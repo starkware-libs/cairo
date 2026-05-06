@@ -455,7 +455,13 @@ fn borrow_check_tracked<'db>(
     function_id: ids::FunctionWithBodyId<'db>,
 ) -> Maybe<BorrowCheckResult<'db>> {
     let lowered = db.function_with_body_lowering(function_id)?;
-    Ok(borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, lowered))
+    let concrete_function_id = function_id.to_concrete(db)?;
+    Ok(borrow_check(
+        db,
+        concrete_function_id,
+        concrete_function_id.is_panic_destruct_fn(db)?,
+        lowered,
+    ))
 }
 
 #[salsa::tracked(returns(ref))]

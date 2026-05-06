@@ -80,6 +80,14 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
             LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => {
                 "Fixed size array repeated element size must be greater than 0.".into()
             }
+            LoweringDiagnosticKind::SelfRecursiveDestructorSynthesis { is_panic_destruct } => {
+                let trait_name = if *is_panic_destruct { "PanicDestruct" } else { "Destruct" };
+                format!(
+                    "Manual `{trait_name}` impl body does not consume `self`; the destructor \
+                     synthesis pass would insert a self-call, recursing forever. Destructure \
+                     `self` explicitly in the body, e.g. `let T {{ }} = self;`."
+                )
+            }
         }
     }
 
@@ -121,6 +129,7 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
             LoweringDiagnosticKind::Unsupported => error_code!(E3011),
             LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => error_code!(E3012),
             LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => error_code!(E3013),
+            LoweringDiagnosticKind::SelfRecursiveDestructorSynthesis { .. } => error_code!(E3014),
         })
     }
 
@@ -206,11 +215,20 @@ impl<'db> MatchError<'db> {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum LoweringDiagnosticKind<'db> {
-    Unreachable { block_end_ptr: SyntaxStablePtrId<'db> },
-    VariableMoved { inference_error: InferenceError<'db> },
-    VariableNotDropped { drop_err: InferenceError<'db>, destruct_err: InferenceError<'db> },
+    Unreachable {
+        block_end_ptr: SyntaxStablePtrId<'db>,
+    },
+    VariableMoved {
+        inference_error: InferenceError<'db>,
+    },
+    VariableNotDropped {
+        drop_err: InferenceError<'db>,
+        destruct_err: InferenceError<'db>,
+    },
     MatchError(MatchError<'db>),
-    DesnappingANonCopyableType { inference_error: InferenceError<'db> },
+    DesnappingANonCopyableType {
+        inference_error: InferenceError<'db>,
+    },
     UnexpectedError,
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
@@ -220,6 +238,13 @@ pub enum LoweringDiagnosticKind<'db> {
     EmptyRepeatedElementFixedSizeArray,
     UnsupportedPattern,
     Unsupported,
+    /// The function being analyzed is the `destruct`/`panic_destruct` method of an `impl X of
+    /// Destruct<T>` (or `PanicDestruct<T>`), and its body leaves `self` unconsumed. Synthesizing a
+    /// destructor call would recurse on the same impl ad infinitum, hanging the compiler with
+    /// unbounded memory growth.
+    SelfRecursiveDestructorSynthesis {
+        is_panic_destruct: bool,
+    },
 }
 
 /// Error in a match-like construct.

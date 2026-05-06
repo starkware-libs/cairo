@@ -352,19 +352,75 @@ impl ADestruct of Destruct<A> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error[E3008]: Call cycle of `nopanic` functions is not allowed.
- --> lib.cairo:3:5-4:35
-      #[inline(always)]
- _____^
-|     fn destruct(self: A) nopanic {}
-|___________________________________^
+error[E3014]: Manual `Destruct` impl body does not consume `self`; the destructor synthesis pass would insert a self-call, recursing forever. Destructure `self` explicitly in the body, e.g. `let T { } = self;`.
+ --> lib.cairo:4:17
+    fn destruct(self: A) nopanic {}
+                ^^^^
 
-error[E3005]: Cannot inline a function that might call itself.
- --> lib.cairo:3:5-4:35
-      #[inline(always)]
- _____^
-|     fn destruct(self: A) nopanic {}
-|___________________________________^
+//! > lowering_flat
+Parameters:
+
+//! > ==========================================================================
+
+//! > Test self-recursive `Destruct` impl whose body does not consume `self`.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _b = B {};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct B {}
+impl BDestruct of Destruct<B> {
+    fn destruct(self: B) nopanic {}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3014]: Manual `Destruct` impl body does not consume `self`; the destructor synthesis pass would insert a self-call, recursing forever. Destructure `self` explicitly in the body, e.g. `let T { } = self;`.
+ --> lib.cairo:3:17
+    fn destruct(self: B) nopanic {}
+                ^^^^
+
+//! > lowering_flat
+Parameters:
+
+//! > ==========================================================================
+
+//! > Test self-recursive `PanicDestruct` impl whose body does not consume `self`.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _c = C {};
+    core::panic_with_felt252('x')
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct C {}
+impl CPanicDestruct of PanicDestruct<C> {
+    fn panic_destruct(self: C, ref panic: Panic) nopanic {}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3014]: Manual `PanicDestruct` impl body does not consume `self`; the destructor synthesis pass would insert a self-call, recursing forever. Destructure `self` explicitly in the body, e.g. `let T { } = self;`.
+ --> lib.cairo:3:23
+    fn panic_destruct(self: C, ref panic: Panic) nopanic {}
+                      ^^^^
 
 //! > lowering_flat
 Parameters:

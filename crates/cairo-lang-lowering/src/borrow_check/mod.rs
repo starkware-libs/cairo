@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
@@ -16,7 +17,10 @@ use self::demand::{AuxCombine, DemandReporter};
 use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics, LoweringDiagnosticsBuilder};
-use crate::ids::{FunctionId, LocationId, SemanticFunctionIdEx};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, FunctionId, LocationId,
+    SemanticFunctionIdEx,
+};
 use crate::{BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
 pub mod demand;
@@ -30,6 +34,15 @@ pub struct BorrowChecker<'db, 'mt, 'r> {
     destruct_fn: TraitFunctionId<'db>,
     panic_destruct_fn: TraitFunctionId<'db>,
     is_panic_destruct_fn: bool,
+    /// If the function being checked is itself the `destruct` method of some
+    /// `impl X of Destruct<T>`, holds X's `ImplId`. Used to detect would-be self-recursive
+    /// destructor synthesis: a manual `Destruct` impl whose body leaves `self` unconsumed
+    /// would otherwise drive `add_destructs` to insert a call to itself, hanging the
+    /// compiler with unbounded memory growth. When set, `drop_aux` reports
+    /// `SelfRecursiveDestructorSynthesis` and skips recording the call.
+    self_destruct_impl: Option<ImplId<'db>>,
+    /// Symmetric counterpart of `self_destruct_impl` for the `PanicDestruct` trait.
+    self_panic_destruct_impl: Option<ImplId<'db>>,
 }
 
 /// A state saved for each position in the back analysis.
@@ -114,6 +127,13 @@ impl<'db, 'mt> DemandReporter<VariableId, PanicState> for BorrowChecker<'db, 'mt
         };
         let destruct_err = match var.info.destruct_impl.clone() {
             Ok(impl_id) => {
+                if Some(impl_id) == self.self_destruct_impl {
+                    self.diagnostics.report_by_location(
+                        var.location.long(db).clone(),
+                        SelfRecursiveDestructorSynthesis { is_panic_destruct: false },
+                    );
+                    return;
+                }
                 add_called_fn(impl_id, self.destruct_fn);
                 return;
             }
@@ -122,6 +142,13 @@ impl<'db, 'mt> DemandReporter<VariableId, PanicState> for BorrowChecker<'db, 'mt
         let panic_destruct_err = if matches!(panic_state, PanicState::EndsWithPanic) {
             match var.info.panic_destruct_impl.clone() {
                 Ok(impl_id) => {
+                    if Some(impl_id) == self.self_panic_destruct_impl {
+                        self.diagnostics.report_by_location(
+                            var.location.long(db).clone(),
+                            SelfRecursiveDestructorSynthesis { is_panic_destruct: true },
+                        );
+                        return;
+                    }
                     add_called_fn(impl_id, self.panic_destruct_fn);
                     return;
                 }
@@ -293,6 +320,7 @@ pub struct BorrowCheckResult<'db> {
 /// Returns the potential destruct function calls per block.
 pub fn borrow_check<'db>(
     db: &'db dyn Database,
+    function_id: ConcreteFunctionWithBodyId<'db>,
     is_panic_destruct_fn: bool,
     lowered: &'db Lowered<'db>,
 ) -> BorrowCheckResult<'db> {
@@ -303,6 +331,8 @@ pub fn borrow_check<'db>(
     let info = db.core_info();
     let destruct_fn = info.destruct_fn;
     let panic_destruct_fn = info.panic_destruct_fn;
+    let self_destruct_impl = self_impl_of_trait_function(db, function_id, destruct_fn);
+    let self_panic_destruct_impl = self_impl_of_trait_function(db, function_id, panic_destruct_fn);
 
     let checker = BorrowChecker {
         db,
@@ -312,6 +342,8 @@ pub fn borrow_check<'db>(
         destruct_fn,
         panic_destruct_fn,
         is_panic_destruct_fn,
+        self_destruct_impl,
+        self_panic_destruct_impl,
     };
     let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();
@@ -351,6 +383,8 @@ pub fn borrow_check_possible_withdraw_gas<'db>(
         destruct_fn,
         panic_destruct_fn,
         is_panic_destruct_fn: false,
+        self_destruct_impl: None,
+        self_panic_destruct_impl: None,
     };
     let position = (
         Some(DropPosition::Panic(location_id.with_auto_generation_note(db, "withdraw_gas"))),
@@ -358,5 +392,29 @@ pub fn borrow_check_possible_withdraw_gas<'db>(
     );
     for param in &lowered.parameters {
         checker.drop_aux(position, *param, PanicState::EndsWithPanic);
+    }
+}
+
+/// If `function_id` is the `trait_function` method of some `impl X of <Trait><T>`,
+/// returns X's `ImplId`. Otherwise returns `None`. Used by the borrow checker to detect
+/// would-be self-recursive destructor synthesis on either the `Destruct::destruct` or
+/// `PanicDestruct::panic_destruct` paths.
+fn self_impl_of_trait_function<'db>(
+    db: &'db dyn Database,
+    function_id: ConcreteFunctionWithBodyId<'db>,
+    trait_function: TraitFunctionId<'db>,
+) -> Option<ImplId<'db>> {
+    let semantic_concrete = match function_id.long(db) {
+        ConcreteFunctionWithBodyLongId::Semantic(id) => *id,
+        _ => return None,
+    };
+    let semantic_fn = semantic_concrete.function_id(db).ok()?;
+    if let GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) =
+        &semantic_fn.long(db).function.generic_function
+        && *function == trait_function
+    {
+        Some(*impl_id)
+    } else {
+        None
     }
 }
