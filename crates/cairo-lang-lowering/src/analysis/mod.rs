@@ -13,6 +13,7 @@ pub use core::{DataflowAnalyzer, Direction, Edge, StatementLocation};
 pub mod dominator;
 pub mod equality_analysis;
 pub mod forward;
+pub mod use_sites;
 pub use forward::ForwardDataflowAnalysis;
 
 #[cfg(test)]
@@ -31,11 +32,47 @@ pub enum DefLocation {
     BlockEntry(BlockId),
 }
 
+impl DefLocation {
+    pub fn block(&self) -> BlockId {
+        match *self {
+            DefLocation::Statement((b, _)) => b,
+            DefLocation::BlockEntry(b) => b,
+        }
+    }
+}
+
 impl std::fmt::Debug for DefLocation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             DefLocation::Statement((block, stmt_idx)) => write!(f, "stmt({block:?}, {stmt_idx})"),
             DefLocation::BlockEntry(block) => write!(f, "entry({block:?})"),
+        }
+    }
+}
+
+/// Where a variable is used.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub enum UseLocation {
+    /// Used as input to a statement.
+    Statement(StatementLocation),
+    /// Used at block end (return, panic, goto, or match).
+    BlockEnd(BlockId),
+}
+
+impl UseLocation {
+    pub fn block(&self) -> BlockId {
+        match *self {
+            UseLocation::Statement((b, _)) => b,
+            UseLocation::BlockEnd(b) => b,
+        }
+    }
+}
+
+impl std::fmt::Debug for UseLocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UseLocation::Statement((block, stmt_idx)) => write!(f, "stmt({block:?}, {stmt_idx})"),
+            UseLocation::BlockEnd(block) => write!(f, "end({block:?})"),
         }
     }
 }
