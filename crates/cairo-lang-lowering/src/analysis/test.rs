@@ -11,6 +11,7 @@ use super::core::{DataflowAnalyzer, Direction, StatementLocation};
 use super::def_site::DefSiteAnalysis;
 use super::dominator::Dominators;
 use super::forward::ForwardDataflowAnalysis;
+use super::use_sites::UseSites;
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
@@ -28,6 +29,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         dominator: "dominator",
         def_site: "def_site",
+        use_sites: "use_sites",
     },
     test_analysis,
     ["analysis"]
@@ -52,6 +54,7 @@ fn test_analysis(
         let result_str = match analysis_name.as_str() {
             "dominator" => format!("{:#?}", Dominators::analyze(lowered)),
             "def_site" => format!("{:#?}", DefSiteAnalysis::analyze(lowered)),
+            "use_sites" => format!("{:#?}", UseSites::analyze(lowered)),
             _ => panic!("unknown analysis: {analysis_name}"),
         };
         (lowering_str, result_str)
