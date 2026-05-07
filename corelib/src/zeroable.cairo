@@ -5,7 +5,7 @@
 //! The [`Zeroable`] trait is meant for internal use only. The public-facing equivalent is the
 //! [`Zero`] trait.
 //!
-//! [`Zero`]: core::num::traits::zero::Zero
+//! [`Zero`]: core::num::traits::Zero
 
 /// A trait for types that have a concept of zero and can be compared to zero.
 ///
