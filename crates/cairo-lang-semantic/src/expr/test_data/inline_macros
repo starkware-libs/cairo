@@ -104,6 +104,112 @@ const out_of_range: u8 = consteval_int!(120 + 160);
 
 //! > ==========================================================================
 
+//! > Test consteval_int! division/modulo by zero
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const div_lit: felt252 = consteval_int!(1 / 0);
+
+const mod_lit: felt252 = consteval_int!(1 % 0);
+
+const div_computed: felt252 = consteval_int!(5 / (3 - 3));
+
+const mod_computed: felt252 = consteval_int!(5 % (7 * 0));
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:26
+const div_lit: felt252 = consteval_int!(1 / 0);
+                         ^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Division by zero in consteval_int macro
+ --> lib.cairo:1:41
+const div_lit: felt252 = consteval_int!(1 / 0);
+                                        ^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:3:26
+const mod_lit: felt252 = consteval_int!(1 % 0);
+                         ^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Modulo by zero in consteval_int macro
+ --> lib.cairo:3:41
+const mod_lit: felt252 = consteval_int!(1 % 0);
+                                        ^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:5:31
+const div_computed: felt252 = consteval_int!(5 / (3 - 3));
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Division by zero in consteval_int macro
+ --> lib.cairo:5:46
+const div_computed: felt252 = consteval_int!(5 / (3 - 3));
+                                             ^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:7:31
+const mod_computed: felt252 = consteval_int!(5 % (7 * 0));
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Modulo by zero in consteval_int macro
+ --> lib.cairo:7:46
+const mod_computed: felt252 = consteval_int!(5 % (7 * 0));
+                                             ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int! division/modulo with non-zero divisor (happy path)
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const div_ok: felt252 = consteval_int!(10 / 2);
+
+const mod_ok: felt252 = consteval_int!(10 % 3);
+
+const div_negative: felt252 = consteval_int!(-7 / 2);
+
+const mod_negative: felt252 = consteval_int!(-7 % 3);
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:25
+const div_ok: felt252 = consteval_int!(10 / 2);
+                        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:3:25
+const mod_ok: felt252 = consteval_int!(10 % 3);
+                        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:5:31
+const div_negative: felt252 = consteval_int!(-7 / 2);
+                              ^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:7:31
+const mod_negative: felt252 = consteval_int!(-7 % 3);
+                              ^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test bad array! macros
 
 //! > test_runner_name
