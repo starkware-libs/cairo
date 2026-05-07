@@ -28,7 +28,7 @@ use crate::zeroable::NonZero;
 /// ```cairo
 /// use core::num::traits::DivRem;
 ///
-/// let big: u256 = 1_000_000;                    // dividend
+/// let big: u256 = 1_000_000;     // dividend
 /// let nz10: NonZero<u128> = 10;  // divisor
 ///
 /// let (q, r) = DivRem::<u256, u128>::div_rem(big, nz10);
