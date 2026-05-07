@@ -952,10 +952,12 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 .intern(db);
             }
             _ => {
-                unreachable!(
-                    "Unexpected function call in constant lowering: `{:?}`",
-                    expr.function.debug(db)
-                )
+                // Reachable via impl methods we don't lower (e.g. `ArrayTrait::new`
+                // from `array![...]` in a `const fn` body). Mirror the extern fallback.
+                return to_missing(self.diagnostics.report(
+                    expr.stable_ptr.untyped(),
+                    SemanticDiagnosticKind::UnsupportedConstant,
+                ));
             }
         };
         if expr.ty == self.felt252 {

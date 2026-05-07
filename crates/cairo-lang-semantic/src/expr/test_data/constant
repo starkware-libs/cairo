@@ -850,3 +850,64 @@ error[E2127]: This expression is not supported as constant.
  --> lib.cairo:5:26
     const VALUE: bool = !F::VALUE;
                          ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Regression: user-defined const fn returning a heap type - graceful diagnostic, not ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const fn f() -> Array<felt252> {
+    array![1, 2, 3]
+}
+const X: Array<felt252> = f();
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:2:5
+    array![1, 2, 3]
+    ^^^^^^^^^^^^^^^
+
+error[E2130]: This expression is not supported as constant.
+ --> lib.cairo:4:27
+const X: Array<felt252> = f();
+                          ^^^
+note: In `test::f`:
+  --> lib.cairo:2:5
+    array![1, 2, 3]
+    ^^^^^^^^^^^^^^^
+
+error[E2130]: This expression is not supported as constant.
+ --> lib.cairo:4:27
+const X: Array<felt252> = f();
+                          ^^^
+note: In `test::f`:
+  --> lib.cairo:2:5
+    array![1, 2, 3]
+    ^^^^^^^^^^^^^^^
+
+error[E2130]: This expression is not supported as constant.
+ --> lib.cairo:4:27
+const X: Array<felt252> = f();
+                          ^^^
+note: In `test::f`:
+  --> lib.cairo:2:5
+    array![1, 2, 3]
+    ^^^^^^^^^^^^^^^
+
+error[E2130]: This expression is not supported as constant.
+ --> lib.cairo:4:27
+const X: Array<felt252> = f();
+                          ^^^
+note: In `test::f`:
+  --> lib.cairo:2:5
+    array![1, 2, 3]
+    ^^^^^^^^^^^^^^^
