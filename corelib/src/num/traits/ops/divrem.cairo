@@ -27,10 +27,9 @@ use crate::zeroable::NonZero;
 /// Heterogeneous division (`u256` by `u128`):
 /// ```cairo
 /// use core::num::traits::DivRem;
-/// use integer::u128_as_non_zero;
 ///
 /// let big: u256 = 1_000_000;                    // dividend
-/// let nz10: NonZero<u128> = u128_as_non_zero(10_u128);  // divisor
+/// let nz10: NonZero<u128> = 10;  // divisor
 ///
 /// let (q, r) = DivRem::<u256, u128>::div_rem(big, nz10);
 /// // q : u256, r : u128
