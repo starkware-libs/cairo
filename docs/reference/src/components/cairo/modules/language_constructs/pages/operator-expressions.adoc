@@ -71,13 +71,11 @@ Use parentheses to override the default precedence: `(2 + 3) * 4`.
 See xref:operator-precedence.adoc[Operator precedence] for the complete
 precedence table and associativity rules.
 
-Chained comparisons such as `a < b < c` are not supported.
-Write them as separate comparisons combined with `&&`, for example:
-`a < b && b < c`.
-
-Chained equality such as `a == b == c` is also not supported.
-Write it as separate equality comparisons combined with `&&`, for example:
-`a == b && b == c`.
+Consecutive comparison/equality operators are not supported, including
+`a < b < c`, `a == b == c`, and mixed forms such as `a < b == c` and `a == b < c`.
+Write them as explicit conjunctions or parenthesized boolean comparisons, for example:
+`a < b && b < c`, `a == b && b == c`, or `(a < b) == expected`.
+The parser reports this as `E1028` (consecutive comparison operators).
 
 Mixed consecutive comparison/equality operators are also not supported, for example
 `a < b == c` or `a == b < c`.
