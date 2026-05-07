@@ -117,11 +117,10 @@ Cairo provides `DivRem` trait for efficient combined division and remainder:
 
 [source,cairo]
 ----
-use core::traits::DivRem;
+use core::num::traits::DivRem;
 
 fn main() {
-    let divisor: NonZero<u32> = 5_u32.try_into().unwrap();
-    let (quotient, remainder) = DivRem::div_rem(17_u32, divisor);
+    let (quotient, remainder) = DivRem::div_rem(17_u32, 5);
     assert!(quotient == 3);
     assert!(remainder == 2);
 }
