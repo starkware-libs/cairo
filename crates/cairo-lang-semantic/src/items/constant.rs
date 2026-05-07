@@ -898,7 +898,17 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return calc_result;
         }
 
-        let imp = extract_matches!(concrete_function.generic_function, GenericFunctionId::Impl);
+        let GenericFunctionId::Impl(imp) = concrete_function.generic_function else {
+            // The const-eval pipeline only knows how to evaluate trait-impl operator calls past
+            // this point. A free function (e.g. the desugaring of `panic!("...")` into
+            // `core::panics::panic_with_byte_array`) reaches here when it is not handled by
+            // `evaluate_const_function_call`; rather than panic, surface it as a regular
+            // const-evaluation failure.
+            return to_missing(self.diagnostics.report(
+                expr.stable_ptr.untyped(),
+                SemanticDiagnosticKind::FailedConstantCalculation,
+            ));
+        };
         let bool_value = |condition: bool| {
             if condition { self.true_const } else { self.false_const }
         };

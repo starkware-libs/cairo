@@ -850,3 +850,62 @@ error[E2127]: This expression is not supported as constant.
  --> lib.cairo:5:26
     const VALUE: bool = !F::VALUE;
                          ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Const fn whose body desugars to a free-function call (issue #9908).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+// `panic!("string")` desugars to a call to `core::panics::panic_with_byte_array`,
+// a free function. Const-eval used to panic at `evaluate_function_call` when the
+// trait-impl extraction of `GenericFunctionId` met a `Free(_)` variant; it must
+// now produce a regular const-evaluation diagnostic instead.
+const fn panic_string_body() -> felt252 {
+    panic!("nope")
+}
+
+const PANIC_STRING_CALLED: felt252 = panic_string_body();
+
+const fn panic_no_arg_body() -> felt252 {
+    panic!()
+}
+
+const PANIC_NO_ARG_CALLED: felt252 = panic_no_arg_body();
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:6:5
+    panic!("nope")
+    ^^^^^^^^^^^^^^
+
+error[E2130]: Failed to calculate constant.
+ --> lib.cairo:9:38
+const PANIC_STRING_CALLED: felt252 = panic_string_body();
+                                     ^^^^^^^^^^^^^^^^^^^
+note: In `test::panic_string_body`:
+  --> lib.cairo:6:5
+    panic!("nope")
+    ^^^^^^^^^^^^^^
+
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:12:5
+    panic!()
+    ^^^^^^^^
+
+error[E2130]: Failed to calculate constant.
+ --> lib.cairo:15:38
+const PANIC_NO_ARG_CALLED: felt252 = panic_no_arg_body();
+                                     ^^^^^^^^^^^^^^^^^^^
+note: In `test::panic_no_arg_body`:
+  --> lib.cairo:12:5
+    panic!()
+    ^^^^^^^^
