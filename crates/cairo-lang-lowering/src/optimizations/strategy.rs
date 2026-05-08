@@ -140,23 +140,29 @@ impl<'db> ApplyOptimization<'db> for [OptimizationPhase<'db>] {
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
-        let fmt = crate::fmt::LoweredFormatter::new(db, &lowered.variables);
-        tracing::trace!(
-            target: "optimization_dump",
-            "({})\nInitial:\n{:?}",
-            function.full_path(db),
-            lowered.debug(&fmt)
-        );
-
-        for phase in self {
-            phase.apply(db, function, lowered)?;
+        let optimization_dump_enabled =
+            tracing::enabled!(target: "optimization_dump", tracing::Level::TRACE);
+        if optimization_dump_enabled {
             let fmt = crate::fmt::LoweredFormatter::new(db, &lowered.variables);
             tracing::trace!(
                 target: "optimization_dump",
-                "({})\nAfter {phase:?}:\n{:?}",
+                "({})\nInitial:\n{:?}",
                 function.full_path(db),
                 lowered.debug(&fmt)
             );
+        }
+
+        for phase in self {
+            phase.apply(db, function, lowered)?;
+            if optimization_dump_enabled {
+                let fmt = crate::fmt::LoweredFormatter::new(db, &lowered.variables);
+                tracing::trace!(
+                    target: "optimization_dump",
+                    "({})\nAfter {phase:?}:\n{:?}",
+                    function.full_path(db),
+                    lowered.debug(&fmt)
+                );
+            }
         }
         Ok(())
     }
