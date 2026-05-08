@@ -54,6 +54,8 @@ Make the intent explicit with conjunctions or parentheses:
 let in_range_and_equal = a < b && b == c;
 let bool_comparison = (a < b) == expected;
 ----
+
+The parser reports these forms as `E1028` (consecutive comparison operators).
  
  == Examples
  
