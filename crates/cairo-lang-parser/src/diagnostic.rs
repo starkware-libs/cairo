@@ -92,6 +92,16 @@ impl<'a> ParserDiagnostic<'a> {
             }
         )
     }
+
+    fn ordering_operator_text(kind: SyntaxKind) -> Option<&'static str> {
+        match kind {
+            SyntaxKind::TerminalLT => Some("<"),
+            SyntaxKind::TerminalGT => Some(">"),
+            SyntaxKind::TerminalLE => Some("<="),
+            SyntaxKind::TerminalGE => Some(">="),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
@@ -231,11 +241,17 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                         "{message} If this appears in a generic path, you may be missing `::` \
                          (for example, `foo::<T>(...)`)."
                     )
+                } else if *first_op == *second_op {
+                    if let Some(op) = Self::ordering_operator_text(*first_op) {
+                        format!(
+                            "{message} If this was intended as a chained comparison, rewrite it \
+                             with `&&` (for example, `a {op} b && b {op} c`)."
+                        )
+                    } else {
+                        message
+                    }
                 } else {
-                    format!(
-                        "{message} If this was intended as a chained comparison, rewrite it with \
-                         `&&` (for example, `a < b && b < c`)."
-                    )
+                    message
                 }
             }
             ParserDiagnosticKind::ExpectedSemicolonOrBody => {
