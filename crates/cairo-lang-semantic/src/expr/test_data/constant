@@ -850,3 +850,51 @@ error[E2127]: This expression is not supported as constant.
  --> lib.cairo:5:26
     const VALUE: bool = !F::VALUE;
                          ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Match on non-enum value in const expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    const X: felt252 = match 1_u8 {
+        _ => 1,
+    };
+    let _ = X;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:2:24-4:5
+      const X: felt252 = match 1_u8 {
+ ________________________^
+|         _ => 1,
+|     };
+|_____^
+
+//! > ==========================================================================
+
+//! > Match on enum value in const expression is supported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    const X: felt252 = match Option::Some(1_felt252) {
+        Option::Some(v) => v,
+        Option::None => 0,
+    };
+    let _ = X;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics

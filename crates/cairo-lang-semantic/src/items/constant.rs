@@ -777,8 +777,17 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             }
             Expr::Match(expr) => {
                 let value = self.evaluate(expr.matched_expr);
-                let ConstValue::Enum(variant, value) = value.long(db) else {
-                    return to_missing(skip_diagnostic());
+                let (variant, value) = match value.long(db) {
+                    ConstValue::Enum(variant, value) => (variant, value),
+                    // Upstream evaluation already reported — reuse that diagnostic.
+                    ConstValue::Missing(diag) => return to_missing(*diag),
+                    // Matching a non-enum value  (e.g. a scalar) is not supported in const eval.
+                    _ => {
+                        return to_missing(self.diagnostics.report(
+                            expr.stable_ptr.untyped(),
+                            SemanticDiagnosticKind::UnsupportedConstant,
+                        ));
+                    }
                 };
                 for arm in &expr.arms {
                     for pattern_id in &arm.patterns {
