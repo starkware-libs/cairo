@@ -50,17 +50,24 @@ impl LoweringDatabaseForTesting {
     }
 }
 
-pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
+static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
     LazyLock::new(|| Mutex::new(LoweringDatabaseForTesting::new()));
-pub static SHARED_DB_FUTURE_SIERRA: LazyLock<Mutex<LoweringDatabaseForTesting>> =
-    LazyLock::new(|| {
-        let mut db = LoweringDatabaseForTesting::new();
-        db.set_flag(FlagLongId(Flag::FUTURE_SIERRA.into()), Some(Flag::FutureSierra(true)));
-        Mutex::new(db)
-    });
+static SHARED_DB_NO_GAS: LazyLock<Mutex<LoweringDatabaseForTesting>> = LazyLock::new(|| {
+    let mut db = LoweringDatabaseForTesting::new();
+    db.set_flag(FlagLongId(Flag::ADD_WITHDRAW_GAS.into()), Some(Flag::AddWithdrawGas(false)));
+    Mutex::new(db)
+});
+static SHARED_DB_FUTURE_SIERRA: LazyLock<Mutex<LoweringDatabaseForTesting>> = LazyLock::new(|| {
+    let mut db = LoweringDatabaseForTesting::new();
+    db.set_flag(FlagLongId(Flag::FUTURE_SIERRA.into()), Some(Flag::FutureSierra(true)));
+    Mutex::new(db)
+});
 impl LoweringDatabaseForTesting {
     pub fn with_future_sierra() -> Self {
         SHARED_DB_FUTURE_SIERRA.lock().unwrap().snapshot()
+    }
+    pub fn with_no_gas() -> Self {
+        SHARED_DB_NO_GAS.lock().unwrap().snapshot()
     }
 }
 impl Default for LoweringDatabaseForTesting {

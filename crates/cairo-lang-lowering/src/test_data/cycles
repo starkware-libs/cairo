@@ -170,3 +170,37 @@ blk0 (root):
 Statements:
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Test self-referential Destruct impl in no-gas mode does not hang (issue #9894).
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false, no_gas: true)
+
+//! > function_code
+fn foo() {
+    let _ = D {};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct D {}
+impl DDestruct of Destruct<D> {
+    fn destruct(self: D) nopanic {}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::D) <- struct_construct()
+  () <- test::DDestruct::destruct(v0)
+End:
+  Return()
