@@ -45,7 +45,7 @@ impl<'db> AttributeTrait<'db> for Attribute<'db> {
 pub trait SemanticQueryAttrs<'db> {
     /// Gets the list of attributes attached to this node.
     ///
-    /// Implementation detail, should not be used by this trait users.
+    /// Implementation detail, should not be used by this trait's users.
     #[doc(hidden)]
     fn attributes_elements(&self, db: &'db dyn Database) -> Maybe<&'db [Attribute<'db>]>;
 

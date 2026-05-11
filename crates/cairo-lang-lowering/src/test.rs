@@ -60,14 +60,18 @@ cairo_lang_test_utils::test_file_test!(
         for_: "for",
     },
     test_function_lowering,
-    ["expect_diagnostics"]
+    ["expect_diagnostics", "no_gas"]
 );
 
 fn test_function_lowering(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
+    let db = &mut if args.get("no_gas").map(|s| s.trim()) == Some("true") {
+        LoweringDatabaseForTesting::with_no_gas()
+    } else {
+        LoweringDatabaseForTesting::default()
+    };
     let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);

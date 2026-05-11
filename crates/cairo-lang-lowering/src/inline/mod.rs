@@ -72,7 +72,7 @@ pub fn priv_should_inline<'db>(
         | ConcreteFunctionWithBodyLongId::Generated(_) => function_id,
         ConcreteFunctionWithBodyLongId::Specialized(specialized) => specialized.long(db).base,
     };
-    if db.concrete_in_cycle(base, DependencyType::Call, LoweringStage::Monomorphized)? {
+    if db.concrete_in_cycle(base, DependencyType::Call, LoweringStage::PreOptimizations)? {
         return Ok(false);
     }
 
@@ -357,8 +357,6 @@ where
                 return Ok(Some((stmt, called_func)));
             }
 
-            // TODO: Implement better logic to avoid inlining of destructors that call
-            // themselves.
             if called_func != calling_function_id && db.priv_should_inline(called_func)? {
                 return Ok(Some((stmt, called_func)));
             }
