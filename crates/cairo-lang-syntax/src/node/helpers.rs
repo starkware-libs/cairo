@@ -281,7 +281,7 @@ pub trait QueryAttrs<'a> {
     /// Generic call `self.attributes(db).elements(db)`, wrapped with `Option` for cases where the
     /// type does not support attributes.
     ///
-    /// Implementation detail, should not be used by this trait users.
+    /// Implementation detail, should not be used by this trait's users.
     #[doc(hidden)]
     fn try_attributes(&self, db: &'a dyn Database) -> Option<AttributeList<'a>>;
 
