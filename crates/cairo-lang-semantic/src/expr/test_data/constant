@@ -1025,3 +1025,57 @@ error[E0006]: Identifier not found.
  --> lib.cairo:7:5
     X
     ^
+
+//! > ==========================================================================
+
+//! > Boolean and with non-concrete impl const lhs is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait BoolConst {
+    const VALUE: bool;
+}
+impl AnotherBoolConst<impl F: BoolConst> of BoolConst {
+    const VALUE: bool = F::VALUE && true;
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:25
+    const VALUE: bool = F::VALUE && true;
+                        ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Boolean or with non-concrete impl const lhs is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait BoolConst {
+    const VALUE: bool;
+}
+impl AnotherBoolConst<impl F: BoolConst> of BoolConst {
+    const VALUE: bool = F::VALUE || false;
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:25
+    const VALUE: bool = F::VALUE || false;
+                        ^^^^^^^^

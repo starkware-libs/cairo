@@ -784,8 +784,13 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                         LogicalOperator::OrOr => true_variant(self.db),
                     };
                     if *v == early_return_variant { lhs } else { self.evaluate(expr.rhs) }
-                } else {
+                } else if matches!(lhs.long(db), ConstValue::Missing(_)) {
                     to_missing(skip_diagnostic())
+                } else {
+                    to_missing(self.diagnostics.report(
+                        self.arenas.exprs[expr.lhs].stable_ptr(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    ))
                 }
             }
             Expr::Match(expr) => {
