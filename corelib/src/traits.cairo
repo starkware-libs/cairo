@@ -934,9 +934,7 @@ pub trait IndexView<C, I, V> {
     fn index(self: @C, index: I) -> V;
 }
 
-#[deprecated(
-    feature: "deprecated-index-traits", note: "Use `core::ops::Index`.", since: "2.7.0",
-)]
+#[deprecated(feature: "deprecated-index-traits", note: "Use `core::ops::Index`.", since: "2.7.0")]
 pub trait Index<C, I, V> {
     fn index(ref self: C, index: I) -> V;
 }

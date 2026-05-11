@@ -33,9 +33,7 @@ pub use crate::traits::AddEq;
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::DivEq;
-#[deprecated(
-    feature: "deprecated-index-traits", note: "Use `core::ops::Index`.", since: "2.7.0",
-)]
+#[deprecated(feature: "deprecated-index-traits", note: "Use `core::ops::Index`.", since: "2.7.0")]
 #[feature("deprecated-index-traits")]
 pub use crate::traits::Index;
 #[deprecated(
