@@ -1990,7 +1990,7 @@ impl I8Neg of Neg<i8> {
     }
 }
 
-#[deprecated(feature: "corelib-internal-use", note: "Use `crate::num::traits::WideMul` instead")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
 impl I8Mul of Mul<i8> {
     fn mul(lhs: i8, rhs: i8) -> i8 {
@@ -2080,7 +2080,7 @@ impl I16Neg of Neg<i16> {
     }
 }
 
-#[deprecated(feature: "corelib-internal-use", note: "Use `crate::num::traits::WideMul` instead")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
 
 impl I16Mul of Mul<i16> {
