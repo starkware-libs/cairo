@@ -145,5 +145,6 @@ supported; see xref:bitwise-operators.adoc[Bitwise operators].
 == References (source)
 
 - link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs#L21-L22[Operator precedence]
-- link:{cairo-repo}/corelib/src/traits.cairo[Traits] (`Add`, `Sub`, `Mul`, `Div`, `Rem`, `DivRem`)
+- link:{cairo-repo}/corelib/src/traits.cairo[Traits] (`Add`, `Sub`, `Mul`, `Div`, `Rem`)
+- link:{cairo-repo}/corelib/src/num/traits/ops/divrem.cairo[`DivRem` trait]
 - link:{cairo-repo}/corelib/src/ops/arith.cairo[`Assignment operators`]
