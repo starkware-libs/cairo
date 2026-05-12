@@ -70,3 +70,25 @@ error[E2042]: Unexpected return type. Expected: "core::felt252", found: "()".
  --> lib.cairo:1:13
 fn foo() -> felt252 {}
             ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test implicit unit return with inferred numeric tail.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let x = 5;
+    x
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2042]: Unexpected return type. Expected: "()", found: "core::felt252".
+ --> lib.cairo:3:5
+    x
+    ^

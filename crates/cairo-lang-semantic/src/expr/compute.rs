@@ -1734,25 +1734,48 @@ pub fn compute_root_expr<'db>(
         ctx.db.generic_params_type_constraints(ctx.resolver.data.generic_params.clone());
     inference.conform_generic_params_type_constraints(constrains);
 
+    let db = ctx.db;
     let return_type = ctx.reduce_ty(return_type);
     let res = compute_expr_block_semantic(ctx, syntax)?;
     let res_ty = ctx.reduce_ty(res.ty());
     let res = ctx.arenas.exprs.alloc(res);
+    let implicit_unit_return = ctx
+        .signature
+        .map(|s| matches!(s.stable_ptr.lookup(db).ret_ty(db), OptionReturnTypeClause::Empty(_)))
+        .unwrap_or(false)
+        && return_type.is_unit(db);
+    let tail_expr_stable_ptr = if implicit_unit_return {
+        let (_, tail) = statements_and_tail(db, syntax.statements(db));
+        tail.map(|tail| tail.expr(db).stable_ptr(db).untyped())
+    } else {
+        None
+    };
+    let prefer_tail_return_diagnostic = tail_expr_stable_ptr.is_some() && !res_ty.is_var_free(db);
     let inference = &mut ctx.resolver.inference();
-    let db = ctx.db;
+    if prefer_tail_return_diagnostic {
+        let _ = inference.finalize_numeric_literals();
+    }
+    let res_ty = inference.rewrite(res_ty).no_err();
+    let tail_return_diag_stable_ptr = if prefer_tail_return_diagnostic && res_ty.is_var_free(db) {
+        tail_expr_stable_ptr
+    } else {
+        None
+    };
     let _ = inference.conform_ty_for_diag(
         res_ty,
         return_type,
         ctx.diagnostics,
         || {
-            ctx.signature
-                .map(|s| match s.stable_ptr.lookup(db).ret_ty(db) {
-                    OptionReturnTypeClause::Empty(_) => syntax.stable_ptr(db).untyped(),
-                    OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
-                        return_type_clause.ty(db).stable_ptr(db).untyped()
-                    }
-                })
-                .unwrap_or_else(|| syntax.stable_ptr(db).untyped())
+            tail_return_diag_stable_ptr.unwrap_or_else(|| {
+                ctx.signature
+                    .map(|s| match s.stable_ptr.lookup(db).ret_ty(db) {
+                        OptionReturnTypeClause::Empty(_) => syntax.stable_ptr(db).untyped(),
+                        OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
+                            return_type_clause.ty(db).stable_ptr(db).untyped()
+                        }
+                    })
+                    .unwrap_or_else(|| syntax.stable_ptr(db).untyped())
+            })
         },
         |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
     );
