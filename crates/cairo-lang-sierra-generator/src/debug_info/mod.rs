@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 mod function_debug_info;
 mod statements_locations;
+pub mod type_names;
 
 pub use function_debug_info::serializable::{
     SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
