@@ -13,6 +13,7 @@ use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::debug_info::type_names::extract_type_names;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{SierraIdReplacer, replace_sierra_ids_in_program};
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
@@ -175,6 +176,10 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
         annotations.extend(Annotations::from(
             debug_info.functions_info.extract_serializable_debug_info(db),
         ))
+    }
+
+    if compiler_config.add_type_names {
+        annotations.extend(Annotations::from(extract_type_names(db, &sierra_program)))
     }
 
     let abi_builder: Option<AbiBuilder<'db>> =

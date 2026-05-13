@@ -17,6 +17,7 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::ProgramArtifact;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::debug_info::StatementsLocations;
+use cairo_lang_sierra_generator::debug_info::type_names::extract_type_names;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -77,6 +78,9 @@ pub struct TestsCompilationConfig<'db> {
     /// Adds a mapping used by [cairo-debugger](https://github.com/software-mansion-labs/cairo-debugger)
     /// to [Annotations] in [DebugInfo] in the compiled tests.
     pub add_functions_debug_info: bool,
+
+    /// Adds struct/enum names and their member/variant names to [Annotations] in [DebugInfo].
+    pub add_type_names: bool,
 
     /// Replaces Sierra IDs with human-readable ones.
     pub replace_ids: bool,
@@ -190,6 +194,10 @@ pub fn compile_test_prepared_db<'db>(
         annotations.extend(Annotations::from(
             debug_info.functions_info.extract_serializable_debug_info(db),
         ))
+    }
+
+    if tests_compilation_config.add_type_names {
+        annotations.extend(Annotations::from(extract_type_names(db, &sierra_program)))
     }
 
     let executables = collect_executables(db, executable_functions, &sierra_program);
