@@ -20,7 +20,7 @@ use crate::zeroable::NonZero;
 /// use core::zeroable::NonZero;
 ///
 /// let lhs: u32 = 7;
-/// let rhs: NonZero<u32> = 3.try_into().unwrap();
+/// let rhs: NonZero<u32> = 3;
 /// assert!(DivRem::<u32, u32>::div_rem(lhs, rhs) == (2, 1));
 /// ```
 ///
