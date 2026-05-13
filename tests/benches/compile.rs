@@ -239,6 +239,7 @@ fn bench_cache_to_testing(c: &mut Criterion) {
                         add_statements_functions: false,
                         add_statements_code_locations: false,
                         add_functions_debug_info: false,
+                        add_type_names: false,
                         replace_ids: false,
                     },
                     main_crate_inputs.clone(),
