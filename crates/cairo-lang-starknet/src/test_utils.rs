@@ -85,6 +85,7 @@ pub fn get_test_contract(example_file_name: &str) -> ContractClass {
             add_statements_functions: false,
             add_statements_code_locations: false,
             add_functions_debug_info: false,
+            add_type_names: false,
         },
     )
     .expect("compile_path failed")
