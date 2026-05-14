@@ -116,7 +116,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error[E2311]: Mismatched types. The type `core::byte_array::ByteArray` cannot be created from a numeric literal.
+error[E2315]: Mismatched types. The type `core::byte_array::ByteArray` cannot be created from a numeric literal.
  --> lib.cairo:2:25
     let _x: ByteArray = 252;
                         ^^^

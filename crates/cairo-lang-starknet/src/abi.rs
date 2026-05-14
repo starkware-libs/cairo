@@ -690,6 +690,7 @@ impl<'db> AbiBuilder<'db> {
             TypeLongId::Coupon(_)
             | TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
+            | TypeLongId::NumericLiteral(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_)
             | TypeLongId::Closure(_) => Err(ABIError::UnexpectedType),

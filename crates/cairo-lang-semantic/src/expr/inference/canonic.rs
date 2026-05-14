@@ -233,7 +233,9 @@ impl<'db> SemanticRewriter<TypeId<'db>, NoError> for Canonicalizer<'db> {
 }
 impl<'db> SemanticRewriter<TypeLongId<'db>, NoError> for Canonicalizer<'db> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId<'db>) -> Result<RewriteResult, NoError> {
-        let TypeLongId::Var(var) = value else {
+        // Both `Var` and `NumericLiteral` wrap a `TypeVar` whose `LocalTypeVarId` must be remapped
+        // to canonical form. The variant tag itself is preserved.
+        let (TypeLongId::Var(var) | TypeLongId::NumericLiteral(var)) = value else {
             return value.default_rewrite(self);
         };
         if var.inference_id != self.to_canonic.source_inference_id {
@@ -381,7 +383,10 @@ impl<'db> SemanticRewriter<TypeId<'db>, NoError> for Embedder<'db, '_, '_> {
 }
 impl<'db> SemanticRewriter<TypeLongId<'db>, NoError> for Embedder<'db, '_, '_> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId<'db>) -> Result<RewriteResult, NoError> {
-        let TypeLongId::Var(var) = value else {
+        // Both `Var` and `NumericLiteral` wrap a `TypeVar`; the embedded form preserves the
+        // outer variant while allocating a fresh local id in the target inference's type-var
+        // table.
+        let (TypeLongId::Var(var) | TypeLongId::NumericLiteral(var)) = value else {
             return value.default_rewrite(self);
         };
         if var.inference_id != InferenceId::Canonical {
@@ -532,7 +537,9 @@ impl<'db> SemanticRewriter<TypeLongId<'db>, MapperError> for Mapper<'db, '_> {
         &mut self,
         value: &mut TypeLongId<'db>,
     ) -> Result<RewriteResult, MapperError> {
-        let TypeLongId::Var(var) = value else {
+        // Both `Var` and `NumericLiteral` wrap a `TypeVar` whose local id must be mapped through
+        // the variable mapping.
+        let (TypeLongId::Var(var) | TypeLongId::NumericLiteral(var)) = value else {
             return value.default_rewrite(self);
         };
         let id = self

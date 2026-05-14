@@ -1177,7 +1177,7 @@ impl TypeCached {
             TypeLongId::Coupon(func_id) => {
                 TypeCached::Coupon(SemanticFunctionIdCached::new(func_id, ctx))
             }
-            TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+            TypeLongId::Var(_) | TypeLongId::NumericLiteral(_) | TypeLongId::Missing(_) => {
                 unreachable!("type {:?} is not supported for caching", type_id.debug(ctx.db))
             }
         }

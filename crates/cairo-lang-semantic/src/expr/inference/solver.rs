@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::{GenericParamId, LanguageElementId};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::Entry;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain, zip_eq};
 use salsa::Database;
 
@@ -20,7 +21,7 @@ use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::imp::{
     ImplId, ImplImplId, ImplLongId, ImplLookupContext, ImplLookupContextId, ImplSemantic,
     UninferredImpl, UninferredImplById, find_candidates_at_context,
-    find_closure_generated_candidate,
+    find_closure_generated_candidate, find_integer_literal_generated_candidate,
 };
 use crate::items::trt::TraitSemantic;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
@@ -205,9 +206,19 @@ fn solve_canonical_trait<'db>(
     impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
 ) -> SolutionSet<'db, CanonicalImpl<'db>> {
     let filter = canonical_trait.id.filter(db);
-    let mut candidates = find_candidates_at_context(db, lookup_context, filter).unwrap_or_default();
-    find_closure_generated_candidate(db, canonical_trait.id)
-        .map(|candidate| candidates.insert(UninferredImplById(candidate)));
+    // For `NumericLiteral` target types with Drop/Copy/Destruct/PanicDestruct, only the
+    // synthetic candidate should match. Otherwise concrete-headed candidates like `felt252Drop`
+    // would "claim" the integer literal and default its type via trait resolution.
+    let candidates = if let Some(integer_literal_candidate) =
+        find_integer_literal_generated_candidate(db, canonical_trait.id)
+    {
+        OrderedHashSet::from_iter([UninferredImplById(integer_literal_candidate)])
+    } else {
+        let mut set = find_candidates_at_context(db, lookup_context, filter).unwrap_or_default();
+        find_closure_generated_candidate(db, canonical_trait.id)
+            .map(|candidate| set.insert(UninferredImplById(candidate)));
+        set
+    };
 
     let mut unique_solution: Option<CanonicalImpl<'_>> = None;
     for candidate in candidates.into_iter() {
@@ -562,7 +573,7 @@ impl<'db> LiteInference<'db> {
         }
         let target_long_ty = target_ty.long(self.db);
 
-        if let TypeLongId::Var(_) = target_long_ty {
+        if let TypeLongId::Var(_) | TypeLongId::NumericLiteral(_) = target_long_ty {
             return CanConformResult::InferenceRequired;
         }
 
@@ -692,6 +703,7 @@ impl<'db> LiteInference<'db> {
             }
             (
                 TypeLongId::Var(_)
+                | TypeLongId::NumericLiteral(_)
                 | TypeLongId::ImplType(_)
                 | TypeLongId::Missing(_)
                 | TypeLongId::Coupon(_),

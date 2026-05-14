@@ -543,7 +543,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: ?2::add,
+                        function: ?1::add,
                         args: [
                             Value(
                                 Literal(
@@ -647,7 +647,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: ?1::add,
+                        function: ?0::add,
                         args: [
                             Value(
                                 Var(
@@ -748,7 +748,7 @@ Match(
                 ],
                 expression: FunctionCall(
                     ExprFunctionCall {
-                        function: ?2::add,
+                        function: ?1::add,
                         args: [
                             Value(
                                 Var(
