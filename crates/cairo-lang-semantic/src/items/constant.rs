@@ -464,7 +464,7 @@ pub fn resolve_const_expr_and_evaluate<'db, 'mt>(
     let mut_ref = &mut ctx.resolver;
     let mut inference: crate::expr::inference::Inference<'db, '_> = mut_ref.inference();
     if let Err(err_set) = inference.conform_ty(value.ty(), target_type) {
-        inference.report_on_pending_error(err_set, ctx.diagnostics, const_stable_ptr);
+        inference.report_on_pending_error(err_set, ctx.diagnostics, value.stable_ptr().untyped());
     }
 
     if finalize {

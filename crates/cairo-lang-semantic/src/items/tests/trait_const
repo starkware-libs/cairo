@@ -645,9 +645,9 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error[E2302]: Type mismatch: `core::integer::u32` and `core::integer::u16`.
- --> lib.cairo:6:5
+ --> lib.cairo:6:20
     const X: u16 = Self::Y;
-    ^^^^^^^^^^^^^^^^^^^^^^^
+                   ^^^^^^^
 
 //! > ==========================================================================
 
