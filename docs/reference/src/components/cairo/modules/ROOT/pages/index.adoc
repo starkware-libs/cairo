@@ -18,7 +18,7 @@ more about Sierra link:https://medium.com/starkware/cairo-1-0-aa96eefb19a0[here]
 
 If you are looking for Cairo 0 documentation, please see link:https://docs.cairo-lang.org/hello_cairo/index.html[here].
 
-## Help us to improve this documentation
+== Help us to improve this documentation
 This documentation site is a work in progress. You are very welcome to contribute to this
 documentation by link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
 
