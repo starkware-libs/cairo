@@ -67,6 +67,6 @@ foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::felt252", found: "()".
- --> lib.cairo:1:13
+ --> lib.cairo:1:21
 fn foo() -> felt252 {}
-            ^^^^^^^
+                    ^^
