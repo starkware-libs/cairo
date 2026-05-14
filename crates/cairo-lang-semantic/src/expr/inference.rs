@@ -24,7 +24,7 @@ use salsa::Database;
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
-use crate::corelib::CorelibSemantic;
+use crate::corelib::{CorelibSemantic, is_valid_literal_type};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
@@ -42,7 +42,7 @@ use crate::items::generics::{
 };
 use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
-    ImplLookupContextId, ImplSemantic, NegativeImplId, NegativeImplLongId,
+    ImplLookupContext, ImplLookupContextId, ImplSemantic, NegativeImplId, NegativeImplLongId,
     UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
 use crate::items::trt::{
@@ -52,7 +52,7 @@ use crate::items::trt::{
 use crate::substitution::{GenericSubstitution, HasDb, RewriteResult, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
-    ImplTypeById, ImplTypeId,
+    ImplTypeById, ImplTypeId, get_impl_at_context,
 };
 use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
@@ -232,6 +232,8 @@ pub enum InferenceError<'db> {
     NoNegativeImplsFound(ConcreteTraitId<'db>),
     Ambiguity(Ambiguity<'db>),
     TypeNotInferred(TypeId<'db>),
+    /// A numeric literal was bound to a type that does not accept numeric literals.
+    InvalidLiteralType(TypeId<'db>),
 }
 impl<'db> InferenceError<'db> {
     pub fn format(&self, db: &dyn Database) -> String {
@@ -266,19 +268,7 @@ impl<'db> InferenceError<'db> {
             }
             InferenceError::ConstNotInferred => "Failed to infer constant.".into(),
             InferenceError::NoImplsFound(concrete_trait_id) => {
-                let info = db.core_info();
-                let trait_id = concrete_trait_id.trait_id(db);
-                if trait_id == info.numeric_literal_trt {
-                    let generic_type = extract_matches!(
-                        concrete_trait_id.generic_args(db)[0],
-                        GenericArgumentId::Type
-                    );
-                    return format!(
-                        "Mismatched types. The type `{:?}` cannot be created from a numeric \
-                         literal.",
-                        generic_type.debug(db)
-                    );
-                } else if trait_id == info.string_literal_trt {
+                if concrete_trait_id.trait_id(db) == db.core_info().string_literal_trt {
                     let generic_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
@@ -313,6 +303,10 @@ impl<'db> InferenceError<'db> {
                     ty1.debug(db)
                 )
             }
+            InferenceError::InvalidLiteralType(ty) => format!(
+                "Mismatched types. The type `{:?}` cannot be created from a numeric literal.",
+                ty.debug(db),
+            ),
         }
     }
 }
@@ -393,6 +387,10 @@ pub struct InferenceData<'db> {
     pub impl_vars_trait_item_mappings: HashMap<LocalImplVarId, ImplVarTraitItemMappings<'db>>,
     /// Type variables.
     pub type_vars: Vec<TypeVar<'db>>,
+    /// Type variables that represent deferred concrete integer types from numeric literals
+    /// (`TypeLongId::NumericLiteral`). At finalization, any of these that remain unassigned are
+    /// defaulted to `felt252`.
+    pub integer_literal_vars: Vec<LocalTypeVarId>,
     /// Const variables.
     pub const_vars: Vec<ConstVar<'db>>,
     /// Impl variables.
@@ -431,6 +429,7 @@ impl<'db> InferenceData<'db> {
             negative_impl_assignment: OrderedHashMap::default(),
             impl_vars_trait_item_mappings: HashMap::new(),
             type_vars: Vec::new(),
+            integer_literal_vars: Vec::new(),
             impl_vars: Vec::new(),
             const_vars: Vec::new(),
             negative_impl_vars: Vec::new(),
@@ -505,6 +504,7 @@ impl<'db> InferenceData<'db> {
                 })
                 .collect(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
+            integer_literal_vars: self.integer_literal_vars.clone(),
             const_vars: inference_id_replacer.rewrite(self.const_vars.clone()).no_err(),
             impl_vars: inference_id_replacer.rewrite(self.impl_vars.clone()).no_err(),
             negative_impl_vars: inference_id_replacer
@@ -535,6 +535,7 @@ impl<'db> InferenceData<'db> {
             negative_impl_assignment: self.negative_impl_assignment.clone(),
             impl_vars_trait_item_mappings: self.impl_vars_trait_item_mappings.clone(),
             type_vars: self.type_vars.clone(),
+            integer_literal_vars: self.integer_literal_vars.clone(),
             const_vars: self.const_vars.clone(),
             impl_vars: self.impl_vars.clone(),
             negative_impl_vars: self.negative_impl_vars.clone(),
@@ -619,6 +620,19 @@ impl<'db, 'id> Inference<'db, 'id> {
         TypeLongId::Var(var).intern(self.db)
     }
 
+    /// Allocates a new [TypeVar] wrapped in a [`TypeLongId::NumericLiteral`] placeholder for a
+    /// numeric literal whose type is not yet known. The synthetic-impl machinery treats this
+    /// placeholder as satisfying `Drop`/`Copy`/`Destruct`/`PanicDestruct`, and finalization
+    /// defaults any still-unbound variant to `felt252`.
+    pub fn new_integer_literal_type(
+        &mut self,
+        stable_ptr: Option<SyntaxStablePtrId<'db>>,
+    ) -> TypeId<'db> {
+        let var = self.new_type_var_raw(stable_ptr);
+        self.data.integer_literal_vars.push(var.id);
+        TypeLongId::NumericLiteral(var).intern(self.db)
+    }
+
     /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
     /// Returns the variable id.
     pub fn new_type_var_raw(&mut self, stable_ptr: Option<SyntaxStablePtrId<'db>>) -> TypeVar<'db> {
@@ -641,7 +655,7 @@ impl<'db, 'id> Inference<'db, 'id> {
             .iter()
             .filter_map(|(impl_type, ty)| {
                 let rewritten_type = self.rewrite(ty.long(self.db).clone()).no_err();
-                if !matches!(rewritten_type, TypeLongId::Var(_)) {
+                if !matches!(rewritten_type, TypeLongId::Var(_) | TypeLongId::NumericLiteral(_)) {
                     return Some(((*impl_type).into(), rewritten_type.intern(self.db)));
                 }
                 // conformed the var type to the original impl type to remove it from the pending
@@ -855,29 +869,28 @@ impl<'db, 'id> Inference<'db, 'id> {
         if self.error_status.is_err() {
             return Err(ErrorSet);
         }
-        let info = self.db.core_info();
-        let numeric_trait_id = info.numeric_literal_trt;
-        let felt_ty = info.felt252;
+        let felt_ty = self.db.core_info().felt252;
 
-        // Conform all uninferred numeric literals to felt252.
+        // Default any still-unbound `NumericLiteral` type variables to `felt252`. We do this one
+        // var at a time and re-solve between each, mirroring the old behavior for
+        // `NumericLiteral<Var>`: defaulting the first literal can constrain other literals
+        // through trait resolution (e.g., `0.pow(0)` — defaulting the receiver lets `Pow<T, Exp>`
+        // resolve, which then constrains the exponent to `usize`, avoiding a felt252 default for
+        // the second literal).
         loop {
-            let mut changed = false;
             self.solve()?;
-            for (var, _) in self.ambiguous.clone() {
-                let impl_var = self.impl_var(var).clone();
-                if impl_var.concrete_trait_id.trait_id(self.db) != numeric_trait_id {
+            let mut changed = false;
+            for var_id in self.data.integer_literal_vars.clone() {
+                if self.type_assignment.contains_key(&var_id) {
                     continue;
                 }
-                // Uninferred numeric trait. Resolve as felt252.
-                let ty = extract_matches!(
-                    impl_var.concrete_trait_id.generic_args(self.db)[0],
-                    GenericArgumentId::Type
-                );
-                if self.rewrite(ty).no_err() == felt_ty {
+                let var = self.type_vars[var_id.0];
+                let placeholder = TypeLongId::NumericLiteral(var).intern(self.db);
+                if self.rewrite(placeholder).no_err() == felt_ty {
                     continue;
                 }
-                self.conform_ty(ty, felt_ty).inspect_err(|_err_set| {
-                    self.add_error_stable_ptr(InferenceVar::Impl(impl_var.id));
+                self.conform_ty(placeholder, felt_ty).inspect_err(|_err_set| {
+                    self.add_error_stable_ptr(InferenceVar::Type(var_id));
                 })?;
                 changed = true;
                 break;
@@ -890,6 +903,31 @@ impl<'db, 'id> Inference<'db, 'id> {
             self.pending.is_empty(),
             "pending should all be solved by this point. Guaranteed by solve()."
         );
+
+        // Defensive backstop: every invalid `IntegerLiteral` binding should already have been
+        // caught at conform-time by `bind_integer_literal`.
+        for var_id in self.data.integer_literal_vars.clone() {
+            let Some(bound) = self.type_assignment.get(&var_id).copied() else {
+                continue;
+            };
+            let bound = self.rewrite(bound).no_err();
+            if !bound.is_var_free(self.db) || is_valid_literal_type(self.db, bound) {
+                continue;
+            }
+            let err = self.set_error(InferenceError::InvalidLiteralType(bound));
+            self.add_error_stable_ptr(InferenceVar::Type(var_id));
+            return Err(err);
+        }
+
+        // Persist rewriter substitutions of synthetic `NumericLiteral`-over-mem-trait
+        // `GeneratedImpl`s into `impl_assignment` so subsequent queries see the natural impl.
+        let assignments: Vec<_> = self.impl_assignment.iter().map(|(k, v)| (*k, *v)).collect();
+        for (var_id, impl_id) in assignments {
+            let rewritten = self.rewrite(impl_id).no_err();
+            if rewritten != impl_id {
+                self.impl_assignment.insert(var_id, rewritten);
+            }
+        }
 
         let Some((var, err)) = self.first_undetermined_variable() else {
             return Ok(());
@@ -1206,7 +1244,10 @@ impl<'db, 'id> Inference<'db, 'id> {
             matches!(
                 garg,
                 GenericArgumentId::Type(ty)
-                if !matches!(ty.long(self.db), TypeLongId::Closure(_))
+                if !matches!(
+                    ty.long(self.db),
+                    TypeLongId::Closure(_) | TypeLongId::NumericLiteral(_)
+                )
                 && !ty.is_var_free(self.db)
             )
         }) {
@@ -1268,7 +1309,8 @@ impl<'db, 'id> Inference<'db, 'id> {
                 let GenericArgumentId::Type(ty) = garg else {
                     panic!("Expected a type variable");
                 };
-                let TypeLongId::Var(var) = ty.long(self.db) else {
+                let (TypeLongId::Var(var) | TypeLongId::NumericLiteral(var)) = ty.long(self.db)
+                else {
                     panic!("Expected a type variable");
                 };
                 self.type_assignment
@@ -1534,7 +1576,7 @@ impl<'db, 'mt> SemanticRewriter<NegativeImplId<'db>, NoError> for Inference<'db,
 impl<'db, 'mt> SemanticRewriter<TypeLongId<'db>, NoError> for Inference<'db, 'mt> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId<'db>) -> Result<RewriteResult, NoError> {
         match value {
-            TypeLongId::Var(var) => {
+            TypeLongId::Var(var) | TypeLongId::NumericLiteral(var) => {
                 if let Some(type_id) = self.type_assignment.get(&var.id) {
                     let mut long_type_id = type_id.long(self.db).clone();
                     if let RewriteResult::Modified = self.internal_rewrite(&mut long_type_id)? {
@@ -1659,6 +1701,39 @@ impl<'db, 'mt> SemanticRewriter<ImplLongId<'db>, NoError> for Inference<'db, 'mt
                     *value = long_impl_id;
                     return Ok(RewriteResult::Modified);
                 }
+            }
+            ImplLongId::GeneratedImpl(generated) => {
+                // Recurse into the generated impl's fields first so the inner type is rewritten.
+                let inner_result = generated.default_rewrite(self)?;
+                let concrete_trait = generated.concrete_trait(self.db);
+                if let Some(GenericArgumentId::Type(first_ty)) =
+                    concrete_trait.generic_args(self.db).first().copied()
+                    && !matches!(
+                        first_ty.long(self.db),
+                        TypeLongId::Closure(_)
+                            | TypeLongId::Var(_)
+                            | TypeLongId::NumericLiteral(_)
+                            | TypeLongId::ImplType(_)
+                    )
+                {
+                    let info = self.db.core_info();
+                    let trait_id = concrete_trait.trait_id(self.db);
+                    if [info.drop_trt, info.copy_trt, info.destruct_trt, info.panic_destruct_trt]
+                        .contains(&trait_id)
+                    {
+                        // The synthetic NumericLiteral candidate produced this GeneratedImpl;
+                        // now that the inner type is concrete, replace it with the natural impl.
+                        let lookup_context =
+                            ImplLookupContext::new_from_type(first_ty, self.db).intern(self.db);
+                        if let Ok(real_impl) =
+                            get_impl_at_context(self.db, lookup_context, concrete_trait, None)
+                        {
+                            *value = real_impl.long(self.db).clone();
+                            return Ok(RewriteResult::Modified);
+                        }
+                    }
+                }
+                return Ok(inner_result);
             }
             ImplLongId::ImplImpl(impl_impl_id) => {
                 let impl_impl_id_rewrite_result = self.internal_rewrite(impl_impl_id)?;

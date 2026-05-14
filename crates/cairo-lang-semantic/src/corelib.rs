@@ -518,6 +518,7 @@ pub fn unwrap_error_propagation_type<'db>(
         | TypeLongId::Tuple(_)
         | TypeLongId::Snapshot(_)
         | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::ImplType(_)
         | TypeLongId::Missing(_)
@@ -815,6 +816,12 @@ impl<'db> LiteralError<'db> {
             }
         }
     }
+}
+
+/// Returns whether `ty` is a valid target type for a numeric literal (regardless of the literal's
+/// value). I.e. `validate_literal` would not return [`LiteralError::InvalidTypeForLiteral`].
+pub fn is_valid_literal_type<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
+    !matches!(validate_literal(db, ty, &BigInt::ZERO), Err(LiteralError::InvalidTypeForLiteral(_)))
 }
 
 /// Validates that a given type is valid for a literal and that the value fits the range of the

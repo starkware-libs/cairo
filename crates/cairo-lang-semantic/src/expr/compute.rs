@@ -3663,15 +3663,12 @@ fn new_literal_expr<'db>(
         }
         return Ok(ExprNumericLiteral { value, ty, stable_ptr });
     };
-    let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
-
-    // Numeric trait.
-    let trait_id = ctx.db.core_info().numeric_literal_trt;
-    let generic_args = vec![GenericArgumentId::Type(ty)];
-    let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
-    let lookup_context = ctx.resolver.impl_lookup_context();
+    // Use a deferred `NumericLiteral` placeholder type. It synthetically satisfies the standard
+    // memory traits (so its `Destruct`/`Drop` can be proven inside trait-solver sandboxes) and
+    // unifies with whatever concrete type later constraints pin it to; if no constraint pins it,
+    // finalization defaults it to `felt252`.
     let inference = &mut ctx.resolver.inference();
-    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context);
+    let ty = inference.new_integer_literal_type(Some(stable_ptr.untyped()));
 
     Ok(ExprNumericLiteral { value, ty, stable_ptr })
 }
@@ -4029,7 +4026,7 @@ fn member_access_expr<'db>(
         TypeLongId::Closure(_) => {
             Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
         }
-        TypeLongId::Var(_) => Err(ctx.diagnostics.report(
+        TypeLongId::Var(_) | TypeLongId::NumericLiteral(_) => Err(ctx.diagnostics.report(
             rhs_syntax.stable_ptr(db),
             InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
         )),
