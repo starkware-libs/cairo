@@ -1739,48 +1739,43 @@ pub fn compute_root_expr<'db>(
     let res = compute_expr_block_semantic(ctx, syntax)?;
     let res_ty = ctx.reduce_ty(res.ty());
     let res = ctx.arenas.exprs.alloc(res);
-    let implicit_unit_return = ctx
+    let block_stable_ptr = syntax.stable_ptr(db).untyped();
+    let (return_diag_stable_ptr, is_implicit_return_with_tail) = ctx
         .signature
-        .map(|s| matches!(s.stable_ptr.lookup(db).ret_ty(db), OptionReturnTypeClause::Empty(_)))
-        .unwrap_or(false)
-        && return_type.is_unit(db);
-    let tail_expr_stable_ptr = if implicit_unit_return {
-        let (_, tail) = statements_and_tail(db, syntax.statements(db));
-        tail.map(|tail| tail.expr(db).stable_ptr(db).untyped())
-    } else {
-        None
-    };
-    let prefer_tail_return_diagnostic = tail_expr_stable_ptr.is_some() && !res_ty.is_var_free(db);
-    let inference = &mut ctx.resolver.inference();
-    if prefer_tail_return_diagnostic {
-        let _ = inference.finalize_numeric_literals();
+        .map(|s| match s.stable_ptr.lookup(db).ret_ty(db) {
+            OptionReturnTypeClause::Empty(_) => {
+                let (_, tail) = statements_and_tail(db, syntax.statements(db));
+                let tail_stable_ptr = tail.map(|tail| tail.expr(db).stable_ptr(db).untyped());
+                let has_tail = tail_stable_ptr.is_some();
+                (tail_stable_ptr.unwrap_or(block_stable_ptr), has_tail)
+            }
+            OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
+                (return_type_clause.ty(db).stable_ptr(db).untyped(), false)
+            }
+        })
+        .unwrap_or((block_stable_ptr, false));
+    if !is_implicit_return_with_tail
+        || !report_return_type_diag_without_backpropagating(
+            db,
+            &ctx.resolver.data.inference_data,
+            ctx.diagnostics,
+            res_ty,
+            return_type,
+            return_diag_stable_ptr,
+        )
+    {
+        let inference = &mut ctx.resolver.inference();
+        let _ = inference.conform_ty_for_diag(
+            res_ty,
+            return_type,
+            ctx.diagnostics,
+            || return_diag_stable_ptr,
+            |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
+        );
     }
-    let res_ty = inference.rewrite(res_ty).no_err();
-    let tail_return_diag_stable_ptr = if prefer_tail_return_diagnostic && res_ty.is_var_free(db) {
-        tail_expr_stable_ptr
-    } else {
-        None
-    };
-    let _ = inference.conform_ty_for_diag(
-        res_ty,
-        return_type,
-        ctx.diagnostics,
-        || {
-            tail_return_diag_stable_ptr.unwrap_or_else(|| {
-                ctx.signature
-                    .map(|s| match s.stable_ptr.lookup(db).ret_ty(db) {
-                        OptionReturnTypeClause::Empty(_) => syntax.stable_ptr(db).untyped(),
-                        OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
-                            return_type_clause.ty(db).stable_ptr(db).untyped()
-                        }
-                    })
-                    .unwrap_or_else(|| syntax.stable_ptr(db).untyped())
-            })
-        },
-        |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
-    );
 
     // Check fully resolved.
+    let inference = &mut ctx.resolver.inference();
     inference.finalize(ctx.diagnostics, syntax.stable_ptr(db).untyped());
 
     ctx.apply_inference_rewriter();
@@ -1788,6 +1783,31 @@ pub fn compute_root_expr<'db>(
         validate_const_expr(ctx, res);
     }
     Ok(res)
+}
+
+fn report_return_type_diag_without_backpropagating<'db>(
+    db: &'db dyn Database,
+    inference_data: &InferenceData<'db>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    res_ty: TypeId<'db>,
+    return_type: TypeId<'db>,
+    stable_ptr: SyntaxStablePtrId<'db>,
+) -> bool {
+    if res_ty.is_var_free(db) {
+        return false;
+    }
+    let mut temp_inference_data = inference_data.temporary_clone();
+    let mut temp_inference = temp_inference_data.inference(db);
+    if temp_inference.finalize_without_reporting().is_err() {
+        return false;
+    }
+    let actual_ty = temp_inference.rewrite(res_ty).no_err();
+    let expected_ty = temp_inference.rewrite(return_type).no_err();
+    if actual_ty == expected_ty {
+        return false;
+    }
+    diagnostics.report(stable_ptr, WrongReturnType { expected_ty, actual_ty });
+    true
 }
 
 /// Computes the semantic model for a list of statements, flattening the result.

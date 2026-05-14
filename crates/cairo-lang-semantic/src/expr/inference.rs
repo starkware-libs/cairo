@@ -849,9 +849,9 @@ impl<'db, 'id> Inference<'db, 'id> {
         Ok(SolutionSet::Unique(()))
     }
 
-    /// Infers uninferred numeric literals as felt252.
+    /// Finalizes the inference by inferring uninferred numeric literals as felt252.
     /// Returns an error and does not report it.
-    pub fn finalize_numeric_literals(&mut self) -> Result<(), ErrorSet> {
+    pub fn finalize_without_reporting(&mut self) -> Result<(), ErrorSet> {
         if self.error_status.is_err() {
             return Err(ErrorSet);
         }
@@ -886,13 +886,6 @@ impl<'db, 'id> Inference<'db, 'id> {
                 break;
             }
         }
-        Ok(())
-    }
-
-    /// Finalizes the inference by inferring uninferred numeric literals as felt252.
-    /// Returns an error and does not report it.
-    pub fn finalize_without_reporting(&mut self) -> Result<(), ErrorSet> {
-        self.finalize_numeric_literals()?;
         assert!(
             self.pending.is_empty(),
             "pending should all be solved by this point. Guaranteed by solve()."
