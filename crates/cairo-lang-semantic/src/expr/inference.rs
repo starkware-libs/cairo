@@ -905,8 +905,23 @@ impl<'db, 'id> Inference<'db, 'id> {
         diagnostics: &mut SemanticDiagnostics<'db>,
         stable_ptr: SyntaxStablePtrId<'db>,
     ) {
+        self.finalize_with_error_reporter(diagnostics, stable_ptr, |_, _, _| None);
+    }
+
+    /// Finalizes the inference and allows replacing a pending inference error with a more specific
+    /// diagnostic.
+    pub fn finalize_with_error_reporter<'m>(
+        &'m mut self,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        stable_ptr: SyntaxStablePtrId<'db>,
+        report: impl FnOnce(
+            &InferenceError<'db>,
+            SyntaxStablePtrId<'db>,
+            &mut SemanticDiagnostics<'db>,
+        ) -> Option<DiagnosticAdded>,
+    ) {
         if let Err(err_set) = self.finalize_without_reporting() {
-            let diag = self.report_on_pending_error(err_set, diagnostics, stable_ptr);
+            let diag = self.report_on_pending_error_with(err_set, diagnostics, stable_ptr, report);
 
             let ty_missing = TypeId::missing(self.db, diag);
             for var in &self.data.type_vars {
@@ -1460,21 +1475,42 @@ impl<'db, 'id> Inference<'db, 'id> {
         diagnostics: &mut SemanticDiagnostics<'db>,
         stable_ptr: SyntaxStablePtrId<'db>,
     ) -> DiagnosticAdded {
+        self.report_on_pending_error_with(_err_set, diagnostics, stable_ptr, |_, _, _| None)
+    }
+
+    fn report_on_pending_error_with(
+        &mut self,
+        _err_set: ErrorSet,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        stable_ptr: SyntaxStablePtrId<'db>,
+        report: impl FnOnce(
+            &InferenceError<'db>,
+            SyntaxStablePtrId<'db>,
+            &mut SemanticDiagnostics<'db>,
+        ) -> Option<DiagnosticAdded>,
+    ) -> DiagnosticAdded {
         let Err(state_error) = &self.error_status else {
             panic!("report_on_pending_error should be called only on error");
         };
         match state_error {
             InferenceErrorStatus::Consumed(diag_added) => *diag_added,
             InferenceErrorStatus::Pending(pending) => {
-                let diag_added = match &pending.err {
-                    InferenceError::TypeNotInferred(_) if diagnostics.error_count > 0 => {
-                        // If we have other diagnostics, there is no need to TypeNotInferred.
+                let stable_ptr = pending.stable_ptr.unwrap_or(stable_ptr);
+                let diag_added = if let Some(diag_added) =
+                    report(&pending.err, stable_ptr, diagnostics)
+                {
+                    diag_added
+                } else {
+                    match &pending.err {
+                        InferenceError::TypeNotInferred(_) if diagnostics.error_count > 0 => {
+                            // If we have other diagnostics, there is no need to TypeNotInferred.
 
-                        // Note that `diagnostics` is not empty, so it is safe to return
-                        // 'DiagnosticAdded' here.
-                        skip_diagnostic()
+                            // Note that `diagnostics` is not empty, so it is safe to return
+                            // 'DiagnosticAdded' here.
+                            skip_diagnostic()
+                        }
+                        diag => diag.report(diagnostics, stable_ptr),
                     }
-                    diag => diag.report(diagnostics, pending.stable_ptr.unwrap_or(stable_ptr)),
                 };
                 self.error_status = Err(InferenceErrorStatus::Consumed(diag_added));
                 diag_added

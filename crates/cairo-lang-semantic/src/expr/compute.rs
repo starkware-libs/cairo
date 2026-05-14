@@ -1754,29 +1754,34 @@ pub fn compute_root_expr<'db>(
             }
         })
         .unwrap_or((block_stable_ptr, false));
-    if !is_implicit_return_with_tail
-        || !report_return_type_diag_without_backpropagating(
-            db,
-            &ctx.resolver.data.inference_data,
-            ctx.diagnostics,
-            res_ty,
-            return_type,
-            return_diag_stable_ptr,
-        )
-    {
-        let inference = &mut ctx.resolver.inference();
-        let _ = inference.conform_ty_for_diag(
-            res_ty,
-            return_type,
-            ctx.diagnostics,
-            || return_diag_stable_ptr,
-            |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
-        );
-    }
+    let inference = &mut ctx.resolver.inference();
+    let _ = inference.conform_ty_for_diag(
+        res_ty,
+        return_type,
+        ctx.diagnostics,
+        || return_diag_stable_ptr,
+        |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
+    );
 
     // Check fully resolved.
     let inference = &mut ctx.resolver.inference();
-    inference.finalize(ctx.diagnostics, syntax.stable_ptr(db).untyped());
+    inference.finalize_with_error_reporter(
+        ctx.diagnostics,
+        syntax.stable_ptr(db).untyped(),
+        |err, _stable_ptr, diagnostics| {
+            if is_implicit_return_with_tail {
+                report_implicit_unit_return_type_diag(
+                    db,
+                    err,
+                    diagnostics,
+                    return_type,
+                    return_diag_stable_ptr,
+                )
+            } else {
+                None
+            }
+        },
+    );
 
     ctx.apply_inference_rewriter();
     if ctx.signature.map(|s| s.is_const) == Some(true) {
@@ -1785,29 +1790,42 @@ pub fn compute_root_expr<'db>(
     Ok(res)
 }
 
-fn report_return_type_diag_without_backpropagating<'db>(
+fn report_implicit_unit_return_type_diag<'db>(
     db: &'db dyn Database,
-    inference_data: &InferenceData<'db>,
+    err: &InferenceError<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
-    res_ty: TypeId<'db>,
-    return_type: TypeId<'db>,
+    expected_ty: TypeId<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
-) -> bool {
-    if res_ty.is_var_free(db) {
-        return false;
+) -> Option<cairo_lang_diagnostics::DiagnosticAdded> {
+    if !expected_ty.is_unit(db) {
+        return None;
     }
-    let mut temp_inference_data = inference_data.temporary_clone();
-    let mut temp_inference = temp_inference_data.inference(db);
-    if temp_inference.finalize_without_reporting().is_err() {
-        return false;
-    }
-    let actual_ty = temp_inference.rewrite(res_ty).no_err();
-    let expected_ty = temp_inference.rewrite(return_type).no_err();
-    if actual_ty == expected_ty {
-        return false;
-    }
-    diagnostics.report(stable_ptr, WrongReturnType { expected_ty, actual_ty });
-    true
+    let actual_ty = match err {
+        InferenceError::NoImplsFound(concrete_trait_id) => {
+            let info = db.core_info();
+            if concrete_trait_id.trait_id(db) != info.numeric_literal_trt {
+                return None;
+            }
+            let GenericArgumentId::Type(ty) = concrete_trait_id.generic_args(db)[0] else {
+                return None;
+            };
+            if ty != expected_ty {
+                return None;
+            }
+            info.felt252
+        }
+        InferenceError::TypeKindMismatch { ty0, ty1 } => {
+            let felt_ty = db.core_info().felt252;
+            if (*ty0 == expected_ty && *ty1 == felt_ty) || (*ty1 == expected_ty && *ty0 == felt_ty)
+            {
+                felt_ty
+            } else {
+                return None;
+            }
+        }
+        _ => return None,
+    };
+    Some(diagnostics.report(stable_ptr, WrongReturnType { expected_ty, actual_ty }))
 }
 
 /// Computes the semantic model for a list of statements, flattening the result.
