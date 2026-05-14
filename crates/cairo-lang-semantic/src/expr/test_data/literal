@@ -173,9 +173,6 @@ incorrect_return_type
 
 //! > expected_diagnostics
 error[E2315]: Mismatched types. The type `()` cannot be created from a numeric literal.
- --> lib.cairo:1:28-4:1
-  fn incorrect_return_type() {
- ____________________________^
-| ...
-| }
-|_^
+ --> lib.cairo:3:5
+    x
+    ^

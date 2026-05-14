@@ -31,12 +31,9 @@ error[E2056]: If blocks have incompatible types: "core::bool" and "{numeric}"
 |_____^
 
 error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:10-8:1
-  fn foo() {
- __________^
-| ...
-| }
-|_^
+ --> lib.cairo:4:9
+        true
+        ^^^^
 
 //! > ==========================================================================
 

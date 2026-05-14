@@ -1712,6 +1712,39 @@ fn handle_possible_closure_expr<'db>(
     }
 }
 
+/// Returns the stable_ptr of the value-producing sub-expression of `expr_id`: drills through
+/// blocks to the tail, through matches to the first non-`never` arm, through ifs to the first
+/// non-`never` branch. Falls back to the expression's own stable_ptr.
+fn value_producer_stable_ptr<'db>(
+    db: &'db dyn Database,
+    arenas: &Arenas<'db>,
+    expr_id: ExprId,
+) -> SyntaxStablePtrId<'db> {
+    let never = never_ty(db);
+    match &arenas.exprs[expr_id] {
+        Expr::Block(ExprBlock { tail: Some(tail), .. }) => {
+            value_producer_stable_ptr(db, arenas, *tail)
+        }
+        Expr::Match(ExprMatch { arms, stable_ptr, .. }) => arms
+            .iter()
+            .find(|arm| arenas.exprs[arm.expression].ty() != never)
+            .map(|arm| value_producer_stable_ptr(db, arenas, arm.expression))
+            .unwrap_or_else(|| stable_ptr.untyped()),
+        Expr::If(ExprIf { if_block, else_block, stable_ptr, .. }) => {
+            if arenas.exprs[*if_block].ty() != never {
+                value_producer_stable_ptr(db, arenas, *if_block)
+            } else if let Some(else_block) = else_block
+                && arenas.exprs[*else_block].ty() != never
+            {
+                value_producer_stable_ptr(db, arenas, *else_block)
+            } else {
+                stable_ptr.untyped()
+            }
+        }
+        other => other.stable_ptr().untyped(),
+    }
+}
+
 pub fn compute_root_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::ExprBlock<'db>,
@@ -1744,16 +1777,7 @@ pub fn compute_root_expr<'db>(
         res_ty,
         return_type,
         ctx.diagnostics,
-        || {
-            ctx.signature
-                .map(|s| match s.stable_ptr.lookup(db).ret_ty(db) {
-                    OptionReturnTypeClause::Empty(_) => syntax.stable_ptr(db).untyped(),
-                    OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
-                        return_type_clause.ty(db).stable_ptr(db).untyped()
-                    }
-                })
-                .unwrap_or_else(|| syntax.stable_ptr(db).untyped())
-        },
+        || value_producer_stable_ptr(db, &ctx.arenas, res),
         |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
     );
 
