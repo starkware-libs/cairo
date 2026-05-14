@@ -12,7 +12,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "(?0, ?1)".
+error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "({numeric}, {numeric})".
  --> lib.cairo:2:22
     let _: felt252 = (3, 3);
                      ^^^^^^

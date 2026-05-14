@@ -287,6 +287,7 @@ pub fn resolve_type<'db>(
             let item = generic_param_id.generic_item(db);
             resolve_generic_item(item, db)
         }
+        TypeLongId::NumericLiteral(_) => None,
         TypeLongId::Var(type_var) => match type_var.inference_id {
             InferenceId::LookupItemDeclaration(lookup_item_id)
             | InferenceId::LookupItemGenerics(lookup_item_id)

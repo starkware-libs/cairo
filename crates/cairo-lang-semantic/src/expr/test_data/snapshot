@@ -37,7 +37,12 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "@?1".
+error[E2315]: Mismatched types. The type `@core::felt252` cannot be created from a numeric literal.
+ --> lib.cairo:2:24
+    let _x: @felt252 = 5;
+                       ^
+
+error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "@{numeric}".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:3:23

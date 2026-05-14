@@ -160,6 +160,7 @@ pub fn get_concrete_long_type_id<'db>(
         .into(),
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
+        | semantic::TypeLongId::NumericLiteral(_)
         | semantic::TypeLongId::ImplType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
@@ -212,6 +213,7 @@ pub fn type_dependencies<'db>(
         }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
+        | semantic::TypeLongId::NumericLiteral(_)
         | semantic::TypeLongId::ImplType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
