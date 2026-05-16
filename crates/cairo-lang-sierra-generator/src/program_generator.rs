@@ -87,7 +87,7 @@ fn generate_type_declarations(
 /// Helper to ensure declaring types ordered in such a way that no type appears before types it
 /// depends on for knowing its size.
 /// `remaining_types` are types that will later be checked.
-/// We may add types to there if we are not sure their dependencies are already declared.
+/// We may add types to them if we are not sure their dependencies are already declared.
 fn generate_type_declarations_helper(
     db: &dyn Database,
     ty: &ConcreteTypeId,
