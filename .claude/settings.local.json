@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build *)",
+      "Bash(cargo run *)",
+      "Bash(./scripts/rust_fmt.sh)",
+      "Bash(./scripts/clippy.sh)",
+      "Bash(cargo test *)",
+      "Bash(./scripts/cairo_fmt.sh)",
+      "Bash(CAIRO_FIX_TESTS=1 cargo test -p cairo-lang-starknet \"libfuncs_coverage\" -- --include-ignored)",
+      "Bash(CAIRO_FIX_TESTS=1 cargo test -p cairo-lang-starknet \"casm_contract_class::test::test_casm_contract_from_contract_class_from_contracts_crate::_libfuncs_coverage\")",
+      "Bash(CAIRO_FIX_TESTS=1 cargo test -p cairo-lang-starknet-classes \"libfuncs_coverage\")"
+    ]
+  }
+}
