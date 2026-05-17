@@ -784,19 +784,29 @@ pub fn get_usize_ty<'db>(db: &'db dyn Database) -> TypeId<'db> {
 
 /// Returns if `ty` is a numeric type upcastable to felt252.
 pub fn numeric_upcastable_to_felt252(db: &dyn Database, ty: TypeId<'_>) -> bool {
-    let info = db.core_info();
-    ty == info.felt252
-        || ty == info.u8
-        || ty == info.u16
-        || ty == info.u32
-        || ty == info.u64
-        || ty == info.u128
-        || ty == info.i8
-        || ty == info.i16
-        || ty == info.i32
-        || ty == info.i64
-        || ty == info.i128
-        || try_extract_bounded_int_type_ranges(db, ty).is_some()
+    match NumericLiteralType::new(db, ty) {
+        Some(
+            NumericLiteralType::Felt252
+            | NumericLiteralType::U8
+            | NumericLiteralType::U16
+            | NumericLiteralType::U32
+            | NumericLiteralType::U64
+            | NumericLiteralType::U128
+            | NumericLiteralType::I8
+            | NumericLiteralType::I16
+            | NumericLiteralType::I32
+            | NumericLiteralType::I64
+            | NumericLiteralType::I128
+            | NumericLiteralType::BoundedInt { .. },
+        ) => true,
+        None
+        | Some(
+            NumericLiteralType::U256
+            | NumericLiteralType::ClassHash
+            | NumericLiteralType::ContractAddress
+            | NumericLiteralType::NonZero(_),
+        ) => false,
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -824,53 +834,109 @@ pub fn validate_literal<'db>(
     ty: TypeId<'db>,
     value: &BigInt,
 ) -> Result<(), LiteralError<'db>> {
-    let info = db.core_info();
     let validate_out_of_range = |is_out_of_range: bool| {
         if is_out_of_range { Err(LiteralError::OutOfRange(ty)) } else { Ok(()) }
     };
-    if ty == info.felt252 {
-        validate_out_of_range(
+    match NumericLiteralType::new(db, ty).ok_or(LiteralError::InvalidTypeForLiteral(ty))? {
+        NumericLiteralType::U8 => validate_out_of_range(value.to_u8().is_none()),
+        NumericLiteralType::U16 => validate_out_of_range(value.to_u16().is_none()),
+        NumericLiteralType::U32 => validate_out_of_range(value.to_u32().is_none()),
+        NumericLiteralType::U64 => validate_out_of_range(value.to_u64().is_none()),
+        NumericLiteralType::U128 => validate_out_of_range(value.to_u128().is_none()),
+        NumericLiteralType::U256 => {
+            validate_out_of_range(value.is_negative() || value.bits() > 256)
+        }
+        NumericLiteralType::I8 => validate_out_of_range(value.to_i8().is_none()),
+        NumericLiteralType::I16 => validate_out_of_range(value.to_i16().is_none()),
+        NumericLiteralType::I32 => validate_out_of_range(value.to_i32().is_none()),
+        NumericLiteralType::I64 => validate_out_of_range(value.to_i64().is_none()),
+        NumericLiteralType::I128 => validate_out_of_range(value.to_i128().is_none()),
+        NumericLiteralType::Felt252 => validate_out_of_range(
             value.abs()
                 > BigInt::from_str_radix(
                     "800000000000011000000000000000000000000000000000000000000000000",
                     16,
                 )
                 .unwrap(),
-        )
-    } else if ty == info.u8 {
-        validate_out_of_range(value.to_u8().is_none())
-    } else if ty == info.u16 {
-        validate_out_of_range(value.to_u16().is_none())
-    } else if ty == info.u32 {
-        validate_out_of_range(value.to_u32().is_none())
-    } else if ty == info.u64 {
-        validate_out_of_range(value.to_u64().is_none())
-    } else if ty == info.u128 {
-        validate_out_of_range(value.to_u128().is_none())
-    } else if ty == info.i8 {
-        validate_out_of_range(value.to_i8().is_none())
-    } else if ty == info.i16 {
-        validate_out_of_range(value.to_i16().is_none())
-    } else if ty == info.i32 {
-        validate_out_of_range(value.to_i32().is_none())
-    } else if ty == info.i64 {
-        validate_out_of_range(value.to_i64().is_none())
-    } else if ty == info.i128 {
-        validate_out_of_range(value.to_i128().is_none())
-    } else if ty == info.u256 {
-        validate_out_of_range(value.is_negative() || value.bits() > 256)
-    } else if ty == info.class_hash || ty == info.contract_address {
-        validate_out_of_range(value.is_negative() || value.bits() > 251)
-    } else if let Some(nz_wrapped_ty) = try_extract_nz_wrapped_type(db, ty) {
-        if value.is_zero() {
-            Err(LiteralError::OutOfRange(ty))
-        } else {
-            validate_literal(db, nz_wrapped_ty, value)
+        ),
+        NumericLiteralType::ClassHash | NumericLiteralType::ContractAddress => {
+            validate_out_of_range(value.is_negative() || value.bits() > 251)
         }
-    } else if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
-        validate_out_of_range(*value < min || *value > max)
-    } else {
-        Err(LiteralError::InvalidTypeForLiteral(ty))
+        NumericLiteralType::BoundedInt { min, max } => {
+            let (Some(min), Some(max)) = (min.to_int(db), max.to_int(db)) else {
+                return Err(LiteralError::InvalidTypeForLiteral(ty));
+            };
+            validate_out_of_range(value < min || value > max)
+        }
+        NumericLiteralType::NonZero(_) if value.is_zero() => Err(LiteralError::OutOfRange(ty)),
+        NumericLiteralType::NonZero(nz_wrapped_ty) => validate_literal(db, nz_wrapped_ty, value),
+    }
+}
+
+/// Classification of a [`TypeId`] as one of the types that can be the target of a numeric
+/// literal. Constructed via [`NumericLiteralType::new`]; used by [`numeric_upcastable_to_felt252`]
+/// and [`validate_literal`] to dispatch on the literal-accepting kind without repeating the
+/// `ty == info.<…>` chain.
+enum NumericLiteralType<'db> {
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+    U256,
+    I8,
+    I16,
+    I32,
+    I64,
+    I128,
+    Felt252,
+    ClassHash,
+    ContractAddress,
+    /// `BoundedInt<min, max>` from the corelib `internal::bounded_int` module.
+    BoundedInt { min: ConstValueId<'db>, max: ConstValueId<'db> },
+    /// `NonZero<T>` where `T` is itself a literal-accepting type.
+    NonZero(TypeId<'db>),
+}
+impl<'db> NumericLiteralType<'db> {
+    /// Returns the classification of `ty`, or `None` if `ty` is not a type that accepts numeric
+    /// literals.
+    fn new(db: &'db dyn Database, ty: TypeId<'db>) -> Option<Self> {
+        let info = db.core_info();
+        if ty == info.u8 {
+            Some(Self::U8)
+        } else if ty == info.u16 {
+            Some(Self::U16)
+        } else if ty == info.u32 {
+            Some(Self::U32)
+        } else if ty == info.u64 {
+            Some(Self::U64)
+        } else if ty == info.u128 {
+            Some(Self::U128)
+        } else if ty == info.u256 {
+            Some(Self::U256)
+        } else if ty == info.i8 {
+            Some(Self::I8)
+        } else if ty == info.i16 {
+            Some(Self::I16)
+        } else if ty == info.i32 {
+            Some(Self::I32)
+        } else if ty == info.i64 {
+            Some(Self::I64)
+        } else if ty == info.i128 {
+            Some(Self::I128)
+        } else if ty == info.felt252 {
+            Some(Self::Felt252)
+        } else if ty == info.class_hash {
+            Some(Self::ClassHash)
+        } else if ty == info.contract_address {
+            Some(Self::ContractAddress)
+        } else if let Some(inner) = try_extract_nz_wrapped_type(db, ty) {
+            Some(Self::NonZero(inner))
+        } else if let Some((min, max)) = try_extract_bounded_int_type(db, ty) {
+            Some(Self::BoundedInt { min, max })
+        } else {
+            None
+        }
     }
 }
 
@@ -899,21 +965,19 @@ pub fn try_extract_box_inner_type<'db>(
 }
 
 /// Returns the ranges of a BoundedInt if it is a BoundedInt type.
-pub fn try_extract_bounded_int_type_ranges<'db>(
+pub fn try_extract_bounded_int_type<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
-) -> Option<(BigInt, BigInt)> {
+) -> Option<(ConstValueId<'db>, ConstValueId<'db>)> {
     let concrete_ty = try_extract_matches!(ty.long(db), TypeLongId::Concrete)?;
     let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
     let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.long(db);
     require(extern_type_id.name(db).long(db) == "BoundedInt")?;
-    let [GenericArgumentId::Constant(min), GenericArgumentId::Constant(max)] = generic_args[..]
-    else {
-        return None;
-    };
-    let to_int = |id: ConstValueId<'db>| id.long(db).to_int().cloned();
-
-    Some((to_int(min)?, to_int(max)?))
+    if let [GenericArgumentId::Constant(min), GenericArgumentId::Constant(max)] = generic_args[..] {
+        Some((min, max))
+    } else {
+        None
+    }
 }
 
 /// Information about various core types and traits.

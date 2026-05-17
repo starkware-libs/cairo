@@ -1415,8 +1415,7 @@ fn compute_expr_fixed_size_array_semantic<'db>(
         };
         let expr_semantic = compute_expr_semantic(ctx, &expr);
         let size = size_const_id
-            .long(db)
-            .to_int()
+            .to_int(db)
             .ok_or_else(|| {
                 ctx.diagnostics.report(syntax.stable_ptr(db), FixedSizeArrayNonNumericSize)
             })?

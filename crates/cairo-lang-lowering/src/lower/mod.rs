@@ -828,8 +828,7 @@ fn lower_tuple_like_pattern_helper<'db>(
                 TypeLongId::Tuple(tys) => tys,
                 TypeLongId::FixedSizeArray { type_id, size } => {
                     let size = size
-                        .long(ctx.db)
-                        .to_int()
+                        .to_int(ctx.db)
                         .expect("Expected ConstValue::Int for size")
                         .to_usize()
                         .unwrap();
@@ -1151,12 +1150,8 @@ fn lower_expr_fixed_size_array<'db>(
         semantic::FixedSizeArrayItems::ValueAndSize(value, size) => {
             let lowered_value = lower_expr(ctx, builder, *value)?;
             let var_usage = lowered_value.as_var_usage(ctx, builder)?;
-            let size = size
-                .long(ctx.db)
-                .to_int()
-                .expect("Expected ConstValue::Int for size")
-                .to_usize()
-                .unwrap();
+            let size =
+                size.to_int(ctx.db).expect("Expected ConstValue::Int for size").to_usize().unwrap();
             if size == 0 {
                 return Err(LoweringFlowError::Failed(
                     ctx.diagnostics

@@ -369,7 +369,7 @@ fn analyze_contract<'db, T: SierraIdReplacer>(
         .unwrap();
     let constant_id = extract_matches!(item, ModuleItemId::Constant);
     let class_hash =
-        Felt252::from(db.constant_const_value(constant_id).unwrap().long(db).to_int().unwrap());
+        Felt252::from(db.constant_const_value(constant_id).unwrap().to_int(db).unwrap());
 
     // Extract functions.
     let SemanticEntryPoints { external, l1_handler, constructor } =
