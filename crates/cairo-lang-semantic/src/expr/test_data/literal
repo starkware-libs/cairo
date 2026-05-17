@@ -37,3 +37,45 @@ error[E2011]: Not a type.
  --> lib.cairo:2:14
     let _x = 1_boolean;
              ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Numeric literal with a compound suffix (multiple underscore segments).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x = 1_u32_u8;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2006]: Unknown type.
+ --> lib.cairo:2:14
+    let _x = 1_u32_u8;
+             ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Negative numeric literal with a compound suffix (multiple underscore segments).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x = -1_u32_u8;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2006]: Unknown type.
+ --> lib.cairo:2:14
+    let _x = -1_u32_u8;
+             ^^^^^^^^^

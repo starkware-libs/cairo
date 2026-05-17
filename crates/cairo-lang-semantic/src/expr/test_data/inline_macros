@@ -2644,3 +2644,57 @@ error[E2199]: Macro placeholder 'y' is from a different repetition than the one 
  --> lib.cairo:2:54
     ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
                                                      ^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int with typed literal.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const a: felt252 = consteval_int!(1_u32);
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:20
+const a: felt252 = consteval_int!(1_u32);
+                   ^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Literals with suffix are not supported in consteval_int macro
+ --> lib.cairo:1:35
+const a: felt252 = consteval_int!(1_u32);
+                                  ^^^^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int with typed literal in subexpression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const a: felt252 = consteval_int!(1_u32 + 2);
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:20
+const a: felt252 = consteval_int!(1_u32 + 2);
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Literals with suffix are not supported in consteval_int macro
+ --> lib.cairo:1:35
+const a: felt252 = consteval_int!(1_u32 + 2);
+                                  ^^^^^^
