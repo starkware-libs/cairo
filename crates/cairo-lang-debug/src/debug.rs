@@ -3,8 +3,6 @@
 mod test;
 
 // Mostly taken from https://github.com/salsa-rs/salsa/blob/fd715619813f634fa07952f0d1b3d3a18b68fd65/components/salsa-2022/src/debug.rs
-#[expect(clippy::disallowed_types)]
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -149,7 +147,7 @@ where
 }
 
 #[expect(clippy::disallowed_types)]
-impl<'db, K, V, S> DebugWithDb<'db> for HashMap<K, V, S>
+impl<'db, K, V, S> DebugWithDb<'db> for std::collections::HashMap<K, V, S>
 where
     K: DebugWithDb<'db>,
     V: DebugWithDb<'db, Db = K::Db>,
@@ -162,7 +160,7 @@ where
     }
 }
 
-impl<'db, K, V> DebugWithDb<'db> for BTreeMap<K, V>
+impl<'db, K, V> DebugWithDb<'db> for std::collections::BTreeMap<K, V>
 where
     K: DebugWithDb<'db>,
     V: DebugWithDb<'db, Db = K::Db>,
@@ -231,7 +229,7 @@ where
 }
 
 #[expect(clippy::disallowed_types)]
-impl<'db, V, S> DebugWithDb<'db> for HashSet<V, S>
+impl<'db, V, S> DebugWithDb<'db> for std::collections::HashSet<V, S>
 where
     V: DebugWithDb<'db>,
 {
@@ -242,7 +240,7 @@ where
     }
 }
 
-impl<'db, V> DebugWithDb<'db> for BTreeSet<V>
+impl<'db, V> DebugWithDb<'db> for std::collections::BTreeSet<V>
 where
     V: DebugWithDb<'db>,
 {

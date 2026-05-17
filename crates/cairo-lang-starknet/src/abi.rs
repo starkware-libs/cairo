@@ -1,6 +1,3 @@
-#[expect(clippy::disallowed_types)]
-use std::collections::{HashMap, HashSet};
-
 use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplAliasId, ImplDefId, LanguageElementId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
@@ -31,6 +28,8 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, require, try_extract_matches};
 use itertools::zip_eq;
 use salsa::Database;
@@ -50,12 +49,11 @@ use crate::plugin::events::EventData;
 mod test;
 
 /// Event information.
-#[expect(clippy::disallowed_types)]
 enum EventInfo {
     /// The event is a struct.
     Struct,
     /// The event is an enum, contains its set of selectors.
-    Enum(HashSet<String>),
+    Enum(OrderedHashSet<String>),
 }
 
 /// The information of an entrypoint.
@@ -73,7 +71,6 @@ pub struct BuilderConfig {
     pub account_contract_validations: bool,
 }
 
-#[expect(clippy::disallowed_types)]
 pub struct AbiBuilder<'db> {
     /// The db.
     db: &'db dyn Database,
@@ -86,15 +83,15 @@ pub struct AbiBuilder<'db> {
 
     /// List of types that were included in the abi.
     /// Used to avoid redundancy.
-    types: HashSet<TypeId<'db>>,
+    types: UnorderedHashSet<TypeId<'db>>,
 
     /// A map of events that were included in the abi to their info.
     /// Used to avoid redundancy, as well as preventing enum events from repeating selectors.
-    event_info: HashMap<TypeId<'db>, EventInfo>,
+    event_info: UnorderedHashMap<TypeId<'db>, EventInfo>,
 
     /// List of entry point names that were included in the abi.
     /// Used to avoid duplication.
-    entry_points: HashMap<String, EntryPointInfo<'db>>,
+    entry_points: UnorderedHashMap<String, EntryPointInfo<'db>>,
 
     /// The constructor for the contract.
     ctor: Option<EntryPointInfo<'db>>,
@@ -104,7 +101,6 @@ pub struct AbiBuilder<'db> {
 }
 impl<'db> AbiBuilder<'db> {
     /// Creates an `AbiBuilder` from a Starknet contract module.
-    #[expect(clippy::disallowed_types)]
     pub fn from_submodule(
         db: &'db dyn Database,
         submodule_id: SubmoduleId<'db>,
@@ -114,9 +110,9 @@ impl<'db> AbiBuilder<'db> {
             db,
             config,
             abi_items: Default::default(),
-            types: HashSet::new(),
-            event_info: HashMap::new(),
-            entry_points: HashMap::new(),
+            types: Default::default(),
+            event_info: Default::default(),
+            entry_points: Default::default(),
             ctor: None,
             errors: Vec::new(),
         };
@@ -563,7 +559,6 @@ impl<'db> AbiBuilder<'db> {
     }
 
     /// Adds an event to the ABI from a type with an Event derive.
-    #[expect(clippy::disallowed_types)]
     fn add_event(
         &mut self,
         type_id: TypeId<'db>,
@@ -599,7 +594,7 @@ impl<'db> AbiBuilder<'db> {
                 let ConcreteTypeId::Enum(concrete_enum_id) = concrete else {
                     unreachable!();
                 };
-                let mut selectors = HashSet::new();
+                let mut selectors = OrderedHashSet::default();
                 let mut add_selector = |selector: &str, source_ptr| {
                     if !selectors.insert(selector.to_string()) {
                         Err(ABIError::EventSelectorDuplication {
