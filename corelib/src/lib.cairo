@@ -385,6 +385,7 @@ pub mod qm31;
 pub mod serde;
 
 pub mod sha256;
+pub mod sha512;
 #[allow(unused_imports)]
 use pedersen::Pedersen;
 
