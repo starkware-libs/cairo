@@ -1,6 +1,3 @@
-#[expect(clippy::disallowed_types)]
-use std::collections::HashMap;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
@@ -14,6 +11,7 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
@@ -168,7 +166,6 @@ a = a * 3
 }
 
 #[test]
-#[expect(clippy::disallowed_types)]
 fn test_sizes() {
     let db = &mut LoweringDatabaseForTesting::default();
     let type_to_size = [
@@ -208,7 +205,7 @@ fn test_sizes() {
     let db: &LoweringDatabaseForTesting = db;
     let type_aliases = test_module.module_id.module_data(db).unwrap().type_aliases(db);
     assert_eq!(type_aliases.len(), type_to_size.len());
-    let alias_expected_size = HashMap::<_, _>::from_iter(
+    let alias_expected_size = UnorderedHashMap::<_, _>::from_iter(
         type_to_size.iter().enumerate().map(|(i, (_, size))| (format!("T{i}"), *size)),
     );
     for (alias_id, alias) in type_aliases.iter() {

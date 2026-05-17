@@ -1,6 +1,4 @@
-#[expect(clippy::disallowed_types)]
-use std::collections::HashMap;
-
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
 use crate::analysis::core::StatementLocation;
@@ -16,8 +14,6 @@ use crate::{
 ///
 /// Removes unreachable blocks.
 /// Blocks that are reachable only through goto are combined with the block that does the goto.
-/// The order of the blocks is changed to be a topologically sorted.
-#[expect(clippy::disallowed_types)]
 pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
@@ -56,7 +52,7 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
     let n_visited_blocks = old_block_rev_order.len();
 
     let mut rebuilder = RebuildContext {
-        block_remapping: HashMap::from_iter(
+        block_remapping: UnorderedHashMap::from_iter(
             old_block_rev_order
                 .iter()
                 .enumerate()
@@ -183,9 +179,8 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for TopSortContext {
     }
 }
 
-#[expect(clippy::disallowed_types)]
 pub struct RebuildContext {
-    block_remapping: HashMap<BlockId, BlockId>,
+    block_remapping: UnorderedHashMap<BlockId, BlockId>,
     remappings_ctx: remappings::Context,
 }
 impl<'db> Rebuilder<'db> for RebuildContext {
