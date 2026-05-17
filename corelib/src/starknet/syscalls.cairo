@@ -223,6 +223,10 @@ pub extern fn sha256_process_block_syscall(
     state: core::sha256::Sha256StateHandle, input: Box<[u32; 16]>,
 ) -> SyscallResult<core::sha256::Sha256StateHandle> implicits(GasBuiltin, System) nopanic;
 
+pub extern fn sha512_process_block_syscall(
+    state: core::sha512::Sha512StateHandle, input: Box<[u64; 16]>,
+) -> SyscallResult<core::sha512::Sha512StateHandle> implicits(GasBuiltin, System) nopanic;
+
 /// Invokes the given entry point as a v0 meta transaction.
 ///
 /// * The signature is replaced with the given signature.
