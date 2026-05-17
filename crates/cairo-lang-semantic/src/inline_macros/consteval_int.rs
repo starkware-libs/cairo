@@ -106,7 +106,19 @@ pub fn compute_constant_expr<'db>(
     macro_ast: &ast::ExprInlineMacro<'db>,
 ) -> Option<BigInt> {
     match value {
-        ast::Expr::Literal(lit) => lit.numeric_value(db),
+        ast::Expr::Literal(lit) => {
+            let (value, suffix) = lit.numeric_value_and_suffix(db);
+            if suffix.is_some() {
+                diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                    db,
+                    macro_ast.stable_ptr(db),
+                    lit.as_syntax_node(),
+                    "Literals with suffix are not supported in consteval_int macro".to_string(),
+                ));
+                return None;
+            }
+            Some(value)
+        }
         ast::Expr::Binary(bin_expr) => match bin_expr.op(db) {
             ast::BinaryOperator::Plus(_) => Some(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics, macro_ast)?

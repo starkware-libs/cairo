@@ -141,7 +141,15 @@ fn extract_available_gas<'db>(
                 return None;
             }
             ast::Expr::Literal(literal) => {
-                literal.numeric_value(db).and_then(|v| v.to_i64()).and_then(|v| v.to_usize())
+                let (value, suffix) = literal.numeric_value_and_suffix(db);
+                if suffix.is_some() {
+                    diagnostics.push(PluginDiagnostic::error(
+                        literal.stable_ptr(db).untyped(),
+                        "Literals with suffix are not supported as gas values".to_string(),
+                    ));
+                    return None;
+                }
+                value.to_i64().and_then(|v| v.to_usize())
             }
             _ => None,
         },
@@ -174,7 +182,11 @@ fn extract_panic_bytes(db: &dyn Database, attr: &Attribute<'_>) -> Option<Vec<Fe
             for panic_expr in panic_exprs.expressions(db).elements(db) {
                 match panic_expr {
                     ast::Expr::Literal(panic_expr) => {
-                        panic_bytes.push(panic_expr.numeric_value(db).unwrap_or_default().into())
+                        let (value, suffix) = panic_expr.numeric_value_and_suffix(db);
+                        if suffix.is_some() {
+                            return None;
+                        }
+                        panic_bytes.push(value.into());
                     }
                     ast::Expr::ShortString(panic_expr) => {
                         panic_bytes.push(panic_expr.numeric_value(db).unwrap_or_default().into())
@@ -189,7 +201,11 @@ fn extract_panic_bytes(db: &dyn Database, attr: &Attribute<'_>) -> Option<Vec<Fe
         }
         ast::Expr::String(panic_string) => Some(extract_string_panic_bytes(panic_string, db)),
         ast::Expr::Literal(panic_expr) => {
-            Some(vec![panic_expr.numeric_value(db).unwrap_or_default().into()])
+            let (value, suffix) = panic_expr.numeric_value_and_suffix(db);
+            if suffix.is_some() {
+                return None;
+            }
+            Some(vec![value.into()])
         }
         ast::Expr::ShortString(panic_expr) => {
             Some(vec![panic_expr.numeric_value(db).unwrap_or_default().into()])

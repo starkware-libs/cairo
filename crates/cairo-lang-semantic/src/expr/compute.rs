@@ -1028,7 +1028,7 @@ fn compute_expr_unary_semantic<'db>(
     match (&unary_op, &inner) {
         // If this is not an actual function call, but actually a minus literal (e.g. -1).
         (UnaryOperator::Minus(_), ast::Expr::Literal(literal)) => {
-            let (value, ty) = literal.numeric_value_and_suffix(db).unwrap_or_default();
+            let (value, ty) = literal.numeric_value_and_suffix(db);
 
             Ok(Expr::Literal(new_literal_expr(ctx, ty, -value, syntax.stable_ptr(db).into())?))
         }
@@ -3683,7 +3683,7 @@ fn literal_to_semantic<'db>(
 ) -> Maybe<ExprNumericLiteral<'db>> {
     let db = ctx.db;
 
-    let (value, ty) = literal_syntax.numeric_value_and_suffix(db).unwrap_or_default();
+    let (value, ty) = literal_syntax.numeric_value_and_suffix(db);
 
     new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr(db).into())
 }
