@@ -37,6 +37,7 @@ See also:
 == Examples
 
 === Public module and re-exports
+Source: link:{cairo-repo}/corelib/src/starknet.cairo[corelib/src/starknet.cairo]
 
 [source,cairo]
 ----
@@ -46,6 +47,7 @@ pub use storage_access::{StorageAddress, Store};
 ----
 
 === Crate-visible items
+Source: link:{cairo-repo}/corelib/src/zeroable.cairo[corelib/src/zeroable.cairo]
 
 [source,cairo]
 ----
@@ -56,6 +58,7 @@ pub(crate) trait Zeroable<T> {
 ----
 
 === Public struct with a public field
+Source: link:{cairo-repo}/corelib/src/pedersen.cairo[corelib/src/pedersen.cairo]
 
 [source,cairo]
 ----
@@ -67,6 +70,7 @@ pub struct HashState {
 ----
 
 === Public implementations
+Source: link:{cairo-repo}/corelib/src/integer.cairo[corelib/src/integer.cairo] (representative pattern)
 
 [source,cairo]
 ----
