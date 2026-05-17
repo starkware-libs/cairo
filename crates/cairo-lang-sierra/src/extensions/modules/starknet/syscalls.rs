@@ -6,7 +6,7 @@ use crate::extensions::array::ArrayType;
 use crate::extensions::boxing::box_ty;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::gas::GasBuiltinType;
-use crate::extensions::int::unsigned::Uint32Type;
+use crate::extensions::int::unsigned::{Uint32Type, Uint64Type};
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
@@ -258,6 +258,107 @@ fn boxed_u32_fixed_array_ty(
     size: i16,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let ty = context.get_concrete_type(Uint32Type::id(), &[])?;
+    box_ty(context, fixed_size_array_ty(context, ty, size)?)
+}
+
+/// Type representing the sha512 state handle.
+#[derive(Default)]
+pub struct Sha512StateHandleType {}
+
+impl NoGenericArgsGenericType for Sha512StateHandleType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("Sha512StateHandle");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const ZERO_SIZED: bool = false;
+}
+
+/// Libfunc for the sha512_process_block system call.
+/// The input needs a Sha512StateHandleType for the previous state and a box of 16 words
+/// (each word is 64 bits).
+#[derive(Default)]
+pub struct Sha512ProcessBlockLibfunc {}
+impl SyscallGenericLibfunc for Sha512ProcessBlockLibfunc {
+    const STR_ID: &'static str = "sha512_process_block_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // Previous state of the hash.
+            context.get_concrete_type(Sha512StateHandleType::id(), &[])?,
+            // The current block to process.
+            boxed_u64_fixed_array_ty(context, 16)?,
+        ])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![context.get_concrete_type(Sha512StateHandleType::id(), &[])?])
+    }
+}
+
+/// Libfunc for initializing a Sha512StateHandle from its inner state representation.
+#[derive(Default)]
+pub struct Sha512StateHandleInitLibfunc {}
+impl NoGenericArgsGenericLibfunc for Sha512StateHandleInitLibfunc {
+    const STR_ID: &'static str = "sha512_state_handle_init";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(sha512_state_handle_unwrapped_type(context)?).with_allow_all(),
+            ],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(Sha512StateHandleType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+/// Libfunc for extracting the inner state representation from a Sha512StateHandle.
+#[derive(Default)]
+pub struct Sha512StateHandleDigestLibfunc {}
+impl NoGenericArgsGenericLibfunc for Sha512StateHandleDigestLibfunc {
+    const STR_ID: &'static str = "sha512_state_handle_digest";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(context.get_concrete_type(Sha512StateHandleType::id(), &[])?)
+                    .with_allow_all(),
+            ],
+            vec![OutputVarInfo {
+                ty: sha512_state_handle_unwrapped_type(context)?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+/// The inner type of the Sha512StateHandle: `Box<[u64; 8]>`.
+pub fn sha512_state_handle_unwrapped_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    boxed_u64_fixed_array_ty(context, 8)
+}
+
+/// Returns `Box<[u64; size]>` according to the given size.
+fn boxed_u64_fixed_array_ty(
+    context: &dyn SignatureSpecializationContext,
+    size: i16,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let ty = context.get_concrete_type(Uint64Type::id(), &[])?;
     box_ty(context, fixed_size_array_ty(context, ty, size)?)
 }
 
