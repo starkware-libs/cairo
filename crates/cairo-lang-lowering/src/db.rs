@@ -804,12 +804,7 @@ fn type_size<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> usize {
         TypeLongId::Snapshot(ty) => db.type_size(*ty),
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.type_size(*type_id)
-                * size
-                    .long(db)
-                    .to_int()
-                    .expect("Expected ConstValue::Int for size")
-                    .to_usize()
-                    .unwrap()
+                * size.to_int(db).expect("Expected ConstValue::Int for size").to_usize().unwrap()
         }
         TypeLongId::Closure(closure_ty) => {
             closure_ty.captured_types.iter().map(|ty| db.type_size(*ty)).sum()

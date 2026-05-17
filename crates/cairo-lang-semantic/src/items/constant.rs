@@ -30,7 +30,7 @@ use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
     CoreInfo, CorelibSemantic, core_nonzero_ty, false_variant, true_variant,
-    try_extract_bounded_int_type_ranges, try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    try_extract_bounded_int_type, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ExprAndId, compute_expr_semantic};
@@ -143,6 +143,11 @@ impl<'db> ConstValueId<'db> {
     /// Returns the type of the const.
     pub fn ty(&self, db: &'db dyn Database) -> Maybe<TypeId<'db>> {
         self.long(db).ty(db)
+    }
+
+    /// Returns the value of an int const as a BigInt.
+    pub fn to_int(&self, db: &'db dyn Database) -> Option<&'db BigInt> {
+        self.long(db).to_int()
     }
 
     /// A utility function for extracting the generic parameters arguments from a ConstValueId.
@@ -760,7 +765,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     }
                     crate::FixedSizeArrayItems::ValueAndSize(value, count) => {
                         let value = self.evaluate(*value);
-                        if let Some(count) = count.long(db).to_int() {
+                        if let Some(count) = count.to_int(db) {
                             vec![value; count.to_usize().unwrap()]
                         } else {
                             self.diagnostics.report(
@@ -966,7 +971,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             let expr_ty = self.generic_substitution.substitute(db, expr.ty).ok()?;
             if self.upcast_fns.contains(&extern_fn) {
                 let [arg] = args else { return None };
-                return Some(ConstValueId::from_int(db, expr_ty, arg.long(db).to_int()?));
+                return Some(ConstValueId::from_int(db, expr_ty, arg.to_int(db)?));
             } else if self.unwrap_non_zero == extern_fn {
                 let [arg] = args else { return None };
                 return try_extract_matches!(arg.long(db), ConstValue::NonZero).copied();
@@ -977,7 +982,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 };
                 let (narrow, wide) =
                     db.concrete_enum_variants(*enm).ok()?.into_iter().collect_tuple()?;
-                let value = felt252_for_downcast(arg.long(db).to_int()?, &BigInt::ZERO);
+                let value = felt252_for_downcast(arg.to_int(db)?, &BigInt::ZERO);
                 let mask128 = BigInt::from(u128::MAX);
                 let low = (&value) & mask128;
                 let high: BigInt = (&value) >> 128;
@@ -1013,8 +1018,8 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     .get(&success_ty)
                     .cloned()
                     .or_else(|| {
-                        let (min, max) = try_extract_bounded_int_type_ranges(db, success_ty)?;
-                        Some(TypeRange::new(min, max))
+                        let (min, max) = try_extract_bounded_int_type(db, success_ty)?;
+                        Some(TypeRange::new(min.to_int(db)?.clone(), max.to_int(db)?.clone()))
                     })
                     .unwrap_or_else(|| {
                         unreachable!(
@@ -1240,7 +1245,7 @@ fn numeric_arg_value<'db>(db: &'db dyn Database, value: ConstValueId<'db>) -> Op
         ConstValue::Int(value, _) => Some(value.clone()),
         ConstValue::Struct(v, _) => {
             if let [low, high] = &v[..] {
-                Some(low.long(db).to_int()? + (high.long(db).to_int()? << 128))
+                Some(low.to_int(db)? + (high.to_int(db)? << 128))
             } else {
                 None
             }

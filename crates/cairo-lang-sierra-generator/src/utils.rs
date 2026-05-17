@@ -451,7 +451,7 @@ pub fn get_concrete_libfunc_id<'db>(
             }
             semantic::GenericArgumentId::Constant(value_id) => {
                 generic_args.push(GenericArg::Value(
-                    value_id.long(db).to_int().expect("Expected ConstValue::Int for size").clone(),
+                    value_id.to_int(db).expect("Expected ConstValue::Int for size").clone(),
                 ));
             }
             semantic::GenericArgumentId::Impl(_) | semantic::GenericArgumentId::NegImpl(_) => {
