@@ -1,17 +1,21 @@
-//! Implementation of the SHA-256 cryptographic hash function.
+//! Implementation of the SHA-512 cryptographic hash function.
 //!
-//! This module provides functions to compute SHA-256 hashes of data.
-//! The input data can be an array of 32-bit words, or a `ByteArray`.
+//! This module provides functions to compute SHA-512 hashes of data.
+//! The input data can be an array of 64-bit words, or a `ByteArray`.
 //!
 //! # Examples
 //!
 //! ```
-//! use core::sha256::compute_sha256_byte_array;
+//! use core::sha512::compute_sha512_byte_array;
 //!
-//! let data = "Hello";
-//! let hash = compute_sha256_byte_array(@data);
-//! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
-//! 0x7d17648, 0x26381969]);
+//! let data = "Hello world";
+//! let hash = compute_sha512_byte_array(@data);
+//! assert!(
+//!     hash == [
+//!         0xb7f783baed8297f0, 0xdb917462184ff4f0, 0x8e69c2d5e5f79a94, 0x2600f9725f58ce1f,
+//!         0x29c18139bf80b06c, 0x0fff2bdd34738452, 0xecf40c488c22a7e3, 0xd80cdf6f9c1c0d47,
+//!     ],
+//! );
 //! ```
 #[feature("byte-span")]
 use core::byte_array::ToByteSpanTrait;
@@ -19,117 +23,132 @@ use core::byte_array::ToByteSpanTrait;
 use core::internal::bounded_int::{BoundedInt, downcast, upcast};
 use starknet::SyscallResultTrait;
 
-/// A handle to the state of a SHA-256 hash.
-pub(crate) extern type Sha256StateHandle;
+/// A handle to the state of a SHA-512 hash.
+pub(crate) extern type Sha512StateHandle;
 
-impl Sha256StateHandleCopy of Copy<Sha256StateHandle>;
-impl Sha256StateHandleDrop of Drop<Sha256StateHandle>;
+impl Sha512StateHandleCopy of Copy<Sha512StateHandle>;
+impl Sha512StateHandleDrop of Drop<Sha512StateHandle>;
 
-/// Initializes a new SHA-256 state handle with the given initial state.
-extern fn sha256_state_handle_init(state: Box<[u32; 8]>) -> Sha256StateHandle nopanic;
+/// Initializes a new SHA-512 state handle with the given initial state.
+extern fn sha512_state_handle_init(state: Box<[u64; 8]>) -> Sha512StateHandle nopanic;
 
-/// Returns the final state of a SHA-256 hash computation.
-extern fn sha256_state_handle_digest(state: Sha256StateHandle) -> Box<[u32; 8]> nopanic;
+/// Returns the final state of a SHA-512 hash computation.
+extern fn sha512_state_handle_digest(state: Sha512StateHandle) -> Box<[u64; 8]> nopanic;
 
-/// Initial hash values for SHA-256 as specified in FIPS 180-4.
-const SHA256_INITIAL_STATE: [u32; 8] = [
-    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+/// Initial hash values for SHA-512 as specified in FIPS 180-4.
+const SHA512_INITIAL_STATE: [u64; 8] = [
+    0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
+    0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
 ];
 
-/// Computes the SHA-256 hash of an input provided as 32-bit words, with optional trailing bytes.
+/// Computes the SHA-512 hash of an input provided as 64-bit words, with optional trailing bytes.
 ///
 /// # Note
 ///
-/// For better type safety, consider using `compute_sha256_u32_array_safe` when
-/// `last_input_num_bytes` is guaranteed to be in the range 0..=3.
+/// For better type safety, consider using `compute_sha512_u64_array_safe` when
+/// `last_input_num_bytes` is guaranteed to be in the range 0..=7.
 ///
 /// # Arguments
 ///
-/// * `input` - The main input, expressed as an array of `u32` words.
+/// * `input` - The main input, expressed as an array of `u64` words.
 /// * `last_input_word` - A partial final word containing any remaining bytes when the input is not
 /// word-aligned.
 /// * `last_input_num_bytes` - The number of valid bytes in `last_input_word`. Must be in the range
-/// 0..=3.
+/// 0..=7.
 ///
 /// # Panics
 ///
-/// * If `last_input_num_bytes` is greater than 3.
+/// * If `last_input_num_bytes` is greater than 7.
 ///
 /// # Returns
 ///
-/// * The SHA-256 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
+/// * The SHA-512 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
 /// `last_input_word`, interpreted in big-endian order.
 ///
 /// # Examples
 ///
 /// ```
-/// use core::sha256::compute_sha256_u32_array;
+/// use core::sha512::compute_sha512_u64_array;
 ///
-/// let hash = compute_sha256_u32_array(array![0x68656c6c], 0x6f, 1);
-/// assert!(hash == [0x2cf24dba, 0x5fb0a30e, 0x26e83b2a, 0xc5b9e29e, 0x1b161e5c, 0x1fa7425e,
-/// 0x73043362, 0x938b9824]);
+/// // SHA-512("Hello world")
+/// let hash = compute_sha512_u64_array(array![0x48656c6c6f20776f], 0x726c64, 3);
+/// assert!(
+///     hash == [
+///         0xb7f783baed8297f0, 0xdb917462184ff4f0, 0x8e69c2d5e5f79a94, 0x2600f9725f58ce1f,
+///         0x29c18139bf80b06c, 0x0fff2bdd34738452, 0xecf40c488c22a7e3, 0xd80cdf6f9c1c0d47,
+///     ],
+/// );
 /// ```
-pub fn compute_sha256_u32_array(
-    mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u32,
-) -> [u32; 8] {
-    let last_input_num_bytes = downcast(last_input_num_bytes).expect('`last_input_num_bytes` > 3');
-    compute_sha256_u32_array_safe(input, last_input_word, last_input_num_bytes)
+pub fn compute_sha512_u64_array(
+    mut input: Array<u64>, last_input_word: u64, last_input_num_bytes: u32,
+) -> [u64; 8] {
+    let last_input_num_bytes = downcast(last_input_num_bytes).expect('`last_input_num_bytes` > 7');
+    compute_sha512_u64_array_safe(input, last_input_word, last_input_num_bytes)
 }
 
-/// A type representing a bounded integer in the range `0..=3`.
-pub type u2 = BoundedInt<0, 3>;
+/// A type representing a bounded integer in the range `0..=7`.
+pub type u3 = BoundedInt<0, 7>;
 
-/// Computes the SHA-256 hash of an input provided as 32-bit words, with optional trailing bytes.
+/// Computes the SHA-512 hash of an input provided as 64-bit words, with optional trailing bytes.
 ///
 /// # Arguments
 ///
-/// * `input` - The main input, expressed as an array of `u32` words.
+/// * `input` - The main input, expressed as an array of `u64` words.
 /// * `last_input_word` - A partial final word containing any remaining bytes when the input is not
 /// word-aligned.
 /// * `last_input_num_bytes` - The number of valid bytes in `last_input_word`.
 ///
 /// # Returns
 ///
-/// * The SHA-256 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
+/// * The SHA-512 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
 /// `last_input_word`, interpreted in big-endian order.
 ///
 /// # Examples
 ///
 /// ```
-/// use core::sha256::compute_sha256_u32_array_safe;
+/// use core::sha512::compute_sha512_u64_array_safe;
 ///
-/// let hash = compute_sha256_u32_array_safe(array![0x68656c6c], 0x6f, 1);
-/// assert!(hash == [0x2cf24dba, 0x5fb0a30e, 0x26e83b2a, 0xc5b9e29e, 0x1b161e5c, 0x1fa7425e,
-/// 0x73043362, 0x938b9824]);
+/// // SHA-512("Hello world")
+/// let hash = compute_sha512_u64_array_safe(array![0x48656c6c6f20776f], 0x726c64, 3);
+/// assert!(
+///     hash == [
+///         0xb7f783baed8297f0, 0xdb917462184ff4f0, 0x8e69c2d5e5f79a94, 0x2600f9725f58ce1f,
+///         0x29c18139bf80b06c, 0x0fff2bdd34738452, 0xecf40c488c22a7e3, 0xd80cdf6f9c1c0d47,
+///     ],
+/// );
 /// ```
-pub fn compute_sha256_u32_array_safe(
-    mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u2,
-) -> [u32; 8] {
-    add_sha256_padding(ref input, last_input_word, last_input_num_bytes);
+pub fn compute_sha512_u64_array_safe(
+    mut input: Array<u64>, last_input_word: u64, last_input_num_bytes: u3,
+) -> [u64; 8] {
+    add_sha512_padding(ref input, last_input_word, last_input_num_bytes);
 
     let mut input = input.span();
-    let mut state = sha256_state_handle_init(BoxTrait::new(SHA256_INITIAL_STATE));
+    let mut state = sha512_state_handle_init(BoxTrait::new(SHA512_INITIAL_STATE));
 
     while let Some(chunk) = input.multi_pop_front() {
-        state = starknet::syscalls::sha256_process_block_syscall(state, *chunk).unwrap_syscall();
+        state = starknet::syscalls::sha512_process_block_syscall(state, *chunk).unwrap_syscall();
     }
 
-    sha256_state_handle_digest(state).unbox()
+    sha512_state_handle_digest(state).unbox()
 }
 
-/// Computes the SHA-256 hash of the input `ByteArray`.
+/// Computes the SHA-512 hash of the input `ByteArray`.
 ///
 /// # Examples
 ///
 /// ```
-/// use core::sha256::compute_sha256_byte_array;
+/// use core::sha512::compute_sha512_byte_array;
 ///
-/// let data = "Hello";
-/// let hash = compute_sha256_byte_array(@data);
-/// assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
-/// 0x7d17648, 0x26381969]);
+/// let data = "Hello world";
+/// let hash = compute_sha512_byte_array(@data);
+/// assert!(
+///     hash == [
+///         0xb7f783baed8297f0, 0xdb917462184ff4f0, 0x8e69c2d5e5f79a94, 0x2600f9725f58ce1f,
+///         0x29c18139bf80b06c, 0x0fff2bdd34738452, 0xecf40c488c22a7e3, 0xd80cdf6f9c1c0d47,
+///     ],
+/// );
 /// ```
-pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
+pub fn compute_sha512_byte_array(arr: @ByteArray) -> [u64; 8] {
     let mut iter = arr.span().into_iter();
     let mut word_arr = array![];
 
@@ -148,32 +167,48 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
         let Some(b3) = iter.next() else {
             break (upcast(b0_b1_b2), 3);
         };
+        let b0_b1_b2_b3 = conversions::shift_append_byte(b0_b1_b2, b3);
+        let Some(b4) = iter.next() else {
+            break (upcast(b0_b1_b2_b3), 4);
+        };
+        let b0_b1_b2_b3_b4 = conversions::shift_append_byte(b0_b1_b2_b3, b4);
+        let Some(b5) = iter.next() else {
+            break (upcast(b0_b1_b2_b3_b4), 5);
+        };
+        let b0_b1_b2_b3_b4_b5 = conversions::shift_append_byte(b0_b1_b2_b3_b4, b5);
+        let Some(b6) = iter.next() else {
+            break (upcast(b0_b1_b2_b3_b4_b5), 6);
+        };
+        let b0_b1_b2_b3_b4_b5_b6 = conversions::shift_append_byte(b0_b1_b2_b3_b4_b5, b6);
+        let Some(b7) = iter.next() else {
+            break (upcast(b0_b1_b2_b3_b4_b5_b6), 7);
+        };
 
-        word_arr.append(upcast(conversions::shift_append_byte(b0_b1_b2, b3)));
+        word_arr.append(upcast(conversions::shift_append_byte(b0_b1_b2_b3_b4_b5_b6, b7)));
     };
 
-    compute_sha256_u32_array_safe(word_arr, last_word, last_word_len)
+    compute_sha512_u64_array_safe(word_arr, last_word, last_word_len)
 }
 
-/// Adds padding to the input array according to the SHA-256 specification.
+/// Adds padding to the input array according to the SHA-512 specification.
 ///
 /// The padding follows FIPS 180-4:
 /// 1. Append a single '1' bit to the message.
-/// 2. Append zeros until data length ≡ 448 (mod 512).
-/// 3. Append the original message length as a 64-bit big-endian integer.
+/// 2. Append zeros until data length ≡ 896 (mod 1024).
+/// 3. Append the original message length as a 128-bit big-endian integer.
 ///    This implementation is made for provable execution and assumes the message bit length
-///    fits in 32 bits, with the high 32 bits of the 64-bit length field being zero.
+///    fits in 64 bits, with the high 64 bits of the 128-bit length field being zero.
 ///
 /// # Arguments
 /// * `arr` - Array to pad (modified in place)
 /// * `last_input_word` - A partial final word containing any remaining bytes when the input is not
 /// word-aligned.
 /// * `last_input_num_bytes` - The number of valid bytes in `last_input_word`.
-fn add_sha256_padding(ref arr: Array<u32>, last_input_word: u32, last_input_num_bytes: u2) {
+fn add_sha512_padding(ref arr: Array<u64>, last_input_word: u64, last_input_num_bytes: u3) {
     let bitlen = conversions::bitlen(arr.len(), last_input_num_bytes);
     arr.append(conversions::to_last_word(last_input_word, last_input_num_bytes));
     // Now writing the length in bits, at the end of a block.
-    // We always need to append a zero to the array, as the length is actually the two last u32
+    // We always need to append a zero to the array, as the length is actually the two last u64
     // words, in which we assume the least significant is enough.
     let zero = 0;
     arr.append(zero);
@@ -184,7 +219,7 @@ fn add_sha256_padding(ref arr: Array<u32>, last_input_word: u32, last_input_num_
 }
 
 /// Appends `count` `value`s to the array.
-fn repeatedly_append_value(ref arr: Array<u32>, count: felt252, value: u32) {
+fn repeatedly_append_value(ref arr: Array<u64>, count: felt252, value: u64) {
     let mut remaining = count;
     dec_and_append_or_return!(remaining, arr, value); // returns if `count == 0`.
     dec_and_append_or_return!(remaining, arr, value); // returns if `count == 1`.
@@ -219,7 +254,7 @@ mod conversions {
     use core::internal::bounded_int::{
         self, AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt,
     };
-    use super::u2;
+    use super::u3;
 
     impl U8Shift of MulHelper<u8, UnitInt<0x100>> {
         type Result = BoundedInt<0, 0xFF00>;
@@ -238,6 +273,30 @@ mod conversions {
     }
     impl U24ShiftAddU8 of AddHelper<U24Shift::Result, u8> {
         type Result = BoundedInt<0, 0xFFFFFFFF>;
+    }
+    impl U32Shift of MulHelper<U24ShiftAddU8::Result, UnitInt<0x100>> {
+        type Result = BoundedInt<0, 0xFFFFFFFF00>;
+    }
+    impl U32ShiftAddU8 of AddHelper<U32Shift::Result, u8> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFF>;
+    }
+    impl U40Shift of MulHelper<U32ShiftAddU8::Result, UnitInt<0x100>> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFF00>;
+    }
+    impl U40ShiftAddU8 of AddHelper<U40Shift::Result, u8> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFFFF>;
+    }
+    impl U48Shift of MulHelper<U40ShiftAddU8::Result, UnitInt<0x100>> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFFFF00>;
+    }
+    impl U48ShiftAddU8 of AddHelper<U48Shift::Result, u8> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFFFFFF>;
+    }
+    impl U56Shift of MulHelper<U48ShiftAddU8::Result, UnitInt<0x100>> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFFFFFF00>;
+    }
+    impl U56ShiftAddU8 of AddHelper<U56Shift::Result, u8> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFFFFFFFF>;
     }
     trait ShiftAppendByte<T, MulResult> {
         impl Mul: MulHelper<T, UnitInt<0x100>>;
@@ -261,59 +320,66 @@ mod conversions {
         bounded_int::add::<_, _, SAB::Add>(bounded_int::mul::<_, _, SAB::Mul>(word, 0x100), byte)
     }
 
-    impl DoubleU32 of MulHelper<u32, UnitInt<2>> {
-        type Result = BoundedInt<0, 0x1FFFFFFFE>;
+    impl DoubleU64 of MulHelper<u64, UnitInt<2>> {
+        type Result = BoundedInt<0, 0x1FFFFFFFFFFFFFFFE>;
     }
 
-    impl DoubleU32Inc of AddHelper<BoundedInt<0, 0x1FFFFFFFE>, UnitInt<1>> {
-        type Result = BoundedInt<1, 0x1FFFFFFFF>;
+    impl DoubleU64Inc of AddHelper<BoundedInt<0, 0x1FFFFFFFFFFFFFFFE>, UnitInt<1>> {
+        type Result = BoundedInt<1, 0x1FFFFFFFFFFFFFFFF>;
     }
 
-    impl DoubleU32IncRightPadded of MulHelper<BoundedInt<1, 0x1FFFFFFFF>, BoundedInt<0, 0x800000>> {
-        type Result = BoundedInt<0, 0xFFFFFFFF800000>;
-    }
-
-    impl DoubleU32IncRightPaddedTrim of DivRemHelper<
-        BoundedInt<0, 0xFFFFFFFF800000>, UnitInt<0x100000000>,
+    impl DoubleU64IncRightPadded of MulHelper<
+        BoundedInt<1, 0x1FFFFFFFFFFFFFFFF>, BoundedInt<0, 0x80000000000000>,
     > {
-        type DivT = BoundedInt<0, 0xFFFFFF>;
-        type RemT = BoundedInt<0, 0xFFFFFFFF>;
+        type Result = BoundedInt<0, 0xFFFFFFFFFFFFFFFF80000000000000>;
     }
 
-    /// Returns the last word to append to the input `u32` array given the last word input.
-    pub fn to_last_word(word: u32, len: u2) -> u32 {
-        let shift: BoundedInt<0, 0x800000> = match len {
-            0 => { return 0x80000000; },
-            1 => 0x800000,
-            2 => 0x8000,
+    impl DoubleU64IncRightPaddedTrim of DivRemHelper<
+        BoundedInt<0, 0xFFFFFFFFFFFFFFFF80000000000000>, UnitInt<0x10000000000000000>,
+    > {
+        type DivT = BoundedInt<0, 0xFFFFFFFFFFFFFF>;
+        type RemT = BoundedInt<0, 0xFFFFFFFFFFFFFFFF>;
+    }
+
+    /// Returns the last word to append to the input `u64` array given the last word input.
+    pub fn to_last_word(word: u64, len: u3) -> u64 {
+        let shift: BoundedInt<0, 0x80000000000000> = match len {
+            0 => { return 0x8000000000000000; },
+            1 => 0x80000000000000,
+            2 => 0x800000000000,
+            3 => 0x8000000000,
+            4 => 0x80000000,
+            5 => 0x800000,
+            6 => 0x8000,
             _ => 0x80,
         };
-        let doubled = bounded_int::mul::<_, _, DoubleU32>(word, 2);
-        let incremented = bounded_int::add::<_, _, DoubleU32Inc>(doubled, 1);
-        let result = bounded_int::mul::<_, _, DoubleU32IncRightPadded>(incremented, shift);
+        let doubled = bounded_int::mul::<_, _, DoubleU64>(word, 2);
+        let incremented = bounded_int::add::<_, _, DoubleU64Inc>(doubled, 1);
+        let result = bounded_int::mul::<_, _, DoubleU64IncRightPadded>(incremented, shift);
         // For backwards compatibility, we make sure to ignore high bits.
-        let (_, r) = bounded_int::div_rem::<_, _, DoubleU32IncRightPaddedTrim>(result, 0x100000000);
+        let (_, r) = bounded_int::div_rem::<
+            _, _, DoubleU64IncRightPaddedTrim,
+        >(result, 0x10000000000000000);
         bounded_int::upcast(r)
     }
 
-    impl ArrBitLen of MulHelper<u32, UnitInt<32>> {
-        type Result = BoundedInt<0, 0x1FFFFFFFE0>;
+    impl ArrBitLen of MulHelper<u32, UnitInt<64>> {
+        type Result = BoundedInt<0, 0x3FFFFFFFC0>;
     }
 
-    impl WordBitLen of MulHelper<u2, UnitInt<8>> {
-        type Result = BoundedInt<0, 0x18>;
+    impl WordBitLen of MulHelper<u3, UnitInt<8>> {
+        type Result = BoundedInt<0, 0x38>;
     }
 
-    impl FullBitLen of AddHelper<BoundedInt<0, 0x1FFFFFFFE0>, BoundedInt<0, 0x18>> {
-        type Result = BoundedInt<0, { 0x1FFFFFFFE0 + 0x18 }>;
+    impl FullBitLen of AddHelper<BoundedInt<0, 0x3FFFFFFFC0>, BoundedInt<0, 0x38>> {
+        type Result = BoundedInt<0, { 0x3FFFFFFFC0 + 0x38 }>;
     }
 
-    /// Returns the bit length of the input message, given the length of the representation u32
+    /// Returns the bit length of the input message, given the length of the representation u64
     /// array and last word bytes.
-    pub fn bitlen(arr_len: u32, last_word_bytes: u2) -> u32 {
-        let arr_bits = bounded_int::mul::<_, _, ArrBitLen>(arr_len, 32);
+    pub fn bitlen(arr_len: u32, last_word_bytes: u3) -> u64 {
+        let arr_bits = bounded_int::mul::<_, _, ArrBitLen>(arr_len, 64);
         let last_word_bits = bounded_int::mul::<_, _, WordBitLen>(last_word_bytes, 8);
-        bounded_int::downcast(bounded_int::add::<_, _, FullBitLen>(arr_bits, last_word_bits))
-            .unwrap()
+        bounded_int::upcast(bounded_int::add::<_, _, FullBitLen>(arr_bits, last_word_bits))
     }
 }
