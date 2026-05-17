@@ -1,12 +1,10 @@
 //! Tests for the dataflow analysis framework.
 
-#[expect(clippy::disallowed_types)]
-use std::collections::HashSet;
-
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use super::core::{DataflowAnalyzer, Direction, StatementLocation};
 use super::def_site::DefSiteAnalysis;
@@ -116,19 +114,17 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for BlockCounter {
 /// A simple forward analyzer that tracks which blocks are reachable.
 /// Demonstrates using default transfer_block with statement-level transfer_stmt.
 #[derive(Default)]
-#[expect(clippy::disallowed_types)]
 struct ReachabilityAnalyzer {
-    reachable_blocks: HashSet<BlockId>,
+    reachable_blocks: OrderedHashSet<BlockId>,
 }
 
-#[expect(clippy::disallowed_types)]
 impl<'db, 'a> DataflowAnalyzer<'db, 'a> for ReachabilityAnalyzer {
-    type Info = HashSet<BlockId>; // Set of blocks visited to reach this point
+    type Info = OrderedHashSet<BlockId>; // Set of blocks visited to reach this point
 
     const DIRECTION: Direction = Direction::Forward;
 
     fn initial_info(&mut self, _block_id: BlockId, _block_end: &'a BlockEnd<'db>) -> Self::Info {
-        HashSet::new()
+        OrderedHashSet::default()
     }
 
     fn merge(
