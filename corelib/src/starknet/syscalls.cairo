@@ -206,6 +206,23 @@ pub extern fn keccak_syscall(
     input: Span<u64>,
 ) -> SyscallResult<u256> implicits(GasBuiltin, System) nopanic;
 
+/// Computes the next SHA-512 state of the input with the given state.
+///
+/// # Arguments
+///
+/// * `state` - The current SHA-512 state.
+/// * `input` - The input provided to compute the next SHA-512 state.
+///
+/// # Returns
+///
+/// * The next SHA-512 state of the input with the given state.
+///
+/// The system call does not add any padding and the input needs to be a multiple of 1024 bits
+/// (== 16 u64 words).
+pub extern fn sha512_process_block_syscall(
+    state: core::sha512::Sha512StateHandle, input: Box<[u64; 16]>,
+) -> SyscallResult<core::sha512::Sha512StateHandle> implicits(GasBuiltin, System) nopanic;
+
 /// Computes the next SHA-256 state of the input with the given state.
 ///
 /// # Arguments

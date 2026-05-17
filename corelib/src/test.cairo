@@ -30,6 +30,7 @@ mod result_test;
 mod secp256k1_test;
 mod secp256r1_test;
 mod sha256_test;
+mod sha512_test;
 mod test_utils;
 mod testing_test;
 mod to_byte_array_test;
