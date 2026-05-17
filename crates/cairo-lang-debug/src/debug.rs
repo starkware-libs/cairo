@@ -3,6 +3,7 @@
 mod test;
 
 // Mostly taken from https://github.com/salsa-rs/salsa/blob/fd715619813f634fa07952f0d1b3d3a18b68fd65/components/salsa-2022/src/debug.rs
+#[expect(clippy::disallowed_types)]
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::Arc;
@@ -147,6 +148,7 @@ where
     }
 }
 
+#[expect(clippy::disallowed_types)]
 impl<'db, K, V, S> DebugWithDb<'db> for HashMap<K, V, S>
 where
     K: DebugWithDb<'db>,
@@ -228,6 +230,7 @@ where
     }
 }
 
+#[expect(clippy::disallowed_types)]
 impl<'db, V, S> DebugWithDb<'db> for HashSet<V, S>
 where
     V: DebugWithDb<'db>,

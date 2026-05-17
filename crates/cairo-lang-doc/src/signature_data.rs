@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashSet;
 
 use cairo_lang_defs::ids::TraitItemId::Function;
@@ -244,6 +245,7 @@ fn get_free_function_signature_data<'db>(
 }
 
 /// Retrieves data for trait function signature formatting.
+#[expect(clippy::disallowed_types)]
 fn get_trait_function_signature_data<'db>(
     db: &'db dyn Database,
     item_id: TraitFunctionId<'db>,

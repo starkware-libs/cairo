@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
 use cairo_lang_debug::DebugWithDb;
@@ -167,6 +168,7 @@ a = a * 3
 }
 
 #[test]
+#[expect(clippy::disallowed_types)]
 fn test_sizes() {
     let db = &mut LoweringDatabaseForTesting::default();
     let type_to_size = [

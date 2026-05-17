@@ -1,5 +1,6 @@
 //! Tests for the dataflow analysis framework.
 
+#[expect(clippy::disallowed_types)]
 use std::collections::HashSet;
 
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -115,10 +116,12 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for BlockCounter {
 /// A simple forward analyzer that tracks which blocks are reachable.
 /// Demonstrates using default transfer_block with statement-level transfer_stmt.
 #[derive(Default)]
+#[expect(clippy::disallowed_types)]
 struct ReachabilityAnalyzer {
     reachable_blocks: HashSet<BlockId>,
 }
 
+#[expect(clippy::disallowed_types)]
 impl<'db, 'a> DataflowAnalyzer<'db, 'a> for ReachabilityAnalyzer {
     type Info = HashSet<BlockId>; // Set of blocks visited to reach this point
 
