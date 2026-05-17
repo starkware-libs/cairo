@@ -12,7 +12,7 @@ use storage::{
 };
 
 pub mod syscalls;
-use syscalls::{GetClassHashAtLibfunc, ReplaceClassLibfunc, SystemType};
+use syscalls::{GetClassHashAtLibfunc, ReplaceClassLibfunc, Sha512StateHandleType, SystemType};
 
 pub mod emit_event;
 use emit_event::EmitEventLibfunc;
@@ -43,7 +43,8 @@ use self::storage::{
 };
 use self::syscalls::{
     KeccakLibfunc, Sha256ProcessBlockLibfunc, Sha256StateHandleDigestLibfunc,
-    Sha256StateHandleInitLibfunc, Sha256StateHandleType,
+    Sha256StateHandleInitLibfunc, Sha256StateHandleType, Sha512ProcessBlockLibfunc,
+    Sha512StateHandleDigestLibfunc, Sha512StateHandleInitLibfunc,
 };
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;
@@ -62,6 +63,7 @@ define_type_hierarchy! {
         System(SystemType),
         Secp256Point(Secp256PointType),
         Sha256StateHandle(Sha256StateHandleType),
+        Sha512StateHandle(Sha512StateHandleType),
     }, StarknetTypeConcrete
 }
 
@@ -92,6 +94,9 @@ define_libfunc_hierarchy! {
          Sha256ProcessBlock(Sha256ProcessBlockLibfunc),
          Sha256StateHandleInit(Sha256StateHandleInitLibfunc),
          Sha256StateHandleDigest(Sha256StateHandleDigestLibfunc),
+         Sha512ProcessBlock(Sha512ProcessBlockLibfunc),
+         Sha512StateHandleInit(Sha512StateHandleInitLibfunc),
+         Sha512StateHandleDigest(Sha512StateHandleDigestLibfunc),
          LibraryCall(LibraryCallLibfunc),
          ReplaceClass(ReplaceClassLibfunc),
          GetClassHashAt(GetClassHashAtLibfunc),
