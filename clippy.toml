@@ -1,1 +1,6 @@
 enum-variant-name-threshold = 1
+
+disallowed-types = [
+    { path = "std::collections::HashMap", reason = "use UnorderedHashMap or OrderedHashMap from cairo-lang-utils" },
+    { path = "std::collections::HashSet", reason = "use UnorderedHashSet or OrderedHashSet from cairo-lang-utils" },
+]

@@ -1,3 +1,5 @@
+#![expect(clippy::disallowed_types)]
+
 use std::collections::HashMap;
 
 use starknet_types_core::felt::Felt as Felt252;

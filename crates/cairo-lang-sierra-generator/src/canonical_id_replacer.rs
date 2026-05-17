@@ -2,6 +2,7 @@
 #[path = "canonical_id_replacer_test.rs"]
 mod test;
 
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
@@ -9,6 +10,7 @@ use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use crate::replace_ids::SierraIdReplacer;
 
 #[derive(Default)]
+#[expect(clippy::disallowed_types)]
 pub struct CanonicalReplacer {
     type_ids: HashMap<ConcreteTypeId, u64>,
     function_ids: HashMap<FunctionId, u64>,
@@ -18,6 +20,7 @@ pub struct CanonicalReplacer {
 /// A replacer that replace the Ids in the program with canonical ones.
 /// The canonical ids are defined by the order of the declaration in the program.
 /// The first type_id is 0, the second type id is 1, etc.
+#[expect(clippy::disallowed_types)]
 impl CanonicalReplacer {
     /// Builds a replacer from a program.
     pub fn from_program(program: &cairo_lang_sierra::program::Program) -> Self {

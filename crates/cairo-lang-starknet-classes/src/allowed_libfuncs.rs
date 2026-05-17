@@ -1,3 +1,5 @@
+#![expect(clippy::disallowed_types)]
+
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
 use std::fs;

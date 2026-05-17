@@ -1,3 +1,11 @@
+#![cfg_attr(
+    feature = "std",
+    expect(
+        clippy::disallowed_types,
+        reason = "this module is the UnorderedHashSet wrapper over std::collections::HashSet"
+    )
+)]
+
 use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Sub;

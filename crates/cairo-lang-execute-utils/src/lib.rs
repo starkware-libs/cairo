@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -16,6 +17,7 @@ use num_bigint::BigInt;
 /// 2. The hint by string mapping.
 ///
 /// This is required for running an executable in the Cairo-VM.
+#[expect(clippy::disallowed_types)]
 pub fn program_and_hints_from_executable(
     executable: &Executable,
     entrypoint: &ExecutableEntryPoint,

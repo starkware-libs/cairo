@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
@@ -5,6 +6,7 @@ use cairo_vm::vm::vm_core::VirtualMachine;
 use starknet_types_core::felt::Felt as Felt252;
 
 /// Stores the data of a specific dictionary.
+#[expect(clippy::disallowed_types)]
 pub struct DictTrackerExecScope {
     /// The data of the dictionary.
     data: HashMap<Felt252, MaybeRelocatable>,
@@ -14,6 +16,7 @@ pub struct DictTrackerExecScope {
 
 /// Helper object to allocate, track and destruct all dictionaries in the run.
 #[derive(Default)]
+#[expect(clippy::disallowed_types)]
 pub struct DictManagerExecScope {
     /// Maps between a segment index and the DictTrackerExecScope associated with it.
     trackers: HashMap<isize, DictTrackerExecScope>,
@@ -21,6 +24,7 @@ pub struct DictManagerExecScope {
 
 impl DictTrackerExecScope {
     /// Creates a new tracker placed in index `idx` in the dict_infos segment.
+    #[expect(clippy::disallowed_types)]
     pub fn new(idx: usize) -> Self {
         Self { data: HashMap::default(), idx }
     }
@@ -94,6 +98,7 @@ impl DictManagerExecScope {
 
 /// Helper object for the management of dict_squash hints.
 #[derive(Default, Debug)]
+#[expect(clippy::disallowed_types)]
 pub struct DictSquashExecScope {
     /// A map from key to the list of indices accessing it, each list in reverse order.
     pub access_indices: HashMap<Felt252, Vec<Felt252>>,

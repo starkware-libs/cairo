@@ -1,3 +1,5 @@
+#![expect(clippy::disallowed_types)]
+
 use std::collections::HashSet;
 use std::fs;
 use std::io::BufReader;

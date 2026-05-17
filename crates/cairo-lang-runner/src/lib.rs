@@ -1,4 +1,7 @@
 //! Basic runner for running a Sierra program on the VM.
+
+#![expect(clippy::disallowed_types)]
+
 use std::collections::HashMap;
 
 use cairo_lang_casm::hints::Hint;
@@ -76,6 +79,7 @@ pub struct RunResult {
 /// The execution resources in a run.
 /// Extends [ExecutionResources] by including the used syscalls for Starknet.
 #[derive(Debug, Eq, PartialEq, Clone, Default)]
+#[expect(clippy::disallowed_types)]
 pub struct StarknetExecutionResources {
     /// The basic execution resources.
     pub basic_resources: ExecutionResources,
@@ -144,6 +148,7 @@ impl From<Felt252> for Arg {
 }
 
 /// Builds `hints_dict` required in `cairo_vm::types::program::Program` from instructions.
+#[expect(clippy::disallowed_types)]
 pub fn build_hints_dict(
     hints: &[(usize, Vec<Hint>)],
 ) -> (HashMap<usize, Vec<HintParams>>, HashMap<String, Hint>) {
@@ -168,6 +173,7 @@ pub fn build_hints_dict(
 /// [`SierraCasmRunner::run_function_with_prepared_starknet_context`] to run the function.
 /// For typical use-cases you should use [`SierraCasmRunner::run_function_with_starknet_context`],
 /// which does all the preparation, running, and result composition for you.
+#[expect(clippy::disallowed_types)]
 pub struct PreparedStarknetContext {
     pub hints_dict: HashMap<usize, Vec<HintParams>>,
     pub bytecode: Vec<BigInt>,
@@ -261,6 +267,7 @@ impl SierraCasmRunner {
     /// Runs the VM starting from a function with a custom hint processor. The function may have
     /// implicits, but no other ref params. The cost of the function is deducted from
     /// `available_gas` before the execution begins.
+    #[expect(clippy::disallowed_types)]
     pub fn run_function<'a, Bytecode>(
         &self,
         func: &Function,
