@@ -2,40 +2,36 @@
 #[path = "canonical_id_replacer_test.rs"]
 mod test;
 
-#[expect(clippy::disallowed_types)]
-use std::collections::HashMap;
-
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::replace_ids::SierraIdReplacer;
 
 #[derive(Default)]
-#[expect(clippy::disallowed_types)]
 pub struct CanonicalReplacer {
-    type_ids: HashMap<ConcreteTypeId, u64>,
-    function_ids: HashMap<FunctionId, u64>,
-    libfunc_ids: HashMap<ConcreteLibfuncId, u64>,
+    type_ids: UnorderedHashMap<ConcreteTypeId, u64>,
+    function_ids: UnorderedHashMap<FunctionId, u64>,
+    libfunc_ids: UnorderedHashMap<ConcreteLibfuncId, u64>,
 }
 
 /// A replacer that replace the Ids in the program with canonical ones.
 /// The canonical ids are defined by the order of the declaration in the program.
 /// The first type_id is 0, the second type id is 1, etc.
-#[expect(clippy::disallowed_types)]
 impl CanonicalReplacer {
     /// Builds a replacer from a program.
     pub fn from_program(program: &cairo_lang_sierra::program::Program) -> Self {
-        let mut type_ids = HashMap::default();
+        let mut type_ids = UnorderedHashMap::default();
 
         for type_declaration in &program.type_declarations {
             type_ids.insert(type_declaration.id.clone(), type_ids.len() as u64);
         }
 
-        let mut function_ids = HashMap::default();
+        let mut function_ids = UnorderedHashMap::default();
         for function in &program.funcs {
             function_ids.insert(function.id.clone(), function_ids.len() as u64);
         }
 
-        let mut libfunc_ids = HashMap::default();
+        let mut libfunc_ids = UnorderedHashMap::default();
         for libfunc_declaration in &program.libfunc_declarations {
             libfunc_ids.insert(libfunc_declaration.id.clone(), libfunc_ids.len() as u64);
         }
