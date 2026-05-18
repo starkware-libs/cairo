@@ -5,13 +5,16 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::items::enm::EnumSemantic;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_sierra::debug_info::Annotations;
+use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{GenericArg, Program};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
 
+use crate::canonical_id_replacer::CanonicalReplacer;
 use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
+use crate::replace_ids::SierraIdReplacer;
 
 /// Serializable type names debug info for all user-defined struct and enum types in a Sierra
 /// program.
@@ -119,6 +122,26 @@ impl SerializableTypeNamesDebugInfo {
         }
 
         Self { structs, enums }
+    }
+
+    pub fn replace_type_ids(mut self, replacer: &CanonicalReplacer) -> Self {
+        fn replace_ids_in_map<T>(
+            replacer: &CanonicalReplacer,
+            id_map: OrderedHashMap<SierraTypeId, T>,
+        ) -> OrderedHashMap<SierraTypeId, T> {
+            id_map
+                .into_iter()
+                .map(|(id, val)| {
+                    let id = replacer.replace_type_id(&ConcreteTypeId::new(id.0));
+                    (SierraTypeId(id.id), val)
+                })
+                .collect()
+        }
+
+        self.structs = replace_ids_in_map(replacer, self.structs);
+        self.enums = replace_ids_in_map(replacer, self.enums);
+
+        self
     }
 }
 
