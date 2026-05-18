@@ -330,6 +330,7 @@ fn assemble_program<'db>(
                 FunctionDebugInfo {
                     signature_location: f.signature_location,
                     variables_locations: f.variable_locations.iter().cloned().collect(),
+                    param_ids: f.parameters.iter().map(|p| p.id.clone()).collect(),
                 },
             )
         })
