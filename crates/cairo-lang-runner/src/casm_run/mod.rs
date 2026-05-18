@@ -1,7 +1,6 @@
 use std::any::Any;
 use std::borrow::Cow;
-#[expect(clippy::disallowed_types)]
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::ops::{Shl, Sub};
 use std::sync::Arc;
 use std::vec::IntoIter;
@@ -18,6 +17,7 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::byte_array::{BYTE_ARRAY_MAGIC, BYTES_IN_WORD};
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::{
     HintProcessor, HintProcessorLogic, HintReference,
 };
@@ -59,14 +59,13 @@ mod contract_address;
 mod dict_manager;
 
 /// Converts a hint to the Cairo VM class `HintParams` by canonically serializing it to a string.
-#[expect(clippy::disallowed_types)]
 pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
         code: hint.representing_string(),
         accessible_scopes: vec![],
         flow_tracking_data: FlowTrackingData {
             ap_tracking: ApTracking::new(),
-            reference_ids: HashMap::new(),
+            reference_ids: Default::default(),
         },
     }
 }
@@ -88,7 +87,6 @@ struct Secp256r1ExecutionScope {
 }
 
 /// HintProcessor for Cairo compiler hints.
-#[expect(clippy::disallowed_types)]
 pub struct CairoHintProcessor<'a> {
     /// The Cairo runner.
     pub runner: Option<&'a SierraCasmRunner>,
@@ -98,7 +96,7 @@ pub struct CairoHintProcessor<'a> {
     /// several user args.
     pub user_args: Vec<Vec<Arg>>,
     /// A mapping from a string that represents a hint to the hint object.
-    pub string_to_hint: HashMap<String, Hint>,
+    pub string_to_hint: UnorderedHashMap<String, Hint>,
     /// The Starknet state.
     pub starknet_state: StarknetState,
     /// Maintains the resources of the run.
@@ -139,18 +137,17 @@ type L2ToL1Message = (Felt252, Vec<Felt252>);
 /// Execution scope for Starknet-related data.
 /// All values will be 0 by default if not set up by the test.
 #[derive(Clone, Default)]
-#[expect(clippy::disallowed_types)]
 pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
-    storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
+    storage: UnorderedHashMap<Felt252, UnorderedHashMap<Felt252, Felt252>>,
     /// A mapping from contract address to class hash.
-    deployed_contracts: HashMap<Felt252, Felt252>,
+    deployed_contracts: UnorderedHashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt252, ContractLogs>,
+    logs: UnorderedHashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     /// A mock history, mapping block number to the block hash.
-    block_hash: HashMap<u64, Felt252>,
+    block_hash: UnorderedHashMap<u64, Felt252>,
 }
 impl StarknetState {
     /// Replaces the addresses in the context.
@@ -474,10 +471,10 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         &self,
         hint_code: &str,
         _ap_tracking_data: &ApTracking,
-        _reference_ids: &HashMap<String, usize>,
+        _reference_ids: &std::collections::HashMap<String, usize>,
         _references: &[HintReference],
         _accessible_scopes: &[String],
-        _constants: Arc<HashMap<String, Felt252>>,
+        _constants: Arc<std::collections::HashMap<String, Felt252>>,
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
@@ -2345,12 +2342,14 @@ pub fn run_function_with_runner(
     Ok(())
 }
 
-/// Creates CairoRunner for `program`.
 #[expect(clippy::disallowed_types)]
+pub type HintsDict = std::collections::HashMap<usize, Vec<HintParams>>;
+
+/// Creates CairoRunner for `program`.
 pub fn build_cairo_runner(
     data: Vec<MaybeRelocatable>,
     builtins: Vec<BuiltinName>,
-    hints_dict: HashMap<usize, Vec<HintParams>>,
+    hints_dict: HintsDict,
 ) -> Result<CairoRunner, Box<CairoRunError>> {
     let program = Program::new(
         builtins,
@@ -2358,7 +2357,7 @@ pub fn build_cairo_runner(
         Some(0),
         hints_dict,
         ReferenceManager { references: Vec::new() },
-        HashMap::new(),
+        Default::default(),
         vec![],
         None,
     )
@@ -2393,13 +2392,12 @@ pub struct RunFunctionResult {
 
 /// Runs `bytecode` on layout with prime, and returns the matching [RunFunctionResult].
 /// Allows injecting custom HintProcessor.
-#[expect(clippy::disallowed_types)]
 pub fn run_function<'a, 'b: 'a>(
     bytecode: impl Iterator<Item = &'a BigInt> + Clone,
     builtins: Vec<BuiltinName>,
     additional_initialization: impl FnOnce(&mut VirtualMachine) -> Result<(), Box<CairoRunError>>,
     hint_processor: &mut dyn HintProcessor,
-    hints_dict: HashMap<usize, Vec<HintParams>>,
+    hints_dict: HintsDict,
 ) -> Result<RunFunctionResult, Box<CairoRunError>> {
     let data: Vec<MaybeRelocatable> =
         bytecode.map(Felt252::from).map(MaybeRelocatable::from).collect();
