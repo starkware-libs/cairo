@@ -1,8 +1,8 @@
-#[expect(clippy::disallowed_types)]
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
 
 use cairo_lang_sierra::extensions::GenericLibfunc;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 use super::{
     BUILTIN_ALL_LIBFUNCS_LIST, BUILTIN_AUDITED_LIBFUNCS_LIST, BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST,
@@ -29,9 +29,8 @@ fn all_list_includes_all_supported() {
 }
 
 #[test]
-#[expect(clippy::disallowed_types)]
 fn libfunc_lists_include_only_supported_libfuncs() {
-    let supported_ids = CoreLibfunc::supported_ids().into_iter().collect::<HashSet<_>>();
+    let supported_ids = CoreLibfunc::supported_ids().into_iter().collect::<UnorderedHashSet<_>>();
     for list_name in [
         BUILTIN_ALL_LIBFUNCS_LIST,
         BUILTIN_AUDITED_LIBFUNCS_LIST,
