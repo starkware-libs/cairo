@@ -2,12 +2,10 @@
 #[path = "early_unsafe_panic_test.rs"]
 mod test;
 
-#[expect(clippy::disallowed_types)]
-use std::collections::HashSet;
-
 use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use salsa::Database;
 
 use crate::analysis::core::StatementLocation;
@@ -22,14 +20,13 @@ use crate::{
 ///
 /// This step might replace a match on an empty enum with a call to unsafe_panic and we rely on the
 /// 'trim_unreachable' optimization to clean that up.
-#[expect(clippy::disallowed_types)]
 pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) {
     if !db.flag_unsafe_panic() || lowered.blocks.is_empty() {
         return;
     }
 
     let core = ModuleHelper::core(db);
-    let libfuncs_with_sideffect = HashSet::from_iter([
+    let libfuncs_with_sideffect = UnorderedHashSet::from_iter([
         core.submodule("debug").extern_function_id("print"),
         core.submodule("internal").extern_function_id("trace"),
     ]);
@@ -61,7 +58,6 @@ pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>
     }
 }
 
-#[expect(clippy::disallowed_types)]
 pub struct UnsafePanicContext<'db> {
     db: &'db dyn Database,
 
@@ -69,7 +65,7 @@ pub struct UnsafePanicContext<'db> {
     fixes: Vec<(StatementLocation, LocationId<'db>)>,
 
     /// libfuncs with side effects that we need to ignore.
-    libfuncs_with_sideffect: HashSet<ExternFunctionId<'db>>,
+    libfuncs_with_sideffect: UnorderedHashSet<ExternFunctionId<'db>>,
 }
 
 impl<'db> UnsafePanicContext<'db> {
