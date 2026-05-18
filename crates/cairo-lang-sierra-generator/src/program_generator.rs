@@ -8,7 +8,7 @@ use cairo_lang_filesystem::location_marks::get_location_marks;
 use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, LocationId};
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
-use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId, VarId};
 use cairo_lang_sierra::program::{self, DeclaredTypeInfo, Program, StatementIdx};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -320,11 +320,24 @@ fn assemble_program<'db>(
     let functions_info = functions
         .iter()
         .map(|f| {
+            let mut variables_locations: OrderedHashMap<VarId, Vec<LocationId<'db>>> =
+                OrderedHashMap::default();
+            for (var, loc) in &f.variable_locations {
+                variables_locations.entry(var.clone()).or_default().push(*loc);
+            }
+            for stmt in &f.body {
+                let Some(loc) = stmt.location else { continue };
+                for var in pre_sierra::referenced_vars(&stmt.statement) {
+                    variables_locations.entry(var).or_default().push(loc);
+                }
+            }
+            let parameter_var_ids = f.parameters.iter().map(|p| p.id.clone()).collect();
             (
                 f.id.clone(),
                 FunctionDebugInfo {
                     signature_location: f.signature_location,
-                    variables_locations: f.variable_locations.iter().cloned().collect(),
+                    variables_locations,
+                    parameter_var_ids,
                 },
             )
         })

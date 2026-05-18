@@ -30,10 +30,23 @@ pub struct SerializableFunctionDebugInfo {
     pub function_file_path: SourceFileFullPath,
     /// Span of the function in the user file it comes from.
     pub function_code_span: SourceCodeSpan,
-    /// Mapping from a sierra variable to a cairo variable (its name and definition span).
-    /// The sierra variable value corresponds to the cairo variable value at some point during
-    /// execution of the function code.
-    pub sierra_to_cairo_variable: HashMap<SierraVarId, (CairoVariableName, SourceCodeSpan)>,
+    /// Mapping from a sierra variable to the list of cairo variables (their names and definition
+    /// spans) that the sierra variable's value corresponds to at some point during execution of
+    /// the function code.
+    pub sierra_to_cairo_variables: HashMap<SierraVarId, Vec<(CairoVariableName, SourceCodeSpan)>>,
+    /// Debug info of the function's parameters, in declaration order.
+    pub parameters: Vec<SerializableParameterInfo>,
+}
+
+/// The serializable debug info of a single function parameter.
+#[derive(Serialize, Deserialize)]
+pub struct SerializableParameterInfo {
+    /// The sierra variable id assigned to this parameter.
+    pub sierra_var_id: SierraVarId,
+    /// The name of the parameter in the source code.
+    pub name: CairoVariableName,
+    /// The span of the parameter name in the source code.
+    pub definition_span: SourceCodeSpan,
 }
 
 /// An id of a sierra function - equivalent of `id` field of [`cairo_lang_sierra::ids::FunctionId`].

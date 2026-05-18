@@ -90,6 +90,24 @@ impl<'db> Statement<'db> {
     }
 }
 
+/// Collects every Sierra `VarId` referenced by a pre-Sierra `Statement`.
+pub fn referenced_vars(statement: &Statement<'_>) -> Vec<sierra::ids::VarId> {
+    match statement {
+        Statement::Sierra(program::GenStatement::Invocation(invocation)) => invocation
+            .args
+            .iter()
+            .cloned()
+            .chain(invocation.branches.iter().flat_map(|branch| branch.results.iter().cloned()))
+            .collect(),
+        Statement::Sierra(program::GenStatement::Return(vars)) => vars.clone(),
+        Statement::PushValues(values) => values
+            .iter()
+            .flat_map(|value| [value.var.clone(), value.var_on_stack.clone()])
+            .collect(),
+        Statement::Label(_) => Vec::new(),
+    }
+}
+
 /// Represents a pre-Sierra statement, with its location in the source code.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StatementWithLocation<'db> {
