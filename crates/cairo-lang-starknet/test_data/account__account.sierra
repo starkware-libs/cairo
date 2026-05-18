@@ -6,7 +6,7 @@ type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false
 type Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407> = Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407> [storable: false, drop: false, dup: false, zero_sized: false];
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
 type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
-type Const<felt252, 3618502788666131213697322783095070105526743751716087489154079457884512865583> = Const<felt252, 3618502788666131213697322783095070105526743751716087489154079457884512865583> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, -96363463615509210819012598251359154898> = Const<felt252, -96363463615509210819012598251359154898> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 1797457979346250507469462289122605207149624459707208389704> = Const<felt252, 1797457979346250507469462289122605207149624459707208389704> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 1486822392393958861653191391200594> = Const<felt252, 1486822392393958861653191391200594> [storable: false, drop: false, dup: false, zero_sized: false];
 type Box<core::array::Span::<core::felt252>> = Box<core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -243,7 +243,7 @@ libfunc drop<core::array::Span::<core::array::Span::<core::felt252>>> = drop<cor
 libfunc const_as_immediate<Const<felt252, 1486822392393958861653191391200594>> = const_as_immediate<Const<felt252, 1486822392393958861653191391200594>>;
 libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tuple<core::panics::Panic, Array<felt252>>>;
 libfunc const_as_immediate<Const<felt252, 1797457979346250507469462289122605207149624459707208389704>> = const_as_immediate<Const<felt252, 1797457979346250507469462289122605207149624459707208389704>>;
-libfunc const_as_immediate<Const<felt252, 3618502788666131213697322783095070105526743751716087489154079457884512865583>> = const_as_immediate<Const<felt252, 3618502788666131213697322783095070105526743751716087489154079457884512865583>>;
+libfunc const_as_immediate<Const<felt252, -96363463615509210819012598251359154898>> = const_as_immediate<Const<felt252, -96363463615509210819012598251359154898>>;
 libfunc ec_point_from_x_nz = ec_point_from_x_nz;
 libfunc ec_state_init = ec_state_init;
 libfunc dup<EcState> = dup<EcState>;
@@ -1304,7 +1304,7 @@ jump() { F18_B1() };
 F18_B0:
 branch_align() -> ();
 drop<NonZero<felt252>>([7]) -> ();
-const_as_immediate<Const<felt252, 3618502788666131213697322783095070105526743751716087489154079457884512865583>>() -> ([8]);
+const_as_immediate<Const<felt252, -96363463615509210819012598251359154898>>() -> ([8]);
 dup<felt252>([5]) -> ([5], [9]);
 dup<felt252>([8]) -> ([8], [10]);
 felt252_sub([9], [10]) -> ([11]);

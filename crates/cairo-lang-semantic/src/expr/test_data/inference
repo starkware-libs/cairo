@@ -256,6 +256,42 @@ error[E2313]: Trait `test::MyTrait::<core::felt252>` has multiple implementation
 
 //! > ==========================================================================
 
+//! > Test felt252 const-generic coherence is field-aware.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() -> felt252 {
+    Marker::<-1>::tag()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Marker<const K: felt252> {
+    fn tag() -> felt252;
+}
+impl MarkerNeg of Marker<-1> {
+    fn tag() -> felt252 {
+        100
+    }
+}
+impl MarkerHex of Marker<0x800000000000011000000000000000000000000000000000000000000000000> {
+    fn tag() -> felt252 {
+        200
+    }
+}
+
+//! > expected_diagnostics
+error[E2313]: Trait `test::Marker::<-1>` has multiple implementations, in: `test::MarkerNeg`, `test::MarkerHex`
+ --> lib.cairo:15:19
+    Marker::<-1>::tag()
+                  ^^^
+
+//! > ==========================================================================
+
 //! > Test trait inference unresolved type for impl.
 
 //! > test_runner_name

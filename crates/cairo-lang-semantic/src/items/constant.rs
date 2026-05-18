@@ -1,5 +1,5 @@
 use std::iter::zip;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
@@ -21,7 +21,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, require, try_extract_matches};
 use itertools::Itertools;
-use num_bigint::BigInt;
+use num_bigint::{BigInt, Sign};
 use num_traits::{ToPrimitive, Zero};
 use salsa::Database;
 use starknet_types_core::felt::{CAIRO_PRIME_BIGINT, Felt as Felt252};
@@ -103,7 +103,9 @@ impl<'db> ConstValueId<'db> {
     pub fn from_int(db: &'db dyn Database, ty: TypeId<'db>, value: &BigInt) -> Self {
         let get_basic_const_value = |ty| {
             let info = db.const_calc_info();
-            if ty != info.u256 {
+            if ty == info.felt252 {
+                ConstValue::Int(canonical_felt252(value), ty).intern(db)
+            } else if ty != info.u256 {
                 ConstValue::Int(value.clone(), ty).intern(db)
             } else {
                 let mask128 = BigInt::from(u128::MAX);
@@ -190,9 +192,19 @@ pub fn felt252_for_downcast(value: &BigInt, range_min: &BigInt) -> BigInt {
     Felt252::from(value - range_min).to_bigint() + range_min
 }
 
-/// Canonicalize the value of a felt252, to the range of `(-PRIME, PRIME)`.
+/// `2^251` — the boundary between the positive and negative halves of `canonical_felt252`.
+static TWO_POW_251: LazyLock<BigInt> = LazyLock::new(|| BigInt::from(1) << 251);
+
+/// Canonicalize the value of a felt252 to a unique balanced representative per field element.
+///
+/// Output range is `[2^251 - PRIME, 2^251)`. Values `>= 2^251` are shifted down by `PRIME` so
+/// that representatives of the same field element collapse: e.g. `-1` and `PRIME - 1` both
+/// reduce to `-1`. This makes structural equality on `ConstValue::Int` agree with field
+/// equality, fixing #9932 / #9933 / #9934.
 pub fn canonical_felt252(value: &BigInt) -> BigInt {
-    value % &*CAIRO_PRIME_BIGINT
+    let r = value % &*CAIRO_PRIME_BIGINT;
+    let r = if r.sign() == Sign::Minus { r + &*CAIRO_PRIME_BIGINT } else { r };
+    if r >= *TWO_POW_251 { r - &*CAIRO_PRIME_BIGINT } else { r }
 }
 
 /// A constant value.
