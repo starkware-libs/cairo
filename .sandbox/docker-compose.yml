@@ -1,0 +1,22 @@
+services:
+  claude-code:
+    build:
+      context: /home/ori/rust/claude-sandbox
+      args:
+        - USER_UID=${UID:-1000}
+        - INSTALL_RUST=${INSTALL_RUST:-false}
+    container_name: claude-sandbox
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - CARGO_TARGET_DIR=target/target-sandbox
+    volumes:
+      - /home/ori/rust/cairo:/home/claude-user/workspace/repos/cairo
+      - ~/.claude.json:/tmp/.claude.json.host:ro
+      - ~/.claude/.credentials.json:/tmp/.credentials.json.host:ro
+      - ~/.claude/skills:/tmp/.claude-skills.host:ro
+      - ~/Data/cairo-sandbox:/data:rw
+      - ~/rust/OrgOrg:/mnt/orgorg:ro
+    stdin_open: true
+    tty: true
+    command: ["sleep", "infinity"]

@@ -177,6 +177,15 @@ const FUNC_CALC_SUCCESS: () = assert(true);
 const FUNC_CALC_FAILURE: () = assert(false);
 const VALID_EQ: () = assert(1 == 1);
 const VALID_NE: () = assert(1 != 2);
+const VALID_EQ_FELT_CROSS_FORM: () = assert(
+    -1_felt252 == 0x800000000000011000000000000000000000000000000000000000000000000,
+);
+const VALID_MATCH_FELT_CROSS_FORM: () = assert(
+    match -1_felt252 {
+        0x800000000000011000000000000000000000000000000000000000000000000 => true,
+        _ => false,
+    },
+);
 const VALID_LT: () = assert(1_usize < 2);
 const VALID_LE: () = assert(1_usize <= 1);
 const VALID_GT: () = assert(2_usize > 1);
@@ -272,21 +281,21 @@ note: In `test::assert`:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2129]: Constant calculation depth exceeded.
- --> lib.cairo:63:43
+ --> lib.cairo:72:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
 error[E2130]: Failed to calculate constant.
- --> lib.cairo:70:37
+ --> lib.cairo:79:37
 const NON_ZERO_ZERO: NonZero<u64> = my_unwrap(ZERO.try_into());
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: In `test::my_unwrap::<core::zeroable::NonZero::<core::integer::u64>>`:
-  --> lib.cairo:76:17
+  --> lib.cairo:85:17
         None => core::panic_with_felt252('bad value'),
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2128]: Failed to calculate constant.
- --> lib.cairo:82:9
+ --> lib.cairo:91:9
         core::panic_with_felt252('should fail')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
