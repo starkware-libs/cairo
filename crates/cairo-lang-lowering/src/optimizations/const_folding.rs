@@ -11,8 +11,8 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{
-    ConstCalcInfo, ConstValue, ConstValueId, ConstantSemantic, TypeRange, canonical_felt252,
-    felt252_for_downcast,
+    ConstCalcInfo, ConstValue, ConstValueId, ConstantSemantic, TypeRange,
+    canonical_calculated_felt252, felt252_for_downcast,
 };
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use cairo_lang_semantic::items::structure::StructSemantic;
@@ -544,7 +544,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
             {
-                let value = canonical_felt252(&(lhs - rhs));
+                let value = canonical_calculated_felt252(&(lhs - rhs));
                 Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
@@ -563,7 +563,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
             {
-                let value = canonical_felt252(&(lhs + rhs));
+                let value = canonical_calculated_felt252(&(lhs + rhs));
                 Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
@@ -588,7 +588,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else if let Some(lhs) = lhs
                 && let Some(rhs) = rhs
             {
-                let value = canonical_felt252(&(lhs * rhs));
+                let value = canonical_calculated_felt252(&(lhs * rhs));
                 Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
