@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Visibility
 
 Visibility controls whether items can be accessed from other modules and crates.
@@ -41,7 +43,6 @@ Source: link:{cairo-repo}/corelib/src/starknet.cairo[corelib/src/starknet.cairo]
 
 [source,cairo]
 ----
-// corelib/src/starknet.cairo
 pub mod storage_access;
 pub use storage_access::{StorageAddress, Store};
 ----
@@ -51,7 +52,6 @@ Source: link:{cairo-repo}/corelib/src/zeroable.cairo[corelib/src/zeroable.cairo]
 
 [source,cairo]
 ----
-// corelib/src/zeroable.cairo
 pub(crate) trait Zeroable<T> {
     fn zero() -> T;
 }
@@ -62,7 +62,6 @@ Source: link:{cairo-repo}/corelib/src/pedersen.cairo[corelib/src/pedersen.cairo]
 
 [source,cairo]
 ----
-// corelib/src/pedersen.cairo
 #[derive(Copy, Drop, Debug)]
 pub struct HashState {
     pub state: felt252,
@@ -70,11 +69,10 @@ pub struct HashState {
 ----
 
 === Public implementations
-Source: link:{cairo-repo}/corelib/src/integer.cairo[corelib/src/integer.cairo] (representative pattern)
+Source: link:{cairo-repo}/corelib/src/integer.cairo[corelib/src/integer.cairo]
 
 [source,cairo]
 ----
-// corelib/src/integer.cairo (representative pattern)
 pub impl U128Add of Add<u128> {
     fn add(lhs: u128, rhs: u128) -> u128 { /* ... */ }
 }
