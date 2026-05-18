@@ -1,12 +1,14 @@
 //! This module introduces the BackAnalysis utility that allows writing analyzers that go backwards
 //! in the flow of the program, on a Lowered representation.
 
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
 use crate::analysis::{Analyzer, DataflowAnalyzer, Direction, Edge, StatementLocation};
 use crate::{Block, BlockEnd, BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage};
 
 /// Main analysis type that allows traversing the flow backwards.
+#[expect(clippy::disallowed_types)]
 pub struct BackAnalysis<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> {
     lowered: &'a Lowered<'db>,
     pub analyzer: TAnalyzer,

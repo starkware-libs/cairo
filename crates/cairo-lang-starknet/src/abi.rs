@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
@@ -49,6 +50,7 @@ use crate::plugin::events::EventData;
 mod test;
 
 /// Event information.
+#[expect(clippy::disallowed_types)]
 enum EventInfo {
     /// The event is a struct.
     Struct,
@@ -71,6 +73,7 @@ pub struct BuilderConfig {
     pub account_contract_validations: bool,
 }
 
+#[expect(clippy::disallowed_types)]
 pub struct AbiBuilder<'db> {
     /// The db.
     db: &'db dyn Database,
@@ -101,6 +104,7 @@ pub struct AbiBuilder<'db> {
 }
 impl<'db> AbiBuilder<'db> {
     /// Creates an `AbiBuilder` from a Starknet contract module.
+    #[expect(clippy::disallowed_types)]
     pub fn from_submodule(
         db: &'db dyn Database,
         submodule_id: SubmoduleId<'db>,
@@ -559,6 +563,7 @@ impl<'db> AbiBuilder<'db> {
     }
 
     /// Adds an event to the ABI from a type with an Event derive.
+    #[expect(clippy::disallowed_types)]
     fn add_event(
         &mut self,
         type_id: TypeId<'db>,

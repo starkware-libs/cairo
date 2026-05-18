@@ -1,3 +1,11 @@
+#![cfg_attr(
+    feature = "std",
+    expect(
+        clippy::disallowed_types,
+        reason = "this module is the UnorderedHashMap wrapper over std::collections::HashMap"
+    )
+)]
+
 #[cfg(test)]
 #[path = "unordered_hash_map_test.rs"]
 mod test;

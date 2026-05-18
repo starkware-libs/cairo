@@ -1,5 +1,7 @@
 //! Bidirectional type inference.
 
+#![expect(clippy::disallowed_types)]
+
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};

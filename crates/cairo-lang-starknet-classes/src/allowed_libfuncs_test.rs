@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::{BTreeSet, HashSet};
 
 use cairo_lang_sierra::extensions::GenericLibfunc;
@@ -28,6 +29,7 @@ fn all_list_includes_all_supported() {
 }
 
 #[test]
+#[expect(clippy::disallowed_types)]
 fn libfunc_lists_include_only_supported_libfuncs() {
     let supported_ids = CoreLibfunc::supported_ids().into_iter().collect::<HashSet<_>>();
     for list_name in [

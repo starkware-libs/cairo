@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
 use cairo_lang_defs::db::get_all_path_leaves;
@@ -99,6 +100,7 @@ impl<'db> FunctionDebugInfo<'db> {
     /// Extracts mapping from a sierra variable to a cairo variable (its name and definition span).
     /// The sierra variable value corresponds to the cairo variable value at some point during
     /// execution of the function code.
+    #[expect(clippy::disallowed_types)]
     fn extract_variables_mapping(
         &self,
         db: &'db dyn Database,

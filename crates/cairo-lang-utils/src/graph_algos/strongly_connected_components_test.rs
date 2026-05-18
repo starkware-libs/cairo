@@ -1,3 +1,5 @@
+#![expect(clippy::disallowed_types)]
+
 use std::collections::HashSet;
 
 use cairo_lang_test_utils::test;

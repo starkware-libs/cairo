@@ -1,5 +1,6 @@
 use std::any::Any;
 use std::borrow::Cow;
+#[expect(clippy::disallowed_types)]
 use std::collections::{HashMap, VecDeque};
 use std::ops::{Shl, Sub};
 use std::sync::Arc;
@@ -58,6 +59,7 @@ mod contract_address;
 mod dict_manager;
 
 /// Converts a hint to the Cairo VM class `HintParams` by canonically serializing it to a string.
+#[expect(clippy::disallowed_types)]
 pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
         code: hint.representing_string(),
@@ -86,6 +88,7 @@ struct Secp256r1ExecutionScope {
 }
 
 /// HintProcessor for Cairo compiler hints.
+#[expect(clippy::disallowed_types)]
 pub struct CairoHintProcessor<'a> {
     /// The Cairo runner.
     pub runner: Option<&'a SierraCasmRunner>,
@@ -136,6 +139,7 @@ type L2ToL1Message = (Felt252, Vec<Felt252>);
 /// Execution scope for Starknet-related data.
 /// All values will be 0 by default if not set up by the test.
 #[derive(Clone, Default)]
+#[expect(clippy::disallowed_types)]
 pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
     storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
@@ -465,6 +469,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
     }
 
     /// Trait function to store hint in the hint processor by string.
+    #[expect(clippy::disallowed_types)]
     fn compile_hint(
         &self,
         hint_code: &str,
@@ -2341,6 +2346,7 @@ pub fn run_function_with_runner(
 }
 
 /// Creates CairoRunner for `program`.
+#[expect(clippy::disallowed_types)]
 pub fn build_cairo_runner(
     data: Vec<MaybeRelocatable>,
     builtins: Vec<BuiltinName>,
@@ -2387,6 +2393,7 @@ pub struct RunFunctionResult {
 
 /// Runs `bytecode` on layout with prime, and returns the matching [RunFunctionResult].
 /// Allows injecting custom HintProcessor.
+#[expect(clippy::disallowed_types)]
 pub fn run_function<'a, 'b: 'a>(
     bytecode: impl Iterator<Item = &'a BigInt> + Clone,
     builtins: Vec<BuiltinName>,

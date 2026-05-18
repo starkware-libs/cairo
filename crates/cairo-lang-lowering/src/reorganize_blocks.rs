@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
 use itertools::Itertools;
@@ -16,6 +17,7 @@ use crate::{
 /// Removes unreachable blocks.
 /// Blocks that are reachable only through goto are combined with the block that does the goto.
 /// The order of the blocks is changed to be a topologically sorted.
+#[expect(clippy::disallowed_types)]
 pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
@@ -181,6 +183,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for TopSortContext {
     }
 }
 
+#[expect(clippy::disallowed_types)]
 pub struct RebuildContext {
     block_remapping: HashMap<BlockId, BlockId>,
     remappings_ctx: remappings::Context,

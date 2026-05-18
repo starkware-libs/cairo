@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
@@ -72,11 +73,15 @@ pub enum ProgramRegistryError {
     TypeSizeOverflow(ConcreteTypeId),
 }
 
+#[expect(clippy::disallowed_types)]
 type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
+#[expect(clippy::disallowed_types)]
 type LibfuncMap<TLibfunc> = HashMap<ConcreteLibfuncId, TLibfunc>;
+#[expect(clippy::disallowed_types)]
 type FunctionMap = HashMap<FunctionId, Function>;
 /// Mapping from the arguments for generating a concrete type (the generic-id and the arguments) to
 /// the concrete-id that points to it.
+#[expect(clippy::disallowed_types)]
 type ConcreteTypeIdMap<'a> = HashMap<(GenericTypeId, &'a [GenericArg]), ConcreteTypeId>;
 
 /// Registry for the data of the compiler, for all program specific data.
@@ -88,6 +93,7 @@ pub struct ProgramRegistry<TType: GenericType, TLibfunc: GenericLibfunc> {
     /// Mapping ids to the concrete libfuncs represented by them.
     concrete_libfuncs: LibfuncMap<TLibfunc::Concrete>,
 }
+#[expect(clippy::disallowed_types)]
 impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfunc> {
     /// Create a registry for the program.
     pub fn new(
@@ -273,6 +279,7 @@ impl<TType: GenericType> TypeSpecializationContext
 
 /// Creates the type-id to concrete type map, and the reverse map from generic-id and arguments to
 /// concrete-id.
+#[expect(clippy::disallowed_types)]
 fn get_concrete_types_maps<TType: GenericType>(
     program: &Program,
 ) -> Result<(TypeMap<TType::Concrete>, ConcreteTypeIdMap<'_>), Box<ProgramRegistryError>> {
@@ -372,6 +379,7 @@ impl<TType: GenericType> SpecializationContext for SpecializationContextForRegis
 }
 
 /// Creates the libfuncs map.
+#[expect(clippy::disallowed_types)]
 fn get_concrete_libfuncs<TType: GenericType, TLibfunc: GenericLibfunc>(
     program: &Program,
     context: &SpecializationContextForRegistry<'_, TType>,
