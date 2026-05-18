@@ -177,6 +177,19 @@ const FUNC_CALC_SUCCESS: () = assert(true);
 const FUNC_CALC_FAILURE: () = assert(false);
 const VALID_EQ: () = assert(1 == 1);
 const VALID_NE: () = assert(1 != 2);
+const VALID_EQ_FELT_NEG_HEX: () = assert(
+    -1_felt252 == 0x800000000000011000000000000000000000000000000000000000000000000,
+);
+const NEG_ONE_FELT: felt252 = -1;
+const P_MINUS_1_FELT: felt252 = 0x800000000000011000000000000000000000000000000000000000000000000;
+const VALID_ASSERT_FELT_CROSS_FORM: () = assert(NEG_ONE_FELT == P_MINUS_1_FELT);
+const VALID_MATCH_FELT_CROSS_FORM: () = assert(
+    match -1_felt252 {
+        0x800000000000011000000000000000000000000000000000000000000000000 => 1,
+        _ => 0,
+    } == 1,
+    'match cross form',
+);
 const VALID_LT: () = assert(1_usize < 2);
 const VALID_LE: () = assert(1_usize <= 1);
 const VALID_GT: () = assert(2_usize > 1);
@@ -271,22 +284,30 @@ note: In `test::assert`:
         core::panic_with_felt252('failed assertion')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+error[E2030]: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:39:41-45:1
+  const VALID_MATCH_FELT_CROSS_FORM: () = assert(
+ _________________________________________^
+| ...
+| );
+|_^
+
 error[E2129]: Constant calculation depth exceeded.
- --> lib.cairo:63:43
+ --> lib.cairo:76:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
 error[E2130]: Failed to calculate constant.
- --> lib.cairo:70:37
+ --> lib.cairo:83:37
 const NON_ZERO_ZERO: NonZero<u64> = my_unwrap(ZERO.try_into());
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: In `test::my_unwrap::<core::zeroable::NonZero::<core::integer::u64>>`:
-  --> lib.cairo:76:17
+  --> lib.cairo:89:17
         None => core::panic_with_felt252('bad value'),
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2128]: Failed to calculate constant.
- --> lib.cairo:82:9
+ --> lib.cairo:95:9
         core::panic_with_felt252('should fail')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
