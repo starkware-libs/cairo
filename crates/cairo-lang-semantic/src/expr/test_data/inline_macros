@@ -1905,6 +1905,69 @@ macro_item_level!();
 
 //! > ==========================================================================
 
+//! > Test item-level macro invocation with missing argument list.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($x:ident) => { 1 };
+}
+m!;
+
+//! > expected_diagnostics
+error[E1006]: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:4:3
+m!;
+  ^
+
+//! > ==========================================================================
+
+//! > Test unresolved item-level macro invocation with missing argument list.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+m!;
+
+//! > expected_diagnostics
+error[E1006]: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:1:3
+m!;
+  ^
+
+//! > ==========================================================================
+
 //! > Test macro with use-star resolution.
 
 //! > test_runner_name

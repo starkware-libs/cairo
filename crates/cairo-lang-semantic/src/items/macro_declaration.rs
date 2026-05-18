@@ -327,7 +327,7 @@ pub fn is_macro_rule_match<'db>(
         ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db),
         ast::WrappedTokenTree::Braced(tt) => tt.tokens(db),
         ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
-        ast::WrappedTokenTree::Missing(_) => unreachable!(),
+        ast::WrappedTokenTree::Missing(_) => return None,
     }
     .elements(db)
     .peekable();

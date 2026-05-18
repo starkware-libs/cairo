@@ -43,16 +43,29 @@ fn priv_macro_call_data<'db>(
     let module_id = macro_call_id.parent_module(db);
     let mut resolver = Resolver::new(db, module_id, inference_id);
     let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
+    let callsite_module_id = module_id;
+    let arguments = macro_call_syntax.arguments(db);
+    // The parser already reports the missing argument list. Avoid resolving or expanding a
+    // syntactically incomplete macro call, so semantic recovery does not add unrelated errors.
+    if matches!(arguments.subtree(db), ast::WrappedTokenTree::Missing(_)) {
+        return Ok(MacroCallData {
+            macro_call_module: Err(skip_diagnostic()),
+            diagnostics: Default::default(),
+            defsite_module_id: callsite_module_id,
+            callsite_module_id,
+            expansion_mappings: Arc::new([]),
+            parent_macro_call_data: resolver.macro_call_data,
+        });
+    }
     // Resolve the macro call path, and report diagnostics if it finds no match or
     // the resolved item is not a macro declaration.
     let macro_call_path = macro_call_syntax.path(db);
     let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
-    let callsite_module_id = macro_call_id.parent_module(db);
-    // If the call is to `expose!` and no other `expose` item is locally declared - using expose.
+    // Treat `expose!` as the built-in macro when no local item named `expose` shadows it.
     if macro_name.long(db) == EXPOSE_MACRO_NAME
         && let Ok(None) = db.module_item_by_name(callsite_module_id, macro_name)
     {
-        let (content, mapping) = expose_content_and_mapping(db, macro_call_syntax.arguments(db))?;
+        let (content, mapping) = expose_content_and_mapping(db, arguments.clone())?;
         let code_mappings: Arc<[CodeMapping]> = [mapping].into();
         let generated_file_id = FileLongId::Virtual(VirtualFile {
             parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
@@ -123,9 +136,10 @@ fn priv_macro_call_data<'db>(
             });
         }
     };
-    let Some((rule, (captures, placeholder_to_rep_id))) = macro_rules.iter().find_map(|rule| {
-        is_macro_rule_match(db, rule, &macro_call_syntax.arguments(db)).map(|res| (rule, res))
-    }) else {
+    let Some((rule, (captures, placeholder_to_rep_id))) = macro_rules
+        .iter()
+        .find_map(|rule| is_macro_rule_match(db, rule, &arguments).map(|res| (rule, res)))
+    else {
         let diag_added = diagnostics.report(
             macro_call_syntax.stable_ptr(db),
             SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name),
