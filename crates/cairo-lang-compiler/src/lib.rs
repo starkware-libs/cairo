@@ -365,7 +365,10 @@ pub fn compile_prepared_db_program_artifact_for_functions<'db>(
 
     if compiler_config.add_functions_debug_info {
         annotations.extend(Annotations::from(
-            sierra_program_with_debug.debug_info.functions_info.extract_serializable_debug_info(db),
+            sierra_program_with_debug
+                .debug_info
+                .functions_info
+                .extract_serializable_debug_info(db, &sierra_program_with_debug.program),
         ))
     }
 

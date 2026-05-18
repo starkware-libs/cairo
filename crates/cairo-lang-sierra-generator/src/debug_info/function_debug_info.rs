@@ -23,6 +23,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::ResolvedGenericItem;
 use cairo_lang_sierra::ids::{FunctionId, VarId};
+use cairo_lang_sierra::program::{Function, Program};
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, ExprBinary, ParamList, StatementLet, TerminalIdentifier,
 };
@@ -34,13 +35,15 @@ use itertools::Itertools;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use salsa::Database;
 
+use crate::canonical_id_replacer::CanonicalReplacer;
 use crate::debug_info::function_debug_info::serializable::{
     CairoVariableName, SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
-    SierraFunctionId, SierraVarId,
+    SerializableParameterInfo, SierraFunctionId, SierraVarId,
 };
 use crate::debug_info::{
     SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, maybe_code_location,
 };
+use crate::replace_ids::SierraIdReplacer;
 
 pub mod serializable;
 
@@ -56,6 +59,7 @@ impl<'db> AllFunctionsDebugInfo<'db> {
     pub fn extract_serializable_debug_info(
         &self,
         db: &'db dyn CloneableDatabase,
+        program: &Program,
     ) -> SerializableAllFunctionsDebugInfo {
         SerializableAllFunctionsDebugInfo(
             self.0
@@ -63,12 +67,28 @@ impl<'db> AllFunctionsDebugInfo<'db> {
                 .collect_vec()
                 .into_par_iter()
                 .map_with(db.dyn_clone(), |db, (function_id, function_debug_info)| {
+                    let function = program.funcs.iter().find(|f| &f.id == function_id).unwrap();
                     Some((
                         SierraFunctionId(function_id.id),
-                        function_debug_info.extract_serializable_debug_info(db.as_ref())?,
+                        function_debug_info
+                            .extract_serializable_debug_info(db.as_ref(), function)?,
                     ))
                 })
                 .flatten()
+                .collect(),
+        )
+    }
+
+    /// Replace each [`FunctionId`] - which is based on the original salsa id - with canonical id
+    /// via [`CanonicalReplacer`].
+    pub fn replace_function_ids(self, replacer: &CanonicalReplacer) -> Self {
+        Self(
+            self.0
+                .into_iter()
+                .map(|(id, val)| {
+                    let id = replacer.replace_function_id(&FunctionId::new(id.id));
+                    (id, val)
+                })
                 .collect(),
         )
     }
@@ -86,14 +106,17 @@ impl<'db> FunctionDebugInfo<'db> {
     fn extract_serializable_debug_info(
         &self,
         db: &'db dyn Database,
+        function: &Function,
     ) -> Option<SerializableFunctionDebugInfo> {
         let (function_file_path, function_code_span) = self.extract_location(db)?;
         let sierra_to_cairo_variable = self.extract_variables_mapping(db);
+        let parameters = self.extract_parameters(db, function);
 
         Some(SerializableFunctionDebugInfo {
             function_file_path,
             function_code_span,
             sierra_to_cairo_variable,
+            parameters,
         })
     }
 
@@ -107,59 +130,9 @@ impl<'db> FunctionDebugInfo<'db> {
     ) -> HashMap<SierraVarId, (CairoVariableName, SourceCodeSpan)> {
         self.variables_locations
             .iter()
-            .filter_map(|(sierra_var, code_location)| {
-                // Ignore inline locations for now as this function is supposed to be called only
-                // on when sierra was compiled with inlining set to `avoid`.
-                // TODO(pm): handle them to make sure user function marked #[inline(always)] work.
-                //  https://github.com/software-mansion-labs/cairo-debugger/issues/41
-                let Location {
-                    stable_location: sierra_var_location,
-                    notes: _,
-                    inline_locations: _,
-                } = code_location.long(db);
-
-                let identifier = find_identifier_corresponding_to_assigned_variable(
-                    db,
-                    sierra_var_location.syntax_node(db),
-                )?;
-
-                let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
-
-                let lookup_items: Vec<_> = identifier
-                    .as_syntax_node()
-                    .ancestors_with_self(db)
-                    .flat_map(|node| lookup_item_from_ast(db, module_id, node).unwrap_or_default())
-                    .collect();
-
-                let definition =
-                    try_variable_declaration(db, &identifier, &lookup_items).or_else(|| {
-                        lookup_variable_in_resolved_items(db, &identifier, &lookup_items)
-                    })?;
-
-                let location = match definition {
-                    // Extract only param name.
-                    cairo_lang_defs::ids::VarId::Param(param) => StableLocation::new(
-                        param.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped(),
-                    ),
-                    x => x.stable_location(db),
-                };
-                let user_location = location.span_in_file(db).user_location(db);
-
-                let var_name = user_location
-                    .span
-                    .take(db.file_content(user_location.file_id).unwrap())
-                    .to_string();
-
-                let position = user_location.span.position_in_file(db, user_location.file_id)?;
-                let source_location = SourceCodeSpan {
-                    start: SourceCodeLocation {
-                        col: position.start.col,
-                        line: position.start.line,
-                    },
-                    end: SourceCodeLocation { col: position.end.col, line: position.end.line },
-                };
-
-                Some((SierraVarId(sierra_var.id), (var_name, source_location)))
+            .filter_map(|(sierra_var, location)| {
+                let (name, span) = resolve_location_to_cairo_info(db, *location)?;
+                Some((SierraVarId(sierra_var.id), (name, span)))
             })
             .collect()
     }
@@ -181,6 +154,114 @@ impl<'db> FunctionDebugInfo<'db> {
 
         Some((function_file_path, function_code_span))
     }
+
+    /// Extracts the debug info of the function's parameters in declaration order.
+    fn extract_parameters(
+        &self,
+        db: &'db dyn Database,
+        function: &Function,
+    ) -> Vec<SerializableParameterInfo> {
+        let Some(param_list) = self.function_param_list(db) else {
+            return Vec::new();
+        };
+        let params = param_list.elements(db);
+        let implicit_count = function.params.len() - params.len();
+
+        function
+            .params
+            .iter()
+            // Assumption: implicit params are always listed first.
+            .skip(implicit_count)
+            .zip(params)
+            .map(|(sierra_param, param_ast)| {
+                let name_ident = param_ast.name(db);
+                let name: CairoVariableName = name_ident.text(db).to_string(db);
+                let (_, definition_span, _) = maybe_code_location(
+                    db,
+                    StableLocation::new(name_ident.stable_ptr(db).untyped()),
+                )
+                .expect("parameter AST nodes must have a source location");
+                SerializableParameterInfo {
+                    sierra_var_id: SierraVarId(sierra_param.id.id),
+                    name,
+                    definition_span,
+                }
+            })
+            .collect()
+    }
+
+    /// Returns the AST `ParamList` of the function this debug info belongs to.
+    fn function_param_list(&self, db: &'db dyn Database) -> Option<ParamList<'db>> {
+        let function_node =
+            self.signature_location.long(db).stable_location.syntax_node(db).ancestor_of_kinds(
+                db,
+                &[SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction],
+            )?;
+        let signature = match function_node.kind(db) {
+            SyntaxKind::FunctionWithBody => {
+                ast::FunctionWithBody::from_syntax_node(db, function_node)
+                    .declaration(db)
+                    .signature(db)
+            }
+            SyntaxKind::TraitItemFunction => {
+                ast::TraitItemFunction::from_syntax_node(db, function_node)
+                    .declaration(db)
+                    .signature(db)
+            }
+            _ => return None,
+        };
+        Some(signature.parameters(db))
+    }
+}
+
+/// Resolves a single source location to a `(name, span)` tuple for the corresponding Cairo
+/// variable, or `None` if no Cairo identifier can be associated with the location.
+fn resolve_location_to_cairo_info<'db>(
+    db: &'db dyn Database,
+    code_location: LocationId<'db>,
+) -> Option<(CairoVariableName, SourceCodeSpan)> {
+    // Ignore inline locations for now as this function is supposed to be called only
+    // when sierra was compiled with inlining set to `avoid`.
+    // TODO(pm): handle them to make sure user function marked #[inline(always)] work.
+    //  https://github.com/software-mansion-labs/cairo-debugger/issues/41
+    let Location { stable_location: sierra_var_location, notes: _, inline_locations: _ } =
+        code_location.long(db);
+
+    let identifier = find_identifier_corresponding_to_assigned_variable(
+        db,
+        sierra_var_location.syntax_node(db),
+    )?;
+
+    let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
+
+    let lookup_items: Vec<_> = identifier
+        .as_syntax_node()
+        .ancestors_with_self(db)
+        .flat_map(|node| lookup_item_from_ast(db, module_id, node).unwrap_or_default())
+        .collect();
+
+    let definition = try_variable_declaration(db, &identifier, &lookup_items)
+        .or_else(|| lookup_variable_in_resolved_items(db, &identifier, &lookup_items))?;
+
+    let location = match definition {
+        // Extract only param name.
+        cairo_lang_defs::ids::VarId::Param(param) => {
+            StableLocation::new(param.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped())
+        }
+        x => x.stable_location(db),
+    };
+    let user_location = location.span_in_file(db).user_location(db);
+
+    let var_name =
+        user_location.span.take(db.file_content(user_location.file_id).unwrap()).to_string();
+
+    let position = user_location.span.position_in_file(db, user_location.file_id)?;
+    let source_location = SourceCodeSpan {
+        start: SourceCodeLocation { col: position.start.col, line: position.start.line },
+        end: SourceCodeLocation { col: position.end.col, line: position.end.line },
+    };
+
+    Some((var_name, source_location))
 }
 
 /// This function gets a node that a sierra variable was mapped to.
