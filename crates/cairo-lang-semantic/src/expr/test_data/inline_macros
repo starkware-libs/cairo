@@ -2730,3 +2730,39 @@ error[E2158]: No matching rule found in inline macro `mymac`.
  --> lib.cairo:6:5
     mymac!(0)
     ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Regression for #9938: item-scope macro invocation without arg brackets does not ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($x:ident) => { 1 };
+}
+m!
+
+//! > expected_diagnostics
+error[E1006]: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:5:3
+m!
+  ^
+
+error[E1001]: Missing token ';'.
+ --> lib.cairo:5:3
+m!
+  ^
+
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:5:1
+m!
+^^
