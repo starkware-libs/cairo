@@ -1392,7 +1392,7 @@ impl<'db> ConstCalcInfo<'db> {
                 (core_info.u32, TypeRange::new(u32::MIN, u32::MAX)),
                 (core_info.u64, TypeRange::new(u64::MIN, u64::MAX)),
                 (core_info.u128, TypeRange::new(u128::MIN, u128::MAX)),
-                (core_info.u256, TypeRange::new(BigInt::ZERO, BigInt::from(1) << 256)),
+                (core_info.u256, TypeRange::new(BigInt::ZERO, (BigInt::from(1) << 256) - 1)),
                 (core_info.i8, TypeRange::new(i8::MIN, i8::MAX)),
                 (core_info.i16, TypeRange::new(i16::MIN, i16::MAX)),
                 (core_info.i32, TypeRange::new(i32::MIN, i32::MAX)),
