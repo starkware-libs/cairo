@@ -1398,8 +1398,9 @@ impl<'db> ConstCalcInfo<'db> {
                 (core_info.i32, TypeRange::new(i32::MIN, i32::MAX)),
                 (core_info.i64, TypeRange::new(i64::MIN, i64::MAX)),
                 (core_info.i128, TypeRange::new(i128::MIN, i128::MAX)),
-                (class_hash_ty, TypeRange::new(BigInt::ZERO, BigInt::from(1) << 251)),
-                (contract_address_ty, TypeRange::new(BigInt::ZERO, BigInt::from(1) << 251)),
+                // `ClassHash` and `ContractAddress` accept values in `[0, 2^251 - 1]`.
+                (class_hash_ty, TypeRange::new(BigInt::ZERO, (BigInt::from(1) << 251) - 1)),
+                (contract_address_ty, TypeRange::new(BigInt::ZERO, (BigInt::from(1) << 251) - 1)),
             ]),
             core_info,
         }
