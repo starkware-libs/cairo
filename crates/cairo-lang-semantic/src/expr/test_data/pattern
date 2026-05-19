@@ -248,7 +248,7 @@ fn foo(s: [felt252; 3]) {
 foo
 
 //! > expected_diagnostics
-error[E2056]: If blocks have incompatible types: "()" and "(core::array::Array::<(?3, ?4, ?5)>,)"
+error[E2056]: If blocks have incompatible types: "()" and "(core::array::Array::<({numeric}, {numeric}, {numeric})>,)"
  --> lib.cairo:2:25-4:5
       let (unresolved,) = if true {} else {
  _________________________^
@@ -463,6 +463,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error[E2315]: Mismatched types. The type `core::array::Span::<core::integer::u32>` cannot be created from a numeric literal.
+ --> lib.cairo:4:9
+        5 => 0,
+        ^
+
 error[E2103]: Mismatched types: pattern cannot match against type "core::array::Span::<core::integer::u32>".
  --> lib.cairo:5:9
         (a, b) => *a + *b,
@@ -492,8 +497,3 @@ error[E2135]: Type `<missing>` cannot be dereferenced
  --> lib.cairo:6:20
         Some(a) => *a,
                    ^
-
-error[E2311]: Mismatched types. The type `core::array::Span::<core::integer::u32>` cannot be created from a numeric literal.
- --> lib.cairo:4:9
-        5 => 0,
-        ^

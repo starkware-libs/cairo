@@ -247,10 +247,10 @@ error[E2125]: The '?' operator is not supported outside of functions.
     Option::<felt252>::Some(0)?
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: core::traits::Add::<core::bool>.
- --> lib.cairo:6:42
+error[E2315]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+ --> lib.cairo:6:1
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2127]: This expression is not supported as constant.
  --> lib.cairo:14:47
@@ -307,10 +307,10 @@ foo
 const DEFAULT_VAR: bool = 1;
 
 //! > expected_diagnostics
-error[E2311]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:1:27
+error[E2315]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+ --> lib.cairo:1:1
 const DEFAULT_VAR: bool = 1;
-                          ^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 

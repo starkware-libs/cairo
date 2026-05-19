@@ -1488,6 +1488,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     InferenceError::NoNegativeImplsFound(_) => error_code!(E2312),
                     InferenceError::Ambiguity(_) => error_code!(E2313),
                     InferenceError::TypeNotInferred(_) => error_code!(E2314),
+                    InferenceError::InvalidLiteralType(_) => error_code!(E2315),
                 }
             }
         })

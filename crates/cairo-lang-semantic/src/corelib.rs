@@ -518,6 +518,7 @@ pub fn unwrap_error_propagation_type<'db>(
         | TypeLongId::Tuple(_)
         | TypeLongId::Snapshot(_)
         | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::ImplType(_)
         | TypeLongId::Missing(_)
@@ -825,6 +826,29 @@ impl<'db> LiteralError<'db> {
             }
         }
     }
+}
+
+/// Returns whether `ty` is a valid target type for a numeric literal (regardless of the literal's
+/// value). I.e. `validate_literal` would not return [`LiteralError::InvalidTypeForLiteral`].
+pub fn is_valid_literal_type<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
+    NumericLiteralType::new(db, ty).is_some_and(|ty| match ty {
+        NumericLiteralType::U8
+        | NumericLiteralType::U16
+        | NumericLiteralType::U32
+        | NumericLiteralType::U64
+        | NumericLiteralType::U128
+        | NumericLiteralType::U256
+        | NumericLiteralType::I8
+        | NumericLiteralType::I16
+        | NumericLiteralType::I32
+        | NumericLiteralType::I64
+        | NumericLiteralType::I128
+        | NumericLiteralType::Felt252
+        | NumericLiteralType::ClassHash
+        | NumericLiteralType::ContractAddress
+        | NumericLiteralType::BoundedInt { .. } => true,
+        NumericLiteralType::NonZero(inner) => is_valid_literal_type(db, inner),
+    })
 }
 
 /// Validates that a given type is valid for a literal and that the value fits the range of the

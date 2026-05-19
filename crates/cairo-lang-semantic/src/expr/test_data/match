@@ -26,6 +26,11 @@ enum A {
 }
 
 //! > expected_diagnostics
+error[E2315]: Mismatched types. The type `test::A` cannot be created from a numeric literal.
+ --> lib.cairo:9:10
+        (7, 1) => { x },
+         ^
+
 error[E0006]: Identifier not found.
  --> lib.cairo:9:21
         (7, 1) => { x },
@@ -40,11 +45,6 @@ error[E0006]: Identifier not found.
  --> lib.cairo:10:30
         (A::b(x), 1, _) => { x },
                              ^
-
-error[E2311]: Mismatched types. The type `test::A` cannot be created from a numeric literal.
- --> lib.cairo:9:10
-        (7, 1) => { x },
-         ^
 
 //! > ==========================================================================
 
@@ -71,6 +71,11 @@ enum A {
 }
 
 //! > expected_diagnostics
+error[E2315]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+ --> lib.cairo:6:15
+    match a + 1 {
+              ^
+
 error[E2109]: Wrong enum in pattern. Expected: "bool". Got: "A".
  --> lib.cairo:7:9
         A::a(_) => 0,
@@ -80,11 +85,6 @@ error[E2109]: Wrong enum in pattern. Expected: "bool". Got: "A".
  --> lib.cairo:8:9
         A::b(_) => 1,
         ^^^^^^^
-
-error[E2311]: Trait has no implementation in context: core::traits::Add::<core::bool>.
- --> lib.cairo:6:11
-    match a + 1 {
-          ^^^^^
 
 //! > ==========================================================================
 
@@ -170,6 +170,11 @@ fn foo(x: Option<()>) {
 foo
 
 //! > expected_diagnostics
+error[E2056]: Match arms have incompatible types: "core::bool" and "{numeric}"
+ --> lib.cairo:4:17
+        None => 0,
+                ^
+
 error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:23-6:1
   fn foo(x: Option<()>) {
