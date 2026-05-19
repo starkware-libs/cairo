@@ -84,20 +84,11 @@ impl<'db> Relation<'db> {
     }
 
     /// Merges two reverse relationships (self and other are proven equal).
-    /// When both exist with the same kind, propagates equality through inputs.
-    /// Always returns a valid relation (self if no merge needed).
-    fn union_equal_relations(self, other: Option<Self>, uf: &mut EqualityState<'_>) -> Self {
+    /// Replaces placeholder inputs with variables when possible.
+    /// Does not propagate equality through inputs, since we do not allow backedges.
+    fn fill_relation_placeholders(self, other: Option<Self>) -> Self {
         let Some(other_rel) = other else { return self };
         match (&self, &other_rel) {
-            (Relation::Box(a), Relation::Box(b)) if a != b => Relation::Box(uf.union(*a, *b)),
-            (Relation::Snapshot(a), Relation::Snapshot(b)) if a != b => {
-                Relation::Snapshot(uf.union(*a, *b))
-            }
-            (Relation::EnumConstruct(v1, a), Relation::EnumConstruct(v2, b))
-                if v1 == v2 && a != b =>
-            {
-                Relation::EnumConstruct(*v1, uf.union(*a, *b))
-            }
             (Relation::StructConstruct(t1, a), Relation::StructConstruct(t2, b))
                 if t1 == t2 && a.len() == b.len() =>
             {
@@ -106,9 +97,6 @@ impl<'db> Relation<'db> {
                     a.iter()
                         .zip(b)
                         .map(|(sf, of)| match (sf, of) {
-                            (FieldVar::Var(a), FieldVar::Var(b)) if a != b => {
-                                FieldVar::Var(uf.union(*a, *b))
-                            }
                             (FieldVar::Var(_), _) => *sf,
                             (_, FieldVar::Var(_)) => *of,
                             (FieldVar::Placeholder(_), FieldVar::Placeholder(_)) => *sf,
@@ -177,64 +165,19 @@ impl<'db> EqualityState<'db> {
         var
     }
 
-    /// Unions two variables into the same equivalence class.
+    /// Unions the two variables into the same equivalence class.
+    /// `old_var`'s root is kept as the representative; `union_var`'s root joins it.
+    /// `union_var` must be a root, unless already in `old_var`'s class (no-op).
     /// Returns the representative of the merged class.
-    /// Always chooses the lower ID as the representative to maintain canonical form.
-    fn union(&mut self, a: VariableId, b: VariableId) -> VariableId {
-        let root_a = self.find(a);
-        let root_b = self.find(b);
-
-        if root_a == root_b {
-            return root_a;
+    fn add_equality(&mut self, old_var: VariableId, union_var: VariableId) -> VariableId {
+        let old_var = self.find(old_var);
+        let new_var = self.find(union_var);
+        if new_var == old_var {
+            return old_var;
         }
-
-        // Always choose the lower ID as the new root to maintain canonical form.
-        // This ensures forward map keys remain valid since lower IDs are defined earlier.
-        let (new_root, old_root) =
-            if root_a.index() < root_b.index() { (root_a, root_b) } else { (root_b, root_a) };
-
-        // Ensure new_root is in the map (as its own parent).
-        self.union_find.entry(new_root).or_insert(new_root);
-        // Update old_root to point to new_root.
-        self.union_find.insert(old_root, new_root);
-
-        // Merge reverse entries for both roots.
-        let old_reverse = self.reverse.swap_remove(&old_root);
-        let new_reverse = self.reverse.swap_remove(&new_root);
-        let merged_reverse = match (new_reverse, old_reverse) {
-            (Some(new_rev), old) => Some(new_rev.union_equal_relations(old, self)),
-            (None, old) => old,
-        };
-
-        // TODO(eytan-starkware): Forward Struct/Enum entries aren't re-keyed during union.
-        //    Doing so would require congruence closure (updating all entries whose inputs
-        //    changed). The consequence is missed hashcons hits — conservative, not unsound.
-        //    We also don't invalidate forward entries that become inconsistent (e.g., two
-        //    different enum variants mapping to the now-merged class). These stale entries
-        //    are harmless as this code should be unreachable.
-        // Merge forward Box/Snapshot entries for both roots.
-        let constructors = [Relation::Box, Relation::Snapshot];
-        for ctor in constructors {
-            let old_fwd = self.forward.swap_remove(&ctor(old_root));
-            let new_fwd = self.forward.swap_remove(&ctor(new_root));
-            let merged = match (new_fwd, old_fwd) {
-                (Some(t1), Some(t2)) => Some(self.union(t1, t2)),
-                (Some(t), None) | (None, Some(t)) => Some(t),
-                (None, None) => None,
-            };
-            if let Some(target) = merged {
-                let final_root = self.find(new_root);
-                let target_rep = self.find(target);
-                self.forward.insert(ctor(final_root), target_rep);
-            }
-        }
-
-        let final_root = self.find(new_root);
-        if let Some(merged_reverse) = merged_reverse {
-            self.reverse.insert(final_root, merged_reverse);
-        }
-
-        self.find(new_root)
+        assert!(union_var == new_var, "Expected variables to always be 'new' or equal to old");
+        self.union_find.insert(new_var, old_var);
+        old_var
     }
 
     /// Records a relation: forward maps `relation -> output`, reverse maps `output -> relation`.
@@ -246,18 +189,16 @@ impl<'db> EqualityState<'db> {
 
         // Forward dedup: if this exact relation already maps to an output, union them.
         if let Some(&existing_output) = self.forward.get(&relation) {
-            self.union(existing_output, output);
+            self.add_equality(existing_output, output);
         }
 
         // Reverse merge: if output already has a reverse, merge inputs and use the result.
-        let output_rep = self.find(output);
-        let existing = self.reverse.swap_remove(&output_rep);
-        let relation = relation.union_equal_relations(existing, self);
+        let existing = self.reverse.swap_remove(&output);
+        let relation = relation.fill_relation_placeholders(existing);
 
         // Insert with current reps (may be slightly stale after unions above).
-        let output_rep = self.find(output);
-        self.forward.insert(relation.clone(), output_rep);
-        self.reverse.insert(output_rep, relation);
+        self.forward.insert(relation.clone(), output);
+        self.reverse.insert(output, relation);
     }
 
     /// Looks up the struct construct info for a representative (immutable).
@@ -332,12 +273,15 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
 /// Variable equality analysis.
 ///
 /// This analyzer tracks snapshot/desnap, box/unbox, and array construct relationships as data
-/// flows through the program. At merge points (after match arms converge), we conservatively
-/// intersect the equivalence classes, keeping only equalities that hold on all paths.
+/// flows through the program. At merge points (after match arms converge), we union-find variables
+/// that share the same equivalence classes in **both** branches (`(rep1, rep2)` meet), rebuild
+/// `forward` / `reverse`, and intersect relations **without** mapping variables across differing
+/// branch-local equivalence roots (structure fields fall back to placeholders).
 pub struct EqualityAnalysis<'a, 'db> {
     db: &'db dyn Database,
     lowered: &'a Lowered<'db>,
-    /// Counter for allocating globally unique placeholder IDs.
+    /// Counter for allocating globally unique `Placeholder` IDs for unknown struct fields after
+    /// merge.
     next_placeholder: usize,
     /// The `array_new` extern function id.
     array_new: ExternFunctionId<'db>,
@@ -388,6 +332,9 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
     /// - `array_snapshot_pop_front`: Same as above but through snapshot/box-of-snapshot wrappers.
     /// - `array_snapshot_pop_back`: Like pop_front but pops from the back: element is `Box(eN)`,
     ///   remaining is `[e0, ..., eN-1]`.
+    ///
+    /// The `None` arms are intentionally ignored: recording empty-array relations or unions there
+    /// would backedge-merge older SSA equivalence classes based on branch discrimination.
     fn transfer_extern_match_arm(
         &self,
         info: &mut EqualityState<'db>,
@@ -426,108 +373,81 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
         id: ExternFunctionId<'db>,
         is_some: bool,
     ) {
-        if id == self.array_pop_front || id == self.array_pop_front_consume {
-            if is_some {
-                // Some arm: var_ids = [remaining_arr, boxed_elem]
-                let input_arr = extern_info.inputs[0].var_id;
-                let remaining_arr = arm.var_ids[0];
-                let boxed_elem = arm.var_ids[1];
-                if let Some((ty, elems)) = info.get_struct_construct(input_arr)
-                    && let Some((first, rest)) = elems.split_first()
-                {
-                    // TODO(eytan-starkware): Add support for placeholders in boxes and reverse box
-                    // relation to unify placeholder.
-                    if let FieldVar::Var(first_var) = first {
-                        info.set_relation(Relation::Box(*first_var), boxed_elem);
-                    }
-                    let rest_fields: Vec<FieldVar> =
-                        rest.iter().map(|f| f.find_rep(info)).collect();
-                    info.set_relation(Relation::StructConstruct(ty, rest_fields), remaining_arr);
+        if (id == self.array_pop_front || id == self.array_pop_front_consume) && is_some {
+            // Some arm: var_ids = [remaining_arr, boxed_elem]
+            let input_arr = extern_info.inputs[0].var_id;
+            let remaining_arr = arm.var_ids[0];
+            let boxed_elem = arm.var_ids[1];
+            if let Some((ty, elems)) = info.get_struct_construct(input_arr)
+                && let Some((first, rest)) = elems.split_first()
+            {
+                // TODO(eytan-starkware): Add support for placeholders in boxes and reverse box
+                // relation to unify placeholder.
+                if let FieldVar::Var(first_var) = first {
+                    info.set_relation(Relation::Box(*first_var), boxed_elem);
                 }
-            } else {
-                // None arm for array_pop_front: var_ids = [original_arr]. Union with input.
-                // None arm for array_pop_front_consume: var_ids = [].
-                let old_array_var = extern_info.inputs[0].var_id;
-                let ty = self.lowered.variables[old_array_var].ty;
-                // TODO(eytan-starkware): This introduces a backedge to our forward map updates,
-                //    so we might need to support updating the structures accordingly.
-                //    For example, if this is empty after a pop, then we know previous array
-                //    was a singleton.
-                info.set_relation(Relation::StructConstruct(ty, vec![]), old_array_var);
-                if let [original_arr] = arm.var_ids[..] {
-                    info.union(original_arr, old_array_var);
-                }
+                let rest_fields: Vec<FieldVar> = rest.iter().map(|f| f.find_rep(info)).collect();
+                info.set_relation(Relation::StructConstruct(ty, rest_fields), remaining_arr);
             }
-        } else if id == self.array_snapshot_pop_front || id == self.array_snapshot_pop_back {
-            if is_some {
-                // Some arm: var_ids = [remaining_snap_arr, boxed_snap_elem]
-                let input_snap_arr = extern_info.inputs[0].var_id;
-                let remaining_snap_arr = arm.var_ids[0];
-                let boxed_snap_elem = arm.var_ids[1];
+        } else if (id == self.array_snapshot_pop_front || id == self.array_snapshot_pop_back)
+            && is_some
+        {
+            // Some arm: var_ids = [remaining_snap_arr, boxed_snap_elem]
+            let input_snap_arr = extern_info.inputs[0].var_id;
+            let remaining_snap_arr = arm.var_ids[0];
+            let boxed_snap_elem = arm.var_ids[1];
 
-                // Look up tracked elements via snapshot reverse relationship or direct lookup.
-                let snap_rep = info.find(input_snap_arr);
-                let original_rep = match info.reverse.get(&snap_rep) {
-                    Some(Relation::Snapshot(v)) => Some(*v),
-                    _ => None,
-                };
-                let elems_opt = original_rep
-                    .and_then(|orig| {
-                        let orig = info.find_immut(orig);
-                        info.get_struct_construct_immut(orig)
-                    })
-                    .or_else(|| info.get_struct_construct_immut(snap_rep));
+            // Look up tracked elements via snapshot reverse relationship or direct lookup.
+            let snap_rep = info.find(input_snap_arr);
+            let original_rep = match info.reverse.get(&snap_rep) {
+                Some(Relation::Snapshot(v)) => Some(*v),
+                _ => None,
+            };
+            let elems_opt = original_rep
+                .and_then(|orig| {
+                    let orig = info.find_immut(orig);
+                    info.get_struct_construct_immut(orig)
+                })
+                .or_else(|| info.get_struct_construct_immut(snap_rep));
 
-                let snap_ty = self.lowered.variables[remaining_snap_arr].ty;
-                let Some((_orig_ty, elems)) = elems_opt else {
+            let snap_ty = self.lowered.variables[remaining_snap_arr].ty;
+            let Some((_orig_ty, elems)) = elems_opt else {
+                return;
+            };
+            let pop_front = id == self.array_snapshot_pop_front;
+            let (elem, rest) = if pop_front {
+                let Some((first, tail)) = elems.split_first() else {
+                    info.set_relation(
+                        Relation::StructConstruct(snap_ty, vec![]),
+                        remaining_snap_arr,
+                    );
                     return;
                 };
-                let pop_front = id == self.array_snapshot_pop_front;
-                let (elem, rest) = if pop_front {
-                    let Some((first, tail)) = elems.split_first() else {
-                        info.set_relation(
-                            Relation::StructConstruct(snap_ty, vec![]),
-                            remaining_snap_arr,
-                        );
-                        return;
-                    };
-                    (*first, tail)
-                } else {
-                    let Some((last, init)) = elems.split_last() else {
-                        info.set_relation(
-                            Relation::StructConstruct(snap_ty, vec![]),
-                            remaining_snap_arr,
-                        );
-                        return;
-                    };
-                    (*last, init)
-                };
-
-                // The popped element is `Box<@T>`. Record the box relationship against
-                // the snapshot class of `elem` if it exists.
-                // TODO(eytan-starkware): Support relationships even when no variable
-                // represents `@elem` yet (elem is a Placeholder).
-                if let FieldVar::Var(elem_var) = elem {
-                    let elem_rep = info.find(elem_var);
-                    if let Some(&snap_of_elem) = info.forward.get(&Relation::Snapshot(elem_rep)) {
-                        info.set_relation(Relation::Box(snap_of_elem), boxed_snap_elem);
-                    }
-                }
-
-                let rest_fields: Vec<FieldVar> = rest.iter().map(|f| f.find_rep(info)).collect();
-                info.set_relation(
-                    Relation::StructConstruct(snap_ty, rest_fields),
-                    remaining_snap_arr,
-                );
+                (*first, tail)
             } else {
-                // None arm: record empty snapshot array and union output with input.
-                let old_snap_arr = extern_info.inputs[0].var_id;
-                let snap_ty = self.lowered.variables[old_snap_arr].ty;
-                info.set_relation(Relation::StructConstruct(snap_ty, vec![]), old_snap_arr);
-                if let [original_snap_arr] = arm.var_ids[..] {
-                    info.union(original_snap_arr, old_snap_arr);
+                let Some((last, init)) = elems.split_last() else {
+                    info.set_relation(
+                        Relation::StructConstruct(snap_ty, vec![]),
+                        remaining_snap_arr,
+                    );
+                    return;
+                };
+                (*last, init)
+            };
+
+            // The popped element is `Box<@T>`. Record the box relationship against
+            // the snapshot class of `elem` if it exists.
+            // TODO(eytan-starkware): Support relationships even when no variable
+            // represents `@elem` yet (elem is a Placeholder).
+            if let FieldVar::Var(elem_var) = elem {
+                let elem_rep = info.find(elem_var);
+                if let Some(&snap_of_elem) = info.forward.get(&Relation::Snapshot(elem_rep)) {
+                    info.set_relation(Relation::Box(snap_of_elem), boxed_snap_elem);
                 }
             }
+
+            let rest_fields: Vec<FieldVar> = rest.iter().map(|f| f.find_rep(info)).collect();
+            info.set_relation(Relation::StructConstruct(snap_ty, rest_fields), remaining_snap_arr);
         }
     }
 }
@@ -554,20 +474,9 @@ fn merge_referenced_vars<'db, 'a>(
     union_find_vars.chain(forward_vars).chain(reverse_vars)
 }
 
-/// Finds an intersection representative: given a rep in info1 and a rep in info2,
-/// returns the intersection representative in the result if one exists.
-fn find_intersection_rep(
-    intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
-    rep1: VariableId,
-    rep2: VariableId,
-) -> Option<VariableId> {
-    intersections.get(&rep1)?.iter().find_map(|(intersection_r2, intersection_rep)| {
-        (*intersection_r2 == rep2).then_some(*intersection_rep)
-    })
-}
-
-/// Preserves relations that exist in both branches.
-/// All relation types are looked up via the forward map, which retains all entries.
+/// Keeps relational edges that survive the join **without** mapping variables across mismatched
+/// branch equivalence roots: struct fields become placeholders unless both sides cite the same SSA
+/// `VariableId`. Box/Snapshot/Enum reuse an edge only when merged outputs coincide in `result`.
 fn merge_relations<'db>(
     info1: &EqualityState<'db>,
     info2: &EqualityState<'db>,
@@ -576,6 +485,7 @@ fn merge_relations<'db>(
     next_placeholder: &mut usize,
 ) {
     // Index info2's StructConstruct entries by output representative for lookup in the merge loop.
+    // Forward entries are completely authoritative, so we use them to build the index.
     let info2_structs_by_output: OrderedHashMap<VariableId, (TypeId<'db>, Vec<FieldVar>)> = info2
         .forward
         .iter()
@@ -586,8 +496,6 @@ fn merge_relations<'db>(
         .collect();
 
     // Iterate all forward entries from info1 and find matching entries in info2.
-    // We use forward (not reverse) because reverse holds only the latest relation per output,
-    // while forward retains all entries and is the authoritative source.
     for (relation, &output1) in info1.forward.iter() {
         match relation {
             Relation::Box(source1) | Relation::Snapshot(source1) => {
@@ -598,20 +506,20 @@ fn merge_relations<'db>(
                         _ => unreachable!(),
                     };
                     let Some(&output2) = info2.forward.get(&relation2) else { continue };
-                    if let Some(output_intersection) = find_intersection_rep(
-                        intersections,
-                        info1.find_immut(output1),
-                        info2.find_immut(output2),
-                    ) {
-                        let result_relation = match relation {
-                            Relation::Box(_) => Relation::Box(result.find(intersection_var)),
-                            Relation::Snapshot(_) => {
-                                Relation::Snapshot(result.find(intersection_var))
-                            }
-                            _ => unreachable!(),
-                        };
-                        result.set_relation(result_relation, output_intersection);
+                    // Require the same unified output (join meet); avoid mapping via rep pair
+                    // lookup.
+                    // TODO(eytan-starkware): We want to check that the intersection is not empty
+                    // and use that for the output rep, not that the leaders are there.
+                    let output_rep = result.find(output1);
+                    if output_rep != result.find_immut(output2) {
+                        continue;
                     }
+                    let result_relation = match relation {
+                        Relation::Box(_) => Relation::Box(result.find(intersection_var)),
+                        Relation::Snapshot(_) => Relation::Snapshot(result.find(intersection_var)),
+                        _ => unreachable!(),
+                    };
+                    result.set_relation(result_relation, output_rep);
                 }
             }
             Relation::EnumConstruct(variant, input1) => {
@@ -620,47 +528,39 @@ fn merge_relations<'db>(
                 {
                     let relation2 = Relation::EnumConstruct(*variant, input2);
                     let Some(&output2) = info2.forward.get(&relation2) else { continue };
-                    if let Some(output_intersection) = find_intersection_rep(
-                        intersections,
-                        info1.find_immut(output1),
-                        info2.find_immut(output2),
-                    ) {
-                        result.set_relation(
-                            Relation::EnumConstruct(*variant, input_intersection),
-                            output_intersection,
-                        );
+                    let output_rep = result.find(output1);
+                    if output_rep != result.find_immut(output2) {
+                        continue;
                     }
+                    result.set_relation(
+                        Relation::EnumConstruct(*variant, input_intersection),
+                        output_rep,
+                    );
                 }
             }
             Relation::StructConstruct(ty, fields1) => {
                 let output1_rep = info1.find_immut(output1);
-                let Some(output_pairs) = intersections.get(&output1_rep) else {
-                    continue;
-                };
-                for &(output2_rep, output_intersection) in output_pairs {
+                for &(output2_rep, output_intersection) in
+                    intersections.get(&output1_rep).unwrap_or(&vec![])
+                {
                     let Some((ty2, fields2)) = info2_structs_by_output.get(&output2_rep) else {
                         continue;
                     };
                     if ty2 != ty || fields2.len() != fields1.len() {
                         continue;
                     }
-                    // Intersect fields pairwise; use placeholders for unresolvable fields.
                     let mut any_data = false;
                     let result_fields: Vec<FieldVar> = fields1
                         .iter()
                         .zip(fields2)
-                        .map(|(f1, f2)| {
-                            if let Some(v1) = f1.as_var()
-                                && let Some(v2) = f2.as_var()
-                                && let Some(v) = find_intersection_rep(
-                                    intersections,
-                                    info1.find_immut(v1),
-                                    info2.find_immut(v2),
-                                )
+                        .map(|(f1, f2)| match (f1, f2) {
+                            (FieldVar::Var(v), FieldVar::Var(w))
+                                if result.find(*v) == result.find(*w) =>
                             {
                                 any_data = true;
-                                FieldVar::Var(v)
-                            } else {
+                                FieldVar::Var(result.find(*v))
+                            }
+                            (_, _) => {
                                 *next_placeholder += 1;
                                 FieldVar::Placeholder(*next_placeholder - 1)
                             }
@@ -694,7 +594,9 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
         info1: Self::Info,
         info2: Self::Info,
     ) -> Self::Info {
-        // Intersection-based merge: keep only equalities that hold in BOTH branches.
+        // Meet of union-finds, then intersect relations (`merge_relations`) without bridging
+        // mismatched equiv-class reps across branches (struct fields → placeholders unless same SSA
+        // id).
         let mut result = EqualityState::default();
 
         // Group variables by (rep1, rep2) - for variables present in either state.
@@ -707,23 +609,19 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
             groups.entry(key).or_default().push(var);
         }
 
-        // Union all variables within each group
+        // Union all variables within each group. Members are fresh in `result`
+        // (which was just constructed), so any choice of `keep` is flat-preserving;
+        // the lowest-ID is chosen so the rep is stable/deterministic.
         for members in groups.values() {
-            if members.len() > 1 {
-                let first = members[0];
-                for &var in &members[1..] {
-                    result.union(first, var);
+            let Some(&keep) = members.iter().min_by_key(|v| v.index()) else { continue };
+            for &var in members {
+                if var != keep {
+                    result.add_equality(keep, var);
                 }
             }
         }
 
-        // An important point in this merge is to retain relationships.
-        // Consider:
-        //  info1 [equality class[1] = 1, 2, 4] and 6 is Box(1).
-        //  info2 [equality class[2] = 3, 5, 4] and 6 is Box(3).
-        // To detect we can keep 6 is Box(4), as it is true in all branches, we need intersection of
-        // eclasses (a single eclass can split in the result into multiple eclasses).
-        // Build secondary index: rep1 -> Vec<(rep2, intersection_rep)>.
+        // Secondary index: rep₁ -> `(rep₂, representative in result)` for relation intersection.
         let mut intersections: OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>> =
             OrderedHashMap::default();
         for (&(rep1, rep2), vars) in groups.iter() {
@@ -743,7 +641,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
     ) {
         match stmt {
             Statement::Snapshot(snapshot_stmt) => {
-                info.union(snapshot_stmt.original(), snapshot_stmt.input.var_id);
+                info.add_equality(snapshot_stmt.input.var_id, snapshot_stmt.original());
                 info.set_relation(
                     Relation::Snapshot(snapshot_stmt.input.var_id),
                     snapshot_stmt.snapshot(),
@@ -751,7 +649,15 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
             }
 
             Statement::Desnap(desnap_stmt) => {
-                info.set_relation(Relation::Snapshot(desnap_stmt.output), desnap_stmt.input.var_id);
+                let input_rep = info.find(desnap_stmt.input.var_id);
+                if let Some(Relation::Snapshot(old_inner)) = info.reverse.get(&input_rep) {
+                    info.add_equality(*old_inner, desnap_stmt.output);
+                } else {
+                    info.set_relation(
+                        Relation::Snapshot(desnap_stmt.output),
+                        desnap_stmt.input.var_id,
+                    );
+                }
             }
 
             Statement::IntoBox(into_box_stmt) => {
@@ -759,7 +665,12 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
             }
 
             Statement::Unbox(unbox_stmt) => {
-                info.set_relation(Relation::Box(unbox_stmt.output), unbox_stmt.input.var_id);
+                let input_rep = info.find(unbox_stmt.input.var_id);
+                if let Some(Relation::Box(old_inner)) = info.reverse.get(&input_rep) {
+                    info.add_equality(*old_inner, unbox_stmt.output);
+                } else {
+                    info.set_relation(Relation::Box(unbox_stmt.output), unbox_stmt.input.var_id);
+                }
             }
 
             Statement::EnumConstruct(enum_stmt) => {
@@ -784,20 +695,21 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
 
             Statement::StructDestructure(struct_stmt) => {
                 // (outputs...) = struct_destructure(input)
+                let struct_var = info.find(struct_stmt.input.var_id);
                 // 1. If input was previously constructed, union outputs with original fields. Skip
                 //    placeholder fields (unknown after merge).
-                if let Some((_, field_reps)) = info.get_struct_construct(struct_stmt.input.var_id) {
+                if let Some((_, field_reps)) = info.get_struct_construct(struct_var) {
                     for (&output, field) in struct_stmt.outputs.iter().zip(field_reps.iter()) {
                         if let FieldVar::Var(field_rep) = field {
-                            info.union(output, *field_rep);
+                            info.add_equality(*field_rep, output);
                         }
                     }
                 }
                 // 2. Record: struct_construct(outputs) == input (for future constructs).
-                let ty = self.lowered.variables[struct_stmt.input.var_id].ty;
+                let ty = self.lowered.variables[struct_var].ty;
                 let fields =
                     struct_stmt.outputs.iter().map(|&v| FieldVar::Var(info.find(v))).collect();
-                info.set_relation(Relation::StructConstruct(ty, fields), struct_stmt.input.var_id);
+                info.set_relation(Relation::StructConstruct(ty, fields), struct_var);
             }
 
             Statement::Call(call_stmt) => {
@@ -829,7 +741,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
             Edge::Goto { remapping, .. } => {
                 // Union remapped variables: dst and src should be in the same equivalence class
                 for (dst, src_usage) in remapping.iter() {
-                    new_info.union(*dst, src_usage.var_id);
+                    new_info.add_equality(src_usage.var_id, *dst);
                 }
             }
             Edge::MatchArm { arm, match_info } => {
@@ -843,12 +755,12 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
                     // If we previously saw this enum constructed with the same variant,
                     // union with the original input. Skip if variants differ — this can
                     // happen after optimizations merge states from different branches.
-                    let output_rep = new_info.find(matched_var);
+                    let matched_rep = new_info.find(matched_var);
                     if let Some((old_variant, input)) =
-                        new_info.get_enum_construct_immut(output_rep)
+                        new_info.get_enum_construct_immut(matched_rep)
                         && variant == old_variant
                     {
-                        new_info.union(arm_var, input);
+                        new_info.add_equality(input, arm_var);
                     }
 
                     // Record the relationship: matched_var = Variant(arm_var)
