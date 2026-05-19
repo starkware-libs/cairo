@@ -110,9 +110,6 @@ fn deserialize_libfuncs_map<'de, D: serde::Deserializer<'de>>(
 /// The allowed libfuncs list to use if no list is supplied to the compiler.
 /// Should only contain libfuncs that are audited and tested.
 pub const BUILTIN_AUDITED_LIBFUNCS_LIST: &str = "audited";
-/// The allowed libfuncs list to use on testnet2 — should be all libfuncs currently
-/// supported by Starknet.
-pub const BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST: &str = "experimental";
 /// The experimental list contains all the libfuncs and is currently used for development.
 pub const BUILTIN_ALL_LIBFUNCS_LIST: &str = "all";
 
@@ -125,9 +122,6 @@ pub fn lookup_allowed_libfuncs_list(
         ListSelector::ListName(list_name) => match list_name.as_str() {
             BUILTIN_ALL_LIBFUNCS_LIST => {
                 include_str!("allowed_libfuncs_lists/all.json").to_string()
-            }
-            BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST => {
-                include_str!("allowed_libfuncs_lists/experimental.json").to_string()
             }
             BUILTIN_AUDITED_LIBFUNCS_LIST => {
                 include_str!("allowed_libfuncs_lists/audited.json").to_string()
