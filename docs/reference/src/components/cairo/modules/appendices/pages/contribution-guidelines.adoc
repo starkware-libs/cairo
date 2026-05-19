@@ -33,7 +33,7 @@ that relate to your submission. You don't want to duplicate effort.
 2. Fork the project
 3. Create your feature branch (`git checkout -b feat/amazing_feature`)
 4. Implement your feature
-5. Run the code formatter for Rust and Cairo (link:{cairo-repo}/scripts/rust_fmt.sh[scripts/rust_fmt.sh] && link:{cairo-repo}/scripts/cairo_fmt.sh[scripts/cairo_fmt.sh])
+5. Run the code formatter for Rust and Cairo (`scripts/rust_fmt.sh && scripts/cairo_fmt.sh`)
 6. Commit your changes (`git commit -m 'feat: Add amazing_feature'`)
 7. Push to the branch (`git push origin feat/amazing_feature`)
 8. link:https://github.com/starkware-libs/cairo/compare[Open a Pull Request]
