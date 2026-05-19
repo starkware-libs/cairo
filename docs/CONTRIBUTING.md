@@ -43,7 +43,7 @@ cargo run --bin cairo-test -- <path-to-cairo-project>
 ```
 
 If you want to run a single test file, you can use the `--single-file` flag. For example, to run
-the tests only from `tests/bug_samples/issue2147.cairo`, use the following command:
+the tests only from [`tests/bug_samples/issue2147.cairo`](../tests/bug_samples/issue2147.cairo), use the following command:
 
 ```sh
 cargo run --bin cairo-test -- --single-file tests/bug_samples/issue2147.cairo
@@ -109,7 +109,7 @@ Please try to create bug reports that are:
 2. Fork the project
 3. Create your feature branch (`git checkout -b feat/amazing_feature`)
 4. Implement your feature
-5. Run the code formatter for Rust and Cairo (`scripts/rust_fmt.sh && scripts/cairo_fmt.sh`)
+5. Run the code formatter for Rust and Cairo ([`scripts/rust_fmt.sh`](../scripts/rust_fmt.sh) && [`scripts/cairo_fmt.sh`](../scripts/cairo_fmt.sh))
 6. Commit your changes (`git commit -m 'feat: Add amazing_feature'`)
 7. Push to the branch (`git push origin feat/amazing_feature`)
 8. [Open a Pull Request](https://github.com/starkware-libs/cairo/compare) to one of the following
