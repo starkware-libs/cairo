@@ -2698,3 +2698,35 @@ error[E2200]: Plugin diagnostic: Literals with suffix are not supported in const
  --> lib.cairo:1:35
 const a: felt252 = consteval_int!(1_u32 + 2);
                                   ^^^^^^
+
+//! > ==========================================================================
+
+//! > Regression for #9936: unsupported macro param kind emits a diagnostic, not an ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() -> u32 {
+    mymac!(0)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro mymac {
+    ($x:literal) => { 5_u32 };
+}
+
+//! > expected_diagnostics
+error[E1008]: Missing tokens. Expected a macro rule parameter kind.
+ --> lib.cairo:3:9
+    ($x:literal) => { 5_u32 };
+        ^
+
+error[E2158]: No matching rule found in inline macro `mymac`.
+ --> lib.cairo:6:5
+    mymac!(0)
+    ^^^^^^^^^

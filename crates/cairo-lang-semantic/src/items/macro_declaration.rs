@@ -156,6 +156,10 @@ fn priv_macro_declaration_data<'db>(
             rule_err: Ok(()),
         };
         ctx.check_node(expansion.as_syntax_node());
+        // Skipping expanding an inline macro if it had a parser error.
+        if pattern.as_syntax_node().descendants(db).any(|node| node.kind(db).is_missing()) {
+            continue;
+        }
         rules.push(MacroRuleData { pattern, expansion, err: ctx.rule_err });
     }
     let resolver_data = Arc::new(resolver.data);
@@ -376,12 +380,10 @@ fn is_macro_rule_match_ex<'db>(
             }
             ast::MacroElement::Param(param) => {
                 advanced = true;
-                let placeholder_kind: PlaceholderKind =
-                    if let ast::OptionParamKind::ParamKind(param_kind) = param.kind(db) {
-                        param_kind.kind(db).into()
-                    } else {
-                        return None;
-                    };
+                let ast::OptionParamKind::ParamKind(param_kind) = param.kind(db) else {
+                    return None;
+                };
+                let placeholder_kind: PlaceholderKind = param_kind.kind(db).into();
                 let placeholder_name = param.name(db).as_syntax_node().get_text_without_trivia(db);
                 match placeholder_kind {
                     PlaceholderKind::Identifier => {
