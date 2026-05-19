@@ -1532,4 +1532,3 @@ True(v3) = v1, test::MyStruct(v0, v7) = v8
 
 Block 3:
 @v6 = v10, test::MyStruct(v0, ?) = v6, v6 = v9
-

@@ -176,12 +176,9 @@ error[E2056]: Match arms have incompatible types: "core::bool" and "{numeric}"
                 ^
 
 error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:23-6:1
-  fn foo(x: Option<()>) {
- _______________________^
-| ...
-| }
-|_^
+ --> lib.cairo:3:20
+        Some(_) => true,
+                   ^^^^
 
 //! > ==========================================================================
 
