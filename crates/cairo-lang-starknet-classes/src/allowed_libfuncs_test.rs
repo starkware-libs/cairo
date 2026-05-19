@@ -5,8 +5,8 @@ use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 use super::{
-    BUILTIN_ALL_LIBFUNCS_LIST, BUILTIN_AUDITED_LIBFUNCS_LIST, BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST,
-    ListSelector, lookup_allowed_libfuncs_list,
+    BUILTIN_ALL_LIBFUNCS_LIST, BUILTIN_AUDITED_LIBFUNCS_LIST, ListSelector,
+    lookup_allowed_libfuncs_list,
 };
 
 #[test]
@@ -31,11 +31,7 @@ fn all_list_includes_all_supported() {
 #[test]
 fn libfunc_lists_include_only_supported_libfuncs() {
     let supported_ids = CoreLibfunc::supported_ids().into_iter().collect::<UnorderedHashSet<_>>();
-    for list_name in [
-        BUILTIN_ALL_LIBFUNCS_LIST,
-        BUILTIN_AUDITED_LIBFUNCS_LIST,
-        BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST,
-    ] {
+    for list_name in [BUILTIN_ALL_LIBFUNCS_LIST, BUILTIN_AUDITED_LIBFUNCS_LIST] {
         let allowed_libfuncs =
             lookup_allowed_libfuncs_list(ListSelector::ListName(list_name.to_string())).unwrap();
         for (libfunc_id, _) in allowed_libfuncs.allowed_libfuncs {
