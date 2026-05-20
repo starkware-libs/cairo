@@ -726,7 +726,7 @@ fn lower_single_pattern<'db>(
         | semantic::Pattern::StringLiteral(_)
         | semantic::Pattern::EnumVariant(_) => {
             return Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(pattern.stable_ptr(), UnsupportedPattern),
+                ctx.diagnostics.report(pattern.stable_ptr(), RefutablePattern),
             ));
         }
         semantic::Pattern::Variable(semantic::PatternVariable {
