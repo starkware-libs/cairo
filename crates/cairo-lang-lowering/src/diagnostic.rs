@@ -68,9 +68,10 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
                 "Call cycle of `nopanic` functions is not allowed.".into()
             }
             LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
-            LoweringDiagnosticKind::UnsupportedPattern => {
-                "Inner patterns are not allowed in this context.".into()
-            }
+            LoweringDiagnosticKind::RefutablePattern => "Refutable pattern in local binding. \
+                                                          Add an `else` clause to handle the \
+                                                          unmatched case."
+                .into(),
             LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => {
                 "Fixed size array inner type must implement the `Copy` trait when the array size \
@@ -117,7 +118,7 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
             LoweringDiagnosticKind::UnexpectedError => error_code!(E3007),
             LoweringDiagnosticKind::NoPanicFunctionCycle => error_code!(E3008),
             LoweringDiagnosticKind::LiteralError(_) => error_code!(E3009),
-            LoweringDiagnosticKind::UnsupportedPattern => error_code!(E3010),
+            LoweringDiagnosticKind::RefutablePattern => error_code!(E3010),
             LoweringDiagnosticKind::Unsupported => error_code!(E3011),
             LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => error_code!(E3012),
             LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => error_code!(E3013),
@@ -218,7 +219,7 @@ pub enum LoweringDiagnosticKind<'db> {
     LiteralError(LiteralError<'db>),
     FixedSizeArrayNonCopyableType,
     EmptyRepeatedElementFixedSizeArray,
-    UnsupportedPattern,
+    RefutablePattern,
     Unsupported,
 }
 
