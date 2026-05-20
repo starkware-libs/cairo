@@ -798,8 +798,14 @@ fn lower_single_pattern<'db>(
             ty,
             ..
         }) => {
-            let patterns = patterns.clone();
-            lower_tuple_like_pattern_helper(ctx, builder, lowered_expr, &patterns, *ty)?;
+            lower_tuple_like_pattern_helper(
+                ctx,
+                builder,
+                lowered_expr,
+                patterns,
+                *ty,
+                pattern.stable_ptr().untyped(),
+            )?;
         }
         semantic::Pattern::Otherwise(pattern) => {
             let stable_ptr = pattern.stable_ptr.untyped();
@@ -818,6 +824,7 @@ fn lower_tuple_like_pattern_helper<'db>(
     lowered_expr: LoweredExpr<'db>,
     patterns: &[semantic::PatternId],
     ty: semantic::TypeId<'db>,
+    stable_ptr: SyntaxStablePtrId<'db>,
 ) -> LoweringResult<'db, ()> {
     let outputs = match lowered_expr {
         LoweredExpr::Tuple { exprs, .. } => exprs,
@@ -833,6 +840,13 @@ fn lower_tuple_like_pattern_helper<'db>(
                         .to_usize()
                         .unwrap();
                     vec![type_id; size]
+                }
+                // `Span<T>` matched against `[..]` is synthesized as a fixed-size array, but
+                // stays refutable.
+                TypeLongId::Concrete(_) => {
+                    return Err(LoweringFlowError::Failed(
+                        ctx.diagnostics.report(stable_ptr, RefutablePattern),
+                    ));
                 }
                 _ => unreachable!("Tuple-like pattern must be a tuple or fixed size array."),
             };
