@@ -258,3 +258,31 @@ error[E3013]: Fixed size array repeated element size must be greater than 0.
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Test fixed-size-array pattern in let-binding on a Span value (refutable).
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let arr: Array<u32> = array![100, 200, 300];
+    let s: Span<u32> = arr.span();
+    let [_a, _b, _c] = s;
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3010]: Refutable pattern in local binding. Add an `else` clause to handle the unmatched case.
+ --> lib.cairo:4:9
+    let [_a, _b, _c] = s;
+        ^^^^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
