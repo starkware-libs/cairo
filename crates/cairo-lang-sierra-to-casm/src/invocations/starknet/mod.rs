@@ -73,6 +73,11 @@ pub fn build(
         }
         StarknetConcreteLibfunc::Sha256StateHandleInit(_) => build_identity(builder),
         StarknetConcreteLibfunc::Sha256StateHandleDigest(_) => build_identity(builder),
+        StarknetConcreteLibfunc::Sha512ProcessBlock(_) => {
+            build_syscalls(builder, "Sha512ProcessBlock", [1, 1], [1])
+        }
+        StarknetConcreteLibfunc::Sha512StateHandleInit(_) => build_identity(builder),
+        StarknetConcreteLibfunc::Sha512StateHandleDigest(_) => build_identity(builder),
         StarknetConcreteLibfunc::LibraryCall(_) => {
             build_syscalls(builder, "LibraryCall", [1, 1, 2], [2])
         }

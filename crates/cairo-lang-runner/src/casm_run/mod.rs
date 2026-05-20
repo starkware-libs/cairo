@@ -362,6 +362,7 @@ mod gas_costs {
     pub const KECCAK: usize = 0;
     pub const KECCAK_ROUND_COST: usize = 180000;
     pub const SHA256_PROCESS_BLOCK: usize = 1852 * STEP + 65 * RANGE_CHECK + 1115 * BITWISE;
+    pub const SHA512_PROCESS_BLOCK: usize = 4733 * STEP + 65 * RANGE_CHECK + 3320 * BITWISE;
     pub const LIBRARY_CALL: usize = CALL_CONTRACT;
     pub const REPLACE_CLASS: usize = 50 * STEP;
     pub const SECP256K1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
@@ -741,6 +742,15 @@ impl CairoHintProcessor<'_> {
             }),
             "Sha256ProcessBlock" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 sha_256_process_block(
+                    gas_counter,
+                    system_buffer.next_fixed_size_arr_pointer(8)?,
+                    system_buffer.next_fixed_size_arr_pointer(16)?,
+                    exec_scopes,
+                    system_buffer,
+                )
+            }),
+            "Sha512ProcessBlock" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                sha_512_process_block(
                     gas_counter,
                     system_buffer.next_fixed_size_arr_pointer(8)?,
                     system_buffer.next_fixed_size_arr_pointer(16)?,
@@ -1469,6 +1479,26 @@ fn sha_256_process_block(
     let mut state_as_words =
         prev_state.iter().map(|v| v.to_u32().unwrap()).collect_array().unwrap();
     sha2::block_api::compress256(&mut state_as_words, &[data_as_bytes]);
+    let next_state_ptr = alloc_memory(exec_scopes, vm.vm(), 8)?;
+    let mut buff: MemBuffer<'_> = MemBuffer::new(vm, next_state_ptr);
+    buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
+    Ok(SyscallResult::Success(vec![next_state_ptr.into()]))
+}
+
+/// Executes the `sha512_process_block` syscall.
+fn sha_512_process_block(
+    gas_counter: &mut usize,
+    prev_state: Vec<Felt252>,
+    data: Vec<Felt252>,
+    exec_scopes: &mut ExecutionScopes,
+    vm: &mut dyn VMWrapper,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, SHA512_PROCESS_BLOCK);
+    let data_as_bytes: [u8; 128] =
+        data.iter().flat_map(|v| v.to_u64().unwrap().to_be_bytes()).collect_array().unwrap();
+    let mut state_as_words: [u64; 8] =
+        prev_state.iter().map(|v| v.to_u64().unwrap()).collect_array().unwrap();
+    sha2::block_api::compress512(&mut state_as_words, &[data_as_bytes]);
     let next_state_ptr = alloc_memory(exec_scopes, vm.vm(), 8)?;
     let mut buff: MemBuffer<'_> = MemBuffer::new(vm, next_state_ptr);
     buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
