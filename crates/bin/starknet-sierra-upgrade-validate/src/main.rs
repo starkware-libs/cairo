@@ -1,7 +1,7 @@
 use std::fmt::Write;
 use std::io::{BufReader, Read, Seek};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 
 use anyhow::Context;
 use cairo_lang_starknet_classes::allowed_libfuncs::{AllowedLibfuncsError, ListSelector};
@@ -11,13 +11,21 @@ use cairo_lang_starknet_classes::casm_contract_class::{
 use cairo_lang_starknet_classes::compiler_version::VersionId;
 use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_utils::bigint::BigUintAsHex;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use num_bigint::BigUint;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 const NUM_OF_PROCESSORS: usize = 32;
+const MAX_RETRIEVAL_ERRORS_TO_LOG: u64 = 20;
+
+#[derive(Debug, Clone, Copy, ValueEnum, Default, PartialEq, Eq)]
+enum FullnodeFailurePolicy {
+    #[default]
+    Continue,
+    FailFast,
+}
 
 /// Runs validation on existing contract classes to make sure they are still valid and
 /// compilable.
@@ -63,6 +71,9 @@ struct Cli {
     /// The output file to write the Sierra classes into.
     #[arg(long)]
     class_info_output_file: Option<String>,
+    /// How to handle fullnode retrieval failures.
+    #[arg(long, value_enum, default_value_t = FullnodeFailurePolicy::Continue, requires = "fullnode_url")]
+    fullnode_failure_policy: FullnodeFailurePolicy,
 }
 
 #[derive(Parser, Debug)]
@@ -162,6 +173,7 @@ async fn main() -> anyhow::Result<()> {
         override_version,
         max_bytecode_size: args.max_bytecode_size,
     });
+    let mut retrieval_control: Option<Arc<RetrievalControl>> = None;
 
     // If fullnode_url is provided, we retrieve the contract class info from the fullnode.
     // Otherwise, we read the contract class info from the input files.
@@ -169,6 +181,8 @@ async fn main() -> anyhow::Result<()> {
         let client = FullNodeClient::new(fullnode_url.clone());
         let max_end_block = client.post::<_, u64>("starknet_blockNumber", ()).await? + 1;
         eprintln!("Latest block #{max_end_block}.");
+        let control = Arc::new(RetrievalControl::new(args.fullnode_failure_policy));
+        retrieval_control = Some(control.clone());
         let fullnode_args = args.fullnode_args.unwrap();
         let (start_block, end_block) = if let Some(last_n_blocks) = fullnode_args.last_n_blocks {
             let end_block = max_end_block;
@@ -201,8 +215,9 @@ async fn main() -> anyhow::Result<()> {
             class_hashes_tx,
             reader_bar.clone(),
             classes_bar.clone(),
+            control.clone(),
         );
-        spawn_classes_from_class_hashes(&client, class_hashes_rx, classes_tx);
+        spawn_classes_from_class_hashes(&client, class_hashes_rx, classes_tx, control);
     } else {
         spawn_input_file_readers(
             args.input_files,
@@ -214,7 +229,7 @@ async fn main() -> anyhow::Result<()> {
 
     // If class_info_output_file is provided, dump all contract class infos into the file.
     // Otherwise, generate a report for the classes analysis.
-    if let Some(class_info_output_file) = args.class_info_output_file {
+    let run_result = if let Some(class_info_output_file) = args.class_info_output_file {
         dump_class_infos_into_json(classes_rx, classes_bar, &class_info_output_file).await
     } else {
         let (results_tx, results_rx) = async_channel::bounded(128);
@@ -229,7 +244,15 @@ async fn main() -> anyhow::Result<()> {
         reader_bar.finish_and_clear();
         classes_bar.finish_and_clear();
         analyze_report(report)
+    };
+
+    if let Some(control) = retrieval_control {
+        control.print_summary();
+        if let Some(err) = control.terminal_error() {
+            return Err(err);
+        }
     }
+    run_result
 }
 
 /// Returns a progress style with the given name.
@@ -496,6 +519,138 @@ pub struct ClassHashes {
     pub compiled_class_hash: BigUintAsHex,
 }
 
+struct RetrievalControl {
+    failure_policy: FullnodeFailurePolicy,
+    abort_requested: AtomicBool,
+    block_requests: AtomicU64,
+    block_failures: AtomicU64,
+    class_requests: AtomicU64,
+    class_failures: AtomicU64,
+    declared_class_hashes: AtomicU64,
+    retrieved_classes: AtomicU64,
+    logged_errors: AtomicU64,
+    first_error: Mutex<Option<String>>,
+}
+impl RetrievalControl {
+    fn new(failure_policy: FullnodeFailurePolicy) -> Self {
+        Self {
+            failure_policy,
+            abort_requested: AtomicBool::new(false),
+            block_requests: AtomicU64::new(0),
+            block_failures: AtomicU64::new(0),
+            class_requests: AtomicU64::new(0),
+            class_failures: AtomicU64::new(0),
+            declared_class_hashes: AtomicU64::new(0),
+            retrieved_classes: AtomicU64::new(0),
+            logged_errors: AtomicU64::new(0),
+            first_error: Mutex::new(None),
+        }
+    }
+
+    fn should_abort(&self) -> bool {
+        self.abort_requested.load(Ordering::Relaxed)
+    }
+
+    fn record_block_success(&self, declared_classes: usize) {
+        self.block_requests.fetch_add(1, Ordering::Relaxed);
+        self.declared_class_hashes.fetch_add(declared_classes as u64, Ordering::Relaxed);
+    }
+
+    fn record_block_failure(&self, block_number: u64, err: &anyhow::Error) {
+        self.block_requests.fetch_add(1, Ordering::Relaxed);
+        self.block_failures.fetch_add(1, Ordering::Relaxed);
+        let msg = format!("Failed to retrieve state update for block {block_number}: {err:#}");
+        self.log_error(msg.clone());
+        if self.failure_policy == FullnodeFailurePolicy::FailFast {
+            self.request_abort(msg);
+        }
+    }
+
+    fn record_class_success(&self) {
+        self.retrieved_classes.fetch_add(1, Ordering::Relaxed);
+    }
+
+    fn record_class_failure(&self, class_hash: &BigUintAsHex, err: &anyhow::Error) {
+        self.class_failures.fetch_add(1, Ordering::Relaxed);
+        let msg =
+            format!("Failed to retrieve class {:#x} from fullnode: {err:#}", class_hash.value);
+        self.log_error(msg.clone());
+        if self.failure_policy == FullnodeFailurePolicy::FailFast {
+            self.request_abort(msg);
+        }
+    }
+
+    fn record_class_send_failure(&self, class_hash: &BigUintAsHex, err: &str) {
+        let msg = format!("Failed to enqueue class {:#x}: {err}", class_hash.value);
+        self.request_abort(msg);
+    }
+
+    fn record_class_hash_send_failure(&self, class_hash: &BigUintAsHex, err: &str) {
+        let msg = format!("Failed to enqueue class hash {:#x}: {err}", class_hash.value);
+        self.request_abort(msg);
+    }
+
+    fn request_abort(&self, reason: String) {
+        if !self.abort_requested.swap(true, Ordering::SeqCst)
+            && let Ok(mut first_error) = self.first_error.lock()
+            && first_error.is_none()
+        {
+            *first_error = Some(reason.clone());
+        }
+        self.log_error(reason);
+    }
+
+    fn log_error(&self, msg: String) {
+        let logged = self.logged_errors.fetch_add(1, Ordering::Relaxed);
+        if logged < MAX_RETRIEVAL_ERRORS_TO_LOG {
+            eprintln!("{msg}");
+        } else if logged == MAX_RETRIEVAL_ERRORS_TO_LOG {
+            eprintln!(
+                "Too many fullnode retrieval errors; suppressing additional logs after {}.",
+                MAX_RETRIEVAL_ERRORS_TO_LOG
+            );
+        }
+    }
+
+    fn has_failures(&self) -> bool {
+        self.block_failures.load(Ordering::Relaxed) > 0
+            || self.class_failures.load(Ordering::Relaxed) > 0
+    }
+
+    fn print_summary(&self) {
+        let block_requests = self.block_requests.load(Ordering::Relaxed);
+        let block_failures = self.block_failures.load(Ordering::Relaxed);
+        let class_requests = self.class_requests.load(Ordering::Relaxed);
+        let class_failures = self.class_failures.load(Ordering::Relaxed);
+        let declared_class_hashes = self.declared_class_hashes.load(Ordering::Relaxed);
+        let retrieved_classes = self.retrieved_classes.load(Ordering::Relaxed);
+        println!(
+            "Fullnode retrieval summary: blocks_requested={block_requests}, \
+             block_failures={block_failures}, declared_class_hashes={declared_class_hashes}, \
+             class_requests={class_requests}, class_failures={class_failures}, \
+             classes_retrieved={retrieved_classes}"
+        );
+        if self.has_failures() {
+            eprintln!(
+                "Warning: fullnode retrieval had failures; validation result may be incomplete."
+            );
+        }
+    }
+
+    fn terminal_error(&self) -> Option<anyhow::Error> {
+        if !self.should_abort() {
+            return None;
+        }
+        let reason = self
+            .first_error
+            .lock()
+            .ok()
+            .and_then(|reason| reason.clone())
+            .unwrap_or_else(|| "unknown reason".to_string());
+        Some(anyhow::anyhow!("Fullnode retrieval aborted: {reason}"))
+    }
+}
+
 /// Given a block number, retrieves the class hashes and compiled class hashes from the state
 /// update.
 async fn retrieve_block_class_hashes(
@@ -503,17 +658,37 @@ async fn retrieve_block_class_hashes(
     block_number: u64,
     class_hashes_tx: &async_channel::Sender<ClassHashes>,
     class_hashes_bar: &ProgressBar,
+    control: &RetrievalControl,
 ) {
-    if let Ok(response) = client
+    if control.should_abort() {
+        return;
+    }
+    match client
         .post::<_, GetStateUpdateResponse>(
             "starknet_getStateUpdate",
             GetStateUpdateRequest { block_id: BlockId { block_number } },
         )
         .await
     {
-        class_hashes_bar.inc_length(response.state_diff.declared_classes.len() as u64);
-        for class_hash in response.state_diff.declared_classes {
-            class_hashes_tx.send(class_hash).await.unwrap();
+        Ok(response) => {
+            let declared_classes = response.state_diff.declared_classes.len();
+            control.record_block_success(declared_classes);
+            class_hashes_bar.inc_length(declared_classes as u64);
+            for class_hash in response.state_diff.declared_classes {
+                if control.should_abort() {
+                    break;
+                }
+                if let Err(err) = class_hashes_tx.send(class_hash.clone()).await {
+                    control.record_class_hash_send_failure(
+                        &class_hash.class_hash,
+                        &format!("{err:#}"),
+                    );
+                    break;
+                }
+            }
+        }
+        Err(err) => {
+            control.record_block_failure(block_number, &err);
         }
     }
 }
@@ -526,6 +701,7 @@ fn spawn_block_class_hashes_retrievers(
     class_hashes_tx: async_channel::Sender<ClassHashes>,
     blocks_bar: ProgressBar,
     class_hashes_bar: ProgressBar,
+    control: Arc<RetrievalControl>,
 ) {
     blocks_bar.set_length(end_block - start_block);
     let block_number_global = Arc::new(AtomicU64::new(start_block));
@@ -535,8 +711,12 @@ fn spawn_block_class_hashes_retrievers(
         let client = client.clone();
         let blocks_bar = blocks_bar.clone();
         let class_hashes_bar = class_hashes_bar.clone();
+        let control = control.clone();
         tokio::spawn(async move {
             loop {
+                if control.should_abort() {
+                    break;
+                }
                 let block_number = block_number_global.fetch_add(1, Ordering::SeqCst);
                 if block_number >= end_block {
                     break;
@@ -546,6 +726,7 @@ fn spawn_block_class_hashes_retrievers(
                     block_number,
                     &class_hashes_tx,
                     &class_hashes_bar,
+                    &control,
                 )
                 .await;
                 blocks_bar.inc(1);
@@ -560,8 +741,13 @@ async fn retrieve_class_from_class_hash(
     client: &FullNodeClient,
     class_hashes: ClassHashes,
     classes_tx: &async_channel::Sender<ContractClassInfo>,
+    control: &RetrievalControl,
 ) {
-    if let Ok(response) = client
+    if control.should_abort() {
+        return;
+    }
+    control.class_requests.fetch_add(1, Ordering::Relaxed);
+    match client
         .post::<_, GetStateClassResponse>(
             "starknet_getClass",
             GetStateClassRequest {
@@ -571,15 +757,24 @@ async fn retrieve_class_from_class_hash(
         )
         .await
     {
-        classes_tx
-            .send(ContractClassInfo {
-                compiled_class_hash: class_hashes.compiled_class_hash,
-                class_hash: class_hashes.class_hash,
-                sierra_program: response.sierra_program,
-                entry_points_by_type: response.entry_points_by_type,
-            })
-            .await
-            .unwrap();
+        Ok(response) => {
+            if let Err(err) = classes_tx
+                .send(ContractClassInfo {
+                    compiled_class_hash: class_hashes.compiled_class_hash,
+                    class_hash: class_hashes.class_hash.clone(),
+                    sierra_program: response.sierra_program,
+                    entry_points_by_type: response.entry_points_by_type,
+                })
+                .await
+            {
+                control.record_class_send_failure(&class_hashes.class_hash, &format!("{err:#}"));
+                return;
+            }
+            control.record_class_success();
+        }
+        Err(err) => {
+            control.record_class_failure(&class_hashes.class_hash, &err);
+        }
     }
 }
 
@@ -588,14 +783,19 @@ fn spawn_classes_from_class_hashes(
     client: &FullNodeClient,
     class_hashes_rx: async_channel::Receiver<ClassHashes>,
     classes_tx: async_channel::Sender<ContractClassInfo>,
+    control: Arc<RetrievalControl>,
 ) {
     for _ in 0..NUM_OF_PROCESSORS {
         let class_hashes_rx = class_hashes_rx.clone();
         let classes_tx = classes_tx.clone();
         let client = client.clone();
+        let control = control.clone();
         tokio::spawn(async move {
             while let Ok(class_hashes) = class_hashes_rx.recv().await {
-                retrieve_class_from_class_hash(&client, class_hashes, &classes_tx).await;
+                if control.should_abort() {
+                    break;
+                }
+                retrieve_class_from_class_hash(&client, class_hashes, &classes_tx, &control).await;
             }
         });
     }
@@ -650,14 +850,32 @@ impl FullNodeClient {
             .send()
             .await?;
         if !res.status().is_success() {
-            return Err(anyhow::anyhow!("Request failed."));
+            return Err(anyhow::anyhow!(
+                "Request for `{method}` failed with status {}.",
+                res.status()
+            ));
         }
-        Ok(res.json::<RpcResponse<Response>>().await?.result)
+        let rpc_response = res.json::<RpcResponse<Response>>().await?;
+        if let Some(error) = rpc_response.error {
+            return Err(anyhow::anyhow!(
+                "RPC method `{method}` failed with code {}: {}",
+                error.code,
+                error.message
+            ));
+        }
+        rpc_response.result.with_context(|| format!("RPC method `{method}` returned no result."))
     }
 }
 
 /// The response from the fullnode rpc.
 #[derive(Deserialize, Debug)]
 struct RpcResponse<T> {
-    pub result: T,
+    pub result: Option<T>,
+    pub error: Option<RpcError>,
+}
+
+#[derive(Deserialize, Debug)]
+struct RpcError {
+    pub code: i64,
+    pub message: String,
 }
