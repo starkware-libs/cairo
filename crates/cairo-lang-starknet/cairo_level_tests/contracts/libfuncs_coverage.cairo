@@ -35,6 +35,7 @@ enum Libfuncs {
     Conversions: ConversionsLibfuncs,
     Ec: EcLibfuncs,
     Sha256: ByteArray,
+    Sha512: ByteArray,
     Blake2s: (Box<[u32; 8]>, u32, Box<[u32; 16]>),
     ArrayU128: ArrayLibfuncs<u128>,
     ArrayU256: ArrayLibfuncs<u256>,
@@ -226,6 +227,7 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Conversions(libfuncs) => conversions_libfuncs(libfuncs),
         Libfuncs::Ec(libfuncs) => ec_libfuncs(libfuncs),
         Libfuncs::Sha256(input) => use_and_panic(core::sha256::compute_sha256_byte_array(@input)),
+        Libfuncs::Sha512(input) => use_and_panic(core::sha512::compute_sha512_byte_array(@input)),
         Libfuncs::Blake2s((
             state, byte_count, msg,
         )) => use_and_panic(
