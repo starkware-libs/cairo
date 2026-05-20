@@ -686,6 +686,61 @@ note: In `test::my_unwrap::<core::starknet::class_hash::ClassHash>`:
 
 //! > ==========================================================================
 
+//! > Starknet downcast at the type's upper boundary.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+// `2 ** 251` is one past the valid range of `ClassHash`/`ContractAddress`.
+const ADDRESS: starknet::ContractAddress = my_unwrap(
+    0x800000000000000000000000000000000000000000000000000000000000000.try_into(),
+);
+const CLASS_HASH: starknet::ClassHash = my_unwrap(
+    0x800000000000000000000000000000000000000000000000000000000000000.try_into(),
+);
+
+// To avoid getting corelib filesystem paths.
+const fn my_unwrap<T>(v: Option<T>) -> T {
+    match v {
+        Some(v) => v,
+        None => core::panic_with_felt252('bad value'),
+    }
+}
+
+//! > expected_diagnostics
+error[E2130]: Failed to calculate constant.
+ --> lib.cairo:2:44-4:1
+  const ADDRESS: starknet::ContractAddress = my_unwrap(
+ ____________________________________________^
+|     0x800000000000000000000000000000000000000000000000000000000000000.try_into(),
+| );
+|_^
+note: In `test::my_unwrap::<core::starknet::contract_address::ContractAddress>`:
+  --> lib.cairo:13:17
+        None => core::panic_with_felt252('bad value'),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2130]: Failed to calculate constant.
+ --> lib.cairo:5:41-7:1
+  const CLASS_HASH: starknet::ClassHash = my_unwrap(
+ _________________________________________^
+|     0x800000000000000000000000000000000000000000000000000000000000000.try_into(),
+| );
+|_^
+note: In `test::my_unwrap::<core::starknet::class_hash::ClassHash>`:
+  --> lib.cairo:13:17
+        None => core::panic_with_felt252('bad value'),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Multiple `if let` conditions.
 
 //! > test_runner_name
