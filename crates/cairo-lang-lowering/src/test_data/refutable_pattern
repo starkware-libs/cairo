@@ -107,3 +107,31 @@ error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are o
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Refutable fixed-size-array pattern on a Span value in `let`.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let arr: Array<u32> = array![100, 200, 300];
+    let s: Span<u32> = arr.span();
+    let [_a, _b, _c] = s;
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
+ --> lib.cairo:4:9
+    let [_a, _b, _c] = s;
+        ^^^^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
