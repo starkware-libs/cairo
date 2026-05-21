@@ -83,7 +83,7 @@
 use core::ops::Range;
 use super::{
     IntoIterRange, Mutable, StorageAsPath, StorageAsPointer, StoragePath,
-    StoragePathMutableConversion, StoragePathTrait, StoragePathUpdateTrait, StoragePointer0Offset,
+    StoragePathTrait, StoragePathUpdateTrait, StoragePointer0Offset,
     StoragePointerReadAccess, StoragePointerWriteAccess,
 };
 
@@ -282,27 +282,6 @@ pub trait MutableVecTrait<T> {
     /// ```
     fn at(self: T, index: u64) -> StoragePath<Mutable<Self::ElementType>>;
 
-    /// Returns the number of elements in the vector.
-    ///
-    /// The length is stored at the vector's base storage address and is automatically
-    /// updated when elements are appended.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use starknet::storage::{Vec, MutableVecTrait};
-    ///
-    /// #[storage]
-    /// struct Storage {
-    ///     numbers: Vec<u256>,
-    /// }
-    ///
-    /// fn is_empty(self: @ContractState) -> bool {
-    ///     self.numbers.len() == 0
-    /// }
-    /// ```
-    fn len(self: T) -> u64;
-
     /// Returns a mutable storage path to write a new element at the end of the vector.
     ///
     /// This operation:
@@ -447,10 +426,6 @@ impl MutableVecImpl<T> of MutableVecTrait<StoragePath<Mutable<Vec<T>>>> {
         self.update(index)
     }
 
-    fn len(self: StoragePath<Mutable<Vec<T>>>) -> u64 {
-        self.as_non_mut().len()
-    }
-
     fn allocate(self: StoragePath<Mutable<Vec<T>>>) -> StoragePath<Mutable<T>> {
         let vec_len = self.len();
         self.as_ptr().write(vec_len + 1);
@@ -501,10 +476,6 @@ impl PathableMutableVecImpl<
 
     fn at(self: T, index: u64) -> StoragePath<Mutable<VecTraitImpl::ElementType>> {
         self.as_path().at(index)
-    }
-
-    fn len(self: T) -> u64 {
-        self.as_path().len()
     }
 
     fn allocate(self: T) -> StoragePath<Mutable<VecTraitImpl::ElementType>> {
