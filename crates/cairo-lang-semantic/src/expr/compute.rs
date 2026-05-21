@@ -55,7 +55,7 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable, PatternWrappingInfo,
 };
 use crate::corelib::{
-    self, CorelibSemantic, core_binary_operator, core_bool_ty, core_unary_operator,
+    self, CorelibSemantic, LiteralError, core_binary_operator, core_bool_ty, core_unary_operator,
     false_literal_expr, get_usize_ty, never_ty, true_literal_expr, try_extract_box_inner_type,
     try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, validate_literal,
 };
@@ -93,9 +93,9 @@ use crate::resolve::{
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    ClosureTypeLongId, ConcreteTypeId, add_type_based_diagnostics, are_coupons_enabled,
-    extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex, resolve_type_ex,
-    verify_fixed_size_array_size, wrap_in_snapshots,
+    ClosureTypeLongId, ConcreteTypeId, TypesSemantic, add_type_based_diagnostics,
+    are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex,
+    resolve_type_ex, verify_fixed_size_array_size, wrap_in_snapshots,
 };
 use crate::usage::Usages;
 use crate::{
@@ -3681,6 +3681,21 @@ fn new_literal_expr<'db>(
         }
         let ty = try_get_core_ty_by_name(ctx.db, ty_str, vec![])
             .map_err(|err| ctx.diagnostics.report(stable_ptr.untyped(), err))?;
+        // Numeric suffixes cannot provide generic arguments, so reject generic core types before
+        // later semantic phases try to substitute their missing arguments.
+        if let TypeLongId::Concrete(concrete_ty) = ty.long(ctx.db) {
+            let generic_ty = concrete_ty.generic_type(ctx.db);
+            if ctx.db.generic_type_generic_params(generic_ty)?.len()
+                != concrete_ty.generic_args(ctx.db).len()
+            {
+                return Err(ctx.diagnostics.report(
+                    stable_ptr,
+                    SemanticDiagnosticKind::LiteralError(
+                        LiteralError::InvalidGenericTypeForLiteral(generic_ty),
+                    ),
+                ));
+            }
+        }
         if let Err(err) = validate_literal(ctx.db, ty, &value) {
             ctx.diagnostics.report(stable_ptr, SemanticDiagnosticKind::LiteralError(err));
         }

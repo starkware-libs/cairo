@@ -19,6 +19,27 @@ error[E2008]: A numeric literal of type core::pedersen::Pedersen cannot be creat
 
 //! > ==========================================================================
 
+//! > Numeric literal with a generic core type suffix.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x = 42_Span;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2008]: A numeric literal of type core::array::Span cannot be created.
+ --> lib.cairo:2:14
+    let _x = 42_Span;
+             ^^^^^^^
+
+//! > ==========================================================================
+
 //! > Numeric literal with a non-type suffix.
 
 //! > test_runner_name

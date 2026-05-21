@@ -813,6 +813,7 @@ pub fn numeric_upcastable_to_felt252(db: &dyn Database, ty: TypeId<'_>) -> bool 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum LiteralError<'db> {
     InvalidTypeForLiteral(TypeId<'db>),
+    InvalidGenericTypeForLiteral(GenericTypeId<'db>),
     OutOfRange(TypeId<'db>),
 }
 impl<'db> LiteralError<'db> {
@@ -822,6 +823,9 @@ impl<'db> LiteralError<'db> {
                 format!("The value does not fit within the range of type {}.", ty.format(db))
             }
             Self::InvalidTypeForLiteral(ty) => {
+                format!("A numeric literal of type {} cannot be created.", ty.format(db))
+            }
+            Self::InvalidGenericTypeForLiteral(ty) => {
                 format!("A numeric literal of type {} cannot be created.", ty.format(db))
             }
         }
