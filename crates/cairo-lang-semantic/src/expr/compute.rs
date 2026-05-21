@@ -55,7 +55,7 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable, PatternWrappingInfo,
 };
 use crate::corelib::{
-    self, CorelibSemantic, core_binary_operator, core_bool_ty, core_unary_operator,
+    self, CorelibSemantic, LiteralError, core_binary_operator, core_bool_ty, core_unary_operator,
     false_literal_expr, get_usize_ty, never_ty, true_literal_expr, try_extract_box_inner_type,
     try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, validate_literal,
 };
@@ -3682,7 +3682,14 @@ fn new_literal_expr<'db>(
         let ty = try_get_core_ty_by_name(ctx.db, ty_str, vec![])
             .map_err(|err| ctx.diagnostics.report(stable_ptr.untyped(), err))?;
         if let Err(err) = validate_literal(ctx.db, ty, &value) {
-            ctx.diagnostics.report(stable_ptr, SemanticDiagnosticKind::LiteralError(err));
+            let is_invalid_type = matches!(err, LiteralError::InvalidTypeForLiteral(_));
+            let diag =
+                ctx.diagnostics.report(stable_ptr, SemanticDiagnosticKind::LiteralError(err));
+            // The type is malformed (generic type with zero args); returning Ok would ICE
+            // downstream queries via GenericSubstitution::new zip_eq mismatch.
+            if is_invalid_type {
+                return Err(diag);
+            }
         }
         return Ok(ExprNumericLiteral { value, ty, stable_ptr });
     };
