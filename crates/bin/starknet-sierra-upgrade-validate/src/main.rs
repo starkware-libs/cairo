@@ -240,10 +240,12 @@ async fn main() -> anyhow::Result<()> {
 
         spawn_class_processors(classes_rx, results_tx, config);
 
-        let report = results_handler.await.with_context(|| "Failed to collect results.")?;
         reader_bar.finish_and_clear();
         classes_bar.finish_and_clear();
-        analyze_report(report)
+        match results_handler.await.with_context(|| "Failed to collect results.") {
+            Ok(report) => analyze_report(report),
+            Err(err) => Err(err),
+        }
     };
 
     if let Some(control) = retrieval_control {
@@ -560,10 +562,11 @@ impl RetrievalControl {
         self.block_requests.fetch_add(1, Ordering::Relaxed);
         self.block_failures.fetch_add(1, Ordering::Relaxed);
         let msg = format!("Failed to retrieve state update for block {block_number}: {err:#}");
-        self.log_error(msg.clone());
-        if self.failure_policy == FullnodeFailurePolicy::FailFast {
-            self.request_abort(msg);
-        }
+        self.report_retrieval_failure(msg);
+    }
+
+    fn record_class_request(&self) {
+        self.class_requests.fetch_add(1, Ordering::Relaxed);
     }
 
     fn record_class_success(&self) {
@@ -574,9 +577,14 @@ impl RetrievalControl {
         self.class_failures.fetch_add(1, Ordering::Relaxed);
         let msg =
             format!("Failed to retrieve class {:#x} from fullnode: {err:#}", class_hash.value);
-        self.log_error(msg.clone());
+        self.report_retrieval_failure(msg);
+    }
+
+    fn report_retrieval_failure(&self, msg: String) {
         if self.failure_policy == FullnodeFailurePolicy::FailFast {
             self.request_abort(msg);
+        } else {
+            self.log_error(msg);
         }
     }
 
@@ -746,7 +754,7 @@ async fn retrieve_class_from_class_hash(
     if control.should_abort() {
         return;
     }
-    control.class_requests.fetch_add(1, Ordering::Relaxed);
+    control.record_class_request();
     match client
         .post::<_, GetStateClassResponse>(
             "starknet_getClass",
