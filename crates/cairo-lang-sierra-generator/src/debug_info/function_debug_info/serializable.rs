@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 
 use cairo_lang_sierra::debug_info::Annotations;
+use cairo_lang_sierra::ids::VarId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
 
@@ -30,10 +31,9 @@ pub struct SerializableFunctionDebugInfo {
     pub function_file_path: SourceFileFullPath,
     /// Span of the function in the user file it comes from.
     pub function_code_span: SourceCodeSpan,
-    /// Mapping from a sierra variable to a cairo variable (its name and definition span).
-    /// The sierra variable value corresponds to the cairo variable value at some point during
-    /// execution of the function code.
-    pub sierra_to_cairo_variable: HashMap<SierraVarId, (CairoVariableName, SourceCodeSpan)>,
+    /// Mapping from a Sierra variable to a all Cairo variables (their names and definition spans)
+    /// ever bound to this variable.
+    pub sierra_to_cairo_variables: HashMap<SierraVarId, Vec<(CairoVariableName, SourceCodeSpan)>>,
 }
 
 /// An id of a sierra function - equivalent of `id` field of [`cairo_lang_sierra::ids::FunctionId`].
@@ -43,7 +43,13 @@ pub struct SierraFunctionId(pub u64);
 
 /// An id of a sierra variable - equivalent of `id` field of [`cairo_lang_sierra::ids::VarId`].
 /// Used to make serialization of a hashmap with id as a key possible.
-#[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct SierraVarId(pub u64);
+
+impl From<VarId> for SierraVarId {
+    fn from(value: VarId) -> Self {
+        Self(value.id)
+    }
+}
 
 pub type CairoVariableName = String;

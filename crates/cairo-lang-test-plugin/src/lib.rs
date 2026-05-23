@@ -193,7 +193,11 @@ pub fn compile_test_prepared_db<'db>(
 
     if tests_compilation_config.add_functions_debug_info {
         annotations.extend(Annotations::from(
-            debug_info.functions_info.extract_serializable_debug_info(db),
+            debug_info.functions_info.extract_serializable_debug_info(
+                db,
+                &sierra_program,
+                &debug_info.statements_locations,
+            ),
         ))
     }
 
