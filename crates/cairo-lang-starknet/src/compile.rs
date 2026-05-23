@@ -181,7 +181,11 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
 
     if compiler_config.add_functions_debug_info {
         annotations.extend(Annotations::from(
-            debug_info.functions_info.extract_serializable_debug_info(db),
+            debug_info.functions_info.extract_serializable_debug_info(
+                db,
+                &sierra_program,
+                &debug_info.statements_locations,
+            ),
         ))
     }
 
