@@ -1,5 +1,7 @@
 #[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
+use std::iter::{self, zip};
+use std::ops::Range;
 
 use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -11,7 +13,6 @@ use cairo_lang_defs::ids::{
     TraitItemId, TraitLongId, TraitTypeLongId, UseLongId,
 };
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_lowering::Location;
 use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_semantic::Expr;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -22,9 +23,14 @@ use cairo_lang_semantic::items::function_with_body::{
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::ResolvedGenericItem;
-use cairo_lang_sierra::ids::{FunctionId, VarId};
+use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcrete};
+use cairo_lang_sierra::extensions::lib_func::ConcreteLibfunc;
+use cairo_lang_sierra::extensions::starknet::StarknetTypeConcrete;
+use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, VarId};
+use cairo_lang_sierra::program::{self, StatementIdx};
+use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_syntax::node::ast::{
-    BinaryOperator, ExprBinary, ParamList, StatementLet, TerminalIdentifier,
+    BinaryOperator, ExprBinary, FunctionSignature, ParamList, StatementLet, TerminalIdentifier,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -34,13 +40,16 @@ use itertools::Itertools;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use salsa::Database;
 
+use crate::canonical_id_replacer::CanonicalReplacer;
 use crate::debug_info::function_debug_info::serializable::{
     CairoVariableName, SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
     SierraFunctionId, SierraVarId,
 };
+use crate::debug_info::statements_locations::StatementsLocations;
 use crate::debug_info::{
     SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, maybe_code_location,
 };
+use crate::replace_ids::SierraIdReplacer;
 
 pub mod serializable;
 
@@ -53,22 +62,53 @@ impl<'db> AllFunctionsDebugInfo<'db> {
         Self(value)
     }
 
+    /// Returns a corresponding [`SerializableAllFunctionsDebugInfo`].
     pub fn extract_serializable_debug_info(
         &self,
         db: &'db dyn CloneableDatabase,
+        program: &program::Program,
+        statements_locations: &StatementsLocations<'db>,
     ) -> SerializableAllFunctionsDebugInfo {
-        SerializableAllFunctionsDebugInfo(
-            self.0
-                .iter()
-                .collect_vec()
-                .into_par_iter()
-                .map_with(db.dyn_clone(), |db, (function_id, function_debug_info)| {
+        let functions_statement_ranges = collect_functions_with_statement_ranges(program);
+        let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)
+            .expect("sierra program produced by sierra-gen must be valid");
+
+        let serializable_debug_info = self
+            .0
+            .iter()
+            .map(|(function_id, function_debug_info)| {
+                let (function, statement_range) = &functions_statement_ranges[function_id];
+                (function_id.to_owned(), function_debug_info, function, statement_range.to_owned())
+            })
+            .collect_vec()
+            .into_par_iter()
+            .map_with(
+                db.dyn_clone(),
+                |db, (function_id, function_debug_info, function, statement_range)| {
                     Some((
                         SierraFunctionId(function_id.id),
-                        function_debug_info.extract_serializable_debug_info(db.as_ref())?,
+                        function_debug_info.extract_serializable_debug_info(
+                            db.as_ref(),
+                            function,
+                            &program.statements[statement_range],
+                            statements_locations,
+                            &registry,
+                        )?,
                     ))
-                })
-                .flatten()
+                },
+            )
+            .flatten()
+            .collect();
+
+        SerializableAllFunctionsDebugInfo(serializable_debug_info)
+    }
+
+    /// Replace each function id with canonical ids via [`CanonicalReplacer`].
+    pub fn replace_function_ids(&self, replacer: &CanonicalReplacer) -> Self {
+        Self(
+            self.0
+                .iter()
+                .map(|(id, info)| (replacer.replace_function_id(id), info.clone()))
                 .collect(),
         )
     }
@@ -83,85 +123,106 @@ pub struct FunctionDebugInfo<'db> {
 }
 
 impl<'db> FunctionDebugInfo<'db> {
+    /// Returns a corresponding [`SerializableFunctionDebugInfo`].
     fn extract_serializable_debug_info(
         &self,
         db: &'db dyn Database,
+        program_func: &program::Function,
+        function_statements: &[program::Statement],
+        statements_locations: &StatementsLocations<'db>,
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     ) -> Option<SerializableFunctionDebugInfo> {
         let (function_file_path, function_code_span) = self.extract_location(db)?;
-        let sierra_to_cairo_variable = self.extract_variables_mapping(db);
+        let sierra_to_cairo_variables = self
+            .extract_sierra_to_cairo_variables_map(
+                db,
+                program_func,
+                function_statements,
+                statements_locations,
+                registry,
+            )
+            .unwrap_or_default();
 
         Some(SerializableFunctionDebugInfo {
             function_file_path,
             function_code_span,
-            sierra_to_cairo_variable,
+            sierra_to_cairo_variables,
         })
     }
 
-    /// Extracts mapping from a sierra variable to a cairo variable (its name and definition span).
-    /// The sierra variable value corresponds to the cairo variable value at some point during
-    /// execution of the function code.
+    /// Extracts a mapping from a Sierra variable to all corresponding Cairo variables
+    /// (their names and definition spans). A value of a Sierra variable corresponds to the value
+    /// of each of the collected Cairo variables at some points during the execution.
     #[expect(clippy::disallowed_types)]
-    fn extract_variables_mapping(
+    fn extract_sierra_to_cairo_variables_map(
         &self,
         db: &'db dyn Database,
-    ) -> HashMap<SierraVarId, (CairoVariableName, SourceCodeSpan)> {
-        self.variables_locations
-            .iter()
-            .filter_map(|(sierra_var, code_location)| {
-                // Ignore inline locations for now as this function is supposed to be called only
-                // on when sierra was compiled with inlining set to `avoid`.
-                // TODO(pm): handle them to make sure user function marked #[inline(always)] work.
-                //  https://github.com/software-mansion-labs/cairo-debugger/issues/41
-                let Location {
-                    stable_location: sierra_var_location,
-                    notes: _,
-                    inline_locations: _,
-                } = code_location.long(db);
+        function: &program::Function,
+        function_statements: &[program::Statement],
+        statements_locations: &StatementsLocations<'db>,
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    ) -> Option<HashMap<SierraVarId, Vec<(CairoVariableName, SourceCodeSpan)>>> {
+        let mut bindings: HashMap<SierraVarId, Vec<(CairoVariableName, SourceCodeSpan)>> =
+            HashMap::new();
 
-                let identifier = find_identifier_corresponding_to_assigned_variable(
-                    db,
-                    sierra_var_location.syntax_node(db),
-                )?;
+        if let Some(function_param_variables) =
+            get_function_params_as_cairo_variables(db, self.signature_location)
+        {
+            // Params of a Sierra function may contain builtins, that are not representable
+            // as Cairo variables and thus not included in `function_param_variables`.
+            // Zipping from the end skips the builtins.
+            let params_without_builtins =
+                zip(function.params.iter().rev(), function_param_variables.into_iter().rev());
 
-                let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
+            for (sierra_param, (name, span)) in params_without_builtins {
+                let sierra_var = SierraVarId(sierra_param.id.id);
+                bindings.entry(sierra_var).or_default().push((name, span));
+            }
+        }
 
-                let lookup_items: Vec<_> = identifier
-                    .as_syntax_node()
-                    .ancestors_with_self(db)
-                    .flat_map(|node| lookup_item_from_ast(db, module_id, node).unwrap_or_default())
-                    .collect();
+        for (offset, statement) in function_statements.iter().enumerate() {
+            let statement_idx = StatementIdx(function.entry_point.0 + offset);
+            let program::GenStatement::Invocation(invocation) = statement else {
+                continue;
+            };
 
-                let definition =
-                    try_variable_declaration(db, &identifier, &lookup_items).or_else(|| {
-                        lookup_variable_in_resolved_items(db, &identifier, &lookup_items)
-                    })?;
+            // Ignore inline locations for now as this function is supposed to be called only
+            // on when sierra was compiled with inlining set to `avoid`.
+            // TODO(pm): handle them to make sure user function marked #[inline(always)] work.
+            //  https://github.com/software-mansion-labs/cairo-debugger/issues/41
+            let Some(stable_location) = statements_locations
+                .locations
+                .get(&statement_idx)
+                .and_then(|locs| locs.first().copied())
+            else {
+                continue;
+            };
 
-                let location = match definition {
-                    // Extract only param name.
-                    cairo_lang_defs::ids::VarId::Param(param) => StableLocation::new(
-                        param.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped(),
-                    ),
-                    x => x.stable_location(db),
-                };
-                let user_location = location.span_in_file(db).user_location(db);
+            let Some((name, span)) = find_cairo_variable_in_location(db, stable_location) else {
+                continue;
+            };
 
-                let var_name = user_location
-                    .span
-                    .take(db.file_content(user_location.file_id).unwrap())
-                    .to_string();
+            let libfunc = registry
+                .get_libfunc(&invocation.libfunc_id)
+                .expect("libfunc must be in the registry");
 
-                let position = user_location.span.position_in_file(db, user_location.file_id)?;
-                let source_location = SourceCodeSpan {
-                    start: SourceCodeLocation {
-                        col: position.start.col,
-                        line: position.start.line,
-                    },
-                    end: SourceCodeLocation { col: position.end.col, line: position.end.line },
-                };
+            for (branch_sig, branch) in
+                libfunc.branch_signatures().iter().zip(invocation.branches.iter())
+            {
+                for (output, sierra_var) in branch_sig.vars.iter().zip(branch.results.iter()) {
+                    if is_builtin(registry, &output.ty) {
+                        continue;
+                    }
 
-                Some((SierraVarId(sierra_var.id), (var_name, source_location)))
-            })
-            .collect()
+                    let sierra_var: SierraVarId = sierra_var.clone().into();
+                    // every output SierraVarId is mapped to the same Cairo variable.
+                    // In general it's not correct. The next PR fixes it.
+                    bindings.entry(sierra_var).or_default().push((name.clone(), span.clone()));
+                }
+            }
+        }
+
+        Some(bindings)
     }
 
     /// Extracts the location of the function - path to the user file it comes from and its span.
@@ -181,6 +242,138 @@ impl<'db> FunctionDebugInfo<'db> {
 
         Some((function_file_path, function_code_span))
     }
+}
+
+/// Returns a map of all functions in [`program::Program`], with corresponding ranges of
+/// their [`StatementIdx`]. This function relies on a contract of contiguous range of statement
+/// indexes throughout the whole program.
+#[expect(clippy::disallowed_types)]
+fn collect_functions_with_statement_ranges(
+    program: &program::Program,
+) -> HashMap<&FunctionId, (&program::Function, Range<usize>)> {
+    let function_ids_by_entrypoints = program
+        .funcs
+        .iter()
+        .sorted_by_key(|function| function.entry_point)
+        .map(Option::Some)
+        .chain(iter::once(None));
+
+    function_ids_by_entrypoints
+        .tuple_windows()
+        .map(move |(function1, function2)| match (function1, function2) {
+            (Some(function1), Some(function2)) => {
+                let range = function1.entry_point.0..function2.entry_point.0;
+                (&function1.id, (function1, range))
+            }
+            (Some(function), None) => {
+                let range = function.entry_point.0..program.statements.len();
+                (&function.id, (function, range))
+            }
+            _ => unreachable!("first item is guaranteed to be Some"),
+        })
+        .collect()
+}
+
+/// Checks whether `ty` is a builtin.
+fn is_builtin(registry: &ProgramRegistry<CoreType, CoreLibfunc>, ty: &ConcreteTypeId) -> bool {
+    matches!(
+        registry.get_type(ty),
+        Ok(CoreTypeConcrete::RangeCheck(_)
+            | CoreTypeConcrete::RangeCheck96(_)
+            | CoreTypeConcrete::GasBuiltin(_)
+            | CoreTypeConcrete::BuiltinCosts(_)
+            | CoreTypeConcrete::Bitwise(_)
+            | CoreTypeConcrete::Pedersen(_)
+            | CoreTypeConcrete::Poseidon(_)
+            | CoreTypeConcrete::EcOp(_)
+            | CoreTypeConcrete::SegmentArena(_)
+            | CoreTypeConcrete::Starknet(StarknetTypeConcrete::System(_))
+            | CoreTypeConcrete::Coupon(_))
+    )
+}
+
+/// Returns function params (only real ones, without implicits) as Cairo variables
+/// in a form `(name, definition_span)`, in declaration order.
+///
+/// Returns `None` if `signature_location` does not point to [`FunctionSignature`],
+/// which happens for `loop`, `while` and `for` loops that get transformed
+/// to recursive functions.
+fn get_function_params_as_cairo_variables<'db>(
+    db: &'db dyn Database,
+    signature_location: LocationId<'db>,
+) -> Option<Vec<(CairoVariableName, SourceCodeSpan)>> {
+    // Sometimes signature_location points to a loop, not a real signature,
+    // since loops are transformed to recursive functions.
+    let param_list = signature_location
+        .long(db)
+        .stable_location
+        .syntax_node(db)
+        .cast::<FunctionSignature<'_>>(db)?
+        .parameters(db)
+        .elements(db);
+
+    Some(
+        param_list
+            .filter_map(|param| {
+                let name_identifier = param.name(db);
+                let name_node = name_identifier.as_syntax_node();
+                let name = name_identifier.text(db).to_string(db);
+
+                let stable_location = StableLocation::new(name_node.stable_ptr(db));
+                let user_location = stable_location.span_in_file(db).user_location(db);
+                let position = user_location.span.position_in_file(db, user_location.file_id)?;
+                let span = SourceCodeSpan {
+                    start: SourceCodeLocation {
+                        line: position.start.line,
+                        col: position.start.col,
+                    },
+                    end: SourceCodeLocation { line: position.end.line, col: position.end.col },
+                };
+
+                Some((name, span))
+            })
+            .collect_vec(),
+    )
+}
+
+/// Resolves a Cairo identifier and its definition span from [`StableLocation`].
+fn find_cairo_variable_in_location<'db>(
+    db: &'db dyn Database,
+    stable_location: StableLocation<'db>,
+) -> Option<(CairoVariableName, SourceCodeSpan)> {
+    let identifier =
+        find_identifier_corresponding_to_assigned_variable(db, stable_location.syntax_node(db))?;
+
+    let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
+
+    let lookup_items: Vec<_> = identifier
+        .as_syntax_node()
+        .ancestors_with_self(db)
+        .flat_map(|node| lookup_item_from_ast(db, module_id, node).unwrap_or_default())
+        .collect();
+
+    let definition = try_variable_declaration(db, &identifier, &lookup_items)
+        .or_else(|| lookup_variable_in_resolved_items(db, &identifier, &lookup_items))?;
+
+    let location = match definition {
+        // Extract only param name.
+        cairo_lang_defs::ids::VarId::Param(param) => {
+            StableLocation::new(param.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped())
+        }
+        x => x.stable_location(db),
+    };
+    let user_location = location.span_in_file(db).user_location(db);
+
+    let var_name =
+        user_location.span.take(db.file_content(user_location.file_id).unwrap()).to_string();
+
+    let position = user_location.span.position_in_file(db, user_location.file_id)?;
+    let source_location = SourceCodeSpan {
+        start: SourceCodeLocation { col: position.start.col, line: position.start.line },
+        end: SourceCodeLocation { col: position.end.col, line: position.end.line },
+    };
+
+    Some((var_name, source_location))
 }
 
 /// This function gets a node that a sierra variable was mapped to.
