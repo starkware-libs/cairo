@@ -13,10 +13,7 @@ use crate::analysis::{DataflowAnalyzer, DataflowBackAnalysis, Direction, Edge};
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::implicits::FunctionImplicitsTrait;
 use crate::panic::PanicSignatureInfo;
-use crate::{
-    BlockEnd, BlockId, Lowered, Statement, StatementCall, StatementEnumConstruct, VarUsage,
-    VariableId,
-};
+use crate::{BlockEnd, BlockId, Lowered, Statement, StatementCall, VarUsage, VariableId};
 
 /// Adds redeposit gas actions.
 ///
@@ -144,12 +141,11 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for GasRedepositContext<'db> {
             return;
         };
 
-        let Statement::EnumConstruct(StatementEnumConstruct { variant, input: _, output }) = stmt
-        else {
+        let Statement::EnumConstruct(stmt) = stmt else {
             return;
         };
 
-        if *output == var_id && *variant == self.err_variant {
+        if stmt.output == var_id && stmt.variant == self.err_variant {
             *info = RedepositState::Unnecessary;
         }
     }

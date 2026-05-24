@@ -254,7 +254,7 @@ impl<'db> BlockBuilder<'db> {
 
     /// Ends a block with an unreachable match.
     pub fn unreachable_match(self, ctx: &mut LoweringContext<'db, '_>, match_info: MatchInfo<'db>) {
-        self.finalize(ctx, BlockEnd::Match { info: match_info });
+        self.finalize(ctx, BlockEnd::Match { info: Box::new(match_info) });
     }
 
     /// Ends a block with Panic.
@@ -316,7 +316,7 @@ impl<'db> BlockBuilder<'db> {
             return Err(LoweringFlowError::Match(match_info));
         };
         let prev_scope = std::mem::replace(self, new_scope);
-        prev_scope.finalize(ctx, BlockEnd::Match { info: match_info });
+        prev_scope.finalize(ctx, BlockEnd::Match { info: Box::new(match_info) });
         Ok(merged_expr)
     }
 

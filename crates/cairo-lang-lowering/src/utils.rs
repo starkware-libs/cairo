@@ -74,11 +74,13 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
                     outputs: stmt.outputs.iter().map(|v| self.map_var_id(*v)).collect(),
                 })
             }
-            Statement::EnumConstruct(stmt) => Statement::EnumConstruct(StatementEnumConstruct {
-                variant: stmt.variant,
-                input: self.map_var_usage(stmt.input),
-                output: self.map_var_id(stmt.output),
-            }),
+            Statement::EnumConstruct(stmt) => {
+                Statement::EnumConstruct(Box::new(StatementEnumConstruct {
+                    variant: stmt.variant,
+                    input: self.map_var_usage(stmt.input),
+                    output: self.map_var_id(stmt.output),
+                }))
+            }
             Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot::new(
                 self.map_var_usage(stmt.input),
                 self.map_var_id(stmt.original()),
@@ -125,7 +127,7 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
             }
             BlockEnd::NotSet => unreachable!(),
             BlockEnd::Match { info } => BlockEnd::Match {
-                info: match info {
+                info: Box::new(match &**info {
                     MatchInfo::Extern(stmt) => MatchInfo::Extern(MatchExternInfo {
                         function: stmt.function,
                         inputs: stmt.inputs.iter().map(|v| self.map_var_usage(*v)).collect(),
@@ -180,7 +182,7 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
                             .collect(),
                         location: self.map_location(stmt.location),
                     }),
-                },
+                }),
             },
         };
         self.transform_end(&mut end);

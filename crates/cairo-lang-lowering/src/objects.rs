@@ -229,7 +229,7 @@ pub enum BlockEnd<'db> {
     /// This block ends with a jump to a different block.
     Goto(BlockId, VarRemapping<'db>),
     Match {
-        info: MatchInfo<'db>,
+        info: Box<MatchInfo<'db>>,
     },
 }
 
@@ -253,7 +253,7 @@ pub struct Variable<'db> {
     /// Location of the variable.
     pub location: LocationId<'db>,
     /// The semantic type info of the variable.
-    pub info: TypeInfo<'db>,
+    pub info: Box<TypeInfo<'db>>,
 }
 
 impl<'db> DebugWithDb<'db> for Variable<'db> {
@@ -271,7 +271,7 @@ impl<'db> Variable<'db> {
         ty: semantic::TypeId<'db>,
         location: LocationId<'db>,
     ) -> Self {
-        Self { ty, location, info: db.type_info(ctx, ty) }
+        Self { ty, location, info: Box::new(db.type_info(ctx, ty)) }
     }
 
     /// Returns a new variable with the type, with info calculated with the default context.
@@ -283,7 +283,7 @@ impl<'db> Variable<'db> {
         Self {
             ty,
             location,
-            info: TypeInfo {
+            info: Box::new(TypeInfo {
                 copyable: db.copyable(ty),
                 droppable: db.droppable(ty),
                 destruct_impl: Err(InferenceError::Ambiguity(Ambiguity::WillNotInfer(
@@ -292,7 +292,7 @@ impl<'db> Variable<'db> {
                 panic_destruct_impl: Err(InferenceError::Ambiguity(Ambiguity::WillNotInfer(
                     concrete_panic_destruct_trait(db, ty),
                 ))),
-            },
+            }),
         }
     }
 }
@@ -311,7 +311,7 @@ pub enum Statement<'db> {
     StructDestructure(StatementStructDestructure<'db>),
 
     // Enums.
-    EnumConstruct(StatementEnumConstruct<'db>),
+    EnumConstruct(Box<StatementEnumConstruct<'db>>),
 
     Snapshot(StatementSnapshot<'db>),
     Desnap(StatementDesnap<'db>),

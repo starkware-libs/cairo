@@ -202,7 +202,7 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
         if id == self.effective_root {
             self.result = Some((builder, LowerGraphResult::Match(info)));
         } else {
-            builder.finalize(self.ctx, BlockEnd::Match { info });
+            builder.finalize(self.ctx, BlockEnd::Match { info: Box::new(info) });
         }
     }
 
@@ -257,7 +257,7 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
                 if let Some((new_builder, lowered_expr)) =
                     merge_sealed_block_builders(self.ctx, self.sealed_blocks, self.location)
                 {
-                    builder.finalize(self.ctx, BlockEnd::Match { info: match_info });
+                    builder.finalize(self.ctx, BlockEnd::Match { info: Box::new(match_info) });
                     (Ok(lowered_expr), new_builder)
                 } else {
                     (Err(LoweringFlowError::Match(match_info)), builder)

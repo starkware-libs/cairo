@@ -156,12 +156,12 @@ fn lower_unsafe_panic<'db>(
         }
 
         block.end = BlockEnd::Match {
-            info: MatchInfo::Extern(MatchExternInfo {
+            info: Box::new(MatchInfo::Extern(MatchExternInfo {
                 arms: vec![],
                 location: err_data.location,
                 function: panic_func_id,
                 inputs: vec![],
-            }),
+            })),
         }
     }
 }
@@ -378,7 +378,7 @@ impl<'db> PanicBlockLoweringContext<'db> {
         });
 
         let cur_block_end = BlockEnd::Match {
-            info: MatchInfo::Enum(MatchEnumInfo {
+            info: Box::new(MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
                 input: VarUsage { var_id: panic_result_var, location },
                 arms: vec![
@@ -394,7 +394,7 @@ impl<'db> PanicBlockLoweringContext<'db> {
                     },
                 ],
                 location,
-            }),
+            })),
         };
 
         Ok((cur_block_end, Some(block_continuation)))
@@ -411,11 +411,13 @@ impl<'db> PanicBlockLoweringContext<'db> {
                     err_data.var_id
                 } else {
                     let output = self.new_var(ty, location);
-                    self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
-                        variant: self.ctx.panic_info.err_variant,
-                        input: err_data,
-                        output,
-                    }));
+                    self.statements.push(Statement::EnumConstruct(Box::new(
+                        StatementEnumConstruct {
+                            variant: self.ctx.panic_info.err_variant,
+                            input: err_data,
+                            output,
+                        },
+                    )));
                     output
                 };
                 BlockEnd::Return(vec![VarUsage { var_id: output, location }], location)
@@ -431,11 +433,11 @@ impl<'db> PanicBlockLoweringContext<'db> {
                 // Wrap with PanicResult::Ok.
                 let ty = self.ctx.panic_info.actual_return_ty;
                 let output = self.new_var(ty, location);
-                self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
+                self.statements.push(Statement::EnumConstruct(Box::new(StatementEnumConstruct {
                     variant: self.ctx.panic_info.ok_variant,
                     input: VarUsage { var_id: tupled_res, location },
                     output,
-                }));
+                })));
                 BlockEnd::Return(vec![VarUsage { var_id: output, location }], location)
             }
             BlockEnd::NotSet => unreachable!(),

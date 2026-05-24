@@ -134,10 +134,11 @@ pub fn optimize_matches<'db>(lowered: &mut Lowered<'db>) {
         }
 
         let block = &mut lowered.blocks[fix.match_block];
-        let BlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) } =
-            &mut block.end
-        else {
+        let BlockEnd::Match { info } = &mut block.end else {
             unreachable!("match block should end with a match.");
+        };
+        let MatchInfo::Enum(MatchEnumInfo { arms, location, .. }) = &mut **info else {
+            unreachable!("match block should end with an enum match.");
         };
 
         let arm = arms.get_mut(fix.arm_idx).unwrap();

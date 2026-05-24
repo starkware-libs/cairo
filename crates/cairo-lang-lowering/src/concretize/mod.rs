@@ -41,7 +41,7 @@ pub fn concretize_lowered<'db>(
     // Substitute all types.
     for (_, var) in lowered.variables.iter_mut() {
         var.ty = substitution.substitute(db, var.ty)?;
-        let TypeInfo { destruct_impl, panic_destruct_impl, .. } = &mut var.info;
+        let TypeInfo { destruct_impl, panic_destruct_impl, .. } = &mut *var.info;
         for impl_id in [destruct_impl, panic_destruct_impl].into_iter().flatten() {
             *impl_id = substitution.substitute(db, *impl_id)?;
         }
@@ -68,7 +68,7 @@ pub fn concretize_lowered<'db>(
             }
         }
         if let BlockEnd::Match { info } = &mut block.end {
-            for MatchArm { arm_selector: selector, .. } in match info {
+            for MatchArm { arm_selector: selector, .. } in match &mut **info {
                 crate::MatchInfo::Enum(s) => s.arms.iter_mut(),
                 crate::MatchInfo::Extern(s) => {
                     s.function = concretize_function(db, substitution, s.function)?;

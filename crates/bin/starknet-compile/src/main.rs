@@ -9,9 +9,13 @@ use cairo_lang_starknet::compile::starknet_compile;
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use clap::Parser;
 
-#[cfg(feature = "mimalloc")]
+#[cfg(all(feature = "mimalloc", not(feature = "dhat")))]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+#[cfg(feature = "dhat")]
+#[global_allocator]
+static ALLOC: dhat::Alloc = dhat::Alloc;
 
 /// Compiles the specified contract from a Cairo project into a contract class file.
 /// Exits with 0/1 if the compilation succeeds/fails.
@@ -43,6 +47,9 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<()> {
+    #[cfg(feature = "dhat")]
+    let _profiler = dhat::Profiler::new_heap();
+
     let args = Args::parse();
 
     // Check if args.path is a file or a directory.

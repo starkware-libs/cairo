@@ -426,13 +426,17 @@ pub fn add_destructs<'db>(
         match destruct_type {
             AddDestructFlowType::Plain => {
                 let block = &mut lowered.blocks[BlockId(block_id)];
-                block
-                    .statements
-                    .splice(statement_idx..statement_idx, stmts.into_iter().map(Statement::Call));
+                block.statements.splice(
+                    statement_idx..statement_idx,
+                    stmts.into_iter().map(Statement::Call),
+                );
             }
             AddDestructFlowType::PanicPostMatch => {
                 let block = &mut lowered.blocks[BlockId(match_block_id)];
-                let BlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end else {
+                let BlockEnd::Match { info } = &mut block.end else {
+                    unreachable!();
+                };
+                let MatchInfo::Enum(info) = &mut **info else {
                     unreachable!();
                 };
 

@@ -11,9 +11,9 @@ use itertools::{Itertools, zip_eq};
 use crate::ids::FunctionId;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
-    Block, BlockEnd, BlockId, Lowered, Statement, StatementCall, StatementConst, StatementDesnap,
-    StatementEnumConstruct, StatementIntoBox, StatementSnapshot, StatementStructConstruct,
-    StatementStructDestructure, StatementUnbox, VarRemapping, VarUsage, VariableArena, VariableId,
+    Block, BlockEnd, BlockId, Lowered, Statement, StatementConst, StatementDesnap,
+    StatementIntoBox, StatementSnapshot, StatementStructConstruct, StatementStructDestructure,
+    StatementUnbox, VarRemapping, VarUsage, VariableArena, VariableId,
 };
 
 /// A canonic representation of a block (used to find duplicated blocks).
@@ -128,18 +128,11 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
                 output: self.handle_output(output),
                 boxed: *boxed,
             },
-            Statement::Call(StatementCall {
-                function,
-                inputs,
-                with_coupon,
-                outputs,
-                location: _,
-                is_specialization_base_call: _,
-            }) => CanonicStatement::Call {
-                function: *function,
-                inputs: inputs.iter().map(|input| self.handle_input(input)).collect(),
-                with_coupon: *with_coupon,
-                outputs: outputs.iter().map(|output| self.handle_output(output)).collect(),
+            Statement::Call(stmt) => CanonicStatement::Call {
+                function: stmt.function,
+                inputs: stmt.inputs.iter().map(|input| self.handle_input(input)).collect(),
+                with_coupon: stmt.with_coupon,
+                outputs: stmt.outputs.iter().map(|output| self.handle_output(output)).collect(),
             },
             Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
                 CanonicStatement::StructConstruct {
@@ -153,13 +146,11 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
                     outputs: outputs.iter().map(|output| self.handle_output(output)).collect(),
                 }
             }
-            Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
-                CanonicStatement::EnumConstruct {
-                    variant: *variant,
-                    input: self.handle_input(input),
-                    output: self.handle_output(output),
-                }
-            }
+            Statement::EnumConstruct(stmt) => CanonicStatement::EnumConstruct {
+                variant: stmt.variant,
+                input: self.handle_input(&stmt.input),
+                output: self.handle_output(&stmt.output),
+            },
             Statement::Snapshot(StatementSnapshot { input, outputs }) => {
                 CanonicStatement::Snapshot {
                     input: self.handle_input(input),
