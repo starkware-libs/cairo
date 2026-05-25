@@ -13,18 +13,21 @@ pub fn resolve_labels_and_extract_locations<'db>(
     statements: Vec<pre_sierra::StatementWithLocation<'db>>,
     label_replacer: &LabelReplacer<'_>,
 ) -> (Vec<program::Statement>, Vec<Option<LocationId<'db>>>) {
-    statements
-        .into_iter()
-        .filter_map(|statement| match statement.statement {
+    let mut resolved_statements = Vec::with_capacity(statements.len());
+    let mut locations = Vec::with_capacity(statements.len());
+    for statement in statements {
+        match statement.statement {
             pre_sierra::Statement::Sierra(sierra_statement) => {
-                Some((label_replacer.handle_statement(sierra_statement), statement.location))
+                resolved_statements.push(label_replacer.handle_statement(sierra_statement));
+                locations.push(statement.location);
             }
-            pre_sierra::Statement::Label(_) => None,
+            pre_sierra::Statement::Label(_) => {}
             pre_sierra::Statement::PushValues(_) => {
                 panic!("Unexpected pre_sierra::Statement:PushValues in resolve_labels().")
             }
-        })
-        .unzip()
+        }
+    }
+    (resolved_statements, locations)
 }
 
 /// Helper struct for resolve_labels.
