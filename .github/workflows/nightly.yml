@@ -70,12 +70,12 @@ jobs:
       - uses: actions/checkout@v6
       - uses: Swatinem/rust-cache@v2
 
-      - name: Run benchmarks
+      - name: Run timing benchmarks
         run: |
           set -o pipefail
           cargo bench --bench compile -- --output-format bencher 2>&1 | tee benchmark-output.txt
 
-      - name: Store benchmark results
+      - name: Store timing benchmark results
         uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b
         with:
           name: Cairo Compiler Benchmarks
@@ -87,6 +87,25 @@ jobs:
           auto-push: false
           fail-on-alert: true
           alert-threshold: '150%'
+
+      - name: Run heap benchmarks
+        run: cargo bench --bench dhat_compile --features dhat
+
+      - name: Store heap benchmark results
+        uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b
+        with:
+          name: Cairo Heap Benchmarks
+          tool: 'customSmallerIsBetter'
+          output-file-path: target/dhat-bench/dhat-output.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          fail-on-alert: true
+          alert-threshold: '150%'
+          # MUST run after `Store timing benchmark results`, which fetches the gh-pages worktree
+          # this step then reuses. Reordering or removing the timing step will break this one.
+          skip-fetch-gh-pages: true
 
       - name: Push results to gh-pages
         run: git push origin gh-pages
