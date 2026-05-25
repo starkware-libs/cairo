@@ -35,9 +35,9 @@ As validated by `ConstantEvaluateContext::validate()` and evaluated by
   * Value-and-size form (value duplicated `size` times, where `size` is const-int).
 - `snapshot` / `desnap` of const values.
 - Logical operators `&&` / `||` (short-circuiting on `bool`).
-- `match` on enum consts (including pattern destructuring).
-- `if` with boolean conditions and `let`-patterns in conditions.
-- Blocks with `let` and expression statements; variables may be bound from const values.
+- `match` on any const value, with wildcard, literal, tuple, struct, fixed-size array, and enum-variant patterns (including destructuring and variable binding).
+- `if` with boolean conditions and `if let` patterns in conditions.
+- Blocks with `let` (including `let ... else`) and expression statements; variables may be bound from const values.
 
 Unsupported constructs in const context are diagnosed as `UnsupportedConstant`.
 

@@ -51,9 +51,9 @@ authoritative list validated by the compiler):
 - Fixed-size arrays: explicit items, or value-and-size form with const size
 - `snapshot` / `desnap` on const values
 - Logical operators `&&` / `||` on `bool` (short-circuiting semantics)
-- `match` on enum consts (pattern matching and destructuring)
-- `if` with boolean conditions (including `let`-patterns in conditions)
-- Blocks containing `let`/expression statements evaluated from const values
+- `match` on any const value, with wildcard, literal, tuple, struct, fixed-size array, and enum-variant patterns
+- `if` with boolean conditions (including `if let` patterns)
+- Blocks containing `let` (including `let ... else`) and expression statements evaluated from const values
 
 == Function calls in const context
 

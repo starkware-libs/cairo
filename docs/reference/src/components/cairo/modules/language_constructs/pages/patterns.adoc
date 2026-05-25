@@ -16,9 +16,8 @@ structures).
 
 Cairo supports two categories of patterns:
 
-* **Refutable patterns** — May fail to match (used in `match` arms and `let ... else`
-  statements)
-* **Irrefutable patterns** — Always match (used in `let` statements)
+* **Refutable patterns** — May fail to match (used in `match` arms, `if let`, `while let`, and `let ... else` statements)
+* **Irrefutable patterns** — Always match (used in plain `let` statements)
 
 == Pattern Types
 
