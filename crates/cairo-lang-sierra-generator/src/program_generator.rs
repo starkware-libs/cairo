@@ -68,9 +68,9 @@ fn generate_type_declarations(
     libfunc_declarations: &[program::LibfuncDeclaration],
     functions: &[program::Function],
 ) -> Vec<program::TypeDeclaration> {
-    let mut declarations = vec![];
-    let mut already_declared = UnorderedHashSet::default();
     let mut remaining_types = collect_used_types(db, libfunc_declarations, functions);
+    let mut already_declared = UnorderedHashSet::with_capacity(remaining_types.len());
+    let mut declarations = Vec::with_capacity(remaining_types.len());
     while let Some(ty) = remaining_types.iter().next().cloned() {
         remaining_types.swap_remove(&ty);
         generate_type_declarations_helper(
@@ -268,8 +268,9 @@ pub fn get_sierra_program_for_functions<'db>(
     _tracked: Tracked,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) -> Maybe<SierraProgramWithDebug<'db>> {
-    let mut functions: Vec<&'db pre_sierra::Function<'_>> = vec![];
-    let mut statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![];
+    let mut functions: Vec<&'db pre_sierra::Function<'_>> =
+        Vec::with_capacity(requested_function_ids.len());
+    let mut statements: Vec<pre_sierra::StatementWithLocation<'_>> = Default::default();
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId<'_>>::default();
     let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId<'_>> =
         requested_function_ids.into_iter().collect();
@@ -317,18 +318,15 @@ fn assemble_program<'db>(
     statements: Vec<pre_sierra::StatementWithLocation<'db>>,
 ) -> AssembledProgram<'db> {
     let label_replacer = LabelReplacer::from_statements(&statements);
-    let functions_info = functions
-        .iter()
-        .map(|f| {
-            (
-                f.id.clone(),
-                FunctionDebugInfo {
-                    signature_location: f.signature_location,
-                    variables_locations: f.variable_locations.iter().cloned().collect(),
-                },
-            )
-        })
-        .collect();
+    let functions_info = functions.iter().map(|f| {
+        (
+            f.id.clone(),
+            FunctionDebugInfo {
+                signature_location: f.signature_location,
+                variables_locations: f.variable_locations.iter().cloned().collect(),
+            },
+        )
+    }).collect::<OrderedHashMap<_, _>>();
     let funcs = functions
         .into_iter()
         .map(|function| {
