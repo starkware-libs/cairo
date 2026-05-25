@@ -10,7 +10,7 @@ use cairo_lang_defs::plugin_utils::{
 };
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::{OptionHelper, try_extract_matches};
 use indoc::indoc;
 use num_bigint::{BigInt, Sign};
@@ -148,8 +148,12 @@ struct FormattingInfo<'db> {
     formatter_arg_node: RewriteNode<'db>,
     /// The format string argument.
     format_string_arg: ast::Arg<'db>,
-    /// The format string content.
+    /// The decoded format string content.
     format_string: String,
+    /// The raw source text of the format string (the body between the surrounding `"` quotes).
+    /// Needed so that placeholder spans account for escape sequences that occupy more source
+    /// bytes than their decoded counterpart.
+    format_string_source: String,
     /// The positional arguments for the format string.
     args: Vec<ast::Expr<'db>>,
     macro_ast: ast::ExprInlineMacro<'db>,
@@ -213,14 +217,26 @@ impl<'db> FormattingInfo<'db> {
                 "Format string argument must be unnamed.",
             )]);
         };
-        let Some(format_string) = try_extract_matches!(format_string_expr, ast::Expr::String)
-            .and_then(|arg| arg.string_value(db))
+        let Some(format_string_terminal) =
+            try_extract_matches!(format_string_expr, ast::Expr::String)
         else {
             return Err(vec![error_with_inner_span(
                 format_string_arg.as_syntax_node(),
                 "Format string argument must be a string literal.",
             )]);
         };
+        let Some(format_string) = format_string_terminal.string_value(db) else {
+            return Err(vec![error_with_inner_span(
+                format_string_arg.as_syntax_node(),
+                "Format string argument must be a string literal.",
+            )]);
+        };
+        let raw_literal = format_string_terminal.text(db).long(db).to_string();
+        let format_string_source = raw_literal
+            .strip_prefix('"')
+            .and_then(|s| s.strip_suffix('"'))
+            .unwrap_or(&raw_literal)
+            .to_string();
         let mut diagnostics = vec![];
         let args: Vec<_> = args_iter
             .filter_map(|arg| {
@@ -238,8 +254,8 @@ impl<'db> FormattingInfo<'db> {
         Ok(FormattingInfo {
             formatter_arg_node: RewriteNode::from_ast_trimmed(&formatter_arg),
             format_string_arg: format_string_arg.clone(),
-            // `unwrap` is ok because the above `on_none` ensures it's not None.
             format_string,
+            format_string_source,
             args,
             macro_ast: syntax.clone(),
         })
@@ -258,6 +274,9 @@ impl<'db> FormattingInfo<'db> {
         let mut pending_chars = String::new();
         let mut ident_count = 1;
         let mut missing_args = 0;
+        // Cursor over `{` positions in the raw source, advanced in lockstep with the main loop
+        // so named-placeholder spans land on the correct source byte despite earlier escapes.
+        let mut source_braces = self.format_string_source.match_indices('{');
         let format_string_base = self
             .format_string_arg
             .as_syntax_node()
@@ -271,13 +290,20 @@ impl<'db> FormattingInfo<'db> {
                 &[("arg".to_string(), RewriteNode::from_ast_trimmed(arg))].into(),
             ));
         }
-        while let Some((idx, c)) = format_iter.next() {
+        while let Some((_idx, c)) = format_iter.next() {
             if c == '{' {
                 if matches!(format_iter.peek(), Some(&(_, '{'))) {
                     pending_chars.push('{');
                     format_iter.next();
+                    // Step past both `{`s of the `{{` escape in the source cursor.
+                    source_braces.next();
+                    source_braces.next();
                     continue;
                 }
+                let brace_source_pos = source_braces
+                    .next()
+                    .map(|(i, _)| i)
+                    .expect("Original string did not contain enough brace positions");
                 let argument_info = match extract_placeholder_argument(&mut format_iter) {
                     Ok(argument_info) => argument_info,
                     Err(error_message) => {
@@ -337,8 +363,9 @@ impl<'db> FormattingInfo<'db> {
                         }
                     }
                     PlaceholderArgumentSource::Named(argument) => {
-                        let start = format_string_base
-                            .add_width(TextWidth::from_str(&self.format_string[..(idx + 1)]));
+                        let start = format_string_base.add_width(TextWidth::from_str(
+                            &self.format_string_source[..brace_source_pos + 1],
+                        ));
                         let origin =
                             TextSpan::new_with_width(start, TextWidth::from_str(&argument));
                         self.append_formatted_arg(
