@@ -426,6 +426,54 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 
 //! > ==========================================================================
 
+//! > Test write! named placeholder span is correct after escape sequences
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let mut f: core::fmt::Formatter = Default::default();
+    write!(f, "prefix\n{name}").unwrap();
+    write!(f, "\x41{hex_name}").unwrap();
+    write!(f, "\101{oct_name}").unwrap();
+    write!(f, "\u{41}{uni_name}").unwrap();
+    write!(f, "\u0041{uni4_name}").unwrap();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:3:25
+    write!(f, "prefix\n{name}").unwrap();
+                        ^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:4:21
+    write!(f, "\x41{hex_name}").unwrap();
+                    ^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:5:21
+    write!(f, "\101{oct_name}").unwrap();
+                    ^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:6:23
+    write!(f, "\u{41}{uni_name}").unwrap();
+                      ^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:7:23
+    write!(f, "\u0041{uni4_name}").unwrap();
+                      ^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test bad writeln! macros
 
 //! > test_runner_name
