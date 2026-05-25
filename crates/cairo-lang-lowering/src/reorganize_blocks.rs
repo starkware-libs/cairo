@@ -33,9 +33,6 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
 
     DataflowBackAnalysis::new(lowered, &mut ctx).run();
 
-    // Rebuild the blocks in the correct order.
-    let mut new_blocks = BlocksBuilder::default();
-
     // Keep only blocks that can't be merged or have more than 1 incoming
     // goto.
     // Note that unreachable blocks were not added to `ctx.old_block_rev_order` during
@@ -50,6 +47,9 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
     old_block_rev_order.push(BlockId::root());
 
     let n_visited_blocks = old_block_rev_order.len();
+
+    // Rebuild the blocks in the correct order.
+    let mut new_blocks = BlocksBuilder::with_capacity(n_visited_blocks);
 
     let mut rebuilder = RebuildContext {
         block_remapping: UnorderedHashMap::from_iter(
@@ -67,9 +67,8 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
     }
 
     for block_id in old_block_rev_order.into_iter().rev() {
-        let mut statements = vec![];
-
         let mut block = &lowered.blocks[block_id];
+        let mut statements = Vec::with_capacity(block.statements.len());
         loop {
             statements.extend(
                 block.statements.iter().map(|stmt| {
@@ -211,7 +210,11 @@ pub struct VarReassigner<'db, 'a> {
 
 impl<'db, 'a> VarReassigner<'db, 'a> {
     pub fn new(old_vars: &'a VariableArena<'db>) -> Self {
-        Self { old_vars, new_vars: Default::default(), vars: vec![None; old_vars.len()] }
+        Self {
+            old_vars,
+            new_vars: VariableArena::with_capacity(old_vars.len()),
+            vars: vec![None; old_vars.len()],
+        }
     }
 }
 
