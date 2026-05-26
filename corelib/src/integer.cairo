@@ -25,16 +25,16 @@
 //! [`Mul`]: crate::traits::Mul
 //! [`Div`]: crate::traits::Div
 //! [`Rem`]: crate::traits::Rem
-//! [`DivRem`]: crate::traits::DivRem
-//! [`CheckedAdd`]: crate::num::traits::ops::checked::CheckedAdd
-//! [`CheckedSub`]: crate::num::traits::ops::checked::CheckedSub
-//! [`CheckedMul`]: crate::num::traits::ops::checked::CheckedMul
-//! [`WrappingAdd`]: crate::num::traits::ops::wrapping::WrappingAdd
-//! [`WrappingSub`]: crate::num::traits::ops::wrapping::WrappingSub
-//! [`WrappingMul`]: crate::num::traits::ops::wrapping::WrappingMul
-//! [`OverflowingAdd`]: crate::num::traits::ops::overflowing::OverflowingAdd
-//! [`OverflowingSub`]: crate::num::traits::ops::overflowing::OverflowingSub
-//! [`OverflowingMul`]: crate::num::traits::ops::overflowing::OverflowingMul
+//! [`DivRem`]: crate::num::traits::DivRem
+//! [`CheckedAdd`]: crate::num::traits::CheckedAdd
+//! [`CheckedSub`]: crate::num::traits::CheckedSub
+//! [`CheckedMul`]: crate::num::traits::CheckedMul
+//! [`WrappingAdd`]: crate::num::traits::WrappingAdd
+//! [`WrappingSub`]: crate::num::traits::WrappingSub
+//! [`WrappingMul`]: crate::num::traits::WrappingMul
+//! [`OverflowingAdd`]: crate::num::traits::OverflowingAdd
+//! [`OverflowingSub`]: crate::num::traits::OverflowingSub
+//! [`OverflowingMul`]: crate::num::traits::OverflowingMul
 //!
 //! # Examples
 //!
