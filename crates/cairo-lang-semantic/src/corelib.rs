@@ -9,6 +9,7 @@ use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{Intern, OptionFrom, extract_matches, require, try_extract_matches};
+use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{Num, Signed, ToPrimitive, Zero};
 use salsa::Database;
@@ -110,21 +111,25 @@ pub fn core_result_ty<'db>(
     ok_type: TypeId<'db>,
     err_type: TypeId<'db>,
 ) -> TypeId<'db> {
-    get_ty_by_name(
-        db,
-        core_submodule(db, SmolStrId::from(db, "result")),
-        SmolStrId::from(db, "Result"),
-        vec![GenericArgumentId::Type(ok_type), GenericArgumentId::Type(err_type)],
-    )
+    TypeLongId::Concrete(ConcreteTypeId::Enum(
+        ConcreteEnumLongId {
+            enum_id: db.core_info().result,
+            generic_args: vec![GenericArgumentId::Type(ok_type), GenericArgumentId::Type(err_type)],
+        }
+        .intern(db),
+    ))
+    .intern(db)
 }
 
 pub fn core_option_ty<'db>(db: &'db dyn Database, some_type: TypeId<'db>) -> TypeId<'db> {
-    get_ty_by_name(
-        db,
-        core_submodule(db, SmolStrId::from(db, "option")),
-        SmolStrId::from(db, "Option"),
-        vec![GenericArgumentId::Type(some_type)],
-    )
+    TypeLongId::Concrete(ConcreteTypeId::Enum(
+        ConcreteEnumLongId {
+            enum_id: db.core_info().option,
+            generic_args: vec![GenericArgumentId::Type(some_type)],
+        }
+        .intern(db),
+    ))
+    .intern(db)
 }
 
 pub fn core_box_ty<'db>(db: &'db dyn Database, inner_type: TypeId<'db>) -> TypeId<'db> {
@@ -490,23 +495,16 @@ pub fn unwrap_error_propagation_type<'db>(
     match ty.long(db) {
         // Only enums may be `Result` and `Option` types.
         TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
-            if let [ok_variant, err_variant] =
-                db.concrete_enum_variants(*enm).to_option()?.as_slice()
-            {
-                let name = enm.enum_id(db).name(db);
-                if name.long(db) == "Option" {
-                    return Some(ErrorPropagationType::Option {
-                        some_variant: *ok_variant,
-                        none_variant: *err_variant,
-                    });
-                } else if name.long(db) == "Result" {
-                    return Some(ErrorPropagationType::Result {
-                        ok_variant: *ok_variant,
-                        err_variant: *err_variant,
-                    });
-                }
+            let [v0, v1] = db.concrete_enum_variants(*enm).ok()?.into_iter().collect_array()?;
+            let info = db.core_info();
+            let enum_id = enm.enum_id(db);
+            if enum_id == info.result {
+                Some(ErrorPropagationType::Result { ok_variant: v0, err_variant: v1 })
+            } else if enum_id == info.option {
+                Some(ErrorPropagationType::Option { some_variant: v0, none_variant: v1 })
+            } else {
+                None
             }
-            None
         }
         TypeLongId::GenericParameter(_) => todo!(
             "When generic types are supported, if type is of matching type, allow unwrapping it \
@@ -1025,6 +1023,9 @@ pub struct CoreInfo<'db> {
     pub i128: TypeId<'db>,
     pub class_hash: TypeId<'db>,
     pub contract_address: TypeId<'db>,
+    // Enums.
+    pub result: EnumId<'db>,
+    pub option: EnumId<'db>,
     // Traits.
     pub numeric_literal_trt: TraitId<'db>,
     pub string_literal_trt: TraitId<'db>,
@@ -1177,6 +1178,8 @@ impl<'db> CoreInfo<'db> {
             i128: integer.ty("i128", vec![]),
             class_hash: starknet.submodule("class_hash").ty("ClassHash", vec![]),
             contract_address: starknet.submodule("contract_address").ty("ContractAddress", vec![]),
+            result: core.submodule("result").enum_id("Result"),
+            option: core.submodule("option").enum_id("Option"),
             numeric_literal_trt: integer.trait_id("NumericLiteral"),
             string_literal_trt: core.submodule("string").trait_id("StringLiteral"),
             index_trt: index_module.trait_id("Index"),
