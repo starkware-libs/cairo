@@ -237,8 +237,8 @@ pub extern fn sha256_process_block_syscall(
 /// The system call does not add any padding and the input needs to be a multiple of 1024 bits
 /// (== 16 u64 word).
 pub extern fn sha512_process_block_syscall(
-    state: core::sha512::Sha512StateHandle, input: Box<[u64; 16]>,
-) -> SyscallResult<core::sha512::Sha512StateHandle> implicits(GasBuiltin, System) nopanic;
+    state: core::sha2_64_core::Sha512StateHandle, input: Box<[u64; 16]>,
+) -> SyscallResult<core::sha2_64_core::Sha512StateHandle> implicits(GasBuiltin, System) nopanic;
 
 /// Invokes the given entry point as a v0 meta transaction.
 ///
