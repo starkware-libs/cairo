@@ -43,22 +43,12 @@ const SHA512_INITIAL_STATE: [u64; 8] = [
 
 /// Computes the SHA-512 hash of an input provided as 64-bit words, with optional trailing bytes.
 ///
-/// # Note
-///
-/// For better type safety, consider using `compute_sha512_u64_array_safe` when
-/// `last_input_num_bytes` is guaranteed to be in the range 0..=7.
-///
 /// # Arguments
 ///
 /// * `input` - The main input, expressed as an array of `u64` words.
 /// * `last_input_word` - A partial final word containing any remaining bytes when the input is not
 /// word-aligned.
-/// * `last_input_num_bytes` - The number of valid bytes in `last_input_word`. Must be in the range
-/// 0..=7.
-///
-/// # Panics
-///
-/// * If `last_input_num_bytes` is greater than 7.
+/// * `last_input_num_bytes` - The number of valid bytes in `last_input_word`.
 ///
 /// # Returns
 ///
@@ -80,44 +70,6 @@ const SHA512_INITIAL_STATE: [u64; 8] = [
 /// );
 /// ```
 pub fn compute_sha512_u64_array(
-    mut input: Array<u64>, last_input_word: u64, last_input_num_bytes: u32,
-) -> [u64; 8] {
-    let last_input_num_bytes = downcast(last_input_num_bytes).expect('`last_input_num_bytes` > 7');
-    compute_sha512_u64_array_safe(input, last_input_word, last_input_num_bytes)
-}
-
-/// A type representing a bounded integer in the range `0..=7`.
-pub type u3 = BoundedInt<0, 7>;
-
-/// Computes the SHA-512 hash of an input provided as 64-bit words, with optional trailing bytes.
-///
-/// # Arguments
-///
-/// * `input` - The main input, expressed as an array of `u64` words.
-/// * `last_input_word` - A partial final word containing any remaining bytes when the input is not
-/// word-aligned.
-/// * `last_input_num_bytes` - The number of valid bytes in `last_input_word`.
-///
-/// # Returns
-///
-/// * The SHA-512 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
-/// `last_input_word`, interpreted in big-endian order.
-///
-/// # Examples
-///
-/// ```
-/// use core::sha512::compute_sha512_u64_array_safe;
-///
-/// // SHA-512("Hello world")
-/// let hash = compute_sha512_u64_array_safe(array![0x48656c6c6f20776f], 0x726c64, 3);
-/// assert!(
-///     hash == [
-///         0xb7f783baed8297f0, 0xdb917462184ff4f0, 0x8e69c2d5e5f79a94, 0x2600f9725f58ce1f,
-///         0x29c18139bf80b06c, 0x0fff2bdd34738452, 0xecf40c488c22a7e3, 0xd80cdf6f9c1c0d47,
-///     ],
-/// );
-/// ```
-pub fn compute_sha512_u64_array_safe(
     mut input: Array<u64>, last_input_word: u64, last_input_num_bytes: u3,
 ) -> [u64; 8] {
     add_sha512_padding(ref input, last_input_word, last_input_num_bytes);
