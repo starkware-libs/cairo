@@ -3,51 +3,35 @@ use std::collections::HashMap;
 use std::iter::{self, zip};
 use std::ops::Range;
 
-use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::{
-    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionLongId,
-    ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId, ImplItemId,
-    LanguageElementId, LookupItemId, MacroDeclarationLongId, ModuleId, ModuleItemId,
-    ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
-    TraitItemId, TraitLongId, TraitTypeLongId, UseLongId,
-};
-use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_defs::ids::{FunctionWithBodyId, VarId as SemanticVarId};
 use cairo_lang_lowering::ids::LocationId;
-use cairo_lang_semantic::Expr;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
-use cairo_lang_semantic::items::function_with_body::{
-    FunctionWithBodySemantic, SemanticExprLookup,
+use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
+use cairo_lang_semantic::{
+    Condition, Expr, ExprFunctionCallArg, ExprId, Pattern, PatternId, Statement, StatementId,
 };
-use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_semantic::lsp_helpers::LspHelpers;
-use cairo_lang_semantic::resolve::ResolvedGenericItem;
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcrete};
-use cairo_lang_sierra::extensions::lib_func::ConcreteLibfunc;
-use cairo_lang_sierra::extensions::starknet::StarknetTypeConcrete;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, VarId};
-use cairo_lang_sierra::program::{self, StatementIdx};
-use cairo_lang_sierra::program_registry::ProgramRegistry;
-use cairo_lang_syntax::node::ast::{
-    BinaryOperator, ExprBinary, FunctionSignature, ParamList, StatementLet, TerminalIdentifier,
-};
+use cairo_lang_sierra::program::{self, GenStatement, StatementIdx};
+use cairo_lang_syntax::node::ast::{BinaryOperator, ExprBinary};
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::CloneableDatabase;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{CloneableDatabase, Intern};
 use itertools::Itertools;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use salsa::Database;
 
+use crate::db::SierraGenGroup;
 use crate::debug_info::function_debug_info::serializable::{
     CairoVariableName, SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
     SierraFunctionId, SierraVarId,
 };
-use crate::debug_info::statements_locations::StatementsLocations;
 use crate::debug_info::{
     SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, maybe_code_location,
 };
+use crate::utils::get_libfunc_signature;
 
 pub mod serializable;
 
@@ -65,11 +49,8 @@ impl<'db> AllFunctionsDebugInfo<'db> {
         &self,
         db: &'db dyn CloneableDatabase,
         program: &program::Program,
-        statements_locations: &StatementsLocations<'db>,
     ) -> SerializableAllFunctionsDebugInfo {
         let functions_statement_ranges = collect_functions_with_statement_ranges(program);
-        let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)
-            .expect("sierra program produced by sierra-gen must be valid");
 
         let serializable_debug_info = self
             .0
@@ -89,8 +70,6 @@ impl<'db> AllFunctionsDebugInfo<'db> {
                             db.as_ref(),
                             function,
                             &program.statements[statement_range],
-                            statements_locations,
-                            &registry,
                         )?,
                     ))
                 },
@@ -117,19 +96,10 @@ impl<'db> FunctionDebugInfo<'db> {
         db: &'db dyn Database,
         program_func: &program::Function,
         function_statements: &[program::Statement],
-        statements_locations: &StatementsLocations<'db>,
-        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     ) -> Option<SerializableFunctionDebugInfo> {
         let (function_file_path, function_code_span) = self.extract_location(db)?;
-        let sierra_to_cairo_variables = self
-            .extract_sierra_to_cairo_variables_map(
-                db,
-                program_func,
-                function_statements,
-                statements_locations,
-                registry,
-            )
-            .unwrap_or_default();
+        let sierra_to_cairo_variables =
+            self.extract_sierra_to_cairo_variables_map(db, program_func, function_statements)?;
 
         Some(SerializableFunctionDebugInfo {
             function_file_path,
@@ -147,67 +117,26 @@ impl<'db> FunctionDebugInfo<'db> {
         db: &'db dyn Database,
         function: &program::Function,
         function_statements: &[program::Statement],
-        statements_locations: &StatementsLocations<'db>,
-        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     ) -> Option<HashMap<SierraVarId, Vec<(CairoVariableName, SourceCodeSpan)>>> {
-        let mut bindings: HashMap<SierraVarId, Vec<(CairoVariableName, SourceCodeSpan)>> =
-            HashMap::new();
+        let function_with_body_id = resolve_function_with_body(db, function)?;
 
-        let function_param_variables =
-            get_function_params_as_cairo_variables(db, self.signature_location)?.collect_vec();
+        let var_introduction_index = build_var_introduction_index(db, &self.variables_locations);
+        let sierra_var_types = build_sierra_var_types_map(db, function, function_statements);
 
-        // Params of a Sierra function may contain builtins, that are not representable
-        // as Cairo variables and thus not included in `function_param_variables`.
-        // Zipping from the end skips the builtins.
-        let params_without_builtins =
-            zip(function.params.iter().rev(), function_param_variables.into_iter().rev());
+        let mut collector = BindingCollector::new(
+            db,
+            function_with_body_id,
+            &var_introduction_index,
+            &sierra_var_types,
+        );
 
-        for (sierra_param, (name, span)) in params_without_builtins {
-            let sierra_var = SierraVarId(sierra_param.id.id);
-            bindings.entry(sierra_var).or_default().push((name, span));
+        collector.initialize_params(function);
+
+        if let Ok(body_expr) = db.function_body_expr(function_with_body_id) {
+            collector.visit_expr(body_expr);
         }
 
-        for (offset, statement) in function_statements.iter().enumerate() {
-            let statement_idx = StatementIdx(function.entry_point.0 + offset);
-            let program::GenStatement::Invocation(invocation) = statement else {
-                continue;
-            };
-
-            // Ignore inline locations for now as this function is supposed to be called only
-            // on when sierra was compiled with inlining set to `avoid`.
-            // TODO(pm): handle them to make sure user function marked #[inline(always)] work.
-            //  https://github.com/software-mansion-labs/cairo-debugger/issues/41
-            let Some(stable_location) = statements_locations
-                .locations
-                .get(&statement_idx)
-                .and_then(|locs| locs.first().copied())
-            else {
-                continue;
-            };
-
-            let Some((name, span)) = find_cairo_variable_in_location(db, stable_location) else {
-                continue;
-            };
-
-            let libfunc = registry
-                .get_libfunc(&invocation.libfunc_id)
-                .expect("libfunc must be in the registry");
-
-            for (branch_sig, branch) in
-                libfunc.branch_signatures().iter().zip(invocation.branches.iter())
-            {
-                for (output, sierra_var) in branch_sig.vars.iter().zip(branch.results.iter()) {
-                    if is_builtin(registry, &output.ty) {
-                        continue;
-                    }
-
-                    let sierra_var: SierraVarId = sierra_var.clone().into();
-                    bindings.entry(sierra_var).or_default().push((name.clone(), span.clone()));
-                }
-            }
-        }
-
-        Some(bindings)
+        Some(collector.bindings)
     }
 
     /// Extracts the location of the function - path to the user file it comes from and its span.
@@ -261,437 +190,420 @@ fn collect_functions_with_statement_ranges(
         .collect()
 }
 
-/// Checks whether `ty` is a builtin.
-fn is_builtin(registry: &ProgramRegistry<CoreType, CoreLibfunc>, ty: &ConcreteTypeId) -> bool {
-    matches!(
-        registry.get_type(ty),
-        Ok(CoreTypeConcrete::RangeCheck(_)
-            | CoreTypeConcrete::RangeCheck96(_)
-            | CoreTypeConcrete::GasBuiltin(_)
-            | CoreTypeConcrete::BuiltinCosts(_)
-            | CoreTypeConcrete::Bitwise(_)
-            | CoreTypeConcrete::Pedersen(_)
-            | CoreTypeConcrete::Poseidon(_)
-            | CoreTypeConcrete::EcOp(_)
-            | CoreTypeConcrete::SegmentArena(_)
-            | CoreTypeConcrete::Starknet(StarknetTypeConcrete::System(_))
-            | CoreTypeConcrete::Coupon(_))
-    )
-}
-
-/// Returns function params (only real ones, without implicits) as Cairo variables
-/// in a form `(name, definition_span)`, in declaration order.
-fn get_function_params_as_cairo_variables<'db>(
+/// Returns a [`FunctionWithBodyId`] for the given Sierra function.
+fn resolve_function_with_body<'db>(
     db: &'db dyn Database,
-    signature_location: LocationId<'db>,
-) -> Option<impl Iterator<Item = (CairoVariableName, SourceCodeSpan)>> {
-    // Sometimes signature_location points to a loop, not a real signature,
-    // since loops are transformed to recursive functions.
-    let param_list = signature_location
-        .long(db)
-        .stable_location
-        .syntax_node(db)
-        .cast::<FunctionSignature<'_>>(db)?
-        .parameters(db)
-        .elements(db);
-
-    let param_vars = param_list.filter_map(|param| {
-        let name_identifier = param.name(db);
-        let name_node = name_identifier.as_syntax_node();
-        let name = name_identifier.text(db).to_string(db);
-
-        let stable_location = StableLocation::new(name_node.stable_ptr(db));
-        let user_location = stable_location.span_in_file(db).user_location(db);
-        let position = user_location.span.position_in_file(db, user_location.file_id)?;
-        let span = SourceCodeSpan {
-            start: SourceCodeLocation { line: position.start.line, col: position.start.col },
-            end: SourceCodeLocation { line: position.end.line, col: position.end.col },
-        };
-
-        Some((name, span))
-    });
-
-    Some(param_vars)
-}
-
-/// Resolves a Cairo identifier and its definition span from [`StableLocation`].
-fn find_cairo_variable_in_location<'db>(
-    db: &'db dyn Database,
-    stable_location: StableLocation<'db>,
-) -> Option<(CairoVariableName, SourceCodeSpan)> {
-    let identifier =
-        find_identifier_corresponding_to_assigned_variable(db, stable_location.syntax_node(db))?;
-
-    let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
-
-    let lookup_items: Vec<_> = identifier
-        .as_syntax_node()
-        .ancestors_with_self(db)
-        .flat_map(|node| lookup_item_from_ast(db, module_id, node).unwrap_or_default())
-        .collect();
-
-    let definition = try_variable_declaration(db, &identifier, &lookup_items)
-        .or_else(|| lookup_variable_in_resolved_items(db, &identifier, &lookup_items))?;
-
-    let location = match definition {
-        // Extract only param name.
-        cairo_lang_defs::ids::VarId::Param(param) => {
-            StableLocation::new(param.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped())
-        }
-        x => x.stable_location(db),
-    };
-    let user_location = location.span_in_file(db).user_location(db);
-
-    let var_name =
-        user_location.span.take(db.file_content(user_location.file_id).unwrap()).to_string();
-
-    let position = user_location.span.position_in_file(db, user_location.file_id)?;
-    let source_location = SourceCodeSpan {
-        start: SourceCodeLocation { col: position.start.col, line: position.start.line },
-        end: SourceCodeLocation { col: position.end.col, line: position.end.line },
-    };
-
-    Some((var_name, source_location))
-}
-
-/// This function gets a node that a sierra variable was mapped to.
-/// It tries to make an educated guess to find an identifier corresponding to a cairo variable
-/// which value in the given location is represented by the sierra variable.
-///
-/// The algorithm is to find an identifier corresponding to a variable which either:
-/// - is assigned a value in the statement the `node` is a part of,
-/// - is part of a function's param, and `node` is a part of the function's params list.
-///
-/// If there is no such identifier - `None` is returned.
-fn find_identifier_corresponding_to_assigned_variable<'db>(
-    db: &'db dyn Database,
-    node: SyntaxNode<'db>,
-) -> Option<TerminalIdentifier<'db>> {
-    let is_param = node.ancestor_of_type::<ParamList<'_>>(db).is_some();
-    if is_param {
-        return find_identifier_in_node(db, node);
-    }
-
-    let assignment_expr = node.ancestors_with_self(db).find_map(|node| {
-        let binary = ExprBinary::cast(db, node)?;
-        match binary.op(db) {
-            BinaryOperator::MulEq(_)
-            | BinaryOperator::DivEq(_)
-            | BinaryOperator::ModEq(_)
-            | BinaryOperator::PlusEq(_)
-            | BinaryOperator::MinusEq(_)
-            | BinaryOperator::Eq(_) => Some(binary),
-            _ => None,
-        }
-    });
-
-    if let Some(assignment_expr) = assignment_expr {
-        let lhs = assignment_expr.lhs(db).as_syntax_node();
-
-        // Case when sierra var maps to a part of lhs.
-        if node.ancestors_with_self(db).any(|node| node == lhs) {
-            return find_identifier_in_node(db, node);
-        }
-
-        // Sometimes a sierra var maps to the whole expression like `x += y`.
-        if node == assignment_expr.as_syntax_node() {
-            return find_identifier_in_node(db, lhs);
-        }
-
-        // If the original node covers whole rhs of the assignment and the operator is a simple eq,
-        // we should try to search for the identifier on the lhs.
-        if assignment_expr.op(db).as_syntax_node().kind(db) == SyntaxKind::TerminalEq
-            && node == assignment_expr.rhs(db).as_syntax_node()
-        {
-            return find_identifier_in_node(db, lhs);
-        }
-    }
-
-    if let Some(let_statement) = node.ancestors(db).find_map(|node| StatementLet::cast(db, node)) {
-        let pattern = let_statement.pattern(db).as_syntax_node();
-
-        let is_on_pattern = node.ancestors_with_self(db).any(|node| node == pattern);
-        if is_on_pattern {
-            return find_identifier_in_node(db, node);
-        }
-
-        // If the original node covers whole rhs of the let statement, we should try to search
-        // for the identifier on the pattern.
-        if node == let_statement.rhs(db).as_syntax_node() {
-            return find_identifier_in_node(db, pattern);
-        }
-    }
-
-    None
-}
-
-/// Tries to find an identifier in the node unambiguously, meaning if either:
-/// - the node is an identifier
-/// - the node is a token of an identifier,
-/// - there is exactly one identifier in descendants of the node,
-///
-/// it returns the aforementioned identifier.
-fn find_identifier_in_node<'db>(
-    db: &'db dyn Database,
-    node: SyntaxNode<'db>,
-) -> Option<TerminalIdentifier<'db>> {
-    TerminalIdentifier::cast_token(db, node).or_else(|| TerminalIdentifier::cast(db, node)).or_else(
-        || {
-            let mut terminal_descendants: Vec<_> = node
-                .descendants(db)
-                .filter_map(|node| TerminalIdentifier::cast_token(db, node))
-                .collect();
-            if terminal_descendants.len() == 1 { terminal_descendants.pop() } else { None }
-        },
-    )
-}
-
-/// If the ast node is a lookup item, return corresponding ids.
-/// Otherwise, returns `None`.
-///
-/// Code from <https://github.com/software-mansion/cairols/blob/6ee588fec02b14071bbd70b405e88fb7215b1d68/src/lang/db/semantic.rs#L417>.
-fn lookup_item_from_ast<'db>(
-    db: &'db dyn Database,
-    module_id: ModuleId<'db>,
-    node: SyntaxNode<'db>,
-) -> Option<Vec<LookupItemId<'db>>> {
-    let syntax_db = db;
-
-    let is_in_impl = node.ancestor_of_kind(syntax_db, SyntaxKind::ItemImpl).is_some();
-
-    Some(match node.kind(syntax_db) {
-        SyntaxKind::ItemConstant => {
-            if is_in_impl {
-                vec![LookupItemId::ImplItem(ImplItemId::Constant(
-                    ImplConstantDefLongId(
-                        module_id,
-                        ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
-                    )
-                    .intern(db),
-                ))]
-            } else {
-                vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
-                    ConstantLongId(
-                        module_id,
-                        ast::ItemConstant::from_syntax_node(db, node).stable_ptr(db),
-                    )
-                    .intern(db),
-                ))]
-            }
-        }
-        SyntaxKind::FunctionWithBody => {
-            if is_in_impl {
-                vec![LookupItemId::ImplItem(ImplItemId::Function(
-                    ImplFunctionLongId(
-                        module_id,
-                        ast::FunctionWithBody::from_syntax_node(db, node).stable_ptr(db),
-                    )
-                    .intern(db),
-                ))]
-            } else {
-                vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
-                    FreeFunctionLongId(
-                        module_id,
-                        ast::FunctionWithBody::from_syntax_node(db, node).stable_ptr(db),
-                    )
-                    .intern(db),
-                ))]
-            }
-        }
-        SyntaxKind::ItemExternFunction => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::ExternFunction(
-                ExternFunctionLongId(
-                    module_id,
-                    ast::ItemExternFunction::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
-            ExternTypeLongId(
-                module_id,
-                ast::ItemExternType::from_syntax_node(db, node).stable_ptr(db),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::ItemTrait => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Trait(
-                TraitLongId(module_id, ast::ItemTrait::from_syntax_node(db, node).stable_ptr(db))
-                    .intern(db),
-            ))]
-        }
-        SyntaxKind::TraitItemConstant => {
-            vec![LookupItemId::TraitItem(TraitItemId::Constant(
-                TraitConstantLongId(
-                    module_id,
-                    ast::TraitItemConstant::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::TraitItemFunction => {
-            vec![LookupItemId::TraitItem(TraitItemId::Function(
-                TraitFunctionLongId(
-                    module_id,
-                    ast::TraitItemFunction::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::TraitItemImpl => {
-            vec![LookupItemId::TraitItem(TraitItemId::Impl(
-                TraitImplLongId(
-                    module_id,
-                    ast::TraitItemImpl::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::TraitItemType => {
-            vec![LookupItemId::TraitItem(TraitItemId::Type(
-                TraitTypeLongId(
-                    module_id,
-                    ast::TraitItemType::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemImpl => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Impl(
-                ImplDefLongId(module_id, ast::ItemImpl::from_syntax_node(db, node).stable_ptr(db))
-                    .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemStruct => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Struct(
-                StructLongId(module_id, ast::ItemStruct::from_syntax_node(db, node).stable_ptr(db))
-                    .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemEnum => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::Enum(
-                EnumLongId(module_id, ast::ItemEnum::from_syntax_node(db, node).stable_ptr(db))
-                    .intern(db),
-            ))]
-        }
-        SyntaxKind::ItemUse => {
-            // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
-            // items.
-            let item_use = ast::ItemUse::from_syntax_node(db, node);
-            get_all_path_leaves(db, &item_use)
-                .into_iter()
-                .map(|leaf| {
-                    let use_long_id = UseLongId(module_id, leaf.stable_ptr(syntax_db));
-                    LookupItemId::ModuleItem(ModuleItemId::Use(use_long_id.intern(db)))
-                })
-                .collect()
-        }
-        SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
-            ModuleTypeAliasLongId(
-                module_id,
-                ast::ItemTypeAlias::from_syntax_node(db, node).stable_ptr(db),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
-            ImplAliasLongId(
-                module_id,
-                ast::ItemImplAlias::from_syntax_node(db, node).stable_ptr(db),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::ItemMacroDeclaration => {
-            vec![LookupItemId::ModuleItem(ModuleItemId::MacroDeclaration(
-                MacroDeclarationLongId(
-                    module_id,
-                    ast::ItemMacroDeclaration::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
-            ))]
-        }
+    function: &program::Function,
+) -> Option<FunctionWithBodyId<'db>> {
+    let lowering_fn_id = db.lookup_sierra_function(&function.id);
+    let concrete_with_body = lowering_fn_id.body(db).ok().flatten()?;
+    let semantic_concrete = match concrete_with_body.long(db) {
+        cairo_lang_lowering::ids::ConcreteFunctionWithBodyLongId::Semantic(id) => *id,
         _ => return None,
+    };
+    Some(semantic_concrete.function_with_body_id(db))
+}
+
+/// Builds an index from a syntax node to a list of Sierra variables that were allocated
+/// at that node during lowering, in sierra-gen's allocation order.
+///
+/// For each variable, its original `stable_location` and all `inline_locations`s
+/// are collected as introduction points.
+#[expect(clippy::disallowed_types)]
+fn build_var_introduction_index<'db>(
+    db: &'db dyn Database,
+    variables_locations: &OrderedHashMap<VarId, LocationId<'db>>,
+) -> HashMap<SyntaxStablePtrId<'db>, Vec<VarId>> {
+    let mut index: HashMap<SyntaxStablePtrId<'db>, Vec<VarId>> = HashMap::new();
+
+    for (var_id, location_id) in variables_locations.iter() {
+        for stable_location in location_id.all_locations(db) {
+            let ptr = stable_location.stable_ptr();
+            let entries = index.entry(ptr).or_default();
+
+            if !entries.contains(var_id) {
+                entries.push(var_id.clone());
+            }
+        }
+    }
+
+    index
+}
+
+/// Returns a map of concrete types for each Sierra variable in the function.
+#[expect(clippy::disallowed_types)]
+fn build_sierra_var_types_map(
+    db: &dyn Database,
+    function: &program::Function,
+    statements: &[program::Statement],
+) -> HashMap<VarId, ConcreteTypeId> {
+    let mut types: HashMap<VarId, ConcreteTypeId> = HashMap::new();
+
+    for param in &function.params {
+        types.insert(param.id.clone(), param.ty.clone());
+    }
+
+    for statement in statements {
+        let GenStatement::Invocation(invocation) = statement else {
+            continue;
+        };
+        let signature = get_libfunc_signature(db, &invocation.libfunc_id);
+
+        for (branch_info, branch_signature) in
+            invocation.branches.iter().zip(signature.branch_signatures.iter())
+        {
+            for (result_var, output_info) in
+                branch_info.results.iter().zip(branch_signature.vars.iter())
+            {
+                types.insert(result_var.clone(), output_info.ty.clone());
+            }
+        }
+    }
+    types
+}
+
+/// Returns an originating [`SourceCodeSpan`] for a stable pointer.
+fn compute_span<'db>(db: &'db dyn Database, ptr: SyntaxStablePtrId<'db>) -> Option<SourceCodeSpan> {
+    let location = StableLocation::new(ptr);
+    let user_location = location.span_in_file(db).user_location(db);
+    let position = user_location.span.position_in_file(db, user_location.file_id)?;
+    Some(SourceCodeSpan {
+        start: SourceCodeLocation { line: position.start.line, col: position.start.col },
+        end: SourceCodeLocation { line: position.end.line, col: position.end.col },
     })
 }
 
-/// Lookups if the identifier is a declaration of a variable/param in one of the lookup items.
-///
-/// Declaration identifiers aren't kept in `ResolvedData`, which is searched for by
-/// `lookup_resolved_generic_item_by_ptr` and `lookup_resolved_concrete_item_by_ptr`.
-/// Therefore, we have to look for these ourselves.
-///
-/// Code from <https://github.com/software-mansion/cairols/blob/3f21ccd34862a48702b2b36f992de95402aa4f2d/src/lang/defs/finder.rs#L498>.
-fn try_variable_declaration<'db>(
+/// Walks the function body's semantic tree, emitting variable-binding events. Each event is tied
+/// to the Sierra variable that holds the bound value at runtime. See
+/// [`FunctionDebugInfo::extract_sierra_to_cairo_variables_map`] for the strategy summary.
+#[expect(clippy::disallowed_types)]
+struct BindingCollector<'db, 'a> {
     db: &'db dyn Database,
-    identifier: &TerminalIdentifier<'db>,
-    lookup_items: &[LookupItemId<'db>],
-) -> Option<cairo_lang_defs::ids::VarId<'db>> {
-    let function_id = lookup_items.first()?.function_with_body()?;
-
-    // Look at function parameters.
-    if let Some(param) = identifier
-        .as_syntax_node()
-        .parent_of_type::<ast::Param<'_>>(db)
-        .filter(|param| param.name(db) == *identifier)
-    {
-        // Closures have different semantic model structures than regular functions.
-        let params = if let Some(expr_closure_ast) =
-            param.as_syntax_node().ancestor_of_type::<ast::ExprClosure<'_>>(db)
-        {
-            let expr_id =
-                db.lookup_expr_by_ptr(function_id, expr_closure_ast.stable_ptr(db).into()).ok()?;
-
-            let Expr::ExprClosure(expr_closure_semantic) = db.expr_semantic(function_id, expr_id)
-            else {
-                // Break in case Expr::Missing was here.
-                return None;
-            };
-            expr_closure_semantic.params
-        } else {
-            let signature = db.function_with_body_signature(function_id).ok()?;
-            signature.params.clone()
-        };
-
-        if let Some(param) =
-            params.into_iter().find(|param| param.stable_ptr == identifier.stable_ptr(db))
-        {
-            let var_id = cairo_lang_defs::ids::VarId::Param(param.id);
-            return Some(var_id);
-        }
-    }
-
-    // Look at identifier patterns in the function body.
-    if let Some(pattern_ast) = identifier.as_syntax_node().ancestor_of_type::<ast::Pattern<'_>>(db)
-    {
-        let pattern_id = db.lookup_pattern_by_ptr(function_id, pattern_ast.stable_ptr(db)).ok()?;
-        let pattern = db.pattern_semantic(function_id, pattern_id);
-
-        let pattern_variable = pattern
-            .variables(&QueryPatternVariablesFromDb(db, function_id))
-            .into_iter()
-            .find(|var| var.name == identifier.text(db))?;
-        let var_id = cairo_lang_defs::ids::VarId::Local(pattern_variable.var.id);
-        return Some(var_id);
-    }
-
-    None
+    function_with_body_id: FunctionWithBodyId<'db>,
+    var_introduction_index: &'a HashMap<SyntaxStablePtrId<'db>, Vec<VarId>>,
+    sierra_var_types: &'a HashMap<VarId, ConcreteTypeId>,
+    /// Map from a Cairo variable to a Sierra variable that currently holds its value.
+    alias_map: HashMap<SemanticVarId<'db>, VarId>,
+    /// Cairo variable encountered so far.
+    cairo_var_info: HashMap<SemanticVarId<'db>, (CairoVariableName, SourceCodeSpan)>,
+    /// Output multi-map accumulated so far.
+    bindings: HashMap<SierraVarId, Vec<(CairoVariableName, SourceCodeSpan)>>,
 }
 
-/// Searches for a variable corresponding to the identifier using
-/// `lookup_resolved_generic_item_by_ptr`.
-fn lookup_variable_in_resolved_items<'db>(
-    db: &'db dyn Database,
-    identifier: &TerminalIdentifier<'db>,
-    lookup_items: &[LookupItemId<'db>],
-) -> Option<cairo_lang_defs::ids::VarId<'db>> {
-    let ptr = identifier.stable_ptr(db);
-
-    for &lookup_item_id in lookup_items {
-        if let Some(ResolvedGenericItem::Variable(var)) =
-            db.lookup_resolved_generic_item_by_ptr(lookup_item_id, ptr)
-        {
-            return Some(var);
+impl<'db, 'a> BindingCollector<'db, 'a> {
+    #[expect(clippy::disallowed_types)]
+    fn new(
+        db: &'db dyn Database,
+        function_with_body_id: FunctionWithBodyId<'db>,
+        var_introduction_index: &'a HashMap<SyntaxStablePtrId<'db>, Vec<VarId>>,
+        sierra_var_types: &'a HashMap<VarId, ConcreteTypeId>,
+    ) -> Self {
+        Self {
+            db,
+            function_with_body_id,
+            var_introduction_index,
+            sierra_var_types,
+            alias_map: HashMap::new(),
+            cairo_var_info: HashMap::new(),
+            bindings: HashMap::new(),
         }
     }
 
-    None
+    /// Initializes the alias map, Cairo var info, and bindings from function parameters.
+    fn initialize_params(&mut self, function: &program::Function) {
+        let Ok(signature) = self.db.function_with_body_signature(self.function_with_body_id) else {
+            return;
+        };
+
+        // Params of a Sierra function may contain builtins, that are not representable
+        // as Cairo variables and thus not included in `function_param_variables`.
+        // Zipping from the end skips the builtins.
+        for (sierra_param, cairo_param) in
+            zip(function.params.iter().rev(), signature.params.iter().rev())
+        {
+            let name = cairo_param.name.long(self.db).to_string();
+            let Some(span) = compute_span(self.db, cairo_param.stable_ptr.untyped()) else {
+                continue;
+            };
+            self.record_binding(
+                SemanticVarId::Param(cairo_param.id),
+                name,
+                span,
+                sierra_param.id.clone(),
+            );
+        }
+    }
+
+    /// Records a binding of a Cairo var (id, name, span) and a Sierra var and updates the alias
+    /// map.
+    fn record_binding(
+        &mut self,
+        cairo_var: SemanticVarId<'db>,
+        name: CairoVariableName,
+        span: SourceCodeSpan,
+        sierra_var: VarId,
+    ) {
+        self.cairo_var_info.insert(cairo_var, (name.clone(), span.clone()));
+        self.alias_map.insert(cairo_var, sierra_var.clone());
+        self.bindings.entry(SierraVarId(sierra_var.id)).or_default().push((name, span));
+    }
+
+    /// Records an additional binding, when we already know the var info.
+    fn rebind(&mut self, cairo_var: SemanticVarId<'db>, sierra_var: VarId) {
+        let Some((name, span)) = self.cairo_var_info.get(&cairo_var).cloned() else {
+            return;
+        };
+
+        self.alias_map.insert(cairo_var, sierra_var.clone());
+        self.bindings.entry(SierraVarId(sierra_var.id)).or_default().push((name, span));
+    }
+
+    fn visit_expr(&mut self, expr_id: ExprId) {
+        let expr = self.db.expr_semantic(self.function_with_body_id, expr_id);
+        match expr {
+            Expr::Block(block) => {
+                for stmt_id in block.statements {
+                    self.visit_statement(stmt_id);
+                }
+                if let Some(tail) = block.tail {
+                    self.visit_expr(tail);
+                }
+            }
+            Expr::If(if_expr) => {
+                for condition in if_expr.conditions {
+                    match condition {
+                        Condition::BoolExpr(id) => self.visit_expr(id),
+                        Condition::Let(rhs_id, patterns) => {
+                            self.visit_expr(rhs_id);
+                            let rhs_expr =
+                                self.db.expr_semantic(self.function_with_body_id, rhs_id);
+                            let rhs_sierra = self.resolve_rhs_sierra_var(rhs_id, rhs_expr.ty());
+                            for pattern_id in patterns {
+                                self.bind_pattern(pattern_id, rhs_sierra.clone());
+                            }
+                        }
+                    }
+                }
+                self.visit_expr(if_expr.if_block);
+                if let Some(else_block) = if_expr.else_block {
+                    self.visit_expr(else_block);
+                }
+            }
+            Expr::Match(match_expr) => {
+                self.visit_expr(match_expr.matched_expr);
+                let matched_ty =
+                    self.db.expr_semantic(self.function_with_body_id, match_expr.matched_expr).ty();
+                let scrutinee_sierra =
+                    self.resolve_rhs_sierra_var(match_expr.matched_expr, matched_ty);
+                for arm in match_expr.arms {
+                    for pattern_id in arm.patterns {
+                        self.bind_pattern(pattern_id, scrutinee_sierra.clone());
+                    }
+                    self.visit_expr(arm.expression);
+                }
+            }
+            Expr::For(for_expr) => {
+                self.visit_expr(for_expr.expr_id);
+                // Best-effort: bind pattern variables; their Sierra vars (if any) will be found
+                // via the per-leaf var-introduction index lookup inside `bind_pattern`.
+                self.bind_pattern(for_expr.pattern, None);
+                self.visit_expr(for_expr.body);
+            }
+            Expr::Loop(loop_expr) => self.visit_expr(loop_expr.body),
+            Expr::While(while_expr) => {
+                match while_expr.condition {
+                    Condition::BoolExpr(id) => self.visit_expr(id),
+                    Condition::Let(rhs_id, patterns) => {
+                        self.visit_expr(rhs_id);
+                        let rhs_expr = self.db.expr_semantic(self.function_with_body_id, rhs_id);
+                        let rhs_sierra = self.resolve_rhs_sierra_var(rhs_id, rhs_expr.ty());
+                        for pattern_id in patterns {
+                            self.bind_pattern(pattern_id, rhs_sierra.clone());
+                        }
+                    }
+                }
+                self.visit_expr(while_expr.body);
+            }
+            Expr::ExprClosure(_) => {
+                // Closures lower to separate Sierra functions; their bodies have their own
+                // `FunctionDebugInfo` entry. Skip descending here.
+            }
+            Expr::FunctionCall(call) => {
+                for arg in &call.args {
+                    match arg {
+                        ExprFunctionCallArg::Value(id) | ExprFunctionCallArg::TempReference(id) => {
+                            self.visit_expr(*id);
+                        }
+                        ExprFunctionCallArg::Reference(_) => {}
+                    }
+                }
+                if let Some(coupon_id) = call.coupon_arg {
+                    self.visit_expr(coupon_id);
+                }
+                // Detect compound assignment: the call's syntactic origin is an `ExprBinary` with
+                // a compound op. The first arg is a Reference to the LHS variable.
+                let call_node = call.stable_ptr.lookup(self.db).as_syntax_node();
+                if let Some(binary) = ExprBinary::cast(self.db, call_node) {
+                    let is_compound = matches!(
+                        binary.op(self.db),
+                        BinaryOperator::MulEq(_)
+                            | BinaryOperator::DivEq(_)
+                            | BinaryOperator::ModEq(_)
+                            | BinaryOperator::PlusEq(_)
+                            | BinaryOperator::MinusEq(_)
+                    );
+                    if is_compound
+                        && let Some(ExprFunctionCallArg::Reference(member_path)) = call.args.first()
+                    {
+                        let lhs_var = member_path.base_var();
+                        let lhs_ty = member_path.ty();
+                        let call_ptr: SyntaxStablePtrId<'db> = call.stable_ptr.into();
+                        if let Some(result_var) = self.resolve_at_node(call_ptr, lhs_ty) {
+                            self.rebind(lhs_var, result_var);
+                        }
+                    }
+                }
+            }
+            Expr::Assignment(assignment) => {
+                self.visit_expr(assignment.rhs);
+                let rhs_ty = assignment.ref_arg.ty();
+                if let Some(sierra_var) = self.resolve_rhs_sierra_var(assignment.rhs, rhs_ty) {
+                    self.rebind(assignment.ref_arg.base_var(), sierra_var);
+                }
+            }
+            Expr::Tuple(tuple) => {
+                for item in tuple.items {
+                    self.visit_expr(item);
+                }
+            }
+            Expr::FixedSizeArray(arr) => {
+                use cairo_lang_semantic::FixedSizeArrayItems;
+                match arr.items {
+                    FixedSizeArrayItems::Items(items) => {
+                        for item in items {
+                            self.visit_expr(item);
+                        }
+                    }
+                    FixedSizeArrayItems::ValueAndSize(item, _) => self.visit_expr(item),
+                }
+            }
+            Expr::StructCtor(ctor) => {
+                for (id, _) in ctor.members {
+                    self.visit_expr(id);
+                }
+                if let Some(base) = ctor.base_struct {
+                    self.visit_expr(base);
+                }
+            }
+            Expr::EnumVariantCtor(ctor) => self.visit_expr(ctor.value_expr),
+            Expr::MemberAccess(access) => self.visit_expr(access.expr),
+            Expr::Snapshot(snap) => self.visit_expr(snap.inner),
+            Expr::Desnap(desnap) => self.visit_expr(desnap.inner),
+            Expr::LogicalOperator(op) => {
+                self.visit_expr(op.lhs);
+                self.visit_expr(op.rhs);
+            }
+            Expr::PropagateError(propagate) => self.visit_expr(propagate.inner),
+            Expr::Var(_)
+            | Expr::Literal(_)
+            | Expr::StringLiteral(_)
+            | Expr::Constant(_)
+            | Expr::Missing(_) => {}
+        }
+    }
+
+    fn visit_statement(&mut self, stmt_id: StatementId) {
+        let stmt = self.db.statement_semantic(self.function_with_body_id, stmt_id);
+        match stmt {
+            Statement::Let(let_stmt) => {
+                self.visit_expr(let_stmt.expr);
+                if let Some(else_id) = let_stmt.else_clause {
+                    self.visit_expr(else_id);
+                }
+                let rhs_ty = self.db.expr_semantic(self.function_with_body_id, let_stmt.expr).ty();
+                let rhs_sierra = self.resolve_rhs_sierra_var(let_stmt.expr, rhs_ty);
+                self.bind_pattern(let_stmt.pattern, rhs_sierra);
+            }
+            Statement::Expr(stmt_expr) => self.visit_expr(stmt_expr.expr),
+            Statement::Return(stmt_return) => {
+                if let Some(id) = stmt_return.expr_option {
+                    self.visit_expr(id);
+                }
+            }
+            Statement::Break(stmt_break) => {
+                if let Some(id) = stmt_break.expr_option {
+                    self.visit_expr(id);
+                }
+            }
+            Statement::Continue(_) | Statement::Item(_) => {}
+        }
+    }
+
+    /// Resolves the Sierra variable that holds the runtime value of `rhs_id` of semantic
+    /// type `expected_ty`.
+    fn resolve_rhs_sierra_var(
+        &self,
+        rhs_id: ExprId,
+        expected_ty: cairo_lang_semantic::TypeId<'db>,
+    ) -> Option<VarId> {
+        let expr = self.db.expr_semantic(self.function_with_body_id, rhs_id);
+        match expr {
+            Expr::Var(var) => self.alias_map.get(&var.var).cloned(),
+            Expr::Block(block) => block.tail.and_then(|tail| {
+                let tail_ty = self.db.expr_semantic(self.function_with_body_id, tail).ty();
+                self.resolve_rhs_sierra_var(tail, tail_ty)
+            }),
+            _ => {
+                let ptr: SyntaxStablePtrId<'db> = expr.stable_ptr().into();
+                self.resolve_at_node(ptr, expected_ty)
+            }
+        }
+    }
+
+    /// Looks up the var-introduction index at `ptr` and picks a Sierra variable whose type matches
+    /// the bridged Sierra type of `expected_ty`. Returns the first match in allocation order.
+    ///
+    /// Skips type-filtering (and returns `None`) if `expected_ty` isn't fully concrete — in
+    /// generic contexts we can't bridge it to a Sierra `ConcreteTypeId`, and
+    /// `get_concrete_type_id` would panic.
+    fn resolve_at_node(
+        &self,
+        ptr: SyntaxStablePtrId<'db>,
+        expected_ty: cairo_lang_semantic::TypeId<'db>,
+    ) -> Option<VarId> {
+        if !expected_ty.is_fully_concrete(self.db) {
+            return None;
+        }
+        let expected_sierra_ty = self.db.get_concrete_type_id(expected_ty).ok()?.clone();
+        let candidates = self.var_introduction_index.get(&ptr)?;
+        candidates
+            .iter()
+            .find(|c| {
+                self.sierra_var_types.get(*c).map(|ty| ty == &expected_sierra_ty).unwrap_or(false)
+            })
+            .cloned()
+    }
+
+    /// Records bindings for every pattern variable in `pattern_id`, projecting onto `rhs_sierra`
+    /// when each leaf doesn't have its own freshly-allocated Sierra var.
+    fn bind_pattern(&mut self, pattern_id: PatternId, rhs_sierra: Option<VarId>) {
+        let pattern = self.db.pattern_semantic(self.function_with_body_id, pattern_id);
+        let is_single_variable = matches!(pattern, Pattern::Variable(_));
+        let pattern_vars =
+            pattern.variables(&QueryPatternVariablesFromDb(self.db, self.function_with_body_id));
+        for pat_var in pattern_vars {
+            let leaf_sierra = self
+                .resolve_at_node(pat_var.stable_ptr.untyped(), pat_var.var.ty)
+                .or_else(|| if is_single_variable { rhs_sierra.clone() } else { None });
+            let Some(sierra_var) = leaf_sierra else {
+                continue;
+            };
+            let name = pat_var.name.long(self.db).to_string();
+            let Some(span) = compute_span(self.db, pat_var.var.stable_ptr(self.db).untyped())
+            else {
+                continue;
+            };
+            self.record_binding(SemanticVarId::Local(pat_var.var.id), name, span, sierra_var);
+        }
+    }
 }
