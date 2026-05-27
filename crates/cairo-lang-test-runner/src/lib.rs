@@ -38,8 +38,6 @@ type ArcCustomHintProcessorFactory = Arc<
     dyn (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>) + Send + Sync,
 >;
 
-const TEST_RESULT_CHANNEL_CAPACITY_FACTOR: usize = 4;
-
 /// Compile and run tests.
 pub struct TestRunner<'db> {
     compiler: TestCompiler<'db>,
@@ -386,9 +384,8 @@ pub fn run_tests(
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
     println!("running {} test{}", named_tests.len(), suffix);
 
-    let result_channel_capacity =
-        rayon::current_num_threads().max(1) * TEST_RESULT_CHANNEL_CAPACITY_FACTOR;
-    let (tx, rx) = sync_channel::<_>(result_channel_capacity);
+    const CAPACITY_FACTOR: usize = 4;
+    let (tx, rx) = sync_channel::<_>(rayon::current_num_threads().max(1) * CAPACITY_FACTOR);
     rayon::spawn(move || {
         named_tests.into_par_iter().for_each(|(name, test)| {
             let result =
