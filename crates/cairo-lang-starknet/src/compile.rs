@@ -184,11 +184,7 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
             debug_info
                 .functions_info
                 .replace_function_ids(&replacer)
-                .extract_serializable_debug_info(
-                    db,
-                    &sierra_program,
-                    &debug_info.statements_locations,
-                ),
+                .extract_serializable_debug_info(db, &sierra_program),
         ))
     }
 
