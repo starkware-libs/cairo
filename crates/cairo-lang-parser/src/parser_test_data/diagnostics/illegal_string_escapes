@@ -10,9 +10,9 @@ fn foo() {
 
 //! > expected_diagnostics
 error[E1017]: Invalid string escaping.
- --> dummy_file.cairo:2:13
+ --> dummy_file.cairo:2:14
     let a = '\p';
-            ^^^^
+             ^^
 
 //! > ==========================================================================
 

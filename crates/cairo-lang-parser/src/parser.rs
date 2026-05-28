@@ -3205,6 +3205,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 ValidationLocation::After => {
                     TextSpan::cursor(self.offset.add_width(self.current_width))
                 }
+                ValidationLocation::InnerSpan { start, end } => {
+                    TextSpan::new(self.offset.add_width(start), self.offset.add_width(end))
+                }
             };
             self.add_diagnostic(err.kind, span);
         }

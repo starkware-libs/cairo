@@ -2,6 +2,7 @@
 //!
 //! A failed validation emits a diagnostic.
 
+use cairo_lang_filesystem::span::TextWidth;
 use num_bigint::BigInt;
 use num_traits::Num;
 use unescaper::unescape;
@@ -28,6 +29,8 @@ pub enum ValidationLocation {
     Full,
     /// The error is at the end of the span, after the consumed token.
     After,
+    /// The error is at a sub-span within the token, given as byte offsets from the token start.
+    InnerSpan { start: TextWidth, end: TextWidth },
 }
 
 /// Validate that the numeric literal is valid, after it is consumed by the parser.
@@ -120,16 +123,33 @@ fn validate_any_string(
         return Some(ValidationError::full(unterminated_string_diagnostic_kind));
     };
 
-    validate_string_body(body, ascii_only_diagnostic_kind)
+    validate_string_body(body, unterminated_string_diagnostic_kind, ascii_only_diagnostic_kind)
 }
 
 fn validate_string_body(
     body: &str,
+    unterminated_string_diagnostic_kind: ParserDiagnosticKind,
     ascii_only_diagnostic_kind: ParserDiagnosticKind,
 ) -> Option<ValidationError> {
-    let Ok(body) = unescape(body) else {
-        // TODO(mkaput): Try to always provide full position for entire escape sequence.
-        return Some(ValidationError::full(ParserDiagnosticKind::IllegalStringEscaping));
+    let body = match unescape(body) {
+        Ok(body) => body,
+        // IncompleteStr means the body ends with a bare backslash: the "closing" delimiter found
+        // by rsplit_once was actually escaped, so the string is unterminated.
+        Err(unescaper::Error::IncompleteStr(_)) => {
+            return Some(ValidationError::full(unterminated_string_diagnostic_kind));
+        }
+        // pos is the char (= byte for ASCII Cairo strings) index of the invalid char in body.
+        // The '\' is at body[pos-1], which lands at byte offset `pos` from the token start
+        // (opening delimiter adds 1).
+        Err(unescaper::Error::InvalidChar { char: ch, pos }) => {
+            let start = TextWidth::from_str(&body[..pos]);
+            let end = start + TextWidth::from_char('\\') + TextWidth::from_char(ch);
+            return Some(ValidationError {
+                kind: ParserDiagnosticKind::IllegalStringEscaping,
+                location: ValidationLocation::InnerSpan { start, end },
+            });
+        }
+        Err(_) => return Some(ValidationError::full(ParserDiagnosticKind::IllegalStringEscaping)),
     };
 
     if !body.is_ascii() {
