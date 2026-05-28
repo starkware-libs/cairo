@@ -246,8 +246,9 @@ impl<'db> TypeLongId<'db> {
             TypeLongId::Var(_) => {}
             TypeLongId::NumericLiteral(_) => {}
             TypeLongId::Coupon(_) => {}
-            TypeLongId::FixedSizeArray { type_id, .. } => {
-                type_id.extract_generic_params(db, generic_parameters, visited)?
+            TypeLongId::FixedSizeArray { type_id, size } => {
+                type_id.extract_generic_params(db, generic_parameters, visited)?;
+                size.extract_generic_params(db, generic_parameters, visited)?;
             }
             TypeLongId::ImplType(impl_type_id) => {
                 let concrete_trait_id = impl_type_id.impl_id.concrete_trait(db)?;

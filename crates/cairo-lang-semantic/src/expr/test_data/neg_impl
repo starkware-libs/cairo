@@ -360,3 +360,35 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Negative impl with fixed-size array whose size is a const generic param.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait IsSpecificSize<T>;
+impl IsSpecificSizeImpl of IsSpecificSize<[u32; 3]>;
+
+trait NotSpecificSize<T>;
+impl NotSpecificSizeImpl<T, -IsSpecificSize<T>> of NotSpecificSize<T>;
+
+fn bar<T, +NotSpecificSize<T>>() {}
+
+fn generic_bar<const N: usize>() {
+    bar::<[u32; N]>();
+}
+
+//! > expected_diagnostics
+error[E2313]: Negative impl has an unsupported generic argument GenericParamConst(test::generic_bar::N).
+ --> lib.cairo:10:5
+    bar::<[u32; N]>();
+    ^^^
