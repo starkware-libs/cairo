@@ -506,11 +506,8 @@ pub fn unwrap_error_propagation_type<'db>(
                 None
             }
         }
-        TypeLongId::GenericParameter(_) => todo!(
-            "When generic types are supported, if type is of matching type, allow unwrapping it \
-             to type."
-        ),
-        TypeLongId::Concrete(
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Concrete(
             semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
         )
         | TypeLongId::Tuple(_)
