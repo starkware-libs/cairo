@@ -518,17 +518,17 @@ impl<'db> BlockStructRecomposer<'_, '_, 'db> {
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId<'db>,
         members: Vec<VariableId>,
+        location: LocationId<'db>,
     ) -> VariableId {
         let ty =
             TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)).intern(self.ctx.db);
-        // TODO(ilya): Is using the `self.location` correct here?
         generators::StructConstruct {
             inputs: members
                 .into_iter()
                 .map(|var_id| VarUsage { var_id, location: self.location })
                 .collect_vec(),
             ty,
-            location: self.location,
+            location,
         }
         .add(self.ctx, self.statements)
         .var_id
