@@ -2,6 +2,7 @@
 //!
 //! A failed validation emits a diagnostic.
 
+use cairo_lang_filesystem::span::TextWidth;
 use num_bigint::BigInt;
 use num_traits::Num;
 use unescaper::unescape;
@@ -28,6 +29,8 @@ pub enum ValidationLocation {
     Full,
     /// The error is at the end of the span, after the consumed token.
     After,
+    /// The error is at a cursor within the span, given as byte offsets from the start.
+    Cursor(TextWidth),
 }
 
 /// Validate that the numeric literal is valid, after it is consumed by the parser.
@@ -120,16 +123,28 @@ fn validate_any_string(
         return Some(ValidationError::full(unterminated_string_diagnostic_kind));
     };
 
-    validate_string_body(body, ascii_only_diagnostic_kind)
+    validate_string_body(body, unterminated_string_diagnostic_kind, ascii_only_diagnostic_kind)
 }
 
 fn validate_string_body(
     body: &str,
+    unterminated_string_diagnostic_kind: ParserDiagnosticKind,
     ascii_only_diagnostic_kind: ParserDiagnosticKind,
 ) -> Option<ValidationError> {
-    let Ok(body) = unescape(body) else {
-        // TODO(mkaput): Try to always provide full position for entire escape sequence.
-        return Some(ValidationError::full(ParserDiagnosticKind::IllegalStringEscaping));
+    let body = match unescape(body) {
+        Ok(body) => body,
+        Err(unescaper::Error::IncompleteStr(_)) => {
+            return Some(ValidationError::full(unterminated_string_diagnostic_kind));
+        }
+        Err(
+            unescaper::Error::InvalidChar { pos, .. } | unescaper::Error::ParseIntError { pos, .. },
+        ) => {
+            let start = body.chars().take(pos).map(TextWidth::from_char).sum();
+            return Some(ValidationError {
+                kind: ParserDiagnosticKind::IllegalStringEscaping,
+                location: ValidationLocation::Cursor(start),
+            });
+        }
     };
 
     if !body.is_ascii() {
