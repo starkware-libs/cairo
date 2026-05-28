@@ -1124,9 +1124,9 @@ note: variable was previously used here:
 note: Trait has no implementation in context: core::traits::Copy::<test::Wrapper>.
 
 error[E3002]: Variable not dropped.
- --> lib.cairo:9:15
-        use_x(x); // First use.
-              ^
+ --> lib.cairo:7:8
+fn foo(x: Wrapper) {
+       ^
 note: the variable needs to be dropped due to the divergence here:
   --> lib.cairo:8:5-10:5
       if x.inner.is_zero() {
@@ -1167,6 +1167,156 @@ Statements:
   (v6: ()) <- struct_construct()
 End:
   Return(v6)
+
+//! > ==========================================================================
+
+//! > E3002 location points to local variable declaration, not use site.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function_code
+fn foo() {
+    let x = Wrapper { inner: 5 };
+    if x.inner.is_zero() {
+        use_x(x);
+    } else {
+        use_snap_x(@x);
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Wrapper {
+    inner: u16,
+}
+
+extern fn use_x(x: Wrapper) nopanic;
+extern fn use_snap_x(x: @Wrapper) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3002]: Variable not dropped.
+ --> lib.cairo:8:9
+    let x = Wrapper { inner: 5 };
+        ^
+note: Trait has no implementation in context: core::traits::Drop::<test::Wrapper>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::Wrapper>.
+
+//! > lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u16) <- 5
+  (v1: test::Wrapper) <- struct_construct(v0{`5`})
+  (v2: core::integer::u16) <- struct_destructure(v1{`x.inner`})
+  (v3: core::bool) <- core::zeroable::zero_based::ZeroableImpl::<core::integer::u16, core::integer::U16Zero, core::integer::u16Drop, core::integer::u16Copy>::is_zero(v2{`x.inner`})
+End:
+  Match(match_enum(v3{`x.inner.is_zero()`}) {
+    bool::False(v5) => blk2,
+    bool::True(v4) => blk1,
+  })
+
+blk1:
+Statements:
+  (v9: test::Wrapper) <- struct_construct(v2{`x`})
+  () <- test::use_x(v9{`x`})
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  (v6: test::Wrapper) <- struct_construct(v2{`x`})
+  (v7: test::Wrapper, v8: @test::Wrapper) <- snapshot(v6{`x`})
+  () <- test::use_snap_x(v8{`@x`})
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v10: ()) <- struct_construct()
+End:
+  Return(v10)
+
+//! > ==========================================================================
+
+//! > E3002 location points to original variable for nested struct reconstruction.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function_code
+fn foo(o: Outer) {
+    if o.inner.x.is_zero() {
+        use_outer(o);
+    } else {
+        use_snap_outer(@o);
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Inner {
+    x: u16,
+}
+
+struct Outer {
+    inner: Inner,
+}
+
+extern fn use_outer(x: Outer) nopanic;
+extern fn use_snap_outer(x: @Outer) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3002]: Variable not dropped.
+ --> lib.cairo:11:8
+fn foo(o: Outer) {
+       ^
+note: Trait has no implementation in context: core::traits::Drop::<test::Outer>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::Outer>.
+
+//! > lowering
+Parameters: v0: test::Outer
+blk0 (root):
+Statements:
+  (v1: test::Inner) <- struct_destructure(v0{`o.inner.x`})
+  (v2: core::integer::u16) <- struct_destructure(v1{`o.inner.x`})
+  (v3: core::bool) <- core::zeroable::zero_based::ZeroableImpl::<core::integer::u16, core::integer::U16Zero, core::integer::u16Drop, core::integer::u16Copy>::is_zero(v2{`o.inner.x`})
+End:
+  Match(match_enum(v3{`o.inner.x.is_zero()`}) {
+    bool::False(v5) => blk2,
+    bool::True(v4) => blk1,
+  })
+
+blk1:
+Statements:
+  (v10: test::Inner) <- struct_construct(v2{`o`})
+  (v11: test::Outer) <- struct_construct(v10{`o`})
+  () <- test::use_outer(v11{`o`})
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  (v6: test::Inner) <- struct_construct(v2{`o`})
+  (v7: test::Outer) <- struct_construct(v6{`o`})
+  (v8: test::Outer, v9: @test::Outer) <- snapshot(v7{`o`})
+  () <- test::use_snap_outer(v9{`@o`})
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v12: ()) <- struct_construct()
+End:
+  Return(v12)
 
 //! > ==========================================================================
 

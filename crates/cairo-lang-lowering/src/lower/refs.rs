@@ -135,7 +135,8 @@ impl<'db> SemanticLoweringMapping<'db> {
                         }
                     })
                     .collect_vec();
-                let var = ctx.reconstruct(scattered.concrete_struct_id, members);
+                let var =
+                    ctx.reconstruct(scattered.concrete_struct_id, members, scattered.var_location);
                 *value = Value::Var(var);
                 if let Some(MovedVar { var_id: _, inference_error, last_use_location }) = moved_var
                 {
@@ -156,39 +157,42 @@ impl<'db> SemanticLoweringMapping<'db> {
             return self.scattered.get_mut(path);
         }
 
-        let MemberPath::Member { parent, member_id, concrete_struct_id, .. } = path else {
+        let &MemberPath::Member { ref parent, member_id, concrete_struct_id, .. } = path else {
             return None;
         };
 
         let parent_value = self.break_into_value(ctx, parent)?;
         match parent_value {
             Value::Var(var) => {
-                let members = ctx.deconstruct(*concrete_struct_id, *var);
+                let location = ctx.ctx.variables[*var].location;
+                let members = ctx.deconstruct(concrete_struct_id, *var);
                 let members = OrderedHashMap::from_iter(
                     members.into_iter().map(|(member_id, var)| (member_id, Value::Var(var))),
                 );
-                let scattered = Scattered { concrete_struct_id: *concrete_struct_id, members };
+                let scattered =
+                    Scattered { concrete_struct_id, members, var_location: Some(location) };
                 *parent_value = Value::Scattered(Box::new(scattered));
             }
-            Value::MovedVar(MovedVar { var_id: var, inference_error, last_use_location }) => {
-                let member_map = ctx.ctx.db.concrete_struct_members(*concrete_struct_id).unwrap();
-                let location = ctx.ctx.variables[*var].location;
+            &mut Value::MovedVar(MovedVar { var_id, ref inference_error, last_use_location }) => {
+                let member_map = ctx.ctx.db.concrete_struct_members(concrete_struct_id).unwrap();
+                let location = ctx.ctx.variables[var_id].location;
                 let members = OrderedHashMap::from_iter(member_map.values().map(|member| {
                     (
                         member.id,
                         Value::MovedVar(MovedVar {
                             var_id: ctx.ctx.new_var(VarRequest { ty: member.ty, location }),
                             inference_error: inference_error.clone(),
-                            last_use_location: *last_use_location,
+                            last_use_location,
                         }),
                     )
                 }));
-                let scattered = Scattered { concrete_struct_id: *concrete_struct_id, members };
+                let scattered =
+                    Scattered { concrete_struct_id, members, var_location: Some(location) };
                 *parent_value = Value::Scattered(Box::new(scattered));
             }
             Value::Scattered(..) => {}
         };
-        extract_matches!(parent_value, Value::Scattered).members.get_mut(member_id)
+        extract_matches!(parent_value, Value::Scattered).members.get_mut(&member_id)
     }
 }
 
@@ -346,7 +350,13 @@ fn compute_remapped_variables<'db>(
         })
         .collect();
 
-    Value::Scattered(Box::new(Scattered { concrete_struct_id, members }))
+    let var_location = only_scattered
+        .iter()
+        .map(|s| s.var_location)
+        .all_equal()
+        .then(|| only_scattered[0].var_location)
+        .flatten();
+    Value::Scattered(Box::new(Scattered { concrete_struct_id, members, var_location }))
 }
 
 /// Returns an iterator to all the [MemberPath]s that appear in both mappings and have different
@@ -412,4 +422,7 @@ impl<'db> std::fmt::Display for Value<'db> {
 struct Scattered<'db> {
     concrete_struct_id: semantic::ConcreteStructId<'db>,
     members: OrderedHashMap<MemberId<'db>, Value<'db>>,
+    /// The location of the original variable that was scattered into members.
+    /// Used when reassembling to give the reconstructed variable a meaningful location.
+    var_location: Option<LocationId<'db>>,
 }
