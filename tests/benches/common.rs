@@ -1,8 +1,10 @@
 //! Shared scenarios for compile benchmarks.
 //!
-//! Each phase is exposed as a one-shot `run_*` function so the criterion timing harness in
-//! `compile.rs` can drive it without duplicating the setup boilerplate. Future bench binaries
-//! (e.g. a heap-profiling counterpart) can reuse the same helpers.
+//! Each phase is exposed as a one-shot `run_*` function so it can be driven by either the criterion
+//! timing harness (in `compile.rs`) or the dhat heap profiler (in `dhat_compile.rs`). Because each
+//! bench includes this module independently, items used by only one bench look "dead" to the
+//! other — silence those false positives module-wide.
+#![allow(dead_code)]
 
 use std::path::PathBuf;
 
@@ -17,6 +19,9 @@ use cairo_lang_lowering::cache::generate_crate_cache;
 use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
+use cairo_lang_sierra_to_casm::metadata::calc_metadata;
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::{TestsCompilationConfig, compile_test_prepared_db, test_plugin_suite};
 use cairo_lang_test_runner::{TestRunConfig, TestRunner, run_tests};
@@ -99,8 +104,8 @@ fn test_run_config() -> TestRunConfig {
     }
 }
 
-/// Phase: source → Sierra (full IR generation). Returns the program so callers can hand it to a
-/// downstream phase outside the timed section.
+/// Phase: source → Sierra (full IR generation). Returns the program so downstream phases (e.g.
+/// sierra-to-casm) can be set up outside a profiled section.
 pub fn run_cairo_to_sierra(config: &BenchConfig) -> Program {
     let mut db = build_db(config, false);
     let inputs = setup_project(&mut db, &config.path).unwrap();
@@ -112,6 +117,20 @@ pub fn run_cairo_to_sierra(config: &BenchConfig) -> Program {
         CompilerConfig { diagnostics_reporter, ..Default::default() },
     )
     .unwrap()
+}
+
+/// Phase: Sierra → CASM. Only valid for non-Starknet programs (Starknet contracts go through
+/// `cairo_lang_starknet_classes::casm_contract_class` instead).
+pub fn run_sierra_to_casm(program: &Program) {
+    let program_info = ProgramRegistryInfo::new(program).unwrap();
+    let metadata = calc_metadata(program, &program_info, Default::default()).unwrap();
+    cairo_lang_sierra_to_casm::compiler::compile(
+        program,
+        &program_info,
+        &metadata,
+        SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX },
+    )
+    .unwrap();
 }
 
 /// Phase: source → diagnostics (no Sierra generation).
