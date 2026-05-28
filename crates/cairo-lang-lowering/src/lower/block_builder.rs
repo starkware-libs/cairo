@@ -145,21 +145,22 @@ impl<'db> BlockBuilder<'db> {
                 }
 
                 // If the variable is not copyable, mark it as [MovedVar].
-                let var = &ctx.variables[var_id];
-                let copyable = var.info.copyable.clone();
-                let ty = var.ty;
-
-                if let Err(inference_error) = copyable {
+                if let Err(inference_error) = &ctx.variables[var_id].info.copyable {
+                    let inference_error = inference_error.clone();
                     self.semantics.mark_as_used(
                         BlockStructRecomposer { statements: &mut self.statements, ctx, location },
                         member_path,
-                        MovedVar { ty, inference_error, last_use_location: location },
+                        MovedVar { var_id, inference_error, last_use_location: location },
                     );
                 }
 
                 Some(VarUsage { var_id, location })
             }
-            Err(AssembleValueError::Moved(MovedVar { ty, inference_error, last_use_location })) => {
+            Err(AssembleValueError::Moved(MovedVar {
+                var_id,
+                inference_error,
+                last_use_location,
+            })) => {
                 // If the variable was already moved, report an error.
                 let diag_location = location
                     .long(ctx.db)
@@ -175,8 +176,6 @@ impl<'db> BlockBuilder<'db> {
                     LoweringDiagnosticKind::VariableMoved { inference_error },
                 );
 
-                // Create and return a dummy variable.
-                let var_id = ctx.new_var(VarRequest { ty, location });
                 Some(VarUsage { var_id, location })
             }
             Err(AssembleValueError::Missing) => None,

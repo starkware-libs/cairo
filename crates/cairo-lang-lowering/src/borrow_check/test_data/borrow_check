@@ -144,7 +144,7 @@ End:
 blk3:
 Statements:
 End:
-  Return(v6)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -368,7 +368,7 @@ End:
 blk3:
 Statements:
 End:
-  Return(v6)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -411,10 +411,10 @@ Statements:
   (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0{`__array_builder_macro_result__`}, v1{`'err_code'`})
   (v4: core::felt252) <- 6450273
   (v6: core::array::Array::<core::felt252>, v5: ()) <- core::array::ArrayImpl::<core::felt252>::append(v3{`b`}, v4{`'bla'`})
-  (v8: core::panics::Panic) <- struct_construct()
-  (v9: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v8{`panic(arr)`}, v7{`arr`})
+  (v7: core::panics::Panic) <- struct_construct()
+  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7{`panic(arr)`}, v3{`arr`})
 End:
-  Panic(v9)
+  Panic(v8)
 
 //! > ==========================================================================
 
@@ -458,28 +458,28 @@ blk0 (root):
 Statements:
   () <- test::use_non_copy(v0{`x`})
 End:
-  Match(match test::do_match_extern(v1{`x`}) {
-    Option::Some(v2) => blk1,
+  Match(match test::do_match_extern(v0{`x`}) {
+    Option::Some(v1) => blk1,
     Option::None => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::option::Option::<test::NonCopy>) <- Option::Some(v2{`do_match_extern(x)`})
+  (v2: core::option::Option::<test::NonCopy>) <- Option::Some(v1{`do_match_extern(x)`})
 End:
-  Goto(blk3, {v3 -> v6})
+  Goto(blk3, {v2 -> v5})
 
 blk2:
 Statements:
-  (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<test::NonCopy>) <- Option::None(v4{`do_match_extern(x)`})
+  (v3: ()) <- struct_construct()
+  (v4: core::option::Option::<test::NonCopy>) <- Option::None(v3{`do_match_extern(x)`})
 End:
-  Goto(blk3, {v5 -> v6})
+  Goto(blk3, {v4 -> v5})
 
 blk3:
 Statements:
 End:
-  Return(v6)
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -528,6 +528,7 @@ Statements:
   (v1: core::integer::u32) <- 17
   (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0{`x.a`})
   () <- test::use_non_copy(v3{`x.b`})
+  (v4: test::MyStruct) <- struct_construct(v1{`x`}, v3{`x`})
 End:
   Return(v4)
 
@@ -588,6 +589,8 @@ Statements:
   (v4: core::array::Array::<core::felt252>, v5: core::integer::u8) <- struct_destructure(v1{`s2.a`})
   () <- test::invalidate(v4{`s2.a`})
   (v6: ()) <- struct_construct()
+  (v7: test::MyStruct) <- struct_construct(v2{`s1`}, v3{`s1`})
+  (v8: test::MyStruct) <- struct_construct(v4{`s2`}, v5{`s2`})
 End:
   Return(v7, v8, v6)
 
@@ -661,6 +664,7 @@ End:
 blk3:
 Statements:
   (v12: ()) <- struct_construct()
+  (v13: test::MyStruct) <- struct_construct(v11{`self`}, v3{`self`})
 End:
   Return(v13, v12)
 
@@ -947,6 +951,7 @@ blk0 (root):
 Statements:
   (v1: core::felt252, v2: test::NonCopy) <- struct_destructure(v0{`x.b`})
   () <- test::consume(v2{`x.b`})
+  (v3: test::MyStruct) <- struct_construct(v1{`x`}, v2{`x`})
 End:
   Return(v3)
 
@@ -1119,16 +1124,18 @@ note: variable was previously used here:
 note: Trait has no implementation in context: core::traits::Copy::<test::Wrapper>.
 
 error[E3002]: Variable not dropped.
- --> lib.cairo:12:11
-    use_x(x); // Second use.
-          ^
-note: the variable needs to be dropped due to the potential panic here:
-  --> lib.cairo:8:8
-    if x.inner.is_zero() {
-       ^^^^^^^^^^^^^^^^^
+ --> lib.cairo:9:15
+        use_x(x); // First use.
+              ^
+note: the variable needs to be dropped due to the divergence here:
+  --> lib.cairo:8:5-10:5
+      if x.inner.is_zero() {
+ _____^
+|         use_x(x); // First use.
+|     }
+|_____^
 note: Trait has no implementation in context: core::traits::Drop::<test::Wrapper>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::Wrapper>.
-note: Trait has no implementation in context: core::traits::PanicDestruct::<test::Wrapper>.
 
 //! > lowering
 Parameters: v0: test::Wrapper
@@ -1156,10 +1163,10 @@ End:
 
 blk3:
 Statements:
-  () <- test::use_x(v6{`x`})
-  (v7: ()) <- struct_construct()
+  () <- test::use_x(v5{`x`})
+  (v6: ()) <- struct_construct()
 End:
-  Return(v7)
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -1257,3 +1264,64 @@ Statements:
   (v1: ()) <- struct_construct()
 End:
   Return(v1)
+
+//! > ==========================================================================
+
+//! > Spurious E3002 alongside E3001 for orphaned inner struct construction (bug repro).
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function_code
+fn foo(outer: Outer) {
+    bar(outer.inner.a);
+    consume(outer.b);
+    use_outer(outer);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type NonCopy;
+
+struct Inner {
+    a: felt252,
+}
+
+struct Outer {
+    inner: Inner,
+    b: NonCopy,
+}
+
+extern fn bar(x: felt252) nopanic;
+extern fn consume(x: NonCopy) nopanic;
+extern fn use_outer(x: Outer) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3001]: Variable was previously moved.
+ --> lib.cairo:18:15
+    use_outer(outer);
+              ^^^^^
+note: variable was previously used here:
+  --> lib.cairo:17:13
+    consume(outer.b);
+            ^^^^^^^
+note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
+
+//! > lowering
+Parameters: v0: test::Outer
+blk0 (root):
+Statements:
+  (v1: test::Inner, v2: test::NonCopy) <- struct_destructure(v0{`outer.inner.a`})
+  (v3: core::felt252) <- struct_destructure(v1{`outer.inner.a`})
+  () <- test::bar(v3{`outer.inner.a`})
+  () <- test::consume(v2{`outer.b`})
+  (v4: test::Inner) <- struct_construct(v3{`outer`})
+  (v5: test::Outer) <- struct_construct(v4{`outer`}, v2{`outer`})
+  () <- test::use_outer(v5{`outer`})
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
