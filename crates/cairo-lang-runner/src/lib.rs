@@ -286,10 +286,9 @@ impl SierraCasmRunner {
         // The execution from the header created by self.builder.create_entry_code().
         // We expect the last trace entry to be the `ret` instruction at the end of the header.
         let header_end = relocated_trace.last().unwrap().pc;
+        used_resources.n_steps -= relocated_trace.iter().position(|e| e.pc > header_end).unwrap();
         used_resources.n_steps -=
-            relocated_trace.iter().position(|e| e.pc > header_end).unwrap() - 1;
-        used_resources.n_steps -=
-            relocated_trace.iter().rev().position(|e| e.pc > header_end).unwrap() - 1;
+            relocated_trace.iter().rev().position(|e| e.pc > header_end).unwrap();
 
         let (results_data, gas_counter) = self.get_results_data(&return_types, &memory, ap);
         assert!(results_data.len() <= 1);
