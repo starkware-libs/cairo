@@ -442,3 +442,45 @@ error[E1001]: Missing token ';'.
     │       │       └── semicolon: Missing
     │       └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test inline macro call with repetition missing operator (allowed at call site).
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn main() -> u32 {
+    foo!($(x))
+}
+
+//! > top_level_kind
+ExprInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprInlineMacro
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'foo'
+    ├── bang (kind: TokenNot): '!'
+    └── arguments (kind: TokenTreeNode)
+        └── subtree (kind: ParenthesizedTokenTree)
+            ├── lparen (kind: TokenLParen): '('
+            ├── tokens (kind: TokenList)
+            │   └── child #0 (kind: TokenTreeRepetition)
+            │       ├── dollar (kind: TokenDollar): '$'
+            │       ├── lparen (kind: TokenLParen): '('
+            │       ├── elements (kind: TokenList)
+            │       │   └── child #0 (kind: TokenTreeLeaf)
+            │       │       └── leaf (kind: TokenIdentifier): 'x'
+            │       ├── rparen (kind: TokenRParen): ')'
+            │       ├── separator (kind: OptionTerminalCommaEmpty) []
+            │       └── operator: Missing []
+            └── rparen (kind: TokenRParen): ')'

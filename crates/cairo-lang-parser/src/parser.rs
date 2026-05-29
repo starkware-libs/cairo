@@ -1792,13 +1792,16 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             SyntaxKind::TerminalComma => self.take::<TerminalComma<'_>>().into(),
                             _ => OptionTerminalCommaEmpty::new_green(self.db).into(),
                         };
+                        // Unlike macro definitions, a missing operator at a call site is not a
+                        // parse error: the semantic layer validates the call against the macro
+                        // declaration and decides whether the shape is legal.
                         let operator = match self.peek().kind {
                             SyntaxKind::TerminalQuestionMark => {
                                 self.take::<TerminalQuestionMark<'_>>().into()
                             }
                             SyntaxKind::TerminalPlus => self.take::<TerminalPlus<'_>>().into(),
                             SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
-                            _ => unreachable!(),
+                            _ => MacroRepetitionOperator::missing(self.db),
                         };
                         TokenTreeRepetition::new_green(
                             self.db, dollar, lparen, elements, rparen, separator, operator,
