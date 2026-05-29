@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780016575872,
+  "lastUpdate": 1780016919361,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -3816,6 +3816,70 @@ window.BENCHMARK_DATA = {
             "value": 3544443328,
             "range": "± 19449915",
             "unit": "ns/iter"
+          }
+        ]
+      }
+    ],
+    "Cairo Heap Benchmarks": [
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "df86e63de7570213e8468826781557ac2ef5270d",
+          "message": "fix(runner): correct n_steps by removing erroneous -1 offsets (#10003)",
+          "timestamp": "2026-05-28T14:31:24Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/df86e63de7570213e8468826781557ac2ef5270d"
+        },
+        "date": 1780016919253,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "cairo-to-testing-max_bytes/fib",
+            "value": 148523528,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-testing-total_bytes/fib",
+            "value": 314112854,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/corelib",
+            "value": 347865697,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/corelib",
+            "value": 813077043,
+            "unit": "bytes"
+          },
+          {
+            "name": "sierra-to-casm-max_bytes/corelib",
+            "value": 12306112,
+            "unit": "bytes"
+          },
+          {
+            "name": "sierra-to-casm-total_bytes/corelib",
+            "value": 44501094,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/cairo_level_tests",
+            "value": 627333287,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/cairo_level_tests",
+            "value": 1789646575,
+            "unit": "bytes"
           }
         ]
       }
