@@ -2043,6 +2043,39 @@ error[E3009]: The value does not fit within the range of type core::integer::u25
 
 //! > ==========================================================================
 
+//! > Match u256 with out-of-range literal before wildcard
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true, skip_lowering: true)
+
+//! > function_code
+fn foo(x: u256) -> felt252 {
+    match x {
+        // Value out of range: must report E3009 only, no spurious E3004 non-exhaustive.
+        0x10000000000000000000000000000000000000000000000000000000000000000 => 1,
+        _ => 0,
+    }
+}
+
+//! > graph
+Root: 3
+3 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(2) }
+2 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(0) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3009]: The value does not fit within the range of type core::integer::u256.
+ --> lib.cairo:4:9
+        0x10000000000000000000000000000000000000000000000000000000000000000 => 1,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > lowered
+
+//! > ==========================================================================
+
 //! > Match u256 with optimized numeric match on low
 
 //! > test_runner_name

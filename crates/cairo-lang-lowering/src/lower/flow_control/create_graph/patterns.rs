@@ -678,6 +678,9 @@ fn create_node_for_tuple_inner<'db>(
                     handle_u256_literal(ctx, graph, pattern_literal, item_idx)
                 {
                     patterns_on_current_item.push(Some(inner_pattern))
+                } else {
+                    // Still push an entry to preserve the one-entry-per-arm invariant.
+                    patterns_on_current_item.push(None)
                 }
             }
             Some(semantic::Pattern::FixedSizeArray(semantic::PatternFixedSizeArray {
