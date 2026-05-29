@@ -2149,12 +2149,8 @@ fn lower_expr_closure<'db>(
     let (capture_var_usage, closure_info) = builder.capture(ctx, usage, expr);
     let closure_variable = LoweredExpr::AtVariable(capture_var_usage);
     let closure_ty = extract_matches!(expr.ty.long(ctx.db), TypeLongId::Closure);
-    let _ = add_capture_destruct_impl(
-        ctx,
-        capture_var_usage,
-        &closure_info,
-        closure_ty.params_location,
-    );
+    add_capture_destruct_impl(ctx, capture_var_usage, &closure_info, closure_ty.params_location)
+        .map_err(LoweringFlowError::Failed)?;
     add_closure_call_function(
         ctx,
         expr,
