@@ -648,44 +648,40 @@ fn create_node_for_tuple_inner<'db>(
 
     // Collect the patterns on the current item.
     let mut patterns_on_current_item = Vec::<Option<semantic::Pattern<'db>>>::default();
-    for pattern in patterns {
-        match pattern {
+    let mut live_filter = FilteredPatterns::default();
+    for (idx, pattern) in patterns.iter().enumerate() {
+        let item_pattern = match pattern {
             Some(semantic::Pattern::Tuple(PatternTuple { field_patterns, .. }))
                 if current_member.is_none() =>
             {
-                patterns_on_current_item
-                    .push(Some(get_pattern(ctx, field_patterns[item_idx]).clone()));
+                Some(get_pattern(ctx, field_patterns[item_idx]).clone())
             }
             Some(semantic::Pattern::Struct(PatternStruct { field_patterns, .. }))
                 if current_member.is_some() =>
             {
                 // Extract the pattern for the current member, or `None` if the member is not
                 // listed in the pattern (e.g., with `MyStruct { a: 0, .. }`).
-                let item_pattern = field_patterns
+                field_patterns
                     .iter()
                     .find(|(_, member)| member.id == current_member.unwrap().id)
-                    .map(|(pattern, _)| get_pattern(ctx, *pattern));
-                patterns_on_current_item.push(item_pattern.cloned());
+                    .map(|(pattern, _)| get_pattern(ctx, *pattern).clone())
             }
-            Some(semantic::Pattern::Otherwise(..)) | None => {
-                patterns_on_current_item.push(None);
-            }
+            Some(semantic::Pattern::Otherwise(..)) | None => None,
             Some(semantic::Pattern::Variable(..)) => unreachable!(),
             Some(semantic::Pattern::Literal(pattern_literal))
                 if pattern_literal.literal.ty == ctx.db.core_info().u256 =>
             {
-                if let Ok(inner_pattern) =
-                    handle_u256_literal(ctx, graph, pattern_literal, item_idx)
-                {
-                    patterns_on_current_item.push(Some(inner_pattern))
+                match handle_u256_literal(ctx, graph, pattern_literal, item_idx) {
+                    Ok(inner_pattern) => Some(inner_pattern),
+                    // Out-of-range `u256` literal, drop the arm.
+                    Err(_) => continue,
                 }
             }
             Some(semantic::Pattern::FixedSizeArray(semantic::PatternFixedSizeArray {
                 elements_patterns,
                 ..
             })) if current_member.is_none() => {
-                patterns_on_current_item
-                    .push(Some(get_pattern(ctx, elements_patterns[item_idx]).clone()));
+                Some(get_pattern(ctx, elements_patterns[item_idx]).clone())
             }
             Some(
                 pattern @ (semantic::Pattern::StringLiteral(..)
@@ -702,7 +698,9 @@ fn create_node_for_tuple_inner<'db>(
                     LoweringDiagnosticKind::UnexpectedError,
                 );
             }
-        }
+        };
+        live_filter.add(idx);
+        patterns_on_current_item.push(item_pattern);
     }
 
     // Create a node to handle the current item. The callback will handle the rest of the tuple.
@@ -713,6 +711,9 @@ fn create_node_for_tuple_inner<'db>(
             graph,
             patterns: &patterns_ref,
             build_node_callback: &mut |graph, pattern_indices, path_head| {
+                // Lift the survivors from the compacted (dropped-arm) indexing back to this level's
+                // arm indexing. When no arm was dropped this is the identity.
+                let pattern_indices = pattern_indices.lift(&live_filter);
                 // Call `create_node_for_tuple_inner` recursively to handle the rest of the tuple.
                 create_node_for_tuple_inner(
                     CreateNodeParams {

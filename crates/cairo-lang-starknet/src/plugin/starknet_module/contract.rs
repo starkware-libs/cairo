@@ -1,13 +1,14 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic, PluginResult};
 use cairo_lang_defs::plugin_utils::not_legacy_macro_diagnostic;
+use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::ast::{Attribute, OptionTypeClause};
 use cairo_lang_syntax::node::helpers::{
-    BodyItems, GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
+    GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -259,7 +260,7 @@ fn handle_contract_item<'db, 'a>(
                 db,
                 diagnostics,
                 item_impl,
-                metadata,
+                metadata.cfg_set,
                 &mut data.specific.entry_points_code,
             );
         }
@@ -332,7 +333,8 @@ pub(super) fn generate_contract_specific_code<'db, 'a>(
 
     let test_class_hash_node = generate_test_class_hash(db, module_ast);
 
-    let deploy_function_node = generate_constructor_deploy_function(db, diagnostics, body);
+    let deploy_function_node =
+        generate_constructor_deploy_function(db, diagnostics, body, metadata.cfg_set);
 
     generation_data.specific.test_config =
         RewriteNode::new_modified(vec![test_class_hash_node, deploy_function_node]);
@@ -364,10 +366,11 @@ fn generate_constructor_deploy_function<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     body: &ast::ModuleBody<'db>,
+    cfg_set: &CfgSet,
 ) -> RewriteNode<'db> {
     let mut deploy_function_node = RewriteNode::empty();
 
-    for item in body.iter_items(db) {
+    for item in body.iter_items_in_cfg(db, cfg_set) {
         if let ast::ModuleItem::FreeFunction(func) = item
             && let Some((EntryPointKind::Constructor, _)) = func.entry_point_kind(db, diagnostics)
         {
@@ -464,11 +467,11 @@ fn handle_contract_free_function<'db>(
 }
 
 /// Handles an impl inside a contract module.
-fn handle_contract_impl<'db, 'a>(
+fn handle_contract_impl<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     imp: &ast::ItemImpl<'db>,
-    metadata: &'a MacroPluginMetadata<'a>,
+    cfg_set: &CfgSet,
     data: &mut EntryPointsGenerationData<'db>,
 ) {
     let Some((abi_config, abi_attr)) = impl_abi_config(db, diagnostics, imp) else {
@@ -479,7 +482,7 @@ fn handle_contract_impl<'db, 'a>(
     };
     let impl_name = imp.name(db);
     let impl_name_node = RewriteNode::from_ast_trimmed(&impl_name);
-    for item in impl_body.iter_items_in_cfg(db, metadata.cfg_set) {
+    for item in impl_body.iter_items_in_cfg(db, cfg_set) {
         if abi_config == ImplAbiConfig::Embed {
             forbid_attributes_in_impl(db, diagnostics, &item, "#[abi(embed_v0)]");
         } else if abi_config == ImplAbiConfig::External {

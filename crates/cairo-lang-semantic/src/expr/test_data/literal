@@ -218,3 +218,42 @@ error[E2315]: Mismatched types. The type `()` cannot be created from a numeric l
  --> lib.cairo:3:5
     x
     ^
+
+//! > ==========================================================================
+
+//! > Numeric literal suffix with generic type emits E2008 instead of ICE (#9975).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _a = 42_Option;
+    let _b = 42_Result;
+    let _c = 42_PanicResult;
+    let _d = 42_Span;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2008]: A numeric literal of type core::option::Option cannot be created.
+ --> lib.cairo:2:14
+    let _a = 42_Option;
+             ^^^^^^^^^
+
+error[E2008]: A numeric literal of type core::result::Result cannot be created.
+ --> lib.cairo:3:14
+    let _b = 42_Result;
+             ^^^^^^^^^
+
+error[E2008]: A numeric literal of type core::panics::PanicResult cannot be created.
+ --> lib.cairo:4:14
+    let _c = 42_PanicResult;
+             ^^^^^^^^^^^^^^
+
+error[E2008]: A numeric literal of type core::array::Span cannot be created.
+ --> lib.cairo:5:14
+    let _d = 42_Span;
+             ^^^^^^^

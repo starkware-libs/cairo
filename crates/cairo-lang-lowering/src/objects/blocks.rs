@@ -38,6 +38,10 @@ impl<'db> BlocksBuilder<'db> {
     pub fn new() -> Self {
         Self(vec![])
     }
+    /// Creates a new builder with pre-allocated capacity for `n` blocks.
+    pub fn with_capacity(n: usize) -> Self {
+        Self(Vec::with_capacity(n))
+    }
     pub fn alloc(&mut self, block: Block<'db>) -> BlockId {
         let id = BlockId(self.0.len());
         self.0.push(block);

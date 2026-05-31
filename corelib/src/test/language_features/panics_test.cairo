@@ -142,6 +142,18 @@ fn test_panic_macro_with_input() {
     panic!("some_format({})", 1)
 }
 
+#[test]
+#[should_panic(expected: "has a \"quote\" inside")]
+fn test_panic_macro_with_escaped_quote() {
+    panic!("has a \"quote\" inside")
+}
+
+#[test]
+#[should_panic(expected: "backslash: \\end")]
+fn test_panic_macro_with_backslash() {
+    panic!("backslash: \\end")
+}
+
 
 #[test]
 #[should_panic(expected: 'PanicDestruct')]

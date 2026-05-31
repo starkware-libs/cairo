@@ -670,7 +670,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         self.data.impl_type_bounds = Arc::new(impl_type_bounds_finalized);
     }
 
-    /// Allocates a new [ConstVar] for an unknown consts that needs to be inferred.
+    /// Allocates a new [ConstVar] for an unknown const that needs to be inferred.
     /// Returns a wrapping [ConstValueId].
     pub fn new_const_var(
         &mut self,

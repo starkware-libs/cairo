@@ -8,6 +8,9 @@ license-file.workspace = true
 description = ""
 publish = false
 
+[dependencies]
+dhat = { workspace = true, optional = true }
+
 [dev-dependencies]
 assert_matches.workspace = true
 cairo-lang-casm = { path = "../crates/cairo-lang-casm" }
@@ -38,12 +41,21 @@ num-bigint = { workspace = true, default-features = true }
 pretty_assertions.workspace = true
 rstest.workspace = true
 salsa.workspace = true
+serde_json.workspace = true
 starknet-types-core.workspace = true
 tracing.workspace = true
+
+[features]
+dhat = ["dep:dhat"]
 
 [[bench]]
 name = "compile"
 harness = false
+
+[[bench]]
+name = "dhat_compile"
+harness = false
+required-features = ["dhat"]
 
 [[test]]
 name = "examples_test"

@@ -9,6 +9,7 @@ description = "Cairo compiler executable for the Cairo programming language"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+dhat = { workspace = true, optional = true }
 log.workspace = true
 mimalloc = { workspace = true, optional = true }
 tracing.workspace = true
@@ -20,4 +21,5 @@ cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.19.0-rc.0", 
 ] }
 
 [features]
+dhat = ["dep:dhat"]
 mimalloc = ["dep:mimalloc"]

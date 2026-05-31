@@ -21,23 +21,23 @@ fn try_handle_simple_panic(
     builder: &mut PatchBuilder<'_>,
     arguments: &[Arg<'_>],
 ) -> Option<()> {
+    // Source text of the format-string literal — outer quotes and escape sequences as-typed.
+    // Using the source (not `string_value`, which decodes escapes) avoids breaking the
+    // surrounding `@"..."` when the literal contains `"` or `\`.
     let panic_str = match arguments {
-        [] => {
-            // Trivial panic!() with no arguments case.
-            "".to_string()
-        }
+        [] => "\"\"".to_string(),
         [arg] => {
             let unnamed_arg = try_extract_unnamed_arg(db, arg)?;
             let format_string_expr = try_extract_matches!(unnamed_arg, ast::Expr::String)?;
             let format_string = format_string_expr.string_value(db)?;
             require(format_string.find(['{', '}']).is_none())?;
-            format_string
+            format_string_expr.as_syntax_node().get_text_without_trivia(db).long(db).to_string()
         }
         // We have more than one argument, fallback to more generic handling.
         _ => return None,
     };
 
-    builder.add_str(&format!("core::panics::panic_with_byte_array(@\"{panic_str}\")"));
+    builder.add_str(&format!("core::panics::panic_with_byte_array(@{panic_str})"));
     Some(())
 }
 

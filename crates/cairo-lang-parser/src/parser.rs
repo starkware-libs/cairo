@@ -1775,43 +1775,14 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Either parses a leaf of the tree (i.e. any non-parenthesis token) or an inner node (i.e. a
-    /// parenthesized stream of tokens).
+    /// parenthesized stream of tokens). Call-site token trees are unstructured: `$`, `?`, `+`, `*`
+    /// have no special meaning here and are just leaves. The semantic layer decides whether the
+    /// shape matches any rule of the target macro.
     fn parse_token_tree(&mut self) -> TokenTreeGreen<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalLBrace
             | SyntaxKind::TerminalLParen
             | SyntaxKind::TerminalLBrack => self.parse_token_tree_node().into(),
-            SyntaxKind::TerminalDollar => {
-                let dollar: TerminalDollarGreen<'_> = self.take::<TerminalDollar<'_>>();
-                match self.peek().kind {
-                    SyntaxKind::TerminalLParen => {
-                        let lparen = self.take::<TerminalLParen<'_>>();
-                        let elements = TokenList::new_green(self.db, &self.parse_token_list());
-                        let rparen = self.parse_token::<TerminalRParen<'_>>();
-                        let separator: OptionTerminalCommaGreen<'_> = match self.peek().kind {
-                            SyntaxKind::TerminalComma => self.take::<TerminalComma<'_>>().into(),
-                            _ => OptionTerminalCommaEmpty::new_green(self.db).into(),
-                        };
-                        let operator = match self.peek().kind {
-                            SyntaxKind::TerminalQuestionMark => {
-                                self.take::<TerminalQuestionMark<'_>>().into()
-                            }
-                            SyntaxKind::TerminalPlus => self.take::<TerminalPlus<'_>>().into(),
-                            SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
-                            _ => unreachable!(),
-                        };
-                        TokenTreeRepetition::new_green(
-                            self.db, dollar, lparen, elements, rparen, separator, operator,
-                        )
-                        .into()
-                    }
-                    SyntaxKind::TerminalIdentifier => {
-                        let identifier = self.take::<TerminalIdentifier<'_>>();
-                        TokenTreeParam::new_green(self.db, dollar, identifier).into()
-                    }
-                    _ => self.parse_token_tree_leaf().into(),
-                }
-            }
             _ => self.parse_token_tree_leaf().into(),
         }
     }
@@ -3204,6 +3175,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 }
                 ValidationLocation::After => {
                     TextSpan::cursor(self.offset.add_width(self.current_width))
+                }
+                ValidationLocation::Cursor(offset) => {
+                    TextSpan::cursor(self.offset.add_width(offset))
                 }
             };
             self.add_diagnostic(err.kind, span);
