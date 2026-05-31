@@ -253,7 +253,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
 
 /// Creates the functions map.
 fn get_functions(program: &Program) -> Result<FunctionMap, Box<ProgramRegistryError>> {
-    let mut functions = FunctionMap::new();
+    let mut functions = FunctionMap::with_capacity(program.funcs.len());
     for func in &program.funcs {
         match functions.entry(func.id.clone()) {
             Entry::Occupied(_) => {
@@ -283,8 +283,11 @@ impl<TType: GenericType> TypeSpecializationContext
 fn get_concrete_types_maps<TType: GenericType>(
     program: &Program,
 ) -> Result<(TypeMap<TType::Concrete>, ConcreteTypeIdMap<'_>), Box<ProgramRegistryError>> {
-    let mut concrete_types = HashMap::new();
-    let mut concrete_type_ids = HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
+    let mut concrete_types = HashMap::with_capacity(program.type_declarations.len());
+    let mut concrete_type_ids =
+        HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::with_capacity(
+            program.type_declarations.len(),
+        );
     let declared_type_info = program
         .type_declarations
         .iter()
@@ -384,7 +387,7 @@ fn get_concrete_libfuncs<TType: GenericType, TLibfunc: GenericLibfunc>(
     program: &Program,
     context: &SpecializationContextForRegistry<'_, TType>,
 ) -> Result<LibfuncMap<TLibfunc::Concrete>, Box<ProgramRegistryError>> {
-    let mut concrete_libfuncs = HashMap::new();
+    let mut concrete_libfuncs = HashMap::with_capacity(program.libfunc_declarations.len());
     for declaration in &program.libfunc_declarations {
         let concrete_libfunc = TLibfunc::specialize_by_id(
             context,
