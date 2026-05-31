@@ -50,7 +50,7 @@ impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
         self.block_info.insert(block_id, info);
     }
 
-    /// Adds to the DFS stack the dependent blocks that are not yet in cache - returns whether if
+    /// Adds to the DFS stack the dependent blocks that are not yet in cache - returns whether
     /// there are any such blocks.
     fn add_missing_dependency_blocks(
         &self,
