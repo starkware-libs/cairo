@@ -49,7 +49,7 @@ fn test_match_optimizer(
     [
         OptimizationPhase::ApplyInlining { enable_const_folding: false },
         OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::CancelOps,
+        OptimizationPhase::VariableForwarding,
         OptimizationPhase::ReorganizeBlocks,
     ]
     .apply(db, function_id, &mut before)

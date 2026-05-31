@@ -15,7 +15,6 @@ macro_rules! trace {
 }
 
 pub mod branch_inversion;
-pub mod cancel_ops;
 pub mod config;
 pub mod const_folding;
 pub mod cse;
@@ -34,3 +33,10 @@ pub mod trim_unreachable;
 pub mod validate;
 pub mod var_renamer;
 pub mod variable_forwarding;
+
+// TODO(eytan-starkware): Move these cases into `variable_forwarding` test data and remove this
+// module. The `cancel_ops` phase was removed, but its test cases are kept here, wired to
+// `variable_forwarding`, until they are migrated.
+#[cfg(test)]
+#[path = "cancel_ops_test.rs"]
+mod cancel_ops_test;
