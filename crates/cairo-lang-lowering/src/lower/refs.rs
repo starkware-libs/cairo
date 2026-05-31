@@ -1,15 +1,16 @@
-use cairo_lang_defs::ids::MemberId;
+use cairo_lang_defs::ids::{LanguageElementId, MemberId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::usage::MemberPath;
-use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeLongId};
+use cairo_lang_semantic::{self as semantic};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
+use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{Itertools, chain};
 
 use super::block_builder::BlockStructRecomposer;
+use super::context::VarRequest;
 use crate::VariableId;
 use crate::ids::LocationId;
 
@@ -73,7 +74,13 @@ impl<'db> SemanticLoweringMapping<'db> {
         path: &MemberPath<'db>,
     ) -> Result<VariableId, AssembleValueError<'db>> {
         let value = self.break_into_value(&mut ctx, path).ok_or(AssembleValueError::Missing)?;
-        Self::assemble_value(&mut ctx, value).map_err(AssembleValueError::Moved)
+        let base_var = path.base_var();
+        let location_stable_ptr = match ctx.ctx.semantic_defs.get(&base_var) {
+            Some(binding) => binding.stable_ptr(ctx.ctx.db),
+            None => base_var.untyped_stable_ptr(ctx.ctx.db),
+        };
+        let location = ctx.ctx.get_location(location_stable_ptr);
+        Self::assemble_value(&mut ctx, value, location).map_err(AssembleValueError::Moved)
     }
 
     pub fn introduce(&mut self, path: MemberPath<'db>, var: VariableId) {
@@ -116,34 +123,34 @@ impl<'db> SemanticLoweringMapping<'db> {
     fn assemble_value(
         ctx: &mut BlockStructRecomposer<'_, '_, 'db>,
         value: &mut Value<'db>,
+        location: LocationId<'db>,
     ) -> Result<VariableId, MovedVar<'db>> {
         match value {
             Value::Var(var) => Ok(*var),
+            Value::MovedVar(moved) => Err(moved.clone()),
             Value::Scattered(scattered) => {
-                let members_res = scattered
+                let mut moved_var = None;
+                let members = scattered
                     .members
                     .iter_mut()
-                    .map(|(_, value)| Self::assemble_value(ctx, value))
-                    .collect::<Result<_, _>>();
-
-                match members_res {
-                    Ok(members) => {
-                        let var = ctx.reconstruct(scattered.concrete_struct_id, members);
-                        *value = Value::Var(var);
-                        Ok(var)
-                    }
-                    Err(MovedVar { ty: _, inference_error, last_use_location }) => {
-                        // Don't use the type of the moved member. Replace it with the type of the
-                        // variable.
-                        let y = TypeLongId::<'db>::Concrete(ConcreteTypeId::Struct(
-                            scattered.concrete_struct_id,
-                        ));
-                        let x = y.intern(ctx.ctx.db);
-                        Err(MovedVar { ty: x, inference_error, last_use_location })
-                    }
+                    .map(|(_, value)| match Self::assemble_value(ctx, value, location) {
+                        Ok(var) => var,
+                        Err(moved) => {
+                            let var = moved.var_id;
+                            moved_var.get_or_insert(moved);
+                            var
+                        }
+                    })
+                    .collect_vec();
+                let var = ctx.reconstruct(scattered.concrete_struct_id, members, location);
+                *value = Value::Var(var);
+                if let Some(MovedVar { var_id: _, inference_error, last_use_location }) = moved_var
+                {
+                    Err(MovedVar { var_id: var, inference_error, last_use_location })
+                } else {
+                    Ok(var)
                 }
             }
-            Value::MovedVar(moved) => Err(moved.clone()),
         }
     }
 
@@ -156,38 +163,39 @@ impl<'db> SemanticLoweringMapping<'db> {
             return self.scattered.get_mut(path);
         }
 
-        let MemberPath::Member { parent, member_id, concrete_struct_id, .. } = path else {
+        let &MemberPath::Member { ref parent, member_id, concrete_struct_id, .. } = path else {
             return None;
         };
 
         let parent_value = self.break_into_value(ctx, parent)?;
         match parent_value {
             Value::Var(var) => {
-                let members = ctx.deconstruct(*concrete_struct_id, *var);
+                let members = ctx.deconstruct(concrete_struct_id, *var);
                 let members = OrderedHashMap::from_iter(
                     members.into_iter().map(|(member_id, var)| (member_id, Value::Var(var))),
                 );
-                let scattered = Scattered { concrete_struct_id: *concrete_struct_id, members };
+                let scattered = Scattered { concrete_struct_id, members };
                 *parent_value = Value::Scattered(Box::new(scattered));
             }
-            Value::MovedVar(MovedVar { ty: _, inference_error, last_use_location }) => {
-                let member_map = ctx.ctx.db.concrete_struct_members(*concrete_struct_id).unwrap();
+            &mut Value::MovedVar(MovedVar { var_id, ref inference_error, last_use_location }) => {
+                let member_map = ctx.ctx.db.concrete_struct_members(concrete_struct_id).unwrap();
+                let location = ctx.ctx.variables[var_id].location;
                 let members = OrderedHashMap::from_iter(member_map.values().map(|member| {
                     (
                         member.id,
                         Value::MovedVar(MovedVar {
-                            ty: member.ty,
+                            var_id: ctx.ctx.new_var(VarRequest { ty: member.ty, location }),
                             inference_error: inference_error.clone(),
-                            last_use_location: *last_use_location,
+                            last_use_location,
                         }),
                     )
                 }));
-                let scattered = Scattered { concrete_struct_id: *concrete_struct_id, members };
+                let scattered = Scattered { concrete_struct_id, members };
                 *parent_value = Value::Scattered(Box::new(scattered));
             }
             Value::Scattered(..) => {}
         };
-        extract_matches!(parent_value, Value::Scattered).members.get_mut(member_id)
+        extract_matches!(parent_value, Value::Scattered).members.get_mut(&member_id)
     }
 }
 
@@ -369,7 +377,7 @@ pub fn find_changed_members<'db, 'a>(
 #[debug_db(ExprFormatter<'db>)]
 pub struct MovedVar<'db> {
     /// The type of the variable.
-    pub ty: semantic::TypeId<'db>,
+    pub var_id: VariableId,
     /// The reason it is not copyable.
     pub inference_error: InferenceError<'db>,
     /// The location of the last use of the moved variable. This is used to report an error.

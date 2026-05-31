@@ -520,7 +520,7 @@ error[E2061]: `?` can only be used in a function with `Option` or `Result` retur
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:6:17
     let bar2 = |b: Option<u32>| {
-                ^^^^^^^^^^^^^^
+                ^
 
 error[E0006]: Function not found.
  --> lib.cairo:10:19

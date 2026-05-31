@@ -325,3 +325,74 @@ error[E1031]: Missing macro repetition operator. Expected `?`, `+`, or `*` after
     │       │       └── semicolon (kind: TokenSemicolon): ';'
     │       └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test macro definition with body repetition missing operator.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+macro macro_name {
+    ($($x:expr),*) => { $($x) };
+}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error[E1031]: Missing macro repetition operator. Expected `?`, `+`, or `*` after `$(...)`.
+ --> dummy_file.cairo:2:30
+    ($($x:expr),*) => { $($x) };
+                             ^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemMacroDeclaration)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── macro_kw (kind: TokenMacro): 'macro'
+    │       ├── name (kind: TokenIdentifier): 'macro_name'
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── rules (kind: MacroRulesList)
+    │       │   └── child #0 (kind: MacroRule)
+    │       │       ├── lhs (kind: ParenthesizedMacro)
+    │       │       │   ├── lparen (kind: TokenLParen): '('
+    │       │       │   ├── elements (kind: MacroElements)
+    │       │       │   │   └── child #0 (kind: MacroRepetition)
+    │       │       │   │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       ├── lparen (kind: TokenLParen): '('
+    │       │       │   │       ├── elements (kind: MacroElements)
+    │       │       │   │       │   └── child #0 (kind: MacroParam)
+    │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       │       ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       │       └── kind (kind: ParamKind)
+    │       │       │   │       │           ├── colon (kind: TokenColon): ':'
+    │       │       │   │       │           └── kind (kind: ParamExpr)
+    │       │       │   │       │               └── expr (kind: TokenIdentifier): 'expr'
+    │       │       │   │       ├── rparen (kind: TokenRParen): ')'
+    │       │       │   │       ├── separator (kind: TokenComma): ','
+    │       │       │   │       └── operator (kind: TokenMul): '*'
+    │       │       │   └── rparen (kind: TokenRParen): ')'
+    │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    │       │       ├── rhs (kind: BracedMacro)
+    │       │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │       │       │   ├── elements (kind: MacroElements)
+    │       │       │   │   └── child #0 (kind: MacroRepetition)
+    │       │       │   │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       ├── lparen (kind: TokenLParen): '('
+    │       │       │   │       ├── elements (kind: MacroElements)
+    │       │       │   │       │   └── child #0 (kind: MacroParam)
+    │       │       │   │       │       ├── dollar (kind: TokenDollar): '$'
+    │       │       │   │       │       ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │       │       └── kind (kind: OptionParamKindEmpty) []
+    │       │       │   │       ├── rparen (kind: TokenRParen): ')'
+    │       │       │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
+    │       │       │   │       └── operator: Missing []
+    │       │       │   └── rbrace (kind: TokenRBrace): '}'
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).

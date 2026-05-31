@@ -428,7 +428,9 @@ impl<'db> NegativeImplLongId<'db> {
     }
     pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
         match self {
-            NegativeImplLongId::Solved(concrete_trait_id) => concrete_trait_id.is_var_free(db),
+            NegativeImplLongId::Solved(concrete_trait_id) => {
+                concrete_trait_id.is_fully_concrete(db)
+            }
             NegativeImplLongId::GenericParameter(_) | NegativeImplLongId::NegativeImplVar(_) => {
                 false
             }

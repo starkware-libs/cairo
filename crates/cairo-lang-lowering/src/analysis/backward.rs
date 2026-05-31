@@ -15,11 +15,16 @@ pub struct BackAnalysis<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> {
 impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
     /// Creates a new BackAnalysis instance.
     pub fn new(lowered: &'a Lowered<'db>, analyzer: TAnalyzer) -> Self {
-        Self { lowered, analyzer, block_info: Default::default() }
+        Self {
+            lowered,
+            analyzer,
+            block_info: UnorderedHashMap::with_capacity(lowered.blocks.len()),
+        }
     }
     /// Gets the analysis info for the entire function.
     pub fn get_root_info(&mut self) -> TAnalyzer::Info {
-        let mut dfs_stack = vec![BlockId::root()];
+        let mut dfs_stack = Vec::with_capacity(self.lowered.blocks.len());
+        dfs_stack.push(BlockId::root());
         while let Some(block_id) = dfs_stack.last() {
             let end = &self.lowered.blocks[*block_id].end;
             if !self.add_missing_dependency_blocks(&mut dfs_stack, end) {
@@ -45,7 +50,7 @@ impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
         self.block_info.insert(block_id, info);
     }
 
-    /// Adds to the DFS stack the dependent blocks that are not yet in cache - returns whether if
+    /// Adds to the DFS stack the dependent blocks that are not yet in cache - returns whether
     /// there are any such blocks.
     fn add_missing_dependency_blocks(
         &self,
