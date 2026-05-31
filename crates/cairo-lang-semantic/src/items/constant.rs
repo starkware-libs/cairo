@@ -903,9 +903,9 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         };
 
         if imp.function == self.eq_fn {
-            return bool_value(args[0] == args[1]);
+            return bool_value(self.const_values_eq(args[0], args[1]));
         } else if imp.function == self.ne_fn {
-            return bool_value(args[0] != args[1]);
+            return bool_value(!self.const_values_eq(args[0], args[1]));
         } else if imp.function == self.not_fn {
             return bool_value(args[0] == self.false_const);
         }
@@ -987,7 +987,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 };
                 let (narrow, wide) =
                     db.concrete_enum_variants(*enm).ok()?.into_iter().collect_tuple()?;
-                let value = felt252_for_downcast(arg.to_int(db)?, &BigInt::ZERO);
+                let value = Felt252::from(arg.to_int(db)?).to_bigint();
                 let mask128 = BigInt::from(u128::MAX);
                 let low = (&value) & mask128;
                 let high: BigInt = (&value) >> 128;
@@ -1171,7 +1171,11 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         match pattern {
             Pattern::Missing(_) | Pattern::StringLiteral(_) => None,
             Pattern::Otherwise(_) => Some(()),
-            Pattern::Literal(v) => require(numeric_arg_value(db, value)? == v.literal.value),
+            Pattern::Literal(v) => require(self.eq_in_type(
+                &numeric_arg_value(db, value)?,
+                &v.literal.value,
+                value.ty(db).ok()?,
+            )),
             Pattern::Variable(pattern) => {
                 self.vars.insert(VarId::Local(pattern.var.id), value);
                 Some(())
@@ -1220,6 +1224,28 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 }
             }
         }
+    }
+
+    /// Compares two const values for `felt252` field-element equality.
+    ///
+    /// Direct `felt252` literals are stored in their original signed form (`-1` vs `PRIME - 1` are
+    /// distinct `ConstValueId`s). The PartialEq operator must agree with the field, not with the
+    /// stored representation, so we canonicalize both sides before comparing for `felt252` ints.
+    /// Non-felt252 types keep id equality.
+    fn const_values_eq(&self, a: ConstValueId<'a>, b: ConstValueId<'a>) -> bool {
+        if a == b {
+            return true;
+        }
+        let (ConstValue::Int(va, ty), ConstValue::Int(vb, _)) = (a.long(self.db), b.long(self.db))
+        else {
+            return false;
+        };
+        self.eq_in_type(va, vb, *ty)
+    }
+
+    /// Compares two `BigInt`s of type `ty` for value equality, treating `felt252` as a field.
+    fn eq_in_type(&self, a: &BigInt, b: &BigInt, ty: TypeId<'a>) -> bool {
+        a == b || (ty == self.felt252 && Felt252::from(a) == Felt252::from(b))
     }
 }
 
