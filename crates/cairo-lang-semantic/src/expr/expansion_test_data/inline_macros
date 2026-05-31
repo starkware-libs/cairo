@@ -270,4 +270,3 @@ error[E2158]: No matching rule found in inline macro `take_ident`.
  --> lib.cairo:6:1
 take_ident!($)
 ^^^^^^^^^^^^^^
-

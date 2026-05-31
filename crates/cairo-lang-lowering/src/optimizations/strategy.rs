@@ -17,7 +17,6 @@ use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
 use crate::optimizations::branch_inversion::branch_inversion;
-use crate::optimizations::cancel_ops::cancel_ops;
 use crate::optimizations::config::Optimizations;
 use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::match_optimizer::optimize_matches;
@@ -35,7 +34,6 @@ pub enum OptimizationPhase<'db> {
         enable_const_folding: bool,
     },
     BranchInversion,
-    CancelOps,
     ConstFolding,
     Cse,
     DedupBlocks,
@@ -92,7 +90,6 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
                 apply_inlining(db, function, lowered, *enable_const_folding)?
             }
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
-            OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, function, lowered),
             OptimizationPhase::Cse => cse(lowered),
             OptimizationPhase::EarlyUnsafePanic => early_unsafe_panic(db, lowered),
@@ -192,7 +189,6 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
                 OptimizationPhase::ReorganizeBlocks,
                 OptimizationPhase::ReorderStatements,
                 OptimizationPhase::BranchInversion,
-                OptimizationPhase::CancelOps,
                 OptimizationPhase::ReorderStatements,
                 OptimizationPhase::VariableForwarding,
                 OptimizationPhase::ReorderStatements,
@@ -209,7 +205,6 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
                 OptimizationPhase::OptimizeMatches,
                 OptimizationPhase::ReorganizeBlocks,
                 OptimizationPhase::Reboxing,
-                OptimizationPhase::CancelOps,
                 OptimizationPhase::ReorderStatements,
                 OptimizationPhase::VariableForwarding,
                 OptimizationPhase::ReorderStatements,
