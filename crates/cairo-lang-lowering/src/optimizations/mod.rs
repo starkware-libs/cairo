@@ -15,7 +15,6 @@ macro_rules! trace {
 }
 
 pub mod branch_inversion;
-pub mod cancel_ops;
 pub mod config;
 pub mod const_folding;
 pub mod cse;
