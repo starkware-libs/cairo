@@ -2,10 +2,10 @@
 //!
 //! This module tracks semantic equivalence between variables as information flows through the
 //! program. Two variables are equivalent if they hold the same value. Additionally, the analysis
-//! tracks `Box`/unbox, snapshot/desnap, and struct/array construct relationships between
-//! equivalence classes via unified forward/reverse maps. Arrays reuse the struct construct
-//! representation since both map `(TypeId, Vec<FieldVar>)` — array pop operations act as
-//! destructures.
+//! tracks `Box`/unbox, snapshot/desnap, struct construct, and array construct relationships between
+//! equivalence classes via unified forward/reverse maps. Structs and arrays both map
+//! `(TypeId, Vec<FieldVar>)` but use distinct relations so they never hashcons together — array
+//! pop operations act as destructures on the array relation.
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ExternFunctionId, NamedLanguageElementId};
@@ -56,6 +56,7 @@ enum Relation<'db> {
     Snapshot(VariableId),
     EnumConstruct(ConcreteVariant<'db>, VariableId),
     StructConstruct(TypeId<'db>, Vec<FieldVar>),
+    Array(TypeId<'db>, Vec<FieldVar>),
 }
 
 impl<'db> Relation<'db> {
@@ -65,7 +66,7 @@ impl<'db> Relation<'db> {
             Relation::Box(v) | Relation::Snapshot(v) | Relation::EnumConstruct(_, v) => {
                 (Some(*v), &[])
             }
-            Relation::StructConstruct(_, vs) => (None, vs),
+            Relation::StructConstruct(_, vs) | Relation::Array(_, vs) => (None, vs),
         };
         single.into_iter().chain(fields.iter().filter_map(|f| f.as_var()))
     }
@@ -80,6 +81,9 @@ impl<'db> Relation<'db> {
                 ty,
                 fields.into_iter().map(|f| f.find_rep(state)).collect(),
             ),
+            Relation::Array(ty, fields) => {
+                Relation::Array(ty, fields.into_iter().map(|f| f.find_rep(state)).collect())
+            }
         }
     }
 }
@@ -186,6 +190,20 @@ impl<'db> EqualityState<'db> {
         self.get_struct_construct_immut(rep)
     }
 
+    /// Looks up the array construct info for a representative (immutable).
+    fn get_array_construct_immut(&self, rep: VariableId) -> Option<(TypeId<'db>, Vec<FieldVar>)> {
+        match self.reverse.get(&rep)? {
+            Relation::Array(ty, fields) => Some((*ty, fields.clone())),
+            _ => None,
+        }
+    }
+
+    /// Looks up the array construct info for a variable (mutable, uses find for path compression).
+    fn get_array_construct(&mut self, var: VariableId) -> Option<(TypeId<'db>, Vec<FieldVar>)> {
+        let rep = self.find(var);
+        self.get_array_construct_immut(rep)
+    }
+
     /// Looks up the enum construct info for a variable (mutable, uses find for path compression).
     pub(crate) fn get_enum_construct(
         &self,
@@ -225,7 +243,7 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
                     let name = variant.id.name(db).to_string(db);
                     lines.push(format!("{name}({}) = {}", v(*input), v(output)));
                 }
-                Relation::StructConstruct(ty, inputs) => {
+                Relation::StructConstruct(ty, inputs) | Relation::Array(ty, inputs) => {
                     let type_name = ty.format(db);
                     let fields = inputs
                         .iter()
@@ -235,7 +253,13 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
                         })
                         .collect::<Vec<_>>()
                         .join(", ");
-                    lines.push(format!("{type_name}({fields}) = {}", v(output)));
+                    // Structs render as `Type(..)`, arrays as `Type[..]`, to disambiguate the two
+                    // relations that share a `(TypeId, Vec<FieldVar>)` payload.
+                    let (open, close) = match relation {
+                        Relation::Array(..) => ('[', ']'),
+                        _ => ('(', ')'),
+                    };
+                    lines.push(format!("{type_name}{open}{fields}{close} = {}", v(output)));
                 }
             }
         }
@@ -252,7 +276,8 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
 
 /// Variable equality analysis.
 ///
-/// This analyzer tracks snapshot/desnap, box/unbox, and array construct relationships as data
+/// This analyzer tracks snapshot/desnap, box/unbox, struct construct, and array construct
+/// relationships as data
 /// flows through the program. At merge points (after match arms converge), we union-find variables
 /// that share the same equivalence classes in **both** branches (`(rep1, rep2)` meet), rebuild
 /// `forward` / `reverse`, and intersect relations **without** mapping variables across differing
@@ -260,8 +285,8 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
 pub struct EqualityAnalysis<'a, 'db> {
     db: &'db dyn Database,
     lowered: &'a Lowered<'db>,
-    /// Counter for allocating globally unique `Placeholder` IDs for unknown struct fields after
-    /// merge.
+    /// Counter for allocating globally unique `Placeholder` IDs for unknown struct/array fields
+    /// after merge.
     next_placeholder: usize,
     /// The `array_new` extern function id.
     array_new: ExternFunctionId<'db>,
@@ -305,7 +330,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
 
     /// Handles extern match arms for array operations.
     ///
-    /// Array pop operations act as "destructures" on the struct construct representation:
+    /// Array pop operations act as "destructures" on the array construct representation:
     /// - `array_pop_front` / `array_pop_front_consume`: On the Some arm, if the input array was
     ///   tracked as `[e0, e1, ..., eN]`, the popped element (boxed) is `Box(e0)` and the remaining
     ///   array is `[e1, ..., eN]`.
@@ -358,7 +383,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
             let input_arr = extern_info.inputs[0].var_id;
             let remaining_arr = arm.var_ids[0];
             let boxed_elem = arm.var_ids[1];
-            if let Some((ty, elems)) = info.get_struct_construct(input_arr)
+            if let Some((ty, elems)) = info.get_array_construct(input_arr)
                 && let Some((first, rest)) = elems.split_first()
             {
                 // TODO(eytan-starkware): Add support for placeholders in boxes and reverse box
@@ -367,7 +392,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
                     info.set_relation(Relation::Box(*first_var), boxed_elem);
                 }
                 let rest_fields: Vec<FieldVar> = rest.iter().map(|f| f.find_rep(info)).collect();
-                info.set_relation(Relation::StructConstruct(ty, rest_fields), remaining_arr);
+                info.set_relation(Relation::Array(ty, rest_fields), remaining_arr);
             }
         } else if (id == self.array_snapshot_pop_front || id == self.array_snapshot_pop_back)
             && is_some
@@ -386,9 +411,9 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
             let elems_opt = original_rep
                 .and_then(|orig| {
                     let orig = info.find_immut(orig);
-                    info.get_struct_construct_immut(orig)
+                    info.get_array_construct_immut(orig)
                 })
-                .or_else(|| info.get_struct_construct_immut(snap_rep));
+                .or_else(|| info.get_array_construct_immut(snap_rep));
 
             let snap_ty = self.lowered.variables[remaining_snap_arr].ty;
             let Some((_orig_ty, elems)) = elems_opt else {
@@ -397,19 +422,13 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
             let pop_front = id == self.array_snapshot_pop_front;
             let (elem, rest) = if pop_front {
                 let Some((first, tail)) = elems.split_first() else {
-                    info.set_relation(
-                        Relation::StructConstruct(snap_ty, vec![]),
-                        remaining_snap_arr,
-                    );
+                    info.set_relation(Relation::Array(snap_ty, vec![]), remaining_snap_arr);
                     return;
                 };
                 (*first, tail)
             } else {
                 let Some((last, init)) = elems.split_last() else {
-                    info.set_relation(
-                        Relation::StructConstruct(snap_ty, vec![]),
-                        remaining_snap_arr,
-                    );
+                    info.set_relation(Relation::Array(snap_ty, vec![]), remaining_snap_arr);
                     return;
                 };
                 (*last, init)
@@ -427,7 +446,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
             }
 
             let rest_fields: Vec<FieldVar> = rest.iter().map(|f| f.find_rep(info)).collect();
-            info.set_relation(Relation::StructConstruct(snap_ty, rest_fields), remaining_snap_arr);
+            info.set_relation(Relation::Array(snap_ty, rest_fields), remaining_snap_arr);
         }
     }
 }
@@ -455,8 +474,9 @@ fn merge_referenced_vars<'db, 'a>(
 }
 
 /// Keeps relational edges that survive the join **without** mapping variables across mismatched
-/// branch equivalence roots: struct fields become placeholders unless both sides cite the same SSA
-/// `VariableId`. Box/Snapshot/Enum reuse an edge only when merged outputs coincide in `result`.
+/// branch equivalence roots: struct/array fields become placeholders unless both sides cite the
+/// same SSA `VariableId`. Box/Snapshot/Enum reuse an edge only when merged outputs coincide in
+/// `result`.
 fn merge_relations<'db>(
     info1: &EqualityState<'db>,
     info2: &EqualityState<'db>,
@@ -464,16 +484,24 @@ fn merge_relations<'db>(
     result: &mut EqualityState<'db>,
     next_placeholder: &mut usize,
 ) {
-    // Index info2's StructConstruct entries by output representative for lookup in the merge loop.
-    // Forward entries are completely authoritative, so we use them to build the index.
-    let info2_structs_by_output: OrderedHashMap<VariableId, (TypeId<'db>, Vec<FieldVar>)> = info2
-        .forward
-        .iter()
-        .filter_map(|(relation, &output2)| {
-            let Relation::StructConstruct(ty, fields) = relation else { return None };
-            Some((info2.find_immut(output2), (*ty, fields.clone())))
-        })
-        .collect();
+    // Index info2's aggregate (struct/array) entries by output representative for lookup in the
+    // merge loop. Forward entries are completely authoritative, so we use them to build the index.
+    // Structs and arrays are indexed separately so they never cross-match during the intersection.
+    let mut info2_structs_by_output: OrderedHashMap<VariableId, (TypeId<'db>, Vec<FieldVar>)> =
+        OrderedHashMap::default();
+    let mut info2_arrays_by_output: OrderedHashMap<VariableId, (TypeId<'db>, Vec<FieldVar>)> =
+        OrderedHashMap::default();
+    for (relation, &output2) in info2.forward.iter() {
+        match relation {
+            Relation::StructConstruct(ty, fields) => {
+                info2_structs_by_output.insert(info2.find_immut(output2), (*ty, fields.clone()));
+            }
+            Relation::Array(ty, fields) => {
+                info2_arrays_by_output.insert(info2.find_immut(output2), (*ty, fields.clone()));
+            }
+            _ => {}
+        }
+    }
 
     // Iterate all forward entries from info1 and find matching entries in info2.
     for (relation, &output1) in info1.forward.iter() {
@@ -519,12 +547,15 @@ fn merge_relations<'db>(
                     );
                 }
             }
-            Relation::StructConstruct(ty, fields1) => {
+            Relation::StructConstruct(ty, fields1) | Relation::Array(ty, fields1) => {
+                let is_array = matches!(relation, Relation::Array(..));
+                let index =
+                    if is_array { &info2_arrays_by_output } else { &info2_structs_by_output };
                 let output1_rep = info1.find_immut(output1);
                 for &(output2_rep, output_intersection) in
                     intersections.get(&output1_rep).into_iter().flatten()
                 {
-                    let Some((ty2, fields2)) = info2_structs_by_output.get(&output2_rep) else {
+                    let Some((ty2, fields2)) = index.get(&output2_rep) else {
                         continue;
                     };
                     if ty2 != ty || fields2.len() != fields1.len() {
@@ -548,10 +579,12 @@ fn merge_relations<'db>(
                         })
                         .collect();
                     if any_data || result_fields.is_empty() {
-                        result.set_relation(
-                            Relation::StructConstruct(*ty, result_fields),
-                            output_intersection,
-                        );
+                        let result_relation = if is_array {
+                            Relation::Array(*ty, result_fields)
+                        } else {
+                            Relation::StructConstruct(*ty, result_fields)
+                        };
+                        result.set_relation(result_relation, output_intersection);
                     }
                 }
             }
@@ -697,18 +730,15 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
                 let Some((id, _)) = call_stmt.function.get_extern(self.db) else { return };
                 if id == self.array_new {
                     let ty = self.lowered.variables[call_stmt.outputs[0]].ty;
-                    info.set_relation(Relation::StructConstruct(ty, vec![]), call_stmt.outputs[0]);
+                    info.set_relation(Relation::Array(ty, vec![]), call_stmt.outputs[0]);
                 } else if id == self.array_append
-                    && let Some((ty, elems)) = info.get_struct_construct(call_stmt.inputs[0].var_id)
+                    && let Some((ty, elems)) = info.get_array_construct(call_stmt.inputs[0].var_id)
                 {
                     // Only track append if the input array is already tracked. Arrays from
                     // function parameters or external calls are conservatively ignored.
                     let mut new_elems = elems;
                     new_elems.push(FieldVar::Var(info.find(call_stmt.inputs[1].var_id)));
-                    info.set_relation(
-                        Relation::StructConstruct(ty, new_elems),
-                        call_stmt.outputs[0],
-                    );
+                    info.set_relation(Relation::Array(ty, new_elems), call_stmt.outputs[0]);
                 }
             }
 
