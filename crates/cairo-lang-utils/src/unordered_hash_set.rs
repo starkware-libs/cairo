@@ -91,6 +91,20 @@ impl<Key, BH> UnorderedHashSet<Key, BH> {
     }
 }
 
+#[cfg(feature = "std")]
+impl<Key: Hash + Eq> UnorderedHashSet<Key> {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashSet::with_capacity(capacity))
+    }
+}
+
+#[cfg(not(feature = "std"))]
+impl<Key: Hash + Eq> UnorderedHashSet<Key> {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashSet::with_capacity_and_hasher(capacity, Default::default()))
+    }
+}
+
 impl<Key: Hash + Eq, BH: BuildHasher> UnorderedHashSet<Key, BH> {
     /// Inserts the value into the set.
     ///

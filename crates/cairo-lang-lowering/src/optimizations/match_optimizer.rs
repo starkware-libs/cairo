@@ -2,20 +2,25 @@
 #[path = "match_optimizer_test.rs"]
 mod test;
 
-use cairo_lang_semantic::MatchArmSelector;
+use cairo_lang_semantic::{ConcreteVariant, MatchArmSelector};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
+use salsa::Database;
 
 use super::var_renamer::VarRenamer;
-use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::def_site::{DefSiteAnalysis, DefSites};
+use crate::analysis::dominator::Dominators;
+use crate::analysis::equality_analysis::{EqualityAnalysis, EqualityState};
+use crate::analysis::{Analyzer, BackAnalysis, DefLocation, StatementLocation};
 use crate::borrow_check::Demand;
 use crate::borrow_check::demand::EmptyDemandReporter;
+use crate::ids::LocationId;
 use crate::utils::RebuilderEx;
 use crate::{
-    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
-    StatementEnumConstruct, VarRemapping, VarUsage, VariableArena, VariableId,
+    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement, VarRemapping,
+    VarUsage, VariableArena, VariableId,
 };
 
 pub type MatchOptimizerDemand<'db> = Demand<VariableId, (), ()>;
@@ -52,14 +57,13 @@ impl<'db> MatchOptimizerDemand<'db> {
 /// ```
 ///
 /// Change `blk0` to jump directly to `blk4`.
-pub fn optimize_matches<'db>(lowered: &mut Lowered<'db>) {
+pub fn optimize_matches<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) {
     if lowered.blocks.is_empty() {
         return;
     }
-    let ctx = MatchOptimizerContext { fixes: vec![] };
-    let mut analysis = BackAnalysis::new(lowered, ctx);
+    let ctx = MatchOptimizerContext::new(db, lowered);
+    let mut analysis = BackAnalysis::new(&*lowered, ctx);
     analysis.get_root_info();
-    let ctx = analysis.analyzer;
 
     let mut new_blocks = vec![];
     let mut next_block_id = BlockId(lowered.blocks.len());
@@ -91,7 +95,7 @@ pub fn optimize_matches<'db>(lowered: &mut Lowered<'db>) {
     // Fixes were added in reverse order and need to be applied in that order.
     // This is because `additional_remappings` in later blocks may need to be renamed by fixes from
     // earlier blocks.
-    for fix in ctx.fixes {
+    for fix in analysis.analyzer.fixes {
         // Choose new variables for each destination of the additional remappings (see comment
         // above).
         let mut new_remapping = fix.remapping.clone();
@@ -105,15 +109,18 @@ pub fn optimize_matches<'db>(lowered: &mut Lowered<'db>) {
             renamed_vars.insert(*var, new_var);
         }
 
-        let block = &mut lowered.blocks[fix.statement_location.0];
-        assert_eq!(
-            block.statements.len() - 1,
-            fix.statement_location.1 + fix.n_same_block_statement,
-            "Unexpected number of statements in block."
-        );
-
-        if fix.remove_enum_construct {
-            block.statements.remove(fix.statement_location.1);
+        let block = &mut lowered.blocks[fix.fix_block];
+        if let Some(UpstreamEnumConstruct { stmt_idx, n_same_block_statement, remove }) =
+            &fix.enum_construct
+        {
+            assert_eq!(
+                block.statements.len() - 1,
+                stmt_idx + n_same_block_statement,
+                "Unexpected number of statements in block."
+            );
+            if *remove {
+                block.statements.remove(*stmt_idx);
+            }
         }
 
         handle_additional_statements(
@@ -126,7 +133,7 @@ pub fn optimize_matches<'db>(lowered: &mut Lowered<'db>) {
         );
 
         block.end = BlockEnd::Goto(fix.target_block, new_remapping);
-        if fix.statement_location.0 == fix.match_block {
+        if fix.fix_block == fix.match_block {
             // The match was removed (by the assignment of `block.end` above), no need to fix it.
             // Sanity check: there should be no additional remapping in this case.
             assert!(fix.additional_remappings.remapping.is_empty());
@@ -229,14 +236,22 @@ fn handle_additional_statements<'db>(
     }
 }
 
-/// Try to apply the optimization at the given statement.
-/// If the optimization can be applied, return the fix information and updates the analysis info
-/// accordingly.
+/// Try to apply the optimization for the given variant.
+///
+/// `inner` is the value to feed into the matched arm. `fix_block` is the block whose `end`
+/// will be replaced with a goto. `enum_construct`, when present, gives `(stmt_idx,
+/// output_var)` of the upstream `Statement::EnumConstruct` in `fix_block` — `output_var` is
+/// used to decide whether the construct can be removed. `None` for equality-anchored folds.
+///
+/// The candidate is consumed: on success its arm-specific state is folded into the returned
+/// `FixInfo`; on failure it is dropped. Either way the caller cannot reuse it.
 fn try_get_fix_info<'db>(
-    StatementEnumConstruct { variant, input, output }: &StatementEnumConstruct<'db>,
+    variant: &ConcreteVariant<'db>,
+    inner: VarUsage<'db>,
+    enum_construct: Option<(usize, VariableId)>,
+    fix_block: BlockId,
     info: &mut AnalysisInfo<'db, '_>,
-    candidate: &mut OptimizationCandidate<'db, '_>,
-    statement_location: (BlockId, usize),
+    mut candidate: OptimizationCandidate<'db, '_>,
 ) -> Option<FixInfo<'db>> {
     let (arm_idx, arm) = candidate
         .match_arms
@@ -253,7 +268,7 @@ fn try_get_fix_info<'db>(
     // Prepare a remapping object for the input of the EnumConstruct, which will be used as `var_id`
     // in `arm.block_id`.
     let mut remapping = VarRemapping::default();
-    remapping.insert(*var_id, *input);
+    remapping.insert(*var_id, inner);
 
     // Compute the demand based on the demand of the specific arm, rather than the current demand
     // (which contains the union of the demands from all the arms).
@@ -273,7 +288,7 @@ fn try_get_fix_info<'db>(
     }
 
     demand
-        .apply_remapping(&mut EmptyDemandReporter {}, [(var_id, (&input.var_id, ()))].into_iter());
+        .apply_remapping(&mut EmptyDemandReporter {}, [(var_id, (&inner.var_id, ()))].into_iter());
 
     let additional_remappings = match candidate.remapping {
         Some(remappings) => {
@@ -288,7 +303,7 @@ fn try_get_fix_info<'db>(
     };
 
     if !additional_remappings.is_empty() && candidate.future_merge {
-        // If there are additional_remappings and a future merge we cannot apply the optimization.
+        // additional_remappings with a future merge cannot be folded.
         return None;
     }
 
@@ -303,23 +318,28 @@ fn try_get_fix_info<'db>(
     info.demand = demand;
     info.reachable_blocks = std::mem::take(&mut candidate.arm_reachable_blocks[arm_idx]);
 
+    let enum_construct = enum_construct.map(|(stmt_idx, output)| UpstreamEnumConstruct {
+        stmt_idx,
+        n_same_block_statement: candidate.n_same_block_statement,
+        remove: !info.demand.vars.contains_key(&output),
+    });
+
     Some(FixInfo {
-        statement_location,
+        fix_block,
         match_block: candidate.match_block,
         arm_idx,
         target_block: arm.block_id,
         remapping,
         reachable_blocks: info.reachable_blocks.clone(),
         additional_remappings,
-        n_same_block_statement: candidate.n_same_block_statement,
-        remove_enum_construct: !info.demand.vars.contains_key(output),
+        enum_construct,
         additional_stmts,
     })
 }
 
 pub struct FixInfo<'db> {
-    /// The location that needs to be fixed.
-    statement_location: (BlockId, usize),
+    /// The block whose `end` will be replaced with a goto to the chosen arm.
+    fix_block: BlockId,
     /// The block with the match statement that we want to jump over.
     match_block: BlockId,
     /// The index of the arm that we want to jump to.
@@ -332,13 +352,25 @@ pub struct FixInfo<'db> {
     reachable_blocks: OrderedHashSet<BlockId>,
     /// Additional remappings that appeared in a `Goto` leading to the match.
     additional_remappings: VarRemapping<'db>,
-    /// The number of statement in the in the same block as the enum construct.
-    n_same_block_statement: usize,
-    /// Indicated that the enum construct statement can be removed.
-    remove_enum_construct: bool,
+    /// When `Some`, an upstream `EnumConstruct` sits at `(fix_block, stmt_idx)`; it is
+    /// removed iff `remove`. `None` for equality-anchored folds (no local construct).
+    enum_construct: Option<UpstreamEnumConstruct>,
     /// Additional statement that appear before the match but not in the same block as the enum
     /// construct.
     additional_stmts: Vec<Statement<'db>>,
+}
+
+/// Describes the upstream `EnumConstruct` in `fix_block` anchoring a construct-anchored fold.
+struct UpstreamEnumConstruct {
+    /// Index of the `EnumConstruct` statement in `fix_block`.
+    stmt_idx: usize,
+    /// Number of statements after the construct in the same block, used for an integrity
+    /// assertion.
+    n_same_block_statement: usize,
+    /// When true, the `EnumConstruct` is removed (input not demanded after the match).
+    /// When false, the construct stays (input is demanded elsewhere, only legal if droppable
+    /// because the fold may drop one use).
+    remove: bool,
 }
 
 #[derive(Clone)]
@@ -351,6 +383,9 @@ struct OptimizationCandidate<'db, 'a> {
 
     /// The block that the match is in.
     match_block: BlockId,
+
+    /// The source location of the match (used to synthesize `VarUsage`s for equality-based fixes).
+    match_location: LocationId<'db>,
 
     /// The demands at the arms.
     arm_demands: Vec<MatchOptimizerDemand<'db>>,
@@ -374,8 +409,44 @@ struct OptimizationCandidate<'db, 'a> {
     n_same_block_statement: usize,
 }
 
-pub struct MatchOptimizerContext<'db> {
+pub struct MatchOptimizerContext<'db, 'a> {
     fixes: Vec<FixInfo<'db>>,
+    equalities: Vec<Option<EqualityState<'db>>>,
+    dominators: Dominators,
+    def_sites: DefSites,
+    /// Borrow of `lowered.variables`, used by the equality-fold gate to check
+    /// droppable/copyable.
+    variables: &'a VariableArena<'db>,
+}
+
+impl<'db, 'a> MatchOptimizerContext<'db, 'a> {
+    fn new(db: &'db dyn Database, lowered: &'a Lowered<'db>) -> Self {
+        Self {
+            fixes: vec![],
+            equalities: EqualityAnalysis::analyze(db, lowered),
+            dominators: Dominators::analyze(lowered),
+            def_sites: DefSiteAnalysis::analyze(lowered),
+            variables: &lowered.variables,
+        }
+    }
+
+    /// Looks up the known variant of `var` at `block_id`'s exit via equality analysis.
+    fn get_enum_variant(
+        &mut self,
+        block_id: BlockId,
+        var: VariableId,
+    ) -> Option<(ConcreteVariant<'db>, VariableId)> {
+        self.equalities[block_id.0].as_mut()?.get_enum_construct(var)
+    }
+
+    /// Returns true if `var`'s definition is in scope at the end of `block_id`.
+    fn is_visible_at_block_end(&self, var_id: VariableId, at: BlockId) -> bool {
+        let Some(loc) = self.def_sites[var_id.index()] else { return false };
+        let block_id = match loc {
+            DefLocation::Statement((b, _)) | DefLocation::BlockEntry(b) => b,
+        };
+        self.dominators.dominates(block_id, at)
+    }
 }
 
 #[derive(Clone)]
@@ -386,7 +457,7 @@ pub struct AnalysisInfo<'db, 'a> {
     reachable_blocks: OrderedHashSet<BlockId>,
 }
 
-impl<'db: 'a, 'a> Analyzer<'db, 'a> for MatchOptimizerContext<'db> {
+impl<'db: 'a, 'a> Analyzer<'db, 'a> for MatchOptimizerContext<'db, 'a> {
     type Info = AnalysisInfo<'db, 'a>;
 
     fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &Block<'db>) {
@@ -405,18 +476,16 @@ impl<'db: 'a, 'a> Analyzer<'db, 'a> for MatchOptimizerContext<'db> {
                     if enum_construct_stmt.output == candidate.match_variable =>
                 {
                     if let Some(fix_info) = try_get_fix_info(
-                        enum_construct_stmt,
+                        &enum_construct_stmt.variant,
+                        enum_construct_stmt.input,
+                        Some((statement_location.1, enum_construct_stmt.output)),
+                        statement_location.0,
                         info,
-                        &mut candidate,
-                        statement_location,
+                        candidate,
                     ) {
                         self.fixes.push(fix_info);
                         return;
                     }
-
-                    // Since `candidate.match_variable` was introduced, the candidate is no longer
-                    // applicable.
-                    info.candidate = None;
                 }
                 _ => {
                     candidate.statement_rev.push(stmt);
@@ -508,23 +577,65 @@ impl<'db: 'a, 'a> Analyzer<'db, 'a> for MatchOptimizerContext<'db> {
         // `arm_reachable_blocks`, then there was a collision.
         let found_collision = reachable_blocks.len() < max_possible_size;
 
+        // A match on an Enum is a fold candidate under one of the following cases:
+        // (a) Input not demanded after the match — the construct-anchored fold (`visit_stmt`)
+        //     may also remove the upstream construct.
+        // (b) Input demanded but droppable — the matched value is also consumed elsewhere
+        //     (must be Copy, else SSA would already be invalid). The construct-anchored fold
+        //     still applies, but the construct stays for the other consumers.
         let candidate = match match_info {
-            // A match is a candidate for the optimization if it is a match on an Enum
-            // and its input is unused after the match.
-            MatchInfo::Enum(MatchEnumInfo { input, arms, .. })
-                if !demand.vars.contains_key(&input.var_id) =>
+            MatchInfo::Enum(MatchEnumInfo { input, arms, location, .. })
+                if !demand.vars.contains_key(&input.var_id)
+                    || self.variables[input.var_id].info.droppable.is_ok() =>
             {
-                Some(OptimizationCandidate {
+                let candidate = OptimizationCandidate {
                     match_variable: input.var_id,
                     match_arms: arms,
                     match_block: block_id,
+                    match_location: *location,
                     arm_demands,
                     future_merge: found_collision,
                     arm_reachable_blocks,
                     remapping: None,
                     statement_rev: vec![],
                     n_same_block_statement: 0,
-                })
+                };
+                // If equality analysis already knows the variant at this block's exit, fold the
+                // match into a direct goto here. The matched-arm payload comes from equality
+                // analysis, not from a local construct; any newly-dead EnumConstruct upstream
+                // will be cleaned up by later passes.
+                if let Some((variant, payload_var)) =
+                    self.get_enum_variant(block_id, candidate.match_variable)
+                    // Without a construct to remove upstream, a non-droppable matched value
+                    // would leak (the match was its only consumer on this path).
+                    && self.variables[candidate.match_variable].info.droppable.is_ok()
+                    // Needs to be copy if we are introducing a new use.
+                    && self.variables[payload_var].info.copyable.is_ok()
+                {
+                    // Equality analysis only records an enum construct at blocks where the
+                    // payload definition dominates, so this must hold.
+                    assert!(self.is_visible_at_block_end(payload_var, block_id));
+                    let mut info = Self::Info {
+                        candidate: None,
+                        demand: MatchOptimizerDemand::default(),
+                        reachable_blocks: reachable_blocks.clone(),
+                    };
+                    // `try_get_fix_info` only fails when there are additional remappings, which
+                    // never exist for an equality-anchored fold (no goto observed yet on the
+                    // freshly-built candidate).
+                    let fix_info = try_get_fix_info(
+                        &variant,
+                        VarUsage { var_id: payload_var, location: candidate.match_location },
+                        None,
+                        block_id,
+                        &mut info,
+                        candidate,
+                    )
+                    .expect("equality-fold has no additional remappings, cannot fail");
+                    self.fixes.push(fix_info);
+                    return info;
+                }
+                Some(candidate)
             }
             _ => None,
         };

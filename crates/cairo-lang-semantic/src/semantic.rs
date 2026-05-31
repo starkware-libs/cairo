@@ -123,7 +123,7 @@ impl<'db> Binding<'db> {
     pub fn stable_ptr(&self, db: &'db dyn Database) -> SyntaxStablePtrId<'db> {
         match self {
             Binding::LocalVar(local) => local.stable_ptr(db).untyped(),
-            Binding::Param(param) => param.stable_ptr(db).untyped(),
+            Binding::Param(param) => param.stable_ptr.untyped(),
             Binding::LocalItem(local) => local.id.name_stable_ptr(db),
         }
     }

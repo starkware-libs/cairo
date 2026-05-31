@@ -158,28 +158,10 @@ Statements:
   (v7: core::felt252) <- core::felt252_add(v4, v4)
   (v8: core::felt252) <- core::felt252_add(v7, v4)
   (v9: core::felt252) <- core::felt252_add(v2, v1)
+  (v10: core::felt252) <- core::felt252_add(v4, v4)
+  (v11: core::felt252) <- core::felt252_add(v10, v4)
+  (v12: core::felt252) <- core::felt252_add(v9, v1)
 End:
-  Match(match_enum(v0) {
-    MyEnum::A(v10) => blk3,
-    MyEnum::B(v11) => blk4,
-  })
-
-blk3:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk4:
-Statements:
-  (v12: core::felt252) <- core::felt252_add(v11, v11)
-  (v13: core::felt252) <- core::felt252_add(v12, v11)
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
-  (v14: core::felt252) <- core::felt252_add(v9, v1)
-End:
-  Return(v14)
+  Return(v12)
 
 //! > local_variables

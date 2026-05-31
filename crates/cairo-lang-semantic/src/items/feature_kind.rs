@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
-use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
+use cairo_lang_filesystem::ids::{CrateId, SmolStrId, Tracked};
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR, UNUSED,
     UNUSED_IMPORTS, UNUSED_VARIABLES,
@@ -261,9 +261,27 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
     syntax: &impl QueryAttrs<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> FeatureConfig<'db> {
-    let mut current_module_id = element_id.parent_module(db);
-    let crate_id = current_module_id.owning_crate(db);
-    let mut config_stack = vec![feature_config_from_ast_item(db, crate_id, syntax, diagnostics)];
+    let parent_module_id = element_id.parent_module(db);
+    let crate_id = parent_module_id.owning_crate(db);
+    let mut config = module_feature_config(db, (), parent_module_id).clone();
+    config.override_with(feature_config_from_ast_item(db, crate_id, syntax, diagnostics));
+    config
+}
+
+/// Returns the merged feature config for a module: its own attributes accumulated with those of
+/// all its ancestor modules, walking parents up to the crate root.
+///
+/// Memoized per `ModuleId`, so the parent walk runs once per module instead of once per item
+/// inside it.
+#[salsa::tracked(returns(ref))]
+fn module_feature_config<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> FeatureConfig<'db> {
+    let mut current_module_id = module_id;
+    let crate_id = module_id.owning_crate(db);
+    let mut config_stack = vec![];
     let mut config = loop {
         match current_module_id {
             ModuleId::CrateRoot(crate_id) => {

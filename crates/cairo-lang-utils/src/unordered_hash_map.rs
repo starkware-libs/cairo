@@ -86,6 +86,13 @@ impl<Key, Value, BH> UnorderedHashMap<Key, Value, BH> {
     }
 }
 
+impl<Key, Value, BH: Default> UnorderedHashMap<Key, Value, BH> {
+    /// Creates an empty map with the specified capacity.
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashMap::<Key, Value, BH>::with_capacity_and_hasher(capacity, Default::default()))
+    }
+}
+
 impl<Key, Value, BH> PartialEq for UnorderedHashMap<Key, Value, BH>
 where
     Key: Eq + Hash,

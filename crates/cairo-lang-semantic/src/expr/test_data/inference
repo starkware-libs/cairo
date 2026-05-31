@@ -256,6 +256,40 @@ error[E2313]: Trait `test::MyTrait::<core::felt252>` has multiple implementation
 
 //! > ==========================================================================
 
+//! > Test felt252 const-generic impls with field-equal but syntactically distinct literals are distinct.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() -> felt252 {
+    Marker::<-1>::tag()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Marker<const K: felt252> {
+    fn tag() -> felt252;
+}
+impl MarkerMinus1 of Marker<-1> {
+    fn tag() -> felt252 {
+        100
+    }
+}
+impl MarkerPrimeMinus1 of Marker<
+    0x800000000000011000000000000000000000000000000000000000000000000,
+> {
+    fn tag() -> felt252 {
+        200
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > Test trait inference unresolved type for impl.
 
 //! > test_runner_name

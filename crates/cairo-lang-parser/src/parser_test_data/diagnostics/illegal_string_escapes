@@ -10,9 +10,27 @@ fn foo() {
 
 //! > expected_diagnostics
 error[E1017]: Invalid string escaping.
- --> dummy_file.cairo:2:13
+ --> dummy_file.cairo:2:14
     let a = '\p';
-            ^^^^
+             ^
+
+//! > ==========================================================================
+
+//! > Illegally escaped short string after non-ASCII character.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo() {
+    let a = 'éé\p';
+}
+
+//! > expected_diagnostics
+error[E1017]: Invalid string escaping.
+ --> dummy_file.cairo:2:16
+    let a = 'éé\p';
+               ^
 
 //! > ==========================================================================
 
