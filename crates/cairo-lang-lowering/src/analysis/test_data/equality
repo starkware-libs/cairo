@@ -938,7 +938,7 @@ Block 3:
 
 //! > ==========================================================================
 
-//! > Test array new and append tracked via struct hashcons
+//! > Test array new and append tracked via array hashcons
 
 //! > test_runner_name
 test_equality_analysis
@@ -970,7 +970,7 @@ End:
 
 //! > analysis_state
 Block 0:
-core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4
+core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[v0, v1] = v4, core::array::Array::<core::felt252>[v0] = v3
 
 //! > ==========================================================================
 
@@ -1059,25 +1059,25 @@ End:
 
 //! > analysis_state
 Block 0:
-core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4
+core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[v0, v1] = v4, core::array::Array::<core::felt252>[v0] = v3
 
 Block 1:
-Box(v0) = v6, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, core::array::Array::<core::felt252>(v1) = v5, v0 = v8
+Box(v0) = v6, core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[v0, v1] = v4, core::array::Array::<core::felt252>[v0] = v3, core::array::Array::<core::felt252>[v1] = v5, v0 = v8
 
 Block 2:
-()() = v10, None(v10) = v11, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4
+()() = v10, None(v10) = v11, core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[v0, v1] = v4, core::array::Array::<core::felt252>[v0] = v3
 
 Block 3:
-()() = v10, None(v10) = v11, Some(v12) = v11, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4
+()() = v10, None(v10) = v11, Some(v12) = v11, core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[v0, v1] = v4, core::array::Array::<core::felt252>[v0] = v3
 
 Block 4:
-core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, core::array::Array::<core::felt252>(v9) = v15, v2 = v14
+core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[v0, v1] = v4, core::array::Array::<core::felt252>[v0] = v3, core::array::Array::<core::felt252>[v9] = v15, v2 = v14
 
 Block 5:
-()() = v10, None(v10) = v11, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v10 = v13
+()() = v10, None(v10) = v11, core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[v0, v1] = v4, core::array::Array::<core::felt252>[v0] = v3, v10 = v13
 
 Block 6:
-@v16 = v18, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v16 = v17
+@v16 = v18, core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[v0, v1] = v4, core::array::Array::<core::felt252>[v0] = v3, v16 = v17
 
 //! > ==========================================================================
 
@@ -1172,19 +1172,19 @@ End:
 
 //! > analysis_state
 Block 0:
-@v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, v0 = v2, v1 = v4, v10 = v12, v8 = v9
+@v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, v0 = v2, v1 = v4, v10 = v12, v8 = v9
 
 Block 1:
-@core::array::Array::<core::felt252>(v1) = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v14, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v3 = v16, v8 = v9
+@core::array::Array::<core::felt252>[v1] = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v14, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v3 = v16, v8 = v9
 
 Block 2:
-@core::array::Array::<core::felt252>() = v19, @core::array::Array::<core::felt252>(v1) = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v14, Box(v5) = v20, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v3 = v16, v5 = v22, v8 = v9
+@core::array::Array::<core::felt252>[] = v19, @core::array::Array::<core::felt252>[v1] = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v14, Box(v5) = v20, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v3 = v16, v5 = v22, v8 = v9
 
 Block 3:
-()() = v23, @core::array::Array::<core::felt252>(v1) = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v14, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v3 = v16, v8 = v9
+()() = v23, @core::array::Array::<core::felt252>[v1] = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v14, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v3 = v16, v8 = v9
 
 Block 4:
-()() = v24, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v15) = v25, v0 = v2, v1 = v4, v10 = v12, v8 = v9
+()() = v24, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v15) = v25, v0 = v2, v1 = v4, v10 = v12, v8 = v9
 
 //! > ==========================================================================
 
@@ -1279,19 +1279,19 @@ End:
 
 //! > analysis_state
 Block 0:
-@v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, v0 = v2, v1 = v4, v10 = v12, v8 = v9
+@v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, v0 = v2, v1 = v4, v10 = v12, v8 = v9
 
 Block 1:
-@core::array::Array::<core::felt252>(v0) = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v5) = v14, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v5 = v16, v8 = v9
+@core::array::Array::<core::felt252>[v0] = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v5) = v14, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v5 = v16, v8 = v9
 
 Block 2:
-@core::array::Array::<core::felt252>() = v19, @core::array::Array::<core::felt252>(v0) = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v20, Box(v5) = v14, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v3 = v22, v5 = v16, v8 = v9
+@core::array::Array::<core::felt252>[] = v19, @core::array::Array::<core::felt252>[v0] = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v20, Box(v5) = v14, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v3 = v22, v5 = v16, v8 = v9
 
 Block 3:
-()() = v23, @core::array::Array::<core::felt252>(v0) = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v5) = v14, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v5 = v16, v8 = v9
+()() = v23, @core::array::Array::<core::felt252>[v0] = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v5) = v14, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v5 = v16, v8 = v9
 
 Block 4:
-()() = v24, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v15) = v25, v0 = v2, v1 = v4, v10 = v12, v8 = v9
+()() = v24, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>[] = v6, core::array::Array::<core::felt252>[v0, v1] = v8, core::array::Array::<core::felt252>[v0] = v7, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v15) = v25, v0 = v2, v1 = v4, v10 = v12, v8 = v9
 
 //! > ==========================================================================
 
@@ -1414,7 +1414,7 @@ Block 1:
 Box(v4) = v2
 
 Block 2:
-()() = v5, core::array::Array::<core::felt252>() = v6
+()() = v5, core::array::Array::<core::felt252>[] = v6
 
 //! > ==========================================================================
 
