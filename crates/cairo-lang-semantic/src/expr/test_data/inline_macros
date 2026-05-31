@@ -2766,3 +2766,30 @@ error[E2158]: No matching rule found in inline macro `m`.
  --> lib.cairo:5:1
 m!
 ^^
+
+//! > ==========================================================================
+
+//! > Regression for #9993: macro call with `$(...)` without an operator does not ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    mymac!($(x));
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro mymac {
+    ($x:ident) => { 1 };
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `mymac`.
+ --> lib.cairo:6:5
+    mymac!($(x));
+    ^^^^^^^^^^^^
