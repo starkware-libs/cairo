@@ -196,6 +196,8 @@ Final lowering:
 Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: ()
 blk0 (root):
 Statements:
+  (v2: test::PanicDestructable) <- struct_destructure(v0)
+  () <- struct_destructure(v2)
 End:
   Return()
 
