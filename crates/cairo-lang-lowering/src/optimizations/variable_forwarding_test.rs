@@ -42,7 +42,6 @@ fn test_variable_forwarding(
         .unwrap();
     OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
     OptimizationPhase::ReorderStatements.apply(db, function_id, &mut before).unwrap();
-    // Don't run CancelOps so we can see the forwarding in action
 
     let mut after = before.clone();
     OptimizationPhase::VariableForwarding.apply(db, function_id, &mut after).unwrap();
