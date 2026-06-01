@@ -42,3 +42,95 @@ End:
 
 //! > local_variables
 v2
+
+//! > ==========================================================================
+
+//! > Test that an alias (snapshot) of a constant live across a revoke does not need local storage.
+
+//! > test_runner_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo() -> @felt252 {
+    let c = 5;
+    let s = @c;
+    immovable(s);
+    revoke_ap();
+    s
+}
+
+//! > module_code
+#[inline(never)]
+fn immovable<T, +Drop<T>>(t: T) -> T {
+    t
+}
+
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+
+//! > lowering_format
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: @core::felt252) <- test::immovable::<@core::felt252, core::traits::SnapshotDrop::<core::felt252>>(v2)
+  (v4: core::felt252) <- test::revoke_ap()
+End:
+  Return(v2)
+
+//! > local_variables
+
+//! > ==========================================================================
+
+//! > Test that a field of a constant struct (partial param) live across a revoke needs no local.
+
+//! > test_runner_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo() -> felt252 {
+    let S { a, b } = C;
+    immovable(b);
+    revoke_ap();
+    a
+}
+
+//! > module_code
+#[derive(Copy, Drop)]
+struct S {
+    a: felt252,
+    b: felt252,
+}
+const C: S = S { a: 1, b: 2 };
+
+#[inline(never)]
+fn immovable<T, +Drop<T>>(t: T) -> T {
+    t
+}
+
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+
+//! > lowering_format
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::S) <- { 1: core::felt252, 2: core::felt252 }
+  (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
+  (v3: core::felt252) <- test::immovable::<core::felt252, core::felt252Drop>(v2)
+  (v4: core::felt252) <- test::revoke_ap()
+End:
+  Return(v1)
+
+//! > local_variables

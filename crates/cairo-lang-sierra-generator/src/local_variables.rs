@@ -284,14 +284,17 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
             return false;
         }
         let mut peeled = self.peel_aliases(var);
-        if self.non_ap_based.contains(peeled) {
+        if self.non_ap_based.contains(peeled) || self.constants.contains(peeled) {
             return false;
         }
         // In the case of partial params, we check if one of its ancestors is a local variable, or
         // will become a local variable. If that is the case, then 'var' doesn't need to be local.
         while let Some(parent) = self.partial_param_parents.get(peeled) {
             peeled = self.peel_aliases(parent);
-            if self.non_ap_based.contains(peeled) || peeled_local_candidates.contains(peeled) {
+            if self.non_ap_based.contains(peeled)
+                || peeled_local_candidates.contains(peeled)
+                || self.constants.contains(peeled)
+            {
                 return false;
             }
         }
