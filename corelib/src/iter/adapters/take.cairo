@@ -1,4 +1,4 @@
-use crate::num::traits::CheckedSub;
+use crate::num::traits::{CheckedAdd, CheckedSub};
 
 /// An iterator that only iterates over the first `n` iterations of `iter`.
 ///
@@ -29,7 +29,8 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
     fn nth<+Destruct<Take<I>>, +Destruct<Self::Item>>(
         ref self: Take<I>, n: usize,
     ) -> Option<Self::Item> {
-        if let Some(updated_n) = self.n.checked_sub(n + 1) {
+        if let Some(n_plus_1) = n.checked_add(1)
+            && let Some(updated_n) = self.n.checked_sub(n_plus_1) {
             self.n = updated_n;
             self.iter.nth(n)
         } else {
