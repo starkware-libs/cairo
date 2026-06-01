@@ -284,7 +284,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
             return false;
         }
         let mut peeled = self.peel_aliases(var);
-        if self.non_ap_based.contains(peeled) {
+        if self.non_ap_based.contains(peeled) || self.constants.contains(peeled) {
             return false;
         }
         // In the case of partial params, we check if one of its ancestors is a local variable, or
