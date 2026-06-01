@@ -88,6 +88,11 @@ pub fn egcd<
 /// We consider the cases of negative `n` to be equivalent to the cases of positive `n`, as it
 /// defines the same equivalence classes.
 ///
+/// # Panics
+///
+/// Panics for a signed `T` when `n == T::MIN`, since the computation relies on `|n|`, and
+/// `|T::MIN|` is not representable in `T`.
+///
 /// # Examples
 ///
 /// ```
