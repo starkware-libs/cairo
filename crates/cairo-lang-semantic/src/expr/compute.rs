@@ -126,7 +126,7 @@ impl ExpansionOffset {
     pub fn mapped(self, mappings: &[CodeMapping]) -> Option<Self> {
         let mapping = mappings
             .iter()
-            .find(|mapping| mapping.span.start <= self.0 && self.0 <= mapping.span.end)?;
+            .find(|mapping| (mapping.span.start..mapping.span.end).contains(&self.0))?;
         Some(Self::new(match mapping.origin {
             CodeOrigin::Start(offset) => offset.add_width(self.0 - mapping.span.start),
             CodeOrigin::Span(span) | CodeOrigin::CallSite(span) => span.start,
