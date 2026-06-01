@@ -1343,6 +1343,7 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
 fn compare_names(a: &str, b: &str) -> Ordering {
     match (a, b) {
         ("super" | "crate", "super" | "crate") => a.cmp(b),
+        ("self", "self") => Ordering::Equal,
         ("super" | "crate", _) | (_, "self") => Ordering::Greater,
         (_, "super" | "crate") | ("self", _) => Ordering::Less,
         _ => a.cmp(b),
