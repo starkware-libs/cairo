@@ -44,6 +44,15 @@ use crate::{FormatterConfig, get_formatted_file};
     false
 )]
 #[test_case(
+    "test_data/cairo_files/sort_self_use.cairo",
+    "test_data/expected_results/sort_self_use.cairo",
+    true,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
     "test_data/cairo_files/fmt_skip.cairo",
     "test_data/expected_results/fmt_skip.cairo",
     false,
