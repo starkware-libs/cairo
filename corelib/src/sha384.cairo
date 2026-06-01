@@ -38,7 +38,7 @@ const SHA384_INITIAL_STATE: [u64; 8] = [
 ///
 /// # Returns
 ///
-/// * The SHA-384 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
+/// * The SHA-384 hash of `input` followed by the `last_input_num_bytes` least significant bytes of
 /// `last_input_word`, interpreted in big-endian order.
 ///
 /// # Examples
