@@ -79,7 +79,7 @@ pub trait BoxTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let snap_boxed_arr = @BoxTraits::new(array![1, 2, 3]);
+    /// let snap_boxed_arr = @BoxTrait::new(array![1, 2, 3]);
     /// let boxed_snap_arr = snap_boxed_arr.as_snapshot();
     /// let snap_arr = boxed_snap_arr.unbox();
     /// ```
