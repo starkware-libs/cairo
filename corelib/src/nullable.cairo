@@ -100,6 +100,7 @@ pub impl NullableImpl<T> of NullableTrait<T> {
     /// This function method does the same thing:
     /// ```
     /// use core::nullable::NullableTrait;
+    /// let value: Nullable<u32> = NullableTrait::new(42);
     /// let also_unwrapped = NullableTrait::deref(value);
     /// ```
     fn deref(nullable: Nullable<T>) -> T {
