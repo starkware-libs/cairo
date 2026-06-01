@@ -186,14 +186,12 @@ pub trait Felt252DictEntryTrait<T> {
     /// // Create a dictionary that stores arrays
     /// let mut dict: Felt252Dict<Nullable<Array<felt252>>> = Default::default();
     ///
-    /// let a = array![1, 2, 3];
-    /// dict.insert(0, NullableTrait::new(a));
+    /// dict.insert(0, NullableTrait::new(array![1, 2, 3]));
     ///
     /// let (entry, prev_value) = dict.entry(0);
-    /// let new_value = NullableTrait::new(array![4, 5, 6]);
-    /// dict = entry.finalize(new_value);
-    /// assert!(prev_value == a);
-    /// assert!(dict.get(0) == new_value);
+    /// dict = entry.finalize(NullableTrait::new(array![4, 5, 6]));
+    /// assert!(prev_value.deref() == array![1, 2, 3]);
+    /// assert!(dict.get(0).deref() == array![4, 5, 6]);
     /// ```
     fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>;
 }
@@ -295,7 +293,7 @@ impl Felt252DictFromIterator<
 #[generate_trait]
 pub impl SquashedFelt252DictImpl<T> of SquashedFelt252DictTrait<T> {
     /// Returns an array of `(key, first_value, last_value)` tuples.
-    /// The first value is always 0.
+    /// The first value is always the zero/default value of the value type `T`.
     ///
     /// # Example
     /// ```

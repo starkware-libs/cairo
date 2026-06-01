@@ -159,7 +159,7 @@ pub struct RangeInclusiveIterator<T> {
     /// The upper bound of the range (inclusive).
     pub(crate) end: T,
     // This field is:
-    //  - `false` upon construction
+    //  - `start > end` upon construction (so reversed/empty ranges start out exhausted)
     //  - `false` when iteration has yielded an element and the iterator is not exhausted
     //  - `true` when iteration has been used to exhaust the iterator
     //

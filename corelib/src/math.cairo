@@ -81,7 +81,7 @@ pub fn egcd<
 /// Computes the modular multiplicative inverse of `a` modulo `n`.
 ///
 /// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `|n|-1` inclusive, or
-/// `None` if `gcd(a,n) > 1` (inverse doesn't exist).
+/// `None` if `gcd(a,n) > 1` (inverse doesn't exist) or `|n| == 1` (the `1..=|n|-1` range is empty).
 ///
 /// # Note
 ///
