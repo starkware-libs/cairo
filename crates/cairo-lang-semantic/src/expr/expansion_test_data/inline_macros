@@ -271,3 +271,21 @@ error[E2158]: No matching rule found in inline macro `take_ident`.
 take_ident!($)
 ^^^^^^^^^^^^^^
 
+//! > ==========================================================================
+
+//! > Test that a macro call with a missing token is not expanded (the parse error is enough).
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > expr_code
+array![1, 2
+
+//! > expanded_code
+array![1, 2
+
+//! > diagnostics
+error[E1001]: Missing token ']'.
+ --> lib.cairo:2:12
+array![1, 2
+           ^
