@@ -2634,6 +2634,24 @@ mod op_eq_by_op {
     }
 }
 
+/// Non-deprecated `*Assign` analog of `op_eq_by_op`: derives an assignment operator from the
+/// corresponding binary operator.
+mod op_assign_by_op {
+    use crate::ops::{DivAssign, RemAssign};
+
+    pub impl DivAssignImpl<T, +Div<T>> of DivAssign<T, T> {
+        fn div_assign(ref self: T, rhs: T) {
+            self = Div::div(self, rhs);
+        }
+    }
+
+    pub impl RemAssignImpl<T, +Rem<T>> of RemAssign<T, T> {
+        fn rem_assign(ref self: T, rhs: T) {
+            self = Rem::rem(self, rhs);
+        }
+    }
+}
+
 impl I8AddEq = op_eq_by_op::AddEqImpl<i8>;
 impl I8SubEq = op_eq_by_op::SubEqImpl<i8>;
 impl I8MulEq = op_eq_by_op::MulEqImpl<i8>;
@@ -2647,12 +2665,18 @@ impl I16RemEq = op_eq_by_op::RemEqImpl<i16>;
 impl I32AddEq = op_eq_by_op::AddEqImpl<i32>;
 impl I32SubEq = op_eq_by_op::SubEqImpl<i32>;
 impl I32MulEq = op_eq_by_op::MulEqImpl<i32>;
+impl I32DivAssign = op_assign_by_op::DivAssignImpl<i32>;
+impl I32RemAssign = op_assign_by_op::RemAssignImpl<i32>;
 impl I64AddEq = op_eq_by_op::AddEqImpl<i64>;
 impl I64SubEq = op_eq_by_op::SubEqImpl<i64>;
 impl I64MulEq = op_eq_by_op::MulEqImpl<i64>;
+impl I64DivAssign = op_assign_by_op::DivAssignImpl<i64>;
+impl I64RemAssign = op_assign_by_op::RemAssignImpl<i64>;
 impl I128AddEq = op_eq_by_op::AddEqImpl<i128>;
 impl I128SubEq = op_eq_by_op::SubEqImpl<i128>;
 impl I128MulEq = op_eq_by_op::MulEqImpl<i128>;
+impl I128DivAssign = op_assign_by_op::DivAssignImpl<i128>;
+impl I128RemAssign = op_assign_by_op::RemAssignImpl<i128>;
 impl U8AddEq = op_eq_by_op::AddEqImpl<u8>;
 impl U8SubEq = op_eq_by_op::SubEqImpl<u8>;
 impl U8MulEq = op_eq_by_op::MulEqImpl<u8>;

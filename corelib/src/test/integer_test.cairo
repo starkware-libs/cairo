@@ -1853,6 +1853,29 @@ fn test_i128_divmod_overflow() {
 }
 
 #[test]
+fn test_signed_div_rem_assign() {
+    // `i32`/`i64`/`i128` previously lacked `/=` and `%=` (only `i8`/`i16` had them).
+    let mut a: i32 = 10;
+    a /= 3;
+    assert_eq!(a, 3);
+    let mut a: i32 = 10;
+    a %= 3;
+    assert_eq!(a, 1);
+    let mut a: i64 = -20;
+    a /= 4;
+    assert_eq!(a, -5);
+    let mut a: i64 = -20;
+    a %= 7;
+    assert_eq!(a, -6);
+    let mut a: i128 = 100;
+    a /= -9;
+    assert_eq!(a, -11);
+    let mut a: i128 = 17;
+    a %= 5;
+    assert_eq!(a, 2);
+}
+
+#[test]
 fn test_signed_int_diff() {
     assert_eq(@integer::i8_diff(3, 3).unwrap(), @0, 'i8: 3 - 3 == 0');
     assert_eq(@integer::i8_diff(4, 3).unwrap(), @1, 'i8: 4 - 3 == 1');
