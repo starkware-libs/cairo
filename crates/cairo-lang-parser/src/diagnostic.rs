@@ -93,12 +93,14 @@ impl<'a> ParserDiagnostic<'a> {
         )
     }
 
+    /// Returns the operator text for comparisons that can be rewritten as explicit conjunctions.
     fn ordering_operator_text(kind: SyntaxKind) -> Option<&'static str> {
         match kind {
             SyntaxKind::TerminalLT => Some("<"),
             SyntaxKind::TerminalGT => Some(">"),
             SyntaxKind::TerminalLE => Some("<="),
             SyntaxKind::TerminalGE => Some(">="),
+            SyntaxKind::TerminalEqEq => Some("=="),
             _ => None,
         }
     }
@@ -241,15 +243,13 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                         "{message} If this appears in a generic path, you may be missing `::` \
                          (for example, `foo::<T>(...)`)."
                     )
-                } else if *first_op == *second_op {
-                    if let Some(op) = Self::ordering_operator_text(*first_op) {
-                        format!(
-                            "{message} If this was intended as a chained comparison, rewrite it \
-                             with `&&` (for example, `a {op} b && b {op} c`)."
-                        )
-                    } else {
-                        message
-                    }
+                } else if let Some(op1) = Self::ordering_operator_text(*first_op)
+                    && let Some(op2) = Self::ordering_operator_text(*second_op)
+                {
+                    format!(
+                        "{message} If this was intended as a chained comparison, rewrite it with \
+                         `&&` (for example, `a {op1} b && b {op2} c`)."
+                    )
                 } else {
                     message
                 }
