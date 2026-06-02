@@ -101,6 +101,7 @@ impl<'a> ParserDiagnostic<'a> {
             SyntaxKind::TerminalLE => Some("<="),
             SyntaxKind::TerminalGE => Some(">="),
             SyntaxKind::TerminalEqEq => Some("=="),
+            SyntaxKind::TerminalNeq => Some("!="),
             _ => None,
         }
     }
