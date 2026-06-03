@@ -632,6 +632,7 @@ impl SyntaxKind {
                 | SyntaxKind::WrappedTokenTreeMissing
                 | SyntaxKind::MacroRepetitionOperatorMissing
                 | SyntaxKind::MacroParamKindMissing
+                | SyntaxKind::TokenMissing
         )
     }
 }

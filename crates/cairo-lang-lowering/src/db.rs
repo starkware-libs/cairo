@@ -35,7 +35,7 @@ use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::Optimizations;
 use crate::optimizations::scrub_units::scrub_units;
-use crate::optimizations::strategy::OptimizationStrategyId;
+use crate::optimizations::strategy::{ApplyOptimization, OptimizationStrategyId};
 use crate::panic::lower_panics;
 use crate::specialization::specialized_function_lowered;
 use crate::{
@@ -136,7 +136,7 @@ pub trait LoweringGroup: Database {
     fn function_with_body_lowering_diagnostics<'db>(
         &'db self,
         function_id: ids::FunctionWithBodyId<'db>,
-    ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
+    ) -> Diagnostics<'db, LoweringDiagnostic<'db>> {
         function_with_body_lowering_diagnostics(self.as_dyn_database(), function_id)
     }
     /// Aggregates semantic function level lowering diagnostics - along with all its generated
@@ -467,7 +467,7 @@ fn lowered_body<'db>(
     Ok(match stage {
         LoweringStage::Monomorphized => match function.generic_or_specialized(db) {
             GenericOrSpecialized::Generic(generic_function_id) => {
-                db.function_with_body_lowering_diagnostics(generic_function_id)?
+                db.function_with_body_lowering_diagnostics(generic_function_id)
                     .check_error_free()?;
                 let mut lowered = db.function_with_body_lowering(generic_function_id)?.clone();
                 concretize_lowered(db, &mut lowered, &function.substitution(db)?)?;
@@ -487,12 +487,12 @@ fn lowered_body<'db>(
         }
         LoweringStage::PostBaseline => {
             let mut lowered = db.lowered_body(function, LoweringStage::PreOptimizations)?.clone();
-            db.baseline_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
+            db.baseline_optimization_strategy().apply(db, function, &mut lowered)?;
             lowered
         }
         LoweringStage::Final => {
             let mut lowered = db.lowered_body(function, LoweringStage::PostBaseline)?.clone();
-            db.final_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
+            db.final_optimization_strategy().apply(db, function, &mut lowered)?;
             lowered
         }
     })
@@ -653,7 +653,7 @@ fn lowered_direct_callees_with_body<'db>(
 fn function_with_body_lowering_diagnostics<'db>(
     db: &'db dyn Database,
     function_id: ids::FunctionWithBodyId<'db>,
-) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
+) -> Diagnostics<'db, LoweringDiagnostic<'db>> {
     let mut diagnostics = DiagnosticsBuilder::default();
 
     if let Ok(lowered) = db.function_with_body_lowering(function_id) {
@@ -661,7 +661,9 @@ fn function_with_body_lowering_diagnostics<'db>(
         if let Ok(bc) = db.borrow_check(function_id) {
             diagnostics.extend(bc.diagnostics.clone());
         }
-        if db.flag_add_withdraw_gas() && db.in_cycle(function_id, DependencyType::Cost)? {
+        if db.flag_add_withdraw_gas()
+            && matches!(db.in_cycle(function_id, DependencyType::Cost), Ok(true))
+        {
             let location =
                 Location::new(function_id.base_semantic_function(db).stable_location(db));
             if !lowered.signature.panicable {
@@ -678,7 +680,7 @@ fn function_with_body_lowering_diagnostics<'db>(
         diagnostics.extend(diag);
     }
 
-    Ok(diagnostics.build())
+    diagnostics.build()
 }
 
 #[salsa::tracked]
@@ -691,15 +693,12 @@ fn semantic_function_with_body_lowering_diagnostics<'db>(
 
     if let Ok(multi_lowering) = db.priv_function_with_body_multi_lowering(semantic_function_id) {
         let function_id = ids::FunctionWithBodyLongId::Semantic(semantic_function_id).intern(db);
-        diagnostics
-            .extend(db.function_with_body_lowering_diagnostics(function_id).unwrap_or_default());
+        diagnostics.extend(db.function_with_body_lowering_diagnostics(function_id));
         for (key, _) in multi_lowering.generated_lowerings.iter() {
             let function_id =
                 ids::FunctionWithBodyLongId::Generated { parent: semantic_function_id, key: *key }
                     .intern(db);
-            diagnostics.extend(
-                db.function_with_body_lowering_diagnostics(function_id).unwrap_or_default(),
-            );
+            diagnostics.extend(db.function_with_body_lowering_diagnostics(function_id));
         }
     }
 
@@ -805,12 +804,7 @@ fn type_size<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> usize {
         TypeLongId::Snapshot(ty) => db.type_size(*ty),
         TypeLongId::FixedSizeArray { type_id, size } => {
             db.type_size(*type_id)
-                * size
-                    .long(db)
-                    .to_int()
-                    .expect("Expected ConstValue::Int for size")
-                    .to_usize()
-                    .unwrap()
+                * size.to_int(db).expect("Expected ConstValue::Int for size").to_usize().unwrap()
         }
         TypeLongId::Closure(closure_ty) => {
             closure_ty.captured_types.iter().map(|ty| db.type_size(*ty)).sum()
@@ -818,6 +812,7 @@ fn type_size<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> usize {
         TypeLongId::Coupon(_) => 0,
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
         | TypeLongId::ImplType(_)
         | TypeLongId::Missing(_) => {
             panic!("Function should only be called with fully concrete types")

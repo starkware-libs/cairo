@@ -18,6 +18,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::debug_info::SerializableTypeNamesDebugInfo;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::{
     SierraProgramWithDebug, find_all_free_function_ids, try_get_function_with_body_id,
@@ -58,6 +59,9 @@ pub struct CompilerConfig<'a> {
     /// Adds a mapping used by [cairo-debugger](https://github.com/software-mansion-labs/cairo-debugger)
     /// to [Annotations] in [DebugInfo] in the compiled tests.
     pub add_functions_debug_info: bool,
+
+    /// Adds struct/enum names and their member/variant names to [Annotations] in [DebugInfo].
+    pub add_type_names: bool,
 }
 
 /// Compiles a Cairo project at the given path.
@@ -363,6 +367,13 @@ pub fn compile_prepared_db_program_artifact_for_functions<'db>(
         annotations.extend(Annotations::from(
             sierra_program_with_debug.debug_info.functions_info.extract_serializable_debug_info(db),
         ))
+    }
+
+    if compiler_config.add_type_names {
+        annotations.extend(Annotations::from(SerializableTypeNamesDebugInfo::extract_type_names(
+            db,
+            &sierra_program_with_debug.program,
+        )))
     }
 
     let debug_info = DebugInfo {

@@ -204,7 +204,7 @@ fn add_downcast_overflow_both(
 }
 
 /// Validates that `value` is smaller than `bound`.
-fn validate_lt(casm_builder: &mut CasmBuilder, range_check: Var, value: Var, bound: &BigInt) {
+pub fn validate_lt(casm_builder: &mut CasmBuilder, range_check: Var, value: Var, bound: &BigInt) {
     casm_build_extend! {casm_builder,
         // value < bound  <=>  value + (2**128 - bound) < 2**128.
         const pos_shift = (BigInt::from(u128::MAX) + 1 - bound) as BigInt;
@@ -215,7 +215,7 @@ fn validate_lt(casm_builder: &mut CasmBuilder, range_check: Var, value: Var, bou
 
 /// Validates that `value` is greater or equal to `bound`.
 /// If `bound` is zero, only range checks without an additional calculation.
-fn validate_ge(casm_builder: &mut CasmBuilder, range_check: Var, value: Var, bound: &BigInt) {
+pub fn validate_ge(casm_builder: &mut CasmBuilder, range_check: Var, value: Var, bound: &BigInt) {
     casm_build_extend! {casm_builder,
         // value >= bound  <=>  value - bound >= 0.
         const bound = bound.clone();

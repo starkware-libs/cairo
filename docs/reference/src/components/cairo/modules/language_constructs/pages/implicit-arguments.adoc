@@ -137,13 +137,36 @@ extern fn downcast<T, S>(value: T) -> Option<S> implicits(RangeCheck) nopanic;
 These declarations inform the compiler about the implicit context
 needed for the operation.
 
+== Implicit inference for regular functions
+
+Regular (non-`extern`) functions do not need to declare their implicits explicitly.
+The compiler infers the required implicits by analyzing which functions are called
+in the body. While regular functions _can_ use `implicits()` explicitly, only `extern`
+functions _must_ do so (they have no body to infer from).
+
+== The `#[implicit_precedence]` attribute
+
+The `#[implicit_precedence]` attribute controls the order in which implicit arguments
+appear in a function's Sierra signature. This is primarily used by Starknet plugins
+and entry-point wrappers to ensure a canonical ordering of builtins.
+
+[source,cairo]
+----
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise,
+    core::ec::EcOp, core::poseidon::Poseidon)]
+fn my_entry_point() { /* ... */ }
+----
+
+Most user code does not need this attribute. It is generated automatically by the
+Starknet contract plugin for entry-point functions.
+
 == Notes
 
 * Implicits are used in Sierra libfuncs, which are defined as `extern` functions
   at the core library code
-* Most applications code doesn't need to explicitly manage implicits
+* Most application code doesn't need to explicitly manage implicits
 * The compiler automatically handles implicit threading through the call stack
-* Implicits are part of a function's type signatures
+* Implicits are part of a function's type signature
 
 == See also
 

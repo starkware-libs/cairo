@@ -156,6 +156,8 @@ counter.increment();  // Calls increment with ref self
 let value = counter.get_value();  // Calls get_value with snapshot
 ----
 
+For the full method call syntax and method lookup behavior, see xref:method-calls.adoc[Method calls].
+
 == Function attributes
 
 === Implicits and nopanic

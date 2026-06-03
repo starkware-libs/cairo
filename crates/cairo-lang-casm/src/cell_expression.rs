@@ -1,5 +1,7 @@
+use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::try_extract_matches;
 use num_bigint::BigInt;
+use num_traits::Zero;
 use num_traits::cast::ToPrimitive;
 
 use crate::ap_change::ApplyApChange;
@@ -89,27 +91,19 @@ impl CellExpression {
     pub fn to_buffer(&self, required_slack: i16) -> Option<CellExpression> {
         let (base, offset) = self.to_deref_with_offset()?;
         offset.to_i16()?.checked_add(required_slack)?;
-        if offset == 0 {
-            Some(CellExpression::Deref(base))
-        } else {
-            Some(CellExpression::BinOp {
-                op: CellOperator::Add,
-                a: base,
-                b: DerefOrImmediate::Immediate(offset.into()),
-            })
-        }
+        Some(Self::add_with_const(base, offset))
     }
 
     /// Returns a cell expression which is the sum of `cell` and `value`.
     /// If the value is zero, returns the cell itself.
-    pub fn add_with_const(cell: CellRef, value: i16) -> CellExpression {
-        if value == 0 {
+    pub fn add_with_const(cell: CellRef, value: impl Into<BigInt> + Zero) -> CellExpression {
+        if value.is_zero() {
             CellExpression::Deref(cell)
         } else {
             CellExpression::BinOp {
                 op: CellOperator::Add,
                 a: cell,
-                b: DerefOrImmediate::Immediate(value.into()),
+                b: DerefOrImmediate::Immediate(BigIntAsHex { value: value.into() }),
             }
         }
     }

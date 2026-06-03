@@ -50,6 +50,12 @@ pub enum TypeLongId<'db> {
     Snapshot(TypeId<'db>),
     GenericParameter(GenericParamId<'db>),
     Var(TypeVar<'db>),
+    /// A deferred concrete integer type. A placeholder produced by numeric literal expressions.
+    /// Always satisfies `Drop`, `Copy`, `Destruct`, `PanicDestruct` (via a synthetic generated
+    /// impl). Can be unified with any type that accepts numeric literals (felt252, primitive
+    /// integers, `NonZero<…>`, bounded ints), and defaults to `felt252` if still unbound at
+    /// inference finalization.
+    NumericLiteral(TypeVar<'db>),
     Coupon(FunctionId<'db>),
     FixedSizeArray {
         type_id: TypeId<'db>,
@@ -133,6 +139,7 @@ impl<'db> TypeLongId<'db> {
             TypeLongId::FixedSizeArray { .. } => TypeHead::FixedSizeArray,
             TypeLongId::GenericParameter(generic_param_id) => TypeHead::Generic(*generic_param_id),
             TypeLongId::Var(_)
+            | TypeLongId::NumericLiteral(_)
             | TypeLongId::Missing(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Closure(_) => {
@@ -175,6 +182,7 @@ impl<'db> TypeLongId<'db> {
             TypeLongId::Snapshot(_)
             | TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
+            | TypeLongId::NumericLiteral(_)
             | TypeLongId::Coupon(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_)
@@ -192,6 +200,7 @@ impl<'db> TypeLongId<'db> {
             }
             TypeLongId::GenericParameter(_) => None,
             TypeLongId::Var(_) => None,
+            TypeLongId::NumericLiteral(_) => None,
             TypeLongId::Coupon(function_id) => {
                 function_id.get_concrete(db).generic_function.module_id(db)
             }
@@ -210,37 +219,41 @@ impl<'db> TypeLongId<'db> {
     }
 
     /// A utility function for extracting the generic parameters arguments from TypeLongId.
+    /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
     pub fn extract_generic_params(
         &self,
         db: &'db dyn Database,
         generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+        visited: &mut OrderedHashSet<TypeId<'db>>,
     ) -> Maybe<()> {
         match self {
             TypeLongId::Concrete(concrete_type_id) => {
                 for garg in concrete_type_id.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
             TypeLongId::Tuple(tys) => {
                 for ty in tys {
-                    ty.long(db).extract_generic_params(db, generic_parameters)?
+                    ty.extract_generic_params(db, generic_parameters, visited)?
                 }
             }
             TypeLongId::Snapshot(ty) => {
-                ty.long(db).extract_generic_params(db, generic_parameters)?
+                ty.extract_generic_params(db, generic_parameters, visited)?
             }
             TypeLongId::GenericParameter(generic_param) => {
                 generic_parameters.insert(*generic_param);
             }
             TypeLongId::Var(_) => {}
+            TypeLongId::NumericLiteral(_) => {}
             TypeLongId::Coupon(_) => {}
-            TypeLongId::FixedSizeArray { type_id, .. } => {
-                type_id.long(db).extract_generic_params(db, generic_parameters)?
+            TypeLongId::FixedSizeArray { type_id, size } => {
+                type_id.extract_generic_params(db, generic_parameters, visited)?;
+                size.extract_generic_params(db, generic_parameters, visited)?;
             }
             TypeLongId::ImplType(impl_type_id) => {
                 let concrete_trait_id = impl_type_id.impl_id.concrete_trait(db)?;
                 for garg in concrete_trait_id.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
             TypeLongId::Closure(closure_ty) => {
@@ -249,12 +262,28 @@ impl<'db> TypeLongId<'db> {
                     &closure_ty.captured_types,
                     std::iter::once(&closure_ty.ret_ty)
                 ) {
-                    ty.long(db).extract_generic_params(db, generic_parameters)?
+                    ty.extract_generic_params(db, generic_parameters, visited)?
                 }
             }
             TypeLongId::Missing(diag_added) => return Err(*diag_added),
         };
         Ok(())
+    }
+}
+
+impl<'db> TypeId<'db> {
+    /// A utility function for extracting the generic parameters arguments from TypeId.
+    /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
+    pub fn extract_generic_params(
+        self,
+        db: &'db dyn Database,
+        generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+        visited: &mut OrderedHashSet<TypeId<'db>>,
+    ) -> Maybe<()> {
+        if !visited.insert(self) {
+            return Ok(());
+        }
+        self.long(db).extract_generic_params(db, generic_parameters, visited)
     }
 }
 impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
@@ -283,6 +312,7 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
                 )
             }
             TypeLongId::Var(var) => write!(f, "?{}", var.id.0),
+            TypeLongId::NumericLiteral(_) => write!(f, "{{numeric}}"),
             TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_path(db)),
             TypeLongId::Missing(_) => write!(f, "<missing>"),
             TypeLongId::FixedSizeArray { type_id, size } => {
@@ -862,6 +892,7 @@ fn single_value_type(db: &dyn Database, ty: TypeId<'_>) -> Maybe<bool> {
         TypeLongId::Snapshot(ty) => db.single_value_type(*ty)?,
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
         | TypeLongId::Missing(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::ImplType(_)
@@ -951,6 +982,7 @@ fn type_size_info(db: &dyn Database, ty: TypeId<'_>) -> Maybe<TypeSizeInformatio
         TypeLongId::Coupon(_) => return Ok(TypeSizeInformation::ZeroSized),
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
         | TypeLongId::Missing(_)
         | TypeLongId::ImplType(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
@@ -1095,6 +1127,7 @@ fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
         TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
         | TypeLongId::Missing(_)
         | TypeLongId::ImplType(_) => false,
         TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
@@ -1121,6 +1154,7 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> boo
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
         TypeLongId::Snapshot(ty) => ty.is_var_free(db),
         TypeLongId::Var(_) => false,
+        TypeLongId::NumericLiteral(_) => false,
         TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => true,
         TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
         TypeLongId::FixedSizeArray { type_id, size } => {
@@ -1178,6 +1212,7 @@ pub fn priv_type_short_name(db: &dyn Database, ty: TypeId<'_>) -> String {
         TypeLongId::FixedSizeArray { type_id, size } => {
             format!("[{}; {:?}", type_id.short_name(db), size.debug(db))
         }
+        TypeLongId::NumericLiteral(_) => "{numeric}".to_string(),
         other => other.format(db),
     }
 }

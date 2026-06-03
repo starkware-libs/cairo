@@ -1,7 +1,7 @@
 //! > Test local_into_box for large struct parameter (size >= 3).
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(a: MyStruct) -> Box<MyStruct> {
@@ -67,7 +67,7 @@ return([1])
 //! > Test chained boxing: inner uses local_into_box, outer uses into_box (Box has size 1).
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(a: MyStruct) -> Box<Box<MyStruct>> {
@@ -102,7 +102,7 @@ return([2])
 //! > Test local_into_box for ap-based variable that becomes local due to size.
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo() -> Box<MyStruct> {
@@ -147,7 +147,7 @@ return([2])
 //! > Test local_into_box for snapshot of parameter (alias is fp-relative).
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(a: MyStruct) -> Box<@MyStruct> {
@@ -184,7 +184,7 @@ return([3])
 //! > Test const_as_box for inline struct construction with constants.
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(x: felt252) -> Box<MyStruct> {
@@ -225,7 +225,7 @@ return([5])
 //! > Test local_into_box for struct field extracted from parameter (PartialParam).
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(s: Wrapper) -> Box<Inner> {
@@ -264,7 +264,7 @@ return([2])
 //! > Test local_into_box for nested struct field (PartialParam chain).
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(s: Outer) -> Box<Inner> {

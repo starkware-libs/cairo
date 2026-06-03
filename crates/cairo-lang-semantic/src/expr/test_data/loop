@@ -18,7 +18,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error[E2311]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+error[E2056]: Loop has incompatible return types: "core::bool" and "{numeric}"
  --> lib.cairo:6:19
             break 0;
                   ^
@@ -45,13 +45,18 @@ fn foo(x: Option<()>) {
 foo
 
 //! > expected_diagnostics
+error[E2056]: Loop has incompatible return types: "core::bool" and "{numeric}"
+ --> lib.cairo:6:19
+            break 0;
+                  ^
+
 error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:23-9:1
-  fn foo(x: Option<()>) {
- _______________________^
+ --> lib.cairo:2:5-8:5
+      loop {
+ _____^
 | ...
-| }
-|_^
+|     }
+|_____^
 
 //! > ==========================================================================
 
@@ -194,9 +199,12 @@ foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
- --> lib.cairo:1:13
-fn foo() -> bool {
-            ^^^^
+ --> lib.cairo:2:5-4:5
+      loop {
+ _____^
+|         break;
+|     }
+|_____^
 
 //! > ==========================================================================
 

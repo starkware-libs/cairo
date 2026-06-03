@@ -93,6 +93,7 @@
       "get_class_hash_at_syscall": null,
       "get_execution_info_syscall": null,
       "get_execution_info_v2_syscall": null,
+      "get_execution_info_v3_syscall": { "major": 1, "minor": 8, "patch": 0 },
       "hades_permutation": null,
       "i128_const": null,
       "i128_diff": null,

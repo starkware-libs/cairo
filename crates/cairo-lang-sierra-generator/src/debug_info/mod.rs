@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 mod function_debug_info;
 mod statements_locations;
+mod type_names;
 
 pub use function_debug_info::serializable::{
     SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
@@ -13,6 +14,7 @@ pub use function_debug_info::{AllFunctionsDebugInfo, FunctionDebugInfo};
 pub use statements_locations::StatementsLocations;
 pub use statements_locations::statements_code_locations::StatementsSourceCodeLocations;
 pub use statements_locations::statements_functions::StatementsFunctions;
+pub use type_names::{EnumInfo, SerializableTypeNamesDebugInfo, SierraTypeId, StructInfo};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SierraProgramDebugInfo<'db> {

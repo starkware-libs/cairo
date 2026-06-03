@@ -28,11 +28,11 @@ An arm breaks the control flow if it
 xref:return-expressions.adoc[returns] or xref:panic.adoc[panics].
 ====
 
-== Limitations
+== Supported match targets
 
-Currently two kinds of match expression are supported:
+Match expressions can match on several kinds of values:
 
-=== Match on an Enum.
+=== Match on an enum
 
 [source, cairo]
 ----
@@ -47,15 +47,81 @@ match enum_var {
 Where `enum_var` is an instance of some xref:enums.adoc[enum] and `variant_0`, `variant_1`, ...,
 `variant_k` are all the variants of the said enum, ordered in the way that they were declared.
 
-=== Match on a felt252.
+=== Match on numeric and boolean types
+
+Match expressions also work on numeric types (`felt252`, `u8`, `u16`, `u32`, `u64`, `u128`,
+`i8`, `i16`, `i32`, `i64`, `i128`) and `bool`.
 
 [source, cairo]
 ----
-match felt_var {
-    0 => { /* code */ }
-    _ => { /* code */ }
+fn describe(x: u32) -> ByteArray {
+    match x {
+        0 => "zero",
+        1 => "one",
+        _ => "other",
+    }
+}
+
+// Match on bool
+match flag {
+    true => { /* code */ }
+    false => { /* code */ }
 }
 ----
 
-Where `felt_var` is a xref:felt252-type.adoc[felt252] and the match patterns are the
-xref:literal-expressions.adoc[literal] `0` and wildcard `_` (which matches any value).
+Numeric match patterns use xref:literal-expressions.adoc[literal] values
+and the wildcard `_` (which matches any value). The wildcard arm must be last (arms after it are unreachable).
+
+=== Match with struct and tuple destructuring
+
+Match arms can destructure structs and tuples:
+
+[source, cairo]
+----
+match point {
+    Point { x: 0, y } => { /* on y-axis */ }
+    Point { x, y: 0 } => { /* on x-axis */ }
+    Point { x, y } => { /* general case */ }
+}
+
+match pair {
+    (0, y) => { /* code */ }
+    (x, 0) => { /* code */ }
+    (x, y) => { /* code */ }
+}
+----
+
+=== OR patterns
+
+Multiple patterns can share the same arm using `|`:
+
+[source, cairo]
+----
+match value {
+    MyEnum::A(x) | MyEnum::B(x) => { x },
+    MyEnum::C(_) => { 0 },
+}
+----
+
+Variables bound across alternatives must be consistent (same name and type in each branch).
+
+=== Nested (recursive) matching
+
+Patterns can be nested to match complex data structures in a single arm:
+
+[source, cairo]
+----
+match result {
+    Result::Ok(MyEnum::A(x)) => { x },
+    Result::Ok(MyEnum::B(_)) => { 0 },
+    Result::Err(e) => { e },
+}
+----
+
+This works with any combination of enums, structs, and tuples.
+
+== See also
+
+- xref:enums.adoc[Enums] — Enum type definitions
+- xref:patterns.adoc[Patterns] — Pattern syntax reference
+- xref:expressions.adoc[Expressions] — Expression syntax

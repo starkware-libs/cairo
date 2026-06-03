@@ -13,6 +13,7 @@ use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::debug_info::SerializableTypeNamesDebugInfo;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{SierraIdReplacer, replace_sierra_ids_in_program};
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
@@ -148,6 +149,15 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
     if compiler_config.replace_ids {
         sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
     }
+
+    let mut annotations = Annotations::default();
+
+    // Type names annotations use `lookup_concrete_type` query which depends on pre-replaced
+    // type declaration ids.
+    let mut maybe_serializable_type_names = compiler_config
+        .add_type_names
+        .then(|| SerializableTypeNamesDebugInfo::extract_type_names(db, &sierra_program));
+
     let replacer = CanonicalReplacer::from_program(&sierra_program);
     let sierra_program = replacer.apply(&sierra_program);
 
@@ -157,8 +167,6 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
         // Later generation of ABI verifies that there is up to one constructor.
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
-
-    let mut annotations = Annotations::default();
 
     if compiler_config.add_statements_functions {
         let statements_functions = debug_info.statements_locations.extract_statements_functions(db);
@@ -175,6 +183,12 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
         annotations.extend(Annotations::from(
             debug_info.functions_info.extract_serializable_debug_info(db),
         ))
+    }
+
+    if let Some(serializable_type_names) = maybe_serializable_type_names.take() {
+        // At this point the type ids in `SerializableTypeNamesDebugInfo` are the original salsa
+        // ids. We need to replace them with canonical ids.
+        annotations.extend(Annotations::from(serializable_type_names.replace_type_ids(&replacer)));
     }
 
     let abi_builder: Option<AbiBuilder<'db>> =

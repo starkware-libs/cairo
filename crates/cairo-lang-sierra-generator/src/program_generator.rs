@@ -68,9 +68,9 @@ fn generate_type_declarations(
     libfunc_declarations: &[program::LibfuncDeclaration],
     functions: &[program::Function],
 ) -> Vec<program::TypeDeclaration> {
-    let mut declarations = vec![];
-    let mut already_declared = UnorderedHashSet::default();
     let mut remaining_types = collect_used_types(db, libfunc_declarations, functions);
+    let mut already_declared = UnorderedHashSet::with_capacity(remaining_types.len());
+    let mut declarations = Vec::with_capacity(remaining_types.len());
     while let Some(ty) = remaining_types.iter().next().cloned() {
         remaining_types.swap_remove(&ty);
         generate_type_declarations_helper(
@@ -87,7 +87,7 @@ fn generate_type_declarations(
 /// Helper to ensure declaring types ordered in such a way that no type appears before types it
 /// depends on for knowing its size.
 /// `remaining_types` are types that will later be checked.
-/// We may add types to there if we are not sure their dependencies are already declared.
+/// We may add types to them if we are not sure their dependencies are already declared.
 fn generate_type_declarations_helper(
     db: &dyn Database,
     ty: &ConcreteTypeId,
@@ -268,8 +268,9 @@ pub fn get_sierra_program_for_functions<'db>(
     _tracked: Tracked,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) -> Maybe<SierraProgramWithDebug<'db>> {
-    let mut functions: Vec<&'db pre_sierra::Function<'_>> = vec![];
-    let mut statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![];
+    let mut functions: Vec<&'db pre_sierra::Function<'_>> =
+        Vec::with_capacity(requested_function_ids.len());
+    let mut statements: Vec<pre_sierra::StatementWithLocation<'_>> = Default::default();
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId<'_>>::default();
     let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId<'_>> =
         requested_function_ids.into_iter().collect();

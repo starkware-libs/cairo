@@ -6,6 +6,9 @@ node_modules
 .DS_Store
 perf.data*
 flamegraph.svg
+dhat-heap*.json
 
 ensure-no_std/Cargo.lock
 ensure-no_std/target/
+
+.claude/settings.local.json

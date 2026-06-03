@@ -2,11 +2,10 @@
 #[path = "early_unsafe_panic_test.rs"]
 mod test;
 
-use std::collections::HashSet;
-
 use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use salsa::Database;
 
 use crate::analysis::core::StatementLocation;
@@ -27,7 +26,7 @@ pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>
     }
 
     let core = ModuleHelper::core(db);
-    let libfuncs_with_sideffect = HashSet::from_iter([
+    let libfuncs_with_sideffect = UnorderedHashSet::from_iter([
         core.submodule("debug").extern_function_id("print"),
         core.submodule("internal").extern_function_id("trace"),
     ]);
@@ -66,7 +65,7 @@ pub struct UnsafePanicContext<'db> {
     fixes: Vec<(StatementLocation, LocationId<'db>)>,
 
     /// libfuncs with side effects that we need to ignore.
-    libfuncs_with_sideffect: HashSet<ExternFunctionId<'db>>,
+    libfuncs_with_sideffect: UnorderedHashSet<ExternFunctionId<'db>>,
 }
 
 impl<'db> UnsafePanicContext<'db> {

@@ -12,6 +12,10 @@ operator `~`. All of them are trait-driven by the corresponding traits in `core:
 - `lhs ^ rhs` → `T` (bitwise XOR)
 - `~operand` → `T` (bitwise NOT)
 
+Shift operators (`<<`, `>>`) are not supported yet.
+Compound bitwise assignment operators (`&=`, `^=`, `|=`) and shift assignment
+operators (`<<=`, `>>=`) are also not supported.
+
 == Semantics
 
 The semantics of bitwise operators are trait-driven via `core::traits`:

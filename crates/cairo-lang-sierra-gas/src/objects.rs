@@ -111,6 +111,8 @@ pub enum BranchCost {
     WithdrawGas(WithdrawGasBranchInfo),
     /// The cost of the `redeposit_gas` libfunc.
     RedepositGas,
+    /// The cost of the `get_unspent_gas` libfunc.
+    GetUnspentGas,
 }
 
 /// Information about a branch of a `withdraw_gas` libfunc.

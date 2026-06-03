@@ -365,19 +365,9 @@ impl EcPointNeg of Neg<EcPoint> {
     }
 }
 
-#[cfg(sierra: "future")]
 impl NonZeroEcPointNeg of Neg<NonZeroEcPoint> {
     fn neg(a: NonZeroEcPoint) -> NonZeroEcPoint {
         ec_neg_nz(a)
-    }
-}
-
-// TODO(orizi): Remove this impl on next Sierra release.
-#[cfg(not(sierra: "future"))]
-impl NonZeroEcPointNeg of Neg<NonZeroEcPoint> {
-    fn neg(a: NonZeroEcPoint) -> NonZeroEcPoint {
-        let p: EcPoint = a.into();
-        (-p).try_into().unwrap()
     }
 }
 

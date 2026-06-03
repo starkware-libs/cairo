@@ -158,6 +158,7 @@ impl HeapSize for std::path::PathBuf {
     }
 }
 
+#[expect(clippy::disallowed_types)]
 impl<K: HeapSize, V: HeapSize> HeapSize for std::collections::HashMap<K, V> {
     fn heap_size(&self) -> usize {
         // Approximate: capacity * size_of key/value + heap of keys/values
@@ -166,6 +167,7 @@ impl<K: HeapSize, V: HeapSize> HeapSize for std::collections::HashMap<K, V> {
     }
 }
 
+#[expect(clippy::disallowed_types)]
 impl<T: HeapSize> HeapSize for std::collections::HashSet<T> {
     fn heap_size(&self) -> usize {
         self.capacity() * std::mem::size_of::<T>()

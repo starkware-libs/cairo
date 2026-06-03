@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::mpsc::channel;
+use std::sync::mpsc::sync_channel;
 
 use anyhow::{Context, Result, bail};
 use cairo_lang_compiler::db::RootDatabase;
@@ -76,6 +76,7 @@ impl<'db> TestRunner<'db> {
                 contract_crate_ids: None,
                 executable_crate_ids: None,
                 add_functions_debug_info: false,
+                add_type_names: false,
                 replace_ids: false,
             },
         )?;
@@ -383,7 +384,8 @@ pub fn run_tests(
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
     println!("running {} test{}", named_tests.len(), suffix);
 
-    let (tx, rx) = channel::<_>();
+    const CAPACITY_FACTOR: usize = 4;
+    let (tx, rx) = sync_channel::<_>(rayon::current_num_threads().max(1) * CAPACITY_FACTOR);
     rayon::spawn(move || {
         named_tests.into_par_iter().for_each(|(name, test)| {
             let result =

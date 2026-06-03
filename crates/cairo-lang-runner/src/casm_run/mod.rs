@@ -1,11 +1,13 @@
 use std::any::Any;
 use std::borrow::Cow;
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::ops::{Shl, Sub};
 use std::sync::Arc;
 use std::vec::IntoIter;
 
 use ark_ff::{BigInteger, PrimeField};
+use ark_secp256k1 as secp256k1;
+use ark_secp256r1 as secp256r1;
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, ExternalHint, Hint, StarknetHint};
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
@@ -15,6 +17,7 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::byte_array::{BYTE_ARRAY_MAGIC, BYTES_IN_WORD};
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::{
     HintProcessor, HintProcessorLogic, HintReference,
 };
@@ -40,9 +43,8 @@ use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
 use num_traits::{Signed, ToPrimitive, Zero};
-use rand::Rng;
+use rand::RngExt;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
-use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::contract_address::calculate_contract_address;
 use self::dict_manager::DictSquashExecScope;
@@ -63,7 +65,7 @@ pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
         accessible_scopes: vec![],
         flow_tracking_data: FlowTrackingData {
             ap_tracking: ApTracking::new(),
-            reference_ids: HashMap::new(),
+            reference_ids: Default::default(),
         },
     }
 }
@@ -94,7 +96,7 @@ pub struct CairoHintProcessor<'a> {
     /// several user args.
     pub user_args: Vec<Vec<Arg>>,
     /// A mapping from a string that represents a hint to the hint object.
-    pub string_to_hint: HashMap<String, Hint>,
+    pub string_to_hint: UnorderedHashMap<String, Hint>,
     /// The Starknet state.
     pub starknet_state: StarknetState,
     /// Maintains the resources of the run.
@@ -137,15 +139,15 @@ type L2ToL1Message = (Felt252, Vec<Felt252>);
 #[derive(Clone, Default)]
 pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
-    storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
+    storage: UnorderedHashMap<Felt252, UnorderedHashMap<Felt252, Felt252>>,
     /// A mapping from contract address to class hash.
-    deployed_contracts: HashMap<Felt252, Felt252>,
+    deployed_contracts: UnorderedHashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt252, ContractLogs>,
+    logs: UnorderedHashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     /// A mock history, mapping block number to the block hash.
-    block_hash: HashMap<u64, Felt252>,
+    block_hash: UnorderedHashMap<u64, Felt252>,
 }
 impl StarknetState {
     /// Replaces the addresses in the context.
@@ -360,6 +362,7 @@ mod gas_costs {
     pub const KECCAK: usize = 0;
     pub const KECCAK_ROUND_COST: usize = 180000;
     pub const SHA256_PROCESS_BLOCK: usize = 1852 * STEP + 65 * RANGE_CHECK + 1115 * BITWISE;
+    pub const SHA512_PROCESS_BLOCK: usize = 4733 * STEP + 65 * RANGE_CHECK + 3320 * BITWISE;
     pub const LIBRARY_CALL: usize = CALL_CONTRACT;
     pub const REPLACE_CLASS: usize = 50 * STEP;
     pub const SECP256K1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
@@ -464,14 +467,15 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
     }
 
     /// Trait function to store hint in the hint processor by string.
+    #[expect(clippy::disallowed_types)]
     fn compile_hint(
         &self,
         hint_code: &str,
         _ap_tracking_data: &ApTracking,
-        _reference_ids: &HashMap<String, usize>,
+        _reference_ids: &std::collections::HashMap<String, usize>,
         _references: &[HintReference],
         _accessible_scopes: &[String],
-        _constants: Arc<HashMap<String, Felt252>>,
+        _constants: Arc<std::collections::HashMap<String, Felt252>>,
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
@@ -738,6 +742,15 @@ impl CairoHintProcessor<'_> {
             }),
             "Sha256ProcessBlock" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 sha_256_process_block(
+                    gas_counter,
+                    system_buffer.next_fixed_size_arr_pointer(8)?,
+                    system_buffer.next_fixed_size_arr_pointer(16)?,
+                    exec_scopes,
+                    system_buffer,
+                )
+            }),
+            "Sha512ProcessBlock" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                sha_512_process_block(
                     gas_counter,
                     system_buffer.next_fixed_size_arr_pointer(8)?,
                     system_buffer.next_fixed_size_arr_pointer(16)?,
@@ -1438,12 +1451,13 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
         fail_syscall!(b"Invalid keccak input size");
     }
     let mut state = [0u64; 25];
+    let keccak = keccak::Keccak::new();
     for chunk in data.chunks(17) {
         deduct_gas!(gas_counter, KECCAK_ROUND_COST);
         for (i, val) in chunk.iter().enumerate() {
             state[i] ^= val.to_u64().unwrap();
         }
-        keccak::f1600(&mut state)
+        keccak.with_f1600(|f1600| f1600(&mut state));
     }
     Ok(SyscallResult::Success(vec![
         ((Felt252::from((state[1] as u128) << 64u32)) + Felt252::from(state[0])).into(),
@@ -1460,16 +1474,31 @@ fn sha_256_process_block(
     vm: &mut dyn VMWrapper,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SHA256_PROCESS_BLOCK);
-    let data_as_bytes = FromIterator::from_iter(
-        data.iter().flat_map(|felt| felt.to_bigint().to_u32().unwrap().to_be_bytes()),
-    );
-    let mut state_as_words: [u32; 8] = prev_state
-        .iter()
-        .map(|felt| felt.to_bigint().to_u32().unwrap())
-        .collect_vec()
-        .try_into()
-        .unwrap();
-    sha2::compress256(&mut state_as_words, &[data_as_bytes]);
+    let data_as_bytes =
+        data.iter().flat_map(|v| v.to_u32().unwrap().to_be_bytes()).collect_array().unwrap();
+    let mut state_as_words =
+        prev_state.iter().map(|v| v.to_u32().unwrap()).collect_array().unwrap();
+    sha2::block_api::compress256(&mut state_as_words, &[data_as_bytes]);
+    let next_state_ptr = alloc_memory(exec_scopes, vm.vm(), 8)?;
+    let mut buff: MemBuffer<'_> = MemBuffer::new(vm, next_state_ptr);
+    buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
+    Ok(SyscallResult::Success(vec![next_state_ptr.into()]))
+}
+
+/// Executes the `sha512_process_block` syscall.
+fn sha_512_process_block(
+    gas_counter: &mut usize,
+    prev_state: Vec<Felt252>,
+    data: Vec<Felt252>,
+    exec_scopes: &mut ExecutionScopes,
+    vm: &mut dyn VMWrapper,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, SHA512_PROCESS_BLOCK);
+    let data_as_bytes: [u8; 128] =
+        data.iter().flat_map(|v| v.to_u64().unwrap().to_be_bytes()).collect_array().unwrap();
+    let mut state_as_words: [u64; 8] =
+        prev_state.iter().map(|v| v.to_u64().unwrap()).collect_array().unwrap();
+    sha2::block_api::compress512(&mut state_as_words, &[data_as_bytes]);
     let next_state_ptr = alloc_memory(exec_scopes, vm.vm(), 8)?;
     let mut buff: MemBuffer<'_> = MemBuffer::new(vm, next_state_ptr);
     buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
@@ -1807,7 +1836,7 @@ fn alloc_memory(
 }
 
 /// Sample a random point on the elliptic curve and insert into memory.
-pub fn random_ec_point<R: rand::RngCore>(
+pub fn random_ec_point<R: rand::Rng>(
     vm: &mut VirtualMachine,
     x: &CellRef,
     y: &CellRef,
@@ -2073,7 +2102,7 @@ pub fn execute_core_hint(
                     .or_insert_with(|| vec![Felt252::from(i)]);
             }
             // Reverse the accesses in order to pop them in order later.
-            for (_, accesses) in dict_squash_exec_scope.access_indices.iter_mut() {
+            for accesses in dict_squash_exec_scope.access_indices.values_mut() {
                 accesses.reverse();
             }
             dict_squash_exec_scope.keys =
@@ -2343,11 +2372,14 @@ pub fn run_function_with_runner(
     Ok(())
 }
 
+#[expect(clippy::disallowed_types)]
+pub type HintsDict = std::collections::HashMap<usize, Vec<HintParams>>;
+
 /// Creates CairoRunner for `program`.
 pub fn build_cairo_runner(
     data: Vec<MaybeRelocatable>,
     builtins: Vec<BuiltinName>,
-    hints_dict: HashMap<usize, Vec<HintParams>>,
+    hints_dict: HintsDict,
 ) -> Result<CairoRunner, Box<CairoRunError>> {
     let program = Program::new(
         builtins,
@@ -2355,7 +2387,7 @@ pub fn build_cairo_runner(
         Some(0),
         hints_dict,
         ReferenceManager { references: Vec::new() },
-        HashMap::new(),
+        Default::default(),
         vec![],
         None,
     )
@@ -2395,7 +2427,7 @@ pub fn run_function<'a, 'b: 'a>(
     builtins: Vec<BuiltinName>,
     additional_initialization: impl FnOnce(&mut VirtualMachine) -> Result<(), Box<CairoRunError>>,
     hint_processor: &mut dyn HintProcessor,
-    hints_dict: HashMap<usize, Vec<HintParams>>,
+    hints_dict: HintsDict,
 ) -> Result<RunFunctionResult, Box<CairoRunError>> {
     let data: Vec<MaybeRelocatable> =
         bytecode.map(Felt252::from).map(MaybeRelocatable::from).collect();

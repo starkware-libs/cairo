@@ -128,9 +128,9 @@ error[E2062]: Return type "core::result::Result::<core::felt252, core::integer::
     ^^^^^^^^^^^^^^^^^
 
 error[E2042]: Unexpected return type. Expected: "core::result::Result::<core::felt252, core::integer::u128>", found: "core::result::Result::<core::felt252, core::felt252>".
- --> lib.cairo:4:13
-fn foo() -> Result<felt252, u128> {
-            ^^^^^^^^^^^^^^^^^^^^^
+ --> lib.cairo:6:5
+    Result::<felt252, felt252>::Ok((0))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -153,3 +153,30 @@ error[E2063]: Type "core::integer::u32" cannot error propagate
  --> lib.cairo:2:5
     6_u32?;
     ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test generics operand for error propagation.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(a: Option<felt252>) -> Option<felt252> {
+    bar(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +Copy<T>>(t: T) -> T {
+    t?;
+    t
+}
+
+//! > expected_diagnostics
+error[E2061]: `?` can only be used in a function with `Option` or `Result` return type.
+ --> lib.cairo:2:5
+    t?;
+    ^^

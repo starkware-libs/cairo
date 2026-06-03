@@ -26,7 +26,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, extract_matches, require, try_extract_matches};
-use itertools::{chain, zip_eq};
+use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::cast::ToPrimitive;
@@ -482,12 +482,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let VarInfo::Const(word) = word.as_ref()?.as_ref() else {
                     return None;
                 };
-                panic_data.push(word.long(db).to_int()?.clone());
+                panic_data.push(word.to_int(db)?.clone());
             }
-            panic_data.extend([
-                pending_word.long(db).to_int()?.clone(),
-                pending_len.long(db).to_int()?.clone(),
-            ]);
+            panic_data.extend([pending_word.to_int(db)?.clone(), pending_len.to_int(db)?.clone()]);
             let felt252_ty = self.felt252;
             let location = stmt.location;
             let new_var = |ty| Variable::with_default_context(db, ty, location);
@@ -912,16 +909,22 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 && let Ok(mut ty) = value.ty(db)
                 && let Some(mut stmt) = self.try_generate_const_statement(*value, output)
             {
-                // Adding snapshot taking statements for snapshots.
-                for _ in 0..n_snapshots {
-                    let non_snap_var = Variable::with_default_context(db, ty, location);
-                    ty = TypeLongId::Snapshot(ty).intern(db);
-                    let pre_snap = self.variables.alloc(non_snap_var);
-                    stmt.outputs_mut()[0] = pre_snap;
-                    let take_snap = snapshot_stmt(self.variables, pre_snap, output);
-                    statements.push(core::mem::replace(&mut stmt, take_snap));
-                }
+                let snapshot_vars = (0..n_snapshots)
+                    .map(|_| {
+                        let old_ty = ty;
+                        ty = TypeLongId::Snapshot(ty).intern(db);
+                        self.variables.alloc(Variable::with_default_context(db, old_ty, location))
+                    })
+                    .chain([output])
+                    .collect::<Vec<_>>();
+                // First var is the input, and needs to equal to the output of the const statement.
+                stmt.outputs_mut()[0] = snapshot_vars[0];
                 statements.push(stmt);
+                // Adding snapshot taking statements for snapshots.
+                statements.extend(snapshot_vars.into_iter().tuple_windows().map(
+                    |(pre_snap, post_snap)| snapshot_stmt(self.variables, pre_snap, post_snap),
+                ));
+
                 return Some(BlockEnd::Goto(arm.block_id, Default::default()));
             }
         } else if let VarInfo::Enum { variant, payload } = var_info.as_ref() {
@@ -982,9 +985,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let val = self.as_const(info.inputs[0].var_id)?;
             let is_zero = match val.long(db) {
                 ConstValue::Int(v, _) => v.is_zero(),
-                ConstValue::Struct(s, _) => s.iter().all(|v| {
-                    v.long(db).to_int().expect("Expected ConstValue::Int for size").is_zero()
-                }),
+                ConstValue::Struct(s, _) => s
+                    .iter()
+                    .all(|v| v.to_int(db).expect("Expected ConstValue::Int for size").is_zero()),
                 _ => unreachable!(),
             };
             Some(if is_zero {
@@ -1132,8 +1135,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 Some(if let Some(range) = self.type_value_ranges.get(&ty) {
                     range.clone()
                 } else {
-                    let (min, max) = corelib::try_extract_bounded_int_type_ranges(db, ty)?;
-                    TypeRange { min, max }
+                    let (min, max) = corelib::try_extract_bounded_int_type(db, ty)?;
+                    TypeRange::new(min.to_int(db)?.clone(), max.to_int(db)?.clone())
                 })
             };
             let (success_arm, failure_arm) = if *reversed { (1, 0) } else { (0, 1) };
@@ -1181,8 +1184,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let value = self.as_int(input_var)?;
             let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
-                .long(db)
-                .to_int()
+                .to_int(db)
                 .expect("Expected ConstValue::Int for size");
             let arm_idx = if value < constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
@@ -1196,7 +1198,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let is_trimmed = if let Some(range) = self.type_value_ranges.get(ty) {
                 range.min == *value
             } else {
-                corelib::try_extract_bounded_int_type_ranges(db, *ty)?.0 == *value
+                corelib::try_extract_bounded_int_type(db, *ty)?.0.to_int(db)? == value
             };
             let arm_idx = if is_trimmed {
                 0
@@ -1214,7 +1216,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let is_trimmed = if let Some(range) = self.type_value_ranges.get(ty) {
                 range.max == *value
             } else {
-                corelib::try_extract_bounded_int_type_ranges(db, *ty)?.1 == *value
+                corelib::try_extract_bounded_int_type(db, *ty)?.1.to_int(db)? == value
             };
             let arm_idx = if is_trimmed {
                 0

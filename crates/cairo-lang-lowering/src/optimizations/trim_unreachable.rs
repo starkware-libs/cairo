@@ -55,7 +55,7 @@ pub fn trim_unreachable<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) 
     for (block_id, output, concrete_enum_id, location) in fixes {
         let block = &mut lowered.blocks[block_id];
 
-        block.statements.truncate(0);
+        block.statements.clear();
         block.end = BlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: *concrete_enum_id,

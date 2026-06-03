@@ -1,3 +1,11 @@
+#![cfg_attr(
+    feature = "std",
+    expect(
+        clippy::disallowed_types,
+        reason = "this module is the UnorderedHashMap wrapper over std::collections::HashMap"
+    )
+)]
+
 #[cfg(test)]
 #[path = "unordered_hash_map_test.rs"]
 mod test;
@@ -75,6 +83,13 @@ unsafe impl<Key: salsa::Update + Eq + Hash, Value: salsa::Update> salsa::Update
 impl<Key, Value, BH> UnorderedHashMap<Key, Value, BH> {
     fn with_hasher(hash_builder: BH) -> Self {
         Self(HashMap::<Key, Value, BH>::with_hasher(hash_builder))
+    }
+}
+
+impl<Key, Value, BH: Default> UnorderedHashMap<Key, Value, BH> {
+    /// Creates an empty map with the specified capacity.
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashMap::<Key, Value, BH>::with_capacity_and_hasher(capacity, Default::default()))
     }
 }
 

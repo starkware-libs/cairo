@@ -663,22 +663,15 @@ struct A {
 }
 
 //! > casm
-[ap + 0] = 1, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 2, ap++;
-[ap + 0] = 0, ap++;
-%{
-if '__boxed_segment' not in globals():
-    __boxed_segment = segments.add()
-memory[ap + 0] = __boxed_segment
-__boxed_segment += 4
-%}
-[ap + -4] = [[ap + 0] + 0], ap++;
-[ap + -4] = [[ap + -1] + 1];
-[ap + -3] = [[ap + -1] + 2];
-[ap + -2] = [[ap + -1] + 3];
+ap += 4;
+[fp + 0] = 1;
+[fp + 1] = 0;
+[fp + 2] = 2;
+[fp + 3] = 0;
+call rel 10;
+[ap + 0] = [ap + -2], ap++;
 ret;
-call rel -13;
+call rel -14;
 [ap + 0] = [ap + -1], ap++;
 [ap + 0] = [ap + -2] + 2, ap++;
 ret;
@@ -690,33 +683,40 @@ test::foo: SmallOrderedMap({Const: 1200})
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type test::A = Struct<ut@test::A, core::integer::u256, core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Uninitialized<test::A> = Uninitialized<test::A> [storable: false, drop: true, dup: false, zero_sized: false];
 type Box<core::integer::u256> = Box<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<Box<core::integer::u256>, Box<core::integer::u256>> = Struct<ut@Tuple, Box<core::integer::u256>, Box<core::integer::u256>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<test::A> = Box<test::A> [storable: true, drop: true, dup: true, zero_sized: false];
-type test::A = Struct<ut@test::A, core::integer::u256, core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<core::integer::u256, Const<u128, 2>, Const<u128, 0>> = Const<core::integer::u256, Const<u128, 2>, Const<u128, 0>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>> = Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<u128, 0> = Const<u128, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<u128, 1> = Const<u128, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<u128, 2> = Const<u128, 2> [storable: false, drop: false, dup: false, zero_sized: false];
 
+libfunc alloc_local<test::A> = alloc_local<test::A>;
+libfunc finalize_locals = finalize_locals;
 libfunc const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>> = const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>>;
 libfunc const_as_immediate<Const<core::integer::u256, Const<u128, 2>, Const<u128, 0>>> = const_as_immediate<Const<core::integer::u256, Const<u128, 2>, Const<u128, 0>>>;
 libfunc struct_construct<test::A> = struct_construct<test::A>;
-libfunc store_temp<test::A> = store_temp<test::A>;
-libfunc into_box<test::A> = into_box<test::A>;
+libfunc store_local<test::A> = store_local<test::A>;
+libfunc local_into_box<test::A> = local_into_box<test::A>;
+libfunc store_temp<Box<test::A>> = store_temp<Box<test::A>>;
 libfunc function_call<user@test::helper> = function_call<user@test::helper>;
 libfunc struct_boxed_deconstruct<test::A> = struct_boxed_deconstruct<test::A>;
 libfunc struct_construct<Tuple<Box<core::integer::u256>, Box<core::integer::u256>>> = struct_construct<Tuple<Box<core::integer::u256>, Box<core::integer::u256>>>;
 libfunc store_temp<Tuple<Box<core::integer::u256>, Box<core::integer::u256>>> = store_temp<Tuple<Box<core::integer::u256>, Box<core::integer::u256>>>;
 
 F0:
-const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>>() -> ([0]);
-const_as_immediate<Const<core::integer::u256, Const<u128, 2>, Const<u128, 0>>>() -> ([1]);
-struct_construct<test::A>([0], [1]) -> ([2]);
-store_temp<test::A>([2]) -> ([2]);
-into_box<test::A>([2]) -> ([3]);
-return([3]);
+alloc_local<test::A>() -> ([1]);
+finalize_locals() -> ();
+const_as_immediate<Const<core::integer::u256, Const<u128, 1>, Const<u128, 0>>>() -> ([2]);
+const_as_immediate<Const<core::integer::u256, Const<u128, 2>, Const<u128, 0>>>() -> ([3]);
+struct_construct<test::A>([2], [3]) -> ([0]);
+store_local<test::A>([1], [0]) -> ([0]);
+local_into_box<test::A>([0]) -> ([4]);
+store_temp<Box<test::A>>([4]) -> ([4]);
+return([4]);
 F1:
 function_call<user@test::helper>() -> ([0]);
 struct_boxed_deconstruct<test::A>([0]) -> ([1], [2]);
@@ -1098,7 +1098,7 @@ test::foo@F1() -> (Box<felt252>);
 //! > ReprPointer (&T) with large struct triggers local_into_box optimization.
 
 //! > test_runner_name
-SmallE2ETestRunner(future_sierra: true)
+SmallE2ETestRunner
 
 //! > cairo_code
 #[derive(Drop, Copy)]

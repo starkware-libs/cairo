@@ -8,7 +8,7 @@ use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::optimizations::reboxing::{apply_reboxing_candidates, find_reboxing_candidates};
-use crate::optimizations::strategy::OptimizationPhase;
+use crate::optimizations::strategy::{ApplyOptimization, OptimizationPhase};
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -30,12 +30,13 @@ fn test_reboxing_analysis(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
     if let Ok(mut before) = db.lowered_body(function_id, LoweringStage::PreOptimizations).cloned() {
-        OptimizationPhase::ApplyInlining { enable_const_folding: true }
-            .apply(db, function_id, &mut before)
-            .unwrap();
-        OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
-
-        OptimizationPhase::ReorderStatements.apply(db, function_id, &mut before).unwrap();
+        [
+            OptimizationPhase::ApplyInlining { enable_const_folding: true },
+            OptimizationPhase::ReorganizeBlocks,
+            OptimizationPhase::ReorderStatements,
+        ]
+        .apply(db, function_id, &mut before)
+        .unwrap();
         let mut after = before.clone();
 
         let formatter = LoweredFormatter::new(db, &after.variables);

@@ -1,0 +1,137 @@
+//! > Refutable enum-variant pattern in `let` (no `else`).
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function_code
+fn foo(opt: Option<u32>) -> u32 {
+    let Option::Some(x) = opt;
+    x
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
+ --> lib.cairo:2:9
+    let Option::Some(x) = opt;
+        ^^^^^^^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Refutable literal pattern in `let`.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: u32) {
+    let 5 = x;
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
+ --> lib.cairo:2:9
+    let 5 = x;
+        ^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Refutable enum-variant pattern nested inside a struct destructure in `let`.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function_code
+fn foo(s: Wrapper) -> u32 {
+    let Wrapper { inner: Option::Some(x) } = s;
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct Wrapper {
+    inner: Option<u32>,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
+ --> lib.cairo:6:26
+    let Wrapper { inner: Option::Some(x) } = s;
+                         ^^^^^^^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Refutable pattern in a `for` loop binding.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function_code
+fn foo(opts: Array<Option<u32>>) {
+    for Option::Some(_x) in opts {}
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
+ --> lib.cairo:2:9
+    for Option::Some(_x) in opts {}
+        ^^^^^^^^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Refutable fixed-size-array pattern on a Span value in `let`.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let arr: Array<u32> = array![100, 200, 300];
+    let s: Span<u32> = arr.span();
+    let [_a, _b, _c] = s;
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
+ --> lib.cairo:4:9
+    let [_a, _b, _c] = s;
+        ^^^^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>

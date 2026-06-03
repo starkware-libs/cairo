@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
 use cairo_lang_utils::extract_matches;
@@ -48,6 +49,7 @@ macro_rules! take_inputs {
 ///
 /// `simulate_function` is a function that simulates running of a user function. It is provided here
 /// for the case where the extensions need to use it.
+#[expect(clippy::disallowed_types)]
 pub fn simulate<
     GetStatementGasInfo: Fn() -> Option<i64>,
     SimulateFunction: Fn(&FunctionId, Vec<CoreValue>) -> Result<Vec<CoreValue>, LibfuncSimulationError>,

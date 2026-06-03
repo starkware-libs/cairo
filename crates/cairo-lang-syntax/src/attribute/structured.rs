@@ -167,12 +167,10 @@ impl<'a> AttributeArg<'a> {
 impl<'a> Modifier<'a> {
     /// Builds [`Modifier`] from [`ast::Modifier`].
     fn from(modifier: ast::Modifier<'a>, db: &'a dyn Database) -> Modifier<'a> {
-        Modifier {
-            stable_ptr: modifier.stable_ptr(db),
-            text: modifier
-                .as_syntax_node()
-                .text(db)
-                .expect("Modifier should always have underlying text"),
-        }
+        let text = match &modifier {
+            ast::Modifier::Ref(r) => r.text(db),
+            ast::Modifier::Mut(m) => m.text(db),
+        };
+        Modifier { stable_ptr: modifier.stable_ptr(db), text }
     }
 }

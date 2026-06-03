@@ -104,6 +104,112 @@ const out_of_range: u8 = consteval_int!(120 + 160);
 
 //! > ==========================================================================
 
+//! > Test consteval_int! division/modulo by zero
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const div_lit: felt252 = consteval_int!(1 / 0);
+
+const mod_lit: felt252 = consteval_int!(1 % 0);
+
+const div_computed: felt252 = consteval_int!(5 / (3 - 3));
+
+const mod_computed: felt252 = consteval_int!(5 % (7 * 0));
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:26
+const div_lit: felt252 = consteval_int!(1 / 0);
+                         ^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Division by zero in consteval_int macro
+ --> lib.cairo:1:41
+const div_lit: felt252 = consteval_int!(1 / 0);
+                                        ^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:3:26
+const mod_lit: felt252 = consteval_int!(1 % 0);
+                         ^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Modulo by zero in consteval_int macro
+ --> lib.cairo:3:41
+const mod_lit: felt252 = consteval_int!(1 % 0);
+                                        ^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:5:31
+const div_computed: felt252 = consteval_int!(5 / (3 - 3));
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Division by zero in consteval_int macro
+ --> lib.cairo:5:46
+const div_computed: felt252 = consteval_int!(5 / (3 - 3));
+                                             ^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:7:31
+const mod_computed: felt252 = consteval_int!(5 % (7 * 0));
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Modulo by zero in consteval_int macro
+ --> lib.cairo:7:46
+const mod_computed: felt252 = consteval_int!(5 % (7 * 0));
+                                             ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int! division/modulo with non-zero divisor (happy path)
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const div_ok: felt252 = consteval_int!(10 / 2);
+
+const mod_ok: felt252 = consteval_int!(10 % 3);
+
+const div_negative: felt252 = consteval_int!(-7 / 2);
+
+const mod_negative: felt252 = consteval_int!(-7 % 3);
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:25
+const div_ok: felt252 = consteval_int!(10 / 2);
+                        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:3:25
+const mod_ok: felt252 = consteval_int!(10 % 3);
+                        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:5:31
+const div_negative: felt252 = consteval_int!(-7 / 2);
+                              ^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:7:31
+const mod_negative: felt252 = consteval_int!(-7 % 3);
+                              ^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test bad array! macros
 
 //! > test_runner_name
@@ -317,6 +423,78 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:9
     let ba: ByteArray = "hello";
         ^^
+
+//! > ==========================================================================
+
+//! > Test write! named placeholder span is correct after escape sequences
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let mut f: core::fmt::Formatter = Default::default();
+    write!(f, "prefix\n{name}").unwrap();
+    write!(f, "\x41{hex_name}").unwrap();
+    write!(f, "\101{oct_name}").unwrap();
+    write!(f, "\u{41}{uni_name}").unwrap();
+    write!(f, "\u0041{uni4_name}").unwrap();
+    write!(f, "\\u{esc_bs_name}").unwrap();
+    write!(f, "{double_quotes}\"").unwrap();
+    write!(f, "\u{7B}uni_brace}").unwrap();
+    write!(f, "\u007Buni4_brace}").unwrap();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:3:25
+    write!(f, "prefix\n{name}").unwrap();
+                        ^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:4:21
+    write!(f, "\x41{hex_name}").unwrap();
+                    ^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:5:21
+    write!(f, "\101{oct_name}").unwrap();
+                    ^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:6:23
+    write!(f, "\u{41}{uni_name}").unwrap();
+                      ^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:7:23
+    write!(f, "\u0041{uni4_name}").unwrap();
+                      ^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:8:20
+    write!(f, "\\u{esc_bs_name}").unwrap();
+                   ^^^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:9:17
+    write!(f, "{double_quotes}\"").unwrap();
+                ^^^^^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:10:32
+    write!(f, "\u{7B}uni_brace}").unwrap();
+                               ^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:11:33
+    write!(f, "\u007Buni4_brace}").unwrap();
+                                ^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -2360,3 +2538,330 @@ error[E2156]: Inline macro `not::a::path::format` not found.
  --> lib.cairo:2:5
     not::a::path::format!("");
     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test macro with empty inner repetition body (would loop infinitely without no-progress guard).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function_code
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($()*) => { 1 };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro with repetition over empty subtrees (would fail to match without the subtree progress fix).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function_code
+fn foo() {
+    test_macro!(() ());
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($(())*) => { 1 };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test repetition placeholder used outside repetition in expansion.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    m!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),*) => { $x };
+}
+
+//! > expected_diagnostics
+error[E2198]: Macro placeholder 'x' requires 1 repetition level(s) in the expansion, but is used at level 0.
+ --> lib.cairo:2:25
+    ($($x:expr),*) => { $x };
+                        ^^
+
+//! > ==========================================================================
+
+//! > Test rep placeholder used inside a nested repetition in expansion (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    m!(1, 2, 3);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),*) => { $($x)* };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test depth-0 placeholder used inside a repetition driven by a depth-1 var (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    m!(1 + 2, 3, 4);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($x:expr, $($y:expr),*) => { $($x + $y),* };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test cross-repetition placeholder mixing in expansion (E2199).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),* ; $($y:expr),*) => { $($x + $y),* };
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'y' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:47
+    ($($x:expr),* ; $($y:expr),*) => { $($x + $y),* };
+                                              ^^
+
+//! > ==========================================================================
+
+//! > Test cross-repetition placeholder mixing with mismatched outer context (prefix check).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'y' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:54
+    ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
+                                                     ^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int with typed literal.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const a: felt252 = consteval_int!(1_u32);
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:20
+const a: felt252 = consteval_int!(1_u32);
+                   ^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Literals with suffix are not supported in consteval_int macro
+ --> lib.cairo:1:35
+const a: felt252 = consteval_int!(1_u32);
+                                  ^^^^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int with typed literal in subexpression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const a: felt252 = consteval_int!(1_u32 + 2);
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:20
+const a: felt252 = consteval_int!(1_u32 + 2);
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Literals with suffix are not supported in consteval_int macro
+ --> lib.cairo:1:35
+const a: felt252 = consteval_int!(1_u32 + 2);
+                                  ^^^^^^
+
+//! > ==========================================================================
+
+//! > Regression for #9936: unsupported macro param kind emits a diagnostic, not an ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() -> u32 {
+    mymac!(0)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro mymac {
+    ($x:literal) => { 5_u32 };
+}
+
+//! > expected_diagnostics
+error[E1008]: Missing tokens. Expected a macro rule parameter kind.
+ --> lib.cairo:3:9
+    ($x:literal) => { 5_u32 };
+        ^
+
+error[E2158]: No matching rule found in inline macro `mymac`.
+ --> lib.cairo:6:5
+    mymac!(0)
+    ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Regression for #9938: item-scope macro invocation without arg brackets does not ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($x:ident) => { 1 };
+}
+m!
+
+//! > expected_diagnostics
+error[E1006]: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:5:3
+m!
+  ^
+
+error[E1001]: Missing token ';'.
+ --> lib.cairo:5:3
+m!
+  ^
+
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:5:1
+m!
+^^
+
+//! > ==========================================================================
+
+//! > Regression for #9993: macro call with `$(...)` without an operator does not ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    mymac!($(x));
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro mymac {
+    ($x:ident) => { 1 };
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `mymac`.
+ --> lib.cairo:6:5
+    mymac!($(x));
+    ^^^^^^^^^^^^

@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Full Grammar
 
 This appendix provides a complete formal grammar specification for the Cairo language. The grammar
@@ -662,7 +664,7 @@ impl PointImpl of PointTrait {
 == Notes
 
 NOTE: This grammar is derived from Cairo's authoritative implementation in
-`crates/cairo-lang-syntax-codegen/src/cairo_spec.rs`.
+link:{cairo-repo}/crates/cairo-lang-syntax-codegen/src/cairo_spec.rs[crates/cairo-lang-syntax-codegen/src/cairo_spec.rs].
 
 NOTE: Some syntax elements like macros use token trees, which allow arbitrary token sequences
 within delimiters.

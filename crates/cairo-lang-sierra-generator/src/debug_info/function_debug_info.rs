@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
 use cairo_lang_defs::db::get_all_path_leaves;
@@ -37,7 +38,9 @@ use crate::debug_info::function_debug_info::serializable::{
     CairoVariableName, SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
     SierraFunctionId, SierraVarId,
 };
-use crate::debug_info::{SourceCodeSpan, SourceFileFullPath, maybe_code_location};
+use crate::debug_info::{
+    SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, maybe_code_location,
+};
 
 pub mod serializable;
 
@@ -85,8 +88,7 @@ impl<'db> FunctionDebugInfo<'db> {
         db: &'db dyn Database,
     ) -> Option<SerializableFunctionDebugInfo> {
         let (function_file_path, function_code_span) = self.extract_location(db)?;
-        let sierra_to_cairo_variable =
-            self.extract_variables_mapping(db, &function_file_path, &function_code_span);
+        let sierra_to_cairo_variable = self.extract_variables_mapping(db);
 
         Some(SerializableFunctionDebugInfo {
             function_file_path,
@@ -98,11 +100,10 @@ impl<'db> FunctionDebugInfo<'db> {
     /// Extracts mapping from a sierra variable to a cairo variable (its name and definition span).
     /// The sierra variable value corresponds to the cairo variable value at some point during
     /// execution of the function code.
+    #[expect(clippy::disallowed_types)]
     fn extract_variables_mapping(
         &self,
         db: &'db dyn Database,
-        function_file_path: &SourceFileFullPath,
-        function_code_span: &SourceCodeSpan,
     ) -> HashMap<SierraVarId, (CairoVariableName, SourceCodeSpan)> {
         self.variables_locations
             .iter()
@@ -142,22 +143,23 @@ impl<'db> FunctionDebugInfo<'db> {
                     ),
                     x => x.stable_location(db),
                 };
-
-                let (path, span, _) = maybe_code_location(db, location)?;
-
-                // Sanity check.
-                // TODO(pm): check if it occurs at all except for inlined function calls.
-                if !(function_file_path == &path && function_code_span.contains(&span)) {
-                    return None;
-                }
-
                 let user_location = location.span_in_file(db).user_location(db);
+
                 let var_name = user_location
                     .span
                     .take(db.file_content(user_location.file_id).unwrap())
                     .to_string();
 
-                Some((SierraVarId(sierra_var.id), (var_name, span)))
+                let position = user_location.span.position_in_file(db, user_location.file_id)?;
+                let source_location = SourceCodeSpan {
+                    start: SourceCodeLocation {
+                        col: position.start.col,
+                        line: position.start.line,
+                    },
+                    end: SourceCodeLocation { col: position.end.col, line: position.end.line },
+                };
+
+                Some((SierraVarId(sierra_var.id), (var_name, source_location)))
             })
             .collect()
     }

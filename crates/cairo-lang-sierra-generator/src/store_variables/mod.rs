@@ -77,19 +77,18 @@ where
         }
     }
     let mut handler = AddStoreVariableStatements::new(db, local_variables, duplicated_vars);
-    let mut state_opt = Some(VariablesState {
-        variables: OrderedHashMap::from_iter(params.iter().map(|param| {
-            (
-                param.id.clone(),
-                if db.get_type_info(param.ty.clone()).unwrap().zero_sized {
-                    VarState::ZeroSizedVar
-                } else {
-                    VarState::LocalVar
-                },
-            )
-        })),
-        known_stack: Default::default(),
-    });
+    let mut variables = OrderedHashMap::with_capacity(params.len());
+    for param in params.iter() {
+        variables.insert(
+            param.id.clone(),
+            if db.get_type_info(param.ty.clone()).unwrap().zero_sized {
+                VarState::ZeroSizedVar
+            } else {
+                VarState::LocalVar
+            },
+        );
+    }
+    let mut state_opt = Some(VariablesState { variables, known_stack: Default::default() });
     // Go over the statements, restarting whenever we see a branch or a label.
     for statement in statements {
         let prev_len = handler.result.len();
@@ -146,11 +145,10 @@ impl<'db> AddStoreVariableStatements<'db> {
         let mut state_opt = state_opt;
         match &statement.statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                let libfunc_id = invocation.libfunc_id.clone();
-                let signature = get_libfunc_signature(libfunc_id.clone());
+                let signature = get_libfunc_signature(invocation.libfunc_id.clone());
                 let mut state = state_opt.unwrap_or_default();
 
-                let libfunc_long_id = self.db.lookup_concrete_lib_func(&libfunc_id);
+                let libfunc_long_id = self.db.lookup_concrete_lib_func(&invocation.libfunc_id);
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
                     FunctionCallLibfunc::STR_ID | CouponCallLibfunc::STR_ID => {
                         // The arguments were already stored using `push_values`.

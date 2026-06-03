@@ -102,26 +102,28 @@ impl<'db> GenericArgumentId<'db> {
     }
 
     /// A utility function for extracting the generic parameters arguments from a GenericArgumentId.
+    /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
     pub fn extract_generic_params(
         &self,
         db: &'db dyn Database,
         generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+        visited: &mut OrderedHashSet<TypeId<'db>>,
     ) -> Maybe<()> {
         match self {
             GenericArgumentId::Type(ty) => {
-                ty.long(db).extract_generic_params(db, generic_parameters)?
+                ty.extract_generic_params(db, generic_parameters, visited)?
             }
             GenericArgumentId::Constant(const_value_id) => {
-                const_value_id.extract_generic_params(db, generic_parameters)?;
+                const_value_id.extract_generic_params(db, generic_parameters, visited)?;
             }
             GenericArgumentId::Impl(impl_id) => {
                 for garg in impl_id.concrete_trait(db)?.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
             GenericArgumentId::NegImpl(negative_impl_id) => {
                 for garg in negative_impl_id.concrete_trait(db)?.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
         }
@@ -292,7 +294,7 @@ fn generic_impl_param_trait<'db>(
 
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     let inference_id = InferenceId::GenericImplParamTrait(generic_param_id);
-    // TODO(spapini): We should not create a new resolver -  we are missing the other generic params
+    // TODO(spapini): We should not create a new resolver - we are missing the other generic params
     // in the context.
     // Remove also GenericImplParamTrait.
     let mut resolver = Resolver::new(db, module_id, inference_id);
@@ -693,9 +695,7 @@ fn impl_generic_param_semantic<'db>(
         });
     let type_constraints = concrete_trait
         .ok()
-        .and_then(|concrete_trait| {
-            item_constraints.map(|type_constraints| (concrete_trait, type_constraints))
-        })
+        .zip(item_constraints)
         .map(|(concrete_trait_id, constraints)| {
             let mut map = OrderedHashMap::default();
 
@@ -787,21 +787,21 @@ struct DisplayableConcrete<'a, 'db, Name> {
 impl<Name: Display> Display for DisplayableConcrete<'_, '_, Name> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut f = CountingWriter::new(f);
-        write!(f, "{}", &self.name)?;
+        write!(f, "{}", self.name)?;
         let mut generic_args = self.generic_args.iter();
         if let Some(first) = generic_args.next() {
             // Soft limit for the number of chars in the formatted type.
             const CHARS_BOUND: usize = 500;
             write!(f, "::<")?;
-            write!(f, "{}", &first.format(self.db))?;
+            write!(f, "{}", first.format(self.db))?;
 
             for arg in generic_args {
                 write!(f, ", ")?;
                 if f.count() > CHARS_BOUND {
                     // If the formatted type is becoming too long, add short version of arguments.
-                    write!(f, "{}", &arg.short_name(self.db))?;
+                    write!(f, "{}", arg.short_name(self.db))?;
                 } else {
-                    write!(f, "{}", &arg.format(self.db))?;
+                    write!(f, "{}", arg.format(self.db))?;
                 }
             }
             write!(f, ">")?;

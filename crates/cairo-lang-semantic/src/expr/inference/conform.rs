@@ -12,7 +12,7 @@ use super::{
     ErrorSet, ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceResult,
     InferenceVar, LocalTypeVarId, TypeVar,
 };
-use crate::corelib::never_ty;
+use crate::corelib::{is_valid_literal_type, never_ty};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
@@ -119,16 +119,28 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
         let long_ty1 = ty1.long(self.db);
         match long_ty1 {
             TypeLongId::Var(var) => return Ok((self.assign_ty(*var, ty0)?, 0)),
+            // Conforming `ty0 -> NumericLiteral(var)`. If `ty0` is also an NumericLiteral or a
+            // Var, fall through so the `long_ty0` match below handles the unification.
+            TypeLongId::NumericLiteral(var)
+                if !matches!(
+                    ty0.long(self.db),
+                    TypeLongId::Var(_) | TypeLongId::NumericLiteral(_)
+                ) =>
+            {
+                return self.bind_integer_literal(*var, ty0);
+            }
             TypeLongId::Missing(_) => return Ok((ty1, 0)),
-            TypeLongId::Snapshot(inner_ty) => {
-                if ty0_is_self {
-                    if *inner_ty == ty0 {
-                        return Ok((ty1, 1));
-                    }
-                    if !matches!(ty0.long(self.db), TypeLongId::Snapshot(_))
-                        && let TypeLongId::Var(var) = inner_ty.long(self.db)
-                    {
+            TypeLongId::Snapshot(inner_ty) if ty0_is_self => {
+                if *inner_ty == ty0 {
+                    return Ok((ty1, 1));
+                }
+                if !matches!(ty0.long(self.db), TypeLongId::Snapshot(_)) {
+                    if let TypeLongId::Var(var) = inner_ty.long(self.db) {
                         return Ok((self.assign_ty(*var, ty0)?, 1));
+                    }
+                    if let TypeLongId::NumericLiteral(var) = ty0.long(self.db) {
+                        let (bound, n) = self.bind_integer_literal(*var, *inner_ty)?;
+                        return Ok((bound, n + 1));
                     }
                 }
             }
@@ -221,6 +233,20 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::Var(var) => Ok((self.assign_ty(*var, ty1)?, 0)),
+            TypeLongId::NumericLiteral(var) => {
+                // Conforming `NumericLiteral(var) -> ty1`.
+                match long_ty1 {
+                    // Same kind: unify the two integer-literal placeholders by binding their
+                    // underlying type vars.
+                    TypeLongId::NumericLiteral(var2) => Ok((
+                        self.assign_ty(*var, TypeLongId::NumericLiteral(*var2).intern(self.db))?,
+                        0,
+                    )),
+                    // `ty1` is a bare Var: let it bind to the NumericLiteral.
+                    TypeLongId::Var(other) => Ok((self.assign_ty(*other, ty0)?, 0)),
+                    _ => self.bind_integer_literal(*var, ty1),
+                }
+            }
             TypeLongId::ImplType(impl_type) => {
                 if let Some(ty) = self.impl_type_bounds.get(&(*impl_type).into()) {
                     return self.conform_ty_ex(*ty, ty1, ty0_is_self);
@@ -599,6 +625,23 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
 }
 
 impl<'db> Inference<'db, '_> {
+    /// Binds an `IntegerLiteral`'s inner type variable to `ty`. If `ty` is not a type that
+    /// accepts numeric literals (felt252, primitive integers, `NonZero<…>`, bounded ints …),
+    /// raises `InvalidLiteralType` so the conform-site caller — not the literal site — reports
+    /// the diagnostic.
+    fn bind_integer_literal(
+        &mut self,
+        var: TypeVar<'db>,
+        ty: TypeId<'db>,
+    ) -> InferenceResult<(TypeId<'db>, usize)> {
+        let bound = self.assign_ty(var, ty)?;
+        let rewritten = self.rewrite(bound).no_err();
+        if !rewritten.is_var_free(self.db) || is_valid_literal_type(self.db, rewritten) {
+            return Ok((bound, 0));
+        }
+        Err(self.set_error(InferenceError::InvalidLiteralType(rewritten)))
+    }
+
     /// Reduces an impl type to a concrete type.
     pub fn reduce_impl_ty(
         &mut self,
@@ -802,11 +845,11 @@ impl<'db> Inference<'db, '_> {
             }
             TypeLongId::Tuple(tys) => tys.iter().any(|ty| self.internal_ty_contains_var(*ty, var)),
             TypeLongId::Snapshot(ty) => self.internal_ty_contains_var(*ty, var),
-            TypeLongId::Var(new_var) => {
-                if InferenceVar::Type(new_var.id) == var {
+            TypeLongId::Var(ty_var) | TypeLongId::NumericLiteral(ty_var) => {
+                if InferenceVar::Type(ty_var.id) == var {
                     return true;
                 }
-                if let Some(ty) = self.type_assignment.get(&new_var.id) {
+                if let Some(ty) = self.type_assignment.get(&ty_var.id) {
                     return self.internal_ty_contains_var(*ty, var);
                 }
                 false

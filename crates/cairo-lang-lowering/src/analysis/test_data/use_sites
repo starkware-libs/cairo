@@ -1,0 +1,171 @@
+//! > Test simple linear function with parameters and statement outputs
+
+//! > test_runner_name
+test_analysis(analysis: use_sites)
+
+//! > function_code
+fn foo(x: felt252, y: felt252) -> felt252 {
+    x + y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+End:
+  Return(v2)
+
+//! > result
+[
+    v0: [(stmt(blk0, 0), 1)],
+    v1: [(stmt(blk0, 0), 1)],
+    v2: [(end(blk0), 1)],
+]
+
+//! > ==========================================================================
+
+//! > Test variable used multiple times
+
+//! > test_runner_name
+test_analysis(analysis: use_sites)
+
+//! > function_code
+fn foo(x: felt252) -> felt252 {
+    x + x + x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- core::felt252_add(v0, v0)
+  (v2: core::felt252) <- core::felt252_add(v1, v0)
+End:
+  Return(v2)
+
+//! > result
+[
+    v0: [(stmt(blk0, 0), 2), (stmt(blk0, 1), 1)],
+    v1: [(stmt(blk0, 1), 1)],
+    v2: [(end(blk0), 1)],
+]
+
+//! > ==========================================================================
+
+//! > Test branching with goto remappings
+
+//! > test_runner_name
+test_analysis(analysis: use_sites)
+
+//! > function_code
+fn foo(x: bool) -> felt252 {
+    let y = if x {
+        1
+    } else {
+        2
+    };
+    y + 3
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v1) => blk1,
+    bool::True(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::felt252) <- 2
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 1
+End:
+  Goto(blk3, {v5 -> v4})
+
+blk3:
+Statements:
+  (v6: core::felt252) <- 3
+  (v7: core::felt252) <- core::felt252_add(v4, v6)
+End:
+  Return(v7)
+
+//! > result
+[
+    v0: [(end(blk0), 1)],
+    v1: [],
+    v2: [],
+    v3: [(end(blk1), 1)],
+    v4: [(stmt(blk3, 1), 1)],
+    v5: [(end(blk2), 1)],
+    v6: [(stmt(blk3, 1), 1)],
+    v7: [(end(blk3), 1)],
+]
+
+//! > ==========================================================================
+
+//! > Test variable used as call argument and call result reused
+
+//! > test_runner_name
+test_analysis(analysis: use_sites)
+
+//! > function_code
+fn foo(x: felt252) -> felt252 {
+    let y = bar(x);
+    y + y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn bar(x: felt252) -> felt252 {
+    x
+}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::bar(v0)
+  (v2: core::felt252) <- core::felt252_add(v1, v1)
+End:
+  Return(v2)
+
+//! > result
+[
+    v0: [(stmt(blk0, 0), 1)],
+    v1: [(stmt(blk0, 1), 2)],
+    v2: [(end(blk0), 1)],
+]

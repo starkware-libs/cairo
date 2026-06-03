@@ -428,7 +428,9 @@ impl<'db> NegativeImplLongId<'db> {
     }
     pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
         match self {
-            NegativeImplLongId::Solved(concrete_trait_id) => concrete_trait_id.is_var_free(db),
+            NegativeImplLongId::Solved(concrete_trait_id) => {
+                concrete_trait_id.is_fully_concrete(db)
+            }
             NegativeImplLongId::GenericParameter(_) | NegativeImplLongId::NegativeImplVar(_) => {
                 false
             }
@@ -1001,7 +1003,7 @@ pub struct DerefInfo<'db> {
     pub target_ty: TypeId<'db>,
 }
 
-/// Cycle handling for  [ImplSemantic::deref_chain].
+/// Cycle handling for [ImplSemantic::deref_chain].
 fn deref_chain_cycle<'db>(
     _db: &dyn Database,
     _id: salsa::Id,
@@ -1666,7 +1668,7 @@ fn get_inner_types<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<Vec<Typ
         TypeLongId::GenericParameter(_) => {
             return Err(skip_diagnostic());
         }
-        TypeLongId::Var(_) | TypeLongId::ImplType(_) => {
+        TypeLongId::Var(_) | TypeLongId::NumericLiteral(_) | TypeLongId::ImplType(_) => {
             panic!("Types should be fully resolved at this point.")
         }
         TypeLongId::Coupon(_) => vec![],
@@ -2258,6 +2260,39 @@ pub fn find_closure_generated_candidate<'db>(
             concrete_trait,
             generic_params,
             impl_items: GeneratedImplItems(impl_items),
+        }
+        .intern(db),
+    ))
+}
+
+/// Finds the synthetic generated candidate for a numeric-literal placeholder type
+/// (`TypeLongId::NumericLiteral`). The placeholder always satisfies `Drop`, `Copy`, `Destruct`,
+/// and `PanicDestruct` (these are the memory traits which the trait solver must be able to
+/// discharge for the literal's containing expression to type-check while the literal's concrete
+/// type is still being inferred). All other traits — including `NumericLiteral<T>` — are left to
+/// the normal solver path once the placeholder is conformed to a concrete type.
+pub fn find_integer_literal_generated_candidate<'db>(
+    db: &'db dyn Database,
+    concrete_trait_id: ConcreteTraitId<'db>,
+) -> Option<UninferredImpl<'db>> {
+    let GenericArgumentId::Type(ty) = *concrete_trait_id.generic_args(db).first()? else {
+        return None;
+    };
+    if !matches!(ty.long(db), TypeLongId::NumericLiteral(_)) {
+        return None;
+    }
+    let info = db.core_info();
+    let trait_id = concrete_trait_id.trait_id(db);
+    if ![info.drop_trt, info.copy_trt, info.destruct_trt, info.panic_destruct_trt]
+        .contains(&trait_id)
+    {
+        return None;
+    }
+    Some(UninferredImpl::GeneratedImpl(
+        UninferredGeneratedImplLongId {
+            concrete_trait: concrete_trait_id,
+            generic_params: vec![],
+            impl_items: GeneratedImplItems(Default::default()),
         }
         .intern(db),
     ))

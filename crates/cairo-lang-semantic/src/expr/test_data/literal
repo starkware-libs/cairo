@@ -16,3 +16,244 @@ error[E2008]: A numeric literal of type core::pedersen::Pedersen cannot be creat
  --> lib.cairo:2:14
     let _a = 'a'_Pedersen;
              ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Numeric literal with a non-type suffix.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x = 1_boolean;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2011]: Not a type.
+ --> lib.cairo:2:14
+    let _x = 1_boolean;
+             ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Numeric literal with a compound suffix (multiple underscore segments).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x = 1_u32_u8;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2006]: Unknown type.
+ --> lib.cairo:2:14
+    let _x = 1_u32_u8;
+             ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Negative numeric literal with a compound suffix (multiple underscore segments).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x = -1_u32_u8;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2006]: Unknown type.
+ --> lib.cairo:2:14
+    let _x = -1_u32_u8;
+             ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Unsuffixed numeric literal defaults to felt252.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    let x = 5;
+    let _y: felt252 = x;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Unsuffixed numeric literal infers from explicit type ascription.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    let x: u32 = 5;
+    let _y: u32 = x;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Array of unsuffixed literals unifies with one suffixed element.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    let _arr: Array<u32> = array![0, 1, 2_u32];
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Unsuffixed literals support `Drop` and `Copy` without explicit suffix.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    let mut total: u32 = 0;
+    for (k, v) in array![0, 1, 2].into_iter().enumerate() {
+        total = total + k + v;
+    };
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Numeric literal cannot be bound to a non-numeric type via let ascription.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x: ByteArray = 252;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2315]: Mismatched types. The type `core::byte_array::ByteArray` cannot be created from a numeric literal.
+ --> lib.cairo:2:25
+    let _x: ByteArray = 252;
+                        ^^^
+
+//! > ==========================================================================
+
+//! > Numeric literal cannot be bound to `bool`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x: bool = 5;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2315]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+ --> lib.cairo:2:20
+    let _x: bool = 5;
+                   ^
+
+//! > ==========================================================================
+
+//! > Issue #6486: diagnostic for an integer-literal tail in a unit-returning function points at the
+
+//! > tail/function-body span, not at the literal's `let` binding.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn incorrect_return_type() {
+    let x = 5;
+    x
+}
+
+//! > function_name
+incorrect_return_type
+
+//! > expected_diagnostics
+error[E2315]: Mismatched types. The type `()` cannot be created from a numeric literal.
+ --> lib.cairo:3:5
+    x
+    ^
+
+//! > ==========================================================================
+
+//! > Numeric literal suffix with generic type emits E2008 instead of ICE (#9975).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _a = 42_Option;
+    let _b = 42_Result;
+    let _c = 42_PanicResult;
+    let _d = 42_Span;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2008]: A numeric literal of type core::option::Option cannot be created.
+ --> lib.cairo:2:14
+    let _a = 42_Option;
+             ^^^^^^^^^
+
+error[E2008]: A numeric literal of type core::result::Result cannot be created.
+ --> lib.cairo:3:14
+    let _b = 42_Result;
+             ^^^^^^^^^
+
+error[E2008]: A numeric literal of type core::panics::PanicResult cannot be created.
+ --> lib.cairo:4:14
+    let _c = 42_PanicResult;
+             ^^^^^^^^^^^^^^
+
+error[E2008]: A numeric literal of type core::array::Span cannot be created.
+ --> lib.cairo:5:14
+    let _d = 42_Span;
+             ^^^^^^^

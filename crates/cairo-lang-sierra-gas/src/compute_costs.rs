@@ -330,6 +330,12 @@ fn analyze_gas_statements<
             for (token_type, amount) in SpecificCostContext::into_full_cost_iter(cost) {
                 assert_eq!(variable_values.insert((idx, token_type), amount), None);
             }
+        } else if let BranchCost::GetUnspentGas = branch_cost {
+            for (token_type, amount) in
+                SpecificCostContext::into_full_cost_iter(wallet_value.clone())
+            {
+                assert_eq!(variable_values.insert((idx, token_type), amount), None);
+            }
         } else if let BranchCost::FunctionCost { sign: BranchCostSign::Add, .. } = branch_cost {
             // If the refund can be fully used, the wallet value will be the same as
             // `branch_requirement`. Otherwise, wallet value will be zero and the difference
@@ -744,7 +750,9 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
     ) -> WalletInfo<PreCost> {
         let branch_cost = match branch_cost {
             BranchCost::Regular { const_cost: _, pre_cost } => pre_cost.clone(),
-            BranchCost::BranchAlign | BranchCost::RedepositGas => Default::default(),
+            BranchCost::BranchAlign | BranchCost::RedepositGas | BranchCost::GetUnspentGas => {
+                Default::default()
+            }
             BranchCost::FunctionCost { const_cost: _, function, sign } => {
                 let func_cost = wallet_at_fn(function.entry_point).value;
                 match sign {
@@ -881,7 +889,7 @@ impl<CostType: PostCostTypeEx, GetApChangeFn: Fn(StatementIdx) -> usize>
                 }
                 cost
             }
-            BranchCost::RedepositGas => {
+            BranchCost::RedepositGas | BranchCost::GetUnspentGas => {
                 CostType::from_const_cost(&self.compute_redeposit_gas_cost(idx))
             }
         };

@@ -28,7 +28,6 @@
   - [Prerequisites](#prerequisites)
   - [Compiling and running Cairo files](#compiling-and-running-cairo-files)
   - [Compiling Starknet Contracts](#compiling-starknet-contracts)
-- [Roadmap](#roadmap)
 - [Support](#support)
 - [Project assistance](#project-assistance)
 - [Contributing](#contributing)
@@ -82,25 +81,25 @@ For running tests specifically, see here: [cairo-test](./crates/cairo-lang-test-
 
 ### Compiling Starknet Contracts
 
-Compile a Starknet Contract to a Sierra ContractClass:
+Compile a Starknet contract from a crate/project path to a Sierra ContractClass:
 ```bash
-cargo run --bin starknet-compile -- --single-file /path/to/input.cairo /path/to/output.json
+cargo run --bin starknet-compile -- /path/to/input/crate /path/to/output.json
 ```
 
-Or specify the contract path if multiple contracts are defined in the same project:
+If multiple contracts are defined in the same crate/project, specify `--contract-path`:
 ```bash
 cargo run --bin starknet-compile -- /path/to/input/crate /path/to/output.json --contract-path path::to::contract
+```
+
+For a single-file `.cairo` input, use `--single-file`:
+```bash
+cargo run --bin starknet-compile -- --single-file /path/to/input.cairo /path/to/output.json
 ```
 
 Compile a Sierra ContractClass to a CASM CompiledClass:
 ```bash
 cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm
 ```
-
-## Roadmap
-
-The next milestone is to reach feature parity with the old Cairo version.
-You can track the exact progress [here](./docs/FEATURE_PARITY.md).
 
 ## Support
 

@@ -199,3 +199,93 @@ error[E2200]: Plugin diagnostic: Macro cannot be parsed as legacy macro. Expecte
  --> lib.cairo:2:1
 array![format!]
 ^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test call-site `+` matched as a literal token and expanded.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro plus_lit {
+    (+) => { 7 };
+}
+
+//! > expr_code
+plus_lit!(+)
+
+//! > expanded_code
+7
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test call-site `+` matched as a literal token between two captures.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro keep_plus {
+    ($a:ident + $b:ident) => { $a + $b };
+}
+
+//! > function_body
+let x = 1_felt252;
+let y = 2_felt252;
+
+//! > expr_code
+keep_plus!(x + y)
+
+//! > expanded_code
+x+ y
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test call-site bare `$` is an opaque token that matches no ident rule.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro take_ident {
+    ($x:ident) => { 0 };
+}
+
+//! > expr_code
+take_ident!($)
+
+//! > expanded_code
+take_ident!($)
+
+//! > diagnostics
+error[E2158]: No matching rule found in inline macro `take_ident`.
+ --> lib.cairo:6:1
+take_ident!($)
+^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test that a macro call with a missing token is not expanded (the parse error is enough).
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > expr_code
+array![1, 2
+
+//! > expanded_code
+array![1, 2
+
+//! > diagnostics
+error[E1001]: Missing token ']'.
+ --> lib.cairo:2:12
+array![1, 2
+           ^

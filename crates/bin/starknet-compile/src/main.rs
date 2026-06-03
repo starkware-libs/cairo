@@ -9,18 +9,22 @@ use cairo_lang_starknet::compile::starknet_compile;
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use clap::Parser;
 
-#[cfg(feature = "mimalloc")]
+#[cfg(all(feature = "mimalloc", not(feature = "dhat")))]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-/// Compiles the specified contract from a Cairo project, into a contract class file.
+#[cfg(feature = "dhat")]
+#[global_allocator]
+static GLOBAL: dhat::Alloc = dhat::Alloc;
+
+/// Compiles the specified contract from a Cairo project into a contract class file.
 /// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
 #[command(version, verbatim_doc_comment)]
 struct Args {
     /// The path of the crate to compile.
     path: PathBuf,
-    /// Whether path is a single file.
+    /// Whether path is a single Cairo source file.
     #[arg(short, long)]
     single_file: bool,
     /// Allows the compilation to succeed with warnings.
@@ -43,6 +47,9 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<()> {
+    #[cfg(feature = "dhat")]
+    let _profiler = dhat::Profiler::new_heap();
+
     let args = Args::parse();
 
     // Check if args.path is a file or a directory.

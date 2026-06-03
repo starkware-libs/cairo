@@ -25,16 +25,16 @@
 //! [`Mul`]: crate::traits::Mul
 //! [`Div`]: crate::traits::Div
 //! [`Rem`]: crate::traits::Rem
-//! [`DivRem`]: crate::traits::DivRem
-//! [`CheckedAdd`]: crate::num::traits::ops::checked::CheckedAdd
-//! [`CheckedSub`]: crate::num::traits::ops::checked::CheckedSub
-//! [`CheckedMul`]: crate::num::traits::ops::checked::CheckedMul
-//! [`WrappingAdd`]: crate::num::traits::ops::wrapping::WrappingAdd
-//! [`WrappingSub`]: crate::num::traits::ops::wrapping::WrappingSub
-//! [`WrappingMul`]: crate::num::traits::ops::wrapping::WrappingMul
-//! [`OverflowingAdd`]: crate::num::traits::ops::overflowing::OverflowingAdd
-//! [`OverflowingSub`]: crate::num::traits::ops::overflowing::OverflowingSub
-//! [`OverflowingMul`]: crate::num::traits::ops::overflowing::OverflowingMul
+//! [`DivRem`]: crate::num::traits::DivRem
+//! [`CheckedAdd`]: crate::num::traits::CheckedAdd
+//! [`CheckedSub`]: crate::num::traits::CheckedSub
+//! [`CheckedMul`]: crate::num::traits::CheckedMul
+//! [`WrappingAdd`]: crate::num::traits::WrappingAdd
+//! [`WrappingSub`]: crate::num::traits::WrappingSub
+//! [`WrappingMul`]: crate::num::traits::WrappingMul
+//! [`OverflowingAdd`]: crate::num::traits::OverflowingAdd
+//! [`OverflowingSub`]: crate::num::traits::OverflowingSub
+//! [`OverflowingMul`]: crate::num::traits::OverflowingMul
 //!
 //! # Examples
 //!
@@ -1990,7 +1990,7 @@ impl I8Neg of Neg<i8> {
     }
 }
 
-#[deprecated(feature: "corelib-internal-use", note: "Use `crate::num::traits::WideMul` instead")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
 impl I8Mul of Mul<i8> {
     fn mul(lhs: i8, rhs: i8) -> i8 {
@@ -2080,7 +2080,7 @@ impl I16Neg of Neg<i16> {
     }
 }
 
-#[deprecated(feature: "corelib-internal-use", note: "Use `crate::num::traits::WideMul` instead")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
 
 impl I16Mul of Mul<i16> {
@@ -2634,6 +2634,24 @@ mod op_eq_by_op {
     }
 }
 
+/// Non-deprecated `*Assign` analog of `op_eq_by_op`: derives an assignment operator from the
+/// corresponding binary operator.
+mod op_assign_by_op {
+    use crate::ops::{DivAssign, RemAssign};
+
+    pub impl DivAssignImpl<T, +Div<T>> of DivAssign<T, T> {
+        fn div_assign(ref self: T, rhs: T) {
+            self = Div::div(self, rhs);
+        }
+    }
+
+    pub impl RemAssignImpl<T, +Rem<T>> of RemAssign<T, T> {
+        fn rem_assign(ref self: T, rhs: T) {
+            self = Rem::rem(self, rhs);
+        }
+    }
+}
+
 impl I8AddEq = op_eq_by_op::AddEqImpl<i8>;
 impl I8SubEq = op_eq_by_op::SubEqImpl<i8>;
 impl I8MulEq = op_eq_by_op::MulEqImpl<i8>;
@@ -2647,12 +2665,18 @@ impl I16RemEq = op_eq_by_op::RemEqImpl<i16>;
 impl I32AddEq = op_eq_by_op::AddEqImpl<i32>;
 impl I32SubEq = op_eq_by_op::SubEqImpl<i32>;
 impl I32MulEq = op_eq_by_op::MulEqImpl<i32>;
+impl I32DivAssign = op_assign_by_op::DivAssignImpl<i32>;
+impl I32RemAssign = op_assign_by_op::RemAssignImpl<i32>;
 impl I64AddEq = op_eq_by_op::AddEqImpl<i64>;
 impl I64SubEq = op_eq_by_op::SubEqImpl<i64>;
 impl I64MulEq = op_eq_by_op::MulEqImpl<i64>;
+impl I64DivAssign = op_assign_by_op::DivAssignImpl<i64>;
+impl I64RemAssign = op_assign_by_op::RemAssignImpl<i64>;
 impl I128AddEq = op_eq_by_op::AddEqImpl<i128>;
 impl I128SubEq = op_eq_by_op::SubEqImpl<i128>;
 impl I128MulEq = op_eq_by_op::MulEqImpl<i128>;
+impl I128DivAssign = op_assign_by_op::DivAssignImpl<i128>;
+impl I128RemAssign = op_assign_by_op::RemAssignImpl<i128>;
 impl U8AddEq = op_eq_by_op::AddEqImpl<u8>;
 impl U8SubEq = op_eq_by_op::SubEqImpl<u8>;
 impl U8MulEq = op_eq_by_op::MulEqImpl<u8>;

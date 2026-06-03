@@ -127,6 +127,7 @@ pub enum ParserDiagnosticKind {
     ConsecutiveMathOperators { first_op: SyntaxKind, second_op: SyntaxKind },
     ExpectedSemicolonOrBody,
     LowPrecedenceOperatorInIfLet { op: SyntaxKind },
+    MissingMacroRepetitionOperator,
 }
 
 impl<'a> DiagnosticEntry<'a> for ParserDiagnostic<'a> {
@@ -239,6 +240,10 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                     self.kind_to_string(*op)
                 )
             }
+            ParserDiagnosticKind::MissingMacroRepetitionOperator => {
+                "Missing macro repetition operator. Expected `?`, `+`, or `*` after `$(...)`."
+                    .to_string()
+            }
         }
     }
 
@@ -279,6 +284,7 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             ParserDiagnosticKind::ConsecutiveMathOperators { .. } => error_code!(E1028),
             ParserDiagnosticKind::ExpectedSemicolonOrBody => error_code!(E1029),
             ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { .. } => error_code!(E1030),
+            ParserDiagnosticKind::MissingMacroRepetitionOperator => error_code!(E1031),
         })
     }
 

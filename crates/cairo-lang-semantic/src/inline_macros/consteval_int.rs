@@ -10,6 +10,7 @@ use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
 use num_bigint::BigInt;
+use num_traits::Zero;
 use salsa::Database;
 
 #[derive(Debug, Default)]
@@ -105,7 +106,19 @@ pub fn compute_constant_expr<'db>(
     macro_ast: &ast::ExprInlineMacro<'db>,
 ) -> Option<BigInt> {
     match value {
-        ast::Expr::Literal(lit) => lit.numeric_value(db),
+        ast::Expr::Literal(lit) => {
+            let (value, suffix) = lit.numeric_value_and_suffix(db);
+            if suffix.is_some() {
+                diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                    db,
+                    macro_ast.stable_ptr(db),
+                    lit.as_syntax_node(),
+                    "Literals with suffix are not supported in consteval_int macro".to_string(),
+                ));
+                return None;
+            }
+            Some(value)
+        }
         ast::Expr::Binary(bin_expr) => match bin_expr.op(db) {
             ast::BinaryOperator::Plus(_) => Some(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics, macro_ast)?
@@ -119,14 +132,34 @@ pub fn compute_constant_expr<'db>(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics, macro_ast)?
                     - compute_constant_expr(db, &bin_expr.rhs(db), diagnostics, macro_ast)?,
             ),
-            ast::BinaryOperator::Div(_) => Some(
-                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics, macro_ast)?
-                    / compute_constant_expr(db, &bin_expr.rhs(db), diagnostics, macro_ast)?,
-            ),
-            ast::BinaryOperator::Mod(_) => Some(
-                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics, macro_ast)?
-                    % compute_constant_expr(db, &bin_expr.rhs(db), diagnostics, macro_ast)?,
-            ),
+            ast::BinaryOperator::Div(_) => {
+                let lhs = compute_constant_expr(db, &bin_expr.lhs(db), diagnostics, macro_ast)?;
+                let rhs = compute_constant_expr(db, &bin_expr.rhs(db), diagnostics, macro_ast)?;
+                if rhs.is_zero() {
+                    diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                        db,
+                        macro_ast.stable_ptr(db),
+                        bin_expr.as_syntax_node(),
+                        "Division by zero in consteval_int macro".to_string(),
+                    ));
+                    return None;
+                }
+                Some(lhs / rhs)
+            }
+            ast::BinaryOperator::Mod(_) => {
+                let lhs = compute_constant_expr(db, &bin_expr.lhs(db), diagnostics, macro_ast)?;
+                let rhs = compute_constant_expr(db, &bin_expr.rhs(db), diagnostics, macro_ast)?;
+                if rhs.is_zero() {
+                    diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                        db,
+                        macro_ast.stable_ptr(db),
+                        bin_expr.as_syntax_node(),
+                        "Modulo by zero in consteval_int macro".to_string(),
+                    ));
+                    return None;
+                }
+                Some(lhs % rhs)
+            }
             ast::BinaryOperator::And(_) => Some(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics, macro_ast)?
                     & compute_constant_expr(db, &bin_expr.rhs(db), diagnostics, macro_ast)?,

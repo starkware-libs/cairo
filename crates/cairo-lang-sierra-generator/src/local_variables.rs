@@ -3,7 +3,6 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::{BlockId, VariableId};
@@ -435,12 +434,10 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::IntoBox(statement_into_box) => {
-                if self.db.flag_future_sierra() {
-                    let input_var = statement_into_box.input.var_id;
-                    let ty = self.lowered_function.variables[input_var].ty;
-                    if self.db.type_size(ty) >= MIN_SIZE_FOR_LOCAL_INTO_BOX {
-                        self.local_candidates.insert(input_var);
-                    }
+                let input_var = statement_into_box.input.var_id;
+                let ty = self.lowered_function.variables[input_var].ty;
+                if self.db.type_size(ty) >= MIN_SIZE_FOR_LOCAL_INTO_BOX {
+                    self.local_candidates.insert(input_var);
                 }
                 BranchInfo { known_ap_change: true }
             }

@@ -223,6 +223,23 @@ pub extern fn sha256_process_block_syscall(
     state: core::sha256::Sha256StateHandle, input: Box<[u32; 16]>,
 ) -> SyscallResult<core::sha256::Sha256StateHandle> implicits(GasBuiltin, System) nopanic;
 
+/// Computes the next SHA-512 state of the input with the given state.
+///
+/// # Arguments
+///
+/// * `state` - The current SHA-512 state.
+/// * `input` - The input provided to compute the next SHA-512 state.
+///
+/// # Returns
+///
+/// * The next SHA-512 state of the input with the given state.
+///
+/// The system call does not add any padding and the input needs to be a multiple of 1024 bits
+/// (== 16 u64 word).
+pub extern fn sha512_process_block_syscall(
+    state: core::sha2_64_core::Sha512StateHandle, input: Box<[u64; 16]>,
+) -> SyscallResult<core::sha2_64_core::Sha512StateHandle> implicits(GasBuiltin, System) nopanic;
+
 /// Invokes the given entry point as a v0 meta transaction.
 ///
 /// * The signature is replaced with the given signature.

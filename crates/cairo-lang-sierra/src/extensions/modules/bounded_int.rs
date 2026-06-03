@@ -3,9 +3,10 @@ use std::ops::Shl;
 use cairo_lang_utils::require;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
-use num_traits::{One, Signed, Zero};
+use num_traits::{One, Signed, ToPrimitive, Zero};
 use starknet_types_core::felt::Felt as Felt252;
 
+use super::int::unsigned128::Uint128Type;
 use super::non_zero::{NonZeroType, nonzero_ty};
 use super::range_check::RangeCheckType;
 use super::utils::{Range, reinterpret_cast_signature};
@@ -18,8 +19,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
-    SpecializationError, args_as_single_type, args_as_two_types,
+    ConcreteType, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibfunc, SpecializationError, args_as_single_type, args_as_two_types,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
@@ -37,30 +38,34 @@ impl NamedType for BoundedIntType {
         _context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let (min, max) = match args {
-            [GenericArg::Value(min), GenericArg::Value(max)] => (min.clone(), max.clone()),
-            [_, _] => return Err(SpecializationError::UnsupportedGenericArg),
-            _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
-        };
-
-        let prime: BigInt = Felt252::prime().into();
-        if !(-&prime < min && min <= max && max < prime && &max - &min < prime) {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
-
-        let long_id = Self::concrete_type_long_id(args);
-        let ty_info = TypeInfo {
-            long_id,
-            zero_sized: false,
-            storable: true,
-            droppable: true,
-            duplicatable: true,
-        };
-
-        Ok(Self::Concrete { info: ty_info, range: Range::closed(min, max) })
+        specialize_bounded_int_type(Self::ID, args, true, true)
     }
 }
 
+/// Type for BoundedIntGuarantee.
+/// A guarantee that a value is within the specified bounds.
+/// Unlike BoundedInt, this type is non-duplicatable and non-droppable.
+/// It must be verified via `bounded_int_guarantee_verify` to be consumed.
+/// Currently only supports u32 bounds (0 to 2^32-1).
+#[derive(Default)]
+pub struct BoundedIntGuaranteeType {}
+impl NamedType for BoundedIntGuaranteeType {
+    type Concrete = BoundedIntConcreteType;
+
+    const ID: GenericTypeId = GenericTypeId::new_inline("BoundedIntGuarantee");
+    fn specialize(
+        &self,
+        _context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let (min, max) = extract_bounds(args)?;
+        // Currently only u32 guarantees are supported.
+        require(is_u32_range(min, max)).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        specialize_bounded_int_type(Self::ID, args, false, false)
+    }
+}
+
+/// Shared concrete type for BoundedInt and BoundedIntGuarantee.
 pub struct BoundedIntConcreteType {
     pub info: TypeInfo,
     /// The range bounds for a value of this type.
@@ -83,6 +88,8 @@ define_libfunc_hierarchy! {
         TrimMax(BoundedIntTrimLibfunc<true>),
         IsZero(BoundedIntIsZeroLibfunc),
         WrapNonZero(BoundedIntWrapNonZeroLibfunc),
+        GuaranteeVerify(BoundedIntGuaranteeVerifyLibfunc),
+        U128ToU32Guarantees(U128ToU32GuaranteesLibfunc),
     }, BoundedIntConcreteLibfunc
 }
 
@@ -544,6 +551,63 @@ impl SignatureOnlyGenericLibfunc for BoundedIntWrapNonZeroLibfunc {
     }
 }
 
+/// Libfunc for verifying a BoundedIntGuarantee.
+/// Consumes the guarantee and returns the underlying value as a BoundedInt.
+/// Generic args: [min, max] - the bounds of the guarantee.
+/// Currently only supports u32 bounds (0 to 2^32-1).
+#[derive(Default)]
+pub struct BoundedIntGuaranteeVerifyLibfunc {}
+impl NamedLibfunc for BoundedIntGuaranteeVerifyLibfunc {
+    type Concrete = BoundedIntGuaranteeVerifyConcreteLibfunc;
+
+    const STR_ID: &'static str = "bounded_int_guarantee_verify";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let (min, max) = extract_bounds(args)?;
+        // Currently only u32 guarantees are supported.
+        require(is_u32_range(min, max)).ok_or(SpecializationError::UnsupportedGenericArg)?;
+
+        let range_check_ty = context.get_concrete_type(RangeCheckType::ID, &[])?;
+        let guarantee_ty = bounded_int_guarantee_ty(context, min.clone(), max.clone())?;
+
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(range_check_ty.clone()).with_allow_add_const(),
+                ParamSignature::new(guarantee_ty),
+            ],
+            vec![OutputVarInfo::new_builtin(range_check_ty)],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let (min, max) = extract_bounds(args)?;
+        // Currently only u32 guarantees are supported.
+        require(is_u32_range(min, max)).ok_or(SpecializationError::UnsupportedGenericArg)?;
+
+        let range = Range::closed(min.clone(), max.clone());
+        Ok(Self::Concrete { range, signature: self.specialize_signature(context, args)? })
+    }
+}
+
+pub struct BoundedIntGuaranteeVerifyConcreteLibfunc {
+    pub range: Range,
+    signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for BoundedIntGuaranteeVerifyConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
 /// Returns the concrete type for a BoundedInt<min, max>.
 pub fn bounded_int_ty(
     context: &dyn SignatureSpecializationContext,
@@ -551,4 +615,90 @@ pub fn bounded_int_ty(
     max: BigInt,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     context.get_concrete_type(BoundedIntType::ID, &[GenericArg::Value(min), GenericArg::Value(max)])
+}
+
+/// Returns the concrete type for a BoundedIntGuarantee<min, max>.
+pub fn bounded_int_guarantee_ty(
+    context: &dyn SignatureSpecializationContext,
+    min: BigInt,
+    max: BigInt,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_concrete_type(
+        BoundedIntGuaranteeType::ID,
+        &[GenericArg::Value(min), GenericArg::Value(max)],
+    )
+}
+
+/// Libfunc for splitting a u128 into 4 u32 guarantees.
+/// Returns 4 BoundedIntGuarantee<0, 2^32-1> values (from low to high).
+#[derive(Default)]
+pub struct U128ToU32GuaranteesLibfunc {}
+impl NoGenericArgsGenericLibfunc for U128ToU32GuaranteesLibfunc {
+    const STR_ID: &'static str = "u128_to_u32_guarantees";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let u32_guarantee_ty =
+            bounded_int_guarantee_ty(context, BigInt::ZERO, BigInt::from(u32::MAX))?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![u128_ty],
+            vec![
+                OutputVarInfo {
+                    ty: u32_guarantee_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+                OutputVarInfo {
+                    ty: u32_guarantee_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+                OutputVarInfo {
+                    ty: u32_guarantee_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+                OutputVarInfo {
+                    ty: u32_guarantee_ty,
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+/// Extracts min and max values from generic args.
+fn extract_bounds(args: &[GenericArg]) -> Result<(&BigInt, &BigInt), SpecializationError> {
+    match args {
+        [GenericArg::Value(min), GenericArg::Value(max)] => Ok((min, max)),
+        [_, _] => Err(SpecializationError::UnsupportedGenericArg),
+        _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+    }
+}
+
+/// Checks if the given bounds match the u32 range.
+fn is_u32_range(min: &BigInt, max: &BigInt) -> bool {
+    min.is_zero() && max.to_u32() == Some(u32::MAX)
+}
+
+/// Helper to specialize bounded int types.
+fn specialize_bounded_int_type(
+    generic_id: GenericTypeId,
+    args: &[GenericArg],
+    droppable: bool,
+    duplicatable: bool,
+) -> Result<BoundedIntConcreteType, SpecializationError> {
+    let (min, max) = extract_bounds(args)?;
+
+    let prime: BigInt = Felt252::prime().into();
+    if !(-&prime < *min && min <= max && max < &prime && max - min < prime) {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+
+    let long_id = crate::program::ConcreteTypeLongId { generic_id, generic_args: args.to_vec() };
+    let ty_info = TypeInfo { long_id, zero_sized: false, storable: true, droppable, duplicatable };
+
+    Ok(BoundedIntConcreteType { info: ty_info, range: Range::closed(min.clone(), max.clone()) })
 }

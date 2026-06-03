@@ -223,7 +223,7 @@ If(
                     tail: Some(
                         FunctionCall(
                             ExprFunctionCall {
-                                function: ?2::add,
+                                function: ?1::add,
                                 args: [
                                     Value(
                                         Literal(

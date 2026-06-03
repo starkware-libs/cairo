@@ -127,3 +127,43 @@ error[E2023]: Base struct has no effect, all the fields in the struct have alrea
  --> lib.cairo:5:15
     A { a: 4, ..a }
               ^^^
+
+//! > ==========================================================================
+
+//! > Member access on unreduced impl associated type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S {
+    val: felt252,
+}
+
+trait T<X> {
+    type A;
+    fn f(self: @X) -> Self::A;
+}
+
+impl I of T<S> {
+    type A = S;
+    fn f(self: @S) -> S {
+        S { val: 0 }
+    }
+}
+
+fn g<X, impl H: T<X>>(x: @X) -> felt252 {
+    H::f(x).val
+}
+
+//! > expected_diagnostics
+error[E2057]: Type "H::A" has no members.
+ --> lib.cairo:18:13
+    H::f(x).val
+            ^^^

@@ -3,8 +3,8 @@ use std::fmt::Write;
 
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, ImplAliasId,
-    ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId, LanguageElementId,
-    LookupItemId, MacroDeclarationId, MemberId, ModuleItemId, ModuleTypeAliasId,
+    ImplConstantDefId, ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId,
+    LanguageElementId, LookupItemId, MacroDeclarationId, MemberId, ModuleItemId, ModuleTypeAliasId,
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
     TraitId, TraitItemId, TraitTypeId, VariantId,
 };
@@ -74,7 +74,7 @@ pub fn get_item_signature_with_links<'db>(
                 ImplItemId::Function(item_id) => item_id.get_signature_with_links(&mut f),
                 ImplItemId::Constant(item_id) => item_id.get_signature_with_links(&mut f),
                 ImplItemId::Type(item_id) => item_id.get_signature_with_links(&mut f),
-                ImplItemId::Impl(_) => (None, vec![]),
+                ImplItemId::Impl(item_id) => item_id.get_signature_with_links(&mut f),
             },
         },
         DocumentableItemId::Member(item_id) => item_id.get_signature_with_links(&mut f),
@@ -508,6 +508,22 @@ impl<'db> HirDisplay<'db> for ImplAliasId<'db> {
             self.name(f.db).long(f.db),
         )?;
         let stx = get_syntactic_evaluation(impl_alias_full_signature.item_id, f.db)?;
+        write!(f, "{}", stx)?;
+        f.format();
+        Ok(())
+    }
+}
+
+impl<'db> HirDisplay<'db> for ImplImplDefId<'db> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
+        let impl_impl_def_full_signature = Self::retrieve_signature_data(f.db, *self)?;
+        write!(
+            f,
+            "{}impl {} = ",
+            get_syntactic_visibility(&impl_impl_def_full_signature.visibility),
+            self.name(f.db).long(f.db),
+        )?;
+        let stx = get_syntactic_evaluation(impl_impl_def_full_signature.item_id, f.db)?;
         write!(f, "{}", stx)?;
         f.format();
         Ok(())

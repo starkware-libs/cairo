@@ -5,7 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantId, ExternFunctionId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitId, VarId,
+    NamedLanguageElementId, TraitConstantId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, MaybeAsRef,
@@ -30,7 +30,7 @@ use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
     CoreInfo, CorelibSemantic, core_nonzero_ty, false_variant, true_variant,
-    try_extract_bounded_int_type_ranges, try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    try_extract_bounded_int_type, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ExprAndId, compute_expr_semantic};
@@ -145,32 +145,39 @@ impl<'db> ConstValueId<'db> {
         self.long(db).ty(db)
     }
 
+    /// Returns the value of an int const as a BigInt.
+    pub fn to_int(&self, db: &'db dyn Database) -> Option<&'db BigInt> {
+        self.long(db).to_int()
+    }
+
     /// A utility function for extracting the generic parameters arguments from a ConstValueId.
+    /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
     pub fn extract_generic_params(
         &self,
         db: &'db dyn Database,
         generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+        visited: &mut OrderedHashSet<TypeId<'db>>,
     ) -> Maybe<()> {
         match self.long(db) {
             ConstValue::Int(_, type_id) | ConstValue::Struct(_, type_id) => {
-                type_id.long(db).extract_generic_params(db, generic_parameters)?
+                type_id.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::Enum(_, const_value_id) => {
-                const_value_id.ty(db)?.long(db).extract_generic_params(db, generic_parameters)?
+                const_value_id.ty(db)?.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::NonZero(const_value_id) => {
-                const_value_id.extract_generic_params(db, generic_parameters)?
+                const_value_id.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::Generic(generic_param_id) => {
                 generic_parameters.insert(*generic_param_id);
             }
             ConstValue::ImplConstant(impl_constant_id) => {
                 for garg in impl_constant_id.impl_id().concrete_trait(db)?.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
             ConstValue::Var(_, type_id) => {
-                type_id.long(db).extract_generic_params(db, generic_parameters)?
+                type_id.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::Missing(diagnostic_added) => return Err(*diagnostic_added),
         }
@@ -384,7 +391,6 @@ pub fn constant_semantic_data_helper<'db>(
     }
 
     let mut ctx = ComputationContext::new_global(db, &mut diagnostics, &mut resolver);
-
     let value = compute_expr_semantic(&mut ctx, &constant_ast.value(db));
     let const_value = resolve_const_expr_and_evaluate(
         db,
@@ -463,7 +469,7 @@ pub fn resolve_const_expr_and_evaluate<'db, 'mt>(
     let mut_ref = &mut ctx.resolver;
     let mut inference: crate::expr::inference::Inference<'db, '_> = mut_ref.inference();
     if let Err(err_set) = inference.conform_ty(value.ty(), target_type) {
-        inference.report_on_pending_error(err_set, ctx.diagnostics, const_stable_ptr);
+        inference.report_on_pending_error(err_set, ctx.diagnostics, value.stable_ptr().untyped());
     }
 
     if finalize {
@@ -524,6 +530,9 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     match &self.arenas.statements[*statement_id] {
                         Statement::Let(statement) => {
                             self.validate(statement.expr);
+                            if let Some(else_clause) = &statement.else_clause {
+                                self.validate(*else_clause);
+                            }
                         }
                         Statement::Expr(expr) => {
                             self.validate(expr.expr);
@@ -682,7 +691,18 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     match &self.arenas.statements[*statement_id] {
                         Statement::Let(statement) => {
                             let value = self.evaluate(statement.expr);
-                            self.destructure_pattern(statement.pattern, value);
+                            if self.destructure_pattern(statement.pattern, value).is_none() {
+                                if let Some(else_clause) = &statement.else_clause {
+                                    // Only exiting the block is possible - so this is a return of a
+                                    // panic.
+                                    return self.evaluate(*else_clause);
+                                } else {
+                                    // Either the pattern is refutable and we are missing an else
+                                    // clause, or the pattern is irrefutable and the pattern have
+                                    // failed for some reason. Both should already cause diagstics.
+                                    return to_missing(skip_diagnostic());
+                                }
+                            }
                         }
                         Statement::Expr(expr) => {
                             self.evaluate(expr.expr);
@@ -723,7 +743,9 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                                 .iter()
                                 .find(|(_, member_id)| m.id == *member_id)
                                 .map(|(expr_id, _)| self.evaluate(*expr_id))
-                                .expect("Should have been caught by semantic validation")
+                                // Semantic validation already reported an error, suppress cascading
+                                // errors from const evaluation.
+                                .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic()).intern(db))
                         })
                         .collect(),
                     *ty,
@@ -743,7 +765,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     }
                     crate::FixedSizeArrayItems::ValueAndSize(value, count) => {
                         let value = self.evaluate(*value);
-                        if let Some(count) = count.long(db).to_int() {
+                        if let Some(count) = count.to_int(db) {
                             vec![value; count.to_usize().unwrap()]
                         } else {
                             self.diagnostics.report(
@@ -767,31 +789,22 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                         LogicalOperator::OrOr => true_variant(self.db),
                     };
                     if *v == early_return_variant { lhs } else { self.evaluate(expr.rhs) }
+                } else if let ConstValue::Missing(diag_added) = lhs.long(db) {
+                    to_missing(*diag_added)
                 } else {
-                    to_missing(skip_diagnostic())
+                    to_missing(self.diagnostics.report(
+                        self.arenas.exprs[expr.lhs].stable_ptr(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    ))
                 }
             }
             Expr::Match(expr) => {
                 let value = self.evaluate(expr.matched_expr);
-                let ConstValue::Enum(variant, value) = value.long(db) else {
-                    return to_missing(skip_diagnostic());
-                };
                 for arm in &expr.arms {
                     for pattern_id in &arm.patterns {
-                        let pattern = &self.arenas.patterns[*pattern_id];
-                        if matches!(pattern, Pattern::Otherwise(_)) {
+                        if self.destructure_pattern(*pattern_id, value).is_some() {
                             return self.evaluate(arm.expression);
                         }
-                        let Pattern::EnumVariant(pattern) = pattern else {
-                            continue;
-                        };
-                        if pattern.variant.idx != variant.idx {
-                            continue;
-                        }
-                        if let Some(inner_pattern) = pattern.inner_pattern {
-                            self.destructure_pattern(inner_pattern, *value);
-                        }
-                        return self.evaluate(arm.expression);
                     }
                 }
                 to_missing(
@@ -807,35 +820,23 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     match condition {
                         crate::Condition::BoolExpr(id) => {
                             let condition = self.evaluate(*id);
-                            let ConstValue::Enum(variant, _) = condition.long(db) else {
-                                return to_missing(skip_diagnostic());
-                            };
-                            if *variant != true_variant(self.db) {
+                            if condition == self.true_const {
+                                continue;
+                            } else if condition == self.false_const {
                                 if_condition = false;
                                 break;
+                            } else {
+                                return to_missing(skip_diagnostic());
                             }
                         }
                         crate::Condition::Let(id, patterns) => {
                             let value = self.evaluate(*id);
-                            let ConstValue::Enum(variant, value) = value.long(db) else {
-                                return to_missing(skip_diagnostic());
-                            };
                             let mut found_pattern = false;
                             for pattern_id in patterns {
-                                let Pattern::EnumVariant(pattern) =
-                                    &self.arenas.patterns[*pattern_id]
-                                else {
-                                    continue;
-                                };
-                                if pattern.variant != *variant {
-                                    // Continue to the next option in the `|` list.
-                                    continue;
+                                if self.destructure_pattern(*pattern_id, value).is_some() {
+                                    found_pattern = true;
+                                    break;
                                 }
-                                if let Some(inner_pattern) = pattern.inner_pattern {
-                                    self.destructure_pattern(inner_pattern, *value);
-                                }
-                                found_pattern = true;
-                                break;
                             }
                             if !found_pattern {
                                 if_condition = false;
@@ -865,7 +866,17 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             .args
             .iter()
             .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Value))
-            .map(|arg| self.evaluate(*arg))
+            .map(|arg| {
+                let value = self.evaluate(*arg);
+                if value.is_fully_concrete(db) || matches!(value.long(db), ConstValue::Missing(_)) {
+                    value
+                } else {
+                    to_missing(self.diagnostics.report(
+                        self.arenas.exprs[*arg].stable_ptr(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    ))
+                }
+            })
             .collect_vec();
         if expr.function == self.panic_with_felt252 {
             return to_missing(self.diagnostics.report(
@@ -884,15 +895,17 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return calc_result;
         }
 
-        let imp = extract_matches!(concrete_function.generic_function, GenericFunctionId::Impl);
+        let GenericFunctionId::Impl(imp) = concrete_function.generic_function else {
+            return to_missing(skip_diagnostic());
+        };
         let bool_value = |condition: bool| {
             if condition { self.true_const } else { self.false_const }
         };
 
         if imp.function == self.eq_fn {
-            return bool_value(args[0] == args[1]);
+            return bool_value(self.const_values_eq(args[0], args[1]));
         } else if imp.function == self.ne_fn {
-            return bool_value(args[0] != args[1]);
+            return bool_value(!self.const_values_eq(args[0], args[1]));
         } else if imp.function == self.not_fn {
             return bool_value(args[0] == self.false_const);
         }
@@ -903,8 +916,6 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             .collect::<Option<Vec<_>>>()
         {
             Some(args) => args,
-            // Diagnostic can be skipped as we would either have a semantic error for a bad arg for
-            // the function, or the arg itself couldn't have been calculated.
             None => return to_missing(skip_diagnostic()),
         };
         let value = match imp.function {
@@ -939,9 +950,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 )
                 .intern(db);
             }
-            _ => {
-                unreachable!("Unexpected function call in constant lowering: {:?}", expr)
-            }
+            _ => return to_missing(skip_diagnostic()),
         };
         if expr.ty == self.felt252 {
             ConstValue::Int(canonical_felt252(&value), expr.ty).intern(db)
@@ -967,7 +976,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             let expr_ty = self.generic_substitution.substitute(db, expr.ty).ok()?;
             if self.upcast_fns.contains(&extern_fn) {
                 let [arg] = args else { return None };
-                return Some(ConstValueId::from_int(db, expr_ty, arg.long(db).to_int()?));
+                return Some(ConstValueId::from_int(db, expr_ty, arg.to_int(db)?));
             } else if self.unwrap_non_zero == extern_fn {
                 let [arg] = args else { return None };
                 return try_extract_matches!(arg.long(db), ConstValue::NonZero).copied();
@@ -978,7 +987,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 };
                 let (narrow, wide) =
                     db.concrete_enum_variants(*enm).ok()?.into_iter().collect_tuple()?;
-                let value = felt252_for_downcast(arg.long(db).to_int()?, &BigInt::ZERO);
+                let value = Felt252::from(arg.to_int(db)?).to_bigint();
                 let mask128 = BigInt::from(u128::MAX);
                 let low = (&value) & mask128;
                 let high: BigInt = (&value) >> 128;
@@ -1014,8 +1023,8 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     .get(&success_ty)
                     .cloned()
                     .or_else(|| {
-                        let (min, max) = try_extract_bounded_int_type_ranges(db, success_ty)?;
-                        Some(TypeRange::new(min, max))
+                        let (min, max) = try_extract_bounded_int_type(db, success_ty)?;
+                        Some(TypeRange::new(min.to_int(db)?.clone(), max.to_int(db)?.clone()))
                     })
                     .unwrap_or_else(|| {
                         unreachable!(
@@ -1066,9 +1075,12 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     .intern(db),
                 );
             } else {
-                unreachable!(
-                    "Unexpected extern function in constant lowering: `{}`",
-                    extern_fn.full_path(db)
+                return Some(
+                    ConstValue::Missing(self.diagnostics.report(
+                        expr.stable_ptr.untyped(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    ))
+                    .intern(db),
                 );
             }
         }
@@ -1147,59 +1159,93 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         Ok(values[member_idx])
     }
 
-    /// Destructures the pattern into the const value of the variables in scope.
-    fn destructure_pattern(&mut self, pattern_id: PatternId, value: ConstValueId<'a>) {
-        let pattern = &self.arenas.patterns[pattern_id];
+    /// Destructures the pattern, binding variables to their values; returns `None` if the pattern
+    /// didn't match.
+    fn destructure_pattern(
+        &mut self,
+        pattern_id: PatternId,
+        value: ConstValueId<'a>,
+    ) -> Option<()> {
         let db = self.db;
+        let pattern = &self.arenas.patterns[pattern_id];
         match pattern {
-            Pattern::Literal(_)
-            | Pattern::StringLiteral(_)
-            | Pattern::Otherwise(_)
-            | Pattern::Missing(_) => {}
+            Pattern::Missing(_) | Pattern::StringLiteral(_) => None,
+            Pattern::Otherwise(_) => Some(()),
+            Pattern::Literal(v) => require(self.eq_in_type(
+                &numeric_arg_value(db, value)?,
+                &v.literal.value,
+                value.ty(db).ok()?,
+            )),
             Pattern::Variable(pattern) => {
                 self.vars.insert(VarId::Local(pattern.var.id), value);
+                Some(())
             }
             Pattern::Struct(pattern) => {
-                if let ConstValue::Struct(inner_values, _) = value.long(db) {
-                    let member_order = match db.concrete_struct_members(pattern.concrete_struct_id)
+                let ConstValue::Struct(inner_values, _) = value.long(db) else {
+                    return None;
+                };
+                let member_order = db.concrete_struct_members(pattern.concrete_struct_id).ok()?;
+                for (member, inner_value) in zip(member_order.values(), inner_values) {
+                    if let Some((inner_pattern, _)) =
+                        pattern.field_patterns.iter().find(|(_, field)| member.id == field.id)
                     {
-                        Ok(member_order) => member_order,
-                        Err(_) => return,
-                    };
-                    for (member, inner_value) in zip(member_order.values(), inner_values) {
-                        if let Some((inner_pattern, _)) =
-                            pattern.field_patterns.iter().find(|(_, field)| member.id == field.id)
-                        {
-                            self.destructure_pattern(*inner_pattern, *inner_value);
-                        }
+                        self.destructure_pattern(*inner_pattern, *inner_value)?;
                     }
                 }
+                Some(())
             }
             Pattern::Tuple(pattern) => {
-                if let ConstValue::Struct(inner_values, _) = value.long(db) {
-                    for (inner_pattern, inner_value) in zip(&pattern.field_patterns, inner_values) {
-                        self.destructure_pattern(*inner_pattern, *inner_value);
-                    }
+                let ConstValue::Struct(inner_values, _) = value.long(db) else {
+                    return None;
+                };
+                for (inner_pattern, inner_value) in zip(&pattern.field_patterns, inner_values) {
+                    self.destructure_pattern(*inner_pattern, *inner_value)?;
                 }
+                Some(())
             }
             Pattern::FixedSizeArray(pattern) => {
-                if let ConstValue::Struct(inner_values, _) = value.long(db) {
-                    for (inner_pattern, inner_value) in
-                        zip(&pattern.elements_patterns, inner_values)
-                    {
-                        self.destructure_pattern(*inner_pattern, *inner_value);
-                    }
+                let ConstValue::Struct(inner_values, _) = value.long(db) else {
+                    return None;
+                };
+                for (inner_pattern, inner_value) in zip(&pattern.elements_patterns, inner_values) {
+                    self.destructure_pattern(*inner_pattern, *inner_value)?;
                 }
+                Some(())
             }
             Pattern::EnumVariant(pattern) => {
-                if let ConstValue::Enum(variant, inner_value) = value.long(db)
-                    && pattern.variant == *variant
-                    && let Some(inner_pattern) = pattern.inner_pattern
-                {
-                    self.destructure_pattern(inner_pattern, *inner_value);
+                let ConstValue::Enum(variant, inner_value) = value.long(db) else {
+                    return None;
+                };
+                require(pattern.variant.id == variant.id)?;
+                if let Some(inner_pattern) = pattern.inner_pattern {
+                    self.destructure_pattern(inner_pattern, *inner_value)
+                } else {
+                    Some(())
                 }
             }
         }
+    }
+
+    /// Compares two const values for `felt252` field-element equality.
+    ///
+    /// Direct `felt252` literals are stored in their original signed form (`-1` vs `PRIME - 1` are
+    /// distinct `ConstValueId`s). The PartialEq operator must agree with the field, not with the
+    /// stored representation, so we canonicalize both sides before comparing for `felt252` ints.
+    /// Non-felt252 types keep id equality.
+    fn const_values_eq(&self, a: ConstValueId<'a>, b: ConstValueId<'a>) -> bool {
+        if a == b {
+            return true;
+        }
+        let (ConstValue::Int(va, ty), ConstValue::Int(vb, _)) = (a.long(self.db), b.long(self.db))
+        else {
+            return false;
+        };
+        self.eq_in_type(va, vb, *ty)
+    }
+
+    /// Compares two `BigInt`s of type `ty` for value equality, treating `felt252` as a field.
+    fn eq_in_type(&self, a: &BigInt, b: &BigInt, ty: TypeId<'a>) -> bool {
+        a == b || (ty == self.felt252 && Felt252::from(a) == Felt252::from(b))
     }
 }
 
@@ -1230,7 +1276,7 @@ fn numeric_arg_value<'db>(db: &'db dyn Database, value: ConstValueId<'db>) -> Op
         ConstValue::Int(value, _) => Some(value.clone()),
         ConstValue::Struct(v, _) => {
             if let [low, high] = &v[..] {
-                Some(low.long(db).to_int()? + (high.long(db).to_int()? << 128))
+                Some(low.to_int(db)? + (high.to_int(db)? << 128))
             } else {
                 None
             }
@@ -1374,14 +1420,15 @@ impl<'db> ConstCalcInfo<'db> {
                 (core_info.u32, TypeRange::new(u32::MIN, u32::MAX)),
                 (core_info.u64, TypeRange::new(u64::MIN, u64::MAX)),
                 (core_info.u128, TypeRange::new(u128::MIN, u128::MAX)),
-                (core_info.u256, TypeRange::new(BigInt::ZERO, BigInt::from(1) << 256)),
+                (core_info.u256, TypeRange::new(BigInt::ZERO, (BigInt::from(1) << 256) - 1)),
                 (core_info.i8, TypeRange::new(i8::MIN, i8::MAX)),
                 (core_info.i16, TypeRange::new(i16::MIN, i16::MAX)),
                 (core_info.i32, TypeRange::new(i32::MIN, i32::MAX)),
                 (core_info.i64, TypeRange::new(i64::MIN, i64::MAX)),
                 (core_info.i128, TypeRange::new(i128::MIN, i128::MAX)),
-                (class_hash_ty, TypeRange::new(BigInt::ZERO, BigInt::from(1) << 251)),
-                (contract_address_ty, TypeRange::new(BigInt::ZERO, BigInt::from(1) << 251)),
+                // `ClassHash` and `ContractAddress` accept values in `[0, 2^251 - 1]`.
+                (class_hash_ty, TypeRange::new(BigInt::ZERO, (BigInt::from(1) << 251) - 1)),
+                (contract_address_ty, TypeRange::new(BigInt::ZERO, (BigInt::from(1) << 251) - 1)),
             ]),
             core_info,
         }

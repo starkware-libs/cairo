@@ -649,15 +649,15 @@ pub trait PartialOrd<T> {
     /// ```
     fn lt(lhs: T, rhs: T) -> bool;
 
-    /// Tests less than or equal to (for `self` and `other`) and is used by the
-    /// `<=` operator.
+    /// Tests greater than or equal to (for `self` and `other`) and is used by
+    /// the `>=` operator.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(1 <= 1, true);
-    /// assert_eq!(1 <= 2, true);
-    /// assert_eq!(2 <= 1, false);
+    /// assert_eq!(1 >= 1, true);
+    /// assert_eq!(1 >= 2, false);
+    /// assert_eq!(2 >= 1, true);
     /// ```
     fn ge(lhs: T, rhs: T) -> bool {
         !Self::lt(lhs, rhs)
@@ -677,15 +677,15 @@ pub trait PartialOrd<T> {
         Self::lt(rhs, lhs)
     }
 
-    /// Tests greater than or equal to (for `self` and `other`) and is used by
-    /// the `>=` operator.
+    /// Tests less than or equal to (for `self` and `other`) and is used by the
+    /// `<=` operator.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(1 >= 1, true);
-    /// assert_eq!(1 >= 2, false);
-    /// assert_eq!(2 >= 1, true);
+    /// assert_eq!(1 <= 1, true);
+    /// assert_eq!(1 <= 2, true);
+    /// assert_eq!(2 <= 1, false);
     /// ```
     fn le(lhs: T, rhs: T) -> bool {
         Self::ge(rhs, lhs)
@@ -928,15 +928,13 @@ pub trait Not<T> {
 // for each type. Both are not consuming of `self`, the first gets a snapshot of the object and
 // the second gets a reference.
 #[deprecated(
-    feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0",
+    feature: "deprecated-index-traits", note: "Use `core::ops::IndexView`.", since: "2.7.0",
 )]
 pub trait IndexView<C, I, V> {
     fn index(self: @C, index: I) -> V;
 }
 
-#[deprecated(
-    feature: "deprecated-index-traits", note: "Use `core::ops::index::Index`.", since: "2.7.0",
-)]
+#[deprecated(feature: "deprecated-index-traits", note: "Use `core::ops::Index`.", since: "2.7.0")]
 pub trait Index<C, I, V> {
     fn index(ref self: C, index: I) -> V;
 }

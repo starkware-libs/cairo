@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplAliasId, ImplDefId, LanguageElementId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
@@ -30,6 +28,8 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, require, try_extract_matches};
 use itertools::zip_eq;
 use salsa::Database;
@@ -39,8 +39,8 @@ use crate::plugin::aux_data::StarknetEventAuxData;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS,
     CONSTRUCTOR_ATTR, CONTRACT_ATTR, CONTRACT_ATTR_ACCOUNT_ARG, CONTRACT_STATE_NAME,
-    EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, FLAT_ATTR, INTERFACE_ATTR,
-    L1_HANDLER_ATTR, VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR,
+    EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, FLAT_ATTR, FORWARD_IMPL_ATTR,
+    INTERFACE_ATTR, L1_HANDLER_ATTR, VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR,
 };
 use crate::plugin::events::EventData;
 
@@ -53,7 +53,7 @@ enum EventInfo {
     /// The event is a struct.
     Struct,
     /// The event is an enum, contains its set of selectors.
-    Enum(HashSet<String>),
+    Enum(OrderedHashSet<String>),
 }
 
 /// The information of an entrypoint.
@@ -83,15 +83,15 @@ pub struct AbiBuilder<'db> {
 
     /// List of types that were included in the abi.
     /// Used to avoid redundancy.
-    types: HashSet<TypeId<'db>>,
+    types: UnorderedHashSet<TypeId<'db>>,
 
     /// A map of events that were included in the abi to their info.
     /// Used to avoid redundancy, as well as preventing enum events from repeating selectors.
-    event_info: HashMap<TypeId<'db>, EventInfo>,
+    event_info: UnorderedHashMap<TypeId<'db>, EventInfo>,
 
     /// List of entry point names that were included in the abi.
     /// Used to avoid duplication.
-    entry_points: HashMap<String, EntryPointInfo<'db>>,
+    entry_points: UnorderedHashMap<String, EntryPointInfo<'db>>,
 
     /// The constructor for the contract.
     ctor: Option<EntryPointInfo<'db>>,
@@ -110,9 +110,9 @@ impl<'db> AbiBuilder<'db> {
             db,
             config,
             abi_items: Default::default(),
-            types: HashSet::new(),
-            event_info: HashMap::new(),
-            entry_points: HashMap::new(),
+            types: Default::default(),
+            event_info: Default::default(),
+            entry_points: Default::default(),
             ctor: None,
             errors: Vec::new(),
         };
@@ -390,8 +390,10 @@ impl<'db> AbiBuilder<'db> {
         let source = Source::ImplAlias(impl_alias_id);
         let impl_def = self.db.impl_alias_impl_def(impl_alias_id)?;
 
-        // Verify the impl definition has #[starknet::embeddable].
-        if !impl_def.has_attr(self.db, EMBEDDABLE_ATTR)? {
+        // Verify the impl definition has #[starknet::embeddable] or #[starknet::forward_impl].
+        if !impl_def.has_attr(self.db, EMBEDDABLE_ATTR)?
+            && !impl_def.has_attr(self.db, FORWARD_IMPL_ATTR)?
+        {
             return Err(ABIError::EmbeddedImplNotEmbeddable(source));
         }
 
@@ -592,7 +594,7 @@ impl<'db> AbiBuilder<'db> {
                 let ConcreteTypeId::Enum(concrete_enum_id) = concrete else {
                     unreachable!();
                 };
-                let mut selectors = HashSet::new();
+                let mut selectors = OrderedHashSet::default();
                 let mut add_selector = |selector: &str, source_ptr| {
                     if !selectors.insert(selector.to_string()) {
                         Err(ABIError::EventSelectorDuplication {
@@ -688,6 +690,7 @@ impl<'db> AbiBuilder<'db> {
             TypeLongId::Coupon(_)
             | TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
+            | TypeLongId::NumericLiteral(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_)
             | TypeLongId::Closure(_) => Err(ABIError::UnexpectedType),

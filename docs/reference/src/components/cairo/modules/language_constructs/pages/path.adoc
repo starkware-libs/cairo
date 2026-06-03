@@ -58,6 +58,9 @@ Concrete paths are used in:
 foo::bar::<bool>() // Function call expression
 Option::<bool>::Some(true) // Enum variant expression
 ----
++
+For standalone uses of concrete paths as expressions, see
+xref:path-expressions.adoc[Path expressions].
 
 * Type expressions
 - `let x: Option<bool> = None;` // Let statement type clause

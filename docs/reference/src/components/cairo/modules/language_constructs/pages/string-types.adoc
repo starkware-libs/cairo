@@ -129,8 +129,9 @@ Use `for byte in s.span()` if you need to keep using the ByteArray afterward.
 
 === Slicing with ByteSpan
 
-IMPORTANT: ByteSpan is an experimental feature behind the `byte-span` feature flag. Enable it to
-use range-based slicing.
+IMPORTANT: ByteSpan is an experimental feature behind the `byte-span` feature flag. Range indexing
+syntax such as `span[0..5]` and `span[6..=10]` requires this feature. The safe `.get(range)` API
+for ranges additionally requires the `corelib-get-trait` feature.
 
 Use `span()` to create a ByteSpan view for slicing operations:
 
@@ -139,13 +140,26 @@ Use `span()` to create a ByteSpan view for slicing operations:
 let s: ByteArray = "Hello World";
 let span = s.span();
 
-// Range slicing (requires byte-span feature)
-let slice = span[0..5];     // Returns ByteSpan
-let slice2 = span[6..=10];  // Returns ByteSpan
+// Range slicing with half-open and inclusive ranges.
+let hello = span[0..5];     // Returns ByteSpan for "Hello"
+let world = span[6..=10];   // Returns ByteSpan for "World"
 
-// Convert ByteSpan back to ByteArray if needed
-let hello: ByteArray = slice.to_byte_array();
+// Convert ByteSpan back to ByteArray if needed.
+let hello_bytes: ByteArray = hello.to_byte_array();
 ----
+
+Range indexing with `[]` panics with `Index out of bounds` when the requested range is invalid
+or outside the span. If you want fallible slicing, use `get()`:
+
+[source,cairo]
+----
+// Safe range slicing (requires `corelib-get-trait`)
+let hello = span.get(0..5);       // Option<ByteSpan>
+let world = span.get(6..=10);     // Option<ByteSpan>
+let missing = span.get(20..25);   // Option::None
+----
+
+`get()` also works with a single `usize` index and returns `Option<u8>`.
 
 == String Formatting
 

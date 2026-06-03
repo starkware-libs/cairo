@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
+use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
     self, MaybeTraitBody, OptionReturnTypeClause, OptionTypeClause,
 };
@@ -11,7 +12,10 @@ use indoc::formatdoc;
 use itertools::Itertools;
 use salsa::Database;
 
-use super::consts::CALLDATA_PARAM_NAME;
+use super::consts::{
+    CALLDATA_PARAM_NAME, CONSTRUCTOR_MODULE, EXTERNAL_MODULE, FORWARD_IMPL_ATTR,
+    GENERIC_CONTRACT_STATE_NAME, IMPLICIT_PRECEDENCE, L1_HANDLER_MODULE, WRAPPER_PREFIX,
+};
 use super::utils::{AstPathExtract, ParamEx};
 use super::{DEPRECATED_ABI_ATTR, DISPATCHER_DOC_GROUP_ATTR, INTERFACE_ATTR, STORE_TRAIT};
 
@@ -83,7 +87,14 @@ pub fn handle_trait<'db>(
     let mut library_caller_method_impls = vec![];
     let mut safe_contract_caller_method_impls = vec![];
     let mut safe_library_caller_method_impls = vec![];
+    let mut forward_method_wrappers = vec![];
+    let mut forward_external_fns = vec![];
+    let mut forward_impl_method_stubs = vec![];
     let base_name = trait_ast.name(db).text(db).long(db);
+    let forward_impl_name = format!("{base_name}ForwardImpl");
+    let unsafe_new_state_trait_name = format!("UnsafeNewContractStateTraitFor{forward_impl_name}");
+    let implicit_precedence_attr =
+        format!("#[{IMPLICIT_PRECEDENCE_ATTR}({})]", IMPLICIT_PRECEDENCE.iter().join(", "));
     let dispatcher_trait_name = format!("{base_name}DispatcherTrait");
     let safe_dispatcher_trait_name = format!("{base_name}SafeDispatcherTrait");
     let contract_caller_name = format!("{base_name}Dispatcher");
@@ -195,6 +206,86 @@ pub fn handle_trait<'db>(
                     continue;
                 }
 
+                let fn_name = declaration.name(db).text(db).long(db);
+                let wrapper_fn_name = format!("{WRAPPER_PREFIX}{forward_impl_name}__{fn_name}");
+
+                // Generate a stub method for the forward impl body.
+                let self_stub_text = if self_param.is_ref_param(db) {
+                    format!("ref self: {GENERIC_CONTRACT_STATE_NAME}")
+                } else {
+                    format!("self: @{GENERIC_CONTRACT_STATE_NAME}")
+                };
+                let stub_decl = {
+                    let mut func_declaration = RewriteNode::from_ast(&declaration);
+                    let params = func_declaration
+                        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+                        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
+                        .modify(db)
+                        .children
+                        .as_mut()
+                        .unwrap();
+                    let maybe_comma = if params.len() > 2 { ", " } else { "" };
+                    params.splice(
+                        0..std::cmp::min(2, params.len()),
+                        [RewriteNode::Text(format!("{self_stub_text}{maybe_comma}"))],
+                    );
+                    func_declaration
+                };
+                let self_for_class_hash =
+                    if self_param.is_ref_param(db) { "@self" } else { "self" };
+                let dispatch_args = sig_params
+                    .elements(db)
+                    .skip(1)
+                    .map(|p| p.name(db).text(db).long(db))
+                    .join(", ");
+                let dispatch_args_with_sep = if dispatch_args.is_empty() {
+                    String::new()
+                } else {
+                    format!(", {dispatch_args}")
+                };
+                let stub_body = format!(
+                    "{dispatcher_trait_name}::{fn_name}({library_caller_name} {{ class_hash: \
+                     FCH::class_hash({self_for_class_hash}) }}{dispatch_args_with_sep})"
+                );
+                forward_impl_method_stubs.push(RewriteNode::interpolate_patched(
+                    "$stub_decl$ {\n        $stub_body$\n    }\n",
+                    &[
+                        ("stub_decl".to_string(), stub_decl),
+                        ("stub_body".to_string(), RewriteNode::text(&stub_body)),
+                    ]
+                    .into(),
+                ));
+                // Unlike standard entry point wrappers, forward wrappers omit
+                // `require_implicit::<System>()` and `revoke_ap_tracking()`: the wrapper
+                // body contains no AP-tracking code (it passes calldata through
+                // unchanged), and `System` is inferred from `library_call_syscall`.
+                forward_method_wrappers.push(RewriteNode::Text(formatdoc! {"
+                    #[doc(hidden)]
+                    #[feature(\"forward-impl\")]
+                    {implicit_precedence_attr}
+                    fn {wrapper_fn_name}<{GENERIC_CONTRACT_STATE_NAME}, impl \
+                    FCH: starknet::ForwardingClassHash<{GENERIC_CONTRACT_STATE_NAME}>, \
+                    +Drop<{GENERIC_CONTRACT_STATE_NAME}>, impl \
+                    UnsafeNewContractState: \
+                    {unsafe_new_state_trait_name}<{GENERIC_CONTRACT_STATE_NAME}>>\
+                    (data: Span::<felt252>) -> Span::<felt252> {{
+                        let Some(_) = core::gas::withdraw_gas() else {{
+                            core::panic_with_felt252('Out of gas');
+                        }};
+                        starknet::SyscallResultTrait::unwrap_syscall(
+                            starknet::syscalls::library_call_syscall(
+                                FCH::class_hash(\
+                    @UnsafeNewContractState::unsafe_new_contract_state()),
+                                selector!(\"{fn_name}\"),
+                                data,
+                            )
+                        )
+                    }}
+                "}));
+                forward_external_fns.push(RewriteNode::Text(format!(
+                    "\n    pub use super::{wrapper_fn_name} as {fn_name};"
+                )));
+
                 let ret_decode = match signature.ret_ty(db) {
                     OptionReturnTypeClause::Empty(_) => "".to_string(),
                     OptionReturnTypeClause::ReturnTypeClause(ty) => {
@@ -222,10 +313,7 @@ pub fn handle_trait<'db>(
                     )]
                     .into(),
                 ));
-                let entry_point_selector = RewriteNode::Text(format!(
-                    "selector!(\"{}\")",
-                    declaration.name(db).text(db).long(db)
-                ));
+                let entry_point_selector = RewriteNode::Text(format!("selector!(\"{fn_name}\")"));
                 contract_caller_method_impls.push(declaration_method_impl(
                     dispatcher_signature(db, &declaration, &contract_caller_name, true),
                     entry_point_selector.clone(),
@@ -377,6 +465,54 @@ pub fn handle_trait<'db>(
         ]
         .into(),
     ));
+
+    if diagnostics.is_empty() {
+        builder.add_modified(RewriteNode::interpolate_patched(
+            &formatdoc! {"
+            #[feature(\"forward-impl\")]
+            #[unstable(feature: \"forward-impl\")]
+            #[{FORWARD_IMPL_ATTR}]
+            $visibility$impl {forward_impl_name}<{GENERIC_CONTRACT_STATE_NAME}, \
+                        impl FCH: starknet::ForwardingClassHash<{GENERIC_CONTRACT_STATE_NAME}>, \
+                        +Drop<{GENERIC_CONTRACT_STATE_NAME}>> of \
+            {base_name}<{GENERIC_CONTRACT_STATE_NAME}> {{
+            $forward_impl_method_stubs$}}
+
+            $visibility$trait {unsafe_new_state_trait_name}<{GENERIC_CONTRACT_STATE_NAME}> {{
+                fn unsafe_new_contract_state() -> {GENERIC_CONTRACT_STATE_NAME};
+            }}
+
+            $forward_method_wrappers$
+            $visibility$mod {EXTERNAL_MODULE}_{forward_impl_name} {{$forward_external_fns$
+            }}
+
+            $visibility$mod {L1_HANDLER_MODULE}_{forward_impl_name} {{
+            }}
+
+            $visibility$mod {CONSTRUCTOR_MODULE}_{forward_impl_name} {{
+            }}
+        "},
+            &[
+                (
+                    "visibility".to_string(),
+                    RewriteNode::Copied(trait_ast.visibility(db).as_syntax_node()),
+                ),
+                (
+                    "forward_impl_method_stubs".to_string(),
+                    RewriteNode::new_modified(forward_impl_method_stubs),
+                ),
+                (
+                    "forward_method_wrappers".to_string(),
+                    RewriteNode::new_modified(forward_method_wrappers),
+                ),
+                (
+                    "forward_external_fns".to_string(),
+                    RewriteNode::new_modified(forward_external_fns),
+                ),
+            ]
+            .into(),
+        ));
+    }
 
     let (content, code_mappings) = builder.build();
     PluginResult {

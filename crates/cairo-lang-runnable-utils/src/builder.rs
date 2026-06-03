@@ -311,13 +311,11 @@ pub fn create_entry_code_from_params(
     let mut helper = EntryCodeHelper::new(config);
     if let Some(builtin_list) = &helper.config.builtin_list {
         helper.builtins = builtin_list.clone();
-        let mut builtin_offset = 3;
-        for builtin_name in helper.builtins.iter().rev() {
+        for (builtin_offset, builtin_name) in (3..).zip(helper.builtins.iter().rev()) {
             helper.builtin_vars.insert(
                 *builtin_name,
                 helper.ctx.add_var(CellExpression::Deref(cell_ref!([fp - builtin_offset]))),
             );
-            builtin_offset += 1;
         }
     } else {
         helper.process_builtins(param_types);

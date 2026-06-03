@@ -3,7 +3,7 @@ use std::ops::Shl;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::bounded_int::{
-    BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
+    BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm, BoundedIntGuaranteeVerifyConcreteLibfunc,
 };
 use cairo_lang_sierra::extensions::felt252::Felt252BinaryOperator;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -11,6 +11,7 @@ use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
 use num_traits::One;
 
+use crate::invocations::casts::{validate_ge, validate_lt};
 use crate::invocations::felt252::build_felt252_op_with_var;
 use crate::invocations::misc::{build_identity, build_is_zero};
 use crate::invocations::{
@@ -45,6 +46,10 @@ pub fn build(
         }
         BoundedIntConcreteLibfunc::IsZero(_) => build_is_zero(builder),
         BoundedIntConcreteLibfunc::WrapNonZero(_) => build_identity(builder),
+        BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
+            build_guarantee_verify(builder, libfunc)
+        }
+        BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => build_u128_to_u32_guarantees(builder),
     }
 }
 
@@ -243,6 +248,81 @@ fn build_trim(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Target", &[&[value]], Some(target_statement_id))],
+        Default::default(),
+    ))
+}
+
+/// Build verification for a BoundedIntGuarantee.
+/// Performs range checks to verify the value is within the specified bounds.
+fn build_guarantee_verify(
+    builder: CompiledInvocationBuilder<'_>,
+    libfunc: &BoundedIntGuaranteeVerifyConcreteLibfunc,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, value] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::with_capacity(4, 2);
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref value;
+    };
+    casm_build_extend!(casm_builder, let orig_range_check = range_check;);
+    validate_ge(&mut casm_builder, range_check, value, &libfunc.range.lower);
+    validate_lt(&mut casm_builder, range_check, value, &libfunc.range.upper);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check]], None)],
+        CostValidationInfo {
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
+            extra_costs: None,
+        },
+    ))
+}
+
+/// Build u128 split into 4 u32 guarantees.
+/// Splits a u128 into 4 u32 values using iterative DivMod hints.
+fn build_u128_to_u32_guarantees(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [value] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::with_capacity(20, 12);
+    add_input_variables!(casm_builder, deref value;);
+
+    let pow2_32: BigInt = BigInt::one().shl(32);
+
+    casm_build_extend! {casm_builder,
+        const pow2_32 = pow2_32;
+        tempvar w1_w2_w3_shifted;
+        tempvar w2_w3_shifted;
+        tempvar w3_shifted;
+        tempvar w1_w2_w3;
+        tempvar w2_w3;
+        tempvar w0;
+        tempvar w1;
+        tempvar w2;
+        tempvar w3;
+
+        hint DivMod { lhs: value, rhs: pow2_32 } into { quotient: w1_w2_w3, remainder: w0 };
+        hint DivMod { lhs: w1_w2_w3, rhs: pow2_32 } into { quotient: w2_w3, remainder: w1 };
+        hint DivMod { lhs: w2_w3, rhs: pow2_32 } into { quotient: w3, remainder: w2 };
+        ap += 3;
+
+        // Verify reconstruction using Horner's method.
+        assert w1_w2_w3_shifted = w1_w2_w3 * pow2_32;
+        assert value = w1_w2_w3_shifted + w0;
+        assert w2_w3_shifted = w2_w3 * pow2_32;
+        assert w1_w2_w3 = w2_w3_shifted + w1;
+        assert w3_shifted = w3 * pow2_32;
+        assert w2_w3 = w3_shifted + w2;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[w0], &[w1], &[w2], &[w3]], None)],
         Default::default(),
     ))
 }

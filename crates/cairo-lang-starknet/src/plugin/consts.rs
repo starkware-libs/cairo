@@ -34,6 +34,7 @@ pub const COMPONENT_ATTR: &str = "starknet::component";
 pub const STORAGE_ATTR: &str = "storage";
 pub const EXTERNAL_ATTR: &str = "external";
 pub const EMBEDDABLE_ATTR: &str = "starknet::embeddable";
+pub const FORWARD_IMPL_ATTR: &str = "starknet::forward_impl";
 pub const L1_HANDLER_ATTR: &str = "l1_handler";
 pub const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const CONSTRUCTOR_NAME: &str = "constructor";

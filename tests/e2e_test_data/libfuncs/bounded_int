@@ -1089,3 +1089,100 @@ test::foo@F0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<0, 254>
 
 //! > function_costs
 test::foo: SmallOrderedMap({Const: 400})
+
+//! > ==========================================================================
+
+//! > bounded_int_guarantee_verify libfunc for u32.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_guarantee_verify<const MIN: felt252, const MAX: felt252>(
+    value: BoundedIntGuarantee<MIN, MAX>,
+) implicits(RangeCheck) nopanic;
+
+fn foo(value: BoundedIntGuarantee<0, 0xffffffff>) {
+    bounded_int_guarantee_verify(value)
+}
+
+//! > casm
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[fp + -4] + 1];
+[ap + 0] = [fp + -4] + 2, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 540})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<0, 4294967295> = BoundedIntGuarantee<0, 4294967295> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc bounded_int_guarantee_verify<0, 4294967295> = bounded_int_guarantee_verify<0, 4294967295>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+
+F0:
+bounded_int_guarantee_verify<0, 4294967295>([0], [1]) -> ([2]);
+store_temp<RangeCheck>([2]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: RangeCheck, [1]: BoundedIntGuarantee<0, 4294967295>) -> (RangeCheck);
+
+//! > ==========================================================================
+
+//! > u128_to_u32_guarantees libfunc.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
+type U32Guarantee = BoundedIntGuarantee<0, 0xffffffff>;
+
+extern fn u128_to_u32_guarantees(
+    value: u128,
+) -> (U32Guarantee, U32Guarantee, U32Guarantee, U32Guarantee) nopanic;
+
+fn foo(value: u128) -> (U32Guarantee, U32Guarantee, U32Guarantee, U32Guarantee) {
+    u128_to_u32_guarantees(value)
+}
+
+//! > casm
+%{ (memory[ap + 3], memory[ap + 5]) = divmod(memory[fp + -3], 4294967296) %}
+%{ (memory[ap + 4], memory[ap + 6]) = divmod(memory[ap + 3], 4294967296) %}
+%{ (memory[ap + 8], memory[ap + 7]) = divmod(memory[ap + 4], 4294967296) %}
+ap += 3;
+[ap + -3] = [ap + 0] * 4294967296, ap++;
+[fp + -3] = [ap + -4] + [ap + 1], ap++;
+[ap + -4] = [ap + -1] * 4294967296, ap++;
+[ap + -3] = [ap + -5] + [ap + 0], ap++;
+[ap + -5] = [ap + 1] * 4294967296, ap++;
+[ap + -4] = [ap + -6] + [ap + -1], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -4], ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 1100})
+
+//! > sierra_code
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedIntGuarantee<0, 4294967295> = BoundedIntGuarantee<0, 4294967295> [storable: true, drop: false, dup: false, zero_sized: false];
+type Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>> = Struct<ut@Tuple, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc u128_to_u32_guarantees = u128_to_u32_guarantees;
+libfunc struct_construct<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>> = struct_construct<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>>;
+libfunc store_temp<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>> = store_temp<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>>;
+
+F0:
+u128_to_u32_guarantees([0]) -> ([1], [2], [3], [4]);
+struct_construct<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>>([1], [2], [3], [4]) -> ([5]);
+store_temp<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>>([5]) -> ([5]);
+return([5]);
+
+test::foo@F0([0]: u128) -> (Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>);

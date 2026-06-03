@@ -1,8 +1,10 @@
 use std::ops::{Deref, DerefMut, Index};
 
+use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
@@ -19,7 +21,6 @@ use salsa::Database;
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
-use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::block_builder::BlockBuilder;
 use super::generators;

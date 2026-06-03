@@ -116,8 +116,7 @@ pub fn get_concrete_long_type_id<'db>(
                                 semantic::GenericArgumentId::Constant(value_id) => {
                                     SierraGenericArg::Value(
                                         value_id
-                                            .long(db)
-                                            .to_int()
+                                            .to_int(db)
                                             .expect("Expected ConstValue::Int for size")
                                             .clone(),
                                     )
@@ -161,6 +160,7 @@ pub fn get_concrete_long_type_id<'db>(
         .into(),
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
+        | semantic::TypeLongId::NumericLiteral(_)
         | semantic::TypeLongId::ImplType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
@@ -207,16 +207,13 @@ pub fn type_dependencies<'db>(
         semantic::TypeLongId::Coupon(_) => vec![],
         semantic::TypeLongId::Closure(closure_ty) => closure_ty.captured_types.clone(),
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
-            let size = size
-                .long(db)
-                .to_int()
-                .expect("Expected ConstValue::Int for size")
-                .to_usize()
-                .unwrap();
+            let size =
+                size.to_int(db).expect("Expected ConstValue::Int for size").to_usize().unwrap();
             [*type_id].repeat(size)
         }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
+        | semantic::TypeLongId::NumericLiteral(_)
         | semantic::TypeLongId::ImplType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))

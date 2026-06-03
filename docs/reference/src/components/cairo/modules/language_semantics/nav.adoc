@@ -1,7 +1,7 @@
 // Language semantics
 * Language Semantics
-** xref:pages/memory-model.adoc[Memory model 🚧]
-** xref:pages/constant-evaluation.adoc[Constant evaluation 🚧]
-** xref:pages/application-binary-interface.adoc[Application binary interface 🚧]
-** xref:pages/runtime.adoc[Runtime 🚧]
+** xref:pages/memory-model.adoc[Memory model]
+** xref:pages/constant-evaluation.adoc[Constant evaluation]
+** xref:pages/application-binary-interface.adoc[Application binary interface]
+** xref:pages/runtime.adoc[Runtime]
 ** xref:pages/linear-types.adoc[Linear Types]

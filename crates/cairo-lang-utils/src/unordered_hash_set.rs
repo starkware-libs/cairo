@@ -1,3 +1,11 @@
+#![cfg_attr(
+    feature = "std",
+    expect(
+        clippy::disallowed_types,
+        reason = "this module is the UnorderedHashSet wrapper over std::collections::HashSet"
+    )
+)]
+
 use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Sub;
@@ -80,6 +88,20 @@ impl<Key, BH> UnorderedHashSet<Key, BH> {
     /// Clears the set, removing all values.
     pub fn clear(&mut self) {
         self.0.clear()
+    }
+}
+
+#[cfg(feature = "std")]
+impl<Key: Hash + Eq> UnorderedHashSet<Key> {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashSet::with_capacity(capacity))
+    }
+}
+
+#[cfg(not(feature = "std"))]
+impl<Key: Hash + Eq> UnorderedHashSet<Key> {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashSet::with_capacity_and_hasher(capacity, Default::default()))
     }
 }
 

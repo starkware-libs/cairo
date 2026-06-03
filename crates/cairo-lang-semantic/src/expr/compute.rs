@@ -7,7 +7,6 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_flat};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
@@ -39,6 +38,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{
     self as utils, Intern, OptionHelper, extract_matches, require, try_extract_matches,
+    with_finally,
 };
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
@@ -55,7 +55,7 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable, PatternWrappingInfo,
 };
 use crate::corelib::{
-    self, CorelibSemantic, core_binary_operator, core_bool_ty, core_unary_operator,
+    self, CorelibSemantic, LiteralError, core_binary_operator, core_bool_ty, core_unary_operator,
     false_literal_expr, get_usize_ty, never_ty, true_literal_expr, try_extract_box_inner_type,
     try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, validate_literal,
 };
@@ -126,7 +126,7 @@ impl ExpansionOffset {
     pub fn mapped(self, mappings: &[CodeMapping]) -> Option<Self> {
         let mapping = mappings
             .iter()
-            .find(|mapping| mapping.span.start <= self.0 && self.0 <= mapping.span.end)?;
+            .find(|mapping| (mapping.span.start..mapping.span.end).contains(&self.0))?;
         Some(Self::new(match mapping.origin {
             CodeOrigin::Start(offset) => offset.add_width(self.0 - mapping.span.start),
             CodeOrigin::Span(span) | CodeOrigin::CallSite(span) => span.start,
@@ -795,6 +795,9 @@ fn expand_inline_macro<'db>(
                 InlineMacroNoMatchingRule(macro_path.identifier(db)),
             ));
         };
+        // If the rule has declaration-time errors, skip expansion to avoid panics on malformed
+        // rules.
+        rule.err?;
         let mut matcher_ctx =
             MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
         let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)?;
@@ -876,31 +879,37 @@ fn compute_expr_inline_macro_semantic<'db>(
     syntax: &ast::ExprInlineMacro<'db>,
 ) -> Maybe<Expr<'db>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
-        name: SmolStrId::from(ctx.db, name),
-        content: SmolStrId::from(ctx.db, content),
-        code_mappings: info.mappings.clone(),
-        kind: FileKind::Expr,
-        original_item_removed: true,
-    })
-    .intern(ctx.db);
-    ctx.resolver.files.push(new_file_id);
-    let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
-    let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
-    if let Err(diag_added) = parser_diagnostics.check_error_free() {
-        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
-            ctx.diagnostics.report(
-                syntax.stable_ptr(ctx.db),
-                SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
-            );
-        }
-        return Err(diag_added);
-    }
-    let expr = ctx.run_in_macro_subscope(|ctx| compute_expr_semantic(ctx, &expr_syntax), info);
-    ctx.resolver.macro_call_data = prev_macro_call_data;
-    Ok(expr.expr)
+    with_finally(
+        ctx,
+        |ctx| {
+            let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
+            let new_file_id = FileLongId::Virtual(VirtualFile {
+                parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
+                name: SmolStrId::from(ctx.db, name),
+                content: SmolStrId::from(ctx.db, content),
+                code_mappings: info.mappings.clone(),
+                kind: FileKind::Expr,
+                original_item_removed: true,
+            })
+            .intern(ctx.db);
+            ctx.resolver.files.push(new_file_id);
+            let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
+            let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
+            if let Err(diag_added) = parser_diagnostics.check_error_free() {
+                for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
+                    ctx.diagnostics.report(
+                        syntax.stable_ptr(ctx.db),
+                        SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
+                    );
+                }
+                return Err(diag_added);
+            }
+            Ok(ctx.run_in_macro_subscope(|ctx| compute_expr_semantic(ctx, &expr_syntax), info).expr)
+        },
+        |ctx| {
+            ctx.resolver.macro_call_data = prev_macro_call_data;
+        },
+    )
 }
 
 /// Computes the semantic model of a tail expression, handling inline macros recursively and
@@ -915,27 +924,30 @@ fn compute_tail_semantic<'db>(
 
     let db = ctx.db;
     let expr = tail.expr(db);
-    let res = match &expr {
-        ast::Expr::InlineMacro(inline_macro_syntax) => {
-            match expand_macro_for_statement(ctx, inline_macro_syntax, true, statements_ids) {
-                Ok(Some(expr_and_id)) => expr_and_id,
-                Ok(None) => unreachable!("Tail expression should not be None"),
-                Err(diag_added) => {
-                    let expr = Expr::Missing(ExprMissing {
-                        ty: TypeId::missing(db, diag_added),
-                        stable_ptr: expr.stable_ptr(db),
-                        diag_added,
-                    });
-                    ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr }
+    with_finally(
+        ctx,
+        |ctx| match &expr {
+            ast::Expr::InlineMacro(inline_macro_syntax) => {
+                match expand_macro_for_statement(ctx, inline_macro_syntax, true, statements_ids) {
+                    Ok(Some(expr_and_id)) => expr_and_id,
+                    Ok(None) => unreachable!("Tail expression should not be None"),
+                    Err(diag_added) => {
+                        let expr = Expr::Missing(ExprMissing {
+                            ty: TypeId::missing(db, diag_added),
+                            stable_ptr: expr.stable_ptr(db),
+                            diag_added,
+                        });
+                        ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr }
+                    }
                 }
             }
-        }
-        _ => compute_expr_semantic(ctx, &expr),
-    };
-
-    // Pop the statement's attributes from the context.
-    ctx.restore_features(feature_restore);
-    res
+            _ => compute_expr_semantic(ctx, &expr),
+        },
+        |ctx| {
+            // Pop the statement's attributes from the context.
+            ctx.restore_features(feature_restore);
+        },
+    )
 }
 
 /// Expands an inline macro used in statement position, computes its semantic model, and extends
@@ -947,55 +959,63 @@ fn expand_macro_for_statement<'db>(
     statements_ids: &mut Vec<StatementId>,
 ) -> Maybe<Option<ExprAndId<'db>>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
-        name: SmolStrId::from(ctx.db, name),
-        content: SmolStrId::from_arcstr(ctx.db, &content),
-        code_mappings: info.mappings.clone(),
-        kind: FileKind::StatementList,
-        original_item_removed: true,
-    })
-    .intern(ctx.db);
-    ctx.resolver.files.push(new_file_id);
-    let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
-    if let Err(diag_added) = parser_diagnostics.check_error_free() {
-        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
-            ctx.diagnostics.report(
-                syntax.stable_ptr(ctx.db),
-                SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
-            );
-        }
-        return Err(diag_added);
-    }
-    let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
-    let (parsed_statements, tail) = statements_and_tail(ctx.db, statement_list);
-    let result = ctx.run_in_macro_subscope(
+    with_finally(
+        ctx,
         |ctx| {
-            compute_statements_semantic_and_extend(ctx, parsed_statements, statements_ids);
-            if is_tail {
-                if let Some(tail_expr) = tail {
-                    Ok(Some(compute_tail_semantic(ctx, &tail_expr, statements_ids)))
-                } else {
-                    Err(ctx.diagnostics.report_after(syntax.stable_ptr(ctx.db), MissingSemicolon))
+            let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
+            let new_file_id = FileLongId::Virtual(VirtualFile {
+                parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
+                name: SmolStrId::from(ctx.db, name),
+                content: SmolStrId::from_arcstr(ctx.db, &content),
+                code_mappings: info.mappings.clone(),
+                kind: FileKind::StatementList,
+                original_item_removed: true,
+            })
+            .intern(ctx.db);
+            ctx.resolver.files.push(new_file_id);
+            let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
+            if let Err(diag_added) = parser_diagnostics.check_error_free() {
+                for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
+                    ctx.diagnostics.report(
+                        syntax.stable_ptr(ctx.db),
+                        SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
+                    );
                 }
-            } else {
-                if let Some(tail_expr) = tail {
-                    let expr = compute_expr_semantic(ctx, &tail_expr.expr(ctx.db));
-                    statements_ids.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
-                        semantic::StatementExpr {
-                            expr: expr.id,
-                            stable_ptr: tail_expr.stable_ptr(ctx.db).into(),
-                        },
-                    )));
-                }
-                Ok(None)
+                return Err(diag_added);
             }
+            let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
+            let (parsed_statements, tail) = statements_and_tail(ctx.db, statement_list);
+            ctx.run_in_macro_subscope(
+                |ctx| {
+                    compute_statements_semantic_and_extend(ctx, parsed_statements, statements_ids);
+                    if is_tail {
+                        if let Some(tail_expr) = tail {
+                            Ok(Some(compute_tail_semantic(ctx, &tail_expr, statements_ids)))
+                        } else {
+                            Err(ctx
+                                .diagnostics
+                                .report_after(syntax.stable_ptr(ctx.db), MissingSemicolon))
+                        }
+                    } else {
+                        if let Some(tail_expr) = tail {
+                            let expr = compute_expr_semantic(ctx, &tail_expr.expr(ctx.db));
+                            statements_ids.push(ctx.arenas.statements.alloc(
+                                semantic::Statement::Expr(semantic::StatementExpr {
+                                    expr: expr.id,
+                                    stable_ptr: tail_expr.stable_ptr(ctx.db).into(),
+                                }),
+                            ));
+                        }
+                        Ok(None)
+                    }
+                },
+                info,
+            )
         },
-        info,
-    );
-    ctx.resolver.macro_call_data = prev_macro_call_data;
-    result
+        |ctx| {
+            ctx.resolver.macro_call_data = prev_macro_call_data;
+        },
+    )
 }
 
 fn compute_expr_unary_semantic<'db>(
@@ -1008,7 +1028,7 @@ fn compute_expr_unary_semantic<'db>(
     match (&unary_op, &inner) {
         // If this is not an actual function call, but actually a minus literal (e.g. -1).
         (UnaryOperator::Minus(_), ast::Expr::Literal(literal)) => {
-            let (value, ty) = literal.numeric_value_and_suffix(db).unwrap_or_default();
+            let (value, ty) = literal.numeric_value_and_suffix(db);
 
             Ok(Expr::Literal(new_literal_expr(ctx, ty, -value, syntax.stable_ptr(db).into())?))
         }
@@ -1395,8 +1415,7 @@ fn compute_expr_fixed_size_array_semantic<'db>(
         };
         let expr_semantic = compute_expr_semantic(ctx, &expr);
         let size = size_const_id
-            .long(db)
-            .to_int()
+            .to_int(db)
             .ok_or_else(|| {
                 ctx.diagnostics.report(syntax.stable_ptr(db), FixedSizeArrayNonNumericSize)
             })?
@@ -1692,6 +1711,39 @@ fn handle_possible_closure_expr<'db>(
     }
 }
 
+/// Returns the stable_ptr of the value-producing sub-expression of `expr_id`: drills through
+/// blocks to the tail, through matches to the first non-`never` arm, through ifs to the first
+/// non-`never` branch. Falls back to the expression's own stable_ptr.
+fn value_producer_stable_ptr<'db>(
+    db: &'db dyn Database,
+    arenas: &Arenas<'db>,
+    expr_id: ExprId,
+) -> SyntaxStablePtrId<'db> {
+    let never = never_ty(db);
+    match &arenas.exprs[expr_id] {
+        Expr::Block(ExprBlock { tail: Some(tail), .. }) => {
+            value_producer_stable_ptr(db, arenas, *tail)
+        }
+        Expr::Match(ExprMatch { arms, stable_ptr, .. }) => arms
+            .iter()
+            .find(|arm| arenas.exprs[arm.expression].ty() != never)
+            .map(|arm| value_producer_stable_ptr(db, arenas, arm.expression))
+            .unwrap_or_else(|| stable_ptr.untyped()),
+        Expr::If(ExprIf { if_block, else_block, stable_ptr, .. }) => {
+            if arenas.exprs[*if_block].ty() != never {
+                value_producer_stable_ptr(db, arenas, *if_block)
+            } else if let Some(else_block) = else_block
+                && arenas.exprs[*else_block].ty() != never
+            {
+                value_producer_stable_ptr(db, arenas, *else_block)
+            } else {
+                stable_ptr.untyped()
+            }
+        }
+        other => other.stable_ptr().untyped(),
+    }
+}
+
 pub fn compute_root_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::ExprBlock<'db>,
@@ -1724,16 +1776,7 @@ pub fn compute_root_expr<'db>(
         res_ty,
         return_type,
         ctx.diagnostics,
-        || {
-            ctx.signature
-                .map(|s| match s.stable_ptr.lookup(db).ret_ty(db) {
-                    OptionReturnTypeClause::Empty(_) => syntax.stable_ptr(db).untyped(),
-                    OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
-                        return_type_clause.ty(db).stable_ptr(db).untyped()
-                    }
-                })
-                .unwrap_or_else(|| syntax.stable_ptr(db).untyped())
-        },
+        || value_producer_stable_ptr(db, &ctx.arenas, res),
         |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
     );
 
@@ -2329,7 +2372,12 @@ fn compute_loop_body_semantic<'db>(
 ) -> (ExprId, InnerContext<'db>) {
     let db: &dyn Database = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
-        let return_type = new_ctx.get_return_type().unwrap();
+        // `None` means we're outside a function/loop context (e.g. a loop in array size position).
+        // The invalid usage will be caught by the caller; use `missing` to suppress cascading
+        // errors.
+        let return_type = new_ctx
+            .get_return_type()
+            .unwrap_or_else(|| TypeId::missing(new_ctx.db, skip_diagnostic()));
         let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
         let (statements, tail) = statements_and_tail(ctx.db, syntax.statements(db));
         let mut statements_semantic = vec![];
@@ -2933,7 +2981,7 @@ fn maybe_compute_pattern_semantic<'db>(
                     ty.check_not_missing(ctx.db)?;
                     Err(ctx
                         .diagnostics
-                        .report(pattern_struct.stable_ptr(db), UnexpectedStructPattern(ty)))
+                        .report(pattern_struct.stable_ptr(db), BadPatternForInputType(ty)))
                 })?;
             let params = pattern_struct.params(db);
             let pattern_param_asts = params.elements(db);
@@ -3020,7 +3068,6 @@ fn maybe_compute_pattern_semantic<'db>(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId<'db>| UnexpectedTuplePattern(ty),
             |expected, actual| WrongNumberOfTupleElements { expected, actual },
         ),
         ast::Pattern::FixedSizeArray(_) => compute_tuple_like_pattern_semantic(
@@ -3028,7 +3075,6 @@ fn maybe_compute_pattern_semantic<'db>(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId<'db>| UnexpectedFixedSizeArrayPattern(ty),
             |expected, actual| WrongNumberOfFixedSizeArrayElements { expected, actual },
         ),
         ast::Pattern::False(pattern_false) => {
@@ -3078,6 +3124,50 @@ fn maybe_compute_pattern_semantic<'db>(
     Ok(pattern)
 }
 
+/// Tries to get the long type of the matched expression for a tuple-like pattern.
+/// Returns `None` if the pattern and type are incompatible.
+fn try_get_match_expr_long_ty<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    pattern_syntax: &ast::Pattern<'db>,
+    long_ty: &TypeLongId<'db>,
+    ty: TypeId<'db>,
+    num_patterns: usize,
+) -> Option<TypeLongId<'db>> {
+    let db = ctx.db;
+    match (pattern_syntax, long_ty) {
+        (_, TypeLongId::Var(_) | TypeLongId::Missing(_))
+        | (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
+        | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {
+            Some(long_ty.clone())
+        }
+        (
+            ast::Pattern::FixedSizeArray(_),
+            TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)),
+        ) => {
+            let [GenericArgumentId::Type(inner_ty)] = concrete_struct_id.long(db).generic_args[..]
+            else {
+                return None;
+            };
+            let span_ty = try_get_core_ty_by_name(
+                db,
+                SmolStrId::from(db, "Span"),
+                vec![GenericArgumentId::Type(inner_ty)],
+            )
+            .ok()?;
+            if let Err(err_set) = ctx.resolver.inference().conform_ty(ty, span_ty) {
+                // The caller is going to report a more accurate error message.
+                ctx.resolver.inference().consume_error_without_reporting(err_set);
+                return None;
+            }
+            Some(TypeLongId::FixedSizeArray {
+                type_id: wrap_in_snapshots(db, inner_ty, 1),
+                size: ConstValue::Int(num_patterns.into(), get_usize_ty(db)).intern(db),
+            })
+        }
+        _ => None,
+    }
+}
+
 /// Computes the semantic model of a pattern of a tuple or a fixed size array. Assumes that the
 /// pattern is one of these types.
 fn compute_tuple_like_pattern_semantic<'db>(
@@ -3085,11 +3175,10 @@ fn compute_tuple_like_pattern_semantic<'db>(
     pattern_syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
     or_pattern_variables_map: &UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>>,
-    unexpected_pattern: fn(TypeId<'db>) -> SemanticDiagnosticKind<'db>,
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind<'db>,
 ) -> Pattern<'db> {
     let db = ctx.db;
-    let (wrapping_info, mut long_ty) =
+    let (wrapping_info, long_ty) =
         match extract_tuple_like_from_pattern_and_validate(ctx, pattern_syntax, ty) {
             Ok(value) => value,
             Err(diag_added) => (
@@ -3097,24 +3186,27 @@ fn compute_tuple_like_pattern_semantic<'db>(
                 TypeLongId::Missing(diag_added),
             ),
         };
-    // Assert that the pattern is of the same type as the expr.
-    match (pattern_syntax, &long_ty) {
-        (_, TypeLongId::Var(_) | TypeLongId::Missing(_))
-        | (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
-        | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {}
-        _ => {
-            long_ty = TypeLongId::Missing(
-                ctx.diagnostics.report(pattern_syntax.stable_ptr(db), unexpected_pattern(ty)),
-            );
-        }
-    };
-    let patterns_syntax = match pattern_syntax {
+    let patterns_syntax_elements = match pattern_syntax {
         ast::Pattern::Tuple(pattern_tuple) => pattern_tuple.patterns(db).elements_vec(db),
         ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
             pattern_fixed_size_array.patterns(db).elements_vec(db)
         }
         _ => unreachable!(),
     };
+
+    // Assert that the pattern is of the same type as the expr.
+    let long_ty = try_get_match_expr_long_ty(
+        ctx,
+        pattern_syntax,
+        &long_ty,
+        ty,
+        patterns_syntax_elements.len(),
+    )
+    .unwrap_or_else(|| {
+        TypeLongId::Missing(
+            ctx.diagnostics.report(pattern_syntax.stable_ptr(db), BadPatternForInputType(ty)),
+        )
+    });
     let mut inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
         TypeLongId::FixedSizeArray { type_id: inner_ty, size } => {
@@ -3123,7 +3215,8 @@ fn compute_tuple_like_pattern_semantic<'db>(
             } else {
                 let inference = &mut ctx.resolver.inference();
                 let expected_size =
-                    ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(db)).intern(db);
+                    ConstValue::Int(patterns_syntax_elements.len().into(), get_usize_ty(db))
+                        .intern(db);
                 if let Err(err) = inference.conform_const(size, expected_size) {
                     let _ = inference.report_on_pending_error(
                         err,
@@ -3131,7 +3224,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
                         pattern_syntax.stable_ptr(db).untyped(),
                     );
                 }
-                patterns_syntax.len()
+                patterns_syntax_elements.len()
             };
 
             [inner_ty].repeat(size)
@@ -3139,7 +3232,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
         TypeLongId::Var(_) => {
             let inference = &mut ctx.resolver.inference();
             let (inner_tys, tuple_like_ty) = if matches!(pattern_syntax, ast::Pattern::Tuple(_)) {
-                let inner_tys: Vec<_> = patterns_syntax
+                let inner_tys: Vec<_> = patterns_syntax_elements
                     .iter()
                     .map(|e| inference.new_type_var(Some(e.stable_ptr(db).untyped())))
                     .collect();
@@ -3147,11 +3240,14 @@ fn compute_tuple_like_pattern_semantic<'db>(
             } else {
                 let var = inference.new_type_var(Some(pattern_syntax.stable_ptr(db).untyped()));
                 (
-                    vec![var; patterns_syntax.len()],
+                    vec![var; patterns_syntax_elements.len()],
                     TypeLongId::FixedSizeArray {
                         type_id: var,
-                        size: ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(db))
-                            .intern(db),
+                        size: ConstValue::Int(
+                            patterns_syntax_elements.len().into(),
+                            get_usize_ty(db),
+                        )
+                        .intern(db),
                     },
                 )
             };
@@ -3163,21 +3259,21 @@ fn compute_tuple_like_pattern_semantic<'db>(
         }
         TypeLongId::Missing(diag_added) => {
             let missing = TypeId::missing(db, diag_added);
-            vec![missing; patterns_syntax.len()]
+            vec![missing; patterns_syntax_elements.len()]
         }
         _ => unreachable!(),
     };
     let size = inner_tys.len();
-    if size != patterns_syntax.len() {
+    if size != patterns_syntax_elements.len() {
         let diag_added = ctx.diagnostics.report(
             pattern_syntax.stable_ptr(db),
-            wrong_number_of_elements(size, patterns_syntax.len()),
+            wrong_number_of_elements(size, patterns_syntax_elements.len()),
         );
         let missing = TypeId::missing(db, diag_added);
 
-        inner_tys = vec![missing; patterns_syntax.len()];
+        inner_tys = vec![missing; patterns_syntax_elements.len()];
     }
-    let subpatterns = zip_eq(patterns_syntax, inner_tys)
+    let subpatterns = zip_eq(patterns_syntax_elements, inner_tys)
         .map(|(pattern_ast, ty)| {
             let ty = wrapping_info.wrap(db, ty);
             compute_pattern_semantic(ctx, &pattern_ast, ty, or_pattern_variables_map).id
@@ -3217,7 +3313,7 @@ fn extract_concrete_enum_from_pattern_and_validate<'db>(
             // Don't add a diagnostic if the type is missing.
             // A diagnostic should've already been added.
             ty.check_not_missing(ctx.db)?;
-            Err(ctx.diagnostics.report(pattern.stable_ptr(ctx.db), UnexpectedEnumPattern(ty)))
+            Err(ctx.diagnostics.report(pattern.stable_ptr(ctx.db), BadPatternForInputType(ty)))
         })?;
     // Check that these are the same enums.
     let pattern_enum = concrete_enum_id.enum_id(ctx.db);
@@ -3586,19 +3682,23 @@ fn new_literal_expr<'db>(
         let ty = try_get_core_ty_by_name(ctx.db, ty_str, vec![])
             .map_err(|err| ctx.diagnostics.report(stable_ptr.untyped(), err))?;
         if let Err(err) = validate_literal(ctx.db, ty, &value) {
-            ctx.diagnostics.report(stable_ptr, SemanticDiagnosticKind::LiteralError(err));
+            let is_invalid_type = matches!(err, LiteralError::InvalidTypeForLiteral(_));
+            let diag =
+                ctx.diagnostics.report(stable_ptr, SemanticDiagnosticKind::LiteralError(err));
+            // The type is malformed (generic type with zero args); returning Ok would ICE
+            // downstream queries via GenericSubstitution::new zip_eq mismatch.
+            if is_invalid_type {
+                return Err(diag);
+            }
         }
         return Ok(ExprNumericLiteral { value, ty, stable_ptr });
     };
-    let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
-
-    // Numeric trait.
-    let trait_id = ctx.db.core_info().numeric_literal_trt;
-    let generic_args = vec![GenericArgumentId::Type(ty)];
-    let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
-    let lookup_context = ctx.resolver.impl_lookup_context();
+    // Use a deferred `NumericLiteral` placeholder type. It synthetically satisfies the standard
+    // memory traits (so its `Destruct`/`Drop` can be proven inside trait-solver sandboxes) and
+    // unifies with whatever concrete type later constraints pin it to; if no constraint pins it,
+    // finalization defaults it to `felt252`.
     let inference = &mut ctx.resolver.inference();
-    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context);
+    let ty = inference.new_integer_literal_type(Some(stable_ptr.untyped()));
 
     Ok(ExprNumericLiteral { value, ty, stable_ptr })
 }
@@ -3610,7 +3710,7 @@ fn literal_to_semantic<'db>(
 ) -> Maybe<ExprNumericLiteral<'db>> {
     let db = ctx.db;
 
-    let (value, ty) = literal_syntax.numeric_value_and_suffix(db).unwrap_or_default();
+    let (value, ty) = literal_syntax.numeric_value_and_suffix(db);
 
     new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr(db).into())
 }
@@ -3956,17 +4056,16 @@ fn member_access_expr<'db>(
         TypeLongId::Closure(_) => {
             Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
         }
-        TypeLongId::ImplType(impl_type_id) => {
-            unreachable!("Impl type should've been reduced {:?}.", impl_type_id.debug(ctx.db))
-        }
-        TypeLongId::Var(_) => Err(ctx.diagnostics.report(
+        TypeLongId::Var(_) | TypeLongId::NumericLiteral(_) => Err(ctx.diagnostics.report(
             rhs_syntax.stable_ptr(db),
             InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
         )),
-        TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => Err(ctx.diagnostics.report(
-            rhs_syntax.stable_ptr(db),
-            TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
-        )),
+        TypeLongId::ImplType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => {
+            Err(ctx.diagnostics.report(
+                rhs_syntax.stable_ptr(db),
+                TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
+            ))
+        }
         TypeLongId::Missing(diag_added) => Err(*diag_added),
     }
 }
@@ -4117,27 +4216,7 @@ fn resolve_expr_path<'db>(
             is_callsite_prefixed,
             path.stable_ptr(ctx.db).into(),
         ) {
-            match res.clone() {
-                Expr::Var(expr_var) => {
-                    let item = ResolvedGenericItem::Variable(expr_var.var);
-                    ctx.resolver
-                        .data
-                        .resolved_items
-                        .generic
-                        .insert(identifier.stable_ptr(db), item);
-                }
-                Expr::Constant(expr_const) => {
-                    let item = ResolvedConcreteItem::Constant(expr_const.const_value_id);
-                    ctx.resolver
-                        .data
-                        .resolved_items
-                        .concrete
-                        .insert(identifier.stable_ptr(db), item);
-                }
-                _ => unreachable!(
-                    "get_binded_expr_by_name should only return variables or constants"
-                ),
-            };
+            mark_binded_expr_in_resolved_items(ctx, &identifier, &res);
             return Ok(res);
         }
     }
@@ -4190,9 +4269,28 @@ pub fn resolve_variable_by_name<'db>(
     let res = get_binded_expr_by_name(ctx, variable_name, false, stable_ptr).ok_or_else(|| {
         ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
-    let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
-    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
+    mark_binded_expr_in_resolved_items(ctx, identifier, &res);
     Ok(res)
+}
+
+/// Marks a resolved binding expression in the resolved items map for tooling (e.g.,
+/// go-to-definition).
+fn mark_binded_expr_in_resolved_items<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    identifier: &ast::TerminalIdentifier<'db>,
+    expr: &Expr<'db>,
+) {
+    let ptr = identifier.stable_ptr(ctx.db);
+    let resolved = &mut ctx.resolver.data.resolved_items;
+    match expr {
+        Expr::Var(expr) => {
+            resolved.generic.insert(ptr, ResolvedGenericItem::Variable(expr.var));
+        }
+        Expr::Constant(expr) => {
+            resolved.concrete.insert(ptr, ResolvedConcreteItem::Constant(expr.const_value_id));
+        }
+        _ => unreachable!("`get_binded_expr_by_name` should only return variables or constants"),
+    }
 }
 
 /// Returns the requested variable from the environment if it exists. Returns None otherwise.
@@ -4429,363 +4527,390 @@ pub fn compute_and_append_statement_semantic<'db>(
 ) -> Maybe<()> {
     // Push the statement's attributes into the context, restored after the computation is resolved.
     let feature_restore = ctx.add_features_from_statement(&syntax);
-
-    let db = ctx.db;
-    let _ = match &syntax {
-        ast::Statement::Let(let_syntax) => {
-            let rhs_syntax = &let_syntax.rhs(db);
-            let (rhs_expr, ty) = match let_syntax.type_clause(db) {
-                ast::OptionTypeClause::Empty(_) => {
-                    let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
-                    let inferred_type = rhs_expr.ty();
-                    (rhs_expr, inferred_type)
-                }
-                ast::OptionTypeClause::TypeClause(type_clause) => {
-                    let var_type_path = type_clause.ty(db);
-                    let explicit_type = resolve_type_ex(
-                        db,
-                        ctx.diagnostics,
-                        ctx.resolver,
-                        &var_type_path,
-                        ResolutionContext::Statement(&mut ctx.environment),
-                    );
-
-                    let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
-                    let inferred_type = ctx.reduce_ty(rhs_expr.ty());
-                    if !inferred_type.is_missing(db) {
-                        let inference = &mut ctx.resolver.inference();
-                        let _ = inference.conform_ty_for_diag(
-                            inferred_type,
-                            explicit_type,
-                            ctx.diagnostics,
-                            || rhs_syntax.stable_ptr(db).untyped(),
-                            |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
-                        );
-                    }
-                    (rhs_expr, explicit_type)
-                }
-            };
-            let rhs_expr_id = rhs_expr.id;
-
-            let else_clause = match let_syntax.let_else_clause(db) {
-                ast::OptionLetElseClause::Empty(_) => None,
-                ast::OptionLetElseClause::LetElseClause(else_clause) => {
-                    let else_block_syntax = else_clause.else_block(db);
-                    let else_block_stable_ptr = else_block_syntax.stable_ptr(db);
-
-                    let else_block =
-                        compute_expr_semantic(ctx, &ast::Expr::Block(else_block_syntax));
-
-                    if else_block.ty() != never_ty(db) {
-                        // Report the error, but continue processing.
-                        ctx.diagnostics.report(else_block_stable_ptr, NonNeverLetElseType);
-                    }
-
-                    Some(else_block.id)
-                }
-            };
-
-            let pattern = compute_pattern_semantic(
-                ctx,
-                &let_syntax.pattern(db),
-                ty,
-                &UnorderedHashMap::default(),
-            );
-            let variables = pattern.variables(&ctx.arenas.patterns);
-            let mut variable_names_in_pattern = UnorderedHashSet::<_>::default();
-            for v in variables {
-                if !variable_names_in_pattern.insert(v.name) {
-                    ctx.diagnostics
-                        .report(v.stable_ptr, VariableDefinedMultipleTimesInPattern(v.name));
-                }
-                let var_def = Binding::LocalVar(v.var.clone());
-                if let Some(old_var) = ctx.environment.variables.insert(v.name, var_def.clone()) {
-                    if matches!(old_var, Binding::LocalItem(_)) {
-                        return Err(ctx
-                            .diagnostics
-                            .report(v.stable_ptr, MultipleDefinitionforBinding(v.name)));
-                    }
-                    add_unused_binding_warning(
-                        ctx.diagnostics,
-                        ctx.db,
-                        &ctx.environment.used_variables,
-                        v.name,
-                        &old_var,
-                        &ctx.resolver.data.feature_config,
-                    );
-                }
-                if ctx.macro_defined_var_unhygienic
-                    && let Some(macro_info) = &mut ctx.environment.macro_info
-                {
-                    macro_info.vars_to_expose.push((v.name, var_def.clone()));
-                }
-                let _ = ctx.variable_tracker.insert(var_def);
-            }
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Let(
-                semantic::StatementLet {
-                    pattern: pattern.id,
-                    expr: rhs_expr_id,
-                    else_clause,
-                    stable_ptr: syntax.stable_ptr(db),
-                },
-            )));
-            Ok(()) as Maybe<()>
-        }
-        ast::Statement::Expr(stmt_expr_syntax) => {
-            let expr_syntax = stmt_expr_syntax.expr(db);
-            if let ast::Expr::InlineMacro(inline_macro_syntax) = &expr_syntax {
-                expand_macro_for_statement(ctx, inline_macro_syntax, false, statements)?;
-            } else {
-                let expr = compute_expr_semantic(ctx, &expr_syntax);
-                if matches!(stmt_expr_syntax.semicolon(db), ast::OptionTerminalSemicolon::Empty(_))
-                    && !matches!(
-                        expr_syntax,
-                        ast::Expr::Block(_)
-                            | ast::Expr::If(_)
-                            | ast::Expr::Match(_)
-                            | ast::Expr::Loop(_)
-                            | ast::Expr::While(_)
-                            | ast::Expr::For(_)
-                    )
-                {
-                    ctx.diagnostics.report_after(expr_syntax.stable_ptr(db), MissingSemicolon);
-                }
-                let ty: TypeId<'_> = expr.ty();
-                if let TypeLongId::Concrete(concrete) = ty.long(db)
-                    && concrete.is_must_use(db)?
-                {
-                    ctx.diagnostics.report(expr_syntax.stable_ptr(db), UnhandledMustUseType(ty));
-                }
-                if let Expr::FunctionCall(expr_function_call) = &expr.expr {
-                    let generic_function_id =
-                        expr_function_call.function.long(db).function.generic_function;
-                    if generic_function_id.is_must_use(db)? {
-                        ctx.diagnostics
-                            .report(expr_syntax.stable_ptr(db), UnhandledMustUseFunction);
-                    }
-                }
-                statements.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
-                    semantic::StatementExpr { expr: expr.id, stable_ptr: syntax.stable_ptr(db) },
-                )));
-            }
-            Ok(())
-        }
-        ast::Statement::Continue(continue_syntax) => {
-            if !ctx.is_inside_loop() {
-                return Err(ctx
-                    .diagnostics
-                    .report(continue_syntax.stable_ptr(db), ContinueOnlyAllowedInsideALoop));
-            }
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Continue(
-                semantic::StatementContinue { stable_ptr: syntax.stable_ptr(db) },
-            )));
-            Ok(())
-        }
-        ast::Statement::Return(return_syntax) => {
-            let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(db) {
-                ast::OptionExprClause::Empty(empty_clause) => {
-                    (None, unit_ty(db), empty_clause.stable_ptr(db).untyped())
-                }
-                ast::OptionExprClause::ExprClause(expr_clause) => {
-                    let expr_syntax = expr_clause.expr(db);
-                    let expr = compute_expr_semantic(ctx, &expr_syntax);
-                    (Some(expr.id), expr.ty(), expr_syntax.stable_ptr(db).untyped())
-                }
-            };
-            let expected_ty = match &ctx.inner_ctx {
-                None => ctx.get_return_type().ok_or_else(|| {
-                    ctx.diagnostics.report(
-                        return_syntax.stable_ptr(db),
-                        UnsupportedOutsideOfFunction(
-                            UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
-                        ),
-                    )
-                })?,
-                Some(ctx) => ctx.return_type,
-            };
-
-            let expected_ty = ctx.reduce_ty(expected_ty);
-            let expr_ty = ctx.reduce_ty(expr_ty);
-            if !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
-                let inference = &mut ctx.resolver.inference();
-                let _ = inference.conform_ty_for_diag(
-                    expr_ty,
-                    expected_ty,
-                    ctx.diagnostics,
-                    || stable_ptr,
-                    |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
-                );
-            }
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Return(
-                semantic::StatementReturn { expr_option, stable_ptr: syntax.stable_ptr(db) },
-            )));
-            Ok(())
-        }
-        ast::Statement::Break(break_syntax) => {
-            let (expr_option, ty, stable_ptr) = match break_syntax.expr_clause(db) {
-                ast::OptionExprClause::Empty(expr_empty) => {
-                    (None, unit_ty(db), expr_empty.stable_ptr(db).untyped())
-                }
-                ast::OptionExprClause::ExprClause(expr_clause) => {
-                    let expr_syntax = expr_clause.expr(db);
-                    let expr = compute_expr_semantic(ctx, &expr_syntax);
-
-                    (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
-                }
-            };
-            let ty = ctx.reduce_ty(ty);
-
-            if !ctx.is_inside_loop() {
-                return Err(ctx
-                    .diagnostics
-                    .report(break_syntax.stable_ptr(db), BreakOnlyAllowedInsideALoop));
-            }
-
-            if let Some(inner_ctx) = &mut ctx.inner_ctx {
-                match &mut inner_ctx.kind {
-                    InnerContextKind::Loop { type_merger, .. } => {
-                        type_merger.try_merge_types(
-                            ctx.db,
-                            ctx.diagnostics,
-                            &mut ctx.resolver.inference(),
-                            ty,
-                            stable_ptr,
-                        );
-                    }
-                    InnerContextKind::While | InnerContextKind::For => {
-                        if expr_option.is_some() {
-                            ctx.diagnostics.report(
-                                break_syntax.stable_ptr(db),
-                                BreakWithValueOnlyAllowedInsideALoop,
+    with_finally(
+        ctx,
+        |ctx| {
+            let db = ctx.db;
+            match &syntax {
+                ast::Statement::Let(let_syntax) => {
+                    let rhs_syntax = &let_syntax.rhs(db);
+                    let (rhs_expr, ty) = match let_syntax.type_clause(db) {
+                        ast::OptionTypeClause::Empty(_) => {
+                            let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
+                            let inferred_type = rhs_expr.ty();
+                            (rhs_expr, inferred_type)
+                        }
+                        ast::OptionTypeClause::TypeClause(type_clause) => {
+                            let var_type_path = type_clause.ty(db);
+                            let explicit_type = resolve_type_ex(
+                                db,
+                                ctx.diagnostics,
+                                ctx.resolver,
+                                &var_type_path,
+                                ResolutionContext::Statement(&mut ctx.environment),
                             );
-                        };
-                    }
-                    InnerContextKind::Closure => unreachable!("Not inside a loop."),
-                }
-            }
 
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Break(
-                semantic::StatementBreak { expr_option, stable_ptr: syntax.stable_ptr(db) },
-            )));
-            Ok(())
-        }
-        ast::Statement::Item(stmt_item_syntax) => {
-            let item_syntax = &stmt_item_syntax.item(db);
-            match item_syntax {
-                ast::ModuleItem::Constant(const_syntax) => {
-                    let lhs = const_syntax.type_clause(db).ty(db);
-                    let rhs = const_syntax.value(db);
-                    let rhs_expr = compute_expr_semantic(ctx, &rhs);
-                    let explicit_type = resolve_type_ex(
-                        db,
-                        ctx.diagnostics,
-                        ctx.resolver,
-                        &lhs,
-                        ResolutionContext::Statement(&mut ctx.environment),
-                    );
-                    let rhs_resolved_expr = resolve_const_expr_and_evaluate(
-                        db,
-                        ctx,
-                        &rhs_expr,
-                        stmt_item_syntax.stable_ptr(db).untyped(),
-                        explicit_type,
-                        false,
-                    );
-                    let name_syntax = const_syntax.name(db);
-                    let name = name_syntax.text(db);
-                    let rhs_id =
-                        StatementConstLongId(ctx.resolver.module_id, const_syntax.stable_ptr(db));
-                    let var_def = Binding::LocalItem(LocalItem {
-                        id: StatementItemId::Constant(rhs_id.intern(db)),
-                        kind: StatementItemKind::Constant(
-                            rhs_resolved_expr,
-                            rhs_resolved_expr.ty(db)?,
-                        ),
-                    });
-                    add_value_to_statement_environment(
-                        ctx,
-                        name,
-                        var_def,
-                        name_syntax.stable_ptr(db),
-                    );
-                }
-                ast::ModuleItem::Use(use_syntax) => {
-                    for leaf in get_all_path_leaves(db, use_syntax) {
-                        let stable_ptr = leaf.stable_ptr(db);
-                        let resolved_item = ctx.resolver.resolve_use_path(
-                            ctx.diagnostics,
-                            ast::UsePath::Leaf(leaf),
-                            ResolutionContext::Statement(&mut ctx.environment),
-                        )?;
-                        let var_def_id = StatementItemId::Use(
-                            StatementUseLongId(ctx.resolver.module_id, stable_ptr).intern(db),
-                        );
-                        let name = var_def_id.name(db);
-                        match resolved_item {
-                            ResolvedGenericItem::GenericConstant(const_id) => {
-                                let const_value_id = db.constant_const_value(const_id)?;
-                                let var_def = Binding::LocalItem(LocalItem {
-                                    id: var_def_id,
-                                    kind: StatementItemKind::Constant(
-                                        const_value_id,
-                                        const_value_id.ty(db)?,
-                                    ),
-                                });
-                                add_value_to_statement_environment(ctx, name, var_def, stable_ptr);
+                            let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
+                            let inferred_type = ctx.reduce_ty(rhs_expr.ty());
+                            if !inferred_type.is_missing(db) {
+                                let inference = &mut ctx.resolver.inference();
+                                let _ = inference.conform_ty_for_diag(
+                                    inferred_type,
+                                    explicit_type,
+                                    ctx.diagnostics,
+                                    || rhs_syntax.stable_ptr(db).untyped(),
+                                    |actual_ty, expected_ty| WrongArgumentType {
+                                        expected_ty,
+                                        actual_ty,
+                                    },
+                                );
                             }
-                            item @ (ResolvedGenericItem::GenericType(_)
-                            | ResolvedGenericItem::Module(_)) => {
-                                add_item_to_statement_environment(ctx, name, item, stable_ptr);
+                            (rhs_expr, explicit_type)
+                        }
+                    };
+                    let rhs_expr_id = rhs_expr.id;
+
+                    let else_clause = match let_syntax.let_else_clause(db) {
+                        ast::OptionLetElseClause::Empty(_) => None,
+                        ast::OptionLetElseClause::LetElseClause(else_clause) => {
+                            let else_block_syntax = else_clause.else_block(db);
+                            let else_block_stable_ptr = else_block_syntax.stable_ptr(db);
+
+                            let else_block =
+                                compute_expr_semantic(ctx, &ast::Expr::Block(else_block_syntax));
+
+                            if else_block.ty() != never_ty(db) {
+                                // Report the error, but continue processing.
+                                ctx.diagnostics.report(else_block_stable_ptr, NonNeverLetElseType);
                             }
-                            ResolvedGenericItem::GenericFunction(_)
-                            | ResolvedGenericItem::GenericTypeAlias(_)
-                            | ResolvedGenericItem::GenericImplAlias(_)
-                            | ResolvedGenericItem::Variant(_)
-                            | ResolvedGenericItem::Trait(_)
-                            | ResolvedGenericItem::Impl(_)
-                            | ResolvedGenericItem::Variable(_)
-                            | ResolvedGenericItem::TraitItem(_)
-                            | ResolvedGenericItem::Macro(_) => {
+
+                            Some(else_block.id)
+                        }
+                    };
+
+                    let pattern = compute_pattern_semantic(
+                        ctx,
+                        &let_syntax.pattern(db),
+                        ty,
+                        &UnorderedHashMap::default(),
+                    );
+                    let variables = pattern.variables(&ctx.arenas.patterns);
+                    let mut variable_names_in_pattern = UnorderedHashSet::<_>::default();
+                    for v in variables {
+                        if !variable_names_in_pattern.insert(v.name) {
+                            ctx.diagnostics.report(
+                                v.stable_ptr,
+                                VariableDefinedMultipleTimesInPattern(v.name),
+                            );
+                        }
+                        let var_def = Binding::LocalVar(v.var.clone());
+                        if let Some(old_var) =
+                            ctx.environment.variables.insert(v.name, var_def.clone())
+                        {
+                            if matches!(old_var, Binding::LocalItem(_)) {
                                 return Err(ctx
                                     .diagnostics
-                                    .report(stable_ptr, UnsupportedUseItemInStatement));
+                                    .report(v.stable_ptr, MultipleDefinitionforBinding(v.name)));
+                            }
+                            add_unused_binding_warning(
+                                ctx.diagnostics,
+                                ctx.db,
+                                &ctx.environment.used_variables,
+                                v.name,
+                                &old_var,
+                                &ctx.resolver.data.feature_config,
+                            );
+                        }
+                        if ctx.macro_defined_var_unhygienic
+                            && let Some(macro_info) = &mut ctx.environment.macro_info
+                        {
+                            macro_info.vars_to_expose.push((v.name, var_def.clone()));
+                        }
+                        let _ = ctx.variable_tracker.insert(var_def);
+                    }
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Let(
+                        semantic::StatementLet {
+                            pattern: pattern.id,
+                            expr: rhs_expr_id,
+                            else_clause,
+                            stable_ptr: syntax.stable_ptr(db),
+                        },
+                    )));
+                    Ok(())
+                }
+                ast::Statement::Expr(stmt_expr_syntax) => {
+                    let expr_syntax = stmt_expr_syntax.expr(db);
+                    if let ast::Expr::InlineMacro(inline_macro_syntax) = &expr_syntax {
+                        expand_macro_for_statement(ctx, inline_macro_syntax, false, statements)?;
+                    } else {
+                        let expr = compute_expr_semantic(ctx, &expr_syntax);
+                        if matches!(
+                            stmt_expr_syntax.semicolon(db),
+                            ast::OptionTerminalSemicolon::Empty(_)
+                        ) && !matches!(
+                            expr_syntax,
+                            ast::Expr::Block(_)
+                                | ast::Expr::If(_)
+                                | ast::Expr::Match(_)
+                                | ast::Expr::Loop(_)
+                                | ast::Expr::While(_)
+                                | ast::Expr::For(_)
+                        ) {
+                            ctx.diagnostics
+                                .report_after(expr_syntax.stable_ptr(db), MissingSemicolon);
+                        }
+                        let ty: TypeId<'_> = expr.ty();
+                        if let TypeLongId::Concrete(concrete) = ty.long(db)
+                            && concrete.is_must_use(db)?
+                        {
+                            ctx.diagnostics
+                                .report(expr_syntax.stable_ptr(db), UnhandledMustUseType(ty));
+                        }
+                        if let Expr::FunctionCall(expr_function_call) = &expr.expr {
+                            let generic_function_id =
+                                expr_function_call.function.long(db).function.generic_function;
+                            if generic_function_id.is_must_use(db)? {
+                                ctx.diagnostics
+                                    .report(expr_syntax.stable_ptr(db), UnhandledMustUseFunction);
                             }
                         }
+                        statements.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
+                            semantic::StatementExpr {
+                                expr: expr.id,
+                                stable_ptr: syntax.stable_ptr(db),
+                            },
+                        )));
                     }
+                    Ok(())
                 }
-                ast::ModuleItem::Module(_) => {
-                    unreachable!("Modules are not supported inside a function.")
+                ast::Statement::Continue(continue_syntax) => {
+                    if !ctx.is_inside_loop() {
+                        return Err(ctx.diagnostics.report(
+                            continue_syntax.stable_ptr(db),
+                            ContinueOnlyAllowedInsideALoop,
+                        ));
+                    }
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Continue(
+                        semantic::StatementContinue { stable_ptr: syntax.stable_ptr(db) },
+                    )));
+                    Ok(())
                 }
-                ast::ModuleItem::FreeFunction(_) => {
-                    unreachable!("FreeFunction type not supported.")
+                ast::Statement::Return(return_syntax) => {
+                    let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(db) {
+                        ast::OptionExprClause::Empty(empty_clause) => {
+                            (None, unit_ty(db), empty_clause.stable_ptr(db).untyped())
+                        }
+                        ast::OptionExprClause::ExprClause(expr_clause) => {
+                            let expr_syntax = expr_clause.expr(db);
+                            let expr = compute_expr_semantic(ctx, &expr_syntax);
+                            (Some(expr.id), expr.ty(), expr_syntax.stable_ptr(db).untyped())
+                        }
+                    };
+                    let expected_ty = match &ctx.inner_ctx {
+                        None => ctx.get_return_type().ok_or_else(|| {
+                            ctx.diagnostics.report(
+                                return_syntax.stable_ptr(db),
+                                UnsupportedOutsideOfFunction(
+                                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
+                                ),
+                            )
+                        })?,
+                        Some(ctx) => ctx.return_type,
+                    };
+
+                    let expected_ty = ctx.reduce_ty(expected_ty);
+                    let expr_ty = ctx.reduce_ty(expr_ty);
+                    if !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
+                        let inference = &mut ctx.resolver.inference();
+                        let _ = inference.conform_ty_for_diag(
+                            expr_ty,
+                            expected_ty,
+                            ctx.diagnostics,
+                            || stable_ptr,
+                            |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
+                        );
+                    }
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Return(
+                        semantic::StatementReturn {
+                            expr_option,
+                            stable_ptr: syntax.stable_ptr(db),
+                        },
+                    )));
+                    Ok(())
                 }
-                ast::ModuleItem::ExternFunction(_) => {
-                    unreachable!("ExternFunction type not supported.")
+                ast::Statement::Break(break_syntax) => {
+                    let (expr_option, ty, stable_ptr) = match break_syntax.expr_clause(db) {
+                        ast::OptionExprClause::Empty(expr_empty) => {
+                            (None, unit_ty(db), expr_empty.stable_ptr(db).untyped())
+                        }
+                        ast::OptionExprClause::ExprClause(expr_clause) => {
+                            let expr_syntax = expr_clause.expr(db);
+                            let expr = compute_expr_semantic(ctx, &expr_syntax);
+
+                            (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
+                        }
+                    };
+                    let ty = ctx.reduce_ty(ty);
+
+                    if !ctx.is_inside_loop() {
+                        return Err(ctx
+                            .diagnostics
+                            .report(break_syntax.stable_ptr(db), BreakOnlyAllowedInsideALoop));
+                    }
+
+                    if let Some(inner_ctx) = &mut ctx.inner_ctx {
+                        match &mut inner_ctx.kind {
+                            InnerContextKind::Loop { type_merger, .. } => {
+                                type_merger.try_merge_types(
+                                    ctx.db,
+                                    ctx.diagnostics,
+                                    &mut ctx.resolver.inference(),
+                                    ty,
+                                    stable_ptr,
+                                );
+                            }
+                            InnerContextKind::While | InnerContextKind::For => {
+                                if expr_option.is_some() {
+                                    ctx.diagnostics.report(
+                                        break_syntax.stable_ptr(db),
+                                        BreakWithValueOnlyAllowedInsideALoop,
+                                    );
+                                };
+                            }
+                            InnerContextKind::Closure => unreachable!("Not inside a loop."),
+                        }
+                    }
+
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Break(
+                        semantic::StatementBreak { expr_option, stable_ptr: syntax.stable_ptr(db) },
+                    )));
+                    Ok(())
                 }
-                ast::ModuleItem::ExternType(_) => unreachable!("ExternType type not supported."),
-                ast::ModuleItem::Trait(_) => unreachable!("Trait type not supported."),
-                ast::ModuleItem::Impl(_) => unreachable!("Impl type not supported."),
-                ast::ModuleItem::ImplAlias(_) => unreachable!("ImplAlias type not supported."),
-                ast::ModuleItem::Struct(_) => unreachable!("Struct type not supported."),
-                ast::ModuleItem::Enum(_) => unreachable!("Enum type not supported."),
-                ast::ModuleItem::TypeAlias(_) => unreachable!("TypeAlias type not supported."),
-                ast::ModuleItem::InlineMacro(_) => unreachable!("InlineMacro type not supported."),
-                ast::ModuleItem::HeaderDoc(_) => unreachable!("HeaderDoc type not supported."),
-                ast::ModuleItem::MacroDeclaration(_) => {
-                    unreachable!("MacroDeclaration type not supported.")
+                ast::Statement::Item(stmt_item_syntax) => {
+                    let item_syntax = &stmt_item_syntax.item(db);
+                    match item_syntax {
+                        ast::ModuleItem::Constant(const_syntax) => {
+                            let lhs = const_syntax.type_clause(db).ty(db);
+                            let rhs = const_syntax.value(db);
+                            let rhs_expr = compute_expr_semantic(ctx, &rhs);
+                            let explicit_type = resolve_type_ex(
+                                db,
+                                ctx.diagnostics,
+                                ctx.resolver,
+                                &lhs,
+                                ResolutionContext::Statement(&mut ctx.environment),
+                            );
+                            let rhs_resolved_expr = resolve_const_expr_and_evaluate(
+                                db,
+                                ctx,
+                                &rhs_expr,
+                                stmt_item_syntax.stable_ptr(db).untyped(),
+                                explicit_type,
+                                false,
+                            );
+                            let name_syntax = const_syntax.name(db);
+                            let name = name_syntax.text(db);
+                            let rhs_id = StatementConstLongId(
+                                ctx.resolver.module_id,
+                                const_syntax.stable_ptr(db),
+                            );
+                            let var_def = Binding::LocalItem(LocalItem {
+                                id: StatementItemId::Constant(rhs_id.intern(db)),
+                                kind: StatementItemKind::Constant(
+                                    rhs_resolved_expr,
+                                    rhs_resolved_expr.ty(db)?,
+                                ),
+                            });
+                            add_value_to_statement_environment(
+                                ctx,
+                                name,
+                                var_def,
+                                name_syntax.stable_ptr(db),
+                            );
+                        }
+                        ast::ModuleItem::Use(use_syntax) => {
+                            for leaf in get_all_path_leaves(db, use_syntax) {
+                                let stable_ptr = leaf.stable_ptr(db);
+                                let resolved_item = ctx.resolver.resolve_use_path(
+                                    ctx.diagnostics,
+                                    ast::UsePath::Leaf(leaf),
+                                    ResolutionContext::Statement(&mut ctx.environment),
+                                )?;
+                                let var_def_id = StatementItemId::Use(
+                                    StatementUseLongId(ctx.resolver.module_id, stable_ptr)
+                                        .intern(db),
+                                );
+                                let name = var_def_id.name(db);
+                                match resolved_item {
+                                    ResolvedGenericItem::GenericConstant(const_id) => {
+                                        let const_value_id = db.constant_const_value(const_id)?;
+                                        let var_def = Binding::LocalItem(LocalItem {
+                                            id: var_def_id,
+                                            kind: StatementItemKind::Constant(
+                                                const_value_id,
+                                                const_value_id.ty(db)?,
+                                            ),
+                                        });
+                                        add_value_to_statement_environment(
+                                            ctx, name, var_def, stable_ptr,
+                                        );
+                                    }
+                                    item @ (ResolvedGenericItem::GenericType(_)
+                                    | ResolvedGenericItem::Module(_)) => {
+                                        add_item_to_statement_environment(
+                                            ctx, name, item, stable_ptr,
+                                        );
+                                    }
+                                    ResolvedGenericItem::GenericFunction(_)
+                                    | ResolvedGenericItem::GenericTypeAlias(_)
+                                    | ResolvedGenericItem::GenericImplAlias(_)
+                                    | ResolvedGenericItem::Variant(_)
+                                    | ResolvedGenericItem::Trait(_)
+                                    | ResolvedGenericItem::Impl(_)
+                                    | ResolvedGenericItem::Variable(_)
+                                    | ResolvedGenericItem::TraitItem(_)
+                                    | ResolvedGenericItem::Macro(_) => {
+                                        return Err(ctx
+                                            .diagnostics
+                                            .report(stable_ptr, UnsupportedUseItemInStatement));
+                                    }
+                                }
+                            }
+                        }
+                        ast::ModuleItem::Module(_)
+                        | ast::ModuleItem::FreeFunction(_)
+                        | ast::ModuleItem::ExternFunction(_)
+                        | ast::ModuleItem::ExternType(_)
+                        | ast::ModuleItem::Trait(_)
+                        | ast::ModuleItem::Impl(_)
+                        | ast::ModuleItem::ImplAlias(_)
+                        | ast::ModuleItem::Struct(_)
+                        | ast::ModuleItem::Enum(_)
+                        | ast::ModuleItem::TypeAlias(_)
+                        | ast::ModuleItem::InlineMacro(_)
+                        | ast::ModuleItem::HeaderDoc(_)
+                        | ast::ModuleItem::MacroDeclaration(_) => {
+                            return Err(ctx.diagnostics.report(
+                                stmt_item_syntax.stable_ptr(db),
+                                UnsupportedItemInStatement,
+                            ));
+                        }
+                        // Diagnostics reported on syntax level already.
+                        ast::ModuleItem::Missing(_) => return Err(skip_diagnostic()),
+                    }
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Item(
+                        semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) },
+                    )));
+                    Ok(())
                 }
-                ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
+                // Diagnostics reported on syntax level already.
+                ast::Statement::Missing(_) => Err(skip_diagnostic()),
             }
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Item(
-                semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) },
-            )));
-            Ok(())
-        }
-        // Diagnostics reported on syntax level already.
-        ast::Statement::Missing(_) => return Err(skip_diagnostic()),
-    };
-    ctx.restore_features(feature_restore);
-    Ok(())
+        },
+        |ctx| {
+            ctx.restore_features(feature_restore);
+        },
+    )
 }
 /// Adds an item to the statement environment and reports a diagnostic if the item is already
 /// defined.

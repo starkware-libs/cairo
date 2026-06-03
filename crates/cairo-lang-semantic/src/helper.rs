@@ -1,4 +1,6 @@
-use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{
+    EnumId, ExternFunctionId, FreeFunctionId, ModuleId, ModuleItemId, TraitId,
+};
 use cairo_lang_filesystem::ids::SmolStrId;
 use salsa::Database;
 
@@ -31,6 +33,15 @@ impl<'a> ModuleHelper<'a> {
             self.db.module_item_by_name(self.id, SmolStrId::from(self.db, name))
         else {
             panic!("`{}` not found in `{}`.", name, self.id.full_path(self.db));
+        };
+        id
+    }
+    /// Returns the id of an enum named `name` in the current module.
+    pub fn enum_id(&self, name: &str) -> EnumId<'a> {
+        let Ok(Some(ModuleItemId::Enum(id))) =
+            self.db.module_item_by_name(self.id, SmolStrId::from(self.db, name))
+        else {
+            panic!("`{name}` not found in `{}`.", self.id.full_path(self.db));
         };
         id
     }

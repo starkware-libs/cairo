@@ -120,12 +120,12 @@ error[E2182]: Closures are not allowed in this context.
 |_^
 
 error[E2302]: Type mismatch: `{closure@lib.cairo:1:17: 1:19}` and `core::integer::i32`.
- --> lib.cairo:1:1-4:2
+ --> lib.cairo:1:17-4:1
   const _x: i32 = || {
- _^
+ _________________^
 | ...
 | };
-|__^
+|_^
 
 //! > ==========================================================================
 
@@ -520,7 +520,7 @@ error[E2061]: `?` can only be used in a function with `Option` or `Result` retur
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:6:17
     let bar2 = |b: Option<u32>| {
-                ^^^^^^^^^^^^^^
+                ^
 
 error[E0006]: Function not found.
  --> lib.cairo:10:19

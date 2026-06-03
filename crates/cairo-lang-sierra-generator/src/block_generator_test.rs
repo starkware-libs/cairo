@@ -49,11 +49,9 @@ fn block_generator_test(
     // Lower code.
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-    let lowering_diagnostics = db
-        .function_with_body_lowering_diagnostics(
-            ids::FunctionWithBodyLongId::Semantic(test_function.function_id).intern(db),
-        )
-        .unwrap();
+    let lowering_diagnostics = db.function_with_body_lowering_diagnostics(
+        ids::FunctionWithBodyLongId::Semantic(test_function.function_id).intern(db),
+    );
 
     let lowered = match db.lowered_body(function_id, LoweringStage::Final) {
         Ok(lowered) if !lowered.blocks.is_empty() => lowered,

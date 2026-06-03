@@ -1,7 +1,9 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs as defs;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{
     CorelibSemantic, ErrorPropagationType, bounded_int_ty, get_enum_concrete_variant,
     try_get_ty_by_name, unwrap_error_propagation_type, validate_literal,
@@ -44,7 +46,6 @@ use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
     MatchArmSelector, SemanticDiagnostic, TypeLongId,
 };
-use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use self::block_builder::{BlockBuilder, SealedBlockBuilder, SealedGotoCallsite};
 use self::context::{
@@ -725,7 +726,7 @@ fn lower_single_pattern<'db>(
         | semantic::Pattern::StringLiteral(_)
         | semantic::Pattern::EnumVariant(_) => {
             return Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(pattern.stable_ptr(), UnsupportedPattern),
+                ctx.diagnostics.report(pattern.stable_ptr(), RefutablePattern),
             ));
         }
         semantic::Pattern::Variable(semantic::PatternVariable {
@@ -797,8 +798,14 @@ fn lower_single_pattern<'db>(
             ty,
             ..
         }) => {
-            let patterns = patterns.clone();
-            lower_tuple_like_pattern_helper(ctx, builder, lowered_expr, &patterns, *ty)?;
+            lower_tuple_like_pattern_helper(
+                ctx,
+                builder,
+                lowered_expr,
+                patterns,
+                *ty,
+                pattern.stable_ptr().untyped(),
+            )?;
         }
         semantic::Pattern::Otherwise(pattern) => {
             let stable_ptr = pattern.stable_ptr.untyped();
@@ -817,6 +824,7 @@ fn lower_tuple_like_pattern_helper<'db>(
     lowered_expr: LoweredExpr<'db>,
     patterns: &[semantic::PatternId],
     ty: semantic::TypeId<'db>,
+    stable_ptr: SyntaxStablePtrId<'db>,
 ) -> LoweringResult<'db, ()> {
     let outputs = match lowered_expr {
         LoweredExpr::Tuple { exprs, .. } => exprs,
@@ -827,12 +835,18 @@ fn lower_tuple_like_pattern_helper<'db>(
                 TypeLongId::Tuple(tys) => tys,
                 TypeLongId::FixedSizeArray { type_id, size } => {
                     let size = size
-                        .long(ctx.db)
-                        .to_int()
+                        .to_int(ctx.db)
                         .expect("Expected ConstValue::Int for size")
                         .to_usize()
                         .unwrap();
                     vec![type_id; size]
+                }
+                // `Span<T>` matched against `[..]` is synthesized as a fixed-size array, but
+                // stays refutable.
+                TypeLongId::Concrete(_) => {
+                    return Err(LoweringFlowError::Failed(
+                        ctx.diagnostics.report(stable_ptr, RefutablePattern),
+                    ));
                 }
                 _ => unreachable!("Tuple-like pattern must be a tuple or fixed size array."),
             };
@@ -872,7 +886,7 @@ fn lower_tuple_like_pattern_helper<'db>(
 /// For example, if we have the code:
 /// foo(a + b)
 ///
-/// then `a + b` will be assigned  variable and a VarUsage object whose origin
+/// then `a + b` will be assigned variable and a VarUsage object whose origin
 /// is the location of the `a + b` expression.
 fn lower_expr_to_var_usage<'db>(
     ctx: &mut LoweringContext<'db, '_>,
@@ -1150,12 +1164,8 @@ fn lower_expr_fixed_size_array<'db>(
         semantic::FixedSizeArrayItems::ValueAndSize(value, size) => {
             let lowered_value = lower_expr(ctx, builder, *value)?;
             let var_usage = lowered_value.as_var_usage(ctx, builder)?;
-            let size = size
-                .long(ctx.db)
-                .to_int()
-                .expect("Expected ConstValue::Int for size")
-                .to_usize()
-                .unwrap();
+            let size =
+                size.to_int(ctx.db).expect("Expected ConstValue::Int for size").to_usize().unwrap();
             if size == 0 {
                 return Err(LoweringFlowError::Failed(
                     ctx.diagnostics
@@ -1224,8 +1234,8 @@ fn lower_expr_desnap<'db>(
     log::trace!("Lowering a desnap: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let expr = lower_expr(ctx, builder, expr.inner)?;
-    if let LoweredExpr::Snapshot { expr, .. } = &expr {
-        return Ok(expr.as_ref().clone());
+    if let LoweredExpr::Snapshot { expr, .. } = expr {
+        return Ok(*expr);
     }
     let input = expr.as_var_usage(ctx, builder)?;
 
@@ -1564,19 +1574,16 @@ fn lower_expr_loop<'db>(
     .intern(db);
 
     // Generate the function.
-    let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
-    let loop_ctx = LoopContext { loop_expr_id, early_return_info: early_return_info.clone() };
+    let encapsulating_ctx = ctx.encapsulating_ctx.as_mut().unwrap();
     let lowered = lower_loop_function(
         encapsulating_ctx,
         function,
         loop_signature.clone(),
-        loop_ctx,
+        LoopContext { loop_expr_id, early_return_info: early_return_info.clone() },
         ctx.return_type,
     )
     .map_err(LoweringFlowError::Failed)?;
-    // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(stable_ptr), lowered);
-    ctx.encapsulating_ctx = Some(encapsulating_ctx);
     let call_loop_expr = call_loop_func_ex(
         ctx,
         loop_signature,
@@ -1948,16 +1955,14 @@ fn add_capture_destruct_impl<'db>(
 
     let location_id = LocationId::from_stable_location(db, location);
 
-    let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
+    let encapsulating_ctx = ctx.encapsulating_ctx.as_mut().unwrap();
     let return_type = signature.return_type;
     let lowered_impl_res = get_destruct_lowering(
         LoweringContext::new(encapsulating_ctx, function_id, signature, return_type)?,
         location_id,
         closure_info,
-    );
-    // Restore the encapsulating context before unwrapping the result.
-    ctx.encapsulating_ctx = Some(encapsulating_ctx);
-    ctx.lowerings.insert(func_key, lowered_impl_res?);
+    )?;
+    ctx.lowerings.insert(func_key, lowered_impl_res);
     Ok(())
 }
 
@@ -2144,12 +2149,8 @@ fn lower_expr_closure<'db>(
     let (capture_var_usage, closure_info) = builder.capture(ctx, usage, expr);
     let closure_variable = LoweredExpr::AtVariable(capture_var_usage);
     let closure_ty = extract_matches!(expr.ty.long(ctx.db), TypeLongId::Closure);
-    let _ = add_capture_destruct_impl(
-        ctx,
-        capture_var_usage,
-        &closure_info,
-        closure_ty.params_location,
-    );
+    add_capture_destruct_impl(ctx, capture_var_usage, &closure_info, closure_ty.params_location)
+        .map_err(LoweringFlowError::Failed)?;
     add_closure_call_function(
         ctx,
         expr,
