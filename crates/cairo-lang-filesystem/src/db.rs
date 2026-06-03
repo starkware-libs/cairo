@@ -122,7 +122,7 @@ pub struct CrateSettings {
 /// Tracked function to return the default settings for a crate.
 /// This is used to initialize the default settings once, and return it by reference.
 #[salsa::tracked(returns(ref))]
-pub fn default_crate_settings<'db>(_db: &'db dyn Database) -> CrateSettings {
+pub fn default_crate_settings(_db: &dyn Database) -> CrateSettings {
     CrateSettings::default()
 }
 
