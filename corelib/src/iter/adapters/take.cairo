@@ -51,26 +51,32 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
             match self.iter.advance_by(n) {
                 Ok(_) => Ok(()),
                 Err(rem_nz) => {
-                    self.n += rem_nz.into();
+                    // Can't overflow - at most restores `self.n` to its value before the
+                    // subtraction above.
+                    if let Some(restored) = self.n.checked_add(rem_nz.into()) {
+                        self.n = restored;
+                    }
                     Err(rem_nz)
                 },
             }
         } else {
             let available = self.n;
+            // Set `self.n = 0`, as it is equivalent to shrinking the size by the taken amount if
+            // the inner iterator was exhausted.
+            self.n = 0;
             let inner_taken = match self.iter.advance_by(available) {
-                Ok(_) => {
-                    self.n = 0;
-                    available
-                },
-                Err(inner_untaken) => {
-                    self.n = inner_untaken.into();
-                    available - self.n
+                Ok(_) => available,
+                // The sub can't actually fail for properly implemented iterators.
+                Err(inner) => if let Some(inner_taken) = available.checked_sub(inner.into()) {
+                    inner_taken
+                } else {
+                    return Ok(());
                 },
             };
-            match (n - inner_taken).try_into() {
-                Some(nz) => Err(nz),
-                // Can't actually happen - but preventing the `unwrap` generated code.
-                None => Ok(()),
+            if let Some(untaken) = n.checked_sub(inner_taken) && let Some(nz) = untaken.try_into() {
+                Err(nz)
+            } else {
+                Ok(())
             }
         }
     }
