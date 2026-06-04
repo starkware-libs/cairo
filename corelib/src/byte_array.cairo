@@ -269,7 +269,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// Appends the reverse of the given word to the end of `self`.
     ///
     /// This function assumes that:
-    /// 1. len < 31
+    /// 1. len <= 31
     /// 2. word is validly convertible to bytes31 of length `len`.
     ///
     /// # Examples
