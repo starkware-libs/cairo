@@ -3,7 +3,7 @@ use crate::zeroable::NonZero;
 /// Performs truncated division **and** remainder.
 ///
 /// `T` – dividend type (left-hand operand)
-/// `U` – divisor  type (right-hand operand, must be wrapped in
+/// `U` – divisor type (right-hand operand, must be wrapped in
 ///       [`NonZero<U>`](core::zeroable::NonZero) at call-site)
 ///
 /// The division truncates toward zero, like Cairo’s `/` and `%`.

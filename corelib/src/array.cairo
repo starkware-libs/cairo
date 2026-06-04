@@ -413,7 +413,7 @@ impl SpanFelt252Serde of Serde<Span<felt252>> {
         serialize_array_helper(*self, ref output)
     }
 
-    /// Deserializes a `Span<felt252>` into an `Span<felt252>` and returns an option of a
+    /// Deserializes a `Span<felt252>` into a `Span<felt252>` and returns an option of a
     /// `Span<felt252>`.
     ///
     /// # Examples
@@ -448,7 +448,7 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>>
         serialize_array_helper(*self, ref output)
     }
 
-    /// Deserializes a `Span<felt252>` into an `Span<T>` and returns an option of a `Span<T>`.
+    /// Deserializes a `Span<felt252>` into a `Span<T>` and returns an option of a `Span<T>`.
     ///
     /// # Examples
     ///
@@ -711,7 +711,8 @@ impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
     }
 }
 
-/// Returns an option to a snapshot of a box of struct of members of the same type from a span.
+/// Returns an option containing a snapshot of a box of a struct with members of the same type from
+/// a span.
 extern fn tuple_from_span<T, impl Info: FixedSizedArrayInfo<T>>(
     span: @Array<Info::Element>,
 ) -> Option<@Box<T>> nopanic;
