@@ -546,7 +546,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let span = array![2, 3, 4];
+    /// let span = array![2, 3, 4].span();
     /// assert!(span.get(1).unwrap().unbox() == @3);
     /// ```
     #[inline]
