@@ -794,11 +794,13 @@ fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usiz
     let mut last_line_broken = false;
     for line in content.lines() {
         let orig_comment_line = CommentLine::from_string(line.to_string());
+        // Saturate: the prefix (indent + slashes + exclamations + leading spaces) can exceed
+        // `max_line_width` for a deeply-indented or many-slash comment, which would underflow.
         let max_comment_width = max_line_width
-            - cur_indent
-            - orig_comment_line.n_slashes
-            - orig_comment_line.n_exclamations
-            - orig_comment_line.n_leading_spaces;
+            .saturating_sub(cur_indent)
+            .saturating_sub(orig_comment_line.n_slashes)
+            .saturating_sub(orig_comment_line.n_exclamations)
+            .saturating_sub(orig_comment_line.n_leading_spaces);
         // The current line is initialized with the previous line only if it was broken (to avoid
         // merging user separated lines).
         let mut current_line = if last_line_broken
