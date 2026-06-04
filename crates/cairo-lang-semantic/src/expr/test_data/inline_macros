@@ -1141,6 +1141,33 @@ macro add_one {
 
 //! > ==========================================================================
 
+//! > Test user defined macro matching a $defsite variant pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() -> felt252 {
+    unwrap_or_zero!(Option::<felt252>::Some(7))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro unwrap_or_zero {
+    ($opt: expr) => {
+        match $opt {
+            $defsite::Option::Some(x) => x,
+            $defsite::Option::None => 0,
+        }
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > Test user defined macro overwriting plugin macro.
 
 //! > test_runner_name
