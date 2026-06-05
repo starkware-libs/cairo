@@ -479,15 +479,6 @@ impl<'db> FlowControlGraphBuilder<'db> {
         self.graph.var_locations[input_var.0]
     }
 
-    /// Reports a diagnostic.
-    pub fn report(
-        &mut self,
-        stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
-        kind: LoweringDiagnosticKind<'db>,
-    ) -> DiagnosticAdded {
-        self.diagnostics.report(stable_ptr, kind)
-    }
-
     /// Reports a diagnostic, and returns a new [FlowControlNode::Missing] node.
     pub fn report_with_missing_node(
         &mut self,

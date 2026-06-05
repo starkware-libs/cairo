@@ -19,6 +19,27 @@ error[E2008]: A numeric literal of type core::pedersen::Pedersen cannot be creat
 
 //! > ==========================================================================
 
+//! > Inferred-type numeric literal whose value is out of range.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x: u8 = 256;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2008]: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:2:18
+    let _x: u8 = 256;
+                 ^^^
+
+//! > ==========================================================================
+
 //! > Numeric literal with a non-type suffix.
 
 //! > test_runner_name

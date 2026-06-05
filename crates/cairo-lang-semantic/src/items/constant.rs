@@ -478,10 +478,7 @@ pub fn resolve_const_expr_and_evaluate<'db, 'mt>(
     } else if let Err(err_set) = inference.solve() {
         inference.report_on_pending_error(err_set, ctx.diagnostics, const_stable_ptr);
     }
-
-    // TODO(orizi): Consider moving this to be called only upon creating const values, other callees
-    // don't necessarily need it.
-    ctx.apply_inference_rewriter_to_exprs();
+    ctx.apply_inference_rewriter();
 
     match &value.expr {
         Expr::Constant(ExprConstant { const_value_id, .. }) => *const_value_id,
@@ -572,14 +569,8 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     );
                 }
             }
-            Expr::Literal(expr) => {
-                if let Err(err) = validate_literal(self.db, expr.ty, &expr.value) {
-                    self.diagnostics.report(
-                        expr.stable_ptr.untyped(),
-                        SemanticDiagnosticKind::LiteralError(err),
-                    );
-                }
-            }
+            // Already validated by `apply_inference_rewriter`.
+            Expr::Literal(_) => {}
             Expr::Tuple(expr) => {
                 for item in &expr.items {
                     self.validate(*item);
