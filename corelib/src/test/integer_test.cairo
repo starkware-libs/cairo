@@ -1763,6 +1763,11 @@ fn test_i128_operators() {
         @-0x80000000000000000000000000000000_i128,
         'failed MIN_I128 as mul result',
     );
+    assert_eq(
+        @(1_i128 * 0x7fffffffffffffffffffffffffffffff_i128),
+        @0x7fffffffffffffffffffffffffffffff_i128,
+        'failed MAX_I128 as mul result',
+    );
     assert_lt(1_i128, 4_i128, '1 < 4');
     assert_le(1_i128, 4_i128, '1 <= 4');
     assert(!(4_i128 < 4_i128), '!(4 < 4)');
@@ -1829,21 +1834,27 @@ fn test_i128_add_underflow() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('i128_mul Overflow',))]
 fn test_i128_mul_overflow_1() {
     0x10000000000000000000000000000000_i128 * 0x10000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('i128_mul Overflow',))]
 fn test_i128_mul_overflow_2() {
     0x11000000000000000000000000000000_i128 * 0x10000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('i128_mul Overflow',))]
 fn test_i128_mul_overflow_3() {
     2_i128 * 0x40000000000000000000000000000000_i128;
+}
+
+#[test]
+#[should_panic(expected: ('i128_mul Overflow',))]
+fn test_i128_mul_overflow_min_times_minus_one() {
+    -0x80000000000000000000000000000000_i128 * -1_i128;
 }
 
 #[test]
