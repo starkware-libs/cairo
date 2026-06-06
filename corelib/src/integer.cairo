@@ -68,8 +68,9 @@
 use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
+use crate::internal::OptionRev;
 #[feature("bounded-int-utils")]
-use crate::internal::bounded_int::{downcast, upcast};
+use crate::internal::bounded_int::{self, downcast, upcast};
 use crate::option::OptionTrait;
 use crate::result::ResultTrait;
 use crate::traits::{BitAnd, BitNot, BitOr, BitXor, Default, Felt252DictValue, Into, TryInto};
@@ -1210,10 +1211,9 @@ pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
 
 /// Helper function for implementation of `u256_wide_mul`.
 /// Used for adding two u128s and receiving a BoundedInt for the carry result.
-#[feature("bounded-int-utils")]
 pub(crate) fn u128_add_with_bounded_int_carry(
     a: u128, b: u128,
-) -> (u128, crate::internal::bounded_int::BoundedInt<0, 1>) nopanic {
+) -> (u128, bounded_int::BoundedInt<0, 1>) nopanic {
     match u128_overflowing_add(a, b) {
         Ok(v) => (v, 0),
         Err(v) => (v, 1),
@@ -1981,12 +1981,11 @@ impl I8Sub of Sub<i8> {
 
 impl I8Neg of Neg<i8> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i8) -> i8 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i8_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i8_neg Underflow'),
+        }
     }
 }
 
@@ -2071,12 +2070,11 @@ impl I16Sub of Sub<i16> {
 
 impl I16Neg of Neg<i16> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i16) -> i16 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i16_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i16_neg Underflow'),
+        }
     }
 }
 
@@ -2162,12 +2160,11 @@ impl I32Sub of Sub<i32> {
 
 impl I32Neg of Neg<i32> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i32) -> i32 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i32_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i32_neg Underflow'),
+        }
     }
 }
 
@@ -2253,12 +2250,11 @@ impl I64Sub of Sub<i64> {
 
 impl I64Neg of Neg<i64> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i64) -> i64 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i64_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i64_neg Underflow'),
+        }
     }
 }
 
@@ -2349,21 +2345,19 @@ impl I128Sub of Sub<i128> {
 
 impl I128Neg of Neg<i128> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i128) -> i128 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i128_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i128_neg Underflow'),
+        }
     }
 }
 
 impl I128Mul of Mul<i128> {
     fn mul(lhs: i128, rhs: i128) -> i128 {
         let (lhs_u127, lhs_neg) = lhs.abs_and_sign();
-        #[feature("bounded-int-utils")]
-        let (rhs_u127, res_neg) = match core::internal::bounded_int::constrain::<i128, 0>(rhs) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), !lhs_neg),
+        let (rhs_u127, res_neg) = match bounded_int::constrain::<i128, 0>(rhs) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), !lhs_neg),
             Err(ge0) => (upcast(ge0), lhs_neg),
         };
         let res_as_u128 = lhs_u127 * rhs_u127;
@@ -3384,50 +3378,45 @@ pub(crate) trait AbsAndSign<Signed, Unsigned> {
 }
 
 impl I8ToU8 of AbsAndSign<i8, u8> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i8) -> (u8, bool) {
-        match core::internal::bounded_int::constrain::<i8, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i8, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I16ToU16 of AbsAndSign<i16, u16> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i16) -> (u16, bool) {
-        match core::internal::bounded_int::constrain::<i16, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i16, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I32ToU32 of AbsAndSign<i32, u32> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i32) -> (u32, bool) {
-        match core::internal::bounded_int::constrain::<i32, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i32, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I64ToU64 of AbsAndSign<i64, u64> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i64) -> (u64, bool) {
-        match core::internal::bounded_int::constrain::<i64, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i64, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I128ToU128 of AbsAndSign<i128, u128> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i128) -> (u128, bool) {
-        match core::internal::bounded_int::constrain::<i128, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i128, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }
