@@ -145,6 +145,10 @@ fn get_contextualized_path<'db>(
     }
 
     if owning_crate == context_module.owning_crate(db) {
+        // Removing the crate name for the provided path, as `crate::` prefix already denotes the
+        // crate root.
+        let mut path_items = path_items;
+        path_items.pop();
         return Ok(ItemAccessInfo::new(ItemAccessKind::ViaCrate, path_items, item_name));
     }
 
