@@ -21,6 +21,11 @@ use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 /// Returns a tuple (g, s, t, sub_direction) where g is the GCD and `(s, -t)` or `(-s, t)` are the
 /// Bezout coefficients (according to `sub_direction`).
 ///
+/// # Panics
+///
+/// Panics for a signed `T` when `a` or `b` is `T::MIN`, since the computation relies on the
+/// absolute value, and `|T::MIN|` is not representable in `T`.
+///
 /// # Examples
 ///
 /// ```
