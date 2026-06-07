@@ -21672,13 +21672,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -1
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x100"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -1
+                },
+                "b": {
+                  "Immediate": "-0x100"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -21840,13 +21846,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -1
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x10000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -1
+                },
+                "b": {
+                  "Immediate": "-0x10000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -22008,13 +22020,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -1
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x100000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -1
+                },
+                "b": {
+                  "Immediate": "-0x100000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -22176,13 +22194,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -1
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x10000000000000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -1
+                },
+                "b": {
+                  "Immediate": "-0x10000000000000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -23549,13 +23573,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -1
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x100000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -1
+                },
+                "b": {
+                  "Immediate": "-0x100000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -26813,13 +26843,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -2
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x80"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -2
+                },
+                "b": {
+                  "Immediate": "-0x80"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -27191,13 +27227,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -2
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x8000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -2
+                },
+                "b": {
+                  "Immediate": "-0x8000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -27569,13 +27611,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -2
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x80000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -2
+                },
+                "b": {
+                  "Immediate": "-0x80000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -27947,13 +27995,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -2
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x8000000000000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -2
+                },
+                "b": {
+                  "Immediate": "-0x8000000000000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -28347,13 +28401,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -2
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x80000000000000000000000000000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -2
+                },
+                "b": {
+                  "Immediate": "-0x80000000000000000000000000000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -32458,13 +32518,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -1
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x100000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -1
+                },
+                "b": {
+                  "Immediate": "-0x100000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -32945,13 +33011,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -16
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x80000000000000000000000000000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -16
+                },
+                "b": {
+                  "Immediate": "-0x80000000000000000000000000000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -32967,13 +33039,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -16
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x80000000000000000000000000000001"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -16
+                },
+                "b": {
+                  "Immediate": "-0x80000000000000000000000000000001"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -32989,13 +33067,19 @@
         {
           "TestLessThan": {
             "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x10"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "FP",
+                  "offset": -3
+                },
+                "b": {
+                  "Immediate": "-0x10"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -34620,7 +34704,7 @@
     [
       5807,
       [
-        "memory[ap + 0] = memory[ap + -1] < 256"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -1] + -256) % PRIME"
       ]
     ],
     [
@@ -34662,7 +34746,7 @@
     [
       6074,
       [
-        "memory[ap + 0] = memory[ap + -1] < 65536"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -1] + -65536) % PRIME"
       ]
     ],
     [
@@ -34704,7 +34788,7 @@
     [
       6341,
       [
-        "memory[ap + 0] = memory[ap + -1] < 4294967296"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -1] + -4294967296) % PRIME"
       ]
     ],
     [
@@ -34746,7 +34830,7 @@
     [
       6608,
       [
-        "memory[ap + 0] = memory[ap + -1] < 18446744073709551616"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -1] + -18446744073709551616) % PRIME"
       ]
     ],
     [
@@ -35065,7 +35149,7 @@
     [
       9570,
       [
-        "memory[ap + 0] = memory[ap + -1] < 4294967296"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -1] + -4294967296) % PRIME"
       ]
     ],
     [
@@ -35907,7 +35991,7 @@
     [
       13786,
       [
-        "memory[ap + 0] = memory[ap + -2] < 128"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -2] + -128) % PRIME"
       ]
     ],
     [
@@ -35991,7 +36075,7 @@
     [
       14084,
       [
-        "memory[ap + 0] = memory[ap + -2] < 32768"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -2] + -32768) % PRIME"
       ]
     ],
     [
@@ -36075,7 +36159,7 @@
     [
       14382,
       [
-        "memory[ap + 0] = memory[ap + -2] < 2147483648"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -2] + -2147483648) % PRIME"
       ]
     ],
     [
@@ -36159,7 +36243,7 @@
     [
       14680,
       [
-        "memory[ap + 0] = memory[ap + -2] < 9223372036854775808"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -2] + -9223372036854775808) % PRIME"
       ]
     ],
     [
@@ -36249,7 +36333,7 @@
     [
       14987,
       [
-        "memory[ap + 0] = memory[ap + -2] < 170141183460469231731687303715884105728"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -2] + -170141183460469231731687303715884105728) % PRIME"
       ]
     ],
     [
@@ -37305,7 +37389,7 @@
     [
       18459,
       [
-        "memory[ap + 0] = memory[ap + -1] < 4294967296"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -1] + -4294967296) % PRIME"
       ]
     ],
     [
@@ -37449,19 +37533,19 @@
     [
       19195,
       [
-        "memory[ap + 0] = memory[ap + -16] < 170141183460469231731687303715884105728"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -16] + -170141183460469231731687303715884105728) % PRIME"
       ]
     ],
     [
       19219,
       [
-        "memory[ap + 0] = memory[ap + -16] < 170141183460469231731687303715884105729"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[ap + -16] + -170141183460469231731687303715884105729) % PRIME"
       ]
     ],
     [
       19256,
       [
-        "memory[ap + 0] = memory[fp + -3] < 16"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 < (memory[fp + -3] + -16) % PRIME"
       ]
     ],
     [
