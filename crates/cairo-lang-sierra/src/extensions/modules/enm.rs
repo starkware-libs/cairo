@@ -342,6 +342,7 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let enum_type = args_as_single_type(args)?;
         let variant_types = EnumConcreteType::try_from_concrete_type(context, enum_type)?.variants;
+        let is_empty = variant_types.is_empty();
         let branch_signatures = variant_types
             .into_iter()
             .map(|ty| {
@@ -364,7 +365,7 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
         Ok(LibfuncSignature {
             param_signatures: vec![snapshot_ty(context, enum_type.clone())?.into()],
             branch_signatures,
-            fallthrough: Some(0),
+            fallthrough: (!is_empty).then_some(0),
         })
     }
 }

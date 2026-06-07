@@ -249,3 +249,32 @@ store_temp<felt252>([6]) -> ([6]);
 return([6]);
 
 test::foo@F0([0]: Snapshot<test::Color>) -> (felt252);
+
+//! > ==========================================================================
+
+//! > match on snapshot never.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn enum_snapshot_match<T>(e: @T) -> never nopanic;
+
+fn foo(n: @never) -> never {
+    enum_snapshot_match::<never>(n)
+}
+
+//! > casm
+
+//! > function_costs
+test::foo: SmallOrderedMap({})
+
+//! > sierra_code
+type core::never = Enum<ut@core::never> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc enum_snapshot_match<core::never> = enum_snapshot_match<core::never>;
+
+F0:
+enum_snapshot_match<core::never>([0]) { };
+
+test::foo@F0([0]: core::never) -> (core::never);
