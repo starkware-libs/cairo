@@ -455,10 +455,11 @@ impl<'db> AddStoreVariableStatements<'db> {
     fn store_all_possibly_lost_variables(&mut self, state: &mut VariablesState) {
         self.store_variables_as_locals(state);
         for (var, var_state) in state.variables.iter_mut() {
-            if let VarState::Deferred { info } = var_state {
-                if info.kind != DeferredOutputKind::Const && self.duplicated_vars.contains(var) {
-                    *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
-                }
+            if let VarState::Deferred { info } = var_state
+                && info.kind != DeferredOutputKind::Const
+                && self.duplicated_vars.contains(var)
+            {
+                *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
             }
         }
     }
