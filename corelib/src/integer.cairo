@@ -2360,13 +2360,25 @@ impl I128Mul of Mul<i128> {
             Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), !lhs_neg),
             Err(ge0) => (upcast(ge0), lhs_neg),
         };
-        let res_as_u128 = lhs_u127 * rhs_u127;
-        let res_as_felt252: felt252 = if res_neg {
-            -res_as_u128.into()
+        let (res_high, res_as_u128) = u128_wide_mul(lhs_u127, rhs_u127);
+        if res_high != 0 {
+            crate::panic_with_felt252('i128_mul Overflow');
+        }
+        if res_neg {
+            match downcast::<
+                _, bounded_int::BoundedInt<0, 0x80000000000000000000000000000000>,
+            >(res_as_u128) {
+                Some(magnitude) => upcast(bounded_int::NegateHelper::negate(magnitude)),
+                None => crate::panic_with_felt252('i128_mul Overflow'),
+            }
         } else {
-            res_as_u128.into()
-        };
-        res_as_felt252.try_into().expect('i128_mul Overflow')
+            match downcast::<
+                _, bounded_int::BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>,
+            >(res_as_u128) {
+                Some(magnitude) => upcast(magnitude),
+                None => crate::panic_with_felt252('i128_mul Overflow'),
+            }
+        }
     }
 }
 
