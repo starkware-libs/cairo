@@ -2949,6 +2949,20 @@ fn maybe_compute_pattern_semantic<'db>(
                 }
             }
 
+            // A resolver-modifier path (`$defsite`/`$callsite`) is never a plain variable binding.
+            // If it didn't resolve to a variant above, surface the real resolution error (e.g.
+            // `Expected path after modifier`) instead of silently treating its trailing segment as
+            // a new binding.
+            if let ast::OptionTerminalDollar::TerminalDollar(_) = path.dollar(db) {
+                ctx.resolver.resolve_generic_path_with_args(
+                    ctx.diagnostics,
+                    path,
+                    NotFoundItemType::Identifier,
+                    ResolutionContext::Statement(&mut ctx.environment),
+                )?;
+                return Err(ctx.diagnostics.report(path.stable_ptr(ctx.db), Unsupported));
+            }
+
             // Paths with a single element are treated as identifiers, which will result in a
             // variable pattern if no matching enum variant is found. If a matching enum
             // variant exists, it is resolved to the corresponding concrete variant.
