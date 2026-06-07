@@ -10,6 +10,7 @@ use super::core::{DataflowAnalyzer, Direction, StatementLocation};
 use super::def_site::DefSiteAnalysis;
 use super::dominator::Dominators;
 use super::forward::ForwardDataflowAnalysis;
+use super::topological_order::TopologicalOrder;
 use super::use_sites::UseSites;
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
@@ -29,6 +30,7 @@ cairo_lang_test_utils::test_file_test!(
         dominator: "dominator",
         def_site: "def_site",
         use_sites: "use_sites",
+        topological_order: "topological_order",
     },
     test_analysis,
     ["analysis"]
@@ -54,6 +56,7 @@ fn test_analysis(
             "dominator" => format!("{:#?}", Dominators::analyze(lowered)),
             "def_site" => format!("{:#?}", DefSiteAnalysis::analyze(lowered)),
             "use_sites" => format!("{:#?}", UseSites::analyze(lowered)),
+            "topological_order" => format!("{:#?}", TopologicalOrder::analyze(lowered)),
             _ => panic!("unknown analysis: {analysis_name}"),
         };
         (lowering_str, result_str)
