@@ -790,3 +790,49 @@ blk0 (root):
 Statements:
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > Test enum construct memo does not collide across variants (same enum, same input var).
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > module_code
+#[derive(Drop, Copy)]
+enum MyEnum {
+    A: u32,
+    B: u32,
+}
+
+//! > function_code
+fn foo(x: u32) -> (MyEnum, MyEnum) {
+    (MyEnum::A(x), MyEnum::B(x))
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: test::MyEnum) <- MyEnum::A(v0)
+  (v2: test::MyEnum) <- MyEnum::B(v0)
+  (v3: (test::MyEnum, test::MyEnum)) <- struct_construct(v1, v2)
+End:
+  Return(v3)
+
+//! > after
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v4: test::MyEnum) <- MyEnum::A(v0)
+  (v5: test::MyEnum) <- MyEnum::B(v0)
+  (v6: (test::MyEnum, test::MyEnum)) <- struct_construct(v4, v5)
+End:
+  Return(v6)
