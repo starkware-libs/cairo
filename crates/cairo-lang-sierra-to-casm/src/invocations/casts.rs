@@ -9,6 +9,7 @@ use num_bigint::BigInt;
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::int::u128_bound;
 use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
     BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
@@ -53,18 +54,22 @@ pub fn build_downcast(
         CastType { overflow_above: false, overflow_below: false } => {
             return handle_downcast_no_overflow(builder);
         }
-        CastType { overflow_above: true, overflow_below: false } => add_downcast_overflow_above(
-            &mut casm_builder,
-            value,
-            range_check,
-            &libfunc.to_range.upper,
-        ),
-        CastType { overflow_above: false, overflow_below: true } => add_downcast_overflow_below(
-            &mut casm_builder,
-            value,
-            range_check,
-            &libfunc.to_range.lower,
-        ),
+        CastType { overflow_above: true, overflow_below: false } => {
+            add_directional_downcast::<true>(
+                &mut casm_builder,
+                value,
+                range_check,
+                &libfunc.to_range.upper,
+            )
+        }
+        CastType { overflow_above: false, overflow_below: true } => {
+            add_directional_downcast::<false>(
+                &mut casm_builder,
+                value,
+                range_check,
+                &libfunc.to_range.lower,
+            )
+        }
         CastType { overflow_above: true, overflow_below: true } => {
             add_downcast_overflow_both(&mut casm_builder, value, range_check, &libfunc.to_range)
         }
@@ -106,54 +111,50 @@ fn handle_downcast_no_overflow(
     ))
 }
 
-/// Adds instructions for downcasting where the value may only overflow above.
-/// Note: The type of `value` must be unsigned.
-fn add_downcast_overflow_above(
+/// Adds instructions for downcasting a `value` that may fall out of range on exactly one side.
+///
+/// `ABOVE` selects the side: when `true`, `value` may exceed the (exclusive) upper `bound`; when
+/// `false`, `value` may fall below the (inclusive) lower `bound`.
+///
+/// Assumes `-2**128 <= value - bound < 2**128`.
+fn add_directional_downcast<const ABOVE: bool>(
     casm_builder: &mut CasmBuilder,
     value: Var,
     range_check: Var,
-    upper_bound: &BigInt,
+    bound: &BigInt,
 ) {
     casm_build_extend! {casm_builder,
-        // Use a hint to guess whether the result is in range (is_valid=1) or overflows
-        // (is_valid=0).
-        // `value` is non-negative as it must be unsigned.
+        const minus_bound = -bound;
+        let diff = value + minus_bound;
         tempvar is_valid;
-        const value_limit_imm = upper_bound.clone();
-        hint TestLessThan {lhs: value, rhs: value_limit_imm} into {dst: is_valid};
-        jump Success if is_valid != 0;
-    }
-    // Validating we overflowed above.
-    validate_ge(casm_builder, range_check, value, upper_bound);
-    casm_build_extend!(casm_builder, jump Failure;);
-
-    casm_build_extend!(casm_builder, Success:);
-    validate_lt(casm_builder, range_check, value, upper_bound);
-}
-
-/// Adds instructions for downcasting where the value may only overflow below.
-fn add_downcast_overflow_below(
-    casm_builder: &mut CasmBuilder,
-    value: Var,
-    range_check: Var,
-    lower_bound: &BigInt,
-) {
+        const rc_bound_imm = u128_bound().clone();
+    };
+    type Validate = fn(&mut CasmBuilder, Var, Var, &BigInt);
+    // Note that since `-2**128 <= value - bound < 2**128`:
+    // If `value < bound` => `-2**128 <= diff < 0`, and therefore `(diff % PRIME) >= 2**128`.
+    // If `value >= bound` => `0 <= diff < 2**128`, and therefore `(diff % PRIME) < 2**128`.
+    let (validate_out_of_range, validate_in_range): (Validate, Validate) = if ABOVE {
+        // Valid values are where `value < bound` therefore setting `is_valid` as
+        // `2**128 <= (diff % PRIME)` - would be 1 if in range and 0 if out of range.
+        casm_build_extend! {casm_builder,
+            hint TestLessThanOrEqual { lhs: rc_bound_imm, rhs: diff } into { dst: is_valid };
+        };
+        (validate_ge, validate_lt)
+    } else {
+        // Valid values are where `value >= bound` therefore setting `is_valid` as
+        // `(diff % PRIME) < 2**128` - would be 1 if in range and 0 if out of range.
+        casm_build_extend! {casm_builder,
+            hint TestLessThan { lhs: diff, rhs: rc_bound_imm } into { dst: is_valid };
+        };
+        (validate_lt, validate_ge)
+    };
+    casm_build_extend!(casm_builder, jump Success if is_valid != 0;);
+    validate_out_of_range(casm_builder, range_check, value, bound);
     casm_build_extend! {casm_builder,
-        const minus_lower_bound = -lower_bound;
-        let canonical_value = value + minus_lower_bound;
-        // Use a hint to guess whether the result is in range (is_valid=1) or overflows
-        // (is_valid=0).
-        tempvar is_valid;
-        const rc_bound_imm = (BigInt::from(u128::MAX) + 1) as BigInt;
-        hint TestLessThan {lhs: canonical_value, rhs: rc_bound_imm} into {dst: is_valid};
-        jump Success if is_valid != 0;
-        // Overflow below.
-    }
-    validate_lt(casm_builder, range_check, value, lower_bound);
-    casm_build_extend!(casm_builder, jump Failure;);
-
-    casm_build_extend!(casm_builder, Success:);
-    validate_ge(casm_builder, range_check, value, lower_bound);
+        jump Failure;
+        Success:
+    };
+    validate_in_range(casm_builder, range_check, value, bound);
 }
 
 /// Adds instructions for downcasting where the value may both overflow and underflow.

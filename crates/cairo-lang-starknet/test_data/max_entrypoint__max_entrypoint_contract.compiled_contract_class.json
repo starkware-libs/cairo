@@ -1779,15 +1779,21 @@
       527,
       [
         {
-          "TestLessThan": {
+          "TestLessThanOrEqual": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -7
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x10000000000000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -7
+                },
+                "b": {
+                  "Immediate": "-0x10000000000000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -1878,15 +1884,21 @@
       586,
       [
         {
-          "TestLessThan": {
+          "TestLessThanOrEqual": {
             "lhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -7
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "rhs": {
-              "Immediate": "0x10000000000000000"
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -7
+                },
+                "b": {
+                  "Immediate": "-0x10000000000000000"
+                }
+              }
             },
             "dst": {
               "register": "AP",
@@ -2176,7 +2188,7 @@
     [
       527,
       [
-        "memory[ap + 0] = memory[ap + -7] < 18446744073709551616"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 <= (memory[ap + -7] + -18446744073709551616) % PRIME"
       ]
     ],
     [
@@ -2200,7 +2212,7 @@
     [
       586,
       [
-        "memory[ap + 0] = memory[ap + -7] < 18446744073709551616"
+        "memory[ap + 0] = 340282366920938463463374607431768211456 <= (memory[ap + -7] + -18446744073709551616) % PRIME"
       ]
     ],
     [
