@@ -146,7 +146,7 @@ pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
 /// Formats the full paths of complex types. For example, input "Result<Error::NotFound,
 /// System::Error>" results in output "Result<NotFound, Error>".
 pub(crate) fn extract_and_format(input: &str) -> String {
-    let delimiters = [',', '<', '>', '(', ')', '[', ']'];
+    let delimiters = [',', '<', '>', '(', ')', '[', ']', '@'];
     let mut output = String::new();
     let mut slice_start = 0;
     let mut in_slice = false;
@@ -173,17 +173,17 @@ pub(crate) fn extract_and_format(input: &str) -> String {
 
 /// Formats a single type path. For example, input "core::felt252" results in output "felt252".
 fn format_final_part(slice: &str) -> String {
-    let parts: Vec<&str> = slice.split("::").collect();
-    let ensure_whitespace =
-        if let Some(first) = parts.first() { first.starts_with(" ") } else { false };
-    let result = {
-        match parts[..] {
-            [.., before_last, ""] => before_last.to_string(),
-            [.., last] => last.to_string(),
-            _ => slice.to_string(),
-        }
+    let mut parts = slice.rsplit("::");
+    let result = if let Some(last) = parts.next().map(str::trim)
+        && !last.is_empty()
+    {
+        last
+    } else if let Some(before_last) = parts.next() {
+        before_last.trim()
+    } else {
+        return slice.to_string();
     };
-    if ensure_whitespace && !result.starts_with(' ') { format!(" {result}") } else { result }
+    if slice.starts_with(" ") { format!(" {result}") } else { result.to_string() }
 }
 
 /// Takes a list of [`GenericParamId`]s and formats it into a string representation used for
