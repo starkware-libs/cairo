@@ -15,6 +15,7 @@ pub mod equality_analysis;
 pub mod forward;
 pub mod use_sites;
 pub use forward::ForwardDataflowAnalysis;
+pub mod topological_order;
 
 #[cfg(test)]
 mod equality_analysis_test;
