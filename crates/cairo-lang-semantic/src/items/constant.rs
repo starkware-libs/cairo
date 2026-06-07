@@ -1226,21 +1226,31 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         }
     }
 
-    /// Compares two const values for `felt252` field-element equality.
+    /// Compares two const values for value equality, treating `felt252` as a field.
     ///
     /// Direct `felt252` literals are stored in their original signed form (`-1` vs `PRIME - 1` are
     /// distinct `ConstValueId`s). The PartialEq operator must agree with the field, not with the
-    /// stored representation, so we canonicalize both sides before comparing for `felt252` ints.
-    /// Non-felt252 types keep id equality.
+    /// stored representation, so we canonicalize `felt252` ints before comparing, and recurse into
+    /// the structural variants - a `felt252` may be nested inside a struct, enum or `NonZero`.
     fn const_values_eq(&self, a: ConstValueId<'a>, b: ConstValueId<'a>) -> bool {
         if a == b {
             return true;
         }
-        let (ConstValue::Int(va, ty), ConstValue::Int(vb, _)) = (a.long(self.db), b.long(self.db))
-        else {
-            return false;
-        };
-        self.eq_in_type(va, vb, *ty)
+        match (a.long(self.db), b.long(self.db)) {
+            (ConstValue::Int(va, ty), ConstValue::Int(vb, _)) => self.eq_in_type(va, vb, *ty),
+            (ConstValue::Struct(a_members, a_ty), ConstValue::Struct(b_members, b_ty)) => {
+                a_ty == b_ty
+                    && a_members.len() == b_members.len()
+                    && zip(a_members, b_members).all(|(a, b)| self.const_values_eq(*a, *b))
+            }
+            (ConstValue::Enum(a_variant, a_value), ConstValue::Enum(b_variant, b_value)) => {
+                a_variant.id == b_variant.id && self.const_values_eq(*a_value, *b_value)
+            }
+            (ConstValue::NonZero(a_value), ConstValue::NonZero(b_value)) => {
+                self.const_values_eq(*a_value, *b_value)
+            }
+            _ => false,
+        }
     }
 
     /// Compares two `BigInt`s of type `ty` for value equality, treating `felt252` as a field.
