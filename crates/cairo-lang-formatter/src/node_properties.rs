@@ -1084,10 +1084,12 @@ fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'
         node.grandparent_kind(db),
         Some(SyntaxKind::MatchArm | SyntaxKind::GenericArgNamed | SyntaxKind::GenericArgUnnamed)
     ) && node.get_children(db).len() == 1
-        && node.descendants(db).all(|d| {
-            d.kind(db) != SyntaxKind::Trivia
-                || ast::Trivia::from_syntax_node(db, d)
-                    .elements(db)
-                    .all(|t| !matches!(t, ast::Trivium::SingleLineComment(_)))
+        && !node.descendants(db).any(|d| {
+            matches!(
+                d.kind(db),
+                SyntaxKind::TokenSingleLineComment
+                    | SyntaxKind::TokenSingleLineDocComment
+                    | SyntaxKind::TokenSingleLineInnerComment
+            )
         })
 }

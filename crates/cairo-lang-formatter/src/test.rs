@@ -108,6 +108,15 @@ use crate::{FormatterConfig, get_formatted_file};
     false
 )]
 #[test_case(
+    "test_data/cairo_files/match_arm_doc_comment.cairo",
+    "test_data/expected_results/match_arm_doc_comment.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
     "test_data/cairo_files/use_merge.cairo",
     "test_data/expected_results/use_merge.cairo",
     true,
