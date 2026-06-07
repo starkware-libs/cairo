@@ -10,7 +10,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use salsa::Database;
 
 use super::attribute::SemanticQueryAttrs;
@@ -156,9 +156,18 @@ fn struct_definition_data<'db>(
         let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
         let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
         let member_name = member.name(db).text(db);
-        if let Some(_other_member) = members.insert(member_name, Member { id, ty, visibility }) {
-            diagnostics
-                .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
+        // Keep the first declaration on a redefinition (matching enum variants), rather than
+        // overwriting with the last - the later duplicate is reported and rejected below.
+        match members.entry(member_name) {
+            Entry::Vacant(e) => {
+                e.insert(Member { id, ty, visibility });
+            }
+            Entry::Occupied(_) => {
+                diagnostics.report(
+                    member.stable_ptr(db),
+                    StructMemberRedefinition { struct_id, member_name },
+                );
+            }
         }
         resolver.restore_feature_config(feature_restore);
     }
