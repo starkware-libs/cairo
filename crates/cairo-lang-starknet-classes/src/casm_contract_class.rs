@@ -289,7 +289,7 @@ impl TypeResolver<'_> {
             return false;
         };
 
-        // The data field must be a Span<felt252>.
+        // The data field must be an Array<felt252>.
         self.is_felt252_array(err_data_ty)
     }
 
