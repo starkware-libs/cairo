@@ -804,6 +804,7 @@ impl PostCostTypeEx for ConstCost {
             (CostTokenType::Step, self.steps.into()),
             (CostTokenType::Hole, self.holes.into()),
             (CostTokenType::RangeCheck, self.range_checks.into()),
+            (CostTokenType::RangeCheck96, self.range_checks96.into()),
         ]
         .into_iter()
     }
