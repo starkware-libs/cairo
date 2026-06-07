@@ -51,6 +51,7 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("Uninitializedu128".into(), as_type_long_id("Uninitialized", &["u128"]));
     elements.insert("GasBuiltin".into(), as_type_long_id("GasBuiltin", &[]));
     elements.insert("RangeCheck".into(), as_type_long_id("RangeCheck", &[]));
+    elements.insert("U128MulGuarantee".into(), as_type_long_id("U128MulGuarantee", &[]));
     elements.insert("System".into(), as_type_long_id("System", &[]));
     elements.insert("StorageBaseAddress".into(), as_type_long_id("StorageBaseAddress", &[]));
     elements.insert("StorageAddress".into(), as_type_long_id("StorageAddress", &[]));
