@@ -51,15 +51,25 @@ pub fn return_optimization<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db
 struct EarlyReturnContext<'db, 'a> {
     /// The lowering database.
     db: &'db dyn Database,
-    /// A map from (type, inputs) to the variable_id for Structs/Enums that were created
+    /// A map from a `Construction` to the variable_id for Structs that were created
     /// while processing the early return.
-    constructed: UnorderedHashMap<(TypeId<'db>, Vec<VariableId>), VariableId>,
+    constructed: UnorderedHashMap<Construction<'db>, VariableId>,
     /// A variable allocator.
     variables: &'a mut VariableArena<'db>,
     /// The statements in the block where the early return is going to happen.
     statements: &'a mut Vec<Statement<'db>>,
     /// The location associated with the early return.
     location: LocationId<'db>,
+}
+
+/// A `Construction` represents a struct or enum construction that was created while processing
+/// the early return.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum Construction<'db> {
+    /// A construction of a struct.
+    Struct(TypeId<'db>, Vec<VariableId>),
+    /// A construction of an enum.
+    Enum(semantic::ConcreteVariant<'db>, VariableId),
 }
 
 impl<'db, 'a> EarlyReturnContext<'db, 'a> {
@@ -78,7 +88,10 @@ impl<'db, 'a> EarlyReturnContext<'db, 'a> {
                     let inputs = self.prepare_early_return_vars(var_infos);
                     let output = *self
                         .constructed
-                        .entry((*ty, inputs.iter().map(|var_usage| var_usage.var_id).collect()))
+                        .entry(Construction::Struct(
+                            *ty,
+                            inputs.iter().map(|var_usage| var_usage.var_id).collect(),
+                        ))
                         .or_insert_with(|| {
                             let output = self.variables.alloc(Variable::with_default_context(
                                 self.db,
@@ -98,8 +111,10 @@ impl<'db, 'a> EarlyReturnContext<'db, 'a> {
                     let ty = TypeLongId::Concrete(ConcreteTypeId::Enum(variant.concrete_enum_id))
                         .intern(self.db);
 
-                    let output =
-                        *self.constructed.entry((ty, vec![input.var_id])).or_insert_with(|| {
+                    let output = *self
+                        .constructed
+                        .entry(Construction::Enum(*variant, input.var_id))
+                        .or_insert_with(|| {
                             let output = self.variables.alloc(Variable::with_default_context(
                                 self.db,
                                 ty,
