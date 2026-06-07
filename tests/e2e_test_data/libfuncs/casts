@@ -74,7 +74,7 @@ fn foo(a: u64) -> Option<u16> {
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 65536 %}
+%{ memory[ap + 0] = 340282366920938463463374607431768211456 <= (memory[fp + -3] + -65536) % PRIME %}
 jmp rel 7 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 65536, ap++;
 [ap + -1] = [[fp + -4] + 0];
@@ -138,7 +138,7 @@ fn foo(a: u64) -> Option<u64> {
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 18446744073709551616 %}
+%{ memory[ap + 0] = 340282366920938463463374607431768211456 <= (memory[fp + -3] + -18446744073709551616) % PRIME %}
 jmp rel 7 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 18446744073709551616, ap++;
 [ap + -1] = [[fp + -4] + 0];
@@ -385,7 +385,7 @@ fn foo(a: u64) -> Option<i16> {
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 32768 %}
+%{ memory[ap + 0] = 340282366920938463463374607431768211456 <= (memory[fp + -3] + -32768) % PRIME %}
 jmp rel 7 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 32768, ap++;
 [ap + -1] = [[fp + -4] + 0];
@@ -648,7 +648,7 @@ fn foo(a: u16) -> Option<i16> {
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -3] < 32768 %}
+%{ memory[ap + 0] = 340282366920938463463374607431768211456 <= (memory[fp + -3] + -32768) % PRIME %}
 jmp rel 7 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 32768, ap++;
 [ap + -1] = [[fp + -4] + 0];
