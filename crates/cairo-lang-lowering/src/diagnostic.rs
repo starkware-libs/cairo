@@ -4,7 +4,6 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::corelib::LiteralError;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use salsa::Database;
@@ -43,7 +42,7 @@ pub struct LoweringDiagnostic<'db> {
 }
 
 impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
-    fn format(&self, db: &'db dyn Database) -> String {
+    fn format(&self, _db: &'db dyn Database) -> String {
         match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
             LoweringDiagnosticKind::VariableMoved { .. } => "Variable was previously moved.".into(),
@@ -67,7 +66,6 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
             LoweringDiagnosticKind::NoPanicFunctionCycle => {
                 "Call cycle of `nopanic` functions is not allowed.".into()
             }
-            LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
             LoweringDiagnosticKind::RefutablePattern => "Refutable pattern in irrefutable \
                                                           binding. Refutable patterns are only \
                                                           supported in `match`, `if let`, \
@@ -118,7 +116,6 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
             LoweringDiagnosticKind::MemberPathLoop => error_code!(E3006),
             LoweringDiagnosticKind::UnexpectedError => error_code!(E3007),
             LoweringDiagnosticKind::NoPanicFunctionCycle => error_code!(E3008),
-            LoweringDiagnosticKind::LiteralError(_) => error_code!(E3009),
             LoweringDiagnosticKind::RefutablePattern => error_code!(E3010),
             LoweringDiagnosticKind::Unsupported => error_code!(E3011),
             LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => error_code!(E3012),
@@ -217,7 +214,6 @@ pub enum LoweringDiagnosticKind<'db> {
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
     NoPanicFunctionCycle,
-    LiteralError(LiteralError<'db>),
     FixedSizeArrayNonCopyableType,
     EmptyRepeatedElementFixedSizeArray,
     RefutablePattern,

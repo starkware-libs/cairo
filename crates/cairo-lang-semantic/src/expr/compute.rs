@@ -91,7 +91,7 @@ use crate::resolve::{
     ResolvedGenericItem, Resolver, ResolverMacroData,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
-use crate::substitution::SemanticRewriter;
+use crate::substitution::{HasDb, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteTypeId, add_type_based_diagnostics, are_coupons_enabled,
     extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex, resolve_type_ex,
@@ -441,29 +441,54 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
         self.resolver.inference().rewrite(ty).no_err()
     }
 
-    /// Applies inference rewriter to all the expressions in the computation context, and adds
-    /// errors on types from the final expressions.
-    pub fn apply_inference_rewriter_to_exprs(&mut self) {
+    /// Applies inference rewriter to all the rewritable things in the computation context.
+    pub fn apply_inference_rewriter(&mut self) {
         let mut analyzed_types = UnorderedHashSet::<_>::default();
+        let inference = &mut self.resolver.inference();
         for (_id, expr) in &mut self.arenas.exprs {
-            self.resolver.inference().internal_rewrite(expr).no_err();
+            if let Expr::Literal(literal) = expr {
+                handle_literal_rewrite(inference, self.diagnostics, literal);
+            } else {
+                inference.internal_rewrite(expr).no_err();
+            }
             // Adding an error only once per type.
             if analyzed_types.insert(expr.ty()) {
                 add_type_based_diagnostics(self.db, self.diagnostics, expr.ty(), &*expr);
             }
         }
-    }
-
-    /// Applies inference rewriter to all the rewritable things in the computation context.
-    fn apply_inference_rewriter(&mut self) {
-        self.apply_inference_rewriter_to_exprs();
         for (_id, pattern) in &mut self.arenas.patterns {
-            self.resolver.inference().internal_rewrite(pattern).no_err();
+            if let Pattern::Literal(literal) = pattern {
+                handle_literal_rewrite(inference, self.diagnostics, &mut literal.literal);
+            } else {
+                inference.internal_rewrite(pattern).no_err();
+            }
         }
         for (_id, stmt) in &mut self.arenas.statements {
-            self.resolver.inference().internal_rewrite(stmt).no_err();
+            inference.internal_rewrite(stmt).no_err();
+        }
+
+        /// Rewrites a numeric `literal`'s type with the inference results, and - if its type was a
+        /// still-unresolved `NumericLiteral` var (a suffix-less literal, whose value was never
+        /// checked against a concrete type) - validates the value is in range, reporting
+        /// `OutOfRange`. An invalid literal type is not reported here; it is already reported at
+        /// conform time.
+        fn handle_literal_rewrite<'db>(
+            inference: &mut Inference<'db, '_>,
+            diagnostics: &mut SemanticDiagnostics<'db>,
+            literal: &mut ExprNumericLiteral<'db>,
+        ) {
+            let db = inference.get_db();
+            let was_unresolved = matches!(literal.ty.long(db), TypeLongId::NumericLiteral(_));
+            inference.internal_rewrite(literal).no_err();
+            if was_unresolved
+                && let Err(err @ LiteralError::OutOfRange(_)) =
+                    validate_literal(db, literal.ty, &literal.value)
+            {
+                diagnostics.report(literal.stable_ptr, SemanticDiagnosticKind::LiteralError(err));
+            }
         }
     }
+
     /// Returns whether the current context is inside a loop.
     fn is_inside_loop(&self) -> bool {
         let Some(inner_ctx) = &self.inner_ctx else {

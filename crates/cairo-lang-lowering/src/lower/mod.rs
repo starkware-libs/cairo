@@ -6,7 +6,7 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{
     CorelibSemantic, ErrorPropagationType, bounded_int_ty, get_enum_concrete_variant,
-    try_get_ty_by_name, unwrap_error_propagation_type, validate_literal,
+    try_get_ty_by_name, unwrap_error_propagation_type,
 };
 use cairo_lang_semantic::expr::compute::unwrap_pattern_type;
 use cairo_lang_semantic::items::constant::ConstValueId;
@@ -55,7 +55,7 @@ use self::context::{
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::logical_op::lower_logical_op;
 use crate::blocks::Blocks;
-use crate::diagnostic::LoweringDiagnosticKind::{self, *};
+use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::LoweringDiagnosticsBuilder;
 use crate::ids::{
     EnrichedSemanticSignature, FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId,
@@ -960,14 +960,7 @@ fn lower_expr_literal_to_var_usage<'db>(
     value: &BigInt,
     builder: &mut BlockBuilder<'db>,
 ) -> VarUsage<'db> {
-    let value = if let Err(err) = validate_literal(ctx.db, ty, value) {
-        ConstValue::Missing(
-            ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err)),
-        )
-        .intern(ctx.db)
-    } else {
-        ConstValueId::from_int(ctx.db, ty, value)
-    };
+    let value = ConstValueId::from_int(ctx.db, ty, value);
     let location = ctx.get_location(stable_ptr);
     generators::Const { value, ty, location }.add(ctx, &mut builder.statements)
 }
