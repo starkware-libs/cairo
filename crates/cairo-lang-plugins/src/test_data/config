@@ -443,6 +443,62 @@ error: `or` operator expects at least two arguments.
 
 //! > ==========================================================================
 
+//! > Test logical operators with unparsable inner arguments are kept, not dropped.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: true)
+
+//! > cfg
+["a", "b", ["k", "a"], ["k", "b"]]
+
+//! > cairo_code
+#[cfg(or(0, 1))]
+fn f_invalid_or_items() -> felt252 {
+    0
+}
+
+#[cfg(and(0, 1))]
+fn f_invalid_and_items() -> felt252 {
+    0
+}
+
+//! > expanded_cairo_code
+#[cfg(or(0, 1))]
+fn f_invalid_or_items() -> felt252 {
+    0
+}
+
+#[cfg(and(0, 1))]
+fn f_invalid_and_items() -> felt252 {
+    0
+}
+
+//! > expected_diagnostics
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:1:10
+#[cfg(or(0, 1))]
+         ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:1:13
+#[cfg(or(0, 1))]
+            ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:6:11
+#[cfg(and(0, 1))]
+          ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:6:14
+#[cfg(and(0, 1))]
+             ^
+
+//! > ==========================================================================
+
 //! > Test cfg of members does not update visibility.
 
 //! > test_runner_name
