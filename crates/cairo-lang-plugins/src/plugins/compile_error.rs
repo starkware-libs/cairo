@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use salsa::Database;
 
 /// Plugin that allows writing item level `compile_error!` causing a diagnostic.
@@ -38,8 +38,10 @@ impl MacroPlugin for CompileErrorPlugin {
             item_ast_ptr
         );
         PluginResult::diagnostic_only(
-            if let ast::Expr::String(err_message) = compilation_error_arg {
-                PluginDiagnostic::error(item_ast_ptr, err_message.text(db).to_string(db))
+            if let ast::Expr::String(err_message_arg) = &compilation_error_arg
+                && let Some(err_message) = err_message_arg.string_value(db)
+            {
+                PluginDiagnostic::error(item_ast_ptr, err_message)
             } else {
                 PluginDiagnostic::error_with_inner_span(
                     db,
