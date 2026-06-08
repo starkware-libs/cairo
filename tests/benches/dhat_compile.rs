@@ -21,6 +21,7 @@ static GLOBAL: dhat::Alloc = dhat::Alloc;
 
 mod common;
 
+use common::staking::prepare_staking;
 use common::{bench_configs, run_cairo_to_sierra, run_cairo_to_testing, run_sierra_to_casm};
 
 /// Cargo's target directory, used to place bench outputs alongside `target/`. Honors
@@ -46,22 +47,21 @@ struct Sample {
     stats: HeapStats,
 }
 
-/// Runs `f` under a fresh `dhat::Profiler` writing to `<dir>/dhat-heap-<phase>-<project>.json`,
-/// then appends a `Sample` to `out`. No-ops when `filter` is `Some` and doesn't substring-match
-/// the combined `<phase>-<project>` scenario name. The closure's return value is discarded.
-fn record_scenario<R>(
+/// Whether the `<phase>-<project>` scenario passes `filter` (always matches when `filter` is
+/// `None`). Single source of truth for the substring match, shared by all the `record_*` helpers.
+fn scenario_matches(filter: Option<&str>, phase: &str, project: &str) -> bool {
+    filter.is_none_or(|needle| format!("{phase}-{project}").contains(needle))
+}
+
+/// Profiles `f` under a fresh `dhat::Profiler` writing to `<dir>/dhat-heap-<phase>-<project>.json`,
+/// then appends a `Sample` to `out`. The closure's return value is discarded.
+fn profile_scenario<R>(
     dir: &Path,
     out: &mut Vec<Sample>,
-    filter: Option<&str>,
     phase: &'static str,
     project: &'static str,
     f: impl FnOnce() -> R,
 ) {
-    if let Some(needle) = filter
-        && !format!("{phase}-{project}").contains(needle)
-    {
-        return;
-    }
     let path = dir.join(format!("dhat-heap-{phase}-{project}.json"));
     eprintln!("dhat: profiling {phase}/{project}");
     let _profiler = dhat::Profiler::builder().file_name(&path).build();
@@ -69,38 +69,94 @@ fn record_scenario<R>(
     out.push(Sample { phase, project, stats: HeapStats::get() });
 }
 
+/// Profiles scenario `<phase>/<project>`, unless it's filtered out. A [`record_scenario_with`]
+/// whose setup is a no-op. Returns whether the scenario matched the filter, so the caller can tell
+/// "filter matched nothing" apart from "a matched scenario produced no sample".
+fn record_scenario<R>(
+    dir: &Path,
+    out: &mut Vec<Sample>,
+    filter: Option<&str>,
+    phase: &'static str,
+    project: &'static str,
+    f: impl FnOnce() -> R,
+) -> bool {
+    record_scenario_with(dir, out, filter, phase, project, || Some(()), |_| f())
+}
+
+/// Like [`record_scenario`], but runs `setup` (un-profiled) just before the profiled compile, and
+/// only once the scenario is known to be selected — so expensive, non-measured preparation (e.g.
+/// cloning the staking sources) is paid for only when needed. If `setup` returns `None` the
+/// scenario is skipped without recording a sample, but still counts as matched so a failed setup
+/// isn't mistaken for a filter typo.
+fn record_scenario_with<S, R>(
+    dir: &Path,
+    out: &mut Vec<Sample>,
+    filter: Option<&str>,
+    phase: &'static str,
+    project: &'static str,
+    setup: impl FnOnce() -> Option<S>,
+    run: impl FnOnce(&S) -> R,
+) -> bool {
+    if !scenario_matches(filter, phase, project) {
+        return false;
+    }
+    if let Some(state) = setup() {
+        profile_scenario(dir, out, phase, project, || run(&state));
+    }
+    true
+}
+
 /// Representative scenarios chosen to sample distinct (project size, domain, phase) combinations
 /// without the full N×M sweep. Each added scenario costs minutes of wall time because dhat
 /// captures a backtrace per allocation; the criterion timing bench (`compile.rs`) still covers
 /// the full matrix.
-fn run_scenarios(dir: &Path, filter: Option<&str>, out: &mut Vec<Sample>) {
+fn run_scenarios(dir: &Path, filter: Option<&str>, out: &mut Vec<Sample>) -> bool {
     let configs = bench_configs();
     let by_name = |name: &str| configs.iter().find(|c| c.name == name).expect(name);
     let fib = by_name("fib");
     let corelib = by_name("corelib");
     let starknet = by_name("cairo_level_tests");
 
+    let mut matched = false;
+
     // Tiny Cairo project, full pipeline — cheap canary.
-    record_scenario(dir, out, filter, "cairo-to-testing", fib.name, || run_cairo_to_testing(fib));
+    matched |= record_scenario(dir, out, filter, "cairo-to-testing", fib.name, || {
+        run_cairo_to_testing(fib)
+    });
 
     // Large pure-Cairo project — front-end + sierra at scale, then sierra-to-casm (codegen).
     // We re-run the cairo-to-sierra compile outside the profiler to capture the Program for the
     // next scenario; the second scenario isolates casm emission. sierra-to-casm only works for
     // non-Starknet programs.
-    record_scenario(dir, out, filter, "cairo-to-sierra", corelib.name, || {
+    matched |= record_scenario(dir, out, filter, "cairo-to-sierra", corelib.name, || {
         run_cairo_to_sierra(corelib)
     });
     let corelib_sierra = run_cairo_to_sierra(corelib);
-    record_scenario(dir, out, filter, "sierra-to-casm", corelib.name, || {
+    matched |= record_scenario(dir, out, filter, "sierra-to-casm", corelib.name, || {
         run_sierra_to_casm(&corelib_sierra)
     });
 
     // Starknet project — exercises contract codegen via the starknet plugin (enabled in build_db
     // when config.starknet is set). We profile only the compile side: the test VM dominates with
     // interpreter allocations that aren't a useful signal for compiler memory regressions.
-    record_scenario(dir, out, filter, "cairo-to-sierra", starknet.name, || {
+    matched |= record_scenario(dir, out, filter, "cairo-to-sierra", starknet.name, || {
         run_cairo_to_sierra(starknet)
     });
+
+    // Large real-world Starknet project (the staking contract). Its sources are cloned by
+    // `prepare_staking` as an un-profiled setup step — run only when this scenario is selected and
+    // just before the profiled compile. A failed clone (e.g. no network) skips it without a sample.
+    matched |= record_scenario_with(
+        dir,
+        out,
+        filter,
+        "cairo-to-sierra",
+        "staking",
+        || prepare_staking(&dir.join("staking-checkout")),
+        |checkout| run_cairo_to_sierra(&checkout.config()),
+    );
+
+    matched
 }
 
 /// Writes `dhat-output.json` in the `customSmallerIsBetter` format consumed by
@@ -139,10 +195,14 @@ fn main() {
     std::fs::create_dir_all(&dir).expect("failed to create dhat output directory");
 
     let mut results = Vec::new();
-    run_scenarios(&dir, filter.as_deref(), &mut results);
+    let matched = run_scenarios(&dir, filter.as_deref(), &mut results);
 
     if results.is_empty() {
-        eprintln!("dhat: no scenarios matched filter");
+        // Distinguish a filter that selected nothing from a matched scenario that was skipped
+        // (e.g. the staking clone failed, which `prepare_staking` already logged).
+        if !matched {
+            eprintln!("dhat: no scenarios matched filter");
+        }
         return;
     }
 
