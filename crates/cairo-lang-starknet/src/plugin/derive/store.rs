@@ -250,7 +250,7 @@ fn handle_enum<'db>(
                         {imp}::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
-            }}",
+            }},",
         ));
         match_idx_at_offset.push(formatdoc!(
             "{indicator} => {{
@@ -259,19 +259,19 @@ fn handle_enum<'db>(
                         {imp}::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
-            }}",
+            }},",
         ));
         match_value.push(formatdoc!(
             "{enum_name}::{variant_name}(x) => {{
                 {STORE_TRAIT}::write(address_domain, base, {indicator})?;
                 {imp}::write_at_offset(address_domain, base, 1_u8, x)?;
-            }}"
+            }},"
         ));
         match_value_at_offset.push(formatdoc!(
             "{enum_name}::{variant_name}(x) => {{
                 {STORE_TRAIT}::write_at_offset(address_domain, base, offset, {indicator})?;
                 {imp}::write_at_offset(address_domain, base, offset + 1_u8, x)?;
-            }}"
+            }},"
         ));
 
         if match_size.is_empty() {
@@ -280,6 +280,9 @@ fn handle_enum<'db>(
             match_size = format!("core::cmp::max({imp}::size(), {match_size})");
         }
     }
+    // An empty enum has no variants, so the accumulated max-size is empty; fall back to `0` (like
+    // the struct handler) to avoid emitting a dangling `+` in `size()`.
+    let match_size = if match_size.is_empty() { "0".to_string() } else { match_size };
 
     let zero_or_none = if default_index.is_some() { "" } else { "0 |" };
     let store_impl = formatdoc!(
@@ -289,7 +292,7 @@ fn handle_enum<'db>(
          starknet::SyscallResult<{full_name}> {{
                 let idx = {STORE_TRAIT}::<felt252>::read(address_domain, base)?;
                 match idx {{
-                    {match_idx},
+                    {match_idx}
                     {zero_or_none} _ => {{
                         starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
                     }}
@@ -307,7 +310,7 @@ fn handle_enum<'db>(
          starknet::SyscallResult<{full_name}> {{
                 let idx = {STORE_TRAIT}::<felt252>::read_at_offset(address_domain, base, offset)?;
                 match idx {{
-                    {match_idx_at_offset},
+                    {match_idx_at_offset}
                     {zero_or_none} _ => {{
                         starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
                     }}
@@ -329,10 +332,10 @@ fn handle_enum<'db>(
         }}
         ",
         header = info.impl_header(STORE_TRAIT, &[STORE_TRAIT, "core::traits::Destruct"]),
-        match_idx = indent_by(12, match_idx.join(",\n")),
-        match_idx_at_offset = indent_by(12, match_idx_at_offset.join(",\n")),
-        match_value = indent_by(12, match_value.join(",\n")),
-        match_value_at_offset = indent_by(12, match_value_at_offset.join(",\n")),
+        match_idx = indent_by(12, match_idx.join("\n")),
+        match_idx_at_offset = indent_by(12, match_idx_at_offset.join("\n")),
+        match_value = indent_by(12, match_value.join("\n")),
+        match_value_at_offset = indent_by(12, match_value_at_offset.join("\n")),
     );
 
     Some(RewriteNode::Text(store_impl))
