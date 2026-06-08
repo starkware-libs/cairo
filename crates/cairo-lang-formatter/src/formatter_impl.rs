@@ -644,7 +644,12 @@ impl LineBuilder {
     /// several lines (separated by '\n'), where each line length is
     /// less than max_line_width (if possible).
     pub fn build(&self, max_line_width: usize, tab_size: usize) -> String {
-        self.break_line_tree(max_line_width, tab_size).iter().join("\n") + "\n"
+        let mut lines = self.break_line_tree(max_line_width, tab_size);
+        // Removing extra trailing newlines.
+        while lines.last().is_some_and(|line| line.is_empty()) {
+            lines.pop();
+        }
+        lines.iter().join("\n") + "\n"
     }
     /// Returns the highest protected zone precedence (minimum number) from within all the protected
     /// zones which are direct children of this builder, or None if there are no protected zones

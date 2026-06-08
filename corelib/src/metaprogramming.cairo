@@ -54,4 +54,3 @@ pub(crate) trait SnapRemove<T> {
 impl SnapRemoveSnap<T> of SnapRemove<@T> {
     type Result = T;
 }
-
