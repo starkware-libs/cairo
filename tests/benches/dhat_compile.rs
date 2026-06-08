@@ -21,6 +21,7 @@ static GLOBAL: dhat::Alloc = dhat::Alloc;
 
 mod common;
 
+use common::staking::prepare_staking;
 use common::{bench_configs, run_cairo_to_sierra, run_cairo_to_testing, run_sierra_to_casm};
 
 /// Cargo's target directory, used to place bench outputs alongside `target/`. Honors
@@ -101,6 +102,21 @@ fn run_scenarios(dir: &Path, filter: Option<&str>, out: &mut Vec<Sample>) {
     record_scenario(dir, out, filter, "cairo-to-sierra", starknet.name, || {
         run_cairo_to_sierra(starknet)
     });
+
+    // Large real-world Starknet project (the staking contract), cloned and set up on demand by
+    // `prepare_staking`. Guard the (slow, network-bound) clone behind the same filter the scenario
+    // itself uses, so unrelated filters don't pay for it. The checkout is removed when `staking`
+    // drops at the end of this scope.
+    let staking = filter
+        .is_none_or(|needle| "cairo-to-sierra-staking".contains(needle))
+        .then(|| prepare_staking(&dir.join("staking-checkout")))
+        .flatten();
+    if let Some(staking) = staking {
+        let config = staking.config();
+        record_scenario(dir, out, filter, "cairo-to-sierra", "staking", || {
+            run_cairo_to_sierra(&config)
+        });
+    }
 }
 
 /// Writes `dhat-output.json` in the `customSmallerIsBetter` format consumed by

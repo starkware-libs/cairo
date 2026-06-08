@@ -26,6 +26,8 @@ use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::{TestsCompilationConfig, compile_test_prepared_db, test_plugin_suite};
 use cairo_lang_test_runner::{TestRunConfig, TestRunner, run_tests};
 
+pub mod staking;
+
 /// Configuration for a benchmarked project.
 pub struct BenchConfig {
     pub name: &'static str,
@@ -37,6 +39,11 @@ pub struct BenchConfig {
     /// `#[cfg(test)]`), which are unrecognized without the test plugin, or when the project
     /// contains only contract code with no program entry point.
     pub sierra_phases: bool,
+    /// If set, only this crate (by name) is compiled as the entry point, instead of every crate
+    /// root in the project. Used for projects whose `cairo_project.toml` registers many dependency
+    /// crate roots (e.g. the staking contract pulls in openzeppelin) but where we only want to
+    /// measure compiling the single top-level crate plus the dependency code it actually reaches.
+    pub main_crate: Option<&'static str>,
 }
 
 /// Returns the list of projects to benchmark across all phases.
@@ -50,24 +57,28 @@ pub fn bench_configs() -> Vec<BenchConfig> {
             path: examples.join("fib.cairo"),
             starknet: false,
             sierra_phases: true,
+            main_crate: None,
         },
         BenchConfig {
             name: "corelib",
             path: root.join("corelib"),
             starknet: false,
             sierra_phases: true,
+            main_crate: None,
         },
         BenchConfig {
             name: "bug_samples",
             path: tests.join("bug_samples"),
             starknet: true,
             sierra_phases: false,
+            main_crate: None,
         },
         BenchConfig {
             name: "cairo_level_tests",
             path: root.join("crates").join("cairo-lang-starknet").join("cairo_level_tests"),
             starknet: true,
             sierra_phases: true,
+            main_crate: None,
         },
     ]
 }
@@ -109,7 +120,28 @@ fn test_run_config() -> TestRunConfig {
 pub fn run_cairo_to_sierra(config: &BenchConfig) -> Program {
     let mut db = build_db(config, false);
     let inputs = setup_project(&mut db, &config.path).unwrap();
-    let diagnostics_reporter = DiagnosticsReporter::ignoring().with_crates(&inputs);
+    // When `main_crate` is set, compile only that crate as the entry point; the other crate roots
+    // registered by `setup_project` stay available as dependencies (resolved on demand) rather than
+    // being eagerly lowered in full.
+    let inputs = match config.main_crate {
+        Some(main) => {
+            let filtered: Vec<_> = inputs
+                .into_iter()
+                .filter(|input| matches!(input, CrateInput::Real { name, .. } if name == main))
+                .collect();
+            assert!(
+                !filtered.is_empty(),
+                "main crate `{main}` not found in {}",
+                config.path.display()
+            );
+            filtered
+        }
+        None => inputs,
+    };
+    // Allow warnings so third-party projects (e.g. the staking contract, which has unused-import
+    // warnings) still compile to Sierra for benchmarking; `ensure` only aborts on real errors.
+    let diagnostics_reporter =
+        DiagnosticsReporter::ignoring().with_crates(&inputs).allow_warnings();
     let crate_ids = CrateInput::into_crate_ids(&db, inputs);
     compile_prepared_db_program(
         &db,
