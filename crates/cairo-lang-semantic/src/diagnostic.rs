@@ -209,7 +209,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 concrete_trait_id,
             } => {
                 format!(
-                    "Cannot infer implicit impl `{}.`\nCould not find implementation of trait \
+                    "Cannot infer implicit impl `{}`.\nCould not find implementation of trait \
                      `{:?}`",
                     trait_impl_id.name(db).long(db),
                     concrete_trait_id.debug(db)
