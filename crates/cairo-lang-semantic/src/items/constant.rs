@@ -1162,11 +1162,10 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         match pattern {
             Pattern::Missing(_) | Pattern::StringLiteral(_) => None,
             Pattern::Otherwise(_) => Some(()),
-            Pattern::Literal(v) => require(self.eq_in_type(
-                &numeric_arg_value(db, value)?,
-                &v.literal.value,
-                value.ty(db).ok()?,
-            )),
+            Pattern::Literal(v) => {
+                let arg = NumericArg::try_new(db, value)?;
+                require(self.eq_in_type(&arg.v, &v.literal.value, arg.ty))
+            }
             Pattern::Variable(pattern) => {
                 self.vars.insert(VarId::Local(pattern.var.id), value);
                 Some(())
@@ -1261,29 +1260,25 @@ impl<'db, 'r> std::ops::Deref for ConstantEvaluateContext<'db, 'r, '_> {
 struct NumericArg<'db> {
     /// The arg's integer value.
     v: BigInt,
-    /// The arg's type.
+    /// The arg's type, unwrapping `NonZero` types.
     ty: TypeId<'db>,
 }
 impl<'db> NumericArg<'db> {
+    /// Extracts the numeric value and its type from `arg`, unwrapping `NonZero` values and reading
+    /// a struct of 2 values as a `u256`.
     fn try_new(db: &'db dyn Database, arg: ConstValueId<'db>) -> Option<Self> {
-        Some(Self { ty: arg.ty(db).ok()?, v: numeric_arg_value(db, arg)? })
-    }
-}
-
-/// Helper for creating a `NumericArg` value.
-/// This includes unwrapping of `NonZero` values and struct of 2 values as a `u256`.
-fn numeric_arg_value<'db>(db: &'db dyn Database, value: ConstValueId<'db>) -> Option<BigInt> {
-    match value.long(db) {
-        ConstValue::Int(value, _) => Some(value.clone()),
-        ConstValue::Struct(v, _) => {
-            if let [low, high] = &v[..] {
-                Some(low.to_int(db)? + (high.to_int(db)? << 128))
-            } else {
-                None
+        match arg.long(db) {
+            ConstValue::Int(v, ty) => Some(Self { v: v.clone(), ty: *ty }),
+            ConstValue::Struct(v, ty) => {
+                if let [low, high] = &v[..] {
+                    Some(Self { v: low.to_int(db)? + (high.to_int(db)? << 128), ty: *ty })
+                } else {
+                    None
+                }
             }
+            ConstValue::NonZero(inner) => Self::try_new(db, *inner),
+            _ => None,
         }
-        ConstValue::NonZero(const_value) => numeric_arg_value(db, *const_value),
-        _ => None,
     }
 }
 
