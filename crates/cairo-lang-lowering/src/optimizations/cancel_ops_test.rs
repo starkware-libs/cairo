@@ -46,7 +46,7 @@ fn test_cancel_ops(
     .unwrap();
 
     let mut after = before.clone();
-    OptimizationPhase::CancelOps.apply(db, function_id, &mut after).unwrap();
+    OptimizationPhase::VariableForwarding.apply(db, function_id, &mut after).unwrap();
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
