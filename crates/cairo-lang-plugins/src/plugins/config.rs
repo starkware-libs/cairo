@@ -203,12 +203,7 @@ fn parse_predicate<'a>(
     attr: Attribute<'a>,
     diagnostics: &mut Vec<PluginDiagnostic<'a>>,
 ) -> Option<PredicateTree> {
-    Some(PredicateTree::And(
-        attr.args
-            .into_iter()
-            .filter_map(|arg| parse_predicate_item(db, arg, diagnostics))
-            .collect(),
-    ))
+    Some(PredicateTree::And(parse_predicate_items(db, attr.args, diagnostics)?))
 }
 
 /// Parse single `#[cfg(...)]` attribute argument as a [`Cfg`] item.
@@ -252,11 +247,7 @@ fn parse_predicate_item<'a>(
                         ));
                         None
                     } else {
-                        Some(PredicateTree::And(
-                            args.into_iter()
-                                .filter_map(|arg| parse_predicate_item(db, arg, diagnostics))
-                                .collect(),
-                        ))
+                        Some(PredicateTree::And(parse_predicate_items(db, args, diagnostics)?))
                     }
                 }
                 "or" => {
@@ -267,11 +258,7 @@ fn parse_predicate_item<'a>(
                         ));
                         None
                     } else {
-                        Some(PredicateTree::Or(
-                            args.into_iter()
-                                .filter_map(|arg| parse_predicate_item(db, arg, diagnostics))
-                                .collect(),
-                        ))
+                        Some(PredicateTree::Or(parse_predicate_items(db, args, diagnostics)?))
                     }
                 }
                 _ => {
@@ -291,6 +278,22 @@ fn parse_predicate_item<'a>(
             None
         }
     }
+}
+
+/// Parses all `args` as predicate items, emitting a diagnostic for each one that fails to parse.
+/// Returns `None` if any argument fails.
+fn parse_predicate_items<'a>(
+    db: &'a dyn Database,
+    args: Vec<AttributeArg<'a>>,
+    diagnostics: &mut Vec<PluginDiagnostic<'a>>,
+) -> Option<Vec<PredicateTree>> {
+    let args = args.into_iter();
+    let expected_size = args.len();
+    let mut items = Vec::with_capacity(expected_size);
+    for arg in args {
+        items.extend(parse_predicate_item(db, arg, diagnostics));
+    }
+    (items.len() == expected_size).then_some(items)
 }
 
 /// Extracts a configuration predicate part from an attribute argument.
