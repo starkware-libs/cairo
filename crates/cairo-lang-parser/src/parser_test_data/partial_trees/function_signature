@@ -23,7 +23,7 @@ error[E1004]: Unexpected token, expected ':' followed by a type.
 fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
                                     ^
 
-error[E1001]: Missing token TokenComma.
+error[E1001]: Missing token ','.
  --> dummy_file.cairo:5:21
 fn bar() -> (felt252) {
                     ^

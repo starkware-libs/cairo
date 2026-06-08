@@ -2159,7 +2159,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let rparen = self.parse_token::<TerminalRParen<'_>>();
         if let [ExprListElementOrSeparatorGreen::Element(_)] = &exprs[..] {
             self.add_diagnostic(
-                ParserDiagnosticKind::MissingToken(SyntaxKind::TokenComma),
+                ParserDiagnosticKind::MissingToken(SyntaxKind::TerminalComma),
                 TextSpan::cursor(self.offset),
             );
         }
