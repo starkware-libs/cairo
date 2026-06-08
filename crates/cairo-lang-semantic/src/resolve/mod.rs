@@ -594,14 +594,14 @@ impl<'db> Resolver<'db> {
         if let Some(last) = segments.segments.last()
             && last.identifier(self.db).long(self.db) == SELF_PARAM_KW
         {
+            segments.segments.pop();
+            if segments.segments.is_empty() {
+                return Err(diagnostics.report(use_path.stable_ptr(self.db), UseSelfEmptyPath));
+            }
             // If the `self` keyword is used in a non-multi-use path, report an error.
             if use_path.as_syntax_node().parent_kind(self.db).unwrap() != SyntaxKind::UsePathList {
                 diagnostics.report(use_path.stable_ptr(self.db), UseSelfNonMulti);
             }
-            segments.segments.pop();
-        }
-        if segments.segments.is_empty() {
-            return Err(diagnostics.report(use_path.stable_ptr(self.db), UseSelfEmptyPath));
         }
         self.resolve_generic_path(diagnostics, segments, NotFoundItemType::Identifier, ctx)
     }

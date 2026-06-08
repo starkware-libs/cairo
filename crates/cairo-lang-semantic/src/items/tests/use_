@@ -179,6 +179,28 @@ use {self, u8};
 
 //! > ==========================================================================
 
+//! > standalone `self` use reports a single diagnostic.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+use self;
+
+//! > expected_diagnostics
+error[E2089]: `self` in `use` items is not allowed for empty path.
+ --> lib.cairo:1:5
+use self;
+    ^^^^
+
+//! > ==========================================================================
+
 //! > Use star on a module that was imported with use star.
 
 //! > test_runner_name
