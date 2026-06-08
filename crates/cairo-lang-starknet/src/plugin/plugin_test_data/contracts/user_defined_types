@@ -45,6 +45,9 @@ mod test_contract {
         #[default]
         C: u32,
     }
+
+    #[derive(Drop, Serde, starknet::Store)]
+    enum EmptyEnum {}
 }
 
 //! > generated_cairo_code
@@ -91,6 +94,9 @@ mod test_contract {
         #[default]
         C: u32,
     }
+
+    #[derive(Drop, Serde, starknet::Store)]
+    enum EmptyEnum {}
 }
 
 lib.cairo:1:1
@@ -195,7 +201,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: starknet::ClassHash = 0x31eca83a5f161f61a5b51407b0d5138ae6f487b968308516a9cddc5b9d4d8da.try_into().unwrap();
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x175e3ea08fbd92b73ad06ddc3822cc0689ed2771dc573e3f7bd095442d98491.try_into().unwrap();
 
 
 #[doc(hidden)]
@@ -500,7 +506,7 @@ impl SimpleEnumStore<> of starknet::Store::<SimpleEnum> {
             SimpleEnum::B(x) => {
                 starknet::Store::write(address_domain, base, 2)?;
                 starknet::Store::<u16>::write_at_offset(address_domain, base, 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }
@@ -536,7 +542,7 @@ impl SimpleEnumStore<> of starknet::Store::<SimpleEnum> {
             SimpleEnum::B(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
                 starknet::Store::<u16>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }
@@ -626,7 +632,7 @@ impl EnumWithDefaultStore<> of starknet::Store::<EnumWithDefault> {
             EnumWithDefault::C(x) => {
                 starknet::Store::write(address_domain, base, 2)?;
                 starknet::Store::<u32>::write_at_offset(address_domain, base, 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }
@@ -673,7 +679,7 @@ impl EnumWithDefaultStore<> of starknet::Store::<EnumWithDefault> {
             EnumWithDefault::C(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
                 starknet::Store::<u32>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }
@@ -711,6 +717,57 @@ impl BadEnumWithDefaultSerde<
                 _ => { return core::option::Option::None; }
             }
         )
+    }
+}
+
+
+lib.cairo:43:5
+    #[derive(Drop, Serde, starknet::Store)]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl EmptyEnumDrop<> of core::traits::Drop::<EmptyEnum>;
+impl EmptyEnumSerde<
+        
+    > of core::serde::Serde<EmptyEnum>
+ {
+    fn serialize(self: @EmptyEnum, ref output: core::array::Array<felt252>) {
+        match self {
+            
+        }
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<EmptyEnum> {
+        let idx: felt252 = core::serde::Serde::<felt252>::deserialize(ref serialized)?;
+        core::option::Option::Some(
+            match idx {
+                
+                _ => { return core::option::Option::None; }
+            }
+        )
+    }
+}
+
+
+lib.cairo:43:27
+    #[derive(Drop, Serde, starknet::Store)]
+                          ^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EmptyEnumStore<> of starknet::Store::<EmptyEnum> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<EmptyEnum> {
+        starknet::SyscallResult::Err(array!['Read of an uninhabited type'])
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: EmptyEnum) -> starknet::SyscallResult<()> {
+        match value {}
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<EmptyEnum> {
+        starknet::SyscallResult::Err(array!['Read of an uninhabited type'])
+    }
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: EmptyEnum) -> starknet::SyscallResult<()> {
+        match value {}
+    }
+    fn size() -> u8 {
+        0
     }
 }
 
@@ -801,6 +858,13 @@ warning[E2200]: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no 
 | ...
 |     }
 |_____^
+
+warning[E2200]: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
+ --> lib.cairo:43:5-44:21
+      #[derive(Drop, Serde, starknet::Store)]
+ _____^
+|     enum EmptyEnum {}
+|_____________________^
 
 warning[E2066]: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:10:18
