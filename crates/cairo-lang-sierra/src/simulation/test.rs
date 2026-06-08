@@ -148,6 +148,12 @@ fn simulate(
 #[test_case("u128_overflowing_sub", vec![], vec![RangeCheck, Uint128(3), Uint128(5)]
              => Ok((vec![RangeCheck, Uint128(u128::MAX - 1)], 1));
             "u128_overflowing_sub(3, 5)")]
+#[test_case("u128s_from_felt252", vec![], vec![RangeCheck, Felt252(5u64.into())]
+             => Ok((vec![RangeCheck, Uint128(5)], 0)); "u128s_from_felt252(5)")]
+#[test_case("u128s_from_felt252", vec![],
+             vec![RangeCheck, Felt252(((BigInt::from(3) << 128_u32) + BigInt::from(7)).into())]
+             => Ok((vec![RangeCheck, Uint128(3), Uint128(7)], 1));
+            "u128s_from_felt252(3 * 2**128 + 7)")]
 fn simulate_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
