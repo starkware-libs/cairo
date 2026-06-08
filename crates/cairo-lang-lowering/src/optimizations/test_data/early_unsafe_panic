@@ -173,3 +173,59 @@ Statements:
 End:
   Match(match core::panics::unsafe_panic() {
   })
+
+//! > ==========================================================================
+
+//! > Test two side-effecting statements in a row before the dead tail are preserved.
+
+//! > test_runner_name
+test_early_unsafe_panic
+
+//! > function_code
+use core::debug::PrintTrait;
+
+fn foo(a: Option<u32>) -> u32 {
+    'error1'.print();
+    'error2'.print();
+    core::panic_with_felt252('error3')
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 111542220583473
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v1)
+  () <- core::debug::print(v3)
+  (v4: core::felt252) <- 111542220583474
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v5, v4)
+  () <- core::debug::print(v6)
+  (v7: core::never) <- core::panic_with_const_felt252::<111542220583475>()
+End:
+  Match(match_enum(v7) {
+  })
+
+//! > after
+Parameters: v0: core::option::Option::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 111542220583473
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v1)
+  () <- core::debug::print(v3)
+  (v4: core::felt252) <- 111542220583474
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v5, v4)
+  () <- core::debug::print(v6)
+End:
+  Match(match core::panics::unsafe_panic() {
+  })
