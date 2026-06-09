@@ -3,9 +3,9 @@
 //! This module tracks semantic equivalence between variables as information flows through the
 //! program. Two variables are equivalent if they hold the same value. Additionally, the analysis
 //! tracks `Box`/unbox, snapshot/desnap, struct construct, and array construct relationships between
-//! equivalence classes via unified forward/reverse maps. Structs and arrays both map
-//! `(TypeId, Vec<FieldVar>)` but use distinct relations so they never hashcons together — array
-//! pop operations act as destructures on the array relation.
+//! equivalence classes via unified forward/reverse maps. Structs track every field; arrays track
+//! a bounded prefix/suffix of elements around a size-typed run of forgotten ones (see
+//! [`ArrayItem`]) — array pop operations act as destructures on the array relation.
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ExternFunctionId, NamedLanguageElementId};
@@ -48,6 +48,129 @@ impl FieldVar {
     }
 }
 
+/// Maximum number of individual elements tracked at the front of an array.
+///
+/// Tracking every element of an array is quadratic: each `array_append` records a fresh
+/// `Relation::Array` holding the whole contents so far, kept per block and cloned at every
+/// edge for the rest of the function. Large array literals (e.g. embedded test vectors with
+/// thousands of elements) made the analysis dominate compilation time and memory, while
+/// element forwarding only ever pays off near an array's ends. So arrays are tracked as up to
+/// [`MAX_ARRAY_PREFIX_ITEMS`] leading elements, up to [`MAX_ARRAY_SUFFIX_ITEMS`] trailing
+/// elements, and a single size-typed run of forgotten elements in between (see [`ArrayItem`]).
+const MAX_ARRAY_PREFIX_ITEMS: usize = 5;
+/// Maximum number of individual elements tracked at the back of an array; see
+/// [`MAX_ARRAY_PREFIX_ITEMS`].
+const MAX_ARRAY_SUFFIX_ITEMS: usize = 5;
+
+/// One item of a tracked array's contents.
+///
+/// The canonical form of an array's item list is: at most [`MAX_ARRAY_PREFIX_ITEMS`]
+/// `Element`s, then at most one run (`KnownSize`/`UnknownSize`), then at most
+/// [`MAX_ARRAY_SUFFIX_ITEMS`] `Element`s; without a run, at most prefix+suffix `Element`s in
+/// total. Runs carry a globally unique `id` (like [`FieldVar::Placeholder`]): two runs
+/// describe the same element sequence only if their ids match, so relations only hashcons
+/// when their unknown parts share a lineage. Any operation that changes a run's contents
+/// (absorbing an overflowed element, shrinking on pop, meeting at a merge) allocates a fresh
+/// id.
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+enum ArrayItem {
+    /// A single element.
+    Element(FieldVar),
+    /// `len` consecutive elements with forgotten values but known count.
+    KnownSize { id: usize, len: usize },
+    /// Consecutive elements with unknown values and unknown count (possibly zero).
+    UnknownSize { id: usize },
+}
+
+impl ArrayItem {
+    /// Returns the element if this is an `Element`, or `None` for runs.
+    fn as_element(self) -> Option<FieldVar> {
+        match self {
+            ArrayItem::Element(f) => Some(f),
+            ArrayItem::KnownSize { .. } | ArrayItem::UnknownSize { .. } => None,
+        }
+    }
+
+    /// Resolves an `Element`'s variable to its representative; runs are unchanged.
+    fn find_rep(self, info: &mut EqualityState<'_>) -> Self {
+        match self {
+            ArrayItem::Element(f) => ArrayItem::Element(f.find_rep(info)),
+            run @ (ArrayItem::KnownSize { .. } | ArrayItem::UnknownSize { .. }) => run,
+        }
+    }
+}
+
+/// Allocates a globally unique id for placeholders and array runs.
+fn fresh_id(next_unique_id: &mut usize) -> usize {
+    *next_unique_id += 1;
+    *next_unique_id - 1
+}
+
+/// Appends `elem` to a canonical array item list, keeping it canonical: when the leading
+/// elements exceed the prefix budget and the trailing ones the suffix budget, the first
+/// element after the prefix is forgotten into the run (counted, value dropped).
+fn append_to_items(
+    mut items: Vec<ArrayItem>,
+    elem: FieldVar,
+    next_unique_id: &mut usize,
+) -> Vec<ArrayItem> {
+    match items.iter().position(|item| item.as_element().is_none()) {
+        None => {
+            if items.len() >= MAX_ARRAY_PREFIX_ITEMS + MAX_ARRAY_SUFFIX_ITEMS {
+                // Forget the first post-prefix element's value into a fresh run of one.
+                items[MAX_ARRAY_PREFIX_ITEMS] =
+                    ArrayItem::KnownSize { id: fresh_id(next_unique_id), len: 1 };
+            }
+        }
+        Some(run_pos) => {
+            if items.len() - run_pos > MAX_ARRAY_SUFFIX_ITEMS {
+                // Absorb the first suffix element into the run.
+                items[run_pos] = match items[run_pos] {
+                    ArrayItem::KnownSize { len, .. } => {
+                        ArrayItem::KnownSize { id: fresh_id(next_unique_id), len: len + 1 }
+                    }
+                    ArrayItem::UnknownSize { .. } => {
+                        ArrayItem::UnknownSize { id: fresh_id(next_unique_id) }
+                    }
+                    ArrayItem::Element(_) => unreachable!("position() found a run"),
+                };
+                items.remove(run_pos + 1);
+            }
+        }
+    }
+    items.push(ArrayItem::Element(elem));
+    items
+}
+
+/// Removes one element from the front (`from_front`) or back of a canonical item list.
+/// Returns the removed element when individually tracked (`None` for a known-size run) and
+/// the remaining items, or `None` when the boundary item is an unknown-size run — it may be
+/// empty, so neither the removed element nor the remainder is representable.
+fn pop_item(
+    items: &[ArrayItem],
+    from_front: bool,
+    next_unique_id: &mut usize,
+) -> Option<(Option<FieldVar>, Vec<ArrayItem>)> {
+    let (boundary, rest) = if from_front { items.split_first()? } else { items.split_last()? };
+    match *boundary {
+        ArrayItem::Element(f) => Some((Some(f), rest.to_vec())),
+        ArrayItem::KnownSize { len: 1, .. } => Some((None, rest.to_vec())),
+        ArrayItem::KnownSize { len, .. } => {
+            let shrunk = ArrayItem::KnownSize { id: fresh_id(next_unique_id), len: len - 1 };
+            let mut remaining = Vec::with_capacity(items.len());
+            if from_front {
+                remaining.push(shrunk);
+                remaining.extend_from_slice(rest);
+            } else {
+                remaining.extend_from_slice(rest);
+                remaining.push(shrunk);
+            }
+            Some((None, remaining))
+        }
+        ArrayItem::UnknownSize { .. } => None,
+    }
+}
+
 /// A relationship between equivalence classes, carrying its payload data.
 /// Hashable so it can be used as a forward map key.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -56,19 +179,23 @@ enum Relation<'db> {
     Snapshot(VariableId),
     EnumConstruct(ConcreteVariant<'db>, VariableId),
     StructConstruct(TypeId<'db>, Vec<FieldVar>),
-    Array(TypeId<'db>, Vec<FieldVar>),
+    Array(TypeId<'db>, Vec<ArrayItem>),
 }
 
 impl<'db> Relation<'db> {
     /// Returns an iterator over all real variables referenced by this relation.
-    fn referenced_vars(&self) -> impl Iterator<Item = VariableId> + '_ {
-        let (single, fields): (Option<VariableId>, &[FieldVar]) = match self {
+    fn referenced_vars(&self) -> Box<dyn Iterator<Item = VariableId> + '_> {
+        match self {
             Relation::Box(v) | Relation::Snapshot(v) | Relation::EnumConstruct(_, v) => {
-                (Some(*v), &[])
+                Box::new(std::iter::once(*v))
             }
-            Relation::StructConstruct(_, vs) | Relation::Array(_, vs) => (None, vs),
-        };
-        single.into_iter().chain(fields.iter().filter_map(|f| f.as_var()))
+            Relation::StructConstruct(_, fields) => {
+                Box::new(fields.iter().filter_map(|f| f.as_var()))
+            }
+            Relation::Array(_, items) => {
+                Box::new(items.iter().filter_map(|item| item.as_element().and_then(|f| f.as_var())))
+            }
+        }
     }
 
     /// Returns a new Relation with all input variables resolved to their current representatives.
@@ -81,8 +208,8 @@ impl<'db> Relation<'db> {
                 ty,
                 fields.into_iter().map(|f| f.find_rep(state)).collect(),
             ),
-            Relation::Array(ty, fields) => {
-                Relation::Array(ty, fields.into_iter().map(|f| f.find_rep(state)).collect())
+            Relation::Array(ty, items) => {
+                Relation::Array(ty, items.into_iter().map(|item| item.find_rep(state)).collect())
             }
         }
     }
@@ -191,15 +318,15 @@ impl<'db> EqualityState<'db> {
     }
 
     /// Looks up the array construct info for a representative (immutable).
-    fn get_array_construct_immut(&self, rep: VariableId) -> Option<(TypeId<'db>, Vec<FieldVar>)> {
+    fn get_array_construct_immut(&self, rep: VariableId) -> Option<(TypeId<'db>, Vec<ArrayItem>)> {
         match self.reverse.get(&rep)? {
-            Relation::Array(ty, fields) => Some((*ty, fields.clone())),
+            Relation::Array(ty, items) => Some((*ty, items.clone())),
             _ => None,
         }
     }
 
     /// Looks up the array construct info for a variable (mutable, uses find for path compression).
-    fn get_array_construct(&mut self, var: VariableId) -> Option<(TypeId<'db>, Vec<FieldVar>)> {
+    fn get_array_construct(&mut self, var: VariableId) -> Option<(TypeId<'db>, Vec<ArrayItem>)> {
         let rep = self.find(var);
         self.get_array_construct_immut(rep)
     }
@@ -243,7 +370,7 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
                     let name = variant.id.name(db).to_string(db);
                     lines.push(format!("{name}({}) = {}", v(*input), v(output)));
                 }
-                Relation::StructConstruct(ty, inputs) | Relation::Array(ty, inputs) => {
+                Relation::StructConstruct(ty, inputs) => {
                     let type_name = ty.format(db);
                     let fields = inputs
                         .iter()
@@ -253,13 +380,23 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
                         })
                         .collect::<Vec<_>>()
                         .join(", ");
-                    // Structs render as `Type(..)`, arrays as `Type[..]`, to disambiguate the two
-                    // relations that share a `(TypeId, Vec<FieldVar>)` payload.
-                    let (open, close) = match relation {
-                        Relation::Array(..) => ('[', ']'),
-                        _ => ('(', ')'),
-                    };
-                    lines.push(format!("{type_name}{open}{fields}{close} = {}", v(output)));
+                    lines.push(format!("{type_name}({fields}) = {}", v(output)));
+                }
+                // Arrays render as `Type[..]` (vs `Type(..)` for structs); runs of forgotten
+                // elements render as `?(len)` / `?(*)`.
+                Relation::Array(ty, items) => {
+                    let type_name = ty.format(db);
+                    let rendered = items
+                        .iter()
+                        .map(|item| match item {
+                            ArrayItem::Element(FieldVar::Var(id)) => v(*id),
+                            ArrayItem::Element(FieldVar::Placeholder(_)) => "?".to_string(),
+                            ArrayItem::KnownSize { len, .. } => format!("?({len})"),
+                            ArrayItem::UnknownSize { .. } => "?(*)".to_string(),
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    lines.push(format!("{type_name}[{rendered}] = {}", v(output)));
                 }
             }
         }
@@ -285,9 +422,9 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
 pub struct EqualityAnalysis<'a, 'db> {
     db: &'db dyn Database,
     lowered: &'a Lowered<'db>,
-    /// Counter for allocating globally unique `Placeholder` IDs for unknown struct/array fields
-    /// after merge.
-    next_placeholder: usize,
+    /// Counter for allocating globally unique ids: `FieldVar::Placeholder`s for unknown fields
+    /// after merge, and [`ArrayItem`] run ids.
+    next_unique_id: usize,
     /// The `array_new` extern function id.
     array_new: ExternFunctionId<'db>,
     /// The `array_append` extern function id.
@@ -309,7 +446,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
         Self {
             db,
             lowered,
-            next_placeholder: 0,
+            next_unique_id: 0,
             array_new: array_module.extern_function_id("array_new"),
             array_append: array_module.extern_function_id("array_append"),
             array_pop_front: array_module.extern_function_id("array_pop_front"),
@@ -341,7 +478,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
     /// The `None` arms are intentionally ignored: recording empty-array relations or unions there
     /// would backedge-merge older SSA equivalence classes based on branch discrimination.
     fn transfer_extern_match_arm(
-        &self,
+        &mut self,
         info: &mut EqualityState<'db>,
         extern_info: &MatchExternInfo<'db>,
         arm: &MatchArm<'db>,
@@ -371,7 +508,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
 
     /// Handles the actual array pop arm transfer after validating the Option variant.
     fn transfer_array_pop_arm(
-        &self,
+        &mut self,
         info: &mut EqualityState<'db>,
         extern_info: &MatchExternInfo<'db>,
         arm: &MatchArm<'db>,
@@ -383,16 +520,15 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
             let input_arr = extern_info.inputs[0].var_id;
             let remaining_arr = arm.var_ids[0];
             let boxed_elem = arm.var_ids[1];
-            if let Some((ty, elems)) = info.get_array_construct(input_arr)
-                && let Some((first, rest)) = elems.split_first()
+            if let Some((ty, items)) = info.get_array_construct(input_arr)
+                && let Some((popped, rest)) = pop_item(&items, true, &mut self.next_unique_id)
             {
                 // TODO(eytan-starkware): Add support for placeholders in boxes and reverse box
                 // relation to unify placeholder.
-                if let FieldVar::Var(first_var) = first {
-                    info.set_relation(Relation::Box(*first_var), boxed_elem);
+                if let Some(FieldVar::Var(first_var)) = popped {
+                    info.set_relation(Relation::Box(first_var), boxed_elem);
                 }
-                let rest_fields: Vec<FieldVar> = rest.iter().map(|f| f.find_rep(info)).collect();
-                info.set_relation(Relation::Array(ty, rest_fields), remaining_arr);
+                info.set_relation(Relation::Array(ty, rest), remaining_arr);
             }
         } else if (id == self.array_snapshot_pop_front || id == self.array_snapshot_pop_back)
             && is_some
@@ -408,7 +544,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
                 Some(Relation::Snapshot(v)) => Some(*v),
                 _ => None,
             };
-            let elems_opt = original_rep
+            let items_opt = original_rep
                 .and_then(|orig| {
                     let orig = info.find_immut(orig);
                     info.get_array_construct_immut(orig)
@@ -416,37 +552,30 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
                 .or_else(|| info.get_array_construct_immut(snap_rep));
 
             let snap_ty = self.lowered.variables[remaining_snap_arr].ty;
-            let Some((_orig_ty, elems)) = elems_opt else {
+            let Some((_orig_ty, items)) = items_opt else {
                 return;
             };
+            if items.is_empty() {
+                info.set_relation(Relation::Array(snap_ty, vec![]), remaining_snap_arr);
+                return;
+            }
             let pop_front = id == self.array_snapshot_pop_front;
-            let (elem, rest) = if pop_front {
-                let Some((first, tail)) = elems.split_first() else {
-                    info.set_relation(Relation::Array(snap_ty, vec![]), remaining_snap_arr);
-                    return;
-                };
-                (*first, tail)
-            } else {
-                let Some((last, init)) = elems.split_last() else {
-                    info.set_relation(Relation::Array(snap_ty, vec![]), remaining_snap_arr);
-                    return;
-                };
-                (*last, init)
+            let Some((popped, rest)) = pop_item(&items, pop_front, &mut self.next_unique_id) else {
+                return;
             };
 
             // The popped element is `Box<@T>`. Record the box relationship against
             // the snapshot class of `elem` if it exists.
             // TODO(eytan-starkware): Support relationships even when no variable
             // represents `@elem` yet (elem is a Placeholder).
-            if let FieldVar::Var(elem_var) = elem {
+            if let Some(FieldVar::Var(elem_var)) = popped {
                 let elem_rep = info.find(elem_var);
                 if let Some(&snap_of_elem) = info.forward.get(&Relation::Snapshot(elem_rep)) {
                     info.set_relation(Relation::Box(snap_of_elem), boxed_snap_elem);
                 }
             }
 
-            let rest_fields: Vec<FieldVar> = rest.iter().map(|f| f.find_rep(info)).collect();
-            info.set_relation(Relation::Array(snap_ty, rest_fields), remaining_snap_arr);
+            info.set_relation(Relation::Array(snap_ty, rest), remaining_snap_arr);
         }
     }
 }
@@ -473,31 +602,103 @@ fn merge_referenced_vars<'db, 'a>(
     union_find_vars.chain(forward_vars).chain(reverse_vars)
 }
 
+/// Meets two field variables at a merge: kept when both cite the same representative in
+/// `result` (setting `any_data`), otherwise replaced by a fresh placeholder.
+fn merge_field(
+    f1: FieldVar,
+    f2: FieldVar,
+    result: &mut EqualityState<'_>,
+    next_unique_id: &mut usize,
+    any_data: &mut bool,
+) -> FieldVar {
+    match (f1, f2) {
+        (FieldVar::Var(v), FieldVar::Var(w)) if result.find(v) == result.find(w) => {
+            *any_data = true;
+            FieldVar::Var(result.find(v))
+        }
+        (_, _) => FieldVar::Placeholder(fresh_id(next_unique_id)),
+    }
+}
+
+/// Meets two arrays' item lists at a merge. Requires the lists to have the same item count and
+/// positionally compatible kinds (elements meet elements, runs meet runs) — since each list has
+/// at most one run, this left-aligns the prefixes and right-aligns the suffixes. Elements meet
+/// like struct fields; runs keep their identity when it is shared, degrade to a fresh known-size
+/// run when only the count agrees, and to a fresh unknown-size run otherwise. Returns the met
+/// items and whether any real data survived, or `None` when the shapes are incompatible.
+fn merge_array_items(
+    items1: &[ArrayItem],
+    items2: &[ArrayItem],
+    result: &mut EqualityState<'_>,
+    next_unique_id: &mut usize,
+) -> Option<(Vec<ArrayItem>, bool)> {
+    if items1.len() != items2.len() {
+        return None;
+    }
+    let mut any_data = false;
+    let mut result_items = Vec::with_capacity(items1.len());
+    for (item1, item2) in items1.iter().zip(items2) {
+        let met = match (*item1, *item2) {
+            (ArrayItem::Element(f1), ArrayItem::Element(f2)) => {
+                ArrayItem::Element(merge_field(f1, f2, result, next_unique_id, &mut any_data))
+            }
+            (
+                ArrayItem::KnownSize { id: id1, len: len1 },
+                ArrayItem::KnownSize { id: id2, len: len2 },
+            ) => {
+                if id1 == id2 && len1 == len2 {
+                    any_data = true;
+                    ArrayItem::KnownSize { id: id1, len: len1 }
+                } else if len1 == len2 {
+                    ArrayItem::KnownSize { id: fresh_id(next_unique_id), len: len1 }
+                } else {
+                    ArrayItem::UnknownSize { id: fresh_id(next_unique_id) }
+                }
+            }
+            (ArrayItem::UnknownSize { id: id1 }, ArrayItem::UnknownSize { id: id2 })
+                if id1 == id2 =>
+            {
+                any_data = true;
+                ArrayItem::UnknownSize { id: id1 }
+            }
+            (
+                ArrayItem::KnownSize { .. } | ArrayItem::UnknownSize { .. },
+                ArrayItem::KnownSize { .. } | ArrayItem::UnknownSize { .. },
+            ) => ArrayItem::UnknownSize { id: fresh_id(next_unique_id) },
+            // An element meeting a run: the lists describe arrays of (potentially) different
+            // lengths with no positional alignment; drop the relation.
+            (ArrayItem::Element(_), _) | (_, ArrayItem::Element(_)) => return None,
+        };
+        result_items.push(met);
+    }
+    Some((result_items, any_data))
+}
+
 /// Keeps relational edges that survive the join **without** mapping variables across mismatched
-/// branch equivalence roots: struct/array fields become placeholders unless both sides cite the
-/// same SSA `VariableId`. Box/Snapshot/Enum reuse an edge only when merged outputs coincide in
-/// `result`.
+/// branch equivalence roots: struct fields become placeholders and array runs lose their
+/// identity unless both sides cite the same SSA `VariableId` / run id. Box/Snapshot/Enum reuse
+/// an edge only when merged outputs coincide in `result`.
 fn merge_relations<'db>(
     info1: &EqualityState<'db>,
     info2: &EqualityState<'db>,
     intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
     result: &mut EqualityState<'db>,
-    next_placeholder: &mut usize,
+    next_unique_id: &mut usize,
 ) {
     // Index info2's aggregate (struct/array) entries by output representative for lookup in the
     // merge loop. Forward entries are completely authoritative, so we use them to build the index.
     // Structs and arrays are indexed separately so they never cross-match during the intersection.
     let mut info2_structs_by_output: OrderedHashMap<VariableId, (TypeId<'db>, Vec<FieldVar>)> =
         OrderedHashMap::default();
-    let mut info2_arrays_by_output: OrderedHashMap<VariableId, (TypeId<'db>, Vec<FieldVar>)> =
+    let mut info2_arrays_by_output: OrderedHashMap<VariableId, (TypeId<'db>, Vec<ArrayItem>)> =
         OrderedHashMap::default();
     for (relation, &output2) in info2.forward.iter() {
         match relation {
             Relation::StructConstruct(ty, fields) => {
                 info2_structs_by_output.insert(info2.find_immut(output2), (*ty, fields.clone()));
             }
-            Relation::Array(ty, fields) => {
-                info2_arrays_by_output.insert(info2.find_immut(output2), (*ty, fields.clone()));
+            Relation::Array(ty, items) => {
+                info2_arrays_by_output.insert(info2.find_immut(output2), (*ty, items.clone()));
             }
             _ => {}
         }
@@ -547,15 +748,12 @@ fn merge_relations<'db>(
                     );
                 }
             }
-            Relation::StructConstruct(ty, fields1) | Relation::Array(ty, fields1) => {
-                let is_array = matches!(relation, Relation::Array(..));
-                let index =
-                    if is_array { &info2_arrays_by_output } else { &info2_structs_by_output };
+            Relation::StructConstruct(ty, fields1) => {
                 let output1_rep = info1.find_immut(output1);
                 for &(output2_rep, output_intersection) in
                     intersections.get(&output1_rep).into_iter().flatten()
                 {
-                    let Some((ty2, fields2)) = index.get(&output2_rep) else {
+                    let Some((ty2, fields2)) = info2_structs_by_output.get(&output2_rep) else {
                         continue;
                     };
                     if ty2 != ty || fields2.len() != fields1.len() {
@@ -565,26 +763,37 @@ fn merge_relations<'db>(
                     let result_fields: Vec<FieldVar> = fields1
                         .iter()
                         .zip(fields2)
-                        .map(|(f1, f2)| match (f1, f2) {
-                            (FieldVar::Var(v), FieldVar::Var(w))
-                                if result.find(*v) == result.find(*w) =>
-                            {
-                                any_data = true;
-                                FieldVar::Var(result.find(*v))
-                            }
-                            (_, _) => {
-                                *next_placeholder += 1;
-                                FieldVar::Placeholder(*next_placeholder - 1)
-                            }
+                        .map(|(f1, f2)| {
+                            merge_field(*f1, *f2, result, next_unique_id, &mut any_data)
                         })
                         .collect();
                     if any_data || result_fields.is_empty() {
-                        let result_relation = if is_array {
-                            Relation::Array(*ty, result_fields)
-                        } else {
-                            Relation::StructConstruct(*ty, result_fields)
-                        };
-                        result.set_relation(result_relation, output_intersection);
+                        result.set_relation(
+                            Relation::StructConstruct(*ty, result_fields),
+                            output_intersection,
+                        );
+                    }
+                }
+            }
+            Relation::Array(ty, items1) => {
+                let output1_rep = info1.find_immut(output1);
+                for &(output2_rep, output_intersection) in
+                    intersections.get(&output1_rep).into_iter().flatten()
+                {
+                    let Some((ty2, items2)) = info2_arrays_by_output.get(&output2_rep) else {
+                        continue;
+                    };
+                    if ty2 != ty {
+                        continue;
+                    }
+                    let Some((result_items, any_data)) =
+                        merge_array_items(items1, items2, result, next_unique_id)
+                    else {
+                        continue;
+                    };
+                    if any_data || result_items.is_empty() {
+                        result
+                            .set_relation(Relation::Array(*ty, result_items), output_intersection);
                     }
                 }
             }
@@ -642,7 +851,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
             intersections.entry(rep1).or_default().push((rep2, result.find(vars[0])));
         }
 
-        merge_relations(&info1, &info2, &intersections, &mut result, &mut self.next_placeholder);
+        merge_relations(&info1, &info2, &intersections, &mut result, &mut self.next_unique_id);
 
         result
     }
@@ -732,13 +941,13 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
                     let ty = self.lowered.variables[call_stmt.outputs[0]].ty;
                     info.set_relation(Relation::Array(ty, vec![]), call_stmt.outputs[0]);
                 } else if id == self.array_append
-                    && let Some((ty, elems)) = info.get_array_construct(call_stmt.inputs[0].var_id)
+                    && let Some((ty, items)) = info.get_array_construct(call_stmt.inputs[0].var_id)
                 {
                     // Only track append if the input array is already tracked. Arrays from
                     // function parameters or external calls are conservatively ignored.
-                    let mut new_elems = elems;
-                    new_elems.push(FieldVar::Var(info.find(call_stmt.inputs[1].var_id)));
-                    info.set_relation(Relation::Array(ty, new_elems), call_stmt.outputs[0]);
+                    let elem = FieldVar::Var(info.find(call_stmt.inputs[1].var_id));
+                    let new_items = append_to_items(items, elem, &mut self.next_unique_id);
+                    info.set_relation(Relation::Array(ty, new_items), call_stmt.outputs[0]);
                 }
             }
 
