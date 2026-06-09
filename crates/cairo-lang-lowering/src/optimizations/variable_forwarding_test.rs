@@ -11,15 +11,15 @@ use crate::optimizations::strategy::{ApplyOptimization, OptimizationPhase};
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
-    test_cancel_ops,
+    test_variable_forwarding,
     "src/optimizations/test_data",
     {
-        cancel_ops: "cancel_ops",
+        variable_forwarding: "variable_forwarding",
     },
-    test_cancel_ops
+    test_variable_forwarding
 );
 
-fn test_cancel_ops(
+fn test_variable_forwarding(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
@@ -37,16 +37,14 @@ fn test_cancel_ops(
 
     let mut before = db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().clone();
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-    [
-        OptimizationPhase::ApplyInlining { enable_const_folding: true },
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReorderStatements,
-    ]
-    .apply(db, function_id, &mut before)
-    .unwrap();
+    OptimizationPhase::ApplyInlining { enable_const_folding: true }
+        .apply(db, function_id, &mut before)
+        .unwrap();
+    OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
+    OptimizationPhase::ReorderStatements.apply(db, function_id, &mut before).unwrap();
 
     let mut after = before.clone();
-    OptimizationPhase::CancelOps.apply(db, function_id, &mut after).unwrap();
+    OptimizationPhase::VariableForwarding.apply(db, function_id, &mut after).unwrap();
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

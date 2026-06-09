@@ -12,3 +12,4 @@ ensure-no_std/Cargo.lock
 ensure-no_std/target/
 
 .claude/settings.local.json
+.reviews/

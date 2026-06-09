@@ -296,4 +296,3 @@ fn test_starknet_consts() {
             .unbox() == STARKNET_CONSTS,
     );
 }
-

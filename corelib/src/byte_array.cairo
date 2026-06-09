@@ -269,7 +269,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// Appends the reverse of the given word to the end of `self`.
     ///
     /// This function assumes that:
-    /// 1. len < 31
+    /// 1. len <= 31
     /// 2. word is validly convertible to bytes31 of length `len`.
     ///
     /// # Examples
@@ -859,7 +859,13 @@ impl ByteSpanGetRange of crate::ops::Get<ByteSpan, crate::ops::Range<usize>> {
     fn get(self: @ByteSpan, index: crate::ops::Range<usize>) -> Option<ByteSpan> {
         let range = index;
         if range.start == range.end {
-            return Some(Default::default());
+            return if range.start <= (*self).len() {
+                // If range is within bounds, return the empty slice.
+                Some(Default::default())
+            } else {
+                // If range is out of bounds, return `None`.
+                None
+            };
         }
         if range.start > range.end {
             return None;

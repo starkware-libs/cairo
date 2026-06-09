@@ -41,4 +41,3 @@ fn const_with_snap() {
 
     revoke(x);
 }
-

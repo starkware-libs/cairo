@@ -7,7 +7,8 @@ use super::LibfuncSimulationError::{
     self, FunctionSimulationError, WrongArgType, WrongNumberOfArgs,
 };
 use super::value::CoreValue::{
-    self, Array, Felt252, GasBuiltin, RangeCheck, Uint32, Uint64, Uint128, Uninitialized,
+    self, Array, Felt252, GasBuiltin, RangeCheck, U128MulGuarantee, Uint32, Uint64, Uint128,
+    Uninitialized,
 };
 use super::{SimulationError, core};
 use crate::extensions::GenericLibfunc;
@@ -147,6 +148,12 @@ fn simulate(
 #[test_case("u128_overflowing_sub", vec![], vec![RangeCheck, Uint128(3), Uint128(5)]
              => Ok((vec![RangeCheck, Uint128(u128::MAX - 1)], 1));
             "u128_overflowing_sub(3, 5)")]
+#[test_case("u128s_from_felt252", vec![], vec![RangeCheck, Felt252(5u64.into())]
+             => Ok((vec![RangeCheck, Uint128(5)], 0)); "u128s_from_felt252(5)")]
+#[test_case("u128s_from_felt252", vec![],
+             vec![RangeCheck, Felt252(((BigInt::from(3) << 128_u32) + BigInt::from(7)).into())]
+             => Ok((vec![RangeCheck, Uint128(3), Uint128(7)], 1));
+            "u128s_from_felt252(3 * 2**128 + 7)")]
 fn simulate_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -186,6 +193,11 @@ fn simulate_branch(
              => Ok(vec![Uint128(3), Uint128(5)]); "function_call<identity>()")]
 #[test_case("u64_to_felt252", vec![], vec![Uint64(5)]
              => Ok(vec![Felt252(5u64.into())]); "u64_to_felt252(5)")]
+#[test_case("u128_guarantee_mul", vec![], vec![Uint128(2), Uint128(3)]
+             => Ok(vec![Uint128(0), Uint128(6), U128MulGuarantee]); "u128_guarantee_mul(2, 3)")]
+#[test_case("u128_guarantee_mul", vec![], vec![Uint128(1 << 64), Uint128(1 << 64)]
+             => Ok(vec![Uint128(1), Uint128(0), U128MulGuarantee]);
+            "u128_guarantee_mul(2**64, 2**64) -> high limb")]
 fn simulate_none_branch(
     id: &str,
     generic_args: Vec<GenericArg>,

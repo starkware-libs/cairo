@@ -1763,6 +1763,11 @@ fn test_i128_operators() {
         @-0x80000000000000000000000000000000_i128,
         'failed MIN_I128 as mul result',
     );
+    assert_eq(
+        @(1_i128 * 0x7fffffffffffffffffffffffffffffff_i128),
+        @0x7fffffffffffffffffffffffffffffff_i128,
+        'failed MAX_I128 as mul result',
+    );
     assert_lt(1_i128, 4_i128, '1 < 4');
     assert_le(1_i128, 4_i128, '1 <= 4');
     assert(!(4_i128 < 4_i128), '!(4 < 4)');
@@ -1829,27 +1834,56 @@ fn test_i128_add_underflow() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('i128_mul Overflow',))]
 fn test_i128_mul_overflow_1() {
     0x10000000000000000000000000000000_i128 * 0x10000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('i128_mul Overflow',))]
 fn test_i128_mul_overflow_2() {
     0x11000000000000000000000000000000_i128 * 0x10000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected: ('i128_mul Overflow',))]
 fn test_i128_mul_overflow_3() {
     2_i128 * 0x40000000000000000000000000000000_i128;
+}
+
+#[test]
+#[should_panic(expected: ('i128_mul Overflow',))]
+fn test_i128_mul_overflow_min_times_minus_one() {
+    -0x80000000000000000000000000000000_i128 * -1_i128;
 }
 
 #[test]
 #[should_panic(expected: 'attempt to divide with overflow')]
 fn test_i128_divmod_overflow() {
     -0x80000000000000000000000000000000_i128 / -1_i128;
+}
+
+#[test]
+fn test_signed_div_rem_assign() {
+    // `i32`/`i64`/`i128` previously lacked `/=` and `%=` (only `i8`/`i16` had them).
+    let mut a: i32 = 10;
+    a /= 3;
+    assert_eq!(a, 3);
+    let mut a: i32 = 10;
+    a %= 3;
+    assert_eq!(a, 1);
+    let mut a: i64 = -20;
+    a /= 4;
+    assert_eq!(a, -5);
+    let mut a: i64 = -20;
+    a %= 7;
+    assert_eq!(a, -6);
+    let mut a: i128 = 100;
+    a /= -9;
+    assert_eq!(a, -11);
+    let mut a: i128 = 17;
+    a %= 5;
+    assert_eq!(a, 2);
 }
 
 #[test]

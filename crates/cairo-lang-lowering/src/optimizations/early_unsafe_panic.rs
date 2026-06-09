@@ -106,14 +106,14 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for UnsafePanicContext<'db> {
         {
             self.fixes.push(((block_id, block.statements.len()), *match_info.location()));
         }
-        if ReachableSideEffects::Reachable == *info {
+        let ReachableSideEffects::Unreachable(location) = *info else {
             return;
-        }
-        for (i, stmt) in block.statements.iter().enumerate() {
-            if self.has_side_effects(stmt)
-                && let ReachableSideEffects::Unreachable(locations) = *info
-            {
-                self.fixes.push(((block_id, i), locations));
+        };
+        // Everything past the last side-effecting statement is dead (no `return` is reachable
+        // from here), so replace it with an early panic — but keep the side effects themselves.
+        for (i, stmt) in block.statements.iter().enumerate().rev() {
+            if self.has_side_effects(stmt) {
+                self.fixes.push(((block_id, i + 1), location));
                 *info = ReachableSideEffects::Reachable;
                 break;
             }

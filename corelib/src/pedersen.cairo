@@ -97,4 +97,3 @@ impl HashStateImpl of crate::hash::HashStateTrait<HashState> {
         self.state
     }
 }
-

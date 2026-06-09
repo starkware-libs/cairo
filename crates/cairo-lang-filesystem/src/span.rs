@@ -270,7 +270,8 @@ impl TextPosition {
 pub struct FileSummary {
     /// Starting offsets of all lines in this file.
     pub line_offsets: Vec<TextOffset>,
-    /// Offset of the last character in the file.
+    /// Offset of the end of the file, i.e. one past the last character (equal to the file's byte
+    /// length).
     pub last_offset: TextOffset,
 }
 impl FileSummary {

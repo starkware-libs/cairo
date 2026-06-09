@@ -467,7 +467,7 @@ error[E0004]: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X',
 impl MyImpl of MyTrait;
      ^^^^^^
 
-error[E2015]: Cannot infer implicit impl `Z.`
+error[E2015]: Cannot infer implicit impl `Z`.
 Could not find implementation of trait `test::OtherTrait`
  --> lib.cairo:9:1
 impl MyImpl of MyTrait;
@@ -520,7 +520,7 @@ error[E0004]: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y',
 impl MyImpl of MyTrait {
      ^^^^^^
 
-error[E2015]: Cannot infer implicit impl `F.`
+error[E2015]: Cannot infer implicit impl `F`.
 Could not find implementation of trait `test::OtherTrait`
  --> lib.cairo:16:1-21:1
   impl MyImpl of MyTrait {
@@ -1112,7 +1112,7 @@ impl FooIntoIterator of core::iter::IntoIterator<Foo> {
 }
 
 //! > expected_diagnostics
-error[E2015]: Cannot infer implicit impl `Iterator.`
+error[E2015]: Cannot infer implicit impl `Iterator`.
 Could not find implementation of trait `core::iter::traits::iterator::Iterator::<test::FooIter>`
  --> lib.cairo:5:1-12:1
   #[feature("collections-into-iter")]

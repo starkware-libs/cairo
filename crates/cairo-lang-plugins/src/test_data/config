@@ -443,6 +443,102 @@ error: `or` operator expects at least two arguments.
 
 //! > ==========================================================================
 
+//! > Test logical operators with unparsable inner arguments are kept, not dropped.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: true)
+
+//! > cfg
+["a", "b", ["k", "a"], ["k", "b"]]
+
+//! > cairo_code
+#[cfg(or(0, 1))]
+const INVALID_OR_ITEMS: felt252 = 0;
+
+#[cfg(and(0, 1))]
+const INVALID_AND_ITEMS: felt252 = 0;
+
+#[cfg(and(or(0, 1), 2))]
+const INVALID_INNER_ITEMS1: felt252 = 0;
+
+#[cfg(or(2, and(0, 1)))]
+const INVALID_INNER_ITEMS2: felt252 = 0;
+
+//! > expanded_cairo_code
+#[cfg(or(0, 1))]
+const INVALID_OR_ITEMS: felt252 = 0;
+
+#[cfg(and(0, 1))]
+const INVALID_AND_ITEMS: felt252 = 0;
+
+#[cfg(and(or(0, 1), 2))]
+const INVALID_INNER_ITEMS1: felt252 = 0;
+
+#[cfg(or(2, and(0, 1)))]
+const INVALID_INNER_ITEMS2: felt252 = 0;
+
+//! > expected_diagnostics
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:1:10
+#[cfg(or(0, 1))]
+         ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:1:13
+#[cfg(or(0, 1))]
+            ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:4:11
+#[cfg(and(0, 1))]
+          ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:4:14
+#[cfg(and(0, 1))]
+             ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:7:14
+#[cfg(and(or(0, 1), 2))]
+             ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:7:17
+#[cfg(and(or(0, 1), 2))]
+                ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:7:21
+#[cfg(and(or(0, 1), 2))]
+                    ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:10:10
+#[cfg(or(2, and(0, 1)))]
+         ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:10:17
+#[cfg(or(2, and(0, 1)))]
+                ^
+
+
+error: Invalid configuration argument.
+ --> test_src/lib.cairo:10:20
+#[cfg(or(2, and(0, 1)))]
+                   ^
+
+//! > ==========================================================================
+
 //! > Test cfg of members does not update visibility.
 
 //! > test_runner_name

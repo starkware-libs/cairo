@@ -108,6 +108,12 @@ macro square_brackets_redundant_whitespace {
 	};
 }
 
+trait CTrait {}
+
+struct StructLeadingImplParam<+CTrait, T> {
+    value: T,
+}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -385,3 +391,26 @@ macro square_brackets_redundant_whitespace {
 //! > Item documentation #35
 
 //! > Item documentation tokens #35
+
+//! > Item signature #36
+trait CTrait
+
+//! > Item documentation #36
+
+//! > Item documentation tokens #36
+
+//! > Item signature #37
+struct StructLeadingImplParam<+CTrait, T> {
+    value: T,
+}
+
+//! > Item documentation #37
+
+//! > Item documentation tokens #37
+
+//! > Item signature #38
+value: T
+
+//! > Item documentation #38
+
+//! > Item documentation tokens #38

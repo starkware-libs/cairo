@@ -644,7 +644,12 @@ impl LineBuilder {
     /// several lines (separated by '\n'), where each line length is
     /// less than max_line_width (if possible).
     pub fn build(&self, max_line_width: usize, tab_size: usize) -> String {
-        self.break_line_tree(max_line_width, tab_size).iter().join("\n") + "\n"
+        let mut lines = self.break_line_tree(max_line_width, tab_size);
+        // Removing extra trailing newlines.
+        while lines.last().is_some_and(|line| line.is_empty()) {
+            lines.pop();
+        }
+        lines.iter().join("\n") + "\n"
     }
     /// Returns the highest protected zone precedence (minimum number) from within all the protected
     /// zones which are direct children of this builder, or None if there are no protected zones
@@ -780,9 +785,10 @@ impl fmt::Display for CommentLine {
     }
 }
 
-/// Formats a comment to fit in the line width. There are no merges of lines, as this is not clear
-/// when to merge two lines the user chose to write on separate lines, so all original line breaks
-/// are preserved.
+/// Formats a comment to fit in the line width. Line breaks the user wrote are preserved, as it is
+/// not clear when to merge two lines the user chose to write separately; the only merges are of
+/// continuation lines that the formatter itself broke off an over-long open line (see the
+/// `is_open_line` check below).
 fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usize) -> String {
     let mut formatted_comment = String::new();
     let mut prev_comment_line = CommentLine::from_string("".to_string());
@@ -794,11 +800,13 @@ fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usiz
     let mut last_line_broken = false;
     for line in content.lines() {
         let orig_comment_line = CommentLine::from_string(line.to_string());
+        // Saturate: the prefix (indent + slashes + exclamations + leading spaces) can exceed
+        // `max_line_width` for a deeply-indented or many-slash comment, which would underflow.
         let max_comment_width = max_line_width
-            - cur_indent
-            - orig_comment_line.n_slashes
-            - orig_comment_line.n_exclamations
-            - orig_comment_line.n_leading_spaces;
+            .saturating_sub(cur_indent)
+            .saturating_sub(orig_comment_line.n_slashes)
+            .saturating_sub(orig_comment_line.n_exclamations)
+            .saturating_sub(orig_comment_line.n_leading_spaces);
         // The current line is initialized with the previous line only if it was broken (to avoid
         // merging user separated lines).
         let mut current_line = if last_line_broken
@@ -1343,6 +1351,7 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
 fn compare_names(a: &str, b: &str) -> Ordering {
     match (a, b) {
         ("super" | "crate", "super" | "crate") => a.cmp(b),
+        ("self", "self") => Ordering::Equal,
         ("super" | "crate", _) | (_, "self") => Ordering::Greater,
         (_, "super" | "crate") | ("self", _) => Ordering::Less,
         _ => a.cmp(b),

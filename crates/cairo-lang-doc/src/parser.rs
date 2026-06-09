@@ -98,18 +98,16 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
         |list_nesting: &mut Vec<DocCommentListItem>,
          tokens: &mut Vec<DocumentationCommentToken>| {
             if !list_nesting.is_empty() {
-                let indent = "  ".repeat(list_nesting.len() - 1);
+                let indent = "    ".repeat(list_nesting.len() - 1);
                 let list_nesting = list_nesting.last_mut().unwrap();
 
-                let item_delimiter = if list_nesting.is_ordered_list {
+                tokens.push(DocumentationCommentToken::Content(if list_nesting.is_ordered_list {
                     let delimiter = list_nesting.delimiter.unwrap_or(0);
                     list_nesting.delimiter = Some(delimiter + 1);
-                    format!("{indent}{delimiter}.",)
+                    format!("{indent}{delimiter}. ",)
                 } else {
-                    format!("{indent}-")
-                };
-                tokens
-                    .push(DocumentationCommentToken::Content(format!("{indent}{item_delimiter} ")));
+                    format!("{indent}- ")
+                }));
             }
         };
     let mut prefix_list_item = false;
