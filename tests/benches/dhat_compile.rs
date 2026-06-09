@@ -12,7 +12,7 @@
 //! Filter scenarios with the first positional argument (substring match), e.g.
 //! `cargo bench --bench dhat_compile --features dhat -- corelib`.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use dhat::HeapStats;
 
@@ -22,18 +22,9 @@ static GLOBAL: dhat::Alloc = dhat::Alloc;
 mod common;
 
 use common::staking::prepare_staking;
-use common::{bench_configs, run_cairo_to_sierra, run_cairo_to_testing, run_sierra_to_casm};
-
-/// Cargo's target directory, used to place bench outputs alongside `target/`. Honors
-/// `CARGO_TARGET_DIR` if set; otherwise derives from the bench binary's own path
-/// (`<target>/release/deps/dhat_compile-<hash>`), which covers the default cargo layout.
-fn target_dir() -> PathBuf {
-    if let Some(dir) = std::env::var_os("CARGO_TARGET_DIR") {
-        return PathBuf::from(dir);
-    }
-    let exe = std::env::current_exe().expect("current_exe");
-    exe.ancestors().nth(3).expect("bench binary not under <target>/release/deps/").to_path_buf()
-}
+use common::{
+    bench_configs, run_cairo_to_sierra, run_cairo_to_testing, run_sierra_to_casm, target_dir,
+};
 
 /// One heap-profiled scenario's result, captured at the end of its `dhat::Profiler` lifetime so
 /// it can be aggregated into the `dhat-output.json` metrics file alongside the other scenarios.

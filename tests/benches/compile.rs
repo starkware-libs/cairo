@@ -3,8 +3,9 @@ use criterion::{Criterion, criterion_group, criterion_main};
 mod common;
 
 use common::{
-    bench_configs, generate_cache, run_cache_to_sierra, run_cache_to_testing, run_cairo_to_cache,
-    run_cairo_to_diagnostics, run_cairo_to_sierra, run_cairo_to_testing,
+    bench_configs, generate_cache, prepare_big_array, run_cache_to_sierra, run_cache_to_testing,
+    run_cairo_to_cache, run_cairo_to_diagnostics, run_cairo_to_sierra, run_cairo_to_testing,
+    target_dir,
 };
 
 /// Phase: source → Sierra (full IR generation).
@@ -14,6 +15,11 @@ fn bench_cairo_to_sierra(c: &mut Criterion) {
     for config in bench_configs().into_iter().filter(|c| c.sierra_phases) {
         group.bench_function(config.name, |b| b.iter(|| run_cairo_to_sierra(&config)));
     }
+    // Compile-time canary for large array literals (generated as an un-measured setup step):
+    // catches compilation costs that scale super-linearly with the number of elements, e.g.
+    // per-append state in lowering analyses.
+    let big_array = prepare_big_array(&target_dir().join("bench-inputs"));
+    group.bench_function(big_array.name, |b| b.iter(|| run_cairo_to_sierra(&big_array)));
     group.finish();
 }
 
