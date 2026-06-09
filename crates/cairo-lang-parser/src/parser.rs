@@ -2159,7 +2159,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let rparen = self.parse_token::<TerminalRParen<'_>>();
         if let [ExprListElementOrSeparatorGreen::Element(_)] = &exprs[..] {
             self.add_diagnostic(
-                ParserDiagnosticKind::MissingToken(SyntaxKind::TokenComma),
+                ParserDiagnosticKind::MissingToken(SyntaxKind::TerminalComma),
                 TextSpan::cursor(self.offset),
             );
         }
@@ -2554,7 +2554,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             SyntaxKind::TerminalTrue => self.take::<TerminalTrue<'_>>().into(),
             SyntaxKind::TerminalFalse => self.take::<TerminalFalse<'_>>().into(),
             SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore<'_>>().into(),
-            SyntaxKind::TerminalIdentifier => {
+            SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalDollar => {
                 // TODO(ilya): Consider parsing a single identifier as PatternIdentifier rather
                 // then ExprPath.
                 let path = self.parse_path();

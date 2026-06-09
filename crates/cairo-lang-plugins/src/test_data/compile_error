@@ -33,7 +33,7 @@ compile_error!("message", "extra");
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-error: "error message"
+error: error message
  --> test_src/lib.cairo:7:1
 compile_error!("error message");
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -58,7 +58,7 @@ compile_error!("ignore");
 //! > expanded_cairo_code
 
 //! > expected_diagnostics
-error: "show"
+error: show
  --> test_src/lib.cairo:1:1-2:23
   #[cfg(noignore)]
  _^

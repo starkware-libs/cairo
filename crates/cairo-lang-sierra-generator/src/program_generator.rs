@@ -443,10 +443,10 @@ pub fn get_dummy_program_for_size_estimation(
     let mut functions = vec![function];
 
     for statement in &function.body {
-        if let Some(function_id) = try_get_function_with_body_id(db, statement) {
-            if processed_function_ids.insert(function_id) {
-                functions.push(db.priv_get_dummy_function(function_id)?);
-            }
+        if let Some(function_id) = try_get_function_with_body_id(db, statement)
+            && processed_function_ids.insert(function_id)
+        {
+            functions.push(db.priv_get_dummy_function(function_id)?);
         }
     }
     // Since we are not interested in the locations, we can remove them from the statements.

@@ -550,15 +550,25 @@ fn test_span_slice_is_empty() {
     assert!(empty.is_empty());
     assert_eq!(empty.to_byte_array(), "");
 
+    assert_eq!(span.get(5..5).map(is_empty), Some(true));
+    assert_eq!(span.get(6..6).map(is_empty), None);
+    assert_eq!(span.get(2..6).map(is_empty), None);
+    assert_eq!(span.get(0..10).map(is_empty), None);
+
     let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
     assert_eq!(ba_31.span().get(30..30).map(is_empty), Some(true));
     assert_eq!(ba_31.span().get(31..31).map(is_empty), Some(true));
     assert_eq!(ba_31.span().get(15..30).map(is_empty), Some(false));
+    assert_eq!(ba_31.span().get(32..32).map(is_empty), None);
+    assert_eq!(ba_31.span().get(15..32).map(is_empty), None);
+    assert_eq!(ba_31.span().get(0..70).map(is_empty), None);
 
     let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
     assert_eq!(ba_30.span().get(29..29).map(is_empty), Some(true));
     assert_eq!(ba_30.span().get(30..30).map(is_empty), Some(true));
     assert_eq!(ba_30.span().get(15..29).map(is_empty), Some(false));
+    assert_eq!(ba_30.span().get(31..31).map(is_empty), None);
+    assert_eq!(ba_30.span().get(15..31).map(is_empty), None);
 }
 
 #[test]

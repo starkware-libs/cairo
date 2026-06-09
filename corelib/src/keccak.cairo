@@ -176,7 +176,7 @@ fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes
     // The first word to append would be of the form
     //     0x1<`last_input_num_bytes` LSB bytes of `last_input_word`>.
     // For example, for `last_input_num_bytes == 4`:
-    //     0x1000000 + (last_input_word & 0xffffff)
+    //     0x100000000 + (last_input_word & 0xffffffff)
     let first_word_to_append = if last_input_num_bytes == 0 {
         // This case is handled separately to avoid unnecessary computations.
         1

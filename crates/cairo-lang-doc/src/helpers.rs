@@ -29,18 +29,18 @@ pub fn get_generic_params<'db>(
     let mut location_links: Vec<LocationLink<'_>> = Vec::new();
 
     if !generic_params.is_empty() {
-        let mut count = generic_params.len();
         buff.push('<');
-
-        for param in generic_params {
+        for (i, param) in generic_params.iter().enumerate() {
+            if i > 0 {
+                buff.push_str(", ");
+            }
             match param {
                 GenericParam::Type(param_type) => {
-                    let name = extract_and_format(param_type.id.format(db).long(db));
-                    buff.push_str(&format!("{}{}", name, if count == 1 { "" } else { ", " }));
+                    buff.push_str(&extract_and_format(param_type.id.format(db).long(db)));
                 }
                 GenericParam::Const(param_const) => {
-                    let name = extract_and_format(param_const.id.format(db).long(db));
-                    buff.push_str(&format!("const {}{}", name, if count == 1 { "" } else { ", " }));
+                    buff.push_str("const ");
+                    buff.push_str(&extract_and_format(param_const.id.format(db).long(db)));
                 }
                 GenericParam::Impl(param_impl) => {
                     let name = extract_and_format(param_impl.id.format(db).long(db));
@@ -61,40 +61,31 @@ pub fn get_generic_params<'db>(
                             } else {
                                 buff.push_str(&format!("impl {name}: "));
 
-                                let concrete_trait_name = concrete_trait.name(db);
-                                let concrete_trait_generic_args_formatted = concrete_trait
+                                let concrete_trait_name = concrete_trait.name(db).long(db);
+                                let concrete_trait_generic_args = concrete_trait
                                     .generic_args(db)
                                     .iter()
                                     .map(|arg| extract_and_format(&arg.format(db)))
-                                    .collect::<Vec<_>>()
                                     .join(", ");
 
                                 location_links.push(LocationLink::new(
                                     buff.len(),
-                                    buff.len() + concrete_trait_name.to_string(db).len(),
+                                    buff.len() + concrete_trait_name.len(),
                                     documentable_id,
                                     0,
                                 ));
-                                buff.push_str(&concrete_trait_name.to_string(db));
+                                buff.push_str(concrete_trait_name);
 
-                                if !concrete_trait_generic_args_formatted.is_empty() {
-                                    let f = format!("<{concrete_trait_generic_args_formatted}>");
-                                    buff.push_str(&f);
+                                if !concrete_trait_generic_args.is_empty() {
+                                    buff.push_str(&format!("<{concrete_trait_generic_args}>"));
                                 }
                             }
                         }
-                        Err(_) => {
-                            buff.push_str(&format!(
-                                "{}{}",
-                                name,
-                                if count == 1 { "" } else { ", " }
-                            ));
-                        }
+                        Err(_) => buff.push_str(&name),
                     }
                 }
                 GenericParam::NegImpl(_) => buff.push_str(crate::documentable_formatter::MISSING),
-            };
-            count -= 1;
+            }
         }
         buff.push('>');
     }
@@ -146,7 +137,7 @@ pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
 /// Formats the full paths of complex types. For example, input "Result<Error::NotFound,
 /// System::Error>" results in output "Result<NotFound, Error>".
 pub(crate) fn extract_and_format(input: &str) -> String {
-    let delimiters = [',', '<', '>', '(', ')', '[', ']'];
+    let delimiters = [',', '<', '>', '(', ')', '[', ']', '@'];
     let mut output = String::new();
     let mut slice_start = 0;
     let mut in_slice = false;
@@ -173,17 +164,17 @@ pub(crate) fn extract_and_format(input: &str) -> String {
 
 /// Formats a single type path. For example, input "core::felt252" results in output "felt252".
 fn format_final_part(slice: &str) -> String {
-    let parts: Vec<&str> = slice.split("::").collect();
-    let ensure_whitespace =
-        if let Some(first) = parts.first() { first.starts_with(" ") } else { false };
-    let result = {
-        match parts[..] {
-            [.., before_last, ""] => before_last.to_string(),
-            [.., last] => last.to_string(),
-            _ => slice.to_string(),
-        }
+    let mut parts = slice.rsplit("::");
+    let result = if let Some(last) = parts.next().map(str::trim)
+        && !last.is_empty()
+    {
+        last
+    } else if let Some(before_last) = parts.next() {
+        before_last.trim()
+    } else {
+        return slice.to_string();
     };
-    if ensure_whitespace && !result.starts_with(' ') { format!(" {result}") } else { result }
+    if slice.starts_with(" ") { format!(" {result}") } else { result.to_string() }
 }
 
 /// Takes a list of [`GenericParamId`]s and formats it into a string representation used for

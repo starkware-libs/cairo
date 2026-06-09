@@ -135,6 +135,10 @@ fn test_iter_adapter_take_nth() {
     // Test when n = 0
     let mut iter = (1_u8..=3).into_iter().take(0);
     assert_eq!(iter.nth(0), None);
+
+    // `nth(usize::MAX)` must return `None`, not overflow on `n + 1`.
+    let mut iter = (1_u8..=10).into_iter().take(5);
+    assert_eq!(iter.nth(core::num::traits::Bounded::<usize>::MAX), None);
 }
 
 #[test]

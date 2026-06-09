@@ -44,6 +44,15 @@ use crate::{FormatterConfig, get_formatted_file};
     false
 )]
 #[test_case(
+    "test_data/cairo_files/sort_self_use.cairo",
+    "test_data/expected_results/sort_self_use.cairo",
+    true,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
     "test_data/cairo_files/fmt_skip.cairo",
     "test_data/expected_results/fmt_skip.cairo",
     false,
@@ -86,6 +95,33 @@ use crate::{FormatterConfig, get_formatted_file};
     true,
     true,
     true,
+    false,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/comment_overflow.cairo",
+    "test_data/expected_results/comment_overflow.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/match_arm_doc_comment.cairo",
+    "test_data/expected_results/match_arm_doc_comment.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/trailing_comment.cairo",
+    "test_data/expected_results/trailing_comment.cairo",
+    false,
+    false,
+    false,
     false,
     false
 )]

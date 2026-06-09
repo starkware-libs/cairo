@@ -1127,7 +1127,7 @@ trait MyTrait {
 impl MyImpl of MyTrait {}
 
 //! > expected_diagnostics
-error[E2015]: Cannot infer implicit impl `I.`
+error[E2015]: Cannot infer implicit impl `I`.
 Could not find implementation of trait `test::OtherTrait`
  --> lib.cairo:7:1
 impl MyImpl of MyTrait {}
@@ -1346,7 +1346,7 @@ error[E2046]: Ambiguous method call. More than one applicable trait function wit
         self.into()
              ^^^^
 
-error[E2015]: Cannot infer implicit impl `InnerImpl.`
+error[E2015]: Cannot infer implicit impl `InnerImpl`.
 Could not find implementation of trait `test::Inner::<core::integer::u32>`
  --> lib.cairo:24:1-29:1
   impl OuterU32 of Outer<u32> {

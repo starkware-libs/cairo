@@ -33,7 +33,9 @@ fn test_early_unsafe_panic(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let before = db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().clone();
+    // `EarlyUnsafePanic` runs in the final optimization strategy, i.e. on `PostBaseline` lowering
+    // (after inlining). Use that stage so side-effecting externs like `debug::print` are visible.
+    let before = db.lowered_body(function_id, LoweringStage::PostBaseline).unwrap().clone();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let mut after = before.clone();

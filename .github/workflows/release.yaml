@@ -50,3 +50,5 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
           body: "Cairo compiler."
+          prerelease: ${{ contains(github.ref, 'rc') }}
+          make_latest: ${{ !contains(github.ref, 'dev') && !contains(github.ref, 'rc') }}

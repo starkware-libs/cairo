@@ -246,4 +246,3 @@ pub trait Extend<T, A> {
         ref self: T, iter: I,
     );
 }
-

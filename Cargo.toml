@@ -94,15 +94,23 @@ edition = "2024"
 license = "Apache-2.0"
 license-file = "LICENSE"
 repository = "https://github.com/starkware-libs/cairo/"
+<<<<<<< HEAD
 rust-version = "1.86"
 version = "2.19.0-rc.2"
+||||||| 75f957d87
+rust-version = "1.86"
+version = "2.18.0"
+=======
+rust-version = "1.94"
+version = "2.18.0"
+>>>>>>> origin/main
 
 [workspace.dependencies]
 anyhow = "1.0.98"
-ark-ff = "0.5.0"
-ark-secp256k1 = "0.5.0"
-ark-secp256r1 = "0.5.0"
-ark-std = "0.5.0"
+ark-ff = "0.6.0"
+ark-secp256k1 = "0.6.0"
+ark-secp256r1 = "0.6.0"
+ark-std = "0.6.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
 cairo-lang-primitive-token = "1"
@@ -115,7 +123,7 @@ convert_case = "0.11.0"
 criterion = { version = "0.8", features = ["html_reports"] }
 derivative = "2.2.0"
 dhat = "0.3.3"
-diffy = "0.4.2"
+diffy = "0.5.0"
 genco = "0.19.0"
 good_lp = { version = "1.14.0", features = ["minilp"], default-features = false }
 hashbrown = "0.17.0"
@@ -141,13 +149,13 @@ quote = "1.0.40"
 rand = "0.10.0"
 rayon = "1.10.0"
 rstest = "0.26.1"
-salsa = "0.26.0"
+salsa = "0.26.2"
 schemars = "1.0.4"
 semver = { version = "1.0.26", features = ["serde"] }
 serde = { version = "1.0.219", default-features = false, features = ["derive", "rc"] }
 serde_json = "1.0.142"
 sha2 = "0.11.0"
-sha3 = "0.11.0"
+sha3 = "0.12.0"
 smol_str = { version = "0.3.2", default-features = false }
 starknet-types-core = { version = "0.2.4", features = ["hash", "prime-bigint", "serde"] }
 syn = { version = "2.0.104", features = ["extra-traits", "full"] }

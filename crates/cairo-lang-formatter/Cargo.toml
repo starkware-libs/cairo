@@ -8,12 +8,28 @@ description = "Cairo formatter."
 
 [dependencies]
 anyhow.workspace = true
+<<<<<<< HEAD
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "=2.19.0-rc.2" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "=2.19.0-rc.2" }
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "=2.19.0-rc.2" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "=2.19.0-rc.2" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.19.0-rc.2" }
 diffy.workspace = true
+||||||| 75f957d87
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "=2.18.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "=2.18.0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "=2.18.0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "=2.18.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.18.0" }
+diffy.workspace = true
+=======
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "=2.18.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "=2.18.0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "=2.18.0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "=2.18.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.18.0" }
+diffy = { workspace = true, features = ["color"] }
+>>>>>>> origin/main
 ignore.workspace = true
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true

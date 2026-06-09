@@ -74,12 +74,10 @@ fn generate_kinds_code() -> rust::Tokens {
     let terminal_kinds = name_tokens(&spec, |k| matches!(k, NodeKind::Terminal { .. }));
     let keyword_terminal_kinds =
         name_tokens(&spec, |k| matches!(k, NodeKind::Terminal { is_keyword, .. } if *is_keyword));
-    let missing_kinds = spec.iter().filter_map(|n| {
-        if let NodeKind::Enum { missing_variant, .. } = &n.kind {
-            missing_variant.as_ref().map(|v| v.kind.as_str())
-        } else {
-            None
-        }
+    let missing_kinds = spec.iter().filter_map(|n| match &n.kind {
+        NodeKind::Enum { missing_variant, .. } => missing_variant.as_ref().map(|v| v.kind.as_str()),
+        NodeKind::Token { .. } if n.name == "TokenMissing" => Some(n.name.as_str()),
+        _ => None,
     });
 
     tokens.extend(quote! {

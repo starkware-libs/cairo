@@ -478,10 +478,7 @@ pub fn resolve_const_expr_and_evaluate<'db, 'mt>(
     } else if let Err(err_set) = inference.solve() {
         inference.report_on_pending_error(err_set, ctx.diagnostics, const_stable_ptr);
     }
-
-    // TODO(orizi): Consider moving this to be called only upon creating const values, other callees
-    // don't necessarily need it.
-    ctx.apply_inference_rewriter_to_exprs();
+    ctx.apply_inference_rewriter();
 
     match &value.expr {
         Expr::Constant(ExprConstant { const_value_id, .. }) => *const_value_id,
@@ -572,14 +569,8 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     );
                 }
             }
-            Expr::Literal(expr) => {
-                if let Err(err) = validate_literal(self.db, expr.ty, &expr.value) {
-                    self.diagnostics.report(
-                        expr.stable_ptr.untyped(),
-                        SemanticDiagnosticKind::LiteralError(err),
-                    );
-                }
-            }
+            // Already validated by `apply_inference_rewriter`.
+            Expr::Literal(_) => {}
             Expr::Tuple(expr) => {
                 for item in &expr.items {
                     self.validate(*item);
@@ -1171,11 +1162,10 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         match pattern {
             Pattern::Missing(_) | Pattern::StringLiteral(_) => None,
             Pattern::Otherwise(_) => Some(()),
-            Pattern::Literal(v) => require(self.eq_in_type(
-                &numeric_arg_value(db, value)?,
-                &v.literal.value,
-                value.ty(db).ok()?,
-            )),
+            Pattern::Literal(v) => {
+                let arg = NumericArg::try_new(db, value)?;
+                require(self.eq_in_type(&arg.v, &v.literal.value, arg.ty))
+            }
             Pattern::Variable(pattern) => {
                 self.vars.insert(VarId::Local(pattern.var.id), value);
                 Some(())
@@ -1226,21 +1216,31 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         }
     }
 
-    /// Compares two const values for `felt252` field-element equality.
+    /// Compares two const values for value equality, treating `felt252` as a field.
     ///
     /// Direct `felt252` literals are stored in their original signed form (`-1` vs `PRIME - 1` are
     /// distinct `ConstValueId`s). The PartialEq operator must agree with the field, not with the
-    /// stored representation, so we canonicalize both sides before comparing for `felt252` ints.
-    /// Non-felt252 types keep id equality.
+    /// stored representation, so we canonicalize `felt252` ints before comparing, and recurse into
+    /// the structural variants - a `felt252` may be nested inside a struct, enum or `NonZero`.
     fn const_values_eq(&self, a: ConstValueId<'a>, b: ConstValueId<'a>) -> bool {
         if a == b {
             return true;
         }
-        let (ConstValue::Int(va, ty), ConstValue::Int(vb, _)) = (a.long(self.db), b.long(self.db))
-        else {
-            return false;
-        };
-        self.eq_in_type(va, vb, *ty)
+        match (a.long(self.db), b.long(self.db)) {
+            (ConstValue::Int(va, ty), ConstValue::Int(vb, _)) => self.eq_in_type(va, vb, *ty),
+            (ConstValue::Struct(a_members, a_ty), ConstValue::Struct(b_members, b_ty)) => {
+                a_ty == b_ty
+                    && a_members.len() == b_members.len()
+                    && zip(a_members, b_members).all(|(a, b)| self.const_values_eq(*a, *b))
+            }
+            (ConstValue::Enum(a_variant, a_value), ConstValue::Enum(b_variant, b_value)) => {
+                a_variant.id == b_variant.id && self.const_values_eq(*a_value, *b_value)
+            }
+            (ConstValue::NonZero(a_value), ConstValue::NonZero(b_value)) => {
+                self.const_values_eq(*a_value, *b_value)
+            }
+            _ => false,
+        }
     }
 
     /// Compares two `BigInt`s of type `ty` for value equality, treating `felt252` as a field.
@@ -1260,29 +1260,25 @@ impl<'db, 'r> std::ops::Deref for ConstantEvaluateContext<'db, 'r, '_> {
 struct NumericArg<'db> {
     /// The arg's integer value.
     v: BigInt,
-    /// The arg's type.
+    /// The arg's type, unwrapping `NonZero` types.
     ty: TypeId<'db>,
 }
 impl<'db> NumericArg<'db> {
+    /// Extracts the numeric value and its type from `arg`, unwrapping `NonZero` values and reading
+    /// a struct of 2 values as a `u256`.
     fn try_new(db: &'db dyn Database, arg: ConstValueId<'db>) -> Option<Self> {
-        Some(Self { ty: arg.ty(db).ok()?, v: numeric_arg_value(db, arg)? })
-    }
-}
-
-/// Helper for creating a `NumericArg` value.
-/// This includes unwrapping of `NonZero` values and struct of 2 values as a `u256`.
-fn numeric_arg_value<'db>(db: &'db dyn Database, value: ConstValueId<'db>) -> Option<BigInt> {
-    match value.long(db) {
-        ConstValue::Int(value, _) => Some(value.clone()),
-        ConstValue::Struct(v, _) => {
-            if let [low, high] = &v[..] {
-                Some(low.to_int(db)? + (high.to_int(db)? << 128))
-            } else {
-                None
+        match arg.long(db) {
+            ConstValue::Int(v, ty) => Some(Self { v: v.clone(), ty: *ty }),
+            ConstValue::Struct(v, ty) if *ty == db.core_info().u256 => {
+                if let [low, high] = &v[..] {
+                    Some(Self { v: low.to_int(db)? + (high.to_int(db)? << 128), ty: *ty })
+                } else {
+                    None
+                }
             }
+            ConstValue::NonZero(inner) => Self::try_new(db, *inner),
+            _ => None,
         }
-        ConstValue::NonZero(const_value) => numeric_arg_value(db, *const_value),
-        _ => None,
     }
 }
 

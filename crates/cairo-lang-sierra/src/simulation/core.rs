@@ -387,7 +387,18 @@ fn simulate_u128_libfunc(
             take_inputs!(let [CoreValue::RangeCheck, CoreValue::Felt252(value)] = inputs);
             match value.to_u128() {
                 Some(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint128(value)], 0),
-                None => (vec![CoreValue::RangeCheck], 1),
+                None => {
+                    let (high, low) =
+                        BigInt::from(value.to_biguint()).div_rem(&(BigInt::one() << 128));
+                    (
+                        vec![
+                            CoreValue::RangeCheck,
+                            CoreValue::Uint128(high.to_u128().unwrap()),
+                            CoreValue::Uint128(low.to_u128().unwrap()),
+                        ],
+                        1,
+                    )
+                }
             }
         }
         Uint128Concrete::ToFelt252(_) => {
@@ -419,11 +430,11 @@ fn simulate_u128_libfunc(
         }
         Uint128Concrete::GuaranteeMul(_) => {
             take_inputs!(let [CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)] = inputs);
-            let (limb1, limb0) = (BigInt::from(lhs) * rhs).div_rem(&BigInt::one().pow(128));
+            let (high, low) = (BigInt::from(lhs) * rhs).div_rem(&(BigInt::one() << 128));
             (
                 vec![
-                    CoreValue::Uint128(limb0.to_u128().unwrap()),
-                    CoreValue::Uint128(limb1.to_u128().unwrap()),
+                    CoreValue::Uint128(high.to_u128().unwrap()),
+                    CoreValue::Uint128(low.to_u128().unwrap()),
                     CoreValue::U128MulGuarantee,
                 ],
                 0,

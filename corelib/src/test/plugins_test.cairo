@@ -147,4 +147,3 @@ fn test_long_enum15_deserialize() {
         'expected O',
     );
 }
-

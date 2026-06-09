@@ -1,8 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
+use cairo_lang_diagnostics::DiagnosticNote;
 use cairo_lang_filesystem::flag::FlagsGroup;
-use cairo_lang_semantic::corelib::{CorelibSemantic, validate_literal};
+use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::expr::compute::unwrap_pattern_type;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::StructSemantic;
@@ -647,10 +647,10 @@ fn create_node_for_tuple_inner<'db>(
     let current_member = struct_members.map(|members| members[item_idx]);
 
     // Collect the patterns on the current item.
-    let mut patterns_on_current_item = Vec::<Option<semantic::Pattern<'db>>>::default();
-    let mut live_filter = FilteredPatterns::default();
-    for (idx, pattern) in patterns.iter().enumerate() {
-        let item_pattern = match pattern {
+    let mut patterns_on_current_item =
+        Vec::<Option<semantic::Pattern<'db>>>::with_capacity(patterns.len());
+    for pattern in patterns {
+        patterns_on_current_item.push(match pattern {
             Some(semantic::Pattern::Tuple(PatternTuple { field_patterns, .. }))
                 if current_member.is_none() =>
             {
@@ -671,11 +671,7 @@ fn create_node_for_tuple_inner<'db>(
             Some(semantic::Pattern::Literal(pattern_literal))
                 if pattern_literal.literal.ty == ctx.db.core_info().u256 =>
             {
-                match handle_u256_literal(ctx, graph, pattern_literal, item_idx) {
-                    Ok(inner_pattern) => Some(inner_pattern),
-                    // Out-of-range `u256` literal, drop the arm.
-                    Err(_) => continue,
-                }
+                Some(handle_u256_literal(ctx, pattern_literal, item_idx))
             }
             Some(semantic::Pattern::FixedSizeArray(semantic::PatternFixedSizeArray {
                 elements_patterns,
@@ -698,9 +694,7 @@ fn create_node_for_tuple_inner<'db>(
                     LoweringDiagnosticKind::UnexpectedError,
                 );
             }
-        };
-        live_filter.add(idx);
-        patterns_on_current_item.push(item_pattern);
+        });
     }
 
     // Create a node to handle the current item. The callback will handle the rest of the tuple.
@@ -711,9 +705,6 @@ fn create_node_for_tuple_inner<'db>(
             graph,
             patterns: &patterns_ref,
             build_node_callback: &mut |graph, pattern_indices, path_head| {
-                // Lift the survivors from the compacted (dropped-arm) indexing back to this level's
-                // arm indexing. When no arm was dropped this is the identity.
-                let pattern_indices = pattern_indices.lift(&live_filter);
                 // Call `create_node_for_tuple_inner` recursively to handle the rest of the tuple.
                 create_node_for_tuple_inner(
                     CreateNodeParams {
@@ -775,18 +766,13 @@ fn add_item_to_path<'db>(
 /// pattern.
 fn handle_u256_literal<'db>(
     ctx: &LoweringContext<'db, '_>,
-    graph: &mut FlowControlGraphBuilder<'db>,
     pattern_literal: &semantic::PatternLiteral<'db>,
     item_idx: usize,
-) -> Maybe<semantic::Pattern<'db>> {
+) -> semantic::Pattern<'db> {
     let PatternLiteral {
-        literal: ExprNumericLiteral { value, ty, stable_ptr: expr_stable_ptr },
+        literal: ExprNumericLiteral { value, ty: _, stable_ptr: expr_stable_ptr },
         stable_ptr,
     } = pattern_literal;
-    if let Err(err) = validate_literal(ctx.db, *ty, value) {
-        return Err(graph.report(*stable_ptr, LoweringDiagnosticKind::LiteralError(err)));
-    }
-
     let inner_value = if item_idx == 0 {
         value.clone() & ((BigInt::from(1) << 128) - 1)
     } else if item_idx == 1 {
@@ -795,14 +781,14 @@ fn handle_u256_literal<'db>(
         unreachable!("Unexpected number of members for u256.")
     };
 
-    Ok(semantic::Pattern::Literal(semantic::PatternLiteral {
+    semantic::Pattern::Literal(semantic::PatternLiteral {
         literal: semantic::ExprNumericLiteral {
             value: inner_value,
             ty: ctx.db.core_info().u128,
             stable_ptr: *expr_stable_ptr,
         },
         stable_ptr: *stable_ptr,
-    }))
+    })
 }
 
 /// Creates a node for matching over numeric values, using a combination of [EnumMatch] and
@@ -825,10 +811,6 @@ fn create_node_for_value<'db>(
     for (pattern_index, pattern) in patterns.iter().enumerate() {
         match pattern {
             Some(semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. })) => {
-                if let Err(err) = validate_literal(ctx.db, var_ty, &literal.value) {
-                    graph.report(literal.stable_ptr, LoweringDiagnosticKind::LiteralError(err));
-                    continue;
-                }
                 literals_map
                     .entry(literal.value.clone())
                     .or_insert((otherwise_filter.clone(), literal.stable_ptr))

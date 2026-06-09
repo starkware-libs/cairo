@@ -649,15 +649,15 @@ pub trait PartialOrd<T> {
     /// ```
     fn lt(lhs: T, rhs: T) -> bool;
 
-    /// Tests less than or equal to (for `self` and `other`) and is used by the
-    /// `<=` operator.
+    /// Tests greater than or equal to (for `self` and `other`) and is used by
+    /// the `>=` operator.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(1 <= 1, true);
-    /// assert_eq!(1 <= 2, true);
-    /// assert_eq!(2 <= 1, false);
+    /// assert_eq!(1 >= 1, true);
+    /// assert_eq!(1 >= 2, false);
+    /// assert_eq!(2 >= 1, true);
     /// ```
     fn ge(lhs: T, rhs: T) -> bool {
         !Self::lt(lhs, rhs)
@@ -677,15 +677,15 @@ pub trait PartialOrd<T> {
         Self::lt(rhs, lhs)
     }
 
-    /// Tests greater than or equal to (for `self` and `other`) and is used by
-    /// the `>=` operator.
+    /// Tests less than or equal to (for `self` and `other`) and is used by the
+    /// `<=` operator.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(1 >= 1, true);
-    /// assert_eq!(1 >= 2, false);
-    /// assert_eq!(2 >= 1, true);
+    /// assert_eq!(1 <= 1, true);
+    /// assert_eq!(1 <= 2, true);
+    /// assert_eq!(2 <= 1, false);
     /// ```
     fn le(lhs: T, rhs: T) -> bool {
         Self::ge(rhs, lhs)
@@ -1131,4 +1131,3 @@ pub trait Felt252DictValue<T> {
     #[must_use]
     fn zero_default() -> T nopanic;
 }
-
