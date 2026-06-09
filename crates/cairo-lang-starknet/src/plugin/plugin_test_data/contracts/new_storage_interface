@@ -2210,7 +2210,7 @@ impl QueryableEnumStore<> of starknet::Store::<QueryableEnum> {
             QueryableEnum::B(x) => {
                 starknet::Store::write(address_domain, base, 2)?;
                 starknet::Store::<u256>::write_at_offset(address_domain, base, 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }
@@ -2246,7 +2246,7 @@ impl QueryableEnumStore<> of starknet::Store::<QueryableEnum> {
             QueryableEnum::B(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
                 starknet::Store::<u256>::write_at_offset(address_domain, base, offset + 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }
@@ -2457,7 +2457,7 @@ impl GenericQueryableEnumStore<AT, BT, impl __MEMBER_IMPL_A_Store: starknet::Sto
             GenericQueryableEnum::B(x) => {
                 starknet::Store::write(address_domain, base, 2)?;
                 __MEMBER_IMPL_B_Store::write_at_offset(address_domain, base, 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }
@@ -2493,7 +2493,7 @@ impl GenericQueryableEnumStore<AT, BT, impl __MEMBER_IMPL_A_Store: starknet::Sto
             GenericQueryableEnum::B(x) => {
                 starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
                 __MEMBER_IMPL_B_Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }

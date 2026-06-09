@@ -217,6 +217,41 @@ fn handle_enum<'db>(
 ) -> Option<RewriteNode<'db>> {
     let enum_name = &info.name;
     let full_name = &info.full_typename();
+
+    // A never-kind enum (no variants) is uninhabited: a value can never be constructed, so `write`
+    // is unreachable and `read` always fails. Emit a trivial impl instead of the per-variant match.
+    if info.members_info.is_empty() {
+        let store_impl = formatdoc!(
+            "
+            {header} {{
+                fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) \
+             -> starknet::SyscallResult<{full_name}> {{
+                    starknet::SyscallResult::Err(array!['Read of an uninhabited type'])
+                }}
+                fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, \
+             value: {full_name}) -> starknet::SyscallResult<()> {{
+                    match value {{}}
+                }}
+                fn read_at_offset(address_domain: u32, base: \
+             starknet::storage_access::StorageBaseAddress, offset: u8) -> \
+             starknet::SyscallResult<{full_name}> {{
+                    starknet::SyscallResult::Err(array!['Read of an uninhabited type'])
+                }}
+                fn write_at_offset(address_domain: u32, base: \
+             starknet::storage_access::StorageBaseAddress, offset: u8, value: {full_name}) -> \
+             starknet::SyscallResult<()> {{
+                    match value {{}}
+                }}
+                fn size() -> u8 {{
+                    0
+                }}
+            }}
+            ",
+            header = info.impl_header(STORE_TRAIT, &[STORE_TRAIT, "core::traits::Destruct"]),
+        );
+        return Some(RewriteNode::Text(store_impl));
+    }
+
     let mut match_idx = Vec::new();
     let mut match_idx_at_offset = Vec::new();
 
@@ -250,7 +285,7 @@ fn handle_enum<'db>(
                         {imp}::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
-            }}",
+            }},",
         ));
         match_idx_at_offset.push(formatdoc!(
             "{indicator} => {{
@@ -259,19 +294,19 @@ fn handle_enum<'db>(
                         {imp}::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
-            }}",
+            }},",
         ));
         match_value.push(formatdoc!(
             "{enum_name}::{variant_name}(x) => {{
                 {STORE_TRAIT}::write(address_domain, base, {indicator})?;
                 {imp}::write_at_offset(address_domain, base, 1_u8, x)?;
-            }}"
+            }},"
         ));
         match_value_at_offset.push(formatdoc!(
             "{enum_name}::{variant_name}(x) => {{
                 {STORE_TRAIT}::write_at_offset(address_domain, base, offset, {indicator})?;
                 {imp}::write_at_offset(address_domain, base, offset + 1_u8, x)?;
-            }}"
+            }},"
         ));
 
         if match_size.is_empty() {
@@ -289,7 +324,7 @@ fn handle_enum<'db>(
          starknet::SyscallResult<{full_name}> {{
                 let idx = {STORE_TRAIT}::<felt252>::read(address_domain, base)?;
                 match idx {{
-                    {match_idx},
+                    {match_idx}
                     {zero_or_none} _ => {{
                         starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
                     }}
@@ -307,7 +342,7 @@ fn handle_enum<'db>(
          starknet::SyscallResult<{full_name}> {{
                 let idx = {STORE_TRAIT}::<felt252>::read_at_offset(address_domain, base, offset)?;
                 match idx {{
-                    {match_idx_at_offset},
+                    {match_idx_at_offset}
                     {zero_or_none} _ => {{
                         starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
                     }}
@@ -329,10 +364,10 @@ fn handle_enum<'db>(
         }}
         ",
         header = info.impl_header(STORE_TRAIT, &[STORE_TRAIT, "core::traits::Destruct"]),
-        match_idx = indent_by(12, match_idx.join(",\n")),
-        match_idx_at_offset = indent_by(12, match_idx_at_offset.join(",\n")),
-        match_value = indent_by(12, match_value.join(",\n")),
-        match_value_at_offset = indent_by(12, match_value_at_offset.join(",\n")),
+        match_idx = indent_by(12, match_idx.join("\n")),
+        match_idx_at_offset = indent_by(12, match_idx_at_offset.join("\n")),
+        match_value = indent_by(12, match_value.join("\n")),
+        match_value_at_offset = indent_by(12, match_value_at_offset.join("\n")),
     );
 
     Some(RewriteNode::Text(store_impl))
