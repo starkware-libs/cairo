@@ -3,9 +3,9 @@
 //! This module tracks semantic equivalence between variables as information flows through the
 //! program. Two variables are equivalent if they hold the same value. Additionally, the analysis
 //! tracks `Box`/unbox, snapshot/desnap, struct construct, and array construct relationships between
-//! equivalence classes via unified forward/reverse maps. Structs track every field and arrays
-//! every element (see `ArrayItems`) — array pop operations act as destructures on the array
-//! relation.
+//! equivalence classes via unified forward/reverse maps. Structs track every field; arrays track
+//! a bounded number of trailing elements behind a run of forgotten leading ones (see
+//! `ArrayItems`) — array pop operations act as destructures on the array relation.
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ExternFunctionId, NamedLanguageElementId};
@@ -13,6 +13,7 @@ use cairo_lang_semantic::corelib::option_some_variant;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::{ConcreteVariant, GenericArgumentId, MatchArmSelector, TypeId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::zip_eq;
 use salsa::Database;
 
 use crate::analysis::core::Edge;
@@ -21,13 +22,13 @@ use crate::{
     BlockEnd, BlockId, Lowered, MatchArm, MatchExternInfo, MatchInfo, Statement, VariableId,
 };
 
-/// A globally unique token for an unknown value tracked by the analysis. Allocated by
+/// A globally unique token for an unknown value or array run tracked by the analysis. Allocated by
 /// [`fresh_placeholder`]; equality means "the very same unknown", so distinct unknowns never
 /// compare equal.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 struct Placeholder(usize);
 
-/// Allocates a globally unique placeholder.
+/// Allocates a globally unique placeholder, used for unknown struct fields and array runs.
 fn fresh_placeholder(next_placeholder: &mut usize) -> Placeholder {
     *next_placeholder += 1;
     Placeholder(*next_placeholder - 1)
@@ -60,41 +61,67 @@ impl FieldVar {
     }
 }
 
-/// The tracked contents of an array.
+/// Maximum number of trailing elements tracked per array.
+///
+/// Tracking every element is quadratic in the number of appends, so only the last
+/// [`MAX_ARRAY_TRACKED_ITEMS`] are tracked; everything before them is forgotten into a counted
+/// run (see [`ArrayItems`]).
+const MAX_ARRAY_TRACKED_ITEMS: usize = 5;
+
+/// The tracked contents of an array: a run of forgotten leading elements (at least one, count
+/// unknown), followed by a bounded number of tracked trailing ones.
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct ArrayItems {
-    /// The elements, in order.
-    elements: Vec<FieldVar>,
+    /// The identity of the forgotten leading elements, or `None` when the contents are fully
+    /// known. Two runs describe the same element sequence only if their placeholders match, so
+    /// any change to a run's contents allocates a fresh placeholder.
+    run: Option<Placeholder>,
+    /// The trailing elements, at most [`MAX_ARRAY_TRACKED_ITEMS`].
+    suffix: Vec<FieldVar>,
 }
 
 impl ArrayItems {
+    /// Whether this tracks an array known to be empty.
+    fn is_empty(&self) -> bool {
+        self.run.is_none() && self.suffix.is_empty()
+    }
+
     /// Returns an iterator over the real variables of the tracked elements.
     fn referenced_vars(&self) -> impl Iterator<Item = VariableId> + '_ {
-        self.elements.iter().filter_map(|f| f.as_var())
+        self.suffix.iter().filter_map(|f| f.as_var())
     }
 
     /// Resolves the tracked elements' variables to their representatives.
     fn find_rep(self, info: &mut EqualityState<'_>) -> Self {
-        Self { elements: self.elements.into_iter().map(|f| f.find_rep(info)).collect() }
+        Self { suffix: self.suffix.into_iter().map(|f| f.find_rep(info)).collect(), ..self }
     }
 
-    /// Appends `elem` to the tracked contents.
-    fn append(mut self, elem: FieldVar) -> Self {
-        self.elements.push(elem);
+    /// Appends `elem`: when the budget is full, the oldest tracked element is forgotten into
+    /// the run.
+    fn append(mut self, elem: FieldVar, next_placeholder: &mut usize) -> Self {
+        if self.suffix.len() == MAX_ARRAY_TRACKED_ITEMS {
+            self.run = Some(fresh_placeholder(next_placeholder));
+            self.suffix.remove(0);
+        }
+        self.suffix.push(elem);
         self
     }
 
     /// Removes one element from the front (`from_front`) or back.
     fn pop(&self, from_front: bool) -> PopResult {
-        if self.elements.is_empty() {
+        // Empty case.
+        if self.is_empty() {
             return PopResult::KnownEmpty;
         }
+        // Unknown cases are when the run exists and popping from the front, or popping from
+        // the back when the suffix is empty.
+        if self.run.is_some() && (from_front || self.suffix.is_empty()) {
+            return PopResult::Unknown;
+        }
+        // Suffix is not empty, so we can pop from it.
         let mut remaining = self.clone();
-        let element = if from_front {
-            remaining.elements.remove(0)
-        } else {
-            remaining.elements.pop().unwrap()
-        };
+        let element =
+            if from_front { remaining.suffix.remove(0) } else { remaining.suffix.pop().unwrap() };
         PopResult::Element { element, remaining }
     }
 }
@@ -105,6 +132,9 @@ enum PopResult {
     Element { element: FieldVar, remaining: ArrayItems },
     /// The array is known to be empty, so there is no element to pop.
     KnownEmpty,
+    /// The popped element came off the run, whose count is unknown, so neither the element nor
+    /// the remainder is known.
+    Unknown,
 }
 
 /// A relationship between equivalence classes, carrying its payload data.
@@ -314,18 +344,17 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
                         .join(", ");
                     lines.push(format!("{type_name}({fields}) = {}", v(output)));
                 }
-                // Arrays render as `Type[..]` (vs `Type(..)` for structs).
+                // Arrays render as `Type[..]` (vs `Type(..)` for structs); runs of forgotten
+                // elements render as `?(len)` / `?(*)`.
                 Relation::Array(ty, items) => {
                     let type_name = ty.format(db);
-                    let rendered = items
-                        .elements
-                        .iter()
-                        .map(|f| match f {
-                            FieldVar::Var(id) => v(*id),
-                            FieldVar::Placeholder(_) => "?".to_string(),
-                        })
-                        .collect::<Vec<_>>()
-                        .join(", ");
+                    let elem = |f: &FieldVar| match f {
+                        FieldVar::Var(id) => v(*id),
+                        FieldVar::Placeholder(_) => "?".to_string(),
+                    };
+                    let run = items.run.iter().map(|_| "?(*)".to_string());
+                    let rendered =
+                        run.chain(items.suffix.iter().map(elem)).collect::<Vec<_>>().join(", ");
                     lines.push(format!("{type_name}[{rendered}] = {}", v(output)));
                 }
             }
@@ -352,8 +381,8 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
 pub struct EqualityAnalysis<'a, 'db> {
     db: &'db dyn Database,
     lowered: &'a Lowered<'db>,
-    /// Counter for allocating globally unique `Placeholder` IDs for unknown struct/array fields
-    /// after merge.
+    /// Counter for allocating globally unique ids: `FieldVar::Placeholder`s for unknown fields
+    /// after merge, and array run ids.
     next_placeholder: usize,
     /// The `array_new` extern function id.
     array_new: ExternFunctionId<'db>,
@@ -408,7 +437,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
     /// The `None` arms are intentionally ignored: recording empty-array relations or unions there
     /// would backedge-merge older SSA equivalence classes based on branch discrimination.
     fn transfer_extern_match_arm(
-        &self,
+        &mut self,
         info: &mut EqualityState<'db>,
         extern_info: &MatchExternInfo<'db>,
         arm: &MatchArm<'db>,
@@ -438,7 +467,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
 
     /// Handles the actual array pop arm transfer after validating the Option variant.
     fn transfer_array_pop_arm(
-        &self,
+        &mut self,
         info: &mut EqualityState<'db>,
         extern_info: &MatchExternInfo<'db>,
         arm: &MatchArm<'db>,
@@ -460,7 +489,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
                         }
                         remaining
                     }
-                    PopResult::KnownEmpty => return,
+                    PopResult::KnownEmpty | PopResult::Unknown => return,
                 };
                 info.set_relation(Relation::Array(ty, remaining), remaining_arr);
             }
@@ -505,9 +534,9 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
                     }
                     remaining
                 }
-                // This arm is unreachable at runtime (popping a known-empty array fails), so any
-                // state is sound; keep tracking the remainder as empty.
-                PopResult::KnownEmpty => ArrayItems::default(),
+                // `KnownEmpty` is unreachable at runtime (popping a known-empty array fails),
+                // so nothing needs to be recorded for it.
+                PopResult::KnownEmpty | PopResult::Unknown => return,
             };
             info.set_relation(Relation::Array(snap_ty, remaining), remaining_snap_arr);
         }
@@ -554,10 +583,40 @@ fn merge_field(
     }
 }
 
+/// Meets two arrays' tracked contents at a merge: requires run presence and tracked element
+/// counts to match. Elements meet like struct fields; the run keeps its placeholder when
+/// shared, and otherwise degrades to a fresh one. Returns the met contents and whether any
+/// real data survived, or `None` when the shapes are incompatible.
+fn merge_array_items(
+    items1: &ArrayItems,
+    items2: &ArrayItems,
+    result: &mut EqualityState<'_>,
+    next_placeholder: &mut usize,
+) -> Option<(ArrayItems, bool)> {
+    if items1.suffix.len() != items2.suffix.len() {
+        return None;
+    }
+    let mut any_data = false;
+    let run = match (items1.run, items2.run) {
+        (None, None) => None,
+        (Some(p1), Some(p2)) => Some(if p1 == p2 {
+            any_data = true;
+            p1
+        } else {
+            fresh_placeholder(next_placeholder)
+        }),
+        (None, Some(_)) | (Some(_), None) => return None,
+    };
+    let suffix = zip_eq(&items1.suffix, &items2.suffix)
+        .map(|(f1, f2)| merge_field(*f1, *f2, result, next_placeholder, &mut any_data))
+        .collect();
+    Some((ArrayItems { run, suffix }, any_data))
+}
+
 /// Keeps relational edges that survive the join **without** mapping variables across mismatched
-/// branch equivalence roots: struct/array fields become placeholders unless both sides cite the
-/// same SSA `VariableId`. Box/Snapshot/Enum reuse an edge only when merged outputs coincide in
-/// `result`.
+/// branch equivalence roots: struct fields become placeholders and array runs lose their
+/// identity unless both sides cite the same SSA `VariableId` / run id. Box/Snapshot/Enum reuse
+/// an edge only when merged outputs coincide in `result`.
 fn merge_relations<'db>(
     info1: &EqualityState<'db>,
     info2: &EqualityState<'db>,
@@ -663,23 +722,17 @@ fn merge_relations<'db>(
                     let Some((ty2, items2)) = info2_arrays_by_output.get(&output2_rep) else {
                         continue;
                     };
-                    if ty2 != ty || items2.elements.len() != items1.elements.len() {
+                    if ty2 != ty {
                         continue;
                     }
-                    let mut any_data = false;
-                    let elements: Vec<FieldVar> = items1
-                        .elements
-                        .iter()
-                        .zip(&items2.elements)
-                        .map(|(f1, f2)| {
-                            merge_field(*f1, *f2, result, next_placeholder, &mut any_data)
-                        })
-                        .collect();
-                    if any_data || elements.is_empty() {
-                        result.set_relation(
-                            Relation::Array(*ty, ArrayItems { elements }),
-                            output_intersection,
-                        );
+                    let Some((result_items, any_data)) =
+                        merge_array_items(items1, items2, result, next_placeholder)
+                    else {
+                        continue;
+                    };
+                    if any_data || result_items.is_empty() {
+                        result
+                            .set_relation(Relation::Array(*ty, result_items), output_intersection);
                     }
                 }
             }
@@ -835,10 +888,8 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
                     // Only track append if the input array is already tracked. Arrays from
                     // function parameters or external calls are conservatively ignored.
                     let elem = FieldVar::Var(info.find(call_stmt.inputs[1].var_id));
-                    info.set_relation(
-                        Relation::Array(ty, items.append(elem)),
-                        call_stmt.outputs[0],
-                    );
+                    let new_items = items.append(elem, &mut self.next_placeholder);
+                    info.set_relation(Relation::Array(ty, new_items), call_stmt.outputs[0]);
                 }
             }
 
