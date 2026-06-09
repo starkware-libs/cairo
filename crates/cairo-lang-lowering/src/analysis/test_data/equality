@@ -974,6 +974,142 @@ core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[
 
 //! > ==========================================================================
 
+//! > Test array tracking stops at MAX_TRACKED_ARRAY_ELEMENTS
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > comments
+The first 32 appends are tracked; the 33rd exceeds the bound, so its output array (the
+function result) has no array relation.
+
+//! > function_code
+fn foo(
+    a0: felt252,
+    a1: felt252,
+    a2: felt252,
+    a3: felt252,
+    a4: felt252,
+    a5: felt252,
+    a6: felt252,
+    a7: felt252,
+    a8: felt252,
+    a9: felt252,
+    a10: felt252,
+    a11: felt252,
+    a12: felt252,
+    a13: felt252,
+    a14: felt252,
+    a15: felt252,
+    a16: felt252,
+    a17: felt252,
+    a18: felt252,
+    a19: felt252,
+    a20: felt252,
+    a21: felt252,
+    a22: felt252,
+    a23: felt252,
+    a24: felt252,
+    a25: felt252,
+    a26: felt252,
+    a27: felt252,
+    a28: felt252,
+    a29: felt252,
+    a30: felt252,
+    a31: felt252,
+    a32: felt252,
+) -> Array<felt252> {
+    let mut arr = ArrayTrait::new();
+    arr.append(a0);
+    arr.append(a1);
+    arr.append(a2);
+    arr.append(a3);
+    arr.append(a4);
+    arr.append(a5);
+    arr.append(a6);
+    arr.append(a7);
+    arr.append(a8);
+    arr.append(a9);
+    arr.append(a10);
+    arr.append(a11);
+    arr.append(a12);
+    arr.append(a13);
+    arr.append(a14);
+    arr.append(a15);
+    arr.append(a16);
+    arr.append(a17);
+    arr.append(a18);
+    arr.append(a19);
+    arr.append(a20);
+    arr.append(a21);
+    arr.append(a22);
+    arr.append(a23);
+    arr.append(a24);
+    arr.append(a25);
+    arr.append(a26);
+    arr.append(a27);
+    arr.append(a28);
+    arr.append(a29);
+    arr.append(a30);
+    arr.append(a31);
+    arr.append(a32);
+    arr
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252, v3: core::felt252, v4: core::felt252, v5: core::felt252, v6: core::felt252, v7: core::felt252, v8: core::felt252, v9: core::felt252, v10: core::felt252, v11: core::felt252, v12: core::felt252, v13: core::felt252, v14: core::felt252, v15: core::felt252, v16: core::felt252, v17: core::felt252, v18: core::felt252, v19: core::felt252, v20: core::felt252, v21: core::felt252, v22: core::felt252, v23: core::felt252, v24: core::felt252, v25: core::felt252, v26: core::felt252, v27: core::felt252, v28: core::felt252, v29: core::felt252, v30: core::felt252, v31: core::felt252, v32: core::felt252
+blk0 (root):
+Statements:
+  (v33: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v34: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v33, v0)
+  (v35: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v34, v1)
+  (v36: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v35, v2)
+  (v37: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v36, v3)
+  (v38: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v37, v4)
+  (v39: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v38, v5)
+  (v40: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v39, v6)
+  (v41: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v40, v7)
+  (v42: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v41, v8)
+  (v43: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v42, v9)
+  (v44: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v43, v10)
+  (v45: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v44, v11)
+  (v46: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v45, v12)
+  (v47: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v46, v13)
+  (v48: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v47, v14)
+  (v49: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v48, v15)
+  (v50: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v49, v16)
+  (v51: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v50, v17)
+  (v52: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v51, v18)
+  (v53: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v52, v19)
+  (v54: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v53, v20)
+  (v55: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v54, v21)
+  (v56: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v55, v22)
+  (v57: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v56, v23)
+  (v58: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v57, v24)
+  (v59: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v58, v25)
+  (v60: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v59, v26)
+  (v61: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v60, v27)
+  (v62: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v61, v28)
+  (v63: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v62, v29)
+  (v64: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v63, v30)
+  (v65: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v64, v31)
+  (v66: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v65, v32)
+End:
+  Return(v66)
+
+//! > analysis_state
+Block 0:
+core::array::Array::<core::felt252>[] = v33, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30, v31] = v65, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29, v30] = v64, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28, v29] = v63, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27, v28] = v62, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27] = v61, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25, v26] = v60, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24, v25] = v59, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23, v24] = v58, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22, v23] = v57, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21, v22] = v56, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20, v21] = v55, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19, v20] = v54, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19] = v53, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18] = v52, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17] = v51, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16] = v50, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15] = v49, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14] = v48, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13] = v47, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12] = v46, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11] = v45, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10] = v44, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8, v9] = v43, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7, v8] = v42, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6, v7] = v41, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5, v6] = v40, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4, v5] = v39, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v38, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v37, core::array::Array::<core::felt252>[v0, v1, v2] = v36, core::array::Array::<core::felt252>[v0, v1] = v35, core::array::Array::<core::felt252>[v0] = v34
+
+//! > ==========================================================================
+
 //! > Test array pop_front recovers elements and merge works correctly
 
 //! > test_runner_name

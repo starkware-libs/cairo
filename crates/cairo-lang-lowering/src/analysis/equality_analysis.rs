@@ -21,6 +21,16 @@ use crate::{
     BlockEnd, BlockId, Lowered, MatchArm, MatchExternInfo, MatchInfo, Statement, VariableId,
 };
 
+/// Maximum number of elements tracked for a single array.
+///
+/// Every `array_append` on a tracked array records a fresh `Relation::Array` holding *all*
+/// elements appended so far, so tracking an array built by `N` appends costs `O(N^2)` state -
+/// kept per block and cloned at every edge for the rest of the function. Large array literals
+/// (e.g. embedded test vectors with thousands of elements) made this analysis dominate
+/// compilation time and memory, while forwarding only ever pays off for small arrays. Appends
+/// to an array already holding this many elements simply stop tracking the resulting array.
+const MAX_TRACKED_ARRAY_ELEMENTS: usize = 32;
+
 /// A struct field variable: either a real variable or a unique placeholder for an unknown field.
 /// Placeholders are created during merge when a field has no intersection representative.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -733,6 +743,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
                     info.set_relation(Relation::Array(ty, vec![]), call_stmt.outputs[0]);
                 } else if id == self.array_append
                     && let Some((ty, elems)) = info.get_array_construct(call_stmt.inputs[0].var_id)
+                    && elems.len() < MAX_TRACKED_ARRAY_ELEMENTS
                 {
                     // Only track append if the input array is already tracked. Arrays from
                     // function parameters or external calls are conservatively ignored.
