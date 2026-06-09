@@ -29,18 +29,17 @@ pub fn get_generic_params<'db>(
     let mut location_links: Vec<LocationLink<'_>> = Vec::new();
 
     if !generic_params.is_empty() {
-        let mut count = generic_params.len();
         buff.push('<');
-
-        for param in generic_params {
+        for (i, param) in generic_params.iter().enumerate() {
+            if i > 0 {
+                buff.push_str(", ");
+            }
             match param {
                 GenericParam::Type(param_type) => {
-                    let name = extract_and_format(param_type.id.format(db).long(db));
-                    buff.push_str(&format!("{}{}", name, if count == 1 { "" } else { ", " }));
+                    buff.push_str(&extract_and_format(param_type.id.format(db).long(db)));
                 }
                 GenericParam::Const(param_const) => {
-                    let name = extract_and_format(param_const.id.format(db).long(db));
-                    buff.push_str(&format!("const {}{}", name, if count == 1 { "" } else { ", " }));
+                    buff.push_str(&extract_and_format(param_const.id.format(db).long(db)));
                 }
                 GenericParam::Impl(param_impl) => {
                     let name = extract_and_format(param_impl.id.format(db).long(db));
@@ -61,40 +60,31 @@ pub fn get_generic_params<'db>(
                             } else {
                                 buff.push_str(&format!("impl {name}: "));
 
-                                let concrete_trait_name = concrete_trait.name(db);
-                                let concrete_trait_generic_args_formatted = concrete_trait
+                                let concrete_trait_name = concrete_trait.name(db).long(db);
+                                let concrete_trait_generic_args = concrete_trait
                                     .generic_args(db)
                                     .iter()
                                     .map(|arg| extract_and_format(&arg.format(db)))
-                                    .collect::<Vec<_>>()
                                     .join(", ");
 
                                 location_links.push(LocationLink::new(
                                     buff.len(),
-                                    buff.len() + concrete_trait_name.to_string(db).len(),
+                                    buff.len() + concrete_trait_name.len(),
                                     documentable_id,
                                     0,
                                 ));
-                                buff.push_str(&concrete_trait_name.to_string(db));
+                                buff.push_str(&concrete_trait_name);
 
-                                if !concrete_trait_generic_args_formatted.is_empty() {
-                                    let f = format!("<{concrete_trait_generic_args_formatted}>");
-                                    buff.push_str(&f);
+                                if !concrete_trait_generic_args.is_empty() {
+                                    buff.push_str(&format!("<{concrete_trait_generic_args}>"));
                                 }
                             }
                         }
-                        Err(_) => {
-                            buff.push_str(&format!(
-                                "{}{}",
-                                name,
-                                if count == 1 { "" } else { ", " }
-                            ));
-                        }
+                        Err(_) => buff.push_str(&name),
                     }
                 }
                 GenericParam::NegImpl(_) => buff.push_str(crate::documentable_formatter::MISSING),
-            };
-            count -= 1;
+            }
         }
         buff.push('>');
     }
