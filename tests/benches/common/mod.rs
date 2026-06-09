@@ -26,7 +26,19 @@ use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::{TestsCompilationConfig, compile_test_prepared_db, test_plugin_suite};
 use cairo_lang_test_runner::{TestRunConfig, TestRunner, run_tests};
 
+pub mod canaries;
 pub mod staking;
+
+/// Cargo's target directory, used to place bench outputs and checkouts alongside `target/`.
+/// Honors `CARGO_TARGET_DIR` if set; otherwise derives from the bench binary's own path
+/// (`<target>/release/deps/<bench>-<hash>`), which covers the default cargo layout.
+pub fn target_dir() -> PathBuf {
+    if let Some(dir) = std::env::var_os("CARGO_TARGET_DIR") {
+        return PathBuf::from(dir);
+    }
+    let exe = std::env::current_exe().expect("current_exe");
+    exe.ancestors().nth(3).expect("bench binary not under <target>/release/deps/").to_path_buf()
+}
 
 /// Configuration for a benchmarked project.
 pub struct BenchConfig {

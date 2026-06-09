@@ -12,7 +12,7 @@
 //! Filter scenarios with the first positional argument (substring match), e.g.
 //! `cargo bench --bench dhat_compile --features dhat -- corelib`.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use dhat::HeapStats;
 
@@ -21,19 +21,11 @@ static GLOBAL: dhat::Alloc = dhat::Alloc;
 
 mod common;
 
+use common::canaries::canary_configs;
 use common::staking::prepare_staking;
-use common::{bench_configs, run_cairo_to_sierra, run_cairo_to_testing, run_sierra_to_casm};
-
-/// Cargo's target directory, used to place bench outputs alongside `target/`. Honors
-/// `CARGO_TARGET_DIR` if set; otherwise derives from the bench binary's own path
-/// (`<target>/release/deps/dhat_compile-<hash>`), which covers the default cargo layout.
-fn target_dir() -> PathBuf {
-    if let Some(dir) = std::env::var_os("CARGO_TARGET_DIR") {
-        return PathBuf::from(dir);
-    }
-    let exe = std::env::current_exe().expect("current_exe");
-    exe.ancestors().nth(3).expect("bench binary not under <target>/release/deps/").to_path_buf()
-}
+use common::{
+    bench_configs, run_cairo_to_sierra, run_cairo_to_testing, run_sierra_to_casm, target_dir,
+};
 
 /// One heap-profiled scenario's result, captured at the end of its `dhat::Profiler` lifetime so
 /// it can be aggregated into the `dhat-output.json` metrics file alongside the other scenarios.
@@ -155,6 +147,17 @@ fn run_scenarios(dir: &Path, filter: Option<&str>, out: &mut Vec<Sample>) -> boo
         || prepare_staking(&dir.join("staking-checkout")),
         |checkout| run_cairo_to_sierra(&checkout.config()),
     );
+
+    // Generated compile-time canaries (see `common/canaries.rs`), profiled here for their
+    // *memory* side: each guards one class of super-linear compilation cost, and blowups of
+    // this kind tend to show up in peak heap before (and harder than) in wall time — e.g. the
+    // quadratic array-tracking state reached multi-GB peaks. The canaries compile in well under
+    // a second each, so the per-allocation dhat overhead stays affordable.
+    for config in canary_configs(&dir.join("bench-inputs")) {
+        matched |= record_scenario(dir, out, filter, "cairo-to-sierra", config.name, || {
+            run_cairo_to_sierra(&config)
+        });
+    }
 
     matched
 }

@@ -2,9 +2,10 @@ use criterion::{Criterion, criterion_group, criterion_main};
 
 mod common;
 
+use common::canaries::canary_configs;
 use common::{
     bench_configs, generate_cache, run_cache_to_sierra, run_cache_to_testing, run_cairo_to_cache,
-    run_cairo_to_diagnostics, run_cairo_to_sierra, run_cairo_to_testing,
+    run_cairo_to_diagnostics, run_cairo_to_sierra, run_cairo_to_testing, target_dir,
 };
 
 /// Phase: source → Sierra (full IR generation).
@@ -12,6 +13,11 @@ fn bench_cairo_to_sierra(c: &mut Criterion) {
     let mut group = c.benchmark_group("cairo-to-sierra");
     group.sample_size(10);
     for config in bench_configs().into_iter().filter(|c| c.sierra_phases) {
+        group.bench_function(config.name, |b| b.iter(|| run_cairo_to_sierra(&config)));
+    }
+    // Generated compile-time canaries (written as an un-measured setup step), each guarding a
+    // specific class of super-linear compilation cost; see `common/canaries.rs`.
+    for config in canary_configs(&target_dir().join("bench-inputs")) {
         group.bench_function(config.name, |b| b.iter(|| run_cairo_to_sierra(&config)));
     }
     group.finish();
