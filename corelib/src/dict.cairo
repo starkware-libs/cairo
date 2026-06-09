@@ -181,17 +181,17 @@ pub trait Felt252DictEntryTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::dict::Felt252DictEntryTrait;
+    /// use core::dict::{Felt252Dict, Felt252DictEntryTrait};
     ///
-    /// // Create a dictionary that stores arrays
+    /// // A dictionary that stores arrays (a non-`Copy` type).
     /// let mut dict: Felt252Dict<Nullable<Array<felt252>>> = Default::default();
-    ///
     /// dict.insert(0, NullableTrait::new(array![1, 2, 3]));
     ///
+    /// // `entry` takes the dictionary and the previous value; `finalize` stores the
+    /// // new value and gives the dictionary back.
     /// let (entry, prev_value) = dict.entry(0);
     /// dict = entry.finalize(NullableTrait::new(array![4, 5, 6]));
     /// assert!(prev_value.deref() == array![1, 2, 3]);
-    /// assert!(dict.get(0).deref() == array![4, 5, 6]);
     /// ```
     fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>;
 }
