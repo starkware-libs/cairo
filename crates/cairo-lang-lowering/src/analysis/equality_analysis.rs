@@ -21,13 +21,25 @@ use crate::{
     BlockEnd, BlockId, Lowered, MatchArm, MatchExternInfo, MatchInfo, Statement, VariableId,
 };
 
+/// A globally unique token for an unknown value tracked by the analysis. Allocated by
+/// [`fresh_placeholder`]; equality means "the very same unknown", so distinct unknowns never
+/// compare equal.
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+struct Placeholder(usize);
+
+/// Allocates a globally unique placeholder.
+fn fresh_placeholder(next_placeholder: &mut usize) -> Placeholder {
+    *next_placeholder += 1;
+    Placeholder(*next_placeholder - 1)
+}
+
 /// A struct field variable: either a real variable or a unique placeholder for an unknown field.
 /// Placeholders are created during merge when a field has no intersection representative.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 enum FieldVar {
     Var(VariableId),
     /// A globally unique placeholder representing an unknown field.
-    Placeholder(usize),
+    Placeholder(Placeholder),
 }
 
 impl FieldVar {
@@ -572,10 +584,7 @@ fn merge_relations<'db>(
                                 any_data = true;
                                 FieldVar::Var(result.find(*v))
                             }
-                            (_, _) => {
-                                *next_placeholder += 1;
-                                FieldVar::Placeholder(*next_placeholder - 1)
-                            }
+                            (_, _) => FieldVar::Placeholder(fresh_placeholder(next_placeholder)),
                         })
                         .collect();
                     if any_data || result_fields.is_empty() {
