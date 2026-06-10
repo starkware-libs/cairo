@@ -119,7 +119,7 @@ impl ArrayItems {
         }
         if self.suffix.len() == MAX_ARRAY_END_ITEMS {
             let len = match self.run {
-                None => Some(NonZeroUsize::MIN),
+                None => Some(NonZeroUsize::new(1).unwrap()),
                 Some(run) => run.len.map(|len| len.saturating_add(1)),
             };
             self.run = Some(ArrayRun { placeholder: fresh_placeholder(next_placeholder), len });
@@ -540,6 +540,11 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
     }
 
     /// Handles the actual array pop arm transfer after validating the Option variant.
+    ///
+    /// Covers both owned pops (`array_pop_front`/`array_pop_front_consume`) and snapshot pops
+    /// (`array_snapshot_pop_front`/`array_snapshot_pop_back`). Snapshot pops differ in that the
+    /// tracked contents are preferably found through the input's snapshot relation, and the
+    /// popped value is a `Box<@T>`, so the boxed class is the popped element's snapshot.
     fn transfer_array_pop_arm(
         &mut self,
         info: &mut EqualityState<'db>,
@@ -548,75 +553,58 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
         id: ExternFunctionId<'db>,
         is_some: bool,
     ) {
-        if (id == self.array_pop_front || id == self.array_pop_front_consume) && is_some {
-            // Some arm: var_ids = [remaining_arr, boxed_elem]
-            let input_arr = extern_info.inputs[0].var_id;
-            let remaining_arr = arm.var_ids[0];
-            let boxed_elem = arm.var_ids[1];
-            if let Some((ty, items)) = info.get_array_construct(input_arr) {
-                let remaining = match items.pop(true, &mut self.next_placeholder) {
-                    PopResult::Element { element, remaining } => {
-                        // TODO(eytan-starkware): Add support for placeholders in boxes and
-                        // reverse box relation to unify placeholder.
-                        if let FieldVar::Var(first_var) = element {
-                            info.set_relation(Relation::Box(first_var), boxed_elem);
-                        }
-                        remaining
-                    }
-                    PopResult::ForgottenElement { remaining } => remaining,
-                    PopResult::KnownEmpty | PopResult::Unknown => return,
-                };
-                info.set_relation(Relation::Array(ty, remaining), remaining_arr);
-            }
-        } else if (id == self.array_snapshot_pop_front || id == self.array_snapshot_pop_back)
-            && is_some
-        {
-            // Some arm: var_ids = [remaining_snap_arr, boxed_snap_elem]
-            let input_snap_arr = extern_info.inputs[0].var_id;
-            let remaining_snap_arr = arm.var_ids[0];
-            let boxed_snap_elem = arm.var_ids[1];
-
-            // Look up tracked elements via snapshot reverse relationship or direct lookup.
-            let snap_rep = info.find(input_snap_arr);
-            let original_rep = match info.reverse.get(&snap_rep) {
-                Some(Relation::Snapshot(v)) => Some(*v),
-                _ => None,
-            };
-            let items_opt = original_rep
-                .and_then(|orig| {
-                    let orig = info.find_immut(orig);
-                    info.get_array_construct_immut(orig)
-                })
-                .or_else(|| info.get_array_construct_immut(snap_rep));
-
-            let snap_ty = self.lowered.variables[remaining_snap_arr].ty;
-            let Some((_orig_ty, items)) = items_opt else {
-                return;
-            };
-            let pop_front = id == self.array_snapshot_pop_front;
-            let remaining = match items.pop(pop_front, &mut self.next_placeholder) {
-                PopResult::Element { element, remaining } => {
-                    // The popped element is `Box<@T>`. Record the box relationship against
-                    // the snapshot class of `elem` if it exists.
-                    // TODO(eytan-starkware): Support relationships even when no variable
-                    // represents `@elem` yet (elem is a Placeholder).
-                    if let FieldVar::Var(elem_var) = element {
-                        let elem_rep = info.find(elem_var);
-                        if let Some(&snap_of_elem) = info.forward.get(&Relation::Snapshot(elem_rep))
-                        {
-                            info.set_relation(Relation::Box(snap_of_elem), boxed_snap_elem);
-                        }
-                    }
-                    remaining
-                }
-                PopResult::ForgottenElement { remaining } => remaining,
-                // This arm is unreachable at runtime (popping a known-empty array fails), so any
-                // state is sound; keep tracking the remainder as empty.
-                PopResult::KnownEmpty => ArrayItems::default(),
-                PopResult::Unknown => return,
-            };
-            info.set_relation(Relation::Array(snap_ty, remaining), remaining_snap_arr);
+        let is_snapshot = id == self.array_snapshot_pop_front || id == self.array_snapshot_pop_back;
+        let is_owned = id == self.array_pop_front || id == self.array_pop_front_consume;
+        if !is_some || !(is_snapshot || is_owned) {
+            return;
         }
+        // Some arm: var_ids = [remaining_arr, boxed_elem]
+        let input_arr = extern_info.inputs[0].var_id;
+        let remaining_arr = arm.var_ids[0];
+        let boxed_elem = arm.var_ids[1];
+
+        // Look up the tracked contents: through the snapshotted original array when the input
+        // is a snapshot of one, or directly (e.g. the remainder of a previous snapshot pop).
+        let input_rep = info.find(input_arr);
+        let original_rep = match info.reverse.get(&input_rep) {
+            Some(Relation::Snapshot(v)) if is_snapshot => Some(info.find_immut(*v)),
+            _ => None,
+        };
+        let Some((_, items)) = original_rep
+            .and_then(|orig| info.get_array_construct_immut(orig))
+            .or_else(|| info.get_array_construct_immut(input_rep))
+        else {
+            return;
+        };
+
+        let from_front = id != self.array_snapshot_pop_back;
+        let remaining = match items.pop(from_front, &mut self.next_placeholder) {
+            PopResult::Element { element, remaining } => {
+                // TODO(eytan-starkware): Add support for placeholders in boxes and reverse box
+                // relation to unify placeholder.
+                if let FieldVar::Var(elem_var) = element {
+                    // A snapshot pop yields `Box<@elem>`, so box the class of `@elem` — when a
+                    // variable represents it.
+                    let box_target = if is_snapshot {
+                        let elem_rep = info.find(elem_var);
+                        info.forward.get(&Relation::Snapshot(elem_rep)).copied()
+                    } else {
+                        Some(elem_var)
+                    };
+                    if let Some(target) = box_target {
+                        info.set_relation(Relation::Box(target), boxed_elem);
+                    }
+                }
+                remaining
+            }
+            PopResult::ForgottenElement { remaining } => remaining,
+            // This arm is unreachable at runtime (popping a known-empty array fails), so any
+            // state is sound; keep tracking the remainder as empty.
+            PopResult::KnownEmpty => ArrayItems::default(),
+            PopResult::Unknown => return,
+        };
+        let ty = self.lowered.variables[remaining_arr].ty;
+        info.set_relation(Relation::Array(ty, remaining), remaining_arr);
     }
 }
 
