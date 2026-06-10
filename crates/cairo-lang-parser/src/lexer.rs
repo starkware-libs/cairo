@@ -324,7 +324,10 @@ impl Lexer {
 }
 
 /// Tokenizes the entire text and returns a deque of terminals.
-#[salsa::tracked]
+///
+/// Deliberately NOT a salsa query: the tokens are consumed exactly once, by the parser (whose
+/// result is what gets memoized), so memoizing them too would retain every file's token deque for
+/// the lifetime of the database.
 pub fn tokenize_all<'a>(
     db: &'a dyn Database,
     _tracked: Tracked,
