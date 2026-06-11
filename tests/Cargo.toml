@@ -57,6 +57,11 @@ name = "dhat_compile"
 harness = false
 required-features = ["dhat"]
 
+[[bench]]
+name = "dhat_ls_flow"
+harness = false
+required-features = ["dhat"]
+
 [[test]]
 name = "examples_test"
 path = "examples_test.rs"
