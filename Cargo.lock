@@ -4523,6 +4523,7 @@ dependencies = [
  "serde_json",
  "starknet-types-core",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
