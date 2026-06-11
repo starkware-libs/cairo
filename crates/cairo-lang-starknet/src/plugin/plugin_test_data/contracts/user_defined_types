@@ -446,10 +446,7 @@ lib.cairo:20:5
 impls:
 
 impl SimpleEnumDrop<> of core::traits::Drop::<SimpleEnum>;
-impl SimpleEnumSerde<
-        
-    > of core::serde::Serde<SimpleEnum>
- {
+impl SimpleEnumSerde<> of core::serde::Serde::<SimpleEnum> {
     fn serialize(self: @SimpleEnum, ref output: core::array::Array<felt252>) {
         match self {
             SimpleEnum::A(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<u8>::serialize(x, ref output); },
@@ -559,10 +556,7 @@ lib.cairo:26:5
 impls:
 
 impl EnumWithDefaultDrop<> of core::traits::Drop::<EnumWithDefault>;
-impl EnumWithDefaultSerde<
-        
-    > of core::serde::Serde<EnumWithDefault>
- {
+impl EnumWithDefaultSerde<> of core::serde::Serde::<EnumWithDefault> {
     fn serialize(self: @EnumWithDefault, ref output: core::array::Array<felt252>) {
         match self {
             EnumWithDefault::A(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<u8>::serialize(x, ref output); },
@@ -696,10 +690,7 @@ lib.cairo:34:5
 impls:
 
 impl BadEnumWithDefaultDrop<> of core::traits::Drop::<BadEnumWithDefault>;
-impl BadEnumWithDefaultSerde<
-        
-    > of core::serde::Serde<BadEnumWithDefault>
- {
+impl BadEnumWithDefaultSerde<> of core::serde::Serde::<BadEnumWithDefault> {
     fn serialize(self: @BadEnumWithDefault, ref output: core::array::Array<felt252>) {
         match self {
             BadEnumWithDefault::A(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<u8>::serialize(x, ref output); },
@@ -727,10 +718,7 @@ lib.cairo:43:5
 impls:
 
 impl EmptyEnumDrop<> of core::traits::Drop::<EmptyEnum>;
-impl EmptyEnumSerde<
-        
-    > of core::serde::Serde<EmptyEnum>
- {
+impl EmptyEnumSerde<> of core::serde::Serde::<EmptyEnum> {
     fn serialize(self: @EmptyEnum, ref output: core::array::Array<felt252>) {
         match self {
             

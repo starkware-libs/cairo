@@ -53,6 +53,26 @@ enum TwoVariantEnum {
     Second: B,
 }
 
+#[derive(Drop, Hash)]
+enum GenericEnum<T> {
+    Variant: T,
+    Other: felt252,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnumMulti<T> {
+    First: T,
+    Second: T,
+    Third: felt252,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnumMultiType<T, U> {
+    First: T,
+    Second: U,
+    Third: felt252,
+}
+
 //! > expanded_cairo_code
 #[derive(Copy, Debug, Default, Drop, Hash)]
 struct A {}
@@ -101,6 +121,26 @@ enum TwoVariantEnum {
     First: A,
     #[default]
     Second: B,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnum<T> {
+    Variant: T,
+    Other: felt252,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnumMulti<T> {
+    First: T,
+    Second: T,
+    Third: felt252,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnumMultiType<T, U> {
+    First: T,
+    Second: U,
+    Third: felt252,
 }
 impl ACopy<> of core::traits::Copy::<A>;
 impl ADebug<> of core::fmt::Debug::<A> {
@@ -536,12 +576,14 @@ impl TwoVariantEnumHash<
     fn update_state(state: __State, value: TwoVariantEnum) -> __State {
         match value {
             TwoVariantEnum::First(x) => {
+                let x = core::internal::InferDrop::<A> { value: x };
                 let state = core::hash::Hash::update_state(state, 0_felt252);
-                core::hash::Hash::<A>::update_state(state, x)
+                core::hash::Hash::<A>::update_state(state, x.value)
             },
             TwoVariantEnum::Second(x) => {
+                let x = core::internal::InferDrop::<B> { value: x };
                 let state = core::hash::Hash::update_state(state, 1_felt252);
-                core::hash::Hash::<B>::update_state(state, x)
+                core::hash::Hash::<B>::update_state(state, x.value)
             },
         }
     }
@@ -568,10 +610,7 @@ impl TwoVariantEnumPartialEq<> of core::traits::PartialEq::<TwoVariantEnum> {
         }
     }
 }
-impl TwoVariantEnumSerde<
-        
-    > of core::serde::Serde<TwoVariantEnum>
- {
+impl TwoVariantEnumSerde<> of core::serde::Serde::<TwoVariantEnum> {
     fn serialize(self: @TwoVariantEnum, ref output: core::array::Array<felt252>) {
         match self {
             TwoVariantEnum::First(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<A>::serialize(x, ref output); },
@@ -587,6 +626,85 @@ impl TwoVariantEnumSerde<
                 _ => { return core::option::Option::None; }
             }
         )
+    }
+}
+impl GenericEnumDrop<T, impl __MEMBER_IMPL_Variant_Drop: core::traits::Drop<T>> of core::traits::Drop::<GenericEnum<T>>;
+impl GenericEnumHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +core::traits::Drop<__State>,
+    T, impl __MEMBER_IMPL_Variant_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_Variant_Drop: core::traits::Drop<T>
+> of core::hash::Hash<GenericEnum<T>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: GenericEnum<T>) -> __State {
+        match value {
+            GenericEnum::Variant(x) => {
+                let x = core::internal::DropWith::<T, __MEMBER_IMPL_Variant_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 0_felt252);
+                __MEMBER_IMPL_Variant_Hash::update_state(state, x.value)
+            },
+            GenericEnum::Other(x) => {
+                let x = core::internal::InferDrop::<felt252> { value: x };
+                let state = core::hash::Hash::update_state(state, 1_felt252);
+                core::hash::Hash::<felt252>::update_state(state, x.value)
+            },
+        }
+    }
+}
+impl GenericEnumMultiDrop<T, impl __MEMBER_IMPL_First_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_Second_Drop: core::traits::Drop<T>> of core::traits::Drop::<GenericEnumMulti<T>>;
+impl GenericEnumMultiHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +core::traits::Drop<__State>,
+    T, impl __MEMBER_IMPL_First_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_First_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_Second_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_Second_Drop: core::traits::Drop<T>
+> of core::hash::Hash<GenericEnumMulti<T>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: GenericEnumMulti<T>) -> __State {
+        match value {
+            GenericEnumMulti::First(x) => {
+                let x = core::internal::DropWith::<T, __MEMBER_IMPL_First_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 0_felt252);
+                __MEMBER_IMPL_First_Hash::update_state(state, x.value)
+            },
+            GenericEnumMulti::Second(x) => {
+                let x = core::internal::DropWith::<T, __MEMBER_IMPL_Second_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 1_felt252);
+                __MEMBER_IMPL_Second_Hash::update_state(state, x.value)
+            },
+            GenericEnumMulti::Third(x) => {
+                let x = core::internal::InferDrop::<felt252> { value: x };
+                let state = core::hash::Hash::update_state(state, 2_felt252);
+                core::hash::Hash::<felt252>::update_state(state, x.value)
+            },
+        }
+    }
+}
+impl GenericEnumMultiTypeDrop<T, U, impl __MEMBER_IMPL_First_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_Second_Drop: core::traits::Drop<U>> of core::traits::Drop::<GenericEnumMultiType<T, U>>;
+impl GenericEnumMultiTypeHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +core::traits::Drop<__State>,
+    T, U, impl __MEMBER_IMPL_First_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_First_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_Second_Hash: core::hash::Hash<U, __State, __SHashState>, impl __MEMBER_IMPL_Second_Drop: core::traits::Drop<U>
+> of core::hash::Hash<GenericEnumMultiType<T, U>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: GenericEnumMultiType<T, U>) -> __State {
+        match value {
+            GenericEnumMultiType::First(x) => {
+                let x = core::internal::DropWith::<T, __MEMBER_IMPL_First_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 0_felt252);
+                __MEMBER_IMPL_First_Hash::update_state(state, x.value)
+            },
+            GenericEnumMultiType::Second(x) => {
+                let x = core::internal::DropWith::<U, __MEMBER_IMPL_Second_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 1_felt252);
+                __MEMBER_IMPL_Second_Hash::update_state(state, x.value)
+            },
+            GenericEnumMultiType::Third(x) => {
+                let x = core::internal::InferDrop::<felt252> { value: x };
+                let state = core::hash::Hash::update_state(state, 2_felt252);
+                core::hash::Hash::<felt252>::update_state(state, x.value)
+            },
+        }
     }
 }
 

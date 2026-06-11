@@ -14,8 +14,12 @@ pub fn handle_hash(info: &PluginTypeInfo<'_>) -> String {
     match &info.type_variant {
         TypeVariant::Enum => {
             let impl_additional_generics = info
-                .impl_generics(&[HASH_TRAIT], |trt, ty| {
-                    format!("{trt}<{ty}, __State, __SHashState>")
+                .impl_generics(&[HASH_TRAIT, DROP_TRAIT], |trt, ty| {
+                    if trt == HASH_TRAIT {
+                        format!("{HASH_TRAIT}<{ty}, __State, __SHashState>")
+                    } else {
+                        format!("{trt}<{ty}>")
+                    }
                 })
                 .join(", ");
             let extra_comma = if impl_additional_generics.is_empty() { "" } else { ",\n    " };
@@ -36,11 +40,13 @@ pub fn handle_hash(info: &PluginTypeInfo<'_>) -> String {
                 indent_by(12,
                 info.members_info.iter().enumerate().map(|(idx, variant)| formatdoc!{"
                             {ty}::{variant}(x) => {{
+                                let x = {drop_with} {{ value: x }};
                                 let state = {HASH_TRAIT}::update_state(state, {idx}_felt252);
-                                {imp}::update_state(state, x)
+                                {imp}::update_state(state, x.value)
                             }},",
                         variant=variant.name,
                         imp = variant.impl_name(HASH_TRAIT),
+                        drop_with = variant.drop_with(),
                     }
                 ).join("\n"))
             }
