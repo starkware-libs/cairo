@@ -44,6 +44,7 @@ salsa.workspace = true
 serde_json.workspace = true
 starknet-types-core.workspace = true
 tracing.workspace = true
+tracing-subscriber.workspace = true
 
 [features]
 dhat = ["dep:dhat"]
@@ -61,6 +62,10 @@ required-features = ["dhat"]
 name = "dhat_ls_flow"
 harness = false
 required-features = ["dhat"]
+
+[[bench]]
+name = "ls_reexec"
+harness = false
 
 [[test]]
 name = "examples_test"
