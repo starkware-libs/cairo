@@ -974,6 +974,242 @@ core::array::Array::<core::felt252>[] = v2, core::array::Array::<core::felt252>[
 
 //! > ==========================================================================
 
+//! > Test long arrays keep bounded suffix tracking
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > comments
+Only the last MAX_ARRAY_TRACKED_ITEMS elements stay individually tracked; everything before
+them is forgotten into a placeholder prefix (rendered `?(*)`).
+
+//! > function_code
+fn foo(
+    a0: felt252, a1: felt252, a2: felt252, a3: felt252, a4: felt252, a5: felt252, a6: felt252,
+) -> Array<felt252> {
+    let mut arr = ArrayTrait::new();
+    arr.append(a0);
+    arr.append(a1);
+    arr.append(a2);
+    arr.append(a3);
+    arr.append(a4);
+    arr.append(a5);
+    arr.append(a6);
+    arr
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252, v3: core::felt252, v4: core::felt252, v5: core::felt252, v6: core::felt252
+blk0 (root):
+Statements:
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v0)
+  (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v1)
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v9, v2)
+  (v11: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v3)
+  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v4)
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v12, v5)
+  (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v13, v6)
+End:
+  Return(v14)
+
+//! > analysis_state
+Block 0:
+core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v13, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v14, core::array::Array::<core::felt252>[] = v7, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v12, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v11, core::array::Array::<core::felt252>[v0, v1, v2] = v10, core::array::Array::<core::felt252>[v0, v1] = v9, core::array::Array::<core::felt252>[v0] = v8
+
+//! > ==========================================================================
+
+//! > Test pop_front on a long array with a forgotten prefix
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > comments
+The popped element comes off the forgotten prefix, so neither it nor the remainder is
+recorded.
+
+//! > function_code
+fn foo(
+    a0: felt252, a1: felt252, a2: felt252, a3: felt252, a4: felt252, a5: felt252, a6: felt252,
+) -> felt252 {
+    let mut arr = ArrayTrait::new();
+    arr.append(a0);
+    arr.append(a1);
+    arr.append(a2);
+    arr.append(a3);
+    arr.append(a4);
+    arr.append(a5);
+    arr.append(a6);
+    match arr.pop_front() {
+        Some(x) => x,
+        None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252, v3: core::felt252, v4: core::felt252, v5: core::felt252, v6: core::felt252
+blk0 (root):
+Statements:
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v0)
+  (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v1)
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v9, v2)
+  (v11: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v3)
+  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v4)
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v12, v5)
+  (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v13, v6)
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v14) {
+    Option::Some(v15, v16) => blk1,
+    Option::None(v17) => blk2,
+  })
+
+blk1:
+Statements:
+  (v18: core::felt252) <- unbox(v16)
+End:
+  Return(v18)
+
+blk2:
+Statements:
+  (v19: ()) <- struct_construct()
+  (v20: core::felt252) <- 0
+End:
+  Return(v20)
+
+//! > analysis_state
+Block 0:
+core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v13, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v14, core::array::Array::<core::felt252>[] = v7, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v12, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v11, core::array::Array::<core::felt252>[v0, v1, v2] = v10, core::array::Array::<core::felt252>[v0, v1] = v9, core::array::Array::<core::felt252>[v0] = v8
+
+Block 1:
+Box(v18) = v16, core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v13, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v14, core::array::Array::<core::felt252>[] = v7, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v12, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v11, core::array::Array::<core::felt252>[v0, v1, v2] = v10, core::array::Array::<core::felt252>[v0, v1] = v9, core::array::Array::<core::felt252>[v0] = v8
+
+Block 2:
+()() = v19, core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v13, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v14, core::array::Array::<core::felt252>[] = v7, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v12, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v11, core::array::Array::<core::felt252>[v0, v1, v2] = v10, core::array::Array::<core::felt252>[v0, v1] = v9, core::array::Array::<core::felt252>[v0] = v8
+
+//! > ==========================================================================
+
+//! > Test long arrays merge across branches keeping suffix elements
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > comments
+Both branches build the same 7-element array, whose forgotten prefix has a branch-local
+placeholder; the merge keeps the shared suffix elements under a fresh placeholder, and the
+post-merge append extends the merged relation.
+
+//! > function_code
+fn foo(
+    a0: felt252,
+    a1: felt252,
+    a2: felt252,
+    a3: felt252,
+    a4: felt252,
+    a5: felt252,
+    a6: felt252,
+    a7: felt252,
+    c: bool,
+) -> Array<felt252> {
+    let mut arr = ArrayTrait::new();
+    if c {
+        arr.append(a0);
+        arr.append(a1);
+        arr.append(a2);
+        arr.append(a3);
+        arr.append(a4);
+        arr.append(a5);
+        arr.append(a6);
+    } else {
+        arr.append(a0);
+        arr.append(a1);
+        arr.append(a2);
+        arr.append(a3);
+        arr.append(a4);
+        arr.append(a5);
+        arr.append(a6);
+    }
+    arr.append(a7);
+    arr
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252, v3: core::felt252, v4: core::felt252, v5: core::felt252, v6: core::felt252, v7: core::felt252, v8: core::bool
+blk0 (root):
+Statements:
+  (v9: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Match(match_enum(v8) {
+    bool::False(v10) => blk1,
+    bool::True(v11) => blk2,
+  })
+
+blk1:
+Statements:
+  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v9, v0)
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v12, v1)
+  (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v13, v2)
+  (v15: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v14, v3)
+  (v16: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v15, v4)
+  (v17: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v16, v5)
+  (v18: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v17, v6)
+End:
+  Goto(blk3, {v18 -> v19})
+
+blk2:
+Statements:
+  (v20: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v9, v0)
+  (v21: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v20, v1)
+  (v22: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v21, v2)
+  (v23: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v22, v3)
+  (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v4)
+  (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v5)
+  (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v25, v6)
+End:
+  Goto(blk3, {v26 -> v19})
+
+blk3:
+Statements:
+  (v27: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v19, v7)
+End:
+  Return(v27)
+
+//! > analysis_state
+Block 0:
+core::array::Array::<core::felt252>[] = v9
+
+Block 1:
+False(v10) = v8, core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v17, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v18, core::array::Array::<core::felt252>[] = v9, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v16, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v15, core::array::Array::<core::felt252>[v0, v1, v2] = v14, core::array::Array::<core::felt252>[v0, v1] = v13, core::array::Array::<core::felt252>[v0] = v12
+
+Block 2:
+True(v11) = v8, core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v25, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v26, core::array::Array::<core::felt252>[] = v9, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v24, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v23, core::array::Array::<core::felt252>[v0, v1, v2] = v22, core::array::Array::<core::felt252>[v0, v1] = v21, core::array::Array::<core::felt252>[v0] = v20
+
+Block 3:
+core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v19, core::array::Array::<core::felt252>[?(*), v3, v4, v5, v6, v7] = v27, core::array::Array::<core::felt252>[] = v9
+
+//! > ==========================================================================
+
 //! > Test array pop_front recovers elements and merge works correctly
 
 //! > test_runner_name
