@@ -1032,8 +1032,8 @@ core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v13, core::array
 test_equality_analysis
 
 //! > comments
-The popped element comes off the forgotten prefix, so neither it nor the remainder is
-recorded.
+The popped element comes off the forgotten prefix, so its value is unknown; the remainder
+stays tracked under a fresh prefix.
 
 //! > function_code
 fn foo(
@@ -1096,7 +1096,7 @@ Block 0:
 core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v13, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v14, core::array::Array::<core::felt252>[] = v7, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v12, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v11, core::array::Array::<core::felt252>[v0, v1, v2] = v10, core::array::Array::<core::felt252>[v0, v1] = v9, core::array::Array::<core::felt252>[v0] = v8
 
 Block 1:
-Box(v18) = v16, core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v13, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v14, core::array::Array::<core::felt252>[] = v7, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v12, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v11, core::array::Array::<core::felt252>[v0, v1, v2] = v10, core::array::Array::<core::felt252>[v0, v1] = v9, core::array::Array::<core::felt252>[v0] = v8
+Box(v18) = v16, core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v13, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v14, core::array::Array::<core::felt252>[?(*), v3, v4, v5, v6] = v15, core::array::Array::<core::felt252>[] = v7, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v12, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v11, core::array::Array::<core::felt252>[v0, v1, v2] = v10, core::array::Array::<core::felt252>[v0, v1] = v9, core::array::Array::<core::felt252>[v0] = v8
 
 Block 2:
 ()() = v19, core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v13, core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v14, core::array::Array::<core::felt252>[] = v7, core::array::Array::<core::felt252>[v0, v1, v2, v3, v4] = v12, core::array::Array::<core::felt252>[v0, v1, v2, v3] = v11, core::array::Array::<core::felt252>[v0, v1, v2] = v10, core::array::Array::<core::felt252>[v0, v1] = v9, core::array::Array::<core::felt252>[v0] = v8

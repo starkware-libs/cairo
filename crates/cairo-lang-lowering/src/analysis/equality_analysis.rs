@@ -22,6 +22,10 @@ use crate::{
     BlockEnd, BlockId, Lowered, MatchArm, MatchExternInfo, MatchInfo, Statement, VariableId,
 };
 
+#[cfg(test)]
+#[path = "equality_analysis_merge_test.rs"]
+mod merge_test;
+
 /// A globally unique token for an unknown value or forgotten array prefix tracked by the analysis.
 /// Allocated by [`fresh_placeholder`]; equality means "the very same unknown", so distinct unknowns
 /// never compare equal.
@@ -68,7 +72,7 @@ impl FieldVar {
 /// placeholder prefix (see [`ArrayItems`]).
 const MAX_ARRAY_TRACKED_ITEMS: usize = 5;
 
-/// The tracked contents of an array: a forgotten prefix of elements (at least one, count
+/// The tracked contents of an array: a forgotten prefix of elements (possibly empty, count
 /// unknown), followed by a bounded number of tracked trailing ones.
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct ArrayItems {
@@ -108,15 +112,32 @@ impl ArrayItems {
     }
 
     /// Removes one element from the front (`from_front`) or back.
-    fn pop(&self, from_front: bool) -> PopResult {
+    fn pop(&self, from_front: bool, next_placeholder: &mut usize) -> PopResult {
         // Empty case.
         if self.is_empty() {
             return PopResult::KnownEmpty;
         }
-        // Unknown cases are when there is a forgotten prefix and popping from the front, or
-        // popping from the back when the suffix is empty.
-        if self.prefix_placeholder.is_some() && (from_front || self.suffix.is_empty()) {
-            return PopResult::Unknown;
+        if self.prefix_placeholder.is_some() {
+            if from_front {
+                // The popped element comes off the forgotten prefix, so its value is unknown —
+                // but the remainder's trailing elements are still the suffix. The oldest one
+                // is absorbed into the prefix, keeping it non-empty (it may have just been
+                // exhausted).
+                let [_, rest @ ..] = self.suffix.as_slice() else {
+                    return PopResult::Unknown;
+                };
+                return PopResult::ForgottenElement {
+                    remaining: ArrayItems {
+                        prefix_placeholder: Some(fresh_placeholder(next_placeholder)),
+                        suffix: rest.to_vec(),
+                    },
+                };
+            }
+            if self.suffix.is_empty() {
+                // The popped element comes off the forgotten prefix, and nothing remains
+                // tracked.
+                return PopResult::Unknown;
+            }
         }
         // Suffix is not empty, so we can pop from it.
         let mut remaining = self.clone();
@@ -130,6 +151,8 @@ impl ArrayItems {
 enum PopResult {
     /// The popped element is individually tracked.
     Element { element: FieldVar, remaining: ArrayItems },
+    /// The popped element's value is unknown, but the remaining contents are still tracked.
+    ForgottenElement { remaining: ArrayItems },
     /// The array is known to be empty, so there is no element to pop.
     KnownEmpty,
     /// The popped element came off the forgotten prefix, whose count is unknown, so neither
@@ -504,7 +527,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
         };
 
         let from_front = id != self.array_snapshot_pop_back;
-        let remaining = match items.pop(from_front) {
+        let remaining = match items.pop(from_front, &mut self.next_placeholder) {
             PopResult::Element { element, remaining } => {
                 // TODO(eytan-starkware): Add support for placeholders in boxes and reverse box
                 // relation to unify placeholder.
@@ -523,6 +546,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
                 }
                 remaining
             }
+            PopResult::ForgottenElement { remaining } => remaining,
             // `KnownEmpty` is unreachable at runtime (popping a known-empty array fails), so
             // nothing needs to be recorded for it.
             PopResult::KnownEmpty | PopResult::Unknown => return,
@@ -572,34 +596,35 @@ fn merge_field(
     }
 }
 
-/// Meets two arrays' tracked contents at a merge: requires forgotten-prefix presence and
-/// tracked element counts to match. Elements meet like struct fields; the prefix keeps its
-/// placeholder when shared, and otherwise degrades to a fresh one. Returns the met contents
-/// and whether any real data survived, or `None` when the shapes are incompatible.
+/// Meets two arrays' tracked contents at a merge: the common trailing elements meet like
+/// struct fields, and everything before them — when the shapes are not identical — degrades
+/// to a fresh forgotten prefix (which may cover zero elements on a side, so no information
+/// needs to be dropped). Returns the met contents and whether any real data survived.
 fn merge_array_items(
     items1: &ArrayItems,
     items2: &ArrayItems,
     result: &mut EqualityState<'_>,
     next_placeholder: &mut usize,
-) -> Option<(ArrayItems, bool)> {
-    if items1.suffix.len() != items2.suffix.len() {
-        return None;
-    }
+) -> (ArrayItems, bool) {
     let mut any_data = false;
+    // The number of trailing elements tracked on both sides.
+    let kept = items1.suffix.len().min(items2.suffix.len());
+    let same_shape = items1.suffix.len() == items2.suffix.len();
     let prefix_placeholder = match (items1.prefix_placeholder, items2.prefix_placeholder) {
-        (None, None) => None,
-        (Some(p1), Some(p2)) => Some(if p1 == p2 {
+        (None, None) if same_shape => None,
+        (Some(p1), Some(p2)) if p1 == p2 && same_shape => {
             any_data = true;
-            p1
-        } else {
-            fresh_placeholder(next_placeholder)
-        }),
-        (None, Some(_)) | (Some(_), None) => return None,
+            Some(p1)
+        }
+        _ => Some(fresh_placeholder(next_placeholder)),
     };
-    let suffix = zip_eq(&items1.suffix, &items2.suffix)
-        .map(|(f1, f2)| merge_field(*f1, *f2, result, next_placeholder, &mut any_data))
-        .collect();
-    Some((ArrayItems { prefix_placeholder, suffix }, any_data))
+    let suffix = zip_eq(
+        &items1.suffix[items1.suffix.len() - kept..],
+        &items2.suffix[items2.suffix.len() - kept..],
+    )
+    .map(|(f1, f2)| merge_field(*f1, *f2, result, next_placeholder, &mut any_data))
+    .collect();
+    (ArrayItems { prefix_placeholder, suffix }, any_data)
 }
 
 /// Keeps relational edges that survive the join **without** mapping variables across mismatched
@@ -714,11 +739,8 @@ fn merge_relations<'db>(
                     if ty2 != ty {
                         continue;
                     }
-                    let Some((result_items, any_data)) =
-                        merge_array_items(items1, items2, result, next_placeholder)
-                    else {
-                        continue;
-                    };
+                    let (result_items, any_data) =
+                        merge_array_items(items1, items2, result, next_placeholder);
                     if any_data || result_items.is_empty() {
                         result
                             .set_relation(Relation::Array(*ty, result_items), output_intersection);
