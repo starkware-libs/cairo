@@ -108,15 +108,31 @@ impl ArrayItems {
     }
 
     /// Removes one element from the front (`from_front`) or back.
-    fn pop(&self, from_front: bool) -> PopResult {
+    fn pop(&self, from_front: bool, next_placeholder: &mut usize) -> PopResult {
         // Empty case.
         if self.is_empty() {
             return PopResult::KnownEmpty;
         }
-        // Unknown cases are when the run exists and popping from the front, or popping from
-        // the back when the suffix is empty.
-        if self.run.is_some() && (from_front || self.suffix.is_empty()) {
-            return PopResult::Unknown;
+        if self.run.is_some() {
+            if from_front {
+                // The popped element comes off the run, so its value is unknown — but the
+                // remainder's trailing elements are still the suffix. The oldest one is
+                // absorbed into the run, keeping it non-empty (the run may have just been
+                // exhausted).
+                let [_, rest @ ..] = self.suffix.as_slice() else {
+                    return PopResult::Unknown;
+                };
+                return PopResult::ForgottenElement {
+                    remaining: ArrayItems {
+                        run: Some(fresh_placeholder(next_placeholder)),
+                        suffix: rest.to_vec(),
+                    },
+                };
+            }
+            if self.suffix.is_empty() {
+                // The popped element comes off the run, and nothing remains tracked.
+                return PopResult::Unknown;
+            }
         }
         // Suffix is not empty, so we can pop from it.
         let mut remaining = self.clone();
@@ -130,6 +146,9 @@ impl ArrayItems {
 enum PopResult {
     /// The popped element is individually tracked.
     Element { element: FieldVar, remaining: ArrayItems },
+    /// The popped element's value is unknown (it came off the run), but the remaining
+    /// contents are still tracked.
+    ForgottenElement { remaining: ArrayItems },
     /// The array is known to be empty, so there is no element to pop.
     KnownEmpty,
     /// The popped element came off the run, whose count is unknown, so neither the element nor
@@ -504,7 +523,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
         };
 
         let from_front = id != self.array_snapshot_pop_back;
-        let remaining = match items.pop(from_front) {
+        let remaining = match items.pop(from_front, &mut self.next_placeholder) {
             PopResult::Element { element, remaining } => {
                 // TODO(eytan-starkware): Add support for placeholders in boxes and reverse box
                 // relation to unify placeholder.
@@ -523,6 +542,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
                 }
                 remaining
             }
+            PopResult::ForgottenElement { remaining } => remaining,
             // `KnownEmpty` is unreachable at runtime (popping a known-empty array fails), so
             // nothing needs to be recorded for it.
             PopResult::KnownEmpty | PopResult::Unknown => return,
@@ -572,33 +592,45 @@ fn merge_field(
     }
 }
 
-/// Meets two arrays' tracked contents at a merge: requires run presence and tracked element
-/// counts to match. Elements meet like struct fields; the run keeps its placeholder when
-/// shared, and otherwise degrades to a fresh one. Returns the met contents and whether any
-/// real data survived, or `None` when the shapes are incompatible.
+/// Meets two arrays' tracked contents at a merge: the common trailing elements meet like
+/// struct fields, and everything before them — when the shapes are not identical — degrades
+/// to a fresh run. A fully-known side whose elements are all kept absorbs its oldest one into
+/// the run, keeping the run non-empty on both sides; when that is impossible (one side is
+/// shorter than the other's run alone) the relation is dropped. Returns the met contents and
+/// whether any real data survived, or `None` when nothing can be kept.
 fn merge_array_items(
     items1: &ArrayItems,
     items2: &ArrayItems,
     result: &mut EqualityState<'_>,
     next_placeholder: &mut usize,
 ) -> Option<(ArrayItems, bool)> {
-    if items1.suffix.len() != items2.suffix.len() {
-        return None;
-    }
     let mut any_data = false;
+    // The number of trailing elements tracked on both sides.
+    let mut kept = items1.suffix.len().min(items2.suffix.len());
+    let same_shape = items1.suffix.len() == items2.suffix.len();
     let run = match (items1.run, items2.run) {
-        (None, None) => None,
-        (Some(p1), Some(p2)) => Some(if p1 == p2 {
+        (None, None) if same_shape => None,
+        (Some(p1), Some(p2)) if p1 == p2 && same_shape => {
             any_data = true;
-            p1
-        } else {
-            fresh_placeholder(next_placeholder)
-        }),
-        (None, Some(_)) | (Some(_), None) => return None,
+            Some(p1)
+        }
+        _ => {
+            // The merged run must cover at least one element on each side; a side whose
+            // contents are fully known and fully kept contributes its oldest kept element.
+            if (items1.run.is_none() && items1.suffix.len() == kept)
+                || (items2.run.is_none() && items2.suffix.len() == kept)
+            {
+                kept = kept.checked_sub(1)?;
+            }
+            Some(fresh_placeholder(next_placeholder))
+        }
     };
-    let suffix = zip_eq(&items1.suffix, &items2.suffix)
-        .map(|(f1, f2)| merge_field(*f1, *f2, result, next_placeholder, &mut any_data))
-        .collect();
+    let suffix = zip_eq(
+        &items1.suffix[items1.suffix.len() - kept..],
+        &items2.suffix[items2.suffix.len() - kept..],
+    )
+    .map(|(f1, f2)| merge_field(*f1, *f2, result, next_placeholder, &mut any_data))
+    .collect();
     Some((ArrayItems { run, suffix }, any_data))
 }
 
