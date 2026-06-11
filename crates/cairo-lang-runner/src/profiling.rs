@@ -149,7 +149,8 @@ impl ProfilingInfo {
                 GenStatement::Invocation(invocation) => {
                     if matches!(
                         builder.registry().get_libfunc(&invocation.libfunc_id),
-                        Ok(CoreConcreteLibfunc::FunctionCall(_))
+                        Ok(CoreConcreteLibfunc::FunctionCall(_)
+                            | CoreConcreteLibfunc::CouponCall(_))
                     ) {
                         // Push to the stack.
                         if function_stack_depth < profiling_config.max_stack_trace_depth {

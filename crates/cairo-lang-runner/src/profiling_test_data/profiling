@@ -324,3 +324,68 @@ Weight by Sierra stack trace:
   test::main: 1
 Weight by Cairo stack trace:
   test::main: 1
+
+//! > ==========================================================================
+
+//! > Test profiling info with a coupon call (regression: profiler must frame coupon_call)
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+use core::num::traits::WrappingAdd;
+
+extern fn coupon_buy<T>() -> T nopanic;
+
+fn add_with_coupon(a: u128, b: u128) -> u128 {
+    a.wrapping_add(b)
+}
+
+fn main() -> u128 {
+    let coupon: add_with_coupon::Coupon = coupon_buy();
+    add_with_coupon(3, 4, __coupon__: coupon)
+}
+
+//! > function_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 0: 3 (u128_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 5([5], [6]) })
+  statement 1: 1 (branch_align() -> ())
+  statement 2: 1 (store_temp<RangeCheck>([3]) -> ([3]))
+  statement 3: 1 (store_temp<u128>([4]) -> ([4]))
+  statement 4: 1 (return([3], [4]))
+  statement 12: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 13: 1 (store_temp<u128>([2]) -> ([2]))
+  statement 14: 1 (store_temp<u128>([3]) -> ([3]))
+  statement 15: 1 (coupon_call<user@test::add_with_coupon>([0], [2], [3], [1]) -> ([4], [5]))
+  statement 16: 1 (return([4], [5]))
+Weight by concrete libfunc:
+  libfunc store_temp<u128>: 3
+  libfunc u128_overflowing_add: 3
+  libfunc store_temp<RangeCheck>: 2
+  libfunc branch_align: 1
+  libfunc coupon_call<user@test::add_with_coupon>: 1
+  return: 2
+Weight by generic libfunc:
+  libfunc store_temp: 5
+  libfunc u128_overflowing_add: 3
+  libfunc branch_align: 1
+  libfunc coupon_call: 1
+  return: 2
+Weight by user function (inc. generated):
+  function test::add_with_coupon: 7
+  function test::main: 5
+Weight by original user function (exc. generated):
+  function test::add_with_coupon: 7
+  function test::main: 5
+Weight by Cairo function:
+  function core::integer::U128OverflowingAdd::overflowing_add: 7
+  function lib.cairo::main: 5
+Weight by Sierra stack trace:
+  test::main: 12
+  test::main -> test::add_with_coupon: 7
+Weight by Cairo stack trace:
+  test::main: 12
+  test::main -> test::add_with_coupon: 7
