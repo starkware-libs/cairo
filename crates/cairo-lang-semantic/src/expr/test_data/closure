@@ -833,3 +833,29 @@ error[E2121]: Named arguments are not supported in this context.
  --> lib.cairo:5:7
     c(b: 2_u32, a: 1_u32);
       ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Closure capturing an inferred-type value, unified with the closure type (occurs-check regression: must not stack-overflow).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn unify<T, +Drop<T>>(_a: T, _b: T) {}
+fn foo() {
+    let x = Default::default();
+    let f = || {
+        let _s = @x;
+    };
+    unify(x, f);
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2041]: Unexpected argument type. Expected: "?0", found: "{closure@lib.cairo:4:13: 4:15}".
+ --> lib.cairo:7:14
+    unify(x, f);
+             ^

@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
-use itertools::zip_eq;
+use itertools::{chain, zip_eq};
 
 use super::canonic::{NoError, ResultNoErrEx};
 use super::{
@@ -861,8 +861,8 @@ impl<'db> Inference<'db, '_> {
                 self.internal_ty_contains_var(*type_id, var)
             }
             TypeLongId::Closure(closure) => {
-                closure.param_tys.iter().any(|ty| self.internal_ty_contains_var(*ty, var))
-                    || self.internal_ty_contains_var(closure.ret_ty, var)
+                chain!(&closure.param_tys, [&closure.ret_ty], &closure.captured_types)
+                    .any(|ty| self.internal_ty_contains_var(*ty, var))
             }
         }
     }
