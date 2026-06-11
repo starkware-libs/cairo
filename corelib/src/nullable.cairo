@@ -125,7 +125,7 @@ pub impl NullableImpl<T> of NullableTrait<T> {
         }
     }
 
-    ///  Returns the contained value if not null, or computes it from a closure.
+    /// Returns the contained value if not null, or computes it from a closure.
     ///
     /// # Examples
     ///

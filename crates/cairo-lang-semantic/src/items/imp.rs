@@ -474,7 +474,7 @@ pub enum ImplHead<'db> {
 #[debug_db(dyn Database)]
 struct ImplDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    /// The concrete trait this impl implements, or Err if cannot be resolved.
+    /// The concrete trait this impl implements, or Err if it cannot be resolved.
     concrete_trait: Maybe<ConcreteTraitId<'db>>,
     attributes: Vec<Attribute<'db>>,
     resolver_data: Arc<ResolverData<'db>>,
