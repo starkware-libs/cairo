@@ -160,7 +160,7 @@ impl<'a> DiagnosticsReporter<'a> {
                 self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                     Severity::Error,
                     None,
-                    "Failed to get main module file".to_string(),
+                    "Failed to get main module file.\n".to_string(),
                 ));
                 continue;
             };
@@ -171,7 +171,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                             Severity::Error,
                             None,
-                            format!("{} not found\n", path.display()),
+                            format!("{} not found.\n", path.display()),
                         ))
                     }
                     FileLongId::Virtual(_) => panic!("Missing virtual file."),
