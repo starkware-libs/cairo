@@ -103,7 +103,6 @@ extern const fn u128s_from_felt252(
     a: felt252,
 ) -> U128sFromFelt252Result implicits(RangeCheck) nopanic;
 
-#[panic_with('u128_from Overflow', u128_from_felt252)]
 const fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128s_from_felt252(a) {
         U128sFromFelt252Result::Narrow(x) => Some(x),
@@ -196,7 +195,6 @@ impl U128Add of Add<u128> {
     }
 }
 
-#[panic_with('u128_sub Overflow', u128_sub)]
 fn u128_checked_sub(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128_overflowing_sub(lhs, rhs) {
         Ok(r) => Some(r),
@@ -224,7 +222,6 @@ impl U128Mul of Mul<u128> {
     }
 }
 
-#[panic_with('u128 is 0', u128_as_non_zero)]
 const fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
     match u128_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -317,7 +314,6 @@ impl NumericLiteralu8 of NumericLiteral<u8>;
 
 extern const fn u8_to_felt252(a: u8) -> felt252 nopanic;
 
-#[panic_with('u8_from Overflow', u8_from_felt252)]
 extern const fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) nopanic;
 
 extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
@@ -411,7 +407,6 @@ extern const fn u8_is_zero(a: u8) -> IsZeroResult<u8> implicits() nopanic;
 
 pub extern fn u8_safe_divmod(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
-#[panic_with('u8 is 0', u8_as_non_zero)]
 const fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
     match u8_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -473,7 +468,6 @@ impl NumericLiteralu16 of NumericLiteral<u16>;
 
 extern const fn u16_to_felt252(a: u16) -> felt252 nopanic;
 
-#[panic_with('u16_from Overflow', u16_from_felt252)]
 extern const fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) nopanic;
 
 extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
@@ -573,7 +567,6 @@ pub extern fn u16_safe_divmod(
     lhs: u16, rhs: NonZero<u16>,
 ) -> (u16, u16) implicits(RangeCheck) nopanic;
 
-#[panic_with('u16 is 0', u16_as_non_zero)]
 const fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
     match u16_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -635,7 +628,6 @@ impl NumericLiteralu32 of NumericLiteral<u32>;
 
 extern const fn u32_to_felt252(a: u32) -> felt252 nopanic;
 
-#[panic_with('u32_from Overflow', u32_from_felt252)]
 extern const fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) nopanic;
 
 extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
@@ -735,7 +727,6 @@ pub extern fn u32_safe_divmod(
     lhs: u32, rhs: NonZero<u32>,
 ) -> (u32, u32) implicits(RangeCheck) nopanic;
 
-#[panic_with('u32 is 0', u32_as_non_zero)]
 const fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
     match u32_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -797,7 +788,6 @@ impl NumericLiteralu64 of NumericLiteral<u64>;
 
 extern const fn u64_to_felt252(a: u64) -> felt252 nopanic;
 
-#[panic_with('u64_from Overflow', u64_from_felt252)]
 extern const fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) nopanic;
 
 extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
@@ -897,7 +887,6 @@ pub extern fn u64_safe_divmod(
     lhs: u64, rhs: NonZero<u64>,
 ) -> (u64, u64) implicits(RangeCheck) nopanic;
 
-#[panic_with('u64 is 0', u64_as_non_zero)]
 const fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
     match u64_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -1050,7 +1039,6 @@ impl U256Add of Add<u256> {
     }
 }
 
-#[panic_with('u256_sub Overflow', u256_sub)]
 fn u256_checked_sub(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflowing_sub(lhs, rhs);
     if overflow {
@@ -1139,7 +1127,6 @@ fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(Ra
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 
-#[panic_with('u256 is 0', u256_as_non_zero)]
 const fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
     match u256_is_zero(a) {
         IsZeroResult::Zero => None,
