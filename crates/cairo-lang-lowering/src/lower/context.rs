@@ -349,10 +349,10 @@ impl<'db> LoweredExprExternEnum<'db> {
             .concrete_enum_variants(self.concrete_enum_id)
             .map_err(LoweringFlowError::Failed)?;
 
-        let mut arm_var_ids = vec![];
+        let mut arm_var_ids = Vec::with_capacity(concrete_variants.len());
         let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = concrete_variants
-            .clone()
-            .into_iter()
+            .iter()
+            .copied()
             .map(|concrete_variant| {
                 let mut subscope = builder.child_block_builder(ctx.blocks.alloc_empty());
                 let block_id = subscope.block_id;
