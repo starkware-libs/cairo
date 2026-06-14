@@ -9,6 +9,7 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use salsa::Database;
 
+use crate::expr::compute::MAX_EXPR_NESTING_DEPTH;
 use crate::expr::fmt::ExprFormatter;
 use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::items::module::ModuleSemantic;
@@ -302,4 +303,31 @@ fn test_function_body() {
 /// Returns the semantic model of the given function code, assuming the function is named "foo".
 fn setup_db_for_foo<'db>(db: &'db dyn Database, foo_code: &str) -> TestFunction<'db> {
     setup_test_function_ex(db, foo_code, "foo", "", None, None).unwrap()
+}
+
+// Regression test for #9800: a deep expression now reports a clean diagnostic instead of
+// aborting with a stack overflow. Run on a dedicated thread with a larger stack so the
+// parser's own recursion has headroom on debug builds.
+#[test]
+fn test_deep_expression_reports_diagnostic_instead_of_overflow() {
+    std::thread::Builder::new()
+        .stack_size(8 * 1024 * 1024)
+        .spawn(|| {
+            let mut expr = String::from("0");
+            for _ in 0..=MAX_EXPR_NESTING_DEPTH {
+                expr = format!("({expr} + 0)");
+            }
+
+            let db_val = SemanticDatabaseForTesting::default();
+            let (_test_expr, diagnostics) = setup_test_expr(&db_val, &expr, "", "", None).split();
+
+            assert!(diagnostics.contains("E2198"), "expected E2198, got:\n{diagnostics}");
+            assert!(
+                diagnostics.contains("Expression nesting exceeds maximum depth"),
+                "unexpected diagnostic text:\n{diagnostics}"
+            );
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }
