@@ -3192,7 +3192,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             SyntaxKind::TerminalLiteralNumber => self.take_terminal_literal_number().into(),
             SyntaxKind::TerminalMinus => {
                 let op = self.take::<TerminalMinus<'_>>().into();
-                let expr = self.parse_token::<TerminalLiteralNumber<'_>>().into();
+                let expr = self.take_terminal_literal_number().into();
                 ExprUnary::new_green(self.db, op, expr).into()
             }
             SyntaxKind::TerminalShortString => self.take_terminal_short_string().into(),

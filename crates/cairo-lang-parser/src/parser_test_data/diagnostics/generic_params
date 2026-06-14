@@ -46,3 +46,35 @@ error[E1000]: Skipped tokens. Expected: generic param.
  --> dummy_file.cairo:1:41
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                         ^
+
+//! > ==========================================================================
+
+//! > Test negative const generic arg with invalid numeric literal.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+type T = Foo<-0x>;
+
+//! > expected_diagnostics
+error[E1016]: Literal is not a valid number.
+ --> dummy_file.cairo:1:15
+type T = Foo<-0x>;
+              ^^
+
+//! > ==========================================================================
+
+//! > Test negative const generic arg with trailing underscore literal.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+type T = Foo<-1_>;
+
+//! > expected_diagnostics
+error[E1015]: Missing literal suffix.
+ --> dummy_file.cairo:1:17
+type T = Foo<-1_>;
+                ^
