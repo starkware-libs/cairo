@@ -46,3 +46,82 @@ error[E1000]: Skipped tokens. Expected: generic param.
  --> dummy_file.cairo:1:41
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                         ^
+
+//! > ==========================================================================
+
+//! > Test negative const generic arg with invalid numeric literal.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+type T = Foo<-0x>;
+
+//! > expected_diagnostics
+error[E1016]: Literal is not a valid number.
+ --> dummy_file.cairo:1:15
+type T = Foo<-0x>;
+              ^^
+
+//! > ==========================================================================
+
+//! > Test negative const generic arg with trailing underscore literal.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+type T = Foo<-1_>;
+
+//! > expected_diagnostics
+error[E1015]: Missing literal suffix.
+ --> dummy_file.cairo:1:17
+type T = Foo<-1_>;
+                ^
+
+//! > ==========================================================================
+
+//! > Test negative const generic arg with no literal following the minus.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+type T = Foo<->;
+
+//! > expected_diagnostics
+error[E1001]: Missing token '>'.
+ --> dummy_file.cairo:1:17
+type T = Foo<->;
+                ^
+
+error[E1001]: Missing token ';'.
+ --> dummy_file.cairo:1:17
+type T = Foo<->;
+                ^
+
+error[E1000]: Skipped tokens. Expected: generic arg.
+ --> dummy_file.cairo:1:14
+type T = Foo<->;
+             ^^^
+
+//! > ==========================================================================
+
+//! > Test negative const generic arg followed by an identifier instead of a literal.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+type T = Foo<-x>;
+
+//! > expected_diagnostics
+error[E1001]: Missing token TerminalLiteralNumber.
+ --> dummy_file.cairo:1:15
+type T = Foo<-x>;
+              ^
+
+error[E1001]: Missing token ','.
+ --> dummy_file.cairo:1:15
+type T = Foo<-x>;
+              ^
