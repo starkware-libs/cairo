@@ -2922,3 +2922,54 @@ error[E2158]: No matching rule found in inline macro `mymac`.
  --> lib.cairo:6:5
     mymac!($(x));
     ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > A `#[feature]` on an item-scope macro call propagates into the expanded items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro make_const {
+    () => { const C: felt252 = consteval_int!(4 + 5); };
+}
+
+#[feature("deprecated-consteval-int-macro")]
+make_const!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Without the feature on the call, the expanded `consteval_int!` is still deprecated.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro make_const {
+    () => { const C: felt252 = consteval_int!(4 + 5); };
+}
+
+make_const!();
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:6:1
+make_const!();
+^^^^^^^^^^^^^^
