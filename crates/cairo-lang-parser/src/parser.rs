@@ -3195,7 +3195,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 let expr = if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
                     self.take_terminal_literal_number().into()
                 } else {
-                    self.create_and_report_missing_terminal::<TerminalLiteralNumber>().into()
+                    self.create_and_report_missing_terminal::<TerminalLiteralNumber<'_>>().into()
                 };
                 ExprUnary::new_green(self.db, op, expr).into()
             }
