@@ -1150,8 +1150,10 @@ fn module_sub_files<'db>(
     let crate_id = module_id.owning_crate(db);
 
     let allowed_attributes = db.allowed_attributes(crate_id);
-    // TODO(orizi): Actually extract the allowed features per module.
-    let allowed_features = Default::default();
+    let declared_derives = db.declared_derives(crate_id);
+    // The features allowed at the module scope; each item additionally grants its own
+    // `#[feature]`s.
+    let module_features = module_allowed_features(db, (), module_id);
 
     let cfg_set = db
         .crate_config(crate_id)
@@ -1161,12 +1163,6 @@ fn module_sub_files<'db>(
         .crate_config(module_id.owning_crate(db))
         .map(|cfg| cfg.settings.edition)
         .unwrap_or_default();
-    let metadata = MacroPluginMetadata {
-        cfg_set,
-        declared_derives: db.declared_derives(crate_id),
-        allowed_features: &allowed_features,
-        edition,
-    };
 
     let mut files = OrderedHashMap::<_, _>::default();
     let mut aux_data = OrderedHashMap::default();
@@ -1175,6 +1171,16 @@ fn module_sub_files<'db>(
     let mut diagnostics_notes = OrderedHashMap::default();
     for item_ast in item_asts.elements(db) {
         let mut remove_original_item = false;
+        // The features in scope for this item: the module's, plus the item's own `#[feature]`s.
+        // Reuse the module set directly when the item adds nothing, to avoid a per-item allocation.
+        let mut item_allowed_features = extract_allowed_features(db, &item_ast);
+        let allowed_features = if item_allowed_features.is_empty() {
+            module_features
+        } else {
+            item_allowed_features.extend(module_features.iter().copied());
+            &item_allowed_features
+        };
+        let metadata = MacroPluginMetadata { cfg_set, declared_derives, allowed_features, edition };
         // Iterate through the plugins by their order. The first one to change something (either
         // generate new code, remove the original code, or both), breaks the loop. If more
         // plugins might act on the item, they can do it on the generated code.
@@ -1454,6 +1460,51 @@ pub fn get_all_path_stars<'db>(
         }
     }
     res
+}
+
+/// Collects the feature names granted by `#[feature("...")]` attributes on `item`.
+///
+/// The values are kept *with* their surrounding quotes, matching how `allowed_features` is
+/// represented elsewhere. Malformed `#[feature]` attributes are ignored here; they are diagnosed by
+/// the semantic model.
+fn extract_allowed_features<'db>(
+    db: &'db dyn Database,
+    item: &impl QueryAttrs<'db>,
+) -> OrderedHashSet<SmolStrId<'db>> {
+    let mut allowed_features = OrderedHashSet::default();
+    for attr in item.query_attr(db, FEATURE_ATTR) {
+        for arg in attr.structurize(db).args {
+            if let Some(ast::Expr::String(value)) = try_extract_unnamed_arg(db, &arg.arg) {
+                allowed_features.insert(value.text(db));
+            }
+        }
+    }
+    allowed_features
+}
+
+/// Returns the feature names allowed in `module_id`'s scope: the `#[feature("...")]` attributes on
+/// the module declaration accumulated with those of all its ancestor modules, up to the crate root.
+///
+/// Mirrors the semantic feature-config walk, but at the defs level and without diagnostics (the
+/// semantic model owns feature diagnostics). Memoized per `ModuleId` so the parent walk runs once.
+#[salsa::tracked(returns(ref))]
+fn module_allowed_features<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> OrderedHashSet<SmolStrId<'db>> {
+    match module_id {
+        ModuleId::CrateRoot(_) => Default::default(),
+        ModuleId::Submodule(id) => {
+            let mut allowed_features = extract_allowed_features(db, &id.stable_ptr(db).lookup(db));
+            allowed_features
+                .extend(module_allowed_features(db, (), id.parent_module(db)).iter().copied());
+            allowed_features
+        }
+        ModuleId::MacroCall { id, .. } => {
+            module_allowed_features(db, (), id.parent_module(db)).clone()
+        }
+    }
 }
 
 #[salsa::tracked(returns(ref))]

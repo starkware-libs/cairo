@@ -6,13 +6,14 @@ use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, init_files_group
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{HasName, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
 use indoc::indoc;
+use itertools::Itertools;
 use salsa::{Database, Setter};
 
 use crate::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
@@ -465,4 +466,104 @@ fn test_plugin_chain() {
         "[FreeFunctionId(test::foo), FreeFunctionId(test::bar), ExternTypeId(test::B), \
          ExternTypeId(test::B)]"
     )
+}
+
+#[test]
+fn test_allowed_features_accumulated_with_item() {
+    let mut db = DatabaseForTesting::default();
+    defs_group_input(&db)
+        .set_default_macro_plugins(&mut db)
+        .to(Some(vec![MacroPluginLongId(Arc::new(ReportAllowedFeaturesPlugin))]));
+    setup_test_module(
+        &mut db,
+        indoc! {r#"
+            mod m1 {
+                fn f1() {}
+            }
+            #[feature("outer2")]
+            mod m2 {
+                fn f2() {}
+            }
+            mod m3 {
+                #[feature("inner3")]
+                fn f3() {}
+            }
+            #[feature("outer4")]
+            mod m4 {
+                #[feature("inner4")]
+                fn f4() {}
+            }
+    "#},
+    );
+    let root_module = ModuleId::CrateRoot(get_crate_id(&db));
+    let mut modules = vec![root_module];
+    modules.extend(
+        root_module
+            .module_data(&db)
+            .unwrap()
+            .submodules(&db)
+            .iter()
+            .map(|(id, _)| ModuleId::Submodule(*id)),
+    );
+    let diags = modules
+        .into_iter()
+        .flat_map(|m| {
+            m.module_data(&db)
+                .unwrap()
+                .plugin_diagnostics(&db)
+                .iter()
+                .map(|(_, diag)| &diag.message)
+        })
+        .sorted()
+        .join("");
+    assert_eq!(
+        diags,
+        indoc! {r#"
+            f1: []
+            f2: ["outer2"]
+            f3: ["inner3"]
+            f4: ["inner4", "outer4"]
+            m1: []
+            m2: ["outer2"]
+            m3: []
+            m4: ["outer4"]
+        "#}
+    );
+}
+
+/// Reports, as a warning for each item the sorted `allowed_features` for it.
+#[derive(Debug)]
+struct ReportAllowedFeaturesPlugin;
+impl MacroPlugin for ReportAllowedFeaturesPlugin {
+    fn generate_code<'db>(
+        &self,
+        db: &'db dyn Database,
+        item_ast: ast::ModuleItem<'db>,
+        metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult<'db> {
+        let name = match &item_ast {
+            ast::ModuleItem::Module(item) => item.name(db),
+            ast::ModuleItem::FreeFunction(item) => item.name(db),
+            _ => return PluginResult::default(),
+        }
+        .text(db);
+        let features = metadata
+            .allowed_features
+            .iter()
+            .map(|feature| feature.long(db).to_string())
+            .sorted()
+            .join(", ");
+        PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic::warning(
+                item_ast.stable_ptr(db),
+                format!("{}: [{features}]\n", name.long(db)),
+            )],
+            remove_original_item: false,
+        }
+    }
+
+    fn declared_attributes<'db>(&self, _db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![]
+    }
 }
