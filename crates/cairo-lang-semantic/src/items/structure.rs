@@ -22,8 +22,8 @@ use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
-use crate::types::{ConcreteStructId, add_type_based_diagnostics, resolve_type};
-use crate::{GenericParam, SemanticDiagnostic, semantic};
+use crate::types::{ConcreteStructId, ConcreteTypeId, add_type_based_diagnostics, resolve_type};
+use crate::{GenericParam, SemanticDiagnostic, TypeId, TypeLongId, semantic};
 
 #[cfg(test)]
 #[path = "structure_test.rs"]
@@ -119,6 +119,76 @@ pub struct Member<'db> {
     pub ty: semantic::TypeId<'db>,
     #[dont_rewrite]
     pub visibility: Visibility,
+}
+
+/// A member or element of a type, abstracting over named struct members and positional tuple
+/// elements, enabling unified member access across both.
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn Database)]
+pub struct TypeMember<'db> {
+    pub ty: TypeId<'db>,
+    #[dont_rewrite]
+    pub visibility: Visibility,
+    pub kind: TypeMemberKind<'db>,
+}
+
+/// Distinguishes between named struct members and positional tuple elements.
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn Database)]
+pub enum TypeMemberKind<'db> {
+    /// A named struct member, identified by its `MemberId`.
+    StructMember(MemberId<'db>),
+    /// A positional tuple element at the given index.
+    TupleElement(#[dont_rewrite] usize),
+}
+
+/// Returns the members of a type keyed by their access name, or `None` for types without
+/// members.
+///
+/// For struct types, members are keyed by their declared name. For tuple types, members are keyed
+/// by their stringified index ("0", "1", ...).
+#[salsa::tracked(returns(ref))]
+fn type_members_query<'db>(
+    db: &'db dyn Database,
+    ty: TypeId<'db>,
+) -> Maybe<Option<OrderedHashMap<SmolStrId<'db>, TypeMember<'db>>>> {
+    match ty.long(db) {
+        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
+            let members = db.concrete_struct_members(*concrete_struct_id)?;
+            Ok(Some(
+                members
+                    .iter()
+                    .map(|(name, member)| {
+                        (
+                            *name,
+                            TypeMember {
+                                ty: member.ty,
+                                visibility: member.visibility,
+                                kind: TypeMemberKind::StructMember(member.id),
+                            },
+                        )
+                    })
+                    .collect(),
+            ))
+        }
+        TypeLongId::Tuple(tys) => Ok(Some(
+            tys.iter()
+                .enumerate()
+                .map(|(i, &ty)| {
+                    let name = SmolStrId::from(db, i.to_string());
+                    (
+                        name,
+                        TypeMember {
+                            ty,
+                            visibility: Visibility::Public,
+                            kind: TypeMemberKind::TupleElement(i),
+                        },
+                    )
+                })
+                .collect(),
+        )),
+        _ => Ok(None),
+    }
 }
 
 /// Returns the definition data of a struct.
@@ -304,6 +374,14 @@ pub trait StructSemantic<'db>: Database {
         concrete_struct_id: ConcreteStructId<'db>,
     ) -> Maybe<&'db OrderedHashMap<SmolStrId<'db>, semantic::Member<'db>>> {
         concrete_struct_members(self.as_dyn_database(), concrete_struct_id).maybe_as_ref()
+    }
+    /// Returns the members of a type keyed by their access name, or `None` for types without
+    /// members. Works for both struct types and tuples.
+    fn type_members(
+        &'db self,
+        ty: TypeId<'db>,
+    ) -> Maybe<Option<&'db OrderedHashMap<SmolStrId<'db>, TypeMember<'db>>>> {
+        type_members_query(self.as_dyn_database(), ty).maybe_as_ref().map(|opt| opt.as_ref())
     }
 }
 

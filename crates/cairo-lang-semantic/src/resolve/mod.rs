@@ -77,7 +77,7 @@ use crate::types::{
 };
 use crate::{
     ConcreteFunction, ConcreteTypeId, ConcreteVariant, FunctionId, FunctionLongId,
-    GenericArgumentId, GenericParam, Member, Mutability, TypeId, TypeLongId,
+    GenericArgumentId, GenericParam, Mutability, TypeId, TypeLongId, TypeMember,
 };
 
 #[cfg(test)]
@@ -134,7 +134,7 @@ impl<'db> ResolvedItems<'db> {
 pub struct EnrichedMembers<'db> {
     /// A map from member names to their semantic representation and the number of deref operations
     /// needed to access them.
-    pub members: OrderedHashMap<SmolStrId<'db>, (Member<'db>, usize)>,
+    pub members: OrderedHashMap<SmolStrId<'db>, (TypeMember<'db>, usize)>,
     /// The sequence of deref needed to access the members.
     pub deref_chain: Arc<Vec<DerefInfo<'db>>>,
     // The number of derefs that were explored.
@@ -143,9 +143,9 @@ pub struct EnrichedMembers<'db> {
 impl<'db> EnrichedMembers<'db> {
     /// Returns `EnrichedTypeMemberAccess` for a single member if exists.
     pub fn get_member(&self, name: SmolStrId<'db>) -> Option<EnrichedTypeMemberAccess<'db>> {
-        let (member, n_derefs) = self.members.get(&name)?;
+        let (type_member, n_derefs) = self.members.get(&name)?;
         Some(EnrichedTypeMemberAccess {
-            member: member.clone(),
+            type_member: type_member.clone(),
             deref_functions: self
                 .deref_chain
                 .iter()
@@ -160,7 +160,7 @@ impl<'db> EnrichedMembers<'db> {
 /// access it.
 pub struct EnrichedTypeMemberAccess<'db> {
     /// The member itself.
-    pub member: Member<'db>,
+    pub type_member: TypeMember<'db>,
     /// The sequence of deref functions needed to access the member.
     pub deref_functions: Vec<(FunctionId<'db>, Mutability)>,
 }

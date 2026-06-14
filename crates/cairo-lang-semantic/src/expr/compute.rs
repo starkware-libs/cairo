@@ -81,7 +81,7 @@ use crate::items::macro_declaration::{
 };
 use crate::items::modifiers::compute_mutability;
 use crate::items::module::ModuleSemantic;
-use crate::items::structure::StructSemantic;
+use crate::items::structure::{StructSemantic, TypeMember, TypeMemberKind};
 use crate::items::trt::TraitSemantic;
 use crate::items::visibility;
 use crate::keyword::MACRO_CALL_SITE;
@@ -4015,13 +4015,22 @@ fn member_access_expr<'db>(
 
     match &long_ty {
         TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
-            let Some(EnrichedTypeMemberAccess { member, deref_functions }) =
+            let Some(EnrichedTypeMemberAccess { type_member, deref_functions }) =
                 get_enriched_type_member_access(ctx, lexpr.clone(), stable_ptr, member_name)?
             else {
                 return Err(ctx.diagnostics.report(
                     rhs_syntax.stable_ptr(db),
                     NoSuchTypeMember { ty: long_ty.intern(ctx.db), member_name },
                 ));
+            };
+            // TODO(#7608): handle TypeMemberKind::TupleElement here.
+            let TypeMemberKind::StructMember(member_id) = type_member.kind else {
+                return Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported));
+            };
+            let member = semantic::Member {
+                id: member_id,
+                ty: type_member.ty,
+                visibility: type_member.visibility,
             };
             check_struct_member_is_visible(
                 ctx,
@@ -4147,20 +4156,18 @@ fn get_enriched_type_member_access<'db>(
         }
         Entry::Vacant(_) => {
             let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, stable_ptr)?;
-            let members =
-                if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
-                    let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-                    if let Some(member) = members.get(&accessed_member_name) {
-                        // Found direct member access - so directly returning it.
-                        return Ok(Some(EnrichedTypeMemberAccess {
-                            member: member.clone(),
-                            deref_functions: vec![],
-                        }));
-                    }
-                    members.iter().map(|(k, v)| (*k, (v.clone(), 0))).collect()
-                } else {
-                    Default::default()
-                };
+            let members = if let Some(type_members_map) = ctx.db.type_members(long_ty.intern(ctx.db))? {
+                if let Some(type_member) = type_members_map.get(&accessed_member_name) {
+                    // Found direct member access - so directly returning it.
+                    return Ok(Some(EnrichedTypeMemberAccess {
+                        type_member: type_member.clone(),
+                        deref_functions: vec![],
+                    }));
+                }
+                type_members_map.iter().map(|(k, v)| (*k, (v.clone(), 0))).collect()
+            } else {
+                Default::default()
+            };
 
             EnrichedMembers {
                 members,
@@ -4198,7 +4205,16 @@ fn enrich_members<'db>(
             let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             for (member_name, member) in members.iter() {
                 // Insert member if there is not already a member with the same name.
-                enriched.entry(*member_name).or_insert_with(|| (member.clone(), *explored_derefs));
+                enriched.entry(*member_name).or_insert_with(|| {
+                    (
+                        TypeMember {
+                            ty: member.ty,
+                            visibility: member.visibility,
+                            kind: TypeMemberKind::StructMember(member.id),
+                        },
+                        *explored_derefs,
+                    )
+                });
             }
             // If member is contained we can stop the calculation post the lookup.
             if members.contains_key(&accessed_member_name) {
