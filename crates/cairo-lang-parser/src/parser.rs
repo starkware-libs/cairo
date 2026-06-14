@@ -3192,7 +3192,15 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             SyntaxKind::TerminalLiteralNumber => self.take_terminal_literal_number().into(),
             SyntaxKind::TerminalMinus => {
                 let op = self.take::<TerminalMinus<'_>>().into();
-                let expr = self.parse_token::<TerminalLiteralNumber<'_>>().into();
+                // Validate the literal like the positive arm, but only when a literal number
+                // actually follows `-`; otherwise fall back to `parse_token` to emit a
+                // missing-token diagnostic and recover (e.g. for `Foo<->` or
+                // `Foo<-x>`) rather than asserting.
+                let expr = if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
+                    self.take_terminal_literal_number().into()
+                } else {
+                    self.parse_token::<TerminalLiteralNumber<'_>>().into()
+                };
                 ExprUnary::new_green(self.db, op, expr).into()
             }
             SyntaxKind::TerminalShortString => self.take_terminal_short_string().into(),
