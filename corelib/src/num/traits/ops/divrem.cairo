@@ -24,16 +24,13 @@ use crate::zeroable::NonZero;
 /// assert!(DivRem::<u32, u32>::div_rem(lhs, rhs) == (2, 1));
 /// ```
 ///
-/// Heterogeneous division (`u256` by `u128`):
-/// ```cairo
-/// use core::num::traits::DivRem;
+/// Heterogeneous operands:
 ///
-/// let big: u256 = 1_000_000;     // dividend
-/// let nz10: NonZero<u128> = 10;  // divisor
-///
-/// let (q, r) = DivRem::<u256, u128>::div_rem(big, nz10);
-/// // q : u256, r : u128
-/// ```
+/// The `T` (dividend) and `U` (divisor) type parameters may differ, and the
+/// [`Quotient`] / [`Remainder`] associated types let the result types differ as
+/// well. The core library only provides the symmetric `DivRem<T, T>` impls
+/// (`u8` through `u256`); a heterogeneous pair such as `DivRem<u256, u128>` can
+/// be supplied by a user-defined implementation.
 pub trait DivRem<T, U> {
     /// Quotient returned by the division.
     type Quotient;
