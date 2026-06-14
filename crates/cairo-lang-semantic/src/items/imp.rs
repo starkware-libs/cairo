@@ -1612,7 +1612,7 @@ fn check_special_impls<'db>(
                 inference_error,
                 InferenceError::Ambiguity(Ambiguity::MultipleImplsFound { .. })
             ) {
-                // Having multiple drop implementations for a member is not an actual error.
+                // Having multiple copy implementations for a member is not an actual error.
                 continue;
             }
             return Err(diagnostics.report(stable_ptr, InvalidCopyTraitImpl(inference_error)));
