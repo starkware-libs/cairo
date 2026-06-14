@@ -3659,14 +3659,14 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let mut diag_start = None;
         let mut diag_end = None;
         while !should_stop(self.peek().kind) {
-            let terminal = self.take_raw();
-            diag_start.get_or_insert(self.offset);
-            diag_end =
-                Some(self.offset.add_width(TextWidth::from_str(terminal.text.long(self.db))));
+            let LexerTerminal { leading_trivia, text, trailing_trivia, .. } = self.take_raw();
+            let text_start = self.offset.add_width(trivia_total_width(self.db, &leading_trivia));
+            diag_start.get_or_insert(text_start);
+            diag_end = Some(text_start.add_width(TextWidth::from_str(text.long(self.db))));
 
-            self.pending_trivia.extend(terminal.leading_trivia);
-            self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
-            self.pending_trivia.extend(terminal.trailing_trivia);
+            self.pending_trivia.extend(leading_trivia);
+            self.pending_trivia.push(TokenSkipped::new_green(self.db, text).into());
+            self.pending_trivia.extend(trailing_trivia);
         }
         if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
             Err(SkippedError(TextSpan::new(diag_start, diag_end)))
