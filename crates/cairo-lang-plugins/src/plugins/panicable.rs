@@ -18,13 +18,16 @@ use salsa::Database;
 pub struct PanicablePlugin;
 
 const PANIC_WITH_ATTR: &str = "panic_with";
+/// The feature gating the deprecated `#[panic_with]` macro. Stored with quotes, as
+/// `allowed_features` holds the raw string-literal text.
+const DEPRECATED_PANIC_WITH_FEATURE: &str = r#""deprecated-panic-with""#;
 
 impl MacroPlugin for PanicablePlugin {
     fn generate_code<'db>(
         &self,
         db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
-        _metadata: &MacroPluginMetadata<'_>,
+        metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
         let (declaration, attributes, visibility) = match item_ast {
             ast::ModuleItem::ExternFunction(extern_func_ast) => (
@@ -40,7 +43,7 @@ impl MacroPlugin for PanicablePlugin {
             _ => return PluginResult::default(),
         };
 
-        generate_panicable_code(db, declaration, attributes, visibility)
+        generate_panicable_code(db, declaration, attributes, visibility, metadata)
     }
 
     fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
@@ -54,6 +57,7 @@ fn generate_panicable_code<'db>(
     declaration: ast::FunctionDeclaration<'db>,
     attributes: ast::AttributeList<'db>,
     visibility: ast::Visibility<'db>,
+    metadata: &MacroPluginMetadata<'_>,
 ) -> PluginResult<'db> {
     let mut attrs = attributes.query_attr(db, PANIC_WITH_ATTR);
     let Some(attr) = attrs.next() else {
@@ -61,6 +65,17 @@ fn generate_panicable_code<'db>(
         return PluginResult::default();
     };
     let mut diagnostics = vec![];
+    let deprecation_feature = SmolStrId::from(db, DEPRECATED_PANIC_WITH_FEATURE);
+    if !metadata.allowed_features.contains(&deprecation_feature) {
+        diagnostics.push(PluginDiagnostic::warning(
+            attr.stable_ptr(db),
+            format!(
+                "Usage of deprecated macro `{PANIC_WITH_ATTR}` with no \
+                 `#[feature({DEPRECATED_PANIC_WITH_FEATURE})]` attribute. Use simple calculations \
+                 instead, as these are supported in const context.",
+            ),
+        ));
+    }
     if let Some(extra_attr) = attrs.next() {
         diagnostics.push(PluginDiagnostic::error(
             extra_attr.stable_ptr(db),
