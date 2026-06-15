@@ -182,5 +182,5 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode<'_> {
     // This is a hack to crate a green id of "SyntaxFile" from "Expr".
     let root = SyntaxFileGreen(expr.0);
     let file_id = FileLongId::OnDisk(PathBuf::default()).intern(db);
-    SyntaxNode::new_root(db, file_id, root.0)
+    SyntaxNode::new_detached_root(db, file_id, root.0)
 }
