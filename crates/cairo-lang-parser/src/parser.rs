@@ -3542,11 +3542,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Move forward one terminal.
     fn take_raw(&mut self) -> LexerTerminal<'a> {
+        let terminal = self.advance();
         self.offset = self.offset.add_width(self.current_width);
-        self.current_width = self.next_terminal().width(self.db);
-        self.last_trivia_length =
-            trivia_total_width(self.db, &self.next_terminal().trailing_trivia);
-        self.advance()
+        self.current_width = terminal.width(self.db);
+        self.last_trivia_length = trivia_total_width(self.db, &terminal.trailing_trivia);
+        terminal
     }
 
     /// Skips the next, non-taken, token. A skipped token is a token which is not expected where it
