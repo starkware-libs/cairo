@@ -25,7 +25,7 @@ fn build_empty_file_green_tree<'a>(db: &'a dyn Database, file_id: FileId<'a>) ->
     );
     SyntaxFile::from_syntax_node(
         db,
-        SyntaxNode::new_root(
+        SyntaxNode::new_detached_root(
             db,
             file_id,
             SyntaxFile::new_green(db, ModuleItemList::new_green(db, &[]), eof_terminal).0,
@@ -45,7 +45,12 @@ fn test_parser() {
 
     let expected_syntax_file = build_empty_file_green_tree(&db, file_id);
 
-    assert_eq!(syntax_file, expected_syntax_file);
+    // The parsed root is created by the parsing query while the expected root is a fresh node, so
+    // they are distinct nodes; compare the green trees.
+    assert_eq!(
+        syntax_file.as_syntax_node().green_node(&db),
+        expected_syntax_file.as_syntax_node().green_node(&db)
+    );
 }
 
 #[test]
