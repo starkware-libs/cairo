@@ -16585,7 +16585,7 @@
       ],
       [
         1477,
-        "function_call<user@core::keccak::keccak_u256s_be_inputs[646-813]>"
+        "function_call<user@core::keccak::keccak_u256s_be_inputs[652-819]>"
       ],
       [
         1478,
@@ -17591,7 +17591,7 @@
       ],
       [
         188,
-        "core::keccak::keccak_u256s_be_inputs[646-813]"
+        "core::keccak::keccak_u256s_be_inputs[652-819]"
       ],
       [
         189,

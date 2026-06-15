@@ -2113,7 +2113,7 @@ libfunc enum_init<core::panics::PanicResult::<(core::zeroable::NonZero::<core::i
 libfunc alloc_local<Bitwise> = alloc_local<Bitwise>;
 libfunc array_new<u64> = array_new<u64>;
 libfunc store_temp<Array<u64>> = store_temp<Array<u64>>;
-libfunc function_call<user@core::keccak::keccak_u256s_be_inputs[646-813]> = function_call<user@core::keccak::keccak_u256s_be_inputs[646-813]>;
+libfunc function_call<user@core::keccak::keccak_u256s_be_inputs[652-819]> = function_call<user@core::keccak::keccak_u256s_be_inputs[652-819]>;
 libfunc store_local<Bitwise> = store_local<Bitwise>;
 libfunc enum_match<core::panics::PanicResult::<(core::array::Span::<core::integer::u256>, core::array::Array::<core::integer::u64>, ())>> = enum_match<core::panics::PanicResult::<(core::array::Span::<core::integer::u256>, core::array::Array::<core::integer::u64>, ())>>;
 libfunc struct_deconstruct<Tuple<core::array::Span::<core::integer::u256>, Array<u64>, Unit>> = struct_deconstruct<Tuple<core::array::Span::<core::integer::u256>, Array<u64>, Unit>>;
@@ -13514,7 +13514,7 @@ store_temp<GasBuiltin>([1]) -> ([1]);
 store_temp<Bitwise>([2]) -> ([2]);
 store_temp<core::array::Span::<core::integer::u256>>([4]) -> ([4]);
 store_temp<Array<u64>>([7]) -> ([7]);
-function_call<user@core::keccak::keccak_u256s_be_inputs[646-813]>([0], [1], [2], [4], [7]) -> ([8], [9], [5], [10]);
+function_call<user@core::keccak::keccak_u256s_be_inputs[652-819]>([0], [1], [2], [4], [7]) -> ([8], [9], [5], [10]);
 store_local<Bitwise>([6], [5]) -> ([5]);
 enum_match<core::panics::PanicResult::<(core::array::Span::<core::integer::u256>, core::array::Array::<core::integer::u64>, ())>>([10]) { fallthrough([11]) F181_B5([12]) };
 branch_align() -> ();
@@ -13985,7 +13985,7 @@ store_temp<GasBuiltin>([13]) -> ([13]);
 store_temp<Bitwise>([27]) -> ([27]);
 store_temp<core::array::Span::<core::integer::u256>>([38]) -> ([38]);
 store_temp<Array<u64>>([37]) -> ([37]);
-function_call<user@core::keccak::keccak_u256s_be_inputs[646-813]>([29], [13], [27], [38], [37]) -> ([39], [40], [41], [42]);
+function_call<user@core::keccak::keccak_u256s_be_inputs[652-819]>([29], [13], [27], [38], [37]) -> ([39], [40], [41], [42]);
 return([39], [40], [41], [42]);
 F188_B0:
 branch_align() -> ();
@@ -14510,7 +14510,7 @@ core::integer::u256_overflowing_mul@F184([0]: RangeCheck, [1]: core::integer::u2
 core::panic_with_const_felt252::<39879774624083218221772669863277689073527>@F185() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_const_felt252::<35795041456710415347159726023441705103223>@F186() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_const_felt252::<573087285299505011920718992710461799>@F187() -> (Tuple<core::panics::Panic, Array<felt252>>);
-core::keccak::keccak_u256s_be_inputs[646-813]@F188([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: core::array::Span::<core::integer::u256>, [4]: Array<u64>) -> (RangeCheck, GasBuiltin, Bitwise, core::panics::PanicResult::<(core::array::Span::<core::integer::u256>, core::array::Array::<core::integer::u64>, ())>);
+core::keccak::keccak_u256s_be_inputs[652-819]@F188([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: core::array::Span::<core::integer::u256>, [4]: Array<u64>) -> (RangeCheck, GasBuiltin, Bitwise, core::panics::PanicResult::<(core::array::Span::<core::integer::u256>, core::array::Array::<core::integer::u64>, ())>);
 core::keccak::finalize_padding@F189([0]: RangeCheck, [1]: GasBuiltin, [2]: Array<u64>, [3]: u32) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::integer::u64>, ())>);
 core::starknet::storage_access::inner_write_byte_array[634-1476]{NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, 0, NotSpecialized, }@F190([0]: RangeCheck, [1]: GasBuiltin, [2]: Poseidon, [3]: System, [4]: core::array::Span::<core::bytes_31::bytes31>, [5]: u32, [6]: StorageBaseAddress, [7]: u8, [8]: StorageAddress) -> (RangeCheck, GasBuiltin, Poseidon, System, core::panics::PanicResult::<(core::array::Span::<core::bytes_31::bytes31>, core::felt252, core::starknet::storage_access::StorageBaseAddress, core::integer::u8, core::result::Result::<(), core::array::Array::<core::felt252>>)>);
 core::starknet::storage_access::inner_write_byte_array[634-1476]@F191([0]: RangeCheck, [1]: GasBuiltin, [2]: Poseidon, [3]: System, [4]: core::array::Span::<core::bytes_31::bytes31>, [5]: u32, [6]: StorageBaseAddress, [7]: u8, [8]: felt252, [9]: StorageAddress) -> (RangeCheck, GasBuiltin, Poseidon, System, core::panics::PanicResult::<(core::array::Span::<core::bytes_31::bytes31>, core::felt252, core::starknet::storage_access::StorageBaseAddress, core::integer::u8, core::result::Result::<(), core::array::Array::<core::felt252>>)>);
