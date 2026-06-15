@@ -103,8 +103,8 @@ fn keccak_add_u256_be(ref keccak_input: Array<u64>, v: u256) {
 /// use core::keccak::keccak_u256s_be_inputs;
 ///
 /// let input = array![0x1234_u256, 0x5678_u256].span();
-/// let hash = assert!(keccak_u256s_be_inputs(input) ==
-/// 0xfa31cb2326ed629f79d2da5beb78e2bd8ac7a1b8b86cae09eeb6a89a908b12a);
+/// let hash = keccak_u256s_be_inputs(input);
+/// assert!(hash == 0xfa31cb2326ed629f79d2da5beb78e2bd8ac7a1b8b86cae09eeb6a89a908b12a);
 /// ```
 pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array<u64> = Default::default();
