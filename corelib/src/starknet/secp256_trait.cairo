@@ -130,7 +130,7 @@ pub fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
 /// );
 /// ```
 pub trait Secp256Trait<Secp256Point> {
-    /// Returns the order (size) of the curve's underlying field.
+    /// Returns the order (size) of the curve's scalar field.
     ///
     /// This is the number of points on the curve, also known as the curve order.
     fn get_curve_size() -> u256;
