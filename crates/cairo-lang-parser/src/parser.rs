@@ -3144,44 +3144,45 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Takes and validates a TerminalLiteralNumber token.
     fn take_terminal_literal_number(&mut self) -> TerminalLiteralNumberGreen<'a> {
-        let diag = validate_literal_number(self.peek().text.long(self.db));
-        let green = self.take::<TerminalLiteralNumber<'_>>();
-        self.add_optional_diagnostic(diag);
-        green
+        self.take_validated_terminal::<TerminalLiteralNumber<'_>>(validate_literal_number)
     }
 
     /// Takes and validates a TerminalShortString token.
     fn take_terminal_short_string(&mut self) -> TerminalShortStringGreen<'a> {
-        let diag = validate_short_string(self.peek().text.long(self.db));
-        let green = self.take::<TerminalShortString<'_>>();
-        self.add_optional_diagnostic(diag);
-        green
+        self.take_validated_terminal::<TerminalShortString<'_>>(validate_short_string)
     }
 
     /// Takes and validates a TerminalString token.
     fn take_terminal_string(&mut self) -> TerminalStringGreen<'a> {
-        let diag = validate_string(self.peek().text.long(self.db));
-        let green = self.take::<TerminalString<'_>>();
-        self.add_optional_diagnostic(diag);
-        green
+        self.take_validated_terminal::<TerminalString<'_>>(validate_string)
     }
 
-    /// Adds a diagnostic of kind `kind` if provided, at the current offset.
-    fn add_optional_diagnostic(&mut self, err: Option<ValidationError>) {
-        if let Some(err) = err {
+    /// Takes a terminal of the given kind and validates its text with `validate`, reporting the
+    /// resulting diagnostic (if any). Validation offsets are relative to the terminal's text, so
+    /// the diagnostic span is anchored at the text and excludes the terminal's trivia.
+    fn take_validated_terminal<Terminal: syntax::node::Terminal<'a>>(
+        &mut self,
+        validate: impl FnOnce(&str) -> Option<ValidationError>,
+    ) -> Terminal::Green {
+        let peek = self.peek();
+        let text = peek.text.long(self.db);
+        let leading_width = trivia_total_width(self.db, &peek.leading_trivia);
+        let green = self.take::<Terminal>();
+        if let Some(err) = validate(text) {
+            // `self.offset` now points at the start of the taken terminal (including its leading
+            // trivia); anchor the span at the terminal's text.
+            let text_start = self.offset.add_width(leading_width);
+            let text_width = TextWidth::from_str(text);
             let span = match err.location {
-                ValidationLocation::Full => {
-                    TextSpan::new_with_width(self.offset, self.current_width)
-                }
-                ValidationLocation::After => {
-                    TextSpan::cursor(self.offset.add_width(self.current_width))
-                }
+                ValidationLocation::Full => TextSpan::new_with_width(text_start, text_width),
+                ValidationLocation::After => TextSpan::cursor(text_start.add_width(text_width)),
                 ValidationLocation::Cursor(offset) => {
-                    TextSpan::cursor(self.offset.add_width(offset))
+                    TextSpan::cursor(text_start.add_width(offset))
                 }
             };
             self.add_diagnostic(err.kind, span);
         }
+        green
     }
 
     /// Returns a GreenId of a node with an

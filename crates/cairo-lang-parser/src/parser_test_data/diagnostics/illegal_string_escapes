@@ -67,3 +67,41 @@ error[E1019]: String literals can only include ASCII characters.
  --> dummy_file.cairo:2:13
     let a = "\u{1024}";
             ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Illegally escaped short string with leading trivia (literal first on its line).
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo() {
+    let a =
+        '\p';
+}
+
+//! > expected_diagnostics
+error[E1017]: Invalid string escaping.
+ --> dummy_file.cairo:3:10
+        '\p';
+         ^
+
+//! > ==========================================================================
+
+//! > Short string with non-ASCII characters with leading trivia (literal first on its line).
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo() {
+    let a =
+        '\u{1024}';
+}
+
+//! > expected_diagnostics
+error[E1018]: Short string literals can only include ASCII characters.
+ --> dummy_file.cairo:3:9
+        '\u{1024}';
+        ^^^^^^^^^^
