@@ -23,8 +23,11 @@ use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 ///
 /// # Panics
 ///
-/// Panics for a signed `T` when `a` or `b` is `T::MIN`, since the computation relies on the
-/// absolute value, and `|T::MIN|` is not representable in `T`.
+/// Panics for some signed inputs involving `T::MIN`, through one of two overflows: taking the
+/// absolute value of a divisor (`|T::MIN|` is not representable in `T`), or a `T::MIN / -1`
+/// quotient during the division. For example `egcd(T::MIN, T::MIN)`, `egcd(T::MIN, -1)` and
+/// `egcd(-1, T::MIN)`
+/// all panic.
 ///
 /// # Examples
 ///
