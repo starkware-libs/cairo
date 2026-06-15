@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use cairo_lang_filesystem::ids::{FileId, SmolStrId};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::ast::{
-    ModuleItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
+    ModuleItemList, SyntaxFile, SyntaxFileGreen, TerminalEndOfFile, TokenEndOfFile, Trivia,
 };
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, Token as SyntaxToken, TypedSyntaxNode};
 use indoc::indoc;
@@ -15,7 +15,7 @@ use crate::printer::print_tree;
 use crate::test_utils::{MockToken, MockTokenStream, create_virtual_file};
 use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
 
-fn build_empty_file_green_tree<'a>(db: &'a dyn Database, file_id: FileId<'a>) -> SyntaxFile<'a> {
+fn build_empty_file_green_tree<'a>(db: &'a dyn Database) -> SyntaxFileGreen<'a> {
     let eof_token = TokenEndOfFile::new_green(db, SmolStrId::from(db, ""));
     let eof_terminal = TerminalEndOfFile::new_green(
         db,
@@ -23,14 +23,7 @@ fn build_empty_file_green_tree<'a>(db: &'a dyn Database, file_id: FileId<'a>) ->
         eof_token,
         Trivia::new_green(db, &[]),
     );
-    SyntaxFile::from_syntax_node(
-        db,
-        SyntaxNode::new_root(
-            db,
-            file_id,
-            SyntaxFile::new_green(db, ModuleItemList::new_green(db, &[]), eof_terminal).0,
-        ),
-    )
+    SyntaxFile::new_green(db, ModuleItemList::new_green(db, &[]), eof_terminal)
 }
 
 #[test]
@@ -43,9 +36,11 @@ fn test_parser() {
     let diagnostics = db.file_syntax_diagnostics(file_id);
     assert_eq!(diagnostics.format(&db), "");
 
-    let expected_syntax_file = build_empty_file_green_tree(&db, file_id);
-
-    assert_eq!(syntax_file, expected_syntax_file);
+    // Compare green trees: the test only asserts the parsed structure, and the parsed root (minted
+    // by the parse query) is a distinct node from any standalone one, so node identity wouldn't
+    // match anyway.
+    let expected_green = build_empty_file_green_tree(&db);
+    assert_eq!(syntax_file.as_syntax_node().green_node(&db), expected_green.0.long(&db));
 }
 
 #[test]
