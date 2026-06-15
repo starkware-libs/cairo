@@ -23,8 +23,9 @@ use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 ///
 /// # Panics
 ///
-/// Panics for a signed `T` when `a` or `b` is `T::MIN`, since the computation relies on the
-/// absolute value, and `|T::MIN|` is not representable in `T`.
+/// Panics for a signed `T` when both `a` and `b` are `T::MIN` (the computation relies on the
+/// absolute value, and `|T::MIN|` is not representable in `T`), or for `(T::MIN, -1)` (a `T::MIN /
+/// -1` overflow).
 ///
 /// # Examples
 ///
