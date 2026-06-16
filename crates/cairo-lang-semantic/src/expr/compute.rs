@@ -86,8 +86,8 @@ use crate::items::visibility;
 use crate::keyword::MACRO_CALL_SITE;
 use crate::lsp_helpers::LspHelpers;
 use crate::resolve::{
-    AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
-    ResolvedGenericItem, Resolver, ResolverMacroData,
+    AsSegments, EnrichedMember, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext,
+    ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverMacroData,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
@@ -98,8 +98,9 @@ use crate::types::{
 };
 use crate::usage::Usages;
 use crate::{
-    ConcreteEnumId, ConcreteVariant, GenericArgumentId, GenericParam, LocalItem, Member,
-    Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
+    ConcreteEnumId, ConcreteStructId, ConcreteVariant, GenericArgumentId, GenericParam, LocalItem,
+    Member, Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature,
+    StatementItemKind,
 };
 
 /// The information of a macro expansion.
@@ -2958,7 +2959,13 @@ fn maybe_compute_pattern_semantic<'db>(
                             },
                         );
                     })?;
-                    check_struct_member_is_visible(ctx, &member, stable_ptr, member_name);
+                    check_struct_member_is_visible(
+                        ctx,
+                        member.id,
+                        member.visibility,
+                        stable_ptr,
+                        member_name,
+                    );
                     used_members.insert(member_name);
                     Some(member)
                 };
@@ -3488,7 +3495,8 @@ fn struct_ctor_expr<'db>(
                 };
                 check_struct_member_is_visible(
                     ctx,
-                    member,
+                    member.id,
+                    member.visibility,
                     arg_identifier.stable_ptr(db).untyped(),
                     arg_name,
                 );
@@ -3578,7 +3586,8 @@ fn struct_ctor_expr<'db>(
         if base_struct.is_some() {
             check_struct_member_is_visible(
                 ctx,
-                member,
+                member.id,
+                member.visibility,
                 base_struct.clone().unwrap().1.stable_ptr(db).untyped(),
                 member_name,
             );
@@ -3763,10 +3772,24 @@ fn dot_expr<'db>(
     rhs_syntax: ast::Expr<'db>,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Maybe<Expr<'db>> {
+    let db = ctx.db;
     // Find MemberId.
     match rhs_syntax {
-        ast::Expr::Path(expr) => member_access_expr(ctx, lexpr, expr, stable_ptr),
+        ast::Expr::Path(expr) => {
+            let member_name = expr_as_identifier(ctx, &expr, db)?;
+            member_access_expr(ctx, lexpr, member_name, expr.stable_ptr(db).untyped(), stable_ptr)
+        }
         ast::Expr::FunctionCall(expr) => method_call_expr(ctx, lexpr, expr, stable_ptr),
+        ast::Expr::Literal(literal) => {
+            let literal_stable_ptr = literal.stable_ptr(db).untyped();
+            // A tuple index must be a plain non-negative decimal integer, with no base prefix
+            // (e.g. `0x1`) and no type suffix (e.g. `0_u8`).
+            let text = literal.text(db);
+            if !text.long(db).bytes().all(|b| b.is_ascii_digit()) {
+                return Err(ctx.diagnostics.report(literal_stable_ptr, InvalidMemberExpression));
+            }
+            member_access_expr(ctx, lexpr, text, literal_stable_ptr, stable_ptr)
+        }
         _ => Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(ctx.db), InvalidMemberExpression)),
     }
 }
@@ -3912,50 +3935,57 @@ fn method_call_expr<'db>(
     expr_function_call(ctx, function_id, named_args, expr.stable_ptr(db), stable_ptr)
 }
 
-/// Computes the semantic model of a member access expression (e.g. "expr.member").
+/// Computes the semantic model of a member access expression: either a named struct member
+/// (`expr.member`) or a positional tuple element (`t.0`).
 fn member_access_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     lexpr: ExprAndId<'db>,
-    rhs_syntax: ast::ExprPath<'db>,
+    member_name: SmolStrId<'db>,
+    rhs_stable_ptr: SyntaxStablePtrId<'db>,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
-    // Find MemberId.
-    let member_name = expr_as_identifier(ctx, &rhs_syntax, db)?;
-    let (n_snapshots, long_ty) =
-        finalized_snapshot_peeled_ty(ctx, lexpr.ty(), rhs_syntax.stable_ptr(db))?;
+    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, lexpr.ty(), rhs_stable_ptr)?;
 
     match &long_ty {
         TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
-            let Some(EnrichedTypeMemberAccess { member, deref_functions }) =
-                get_enriched_type_member_access(ctx, lexpr.clone(), stable_ptr, member_name)?
+            // Resolve the accessed member - a named struct member or a positional tuple element -
+            // following the `Deref` chain if needed.
+            let Some(EnrichedTypeMemberAccess {
+                member: EnrichedMember { kind, ty: member_ty, visibility },
+                deref_functions,
+            }) = get_enriched_type_member_access(ctx, lexpr.clone(), stable_ptr, member_name)?
             else {
                 return Err(ctx.diagnostics.report(
-                    rhs_syntax.stable_ptr(db),
-                    NoSuchTypeMember { ty: long_ty.intern(ctx.db), member_name },
+                    rhs_stable_ptr,
+                    NoSuchTypeMember { ty: long_ty.intern(db), member_name },
                 ));
             };
-            check_struct_member_is_visible(
-                ctx,
-                &member,
-                rhs_syntax.stable_ptr(db).untyped(),
-                member_name,
-            );
-            let member_path = match &long_ty {
-                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))
-                    if n_snapshots == 0 && deref_functions.is_empty() =>
-                {
-                    lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
-                        parent: Box::new(parent),
-                        member_id: member.id,
-                        stable_ptr,
-                        concrete_struct_id: *concrete_struct_id,
-                        ty: member.ty,
-                    })
-                }
-                _ => None,
+            if let MemberAccessKind::Struct { member_id, .. } = kind {
+                check_struct_member_is_visible(
+                    ctx,
+                    member_id,
+                    visibility.unwrap(),
+                    rhs_stable_ptr,
+                    member_name,
+                );
+            }
+
+            // A member is an assignable place only if it is directly on the (owned) aggregate -
+            // i.e. not behind a snapshot or a deref.
+            let member_path = if n_snapshots == 0 && deref_functions.is_empty() {
+                lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
+                    parent: Box::new(parent),
+                    kind: kind.clone(),
+                    stable_ptr,
+                    ty: member_ty,
+                })
+            } else {
+                None
             };
+
+            // Replay the deref functions to build the actual accessed expression.
             let mut derefed_expr: ExprAndId<'_> = lexpr;
             for (deref_function, mutability) in &deref_functions {
                 let cur_expr = expr_function_call(
@@ -3970,19 +4000,15 @@ fn member_access_expr<'db>(
                 derefed_expr =
                     ExprAndId { expr: cur_expr.clone(), id: ctx.arenas.exprs.alloc(cur_expr) };
             }
-            let (n_snapshots, long_ty) =
-                finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), rhs_syntax.stable_ptr(db))?;
-            let derefed_expr_concrete_struct_id = match long_ty {
-                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
-                    concrete_struct_id
-                }
-                _ => unreachable!(),
-            };
-            let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
+            // The member access is performed on the (possibly derefed) aggregate, so the resulting
+            // type and desnaps are governed by the snapshots of `derefed_expr`.
+            let (n_snapshots, _) =
+                finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), rhs_stable_ptr)?;
+
+            let ty = wrap_in_snapshots(db, member_ty, n_snapshots);
             let mut final_expr = Expr::MemberAccess(ExprMemberAccess {
                 expr: derefed_expr.id,
-                concrete_struct_id: derefed_expr_concrete_struct_id,
-                member: member.id,
+                kind,
                 ty,
                 member_path,
                 n_snapshots,
@@ -4003,29 +4029,66 @@ fn member_access_expr<'db>(
 
         TypeLongId::Snapshot(_) => {
             // TODO(spapini): Handle snapshot members.
-            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
+            Err(ctx.diagnostics.report(rhs_stable_ptr, Unsupported))
         }
-        TypeLongId::Closure(_) => {
-            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
-        }
+        TypeLongId::Closure(_) => Err(ctx.diagnostics.report(rhs_stable_ptr, Unsupported)),
         TypeLongId::Var(_) => Err(ctx.diagnostics.report(
-            rhs_syntax.stable_ptr(db),
-            InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
+            rhs_stable_ptr,
+            InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(db))),
         )),
         TypeLongId::ImplType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => {
-            Err(ctx.diagnostics.report(
-                rhs_syntax.stable_ptr(db),
-                TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
-            ))
+            Err(ctx
+                .diagnostics
+                .report(rhs_stable_ptr, TypeHasNoMembers { ty: long_ty.intern(db), member_name }))
         }
         TypeLongId::Missing(diag_added) => Err(*diag_added),
     }
 }
 
+/// Builds the enriched members for the named members of a struct, each reachable through
+/// `n_derefs` deref operations.
+fn struct_enriched_members<'db>(
+    concrete_struct_id: ConcreteStructId<'db>,
+    members: &OrderedHashMap<SmolStrId<'db>, Member<'db>>,
+    n_derefs: usize,
+) -> OrderedHashMap<SmolStrId<'db>, (EnrichedMember<'db>, usize)> {
+    members
+        .iter()
+        .map(|(name, member)| {
+            let member = EnrichedMember {
+                kind: MemberAccessKind::Struct { concrete_struct_id, member_id: member.id },
+                ty: member.ty,
+                visibility: Some(member.visibility),
+            };
+            (*name, (member, n_derefs))
+        })
+        .collect()
+}
+
+/// Builds the enriched members for the positional elements of a tuple, keyed by their decimal
+/// index (`"0"`, `"1"`, ...), each reachable through `n_derefs` deref operations.
+fn tuple_index_members<'db>(
+    db: &'db dyn Database,
+    tys: &[TypeId<'db>],
+    n_derefs: usize,
+) -> OrderedHashMap<SmolStrId<'db>, (EnrichedMember<'db>, usize)> {
+    tys.iter()
+        .enumerate()
+        .map(|(index, ty)| {
+            let member = EnrichedMember {
+                kind: MemberAccessKind::Index { index },
+                ty: *ty,
+                visibility: None,
+            };
+            (SmolStrId::from(db, index.to_string()), (member, n_derefs))
+        })
+        .collect()
+}
+
 /// Returns the member and the deref operations needed for its access.
 ///
-/// Enriched members include both direct members (in case of a struct), and members of derefed types
-/// if the type implements the Deref trait into a struct.
+/// Enriched members include both direct members (in case of a struct or a tuple), and members of
+/// derefed types if the type implements the Deref trait into a struct or a tuple.
 fn get_enriched_type_member_access<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     expr: ExprAndId<'db>,
@@ -4060,20 +4123,28 @@ fn get_enriched_type_member_access<'db>(
         }
         Entry::Vacant(_) => {
             let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, stable_ptr)?;
-            let members =
-                if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
+            let members = match long_ty {
+                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
                     let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
                     if let Some(member) = members.get(&accessed_member_name) {
                         // Found direct member access - so directly returning it.
                         return Ok(Some(EnrichedTypeMemberAccess {
-                            member: member.clone(),
+                            member: EnrichedMember {
+                                kind: MemberAccessKind::Struct {
+                                    concrete_struct_id,
+                                    member_id: member.id,
+                                },
+                                ty: member.ty,
+                                visibility: Some(member.visibility),
+                            },
                             deref_functions: vec![],
                         }));
                     }
-                    members.iter().map(|(k, v)| (*k, (v.clone(), 0))).collect()
-                } else {
-                    Default::default()
-                };
+                    struct_enriched_members(concrete_struct_id, members, 0)
+                }
+                TypeLongId::Tuple(tys) => tuple_index_members(ctx.db, &tys, 0),
+                _ => Default::default(),
+            };
 
             EnrichedMembers {
                 members,
@@ -4103,21 +4174,27 @@ fn enrich_members<'db>(
 ) -> Maybe<()> {
     let EnrichedMembers { members: enriched, deref_chain, explored_derefs } = enriched_members;
 
-    // Add members of derefed types.
+    // Add members of derefed types. A struct contributes its named members; a tuple contributes
+    // its positional elements (a tuple cannot itself have a `Deref` impl, but a type may `Deref`
+    // into a tuple).
     for deref_info in deref_chain.iter().skip(*explored_derefs).cloned() {
         *explored_derefs += 1;
         let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, deref_info.target_ty, stable_ptr)?;
-        if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
-            let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-            for (member_name, member) in members.iter() {
-                // Insert member if there is not already a member with the same name.
-                enriched.entry(*member_name).or_insert_with(|| (member.clone(), *explored_derefs));
+        let new_members = match long_ty {
+            TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
+                let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
+                struct_enriched_members(concrete_struct_id, members, *explored_derefs)
             }
-            // If member is contained we can stop the calculation post the lookup.
-            if members.contains_key(&accessed_member_name) {
-                // Found member, so exploration isn't done.
-                break;
-            }
+            TypeLongId::Tuple(tys) => tuple_index_members(ctx.db, &tys, *explored_derefs),
+            _ => continue,
+        };
+        for (name, value) in new_members {
+            // Insert member if there is not already a member with the same name.
+            enriched.entry(name).or_insert(value);
+        }
+        // If the member is found we can stop the calculation post the lookup.
+        if enriched.contains_key(&accessed_member_name) {
+            break;
         }
     }
     Ok::<(), cairo_lang_diagnostics::DiagnosticAdded>(())
@@ -4895,17 +4972,18 @@ fn compute_bool_condition_semantic<'db>(
 /// Validates a struct member is visible and otherwise adds a diagnostic.
 fn check_struct_member_is_visible<'db>(
     ctx: &mut ComputationContext<'db, '_>,
-    member: &Member<'db>,
+    member_id: MemberId<'db>,
+    visibility: visibility::Visibility,
     stable_ptr: SyntaxStablePtrId<'db>,
     member_name: SmolStrId<'db>,
 ) {
     let db = ctx.db;
-    let containing_module_id = member.id.parent_module(db);
+    let containing_module_id = member_id.parent_module(db);
     if ctx.resolver.ignore_visibility_checks(containing_module_id) {
         return;
     }
     let user_module_id = ctx.resolver.module_id;
-    if !visibility::peek_visible_in(db, member.visibility, containing_module_id, user_module_id) {
+    if !visibility::peek_visible_in(db, visibility, containing_module_id, user_module_id) {
         ctx.diagnostics.report(stable_ptr, MemberNotVisible(member_name));
     }
 }

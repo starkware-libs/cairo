@@ -87,15 +87,10 @@ error[E2085]: Invalid member expression.
     a.a::b;
       ^^^^
 
-error[E2085]: Invalid member expression.
+error[E0007]: Type "test::A" has no member "4"
  --> lib.cairo:9:7
     a.4.4;
       ^
-
-error[E2085]: Invalid member expression.
- --> lib.cairo:9:9
-    a.4.4;
-        ^
 
 error[E0007]: Type "core::felt252" has no member "a"
  --> lib.cairo:10:15

@@ -340,10 +340,9 @@ pub enum ExprVarMemberPath<'db> {
     Var(ExprVar<'db>),
     Member {
         parent: Box<ExprVarMemberPath<'db>>,
-        member_id: MemberId<'db>,
+        kind: MemberAccessKind<'db>,
         #[dont_rewrite]
         stable_ptr: ast::ExprPtr<'db>,
-        concrete_struct_id: ConcreteStructId<'db>,
         // Type of the member.
         ty: TypeId<'db>,
     },
@@ -374,9 +373,14 @@ impl<'db> DebugWithDb<'db> for ExprVarMemberPath<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
             ExprVarMemberPath::Var(var) => var.fmt(f, db),
-            ExprVarMemberPath::Member { parent, member_id, .. } => {
-                write!(f, "{:?}::{}", parent.debug(db), member_id.name(db).long(db))
-            }
+            ExprVarMemberPath::Member { parent, kind, .. } => match kind {
+                MemberAccessKind::Struct { member_id, .. } => {
+                    write!(f, "{:?}::{}", parent.debug(db), member_id.name(db).long(db))
+                }
+                MemberAccessKind::Index { index } => {
+                    write!(f, "{:?}::{}", parent.debug(db), index)
+                }
+            },
         }
     }
 }
@@ -522,12 +526,25 @@ pub struct ExprStringLiteral<'db> {
     pub stable_ptr: ast::ExprPtr<'db>,
 }
 
+/// Identifies the accessed member of an aggregate, either a named struct member or a positional
+/// element of a tuple (e.g. `t.0`).
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[debug_db(dyn Database)]
+pub enum MemberAccessKind<'db> {
+    /// A named member of a struct.
+    Struct { concrete_struct_id: ConcreteStructId<'db>, member_id: MemberId<'db> },
+    /// A positional element of a tuple, accessed by index (e.g. `t.0`).
+    Index {
+        #[dont_rewrite]
+        index: usize,
+    },
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'db>)]
 pub struct ExprMemberAccess<'db> {
     pub expr: semantic::ExprId,
-    pub concrete_struct_id: ConcreteStructId<'db>,
-    pub member: MemberId<'db>,
+    pub kind: MemberAccessKind<'db>,
     pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     pub member_path: Option<ExprVarMemberPath<'db>>,

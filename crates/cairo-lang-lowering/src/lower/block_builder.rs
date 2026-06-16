@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, require};
 use itertools::{Itertools, chain, zip_eq};
-use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
+use semantic::{ConcreteTypeId, ExprVarMemberPath, MemberAccessKind, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
@@ -222,8 +222,11 @@ impl<'db> BlockBuilder<'db> {
         if let Some(var_id) = ctx.snapped_semantics.get::<MemberPath<'_>>(&member_path.into()) {
             return Some(VarUsage { var_id: *var_id, location });
         }
-        let ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } = member_path
-        else {
+        let ExprVarMemberPath::Member { parent, kind, .. } = member_path else {
+            return None;
+        };
+        // TODO(TomerStarkware): Support lowering of tuple index access (`t.0`).
+        let MemberAccessKind::Struct { concrete_struct_id, member_id } = kind else {
             return None;
         };
         let parent_var = self.get_snap_ref(ctx, parent)?;
@@ -420,9 +423,20 @@ fn get_ty<'db>(
 ) -> semantic::TypeId<'db> {
     match member_path {
         MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
-        MemberPath::Member { member_id, concrete_struct_id, .. } => {
-            ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()[&member_id.name(ctx.db)].ty
-        }
+        MemberPath::Member { parent, kind } => match kind {
+            MemberAccessKind::Struct { concrete_struct_id, member_id } => {
+                ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
+                    [&member_id.name(ctx.db)]
+                    .ty
+            }
+            MemberAccessKind::Index { index } => {
+                let (n_snapshots, long_ty) = peel_snapshots(ctx.db, get_ty(ctx, parent));
+                let TypeLongId::Tuple(tys) = long_ty else {
+                    unreachable!("Tuple index access on a non-tuple type.");
+                };
+                wrap_in_snapshots(ctx.db, tys[*index], n_snapshots)
+            }
+        },
     }
 }
 
@@ -481,7 +495,7 @@ pub type SealedBlockBuilder<'db> = Option<SealedGotoCallsite<'db>>;
 pub struct BlockStructRecomposer<'a, 'b, 'db> {
     statements: &'a mut StatementsBuilder<'db>,
     pub ctx: &'a mut LoweringContext<'db, 'b>,
-    location: LocationId<'db>,
+    pub(crate) location: LocationId<'db>,
 }
 impl<'db> BlockStructRecomposer<'_, '_, 'db> {
     pub fn deconstruct(
