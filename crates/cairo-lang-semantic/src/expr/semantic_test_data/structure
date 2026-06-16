@@ -39,8 +39,10 @@ Block(
                             expr: Var(
                                 LocalVarId(test::a),
                             ),
-                            concrete_struct_id: test::A,
-                            member: MemberId(test::A::a),
+                            kind: Struct {
+                                concrete_struct_id: test::A,
+                                member_id: MemberId(test::A::a),
+                            },
                             ty: (core::felt252,),
                         },
                     ),
@@ -53,8 +55,10 @@ Block(
                             expr: Var(
                                 LocalVarId(test::a),
                             ),
-                            concrete_struct_id: test::A,
-                            member: MemberId(test::A::b),
+                            kind: Struct {
+                                concrete_struct_id: test::A,
+                                member_id: MemberId(test::A::b),
+                            },
                             ty: core::felt252,
                         },
                     ),
@@ -67,8 +71,10 @@ Block(
                             expr: Var(
                                 LocalVarId(test::a),
                             ),
-                            concrete_struct_id: test::A,
-                            member: MemberId(test::A::c),
+                            kind: Struct {
+                                concrete_struct_id: test::A,
+                                member_id: MemberId(test::A::c),
+                            },
                             ty: test::B,
                         },
                     ),
@@ -83,13 +89,17 @@ Block(
                                     expr: Var(
                                         LocalVarId(test::a),
                                     ),
-                                    concrete_struct_id: test::A,
-                                    member: MemberId(test::A::c),
+                                    kind: Struct {
+                                        concrete_struct_id: test::A,
+                                        member_id: MemberId(test::A::c),
+                                    },
                                     ty: test::B,
                                 },
                             ),
-                            concrete_struct_id: test::B,
-                            member: MemberId(test::B::a),
+                            kind: Struct {
+                                concrete_struct_id: test::B,
+                                member_id: MemberId(test::B::a),
+                            },
                             ty: core::felt252,
                         },
                     ),

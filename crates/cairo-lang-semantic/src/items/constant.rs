@@ -51,8 +51,8 @@ use crate::types::resolve_type;
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
     ExprConstant, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor,
-    FunctionId, GenericParam, LogicalOperator, Pattern, PatternId, SemanticDiagnostic, Statement,
-    TypeId, TypeLongId, semantic_object_for_id,
+    FunctionId, GenericParam, LogicalOperator, MemberAccessKind, Pattern, PatternId,
+    SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -1162,11 +1162,18 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             // A semantic diagnostic should have been reported.
             return Err(skip_diagnostic());
         };
-        let members = self.db.concrete_struct_members(expr.concrete_struct_id)?;
-        let Some(member_idx) = members.iter().position(|(_, member)| member.id == expr.member)
-        else {
-            // A semantic diagnostic should have been reported.
-            return Err(skip_diagnostic());
+        let member_idx = match &expr.kind {
+            MemberAccessKind::Struct { concrete_struct_id, member_id } => {
+                let members = self.db.concrete_struct_members(*concrete_struct_id)?;
+                let Some(member_idx) =
+                    members.iter().position(|(_, member)| member.id == *member_id)
+                else {
+                    // A semantic diagnostic should have been reported.
+                    return Err(skip_diagnostic());
+                };
+                member_idx
+            }
+            MemberAccessKind::Index { index, .. } => *index,
         };
         Ok(values[member_idx])
     }
