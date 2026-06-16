@@ -5,6 +5,7 @@ use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_test_utils::test;
+use itertools::Itertools;
 
 use crate::lexer::{LexerTerminal, tokenize_all};
 use crate::utils::SimpleParserDatabase;
@@ -441,6 +442,31 @@ fn test_cases() {
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
             }
+        ]
+    );
+}
+
+/// `///` is a doc comment and `//!` an inner doc comment, but `////` (4+ slashes) is a regular
+/// comment, matching `cairo-lang-doc` (which discards a doc comment whose content starts with `/`).
+#[test]
+fn test_doc_comment_classification() {
+    let db_val = SimpleParserDatabase::default();
+    let db = &db_val;
+    let text = "// regular\n/// doc\n//! inner\n//// regular\n///// regular\n";
+    let terminal = tokenize_all(db, (), Arc::from(text)).into_iter().exactly_one().unwrap();
+    assert_eq!(
+        terminal.leading_trivia.into_iter().map(|t| t.0.long(db).kind).collect_vec(),
+        [
+            SyntaxKind::TokenSingleLineComment,
+            SyntaxKind::TokenNewline,
+            SyntaxKind::TokenSingleLineDocComment,
+            SyntaxKind::TokenNewline,
+            SyntaxKind::TokenSingleLineInnerComment,
+            SyntaxKind::TokenNewline,
+            SyntaxKind::TokenSingleLineComment,
+            SyntaxKind::TokenNewline,
+            SyntaxKind::TokenSingleLineComment,
+            SyntaxKind::TokenNewline
         ]
     );
 }
