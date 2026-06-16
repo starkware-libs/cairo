@@ -44,7 +44,7 @@ use semantic::items::constant::ConstValue;
 use semantic::types::wrap_in_snapshots;
 use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
-    MatchArmSelector, SemanticDiagnostic, TypeLongId,
+    MatchArmSelector, MemberAccessKind, SemanticDiagnostic, TypeLongId,
 };
 
 use self::block_builder::{BlockBuilder, SealedBlockBuilder, SealedGotoCallsite};
@@ -1536,12 +1536,11 @@ fn lower_expr_loop<'db>(
             ExprVarMemberPath::Var(var) => {
                 ExprVarMemberPath::Var(ExprVar { ty: wrap_in_snapshots(db, var.ty, 1), ..*var })
             }
-            ExprVarMemberPath::Member { parent, member_id, stable_ptr, concrete_struct_id, ty } => {
+            ExprVarMemberPath::Member { parent, kind, stable_ptr, ty } => {
                 ExprVarMemberPath::Member {
                     parent: parent.clone(),
-                    member_id: *member_id,
+                    kind: kind.clone(),
                     stable_ptr: *stable_ptr,
-                    concrete_struct_id: *concrete_struct_id,
                     ty: wrap_in_snapshots(db, *ty, 1),
                 }
             }
@@ -1803,6 +1802,12 @@ fn lower_expr_member_access<'db>(
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
+    // TODO(TomerStarkware): Support lowering of tuple index access (`t.0`).
+    let MemberAccessKind::Struct { concrete_struct_id, member_id } = expr.kind else {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), Unsupported),
+        ));
+    };
     if let Some(member_path) = &expr.member_path {
         return Ok(LoweredExpr::MemberPath(
             member_path.clone(),
@@ -1810,12 +1815,10 @@ fn lower_expr_member_access<'db>(
         ));
     }
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let members = ctx
-        .db
-        .concrete_struct_members(expr.concrete_struct_id)
-        .map_err(LoweringFlowError::Failed)?;
+    let members =
+        ctx.db.concrete_struct_members(concrete_struct_id).map_err(LoweringFlowError::Failed)?;
     let member_idx =
-        members.iter().position(|(_, member)| member.id == expr.member).ok_or_else(|| {
+        members.iter().position(|(_, member)| member.id == member_id).ok_or_else(|| {
             LoweringFlowError::Failed(
                 ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
             )
@@ -1861,9 +1864,11 @@ fn lower_expr_struct_ctor<'db>(
                 };
                 let member_path = ExprVarMemberPath::Member {
                     parent: Box::new(path.clone()),
-                    member_id: member.id,
+                    kind: MemberAccessKind::Struct {
+                        concrete_struct_id: expr.concrete_struct_id,
+                        member_id: member.id,
+                    },
                     stable_ptr: path.stable_ptr(),
-                    concrete_struct_id: expr.concrete_struct_id,
                     ty: member.ty,
                 };
                 entry

@@ -77,7 +77,7 @@ use crate::types::{
 };
 use crate::{
     ConcreteFunction, ConcreteTypeId, ConcreteVariant, FunctionId, FunctionLongId,
-    GenericArgumentId, GenericParam, Member, Mutability, TypeId, TypeLongId,
+    GenericArgumentId, GenericParam, MemberAccessKind, Mutability, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -132,9 +132,9 @@ impl<'db> ResolvedItems<'db> {
 #[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::Update)]
 #[debug_db(dyn Database)]
 pub struct EnrichedMembers<'db> {
-    /// A map from member names to their semantic representation and the number of deref operations
-    /// needed to access them.
-    pub members: OrderedHashMap<SmolStrId<'db>, (Member<'db>, usize)>,
+    /// A map from member names to the member and the number of deref operations needed to access
+    /// them.
+    pub members: OrderedHashMap<SmolStrId<'db>, (EnrichedMember<'db>, usize)>,
     /// The sequence of deref needed to access the members.
     pub deref_chain: Arc<Vec<DerefInfo<'db>>>,
     // The number of derefs that were explored.
@@ -156,11 +156,24 @@ impl<'db> EnrichedMembers<'db> {
     }
 }
 
+/// A member accessible on a type: a named struct member or a positional tuple element.
+#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::Update)]
+#[debug_db(dyn Database)]
+pub struct EnrichedMember<'db> {
+    /// How the member is accessed: a struct member id or a tuple index.
+    pub kind: MemberAccessKind<'db>,
+    /// The type of the member.
+    pub ty: TypeId<'db>,
+    /// The visibility of the member. `Some` for struct members; `None` for tuple elements (which
+    /// are always visible).
+    pub visibility: Option<visibility::Visibility>,
+}
+
 /// The enriched member of a type, including the member itself and the deref functions needed to
 /// access it.
 pub struct EnrichedTypeMemberAccess<'db> {
-    /// The member itself.
-    pub member: Member<'db>,
+    /// The accessible member.
+    pub member: EnrichedMember<'db>,
     /// The sequence of deref functions needed to access the member.
     pub deref_functions: Vec<(FunctionId<'db>, Mutability)>,
 }
