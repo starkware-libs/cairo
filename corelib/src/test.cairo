@@ -51,5 +51,6 @@ mod language_features {
     mod panics_test;
     mod path_attr_test;
     mod trait_test;
+    mod tuple_test;
     mod while_test;
 }

@@ -35,7 +35,7 @@ use flow_control::lower_graph::lower_graph;
 use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
-use refs::ClosureInfo;
+use refs::{ClosureInfo, member_access_components};
 use salsa::Database;
 use semantic::corelib::{
     core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
@@ -44,7 +44,7 @@ use semantic::items::constant::ConstValue;
 use semantic::types::wrap_in_snapshots;
 use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
-    MatchArmSelector, SemanticDiagnostic, TypeLongId,
+    MatchArmSelector, MemberAccessKind, SemanticDiagnostic, TypeLongId,
 };
 
 use self::block_builder::{BlockBuilder, SealedBlockBuilder, SealedGotoCallsite};
@@ -1536,12 +1536,11 @@ fn lower_expr_loop<'db>(
             ExprVarMemberPath::Var(var) => {
                 ExprVarMemberPath::Var(ExprVar { ty: wrap_in_snapshots(db, var.ty, 1), ..*var })
             }
-            ExprVarMemberPath::Member { parent, member_id, stable_ptr, concrete_struct_id, ty } => {
+            ExprVarMemberPath::Member { parent, kind, stable_ptr, ty } => {
                 ExprVarMemberPath::Member {
                     parent: parent.clone(),
-                    member_id: *member_id,
+                    kind: kind.clone(),
                     stable_ptr: *stable_ptr,
-                    concrete_struct_id: *concrete_struct_id,
                     ty: wrap_in_snapshots(db, *ty, 1),
                 }
             }
@@ -1810,27 +1809,18 @@ fn lower_expr_member_access<'db>(
         ));
     }
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let members = ctx
-        .db
-        .concrete_struct_members(expr.concrete_struct_id)
-        .map_err(LoweringFlowError::Failed)?;
-    let member_idx =
-        members.iter().position(|(_, member)| member.id == expr.member).ok_or_else(|| {
-            LoweringFlowError::Failed(
-                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
-            )
-        })?;
+    let input = lower_expr_to_var_usage(ctx, builder, expr.expr)?;
+    let (member_tys, member_idx) =
+        member_access_components(ctx, ctx.variables[input.var_id].ty, &expr.kind).ok_or_else(
+            || {
+                LoweringFlowError::Failed(
+                    ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
+                )
+            },
+        )?;
     Ok(LoweredExpr::AtVariable(
-        generators::StructMemberAccess {
-            input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
-            member_tys: members
-                .iter()
-                .map(|(_, member)| wrap_in_snapshots(ctx.db, member.ty, expr.n_snapshots))
-                .collect(),
-            member_idx,
-            location,
-        }
-        .add(ctx, &mut builder.statements),
+        generators::StructMemberAccess { input, member_tys, member_idx, location }
+            .add(ctx, &mut builder.statements),
     ))
 }
 
@@ -1861,9 +1851,11 @@ fn lower_expr_struct_ctor<'db>(
                 };
                 let member_path = ExprVarMemberPath::Member {
                     parent: Box::new(path.clone()),
-                    member_id: member.id,
+                    kind: MemberAccessKind::Struct {
+                        concrete_struct_id: expr.concrete_struct_id,
+                        member_id: member.id,
+                    },
                     stable_ptr: path.stable_ptr(),
-                    concrete_struct_id: expr.concrete_struct_id,
                     ty: member.ty,
                 };
                 entry
