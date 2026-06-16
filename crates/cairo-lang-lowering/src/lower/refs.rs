@@ -4,7 +4,7 @@ use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::usage::MemberPath;
-use cairo_lang_semantic::{self as semantic};
+use cairo_lang_semantic::{self as semantic, ConcreteTypeId, MemberAccessKind, TypeLongId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{Itertools, chain};
@@ -12,6 +12,7 @@ use itertools::{Itertools, chain};
 use super::block_builder::BlockStructRecomposer;
 use super::context::VarRequest;
 use crate::VariableId;
+use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 
 /// Information about members captured by the closure and their types.
@@ -163,7 +164,15 @@ impl<'db> SemanticLoweringMapping<'db> {
             return self.scattered.get_mut(path);
         }
 
-        let &MemberPath::Member { ref parent, member_id, concrete_struct_id, .. } = path else {
+        let MemberPath::Member { parent, kind } = path else {
+            return None;
+        };
+        // TODO(TomerStarkware): Support lowering of tuple index access (`t.0`).
+        let MemberAccessKind::Struct { member_id, concrete_struct_id } = kind else {
+            ctx.ctx.diagnostics.report_by_location(
+                ctx.location.long(ctx.ctx.db).clone(),
+                LoweringDiagnosticKind::Unsupported,
+            );
             return None;
         };
 
@@ -332,8 +341,7 @@ fn compute_remapped_variables<'db>(
         .map(|member_id| {
             let member_path = MemberPath::Member {
                 parent: parent_path.clone().into(),
-                member_id: *member_id,
-                concrete_struct_id,
+                kind: MemberAccessKind::Struct { concrete_struct_id, member_id: *member_id },
             };
             // Call `compute_remapped_variables` recursively on the scattered values.
             // If there is a [Value::Var], `require_remapping` will be set to `true` to account
