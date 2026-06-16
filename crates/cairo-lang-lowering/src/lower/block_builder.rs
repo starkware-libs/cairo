@@ -1,21 +1,23 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::structure::StructSemantic;
-use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::usage::{MemberPath, Usage};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, require};
+use cairo_lang_utils::require;
 use itertools::{Itertools, chain, zip_eq};
-use semantic::{ConcreteTypeId, ExprVarMemberPath, MemberAccessKind, TypeLongId};
+use semantic::{ExprVarMemberPath, MemberAccessKind, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
-use super::refs::{AssembleValueError, MovedVar, SemanticLoweringMapping, merge_semantics};
+use super::refs::{
+    AssembleValueError, MovedVar, SemanticLoweringMapping, aggregate_members,
+    member_access_components, merge_semantics,
+};
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 use crate::lower::refs::ClosureInfo;
@@ -224,28 +226,12 @@ impl<'db> BlockBuilder<'db> {
         let ExprVarMemberPath::Member { parent, kind, .. } = member_path else {
             return None;
         };
-        // TODO(TomerStarkware): Support lowering of tuple index access (`t.0`).
-        let MemberAccessKind::Struct { concrete_struct_id, member_id } = kind else {
-            return None;
-        };
         let parent_var = self.get_snap_ref(ctx, parent)?;
-        let members = ctx.db.concrete_struct_members(*concrete_struct_id).ok()?;
-        let (parent_number_of_snapshots, _) =
-            peel_snapshots(ctx.db, ctx.variables[parent_var.var_id].ty);
-        let member_idx = members.iter().position(|(_, member)| member.id == *member_id)?;
+        let (member_tys, member_idx) =
+            member_access_components(ctx, ctx.variables[parent_var.var_id].ty, kind)?;
         Some(
-            generators::StructMemberAccess {
-                input: parent_var,
-                member_tys: members
-                    .iter()
-                    .map(|(_, member)| {
-                        wrap_in_snapshots(ctx.db, member.ty, parent_number_of_snapshots)
-                    })
-                    .collect(),
-                member_idx,
-                location,
-            }
-            .add(ctx, &mut self.statements),
+            generators::StructMemberAccess { input: parent_var, member_tys, member_idx, location }
+                .add(ctx, &mut self.statements),
         )
     }
 
@@ -428,9 +414,11 @@ fn get_ty<'db>(
                     [&member_id.name(ctx.db)]
                     .ty
             }
-            // TODO(TomerStarkware): Support lowering of tuple index access (`t.0`).
-            MemberAccessKind::Index { .. } => {
-                unreachable!("Tuple index access is not supported in lowering.")
+            MemberAccessKind::Index { tuple_ty, index } => {
+                let TypeLongId::Tuple(tys) = tuple_ty.long(ctx.db) else {
+                    unreachable!("Tuple index access on a non-tuple type.");
+                };
+                tys[*index]
             }
         },
     }
@@ -496,16 +484,13 @@ pub struct BlockStructRecomposer<'a, 'b, 'db> {
 impl<'db> BlockStructRecomposer<'_, '_, 'db> {
     pub fn deconstruct(
         &mut self,
-        concrete_struct_id: semantic::ConcreteStructId<'db>,
+        ty: semantic::TypeId<'db>,
         value: VariableId,
-    ) -> OrderedHashMap<MemberId<'db>, VariableId> {
-        let members = self.ctx.db.concrete_struct_members(concrete_struct_id).unwrap();
-        let members = members.values().collect_vec();
-        let member_ids = members.iter().map(|m| m.id);
-
+    ) -> OrderedHashMap<MemberAccessKind<'db>, VariableId> {
+        let members = aggregate_members(self.ctx.db, ty);
         let member_values =
-            self.deconstruct_by_types(value, members.iter().map(|member| member.ty));
-        OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
+            self.deconstruct_by_types(value, members.iter().map(|(_, member_ty)| *member_ty));
+        OrderedHashMap::from_iter(zip_eq(members.into_iter().map(|(kind, _)| kind), member_values))
     }
 
     pub fn deconstruct_by_types(
@@ -527,12 +512,11 @@ impl<'db> BlockStructRecomposer<'_, '_, 'db> {
 
     pub fn reconstruct(
         &mut self,
-        concrete_struct_id: semantic::ConcreteStructId<'db>,
+        ty: semantic::TypeId<'db>,
         members: Vec<VariableId>,
         location: LocationId<'db>,
     ) -> VariableId {
-        let ty =
-            TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)).intern(self.ctx.db);
+        // TODO(ilya): Is using the `self.location` correct here?
         generators::StructConstruct {
             inputs: members
                 .into_iter()
