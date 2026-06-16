@@ -35,7 +35,7 @@ use flow_control::lower_graph::lower_graph;
 use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
-use refs::ClosureInfo;
+use refs::{ClosureInfo, member_access_components};
 use salsa::Database;
 use semantic::corelib::{
     core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
@@ -1802,12 +1802,6 @@ fn lower_expr_member_access<'db>(
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a member-access expression: {:?}", expr.debug(&ctx.expr_formatter));
-    // TODO(TomerStarkware): Support lowering of tuple index access (`t.0`).
-    let MemberAccessKind::Struct { concrete_struct_id, member_id } = expr.kind else {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), Unsupported),
-        ));
-    };
     if let Some(member_path) = &expr.member_path {
         return Ok(LoweredExpr::MemberPath(
             member_path.clone(),
@@ -1815,25 +1809,18 @@ fn lower_expr_member_access<'db>(
         ));
     }
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let members =
-        ctx.db.concrete_struct_members(concrete_struct_id).map_err(LoweringFlowError::Failed)?;
-    let member_idx =
-        members.iter().position(|(_, member)| member.id == member_id).ok_or_else(|| {
-            LoweringFlowError::Failed(
-                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
-            )
-        })?;
+    let input = lower_expr_to_var_usage(ctx, builder, expr.expr)?;
+    let (member_tys, member_idx) =
+        member_access_components(ctx, ctx.variables[input.var_id].ty, &expr.kind).ok_or_else(
+            || {
+                LoweringFlowError::Failed(
+                    ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
+                )
+            },
+        )?;
     Ok(LoweredExpr::AtVariable(
-        generators::StructMemberAccess {
-            input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
-            member_tys: members
-                .iter()
-                .map(|(_, member)| wrap_in_snapshots(ctx.db, member.ty, expr.n_snapshots))
-                .collect(),
-            member_idx,
-            location,
-        }
-        .add(ctx, &mut builder.statements),
+        generators::StructMemberAccess { input, member_tys, member_idx, location }
+            .add(ctx, &mut builder.statements),
     ))
 }
 
