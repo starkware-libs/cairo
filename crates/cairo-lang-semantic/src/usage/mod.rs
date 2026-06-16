@@ -1,7 +1,6 @@
 //! Introduces [Usages], which is responsible for computing variables usage in semantic blocks\
 //! of a function.
 
-use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -10,8 +9,8 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
 use crate::{
-    ConcreteStructId, Condition, Expr, ExprClosure, ExprFor, ExprFunctionCall, ExprFunctionCallArg,
-    ExprId, ExprLoop, ExprVarMemberPath, ExprWhile, FixedSizeArrayItems, FunctionBody, Parameter,
+    Condition, Expr, ExprClosure, ExprFor, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprLoop,
+    ExprVarMemberPath, ExprWhile, FixedSizeArrayItems, FunctionBody, MemberAccessKind, Parameter,
     Pattern, PatternArena, PatternId, Statement, StatementBreak, StatementExpr, StatementLet,
     StatementReturn, VarId,
 };
@@ -25,11 +24,7 @@ mod test;
 #[debug_db(ExprFormatter<'db>)]
 pub enum MemberPath<'db> {
     Var(VarId<'db>),
-    Member {
-        parent: Box<MemberPath<'db>>,
-        member_id: MemberId<'db>,
-        concrete_struct_id: ConcreteStructId<'db>,
-    },
+    Member { parent: Box<MemberPath<'db>>, kind: MemberAccessKind<'db> },
 }
 impl<'db> MemberPath<'db> {
     pub fn base_var(&self) -> VarId<'db> {
@@ -43,12 +38,8 @@ impl<'db> From<&ExprVarMemberPath<'db>> for MemberPath<'db> {
     fn from(value: &ExprVarMemberPath<'db>) -> Self {
         match value {
             ExprVarMemberPath::Var(expr) => MemberPath::Var(expr.var),
-            ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } => {
-                MemberPath::Member {
-                    parent: Box::new(parent.as_ref().into()),
-                    member_id: *member_id,
-                    concrete_struct_id: *concrete_struct_id,
-                }
+            ExprVarMemberPath::Member { parent, kind, .. } => {
+                MemberPath::Member { parent: Box::new(parent.as_ref().into()), kind: kind.clone() }
             }
         }
     }
