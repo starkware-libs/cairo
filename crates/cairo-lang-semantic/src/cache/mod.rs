@@ -59,7 +59,8 @@ use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteFunctionWithBodyId,
     ConcreteImplId, ConcreteImplLongId, ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId,
     ConcreteTypeId, ConcreteVariant, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId,
-    GenericArgumentId, GenericParam, MatchArmSelector, TypeId, TypeLongId, ValueSelectorArm,
+    GenericArgumentId, GenericParam, MatchArmSelector, MemberAccessKind, TypeId, TypeLongId,
+    ValueSelectorArm,
 };
 
 type SemanticCache<'db> = (CrateSemanticCache, SemanticCacheLookups);
@@ -478,12 +479,51 @@ impl FeatureKindCached {
 }
 
 #[derive(Serialize, Deserialize)]
+pub enum MemberAccessKindCached {
+    Struct { concrete_struct_id: ConcreteStructCached, member_id: LanguageElementCached },
+    Index { index: usize },
+}
+impl MemberAccessKindCached {
+    pub fn new<'db>(
+        kind: MemberAccessKind<'db>,
+        ctx: &mut SemanticCacheSavingContext<'db>,
+    ) -> Self {
+        match kind {
+            MemberAccessKind::Struct { concrete_struct_id, member_id } => {
+                MemberAccessKindCached::Struct {
+                    concrete_struct_id: ConcreteStructCached::new(concrete_struct_id, ctx),
+                    member_id: LanguageElementCached::new(member_id, &mut ctx.defs_ctx),
+                }
+            }
+            MemberAccessKind::Index { index } => MemberAccessKindCached::Index { index },
+        }
+    }
+    pub fn get_embedded<'db>(
+        self,
+        data: &Arc<SemanticCacheLoadingData<'db>>,
+        db: &'db dyn Database,
+    ) -> MemberAccessKind<'db> {
+        match self {
+            MemberAccessKindCached::Struct { concrete_struct_id, member_id } => {
+                let (module_id, member_stable_ptr) =
+                    member_id.get_embedded(&data.defs_loading_data);
+                let member_id = MemberLongId(module_id, MemberPtr(member_stable_ptr)).intern(db);
+                MemberAccessKind::Struct {
+                    concrete_struct_id: concrete_struct_id.get_embedded(data, db),
+                    member_id,
+                }
+            }
+            MemberAccessKindCached::Index { index } => MemberAccessKind::Index { index },
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 pub enum ExprVarMemberPathCached {
     Var(ExprVarCached),
     Member {
         parent: Box<ExprVarMemberPathCached>,
-        member_id: LanguageElementCached,
-        concrete_struct_id: ConcreteStructCached,
+        kind: MemberAccessKindCached,
         stable_ptr: SyntaxStablePtrIdCached,
         ty: TypeIdCached,
     },
@@ -497,11 +537,10 @@ impl ExprVarMemberPathCached {
             ExprVarMemberPath::Var(var) => {
                 ExprVarMemberPathCached::Var(ExprVarCached::new(var, ctx))
             }
-            ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, stable_ptr, ty } => {
+            ExprVarMemberPath::Member { parent, kind, stable_ptr, ty } => {
                 ExprVarMemberPathCached::Member {
                     parent: Box::new(ExprVarMemberPathCached::new(*parent, ctx)),
-                    member_id: LanguageElementCached::new(member_id, &mut ctx.defs_ctx),
-                    concrete_struct_id: ConcreteStructCached::new(concrete_struct_id, ctx),
+                    kind: MemberAccessKindCached::new(kind, ctx),
                     stable_ptr: SyntaxStablePtrIdCached::new(
                         stable_ptr.untyped(),
                         &mut ctx.defs_ctx,
@@ -518,21 +557,11 @@ impl ExprVarMemberPathCached {
     ) -> ExprVarMemberPath<'db> {
         match self {
             ExprVarMemberPathCached::Var(var) => ExprVarMemberPath::Var(var.get_embedded(data, db)),
-            ExprVarMemberPathCached::Member {
-                parent,
-                member_id,
-                concrete_struct_id,
-                stable_ptr,
-                ty,
-            } => {
+            ExprVarMemberPathCached::Member { parent, kind, stable_ptr, ty } => {
                 let parent = Box::new(parent.get_embedded(data, db));
-                let (module_id, member_stable_ptr) =
-                    member_id.get_embedded(&data.defs_loading_data);
-                let member_id = MemberLongId(module_id, MemberPtr(member_stable_ptr)).intern(db);
                 ExprVarMemberPath::Member {
                     parent,
-                    member_id,
-                    concrete_struct_id: concrete_struct_id.get_embedded(data, db),
+                    kind: kind.get_embedded(data, db),
                     stable_ptr: ExprPtr(stable_ptr.get_embedded(&data.defs_loading_data)),
                     ty: ty.get_embedded(data),
                 }

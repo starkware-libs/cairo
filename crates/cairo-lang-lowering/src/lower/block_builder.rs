@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, require};
 use itertools::{Itertools, chain, zip_eq};
-use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
+use semantic::{ConcreteTypeId, ExprVarMemberPath, MemberAccessKind, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
@@ -70,6 +70,14 @@ impl<'db> BlockBuilder<'db> {
         var: VariableId,
         location: LocationId<'db>,
     ) {
+        // TODO(TomerStarkware): Support lowering of tuple index access (`t.0`).
+        if member_path_is_tuple_index(&member_path) {
+            ctx.diagnostics.report_by_location(
+                location.long(ctx.db).clone(),
+                LoweringDiagnosticKind::Unsupported,
+            );
+            return;
+        }
         self.semantics.update(
             &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             &member_path,
@@ -129,6 +137,14 @@ impl<'db> BlockBuilder<'db> {
         location: LocationId<'db>,
         expected_ty: Option<semantic::TypeId<'db>>,
     ) -> Option<VarUsage<'db>> {
+        // TODO(TomerStarkware): Support lowering of tuple index access (`t.0`).
+        if member_path_is_tuple_index(member_path) {
+            ctx.diagnostics.report_by_location(
+                location.long(ctx.db).clone(),
+                LoweringDiagnosticKind::Unsupported,
+            );
+            return None;
+        }
         // Fetch the variable from the semantics.
         let res = self.semantics.get(
             BlockStructRecomposer { statements: &mut self.statements, ctx, location },
@@ -222,8 +238,11 @@ impl<'db> BlockBuilder<'db> {
         if let Some(var_id) = ctx.snapped_semantics.get::<MemberPath<'_>>(&member_path.into()) {
             return Some(VarUsage { var_id: *var_id, location });
         }
-        let ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } = member_path
-        else {
+        let ExprVarMemberPath::Member { parent, kind, .. } = member_path else {
+            return None;
+        };
+        // TODO(TomerStarkware): Support lowering of tuple index access (`t.0`).
+        let MemberAccessKind::Struct { concrete_struct_id, member_id } = kind else {
             return None;
         };
         let parent_var = self.get_snap_ref(ctx, parent)?;
@@ -420,8 +439,30 @@ fn get_ty<'db>(
 ) -> semantic::TypeId<'db> {
     match member_path {
         MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
-        MemberPath::Member { member_id, concrete_struct_id, .. } => {
-            ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()[&member_id.name(ctx.db)].ty
+        MemberPath::Member { parent, kind } => match kind {
+            MemberAccessKind::Struct { concrete_struct_id, member_id } => {
+                ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
+                    [&member_id.name(ctx.db)]
+                    .ty
+            }
+            MemberAccessKind::Index { index } => {
+                let (n_snapshots, long_ty) = peel_snapshots(ctx.db, get_ty(ctx, parent));
+                let TypeLongId::Tuple(tys) = long_ty else {
+                    unreachable!("Tuple index access on a non-tuple type.");
+                };
+                wrap_in_snapshots(ctx.db, tys[*index], n_snapshots)
+            }
+        },
+    }
+}
+
+/// Returns whether the member path accesses a tuple element by index at any level (`t.0`).
+/// Such accesses are not yet lowered.
+fn member_path_is_tuple_index(member_path: &MemberPath<'_>) -> bool {
+    match member_path {
+        MemberPath::Var(_) => false,
+        MemberPath::Member { parent, kind } => {
+            matches!(kind, MemberAccessKind::Index { .. }) || member_path_is_tuple_index(parent)
         }
     }
 }

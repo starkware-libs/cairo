@@ -538,6 +538,14 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::NoSuchTypeMember { ty, member_name } => {
                 format!(r#"Type "{}" has no member "{}""#, ty.format(db), member_name.long(db))
             }
+            SemanticDiagnosticKind::TupleIndexOutOfBounds { ty, index, len } => {
+                format!(
+                    r#"Index {} is out of bounds for tuple "{}" of length {}."#,
+                    index,
+                    ty.format(db),
+                    len
+                )
+            }
             SemanticDiagnosticKind::MemberNotVisible(member_name) => {
                 format!(r#"Member "{}" is not visible in this context."#, member_name.long(db))
             }
@@ -1245,6 +1253,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::ModuleFileNotFound(_) => error_code!(E0005),
             SemanticDiagnosticKind::PathNotFound(_) => error_code!(E0006),
             SemanticDiagnosticKind::NoSuchTypeMember { .. } => error_code!(E0007),
+            SemanticDiagnosticKind::TupleIndexOutOfBounds { .. } => error_code!(E2315),
             SemanticDiagnosticKind::Unsupported => error_code!(E2000),
             SemanticDiagnosticKind::UnknownLiteral => error_code!(E2001),
             SemanticDiagnosticKind::UnknownBinaryOperator => error_code!(E2002),
@@ -1652,6 +1661,11 @@ pub enum SemanticDiagnosticKind<'db> {
     NoSuchTypeMember {
         ty: semantic::TypeId<'db>,
         member_name: SmolStrId<'db>,
+    },
+    TupleIndexOutOfBounds {
+        ty: semantic::TypeId<'db>,
+        index: usize,
+        len: usize,
     },
     MemberNotVisible(SmolStrId<'db>),
     NoSuchVariant {

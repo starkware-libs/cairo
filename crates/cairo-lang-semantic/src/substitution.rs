@@ -43,8 +43,8 @@ use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
     ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
     ExprId, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId, GenericArgumentId,
-    GenericParam, MatchArmSelector, Parameter, Signature, TypeId, TypeLongId, ValueSelectorArm,
-    VarId,
+    GenericParam, MatchArmSelector, MemberAccessKind, Parameter, Signature, TypeId, TypeLongId,
+    ValueSelectorArm, VarId,
 };
 
 pub enum RewriteResult {
@@ -387,6 +387,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, UninferredGeneratedImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, UninferredImpl, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVarMemberPath, $($exclude)*);
+        $crate::prune_single!(__regular_helper, MemberAccessKind, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplVarTraitItemMappings, $($exclude)*);
         $crate::prune_single!(__regular_helper, CanonicalTrait, $($exclude)*);

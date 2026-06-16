@@ -3767,8 +3767,84 @@ fn dot_expr<'db>(
     match rhs_syntax {
         ast::Expr::Path(expr) => member_access_expr(ctx, lexpr, expr, stable_ptr),
         ast::Expr::FunctionCall(expr) => method_call_expr(ctx, lexpr, expr, stable_ptr),
+        ast::Expr::Literal(literal) => tuple_index_access_expr(ctx, lexpr, literal, stable_ptr),
         _ => Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(ctx.db), InvalidMemberExpression)),
     }
+}
+
+/// Computes the semantic model of a tuple-index access expression (e.g. "expr.0").
+fn tuple_index_access_expr<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    lexpr: ExprAndId<'db>,
+    index_syntax: ast::TerminalLiteralNumber<'db>,
+    stable_ptr: ast::ExprPtr<'db>,
+) -> Maybe<Expr<'db>> {
+    let db = ctx.db;
+    let index_stable_ptr = index_syntax.stable_ptr(db);
+
+    // A tuple index must be a plain non-negative decimal integer, with no base prefix (e.g. `0x1`)
+    // and no type suffix (e.g. `0_u8`).
+    let index_text = index_syntax.text(db);
+    let index_str = index_text.long(db).as_str();
+
+    let Some(index) = index_str
+        .bytes()
+        .all(|b| b.is_ascii_digit())
+        .then(|| index_str.parse::<usize>().ok())
+        .flatten()
+    else {
+        return Err(ctx.diagnostics.report(index_stable_ptr, InvalidMemberExpression));
+    };
+
+    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, lexpr.ty(), index_stable_ptr)?;
+
+    let TypeLongId::Tuple(tys) = &long_ty else {
+        return Err(ctx.diagnostics.report(
+            index_stable_ptr,
+            NoSuchTypeMember { ty: long_ty.intern(db), member_name: index_text },
+        ));
+    };
+    let len = tys.len();
+    let Some(member_ty) = tys.get(index).copied() else {
+        return Err(ctx.diagnostics.report(
+            index_stable_ptr,
+            TupleIndexOutOfBounds { ty: long_ty.intern(db), index, len },
+        ));
+    };
+
+    // A tuple element is an assignable place only if the tuple itself is one (i.e. not behind a
+    // snapshot).
+    let member_path = if n_snapshots == 0 {
+        lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
+            parent: Box::new(parent),
+            kind: MemberAccessKind::Index { index },
+            stable_ptr,
+            ty: member_ty,
+        })
+    } else {
+        None
+    };
+
+    let ty = wrap_in_snapshots(db, member_ty, n_snapshots);
+    let mut final_expr = Expr::MemberAccess(ExprMemberAccess {
+        expr: lexpr.id,
+        kind: MemberAccessKind::Index { index },
+        ty,
+        member_path,
+        n_snapshots,
+        stable_ptr,
+    });
+    // Adding desnaps after the member access.
+    let desnaps =
+        if ctx.resolver.settings.edition.member_access_desnaps() { n_snapshots } else { 0 };
+    for _ in 0..desnaps {
+        let TypeLongId::Snapshot(ty) = final_expr.ty().long(db) else {
+            unreachable!("Expected snapshot type");
+        };
+        let inner = ctx.arenas.exprs.alloc(final_expr);
+        final_expr = Expr::Desnap(ExprDesnap { inner, ty: *ty, stable_ptr });
+    }
+    Ok(final_expr)
 }
 
 /// Finds all the trait ids usable in the current context.
@@ -3948,9 +4024,11 @@ fn member_access_expr<'db>(
                 {
                     lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
                         parent: Box::new(parent),
-                        member_id: member.id,
+                        kind: MemberAccessKind::Struct {
+                            concrete_struct_id: *concrete_struct_id,
+                            member_id: member.id,
+                        },
                         stable_ptr,
-                        concrete_struct_id: *concrete_struct_id,
                         ty: member.ty,
                     })
                 }
@@ -3981,8 +4059,10 @@ fn member_access_expr<'db>(
             let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
             let mut final_expr = Expr::MemberAccess(ExprMemberAccess {
                 expr: derefed_expr.id,
-                concrete_struct_id: derefed_expr_concrete_struct_id,
-                member: member.id,
+                kind: MemberAccessKind::Struct {
+                    concrete_struct_id: derefed_expr_concrete_struct_id,
+                    member_id: member.id,
+                },
                 ty,
                 member_path,
                 n_snapshots,
