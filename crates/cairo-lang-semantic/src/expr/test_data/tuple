@@ -1,0 +1,185 @@
+//! > Test tuple index access - valid
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo(t: (felt252, u8)) -> u8 {
+    t.1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test tuple index access - out of bounds
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(t: (felt252, u8)) -> felt252 {
+    t.5
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E0007]: Type "(core::felt252, core::integer::u8)" has no member "5"
+ --> lib.cairo:2:7
+    t.5
+      ^
+
+//! > ==========================================================================
+
+//! > Test tuple index access - non-tuple type
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: felt252) -> felt252 {
+    x.0
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E0007]: Type "core::felt252" has no member "0"
+ --> lib.cairo:2:7
+    x.0
+      ^
+
+//! > ==========================================================================
+
+//! > Test tuple index access - type suffix rejected
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(t: (felt252, u8)) -> felt252 {
+    t.0_u8
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E2085]: Invalid member expression.
+ --> lib.cairo:2:7
+    t.0_u8
+      ^^^^
+
+//! > ==========================================================================
+
+//! > Test tuple index access - hex base rejected
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(t: (felt252, u8)) -> u8 {
+    t.0x1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E2085]: Invalid member expression.
+ --> lib.cairo:2:7
+    t.0x1
+      ^^^
+
+//! > ==========================================================================
+
+//! > Test tuple index access - leading zero rejected
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(t: (felt252, u8)) -> (felt252, felt252) {
+    (t.00, t.0x1)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E0007]: Type "(core::felt252, core::integer::u8)" has no member "00"
+ --> lib.cairo:2:8
+    (t.00, t.0x1)
+       ^^
+
+error[E2085]: Invalid member expression.
+ --> lib.cairo:2:14
+    (t.00, t.0x1)
+             ^^^
+
+//! > ==========================================================================
+
+//! > Test tuple index access - assignment to element
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo(mut t: (felt252, u8)) {
+    t.0 = 5;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test tuple index access - through Deref
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo(w: Wrapper) -> u8 {
+    w.1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct Wrapper {
+    inner: (felt252, u8),
+}
+
+impl WrapperDeref of core::ops::Deref<Wrapper> {
+    type Target = (felt252, u8);
+    fn deref(self: Wrapper) -> (felt252, u8) {
+        self.inner
+    }
+}
+
+//! > expected_diagnostics
