@@ -99,7 +99,9 @@ impl Lexer {
     /// Assumes the next 2 characters are "//".
     fn match_trivium_single_line_comment<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         match self.peek_nth(2) {
-            Some('/') => {
+            // `///` is a doc comment, but `////` (4+ slashes) is a regular comment. This matches
+            // `cairo-lang-doc`, which discards a doc comment whose content starts with `/`.
+            Some('/') if self.peek_nth(3) != Some('/') => {
                 self.take_while(|c| c != '\n');
                 let span = self.consume_text_span();
                 let text = span.take(&self.text);
