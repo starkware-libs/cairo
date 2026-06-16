@@ -733,8 +733,7 @@ pub trait Iterator<T> {
     ///
     /// An empty iterator returns the zero value of the type.
     ///
-    /// `sum()` can be used to sum any type implementing [`Sum`][`core::iter::Sum`],
-    /// including [`Option`][`Option::sum`] and [`Result`][`Result::sum`].
+    /// `sum()` can be used to sum any type implementing [`Sum`][`core::iter::Sum`].
     ///
     /// # Panics
     ///
