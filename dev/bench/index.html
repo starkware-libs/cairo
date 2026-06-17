@@ -189,14 +189,19 @@
         // Each distinct unit gets its own y-axis (first on the left, the rest on the right), so a
         // chart mixing e.g. ns/iter and bytes plots each on a comparable scale. `labelOf` picks
         // each series' legend label; `colorMap` maps that label to a color.
-        function drawChart(canvas, title, series, labelOf, colorMap) {
+        function drawChart(panel, title, series, labelOf, colorMap) {
           const wrap = document.createElement('div');
           wrap.className = 'bench-chart-wrap';
           const titleEl = document.createElement('div');
           titleEl.className = 'bench-chart-title';
           titleEl.textContent = title;
+          const canvas = document.createElement('canvas');
           wrap.appendChild(titleEl);
           wrap.appendChild(canvas);
+          // Attach to the live panel BEFORE creating the chart: a responsive Chart.js chart
+          // sizes itself from its parent container, and constructing it on a detached canvas
+          // sends it into an unbounded resize loop ("Maximum call stack size exceeded").
+          panel.appendChild(wrap);
 
           const runIndices = [...new Set(series.flatMap(s => s.dataPoints.map(d => d.entryIndex)))]
             .sort((a, b) => entryList[a].date - entryList[b].date);
@@ -277,8 +282,6 @@
               },
             },
           });
-
-          return wrap;
         }
 
         // Per Metric: one graph per metric, one line per project.
@@ -292,8 +295,7 @@
           }
           const projectColors = buildColorMap(new Set(rows.map(r => r.project)));
           for (const [metricName, series] of byMetric) {
-            const canvas = document.createElement('canvas');
-            panel.appendChild(drawChart(canvas, metricName, series, s => s.project, projectColors));
+            drawChart(panel, metricName, series, s => s.project, projectColors);
           }
           if (!panel.firstChild) panel.innerHTML = '<div class="empty">No matching benchmarks.</div>';
         }
@@ -311,8 +313,7 @@
 
           const metricColors = buildColorMap(new Set(rows.map(r => r.metric)));
           for (const [projectName, series] of byProject) {
-            const canvas = document.createElement('canvas');
-            panel.appendChild(drawChart(canvas, projectName, series, s => s.metric, metricColors));
+            drawChart(panel, projectName, series, s => s.metric, metricColors);
           }
           if (!panel.firstChild) panel.innerHTML = '<div class="empty">No matching benchmarks.</div>';
         }
