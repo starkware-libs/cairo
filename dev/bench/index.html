@@ -318,10 +318,17 @@
           if (!panel.firstChild) panel.innerHTML = '<div class="empty">No matching benchmarks.</div>';
         }
 
-        function render() {
+        // Render a tab's charts the first time its panel becomes visible. Building a chart while
+        // its panel is `display:none` gives Chart.js a zero-width container, and the axis-fitting
+        // pass never converges (infinite `fitBoxes` recursion -> "Maximum call stack size
+        // exceeded"). Deferring until the panel is shown guarantees a real size to lay out in.
+        const renderedTabs = new Set();
+        function renderTab(tab) {
+          if (renderedTabs.has(tab)) return;
+          renderedTabs.add(tab);
           const rows = allRows();
-          renderPerMetric(rows);
-          renderPerProject(rows);
+          if (tab === 'per-metric') renderPerMetric(rows);
+          else if (tab === 'per-project') renderPerProject(rows);
         }
 
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -329,11 +336,14 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             btn.classList.add('active');
+            // Make the panel visible first, then render into it so the charts get a real size.
             document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            renderTab(btn.dataset.tab);
           });
         });
 
-        render();
+        // Render whichever tab is active on load (its panel is already visible).
+        renderTab(document.querySelector('.tab-btn.active').dataset.tab);
       })();
     </script>
   </body>
