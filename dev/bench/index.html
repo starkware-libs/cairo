@@ -139,13 +139,18 @@
             .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
-        // allSeries: benchName ("metric/project") → [{commit, date, bench}, ...] chronological
+        // entryList: every benchmark run in iteration order. A run's index is the shared x-axis
+        // position for all of its benches; the same commit may appear in several runs.
+        const entryList = [];
+        // allSeries: benchName ("metric/project") → [{entryIndex, commit, date, bench}, ...] chronological
         const allSeries = new Map();
         for (const entries of Object.values(data.entries)) {
           for (const entry of entries) {
+            const entryIndex = entryList.length;
+            entryList.push({ commit: entry.commit, date: entry.date });
             for (const bench of entry.benches) {
               if (!allSeries.has(bench.name)) allSeries.set(bench.name, []);
-              allSeries.get(bench.name).push({ commit: entry.commit, date: entry.date, bench });
+              allSeries.get(bench.name).push({ entryIndex, commit: entry.commit, date: entry.date, bench });
             }
           }
         }
@@ -175,6 +180,82 @@
           '#38ff38', '#ff3838', '#333333', '#6e5494',
         ];
 
+        // Draw a line chart for `series` (each {dataPoints, ...}) sharing one x-axis.
+        // The axis is the union of runs the series appear in, ordered chronologically; every
+        // series is aligned onto it by run index, so a series that started later lines up at
+        // the correct (right-hand) positions instead of being shifted to the left. `labelOf`
+        // picks each series' legend label; `colorMap` maps that label to a color.
+        function drawChart(canvas, title, series, labelOf, colorMap) {
+          const wrap = document.createElement('div');
+          wrap.className = 'bench-chart-wrap';
+          const titleEl = document.createElement('div');
+          titleEl.className = 'bench-chart-title';
+          titleEl.textContent = title;
+          wrap.appendChild(titleEl);
+          wrap.appendChild(canvas);
+
+          const runIndices = [...new Set(series.flatMap(s => s.dataPoints.map(d => d.entryIndex)))]
+            .sort((a, b) => a - b);
+          const slot = new Map(runIndices.map((ei, i) => [ei, i]));
+          const labels = runIndices.map(ei => entryList[ei].commit.id.slice(0, 7));
+
+          // aligned[seriesIdx][slot] = data point at that run, or null if the series had no run there.
+          const aligned = series.map(({ dataPoints }) => {
+            const arr = new Array(runIndices.length).fill(null);
+            for (const dp of dataPoints) arr[slot.get(dp.entryIndex)] = dp;
+            return arr;
+          });
+          const unit = aligned.flat().find(dp => dp)?.bench.unit ?? '';
+
+          const datasets = series.map((s, i) => {
+            const color = colorMap.get(labelOf(s));
+            return {
+              label: labelOf(s),
+              data: aligned[i].map(dp => (dp ? dp.bench.value : null)),
+              borderColor: color,
+              backgroundColor: color + '60',
+            };
+          });
+
+          new Chart(canvas, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+              scales: {
+                xAxes: [{ scaleLabel: { display: true, labelString: 'commit' } }],
+                yAxes: [{ scaleLabel: { display: true, labelString: unit }, ticks: { beginAtZero: true } }],
+              },
+              tooltips: {
+                callbacks: {
+                  afterTitle: items => {
+                    const d = aligned[items[0].datasetIndex][items[0].index];
+                    return d ? '\n' + d.commit.message.split('\n')[0] + '\n\n' +
+                      d.commit.timestamp + ' committed by @' + d.commit.committer.username + '\n' : '';
+                  },
+                  label: item => {
+                    const d = aligned[item.datasetIndex][item.index];
+                    if (!d) return '';
+                    let label = item.dataset.label + ': ' + item.value + ' ' + d.bench.unit;
+                    if (d.bench.range) label += ' (' + d.bench.range + ')';
+                    return label;
+                  },
+                  afterLabel: item => {
+                    const d = aligned[item.datasetIndex][item.index];
+                    return d && d.bench.extra ? '\n' + d.bench.extra : '';
+                  },
+                },
+              },
+              onClick: (_evt, elems) => {
+                if (elems.length === 0) return;
+                const d = aligned[elems[0]._datasetIndex][elems[0]._index];
+                if (d) window.open(d.commit.url, '_blank');
+              },
+            },
+          });
+
+          return wrap;
+        }
+
         // Per Metric: one graph per metric, one line per project.
         function renderPerMetric(rows) {
           const panel = document.getElementById('tab-per-metric');
@@ -186,63 +267,8 @@
           }
           const projectColors = buildColorMap(new Set(rows.map(r => r.project)));
           for (const [metricName, series] of byMetric) {
-            const seriesDataArr = series.map(s => s.dataPoints);
-            const labels = series[0].dataPoints.map(d => d.commit.id.slice(0, 7));
-            const unit = series[0].dataPoints[0]?.bench.unit ?? '';
-            const datasets = series.map(({ project, dataPoints }) => {
-              const color = projectColors.get(project);
-              return {
-                label: project,
-                data: dataPoints.map(d => d.bench.value),
-                borderColor: color,
-                backgroundColor: color + '60',
-              };
-            });
-
-            const wrap = document.createElement('div');
-            wrap.className = 'bench-chart-wrap';
-            const title = document.createElement('div');
-            title.className = 'bench-chart-title';
-            title.textContent = metricName;
             const canvas = document.createElement('canvas');
-            wrap.appendChild(title);
-            wrap.appendChild(canvas);
-            panel.appendChild(wrap);
-
-            new Chart(canvas, {
-              type: 'line',
-              data: { labels, datasets },
-              options: {
-                scales: {
-                  xAxes: [{ scaleLabel: { display: true, labelString: 'commit' } }],
-                  yAxes: [{ scaleLabel: { display: true, labelString: unit }, ticks: { beginAtZero: true } }],
-                },
-                tooltips: {
-                  callbacks: {
-                    afterTitle: items => {
-                      const d = seriesDataArr[items[0].datasetIndex][items[0].index];
-                      return '\n' + d.commit.message.split('\n')[0] + '\n\n' +
-                        d.commit.timestamp + ' committed by @' + d.commit.committer.username + '\n';
-                    },
-                    label: item => {
-                      const { bench } = seriesDataArr[item.datasetIndex][item.index];
-                      let label = item.dataset.label + ': ' + item.value + ' ' + bench.unit;
-                      if (bench.range) label += ' (' + bench.range + ')';
-                      return label;
-                    },
-                    afterLabel: item => {
-                      const { extra } = seriesDataArr[item.datasetIndex][item.index].bench;
-                      return extra ? '\n' + extra : '';
-                    },
-                  },
-                },
-                onClick: (_evt, elems) => {
-                  if (elems.length === 0) return;
-                  const d = seriesDataArr[elems[0]._datasetIndex][elems[0]._index];
-                  window.open(d.commit.url, '_blank');
-                },
-              },
-            });
+            panel.appendChild(drawChart(canvas, metricName, series, s => s.project, projectColors));
           }
           if (!panel.firstChild) panel.innerHTML = '<div class="empty">No matching benchmarks.</div>';
         }
@@ -260,63 +286,8 @@
 
           const metricColors = buildColorMap(new Set(rows.map(r => r.metric)));
           for (const [projectName, series] of byProject) {
-            const seriesDataArr = series.map(s => s.dataPoints);
-            const labels = series[0].dataPoints.map(d => d.commit.id.slice(0, 7));
-            const unit = series[0].dataPoints[0]?.bench.unit ?? '';
-            const datasets = series.map(({ metric, dataPoints }) => {
-              const color = metricColors.get(metric);
-              return {
-                label: metric,
-                data: dataPoints.map(d => d.bench.value),
-                borderColor: color,
-                backgroundColor: color + '60',
-              };
-            });
-
-            const wrap = document.createElement('div');
-            wrap.className = 'bench-chart-wrap';
-            const title = document.createElement('div');
-            title.className = 'bench-chart-title';
-            title.textContent = projectName;
             const canvas = document.createElement('canvas');
-            wrap.appendChild(title);
-            wrap.appendChild(canvas);
-            panel.appendChild(wrap);
-
-            new Chart(canvas, {
-              type: 'line',
-              data: { labels, datasets },
-              options: {
-                scales: {
-                  xAxes: [{ scaleLabel: { display: true, labelString: 'commit' } }],
-                  yAxes: [{ scaleLabel: { display: true, labelString: unit }, ticks: { beginAtZero: true } }],
-                },
-                tooltips: {
-                  callbacks: {
-                    afterTitle: items => {
-                      const d = seriesDataArr[items[0].datasetIndex][items[0].index];
-                      return '\n' + d.commit.message.split('\n')[0] + '\n\n' +
-                        d.commit.timestamp + ' committed by @' + d.commit.committer.username + '\n';
-                    },
-                    label: item => {
-                      const { bench } = seriesDataArr[item.datasetIndex][item.index];
-                      let label = item.dataset.label + ': ' + item.value + ' ' + bench.unit;
-                      if (bench.range) label += ' (' + bench.range + ')';
-                      return label;
-                    },
-                    afterLabel: item => {
-                      const { extra } = seriesDataArr[item.datasetIndex][item.index].bench;
-                      return extra ? '\n' + extra : '';
-                    },
-                  },
-                },
-                onClick: (_evt, elems) => {
-                  if (elems.length === 0) return;
-                  const d = seriesDataArr[elems[0]._datasetIndex][elems[0]._index];
-                  window.open(d.commit.url, '_blank');
-                },
-              },
-            });
+            panel.appendChild(drawChart(canvas, projectName, series, s => s.metric, metricColors));
           }
           if (!panel.firstChild) panel.innerHTML = '<div class="empty">No matching benchmarks.</div>';
         }
