@@ -181,10 +181,14 @@
         ];
 
         // Draw a line chart for `series` (each {dataPoints, ...}) sharing one x-axis.
-        // The axis is the union of runs the series appear in, ordered chronologically; every
-        // series is aligned onto it by run index, so a series that started later lines up at
-        // the correct (right-hand) positions instead of being shifted to the left. `labelOf`
-        // picks each series' legend label; `colorMap` maps that label to a color.
+        // The axis is the union of runs the series appear in, ordered chronologically by date;
+        // every series is aligned onto it by run index, so a series that started later lines up
+        // at the correct (right-hand) positions instead of being shifted to the left. Date order
+        // (rather than per-suite append order) interleaves runs from different suites, so series
+        // measured by separate suites overlap in time instead of sitting in disjoint x-ranges.
+        // Each distinct unit gets its own y-axis (first on the left, the rest on the right), so a
+        // chart mixing e.g. ns/iter and bytes plots each on a comparable scale. `labelOf` picks
+        // each series' legend label; `colorMap` maps that label to a color.
         function drawChart(canvas, title, series, labelOf, colorMap) {
           const wrap = document.createElement('div');
           wrap.className = 'bench-chart-wrap';
@@ -195,7 +199,7 @@
           wrap.appendChild(canvas);
 
           const runIndices = [...new Set(series.flatMap(s => s.dataPoints.map(d => d.entryIndex)))]
-            .sort((a, b) => a - b);
+            .sort((a, b) => entryList[a].date - entryList[b].date);
           const slot = new Map(runIndices.map((ei, i) => [ei, i]));
           const labels = runIndices.map(ei => entryList[ei].commit.id.slice(0, 7));
 
@@ -205,15 +209,34 @@
             for (const dp of dataPoints) arr[slot.get(dp.entryIndex)] = dp;
             return arr;
           });
-          const unit = aligned.flat().find(dp => dp)?.bench.unit ?? '';
+
+          // One y-axis per distinct unit, in first-seen order: y-0 left, the rest stacked right.
+          const unitOf = s => s.dataPoints[0]?.bench.unit ?? '';
+          const units = [...new Set(series.map(unitOf))];
+          const yAxisId = unit => 'y-' + units.indexOf(unit);
+          const yAxes = units.map((unit, i) => ({
+            id: yAxisId(unit),
+            position: i === 0 ? 'left' : 'right',
+            scaleLabel: { display: true, labelString: unit },
+            ticks: { beginAtZero: true },
+            // Keep only the first axis' gridlines so stacked right axes don't clutter the plot.
+            gridLines: { drawOnChartArea: i === 0 },
+          }));
 
           const datasets = series.map((s, i) => {
             const color = colorMap.get(labelOf(s));
+            // When the chart carries more than one unit, name the line's unit so the reader
+            // can tell which y-axis it belongs to.
+            const label = units.length > 1 ? labelOf(s) + ' (' + unitOf(s) + ')' : labelOf(s);
             return {
-              label: labelOf(s),
+              label,
+              yAxisID: yAxisId(unitOf(s)),
               data: aligned[i].map(dp => (dp ? dp.bench.value : null)),
               borderColor: color,
               backgroundColor: color + '60',
+              // Runs from another suite leave gaps in the interleaved region; bridge them so each
+              // line stays continuous instead of rendering as scattered points.
+              spanGaps: true,
             };
           });
 
@@ -223,7 +246,7 @@
             options: {
               scales: {
                 xAxes: [{ scaleLabel: { display: true, labelString: 'commit' } }],
-                yAxes: [{ scaleLabel: { display: true, labelString: unit }, ticks: { beginAtZero: true } }],
+                yAxes,
               },
               tooltips: {
                 callbacks: {
