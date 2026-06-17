@@ -82,11 +82,11 @@ impl ASerde<> of core::serde::Serde::<A> {
         core::serde::Serde::<usize>::serialize(self.data, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<A> {
-        let x = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
-        let data = core::internal::InferDestruct::<usize> { value: core::serde::Serde::<usize>::deserialize(ref serialized)? };
+        let __serde_member_x = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let __serde_member_data = core::internal::InferDestruct::<usize> { value: core::serde::Serde::<usize>::deserialize(ref serialized)? };
         core::option::Option::Some(A {
-            x: x.value,
-            data: data.value,
+            x: __serde_member_x.value,
+            data: __serde_member_data.value,
         })
     }
 }
@@ -252,9 +252,9 @@ impl BSerde<> of core::serde::Serde::<B> {
         core::serde::Serde::<felt252>::serialize(self.x, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<B> {
-        let x = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let __serde_member_x = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
         core::option::Option::Some(B {
-            x: x.value,
+            x: __serde_member_x.value,
         })
     }
 }

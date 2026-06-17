@@ -89,8 +89,8 @@ impl OuterTypeHash<
     #[inline(always)]
     fn update_state(state: __State, value: OuterType) -> __State {
         let __hash_derive_state = state;
-        let x = core::internal::InferDrop::<u32> { value: value.x };
-        let __hash_derive_state = core::hash::Hash::<u32>::update_state(__hash_derive_state, x.value);
+        let __hash_derive_member_x = core::internal::InferDrop::<u32> { value: value.x };
+        let __hash_derive_state = core::hash::Hash::<u32>::update_state(__hash_derive_state, __hash_derive_member_x.value);
         __hash_derive_state
     }
 }

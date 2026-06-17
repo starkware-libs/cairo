@@ -244,10 +244,10 @@ impl TwoMemberStructHash<
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberStruct) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::InferDrop::<A> { value: value.a };
-        let b = core::internal::InferDrop::<B> { value: value.b };
-        let __hash_derive_state = core::hash::Hash::<A>::update_state(__hash_derive_state, a.value);
-        let __hash_derive_state = core::hash::Hash::<B>::update_state(__hash_derive_state, b.value);
+        let __hash_derive_member_a = core::internal::InferDrop::<A> { value: value.a };
+        let __hash_derive_member_b = core::internal::InferDrop::<B> { value: value.b };
+        let __hash_derive_state = core::hash::Hash::<A>::update_state(__hash_derive_state, __hash_derive_member_a.value);
+        let __hash_derive_state = core::hash::Hash::<B>::update_state(__hash_derive_state, __hash_derive_member_b.value);
         __hash_derive_state
     }
 }
@@ -269,11 +269,11 @@ impl TwoMemberStructSerde<> of core::serde::Serde::<TwoMemberStruct> {
         core::serde::Serde::<B>::serialize(self.b, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberStruct> {
-        let a = core::internal::InferDestruct::<A> { value: core::serde::Serde::<A>::deserialize(ref serialized)? };
-        let b = core::internal::InferDestruct::<B> { value: core::serde::Serde::<B>::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::InferDestruct::<A> { value: core::serde::Serde::<A>::deserialize(ref serialized)? };
+        let __serde_member_b = core::internal::InferDestruct::<B> { value: core::serde::Serde::<B>::deserialize(ref serialized)? };
         core::option::Option::Some(TwoMemberStruct {
-            a: a.value,
-            b: b.value,
+            a: __serde_member_a.value,
+            b: __serde_member_b.value,
         })
     }
 }
@@ -315,8 +315,8 @@ impl GenericStructHash<
     #[inline(always)]
     fn update_state(state: __State, value: GenericStruct<T>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
-        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
+        let __hash_derive_member_a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, __hash_derive_member_a.value);
         __hash_derive_state
     }
 }
@@ -353,11 +353,11 @@ impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl __
         __MEMBER_IMPL_b_Serde::serialize(self.b, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberGenericStruct<T, U, USomeTrait>> {
-        let a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
-        let b = core::internal::DestructWith::<U, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
+        let __serde_member_b = core::internal::DestructWith::<U, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
         core::option::Option::Some(TwoMemberGenericStruct {
-            a: a.value,
-            b: b.value,
+            a: __serde_member_a.value,
+            b: __serde_member_b.value,
         })
     }
 }
@@ -370,10 +370,10 @@ impl TwoMemberGenericStructHash<
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberGenericStruct<T, U, USomeTrait>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
-        let b = core::internal::DropWith::<U, __MEMBER_IMPL_b_Drop> { value: value.b };
-        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
-        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, b.value);
+        let __hash_derive_member_a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_member_b = core::internal::DropWith::<U, __MEMBER_IMPL_b_Drop> { value: value.b };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, __hash_derive_member_a.value);
+        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, __hash_derive_member_b.value);
         __hash_derive_state
     }
 }
@@ -410,11 +410,11 @@ impl TwoMemberSameTypeGenericStructSerde<T, impl __MEMBER_IMPL_a_Serde: core::se
         __MEMBER_IMPL_b_Serde::serialize(self.b, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberSameTypeGenericStruct<T>> {
-        let a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
-        let b = core::internal::DestructWith::<T, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
+        let __serde_member_b = core::internal::DestructWith::<T, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
         core::option::Option::Some(TwoMemberSameTypeGenericStruct {
-            a: a.value,
-            b: b.value,
+            a: __serde_member_a.value,
+            b: __serde_member_b.value,
         })
     }
 }
@@ -427,10 +427,10 @@ impl TwoMemberSameTypeGenericStructHash<
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberSameTypeGenericStruct<T>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
-        let b = core::internal::DropWith::<T, __MEMBER_IMPL_b_Drop> { value: value.b };
-        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
-        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, b.value);
+        let __hash_derive_member_a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_member_b = core::internal::DropWith::<T, __MEMBER_IMPL_b_Drop> { value: value.b };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, __hash_derive_member_a.value);
+        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, __hash_derive_member_b.value);
         __hash_derive_state
     }
 }
@@ -461,9 +461,9 @@ impl GenericStructNotDependentSerde<T> of core::serde::Serde::<GenericStructNotD
         core::serde::Serde::<u32>::serialize(self.a, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GenericStructNotDependent<T>> {
-        let a = core::internal::InferDestruct::<u32> { value: core::serde::Serde::<u32>::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::InferDestruct::<u32> { value: core::serde::Serde::<u32>::deserialize(ref serialized)? };
         core::option::Option::Some(GenericStructNotDependent {
-            a: a.value,
+            a: __serde_member_a.value,
         })
     }
 }
@@ -476,8 +476,8 @@ impl GenericStructNotDependentHash<
     #[inline(always)]
     fn update_state(state: __State, value: GenericStructNotDependent<T>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::InferDrop::<u32> { value: value.a };
-        let __hash_derive_state = core::hash::Hash::<u32>::update_state(__hash_derive_state, a.value);
+        let __hash_derive_member_a = core::internal::InferDrop::<u32> { value: value.a };
+        let __hash_derive_state = core::hash::Hash::<u32>::update_state(__hash_derive_state, __hash_derive_member_a.value);
         __hash_derive_state
     }
 }
@@ -508,9 +508,9 @@ impl GenericStructIndirectlyDependentSerde<T, impl __MEMBER_IMPL_a_Serde: core::
         __MEMBER_IMPL_a_Serde::serialize(self.a, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GenericStructIndirectlyDependent<T>> {
-        let a = core::internal::DestructWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::DestructWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
         core::option::Option::Some(GenericStructIndirectlyDependent {
-            a: a.value,
+            a: __serde_member_a.value,
         })
     }
 }
@@ -523,8 +523,8 @@ impl GenericStructIndirectlyDependentHash<
     #[inline(always)]
     fn update_state(state: __State, value: GenericStructIndirectlyDependent<T>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::DropWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Drop> { value: value.a };
-        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
+        let __hash_derive_member_a = core::internal::DropWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, __hash_derive_member_a.value);
         __hash_derive_state
     }
 }

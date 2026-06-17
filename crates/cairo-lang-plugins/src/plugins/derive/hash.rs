@@ -79,14 +79,14 @@ pub fn handle_hash(info: &PluginTypeInfo<'_>) -> String {
                 chain!(
                     info.members_info.iter().map(|member| {
                         format!(
-                            "let {member} = {drop_with} {{ value: value.{member} }};",
+                            "let __hash_derive_member_{member} = {drop_with} {{ value: value.{member} }};",
                             member = member.name,
                             drop_with = member.drop_with(),
                         )
                     }),
                     info.members_info.iter().map(|member| {
                         format!(
-                            "let __hash_derive_state = {imp}::update_state(__hash_derive_state, {}.value);",
+                            "let __hash_derive_state = {imp}::update_state(__hash_derive_state, __hash_derive_member_{}.value);",
                             member.name,
                             imp = member.impl_name(HASH_TRAIT),
                         )
