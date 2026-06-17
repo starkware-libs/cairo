@@ -27,3 +27,91 @@ const_as_box<Const<Tuple<felt252, felt252, felt252>, Const<felt252, 10>, Const<f
 span_from_tuple<Tuple<felt252, felt252, felt252>>([0]) -> ([1])
 store_temp<Snapshot<Array<felt252>>>([1]) -> ([1])
 return([1])
+
+//! > ==========================================================================
+
+//! > Test a user-defined phantom type in a container specializes (represented as `never`).
+
+//! > test_runner_name
+test_function_generator
+
+//! > function_code
+fn foo(x: Option<Ph>) -> felt252 {
+    match x {
+        Option::Some(p) => match p {},
+        Option::None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+enum_match<core::option::Option::<test::Ph>>([0]) { fallthrough([1]) label_test::foo::1([2]) }
+branch_align() -> ()
+enum_match<core::never>([1]) { }
+label_test::foo::3:
+label_test::foo::1:
+branch_align() -> ()
+drop<Unit>([2]) -> ()
+const_as_immediate<Const<felt252, 0>>() -> ([3])
+store_temp<felt252>([3]) -> ([3])
+return([3])
+label_test::foo::2:
+
+//! > ==========================================================================
+
+//! > Test a tuple of a user-defined phantom keeps its struct shape with `never` members.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function_code
+fn foo(x: Option<(Ph,)>) -> felt252 {
+    match x {
+        Option::Some(t) => {
+            let (p,) = t;
+            match p {}
+        },
+        Option::None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+enum_match<core::option::Option::<(test::Ph,)>>([0]) { fallthrough([1]) label_test::foo::1([2]) }
+branch_align() -> ()
+struct_deconstruct<Tuple<core::never>>([1]) -> ([3])
+enum_match<core::never>([3]) { }
+label_test::foo::3:
+label_test::foo::1:
+branch_align() -> ()
+drop<Unit>([2]) -> ()
+const_as_immediate<Const<felt252, 0>>() -> ([4])
+store_temp<felt252>([4]) -> ([4])
+return([4])
+label_test::foo::2:
