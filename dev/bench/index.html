@@ -258,7 +258,9 @@
                   label: item => {
                     const d = aligned[item.datasetIndex][item.index];
                     if (!d) return '';
-                    let label = item.dataset.label + ': ' + item.value + ' ' + d.bench.unit;
+                    // Chart.js 2.x tooltip items carry no `dataset`; read the line label from
+                    // the datasets array we built above (in closure).
+                    let label = datasets[item.datasetIndex].label + ': ' + d.bench.value + ' ' + d.bench.unit;
                     if (d.bench.range) label += ' (' + d.bench.range + ')';
                     return label;
                   },
