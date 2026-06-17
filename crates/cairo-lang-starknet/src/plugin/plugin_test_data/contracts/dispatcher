@@ -277,9 +277,9 @@ impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -397,9 +397,9 @@ impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -517,9 +517,9 @@ impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -637,9 +637,9 @@ impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -930,9 +930,9 @@ impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -1050,9 +1050,9 @@ impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -1170,9 +1170,9 @@ impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -1290,9 +1290,9 @@ impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -1663,9 +1663,9 @@ impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -1783,9 +1783,9 @@ impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -1903,9 +1903,9 @@ impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -2023,9 +2023,9 @@ impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }

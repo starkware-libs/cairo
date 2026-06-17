@@ -628,9 +628,9 @@ impl GetSupplyDispatcherSerde<> of core::serde::Serde::<GetSupplyDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplyDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -734,9 +734,9 @@ impl GetSupplyLibraryDispatcherSerde<> of core::serde::Serde::<GetSupplyLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplyLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -840,9 +840,9 @@ impl GetSupplySafeLibraryDispatcherSerde<> of core::serde::Serde::<GetSupplySafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplySafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -946,9 +946,9 @@ impl GetSupplySafeDispatcherSerde<> of core::serde::Serde::<GetSupplySafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplySafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }

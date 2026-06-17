@@ -248,8 +248,8 @@ impl WrappedFelt252Hash<
     #[inline(always)]
     fn update_state(state: __State, value: WrappedFelt252) -> __State {
         let __hash_derive_state = state;
-        let value = core::internal::InferDrop::<felt252> { value: value.value };
-        let __hash_derive_state = core::hash::Hash::<felt252>::update_state(__hash_derive_state, value.value);
+        let __hash_derive_member_value = core::internal::InferDrop::<felt252> { value: value.value };
+        let __hash_derive_state = core::hash::Hash::<felt252>::update_state(__hash_derive_state, __hash_derive_member_value.value);
         __hash_derive_state
     }
 }

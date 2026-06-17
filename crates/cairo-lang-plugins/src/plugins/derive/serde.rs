@@ -76,13 +76,13 @@ pub fn handle_serde(info: &PluginTypeInfo<'_>, member_access_desnaps: bool) -> S
                         {}
                     }})",
                     info.members_info.iter().map(|member|format!(
-                        "let {member} = {destruct_with} {{ value: {imp}::deserialize(ref serialized)? }};",
+                        "let __serde_member_{member} = {destruct_with} {{ value: {imp}::deserialize(ref serialized)? }};",
                         member=member.name,
                         destruct_with=member.destruct_with(),
                         imp=member.impl_name(SERDE_TRAIT),
                     )).join("\n"),
                     info.members_info.iter().map(|member|format!(
-                        "{member}: {member}.value,", member=member.name
+                        "{member}: __serde_member_{member}.value,", member=member.name
                     )).join("\n    "),
                 }
             }

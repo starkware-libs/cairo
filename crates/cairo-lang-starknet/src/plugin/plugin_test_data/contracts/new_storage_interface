@@ -2709,9 +2709,9 @@ impl HelloStarknetTraitDispatcherSerde<> of core::serde::Serde::<HelloStarknetTr
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(HelloStarknetTraitDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -2829,9 +2829,9 @@ impl HelloStarknetTraitLibraryDispatcherSerde<> of core::serde::Serde::<HelloSta
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(HelloStarknetTraitLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -2949,9 +2949,9 @@ impl HelloStarknetTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<Hell
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(HelloStarknetTraitSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -3069,9 +3069,9 @@ impl HelloStarknetTraitSafeDispatcherSerde<> of core::serde::Serde::<HelloStarkn
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(HelloStarknetTraitSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }

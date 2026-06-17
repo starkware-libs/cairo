@@ -1454,15 +1454,15 @@ impl UserInfoSerde<> of core::serde::Serde::<UserInfo> {
         core::serde::Serde::<u256>::serialize(self.total_supply, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<UserInfo> {
-        let name = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
-        let symbol = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
-        let decimals = core::internal::InferDestruct::<u8> { value: core::serde::Serde::<u8>::deserialize(ref serialized)? };
-        let total_supply = core::internal::InferDestruct::<u256> { value: core::serde::Serde::<u256>::deserialize(ref serialized)? };
+        let __serde_member_name = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let __serde_member_symbol = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let __serde_member_decimals = core::internal::InferDestruct::<u8> { value: core::serde::Serde::<u8>::deserialize(ref serialized)? };
+        let __serde_member_total_supply = core::internal::InferDestruct::<u256> { value: core::serde::Serde::<u256>::deserialize(ref serialized)? };
         core::option::Option::Some(UserInfo {
-            name: name.value,
-            symbol: symbol.value,
-            decimals: decimals.value,
-            total_supply: total_supply.value,
+            name: __serde_member_name.value,
+            symbol: __serde_member_symbol.value,
+            decimals: __serde_member_decimals.value,
+            total_supply: __serde_member_total_supply.value,
         })
     }
 }
@@ -1739,9 +1739,9 @@ impl IERC20DispatcherSerde<> of core::serde::Serde::<IERC20Dispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20Dispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20Dispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -1845,9 +1845,9 @@ impl IERC20LibraryDispatcherSerde<> of core::serde::Serde::<IERC20LibraryDispatc
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20LibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20LibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -1951,9 +1951,9 @@ impl IERC20SafeLibraryDispatcherSerde<> of core::serde::Serde::<IERC20SafeLibrar
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20SafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -2057,9 +2057,9 @@ impl IERC20SafeDispatcherSerde<> of core::serde::Serde::<IERC20SafeDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20SafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }

@@ -7,6 +7,13 @@ enum EnumForSerde {
     C: u64,
 }
 
+/// A field named `serialized` (not last) must not shadow the generated `deserialize` parameter.
+#[derive(Copy, Debug, Drop, Serde, PartialEq)]
+struct StructWithSerializedField {
+    serialized: u32,
+    other: u32,
+}
+
 #[derive(Drop, Debug, Default, PartialEq)]
 struct StructForDefault {
     a: felt252,
@@ -58,6 +65,19 @@ fn test_derive_serde_enum() {
         @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
         @a,
         'expected a',
+    );
+    assert(serialized.is_empty(), 'expected empty');
+}
+
+#[test]
+fn test_derive_serde_struct_with_serialized_field() {
+    let mut output = array![];
+    StructWithSerializedField { serialized: 3, other: 5 }.serialize(ref output);
+    let mut serialized = output.span();
+    assert_eq(
+        @Serde::<StructWithSerializedField>::deserialize(ref serialized).expect('failed to read'),
+        @StructWithSerializedField { serialized: 3, other: 5 },
+        'bad round-trip',
     );
     assert(serialized.is_empty(), 'expected empty');
 }
