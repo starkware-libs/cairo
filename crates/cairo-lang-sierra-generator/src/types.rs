@@ -40,11 +40,19 @@ pub fn get_concrete_type_id<'db>(
         ) if db.is_self_referential(type_id)? => {
             return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)));
         }
-        _ => {
-            if type_id.is_phantom(db) {
-                return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)));
-            }
+        // A user-defined phantom struct/enum is uninhabited, so represent it as the (representable)
+        // `never` type; a container of it (e.g. `Option<Ph>`) then specializes instead of ICEing.
+        semantic::TypeLongId::Concrete(
+            semantic::ConcreteTypeId::Enum(_) | semantic::ConcreteTypeId::Struct(_),
+        ) if type_id.is_phantom(db) => {
+            return Ok(db.get_concrete_type_id(semantic::corelib::never_ty(db))?.clone());
         }
+        // Extern phantom types keep their dedicated `Phantom` long id - their identity matters to
+        // the libfuncs that consume them (e.g. circuit gates).
+        _ if type_id.is_phantom(db) => {
+            return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)));
+        }
+        _ => {}
     }
     Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
         db.get_concrete_long_type_id(type_id)?.clone(),
