@@ -20,7 +20,7 @@ use cairo_lang_sierra_generator::debug_info::SierraProgramDebugInfo;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
-use cairo_lang_utils::{CloneableDatabase, write_comma_separated};
+use cairo_lang_utils::CloneableDatabase;
 use cairo_vm::types::builtin_name::BuiltinName;
 use itertools::Itertools;
 use salsa::Database;
@@ -36,8 +36,7 @@ impl std::fmt::Display for CompiledFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "// builtins:")?;
         if !self.wrapper.builtins.is_empty() {
-            write!(f, " ")?;
-            write_comma_separated(f, self.wrapper.builtins.iter().map(|b| b.to_str()))?;
+            write!(f, " {}", self.wrapper.builtins.iter().map(|b| b.to_str()).format(", "))?;
         }
         writeln!(f)?;
         writeln!(f, "// header")?;

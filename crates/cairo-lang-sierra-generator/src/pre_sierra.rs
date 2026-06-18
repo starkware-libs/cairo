@@ -6,7 +6,8 @@ use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
-use cairo_lang_utils::{define_short_id, write_comma_separated};
+use cairo_lang_utils::define_short_id;
+use itertools::Itertools;
 use salsa::Database;
 
 /// Represents the long ID of a pre-Sierra label.
@@ -117,19 +118,16 @@ impl<'db> std::fmt::Display for StatementWithDb<'db> {
                 write!(f, "{}:", id.with_db(self.db))
             }
             Statement::PushValues(values) => {
-                write!(f, "PushValues(")?;
-                write_comma_separated(
+                write!(
                     f,
-                    values.iter().map(|PushValue { var, ty, .. }| format!("{var}: {ty}")),
-                )?;
-                write!(f, ") -> (")?;
-                write_comma_separated(
-                    f,
-                    values.iter().map(|PushValue { var_on_stack, dup, .. }| {
-                        if *dup { format!("{var_on_stack}*") } else { format!("{var_on_stack}") }
-                    }),
-                )?;
-                write!(f, ")")
+                    "PushValues({}) -> ({})",
+                    values.iter().format_with(", ", |PushValue { var, ty, .. }, f| f(
+                        &format_args!("{var}: {ty}")
+                    )),
+                    values.iter().format_with(", ", |PushValue { var_on_stack, dup, .. }, f| {
+                        if *dup { f(&format_args!("{var_on_stack}*")) } else { f(var_on_stack) }
+                    })
+                )
             }
         }
     }

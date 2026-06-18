@@ -2,7 +2,7 @@ use std::fmt;
 
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::write_comma_separated;
+use itertools::Itertools;
 
 use crate::ids::{
     ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
@@ -110,11 +110,14 @@ impl fmt::Display for ConcreteLibfuncLongId {
 
 impl<StatementId: fmt::Display> fmt::Display for GenFunction<StatementId> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}@{}(", self.id, self.entry_point)?;
-        write_comma_separated(f, &self.params)?;
-        write!(f, ") -> (")?;
-        write_comma_separated(f, &self.signature.ret_types)?;
-        write!(f, ")")
+        write!(
+            f,
+            "{}@{}({}) -> ({})",
+            self.id,
+            self.entry_point,
+            self.params.iter().format(", "),
+            self.signature.ret_types.iter().format(", ")
+        )
     }
 }
 
@@ -173,9 +176,7 @@ impl<StatementId: fmt::Display> fmt::Display for GenStatement<StatementId> {
         match self {
             GenStatement::Invocation(invocation) => write!(f, "{invocation}"),
             GenStatement::Return(ids) => {
-                write!(f, "return(")?;
-                write_comma_separated(f, ids)?;
-                write!(f, ")")
+                write!(f, "return({})", ids.iter().format(", "))
             }
         }
     }
@@ -183,16 +184,13 @@ impl<StatementId: fmt::Display> fmt::Display for GenStatement<StatementId> {
 
 impl<StatementId: fmt::Display> fmt::Display for GenInvocation<StatementId> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}(", self.libfunc_id)?;
-        write_comma_separated(f, &self.args)?;
+        write!(f, "{}({}) ", self.libfunc_id, self.args.iter().format(", "))?;
         if let [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] =
             &self.branches[..]
         {
-            write!(f, ") -> (")?;
-            write_comma_separated(f, results)?;
-            write!(f, ")")
+            write!(f, "-> ({})", results.iter().format(", "))
         } else {
-            write!(f, ") {{ ")?;
+            write!(f, "{{ ")?;
             self.branches.iter().try_for_each(|branch_info| write!(f, "{branch_info} "))?;
             write!(f, "}}")
         }
@@ -201,9 +199,7 @@ impl<StatementId: fmt::Display> fmt::Display for GenInvocation<StatementId> {
 
 impl<StatementId: fmt::Display> fmt::Display for GenBranchInfo<StatementId> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}(", self.target)?;
-        write_comma_separated(f, &self.results)?;
-        write!(f, ")")
+        write!(f, "{}({})", self.target, self.results.iter().format(", "))
     }
 }
 
@@ -223,11 +219,5 @@ impl fmt::Display for StatementIdx {
 }
 
 fn write_template_args(f: &mut fmt::Formatter<'_>, args: &[GenericArg]) -> fmt::Result {
-    if args.is_empty() {
-        Ok(())
-    } else {
-        write!(f, "<")?;
-        write_comma_separated(f, args)?;
-        write!(f, ">")
-    }
+    if args.is_empty() { Ok(()) } else { write!(f, "<{}>", args.iter().format(", ")) }
 }

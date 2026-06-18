@@ -5,8 +5,6 @@
 #[cfg(not(feature = "std"))]
 extern crate alloc;
 
-use core::fmt;
-
 /// Re-exporting the [`smol_str`] crate so that downstream projects can always use the same
 /// instance the compiler does.
 pub use ::smol_str;
@@ -37,20 +35,6 @@ pub use heap_size::HeapSize;
 /// Similar to From / TryFrom, but returns an option.
 pub trait OptionFrom<T>: Sized {
     fn option_from(other: T) -> Option<Self>;
-}
-
-pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: core::fmt::Display>(
-    f: &mut fmt::Formatter<'_>,
-    values: Iter,
-) -> fmt::Result {
-    let mut iter = values.into_iter();
-    if let Some(value) = iter.next() {
-        write!(f, "{value}")?;
-    }
-    for value in iter {
-        write!(f, ", {value}")?;
-    }
-    Ok(())
 }
 
 /// Helper operations on `Option<T>`.
