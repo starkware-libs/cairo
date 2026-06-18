@@ -8,36 +8,36 @@
 //!
 //! ```
 //! use starknet::SyscallResultTrait;
-/// use starknet::secp256r1::Secp256r1Point;
-/// use starknet::secp256_trait::{Secp256Trait, Signature, is_signature_entry_valid,
-/// is_valid_signature, recover_public_key};
-///
-/// assert!(
-///     is_signature_entry_valid::<
-///         Secp256r1Point,
-///     >(0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac),
-/// );
-///
-/// let msg_hash = 0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4d;
-/// let r = 0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac;
-/// let s = 0x36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d60;
-/// let public_key = Secp256Trait::secp256_ec_new_syscall(
-///     0x4aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff3,
-///     0x7618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e10e,
-/// )
-///     .unwrap_syscall()
-///     .unwrap();
-///
-/// assert!(is_valid_signature::<Secp256r1Point>(msg_hash, r, s, public_key));
-///
-/// let signature = Signature {
-///     r: 0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac,
-///     s: 0x36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d60,
-///     y_parity: true,
-/// };
-///
-/// let public_key = recover_public_key::<Secp256r1Point>(msg_hash, signature);
-/// ```
+//! use starknet::secp256r1::Secp256r1Point;
+//! use starknet::secp256_trait::{Secp256Trait, Signature, is_signature_entry_valid,
+//! is_valid_signature, recover_public_key};
+//!
+//! assert!(
+//!     is_signature_entry_valid::<
+//!         Secp256r1Point,
+//!     >(0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac),
+//! );
+//!
+//! let msg_hash = 0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4d;
+//! let r = 0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac;
+//! let s = 0x36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d60;
+//! let public_key = Secp256Trait::secp256_ec_new_syscall(
+//!     0x4aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff3,
+//!     0x7618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e10e,
+//! )
+//!     .unwrap_syscall()
+//!     .unwrap();
+//!
+//! assert!(is_valid_signature::<Secp256r1Point>(msg_hash, r, s, public_key));
+//!
+//! let signature = Signature {
+//!     r: 0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac,
+//!     s: 0x36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d60,
+//!     y_parity: true,
+//! };
+//!
+//! let public_key = recover_public_key::<Secp256r1Point>(msg_hash, signature);
+//! ```
 
 #[allow(unused_imports)]
 use core::array::ArrayTrait;
