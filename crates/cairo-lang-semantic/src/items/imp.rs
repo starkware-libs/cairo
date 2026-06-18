@@ -2732,7 +2732,7 @@ fn validate_impl_item_constant<'db>(
 
     let expected_ty = inference.rewrite(concrete_trait_constant_ty).no_err();
     let actual_ty = inference.rewrite(constant_ty).no_err();
-    if expected_ty != actual_ty {
+    if expected_ty != actual_ty && !expected_ty.is_missing(db) && !actual_ty.is_missing(db) {
         diagnostics.report(
             impl_constant_type_clause_ast.ty(db).stable_ptr(db),
             WrongType { expected_ty, actual_ty },
