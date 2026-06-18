@@ -314,7 +314,7 @@ fn generate_entry_point_wrapper<'db>(
     );
 
     let implicit_precedence = RewriteNode::Text(format!("#[{IMPLICIT_PRECEDENCE_ATTR}({})]", {
-        IMPLICIT_PRECEDENCE.iter().join(", ")
+        IMPLICIT_PRECEDENCE.iter().format(", ")
     }));
 
     let arg_definitions = RewriteNode::Text(arg_definitions.join("\n    "));

@@ -296,7 +296,7 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
                 if inner_types.len() == 1 {
                     write!(f, "({},)", inner_types[0].format(db))
                 } else {
-                    write!(f, "({})", inner_types.iter().map(|ty| ty.format(db)).join(", "))
+                    write!(f, "({})", inner_types.iter().map(|ty| ty.format(db)).format(", "))
                 }
             }
             TypeLongId::Snapshot(ty) => write!(f, "@{}", ty.format(db)),

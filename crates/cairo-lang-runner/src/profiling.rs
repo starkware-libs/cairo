@@ -276,16 +276,14 @@ impl Display for StackTraceWeights {
         if let Some(sierra_stack_trace_weights) = &self.sierra_stack_trace_weights {
             writeln!(f, "Weight by Sierra stack trace:")?;
             for (stack_trace, weight) in sierra_stack_trace_weights.iter() {
-                let stack_trace_str = stack_trace.join(" -> ");
-                writeln!(f, "  {stack_trace_str}: {weight}")?;
+                writeln!(f, "  {}: {weight}", stack_trace.iter().format(" -> "))?;
             }
         }
 
         if let Some(cairo_stack_trace_weights) = &self.cairo_stack_trace_weights {
             writeln!(f, "Weight by Cairo stack trace:")?;
             for (stack_trace, weight) in cairo_stack_trace_weights.iter() {
-                let stack_trace_str = stack_trace.join(" -> ");
-                writeln!(f, "  {stack_trace_str}: {weight}")?;
+                writeln!(f, "  {}: {weight}", stack_trace.iter().format(" -> "))?;
             }
         }
         Ok(())
@@ -758,7 +756,7 @@ fn format_scoped_sierra_statement_weights(
     f: &mut std::fmt::Formatter<'_>,
 ) -> std::fmt::Result {
     for (key, weight) in weights.iter() {
-        f.write_fmt(format_args!("{} {weight}\n", key.join(";")))?;
+        f.write_fmt(format_args!("{} {weight}\n", key.iter().format(";")))?;
     }
     Ok(())
 }

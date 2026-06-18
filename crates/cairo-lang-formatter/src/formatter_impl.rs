@@ -346,7 +346,7 @@ impl fmt::Display for LineBuilder {
         if self.is_only_indents() {
             write!(f, "")
         } else {
-            write!(f, "{}", self.children.iter().map(|child| child.to_string()).join(""))
+            write!(f, "{}", self.children.iter().format(""))
         }
     }
 }
