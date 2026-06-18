@@ -1,8 +1,6 @@
 //! This module introduces the BackAnalysis utility that allows writing analyzers that go backwards
 //! in the flow of the program, on a Lowered representation.
 
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-
 use crate::analysis::{Analyzer, DataflowAnalyzer, Direction, Edge, StatementLocation};
 use crate::{Block, BlockEnd, BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage};
 
@@ -10,16 +8,12 @@ use crate::{Block, BlockEnd, BlockId, Lowered, MatchInfo, Statement, VarRemappin
 pub struct BackAnalysis<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> {
     lowered: &'a Lowered<'db>,
     pub analyzer: TAnalyzer,
-    block_info: UnorderedHashMap<BlockId, TAnalyzer::Info>,
+    block_info: Vec<Option<TAnalyzer::Info>>,
 }
 impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
     /// Creates a new BackAnalysis instance.
     pub fn new(lowered: &'a Lowered<'db>, analyzer: TAnalyzer) -> Self {
-        Self {
-            lowered,
-            analyzer,
-            block_info: UnorderedHashMap::with_capacity(lowered.blocks.len()),
-        }
+        Self { lowered, analyzer, block_info: vec![None; lowered.blocks.len()] }
     }
     /// Gets the analysis info for the entire function.
     pub fn get_root_info(&mut self) -> TAnalyzer::Info {
@@ -31,7 +25,7 @@ impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
                 self.calc_block_info(dfs_stack.pop().unwrap());
             }
         }
-        self.block_info.remove(&BlockId::root()).unwrap()
+        self.block_info[BlockId::root().0].take().unwrap()
     }
 
     /// Gets the analysis info from the start of a block.
@@ -47,7 +41,7 @@ impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
         self.analyzer.visit_block_start(&mut info, block_id, &self.lowered.blocks[block_id]);
 
         // Store result.
-        self.block_info.insert(block_id, info);
+        self.block_info[block_id.0] = Some(info);
     }
 
     /// Adds to the DFS stack the dependent blocks that are not yet in cache - returns whether
@@ -59,9 +53,7 @@ impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
     ) -> bool {
         match block_end {
             BlockEnd::NotSet => unreachable!(),
-            BlockEnd::Goto(target_block_id, _)
-                if !self.block_info.contains_key(target_block_id) =>
-            {
+            BlockEnd::Goto(target_block_id, _) if self.block_info[target_block_id.0].is_none() => {
                 dfs_stack.push(*target_block_id);
                 true
             }
@@ -69,7 +61,7 @@ impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
             BlockEnd::Match { info } => {
                 let mut missing_cache = false;
                 for arm in info.arms() {
-                    if !self.block_info.contains_key(&arm.block_id) {
+                    if self.block_info[arm.block_id.0].is_none() {
                         dfs_stack.push(arm.block_id);
                         missing_cache = true;
                     }
@@ -86,7 +78,7 @@ impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
         match block_end {
             BlockEnd::NotSet => unreachable!(),
             BlockEnd::Goto(target_block_id, remapping) => {
-                let mut info = self.block_info[target_block_id].clone();
+                let mut info = self.block_info[target_block_id.0].clone().unwrap();
                 self.analyzer.visit_goto(
                     &mut info,
                     statement_location,
@@ -102,7 +94,7 @@ impl<'db, 'a, TAnalyzer: Analyzer<'db, 'a>> BackAnalysis<'db, 'a, TAnalyzer> {
             BlockEnd::Match { info } => {
                 // Can remove the block since match blocks do not merge.
                 let arm_infos =
-                    info.arms().iter().map(|arm| self.block_info.remove(&arm.block_id).unwrap());
+                    info.arms().iter().map(|arm| self.block_info[arm.block_id.0].take().unwrap());
                 self.analyzer.merge_match(statement_location, info, arm_infos)
             }
         }
