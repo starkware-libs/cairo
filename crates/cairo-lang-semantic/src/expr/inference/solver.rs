@@ -81,10 +81,11 @@ impl<'db> Ambiguity<'db> {
     pub fn format(&self, db: &dyn Database) -> String {
         match self {
             Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
-                let impls_str =
-                    impls.iter().map(|imp| format!("`{}`", imp.format(db))).format(", ");
+                let impls = impls
+                    .iter()
+                    .format_with(", ", |imp, f| f(&format_args!("`{}`", imp.format(db))));
                 format!(
-                    "Trait `{:?}` has multiple implementations, in: {impls_str}",
+                    "Trait `{:?}` has multiple implementations, in: {impls}",
                     concrete_trait_id.debug(db)
                 )
             }

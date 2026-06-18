@@ -32,14 +32,11 @@ pub fn handle_panic_destruct(info: &PluginTypeInfo<'_>) -> String {
                 format!(
                     "let {ty} {{ {} }} = self;{}",
                     info.members_info.iter().map(|member| &member.name).format(", "),
-                    info.members_info
-                        .iter()
-                        .map(|member| format!(
-                            "\n{imp}::panic_destruct({}, ref panic);",
-                            member.name,
-                            imp = member.impl_name(PANIC_DESTRUCT_TRAIT),
-                        ))
-                        .format(""),
+                    info.members_info.iter().format_with("", |member, f| f(&format_args!(
+                        "\n{imp}::panic_destruct({}, ref panic);",
+                        member.name,
+                        imp = member.impl_name(PANIC_DESTRUCT_TRAIT),
+                    ))),
                 )
             }
         },
