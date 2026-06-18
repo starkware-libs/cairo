@@ -405,7 +405,7 @@ impl<'db> std::fmt::Display for Value<'db> {
                 write!(
                     f,
                     "Scattered({})",
-                    scattered.members.values().map(|value| value.to_string()).join(", ")
+                    scattered.members.values().map(|value| value.to_string()).format(", ")
                 )
             }
             Value::MovedVar(..) => write!(f, "MovedVar"),

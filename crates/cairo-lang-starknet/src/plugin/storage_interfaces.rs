@@ -450,8 +450,8 @@ fn handle_storage_interface_for_interface_type<'db>(
         [RewriteNode::empty(), RewriteNode::empty()]
     } else {
         [
-            format!("<{}>", generics.param_names.join(", ")),
-            format!("<{}>", generics.full_params.join(", ")),
+            format!("<{}>", generics.param_names.iter().format(", ")),
+            format!("<{}>", generics.full_params.iter().format(", ")),
         ]
         .map(RewriteNode::Text)
     };
@@ -547,8 +547,8 @@ pub fn handle_storage_interface_enum<'db>(
         [RewriteNode::empty(), RewriteNode::empty()]
     } else {
         [
-            format!("<{}>", generics.param_names.join(", ")),
-            format!("<{}>", generics.full_params.join(", ")),
+            format!("<{}>", generics.param_names.iter().format(", ")),
+            format!("<{}>", generics.full_params.iter().format(", ")),
         ]
         .map(RewriteNode::Text)
     };

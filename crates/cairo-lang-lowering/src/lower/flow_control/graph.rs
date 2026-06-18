@@ -118,7 +118,7 @@ impl<'db> std::fmt::Debug for EnumMatch<'db> {
             f,
             "EnumMatch {{ matched_var: {:?}, variants: {}}}",
             self.matched_var,
-            self.variants.iter().map(|(_, node, var)| format!("({node:?}, {var:?})")).join(", ")
+            self.variants.iter().map(|(_, node, var)| format!("({node:?}, {var:?})")).format(", ")
         )
     }
 }

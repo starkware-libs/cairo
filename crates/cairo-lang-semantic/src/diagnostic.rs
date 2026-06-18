@@ -178,7 +178,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
             SemanticDiagnosticKind::UnexpectedElement { expected, actual } => {
-                let expected_str = expected.iter().map(|kind| kind.to_string()).join(" or ");
+                let expected_str = expected.iter().map(|kind| kind.to_string()).format(" or ");
                 format!("Expected {expected_str}, found {actual}.")
             }
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
@@ -661,7 +661,10 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::AmbiguousPath(module_items) => {
                 format!(
                     "Ambiguous path. Multiple matching items: {}",
-                    module_items.iter().map(|item| format!("`{}`", item.full_path(db))).join(", ")
+                    module_items
+                        .iter()
+                        .map(|item| format!("`{}`", item.full_path(db)))
+                        .format(", ")
                 )
             }
             SemanticDiagnosticKind::UseSelfNonMulti => {
@@ -718,7 +721,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                             containing_modules
                                 .iter()
                                 .map(|module_id| format!("`{}`", module_id.full_path(db)))
-                                .join(", ")
+                                .format(", ")
                         )
                     }
                 )
@@ -776,7 +779,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::MissingItemsInImpl(item_names) => {
                 format!(
                     "Not all trait items are implemented. Missing: {}.",
-                    item_names.iter().map(|name| format!("'{}'", name.long(db))).join(", ")
+                    item_names.iter().map(|name| format!("'{}'", name.long(db))).format(", ")
                 )
             }
             SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {
@@ -916,8 +919,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     let suggestions = relevant_traits
                         .iter()
                         .map(|trait_path| format!("`{trait_path}`"))
-                        .collect::<Vec<_>>()
-                        .join(", ");
+                        .format(", ");
 
                     format!(
                         "Method `{}` not found on type `{}`. Consider importing one of the \
@@ -1169,7 +1171,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     path.segments(db)
                         .elements(db)
                         .map(|seg| seg.identifier(db).long(db))
-                        .join("::")
+                        .format("::")
                 )
             }
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {

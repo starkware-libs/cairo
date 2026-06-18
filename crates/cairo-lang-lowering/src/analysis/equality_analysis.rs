@@ -13,7 +13,7 @@ use cairo_lang_semantic::corelib::option_some_variant;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::{ConcreteVariant, GenericArgumentId, MatchArmSelector, TypeId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::zip_eq;
+use itertools::{Itertools, zip_eq};
 use salsa::Database;
 
 use crate::analysis::core::Edge;
@@ -391,7 +391,11 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
             }
         }
         lines.sort();
-        if lines.is_empty() { write!(f, "(empty)") } else { write!(f, "{}", lines.join(", ")) }
+        if lines.is_empty() {
+            write!(f, "(empty)")
+        } else {
+            write!(f, "{}", lines.iter().format(", "))
+        }
     }
 }
 

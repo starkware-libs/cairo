@@ -555,7 +555,7 @@ fn print_resource_map(m: impl ExactSizeIterator<Item = (String, usize)>, resourc
     if m.len() != 0 {
         println!(
             "    {resource_type}: ({})",
-            m.into_iter().sorted().map(|(k, v)| format!(r#""{k}": {v}"#)).join(", ")
+            m.into_iter().sorted().map(|(k, v)| format!(r#""{k}": {v}"#)).format(", ")
         );
     }
 }
