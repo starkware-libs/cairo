@@ -844,3 +844,32 @@ impl SomeImpl of SomeTrait {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test impl const with an unresolvable type reports only the resolution error (no spurious
+
+//! > type-mismatch cascade).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+}
+impl MyImpl of MyTrait {
+    const X: Nonexistent = 0;
+}
+
+//! > expected_diagnostics
+error[E0006]: Type not found.
+ --> lib.cairo:5:14
+    const X: Nonexistent = 0;
+             ^^^^^^^^^^^
