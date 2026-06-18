@@ -139,20 +139,24 @@
             .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
-        // entryList: every benchmark run in iteration order. A run's index is the shared x-axis
-        // position for all of its benches; the same commit may appear in several runs.
-        const entryList = [];
-        // allSeries: benchName ("metric/project") → [{entryIndex, commit, date, bench}, ...] chronological
+        // Each suite (timing, heap, ...) runs once per night, so entry i of one suite and entry i
+        // of another are the same nightly run on the same commit. A suite added later has fewer
+        // entries, so tail-align every suite to the most recent night: its entries occupy the last
+        // N nights. A bench's `night` is then its shared x-axis column — the timing and heap
+        // measurements of one night line up, while re-runs of a commit on different nights stay as
+        // separate columns.
+        const nights = Math.max(...Object.values(data.entries).map(entries => entries.length));
+        // allSeries: benchName ("metric/project") → [{night, commit, date, bench}, ...] chronological
         const allSeries = new Map();
         for (const entries of Object.values(data.entries)) {
-          for (const entry of entries) {
-            const entryIndex = entryList.length;
-            entryList.push({ commit: entry.commit, date: entry.date });
+          const offset = nights - entries.length;
+          entries.forEach((entry, i) => {
+            const night = offset + i;
             for (const bench of entry.benches) {
               if (!allSeries.has(bench.name)) allSeries.set(bench.name, []);
-              allSeries.get(bench.name).push({ entryIndex, commit: entry.commit, date: entry.date, bench });
+              allSeries.get(bench.name).push({ night, commit: entry.commit, date: entry.date, bench });
             }
-          }
+          });
         }
 
         function allRows() {
@@ -181,14 +185,12 @@
         ];
 
         // Draw a line chart for `series` (each {dataPoints, ...}) sharing one x-axis.
-        // The axis is the union of runs the series appear in, ordered chronologically by date;
-        // every series is aligned onto it by run index, so a series that started later lines up
-        // at the correct (right-hand) positions instead of being shifted to the left. Date order
-        // (rather than per-suite append order) interleaves runs from different suites, so series
-        // measured by separate suites overlap in time instead of sitting in disjoint x-ranges.
-        // Each distinct unit gets its own y-axis (first on the left, the rest on the right), so a
-        // chart mixing e.g. ns/iter and bytes plots each on a comparable scale. `labelOf` picks
-        // each series' legend label; `colorMap` maps that label to a color.
+        // The axis is one column per nightly run (see `night` above): a series that started later
+        // lines up at the correct right-hand columns, and series measured by separate suites (e.g.
+        // timing in ns/iter and heap in bytes) share each night's column instead of landing on
+        // adjacent, offset columns. Each distinct unit gets its own y-axis (first on the left, the
+        // rest on the right), so a chart mixing units plots each on a comparable scale. `labelOf`
+        // picks each series' legend label; `colorMap` maps that label to a color.
         function drawChart(panel, title, series, labelOf, colorMap) {
           const wrap = document.createElement('div');
           wrap.className = 'bench-chart-wrap';
@@ -203,15 +205,24 @@
           // sends it into an unbounded resize loop ("Maximum call stack size exceeded").
           panel.appendChild(wrap);
 
-          const runIndices = [...new Set(series.flatMap(s => s.dataPoints.map(d => d.entryIndex)))]
-            .sort((a, b) => entryList[a].date - entryList[b].date);
-          const slot = new Map(runIndices.map((ei, i) => [ei, i]));
-          const labels = runIndices.map(ei => entryList[ei].commit.id.slice(0, 7));
+          // X-axis = the nightly runs the chart's series appear in. Each night holds the timing and
+          // heap measurements of one run, so series from different suites align on it by night.
+          const nightSet = new Set();
+          const nightCommit = new Map();
+          for (const s of series) {
+            for (const dp of s.dataPoints) {
+              nightSet.add(dp.night);
+              if (!nightCommit.has(dp.night)) nightCommit.set(dp.night, dp.commit);
+            }
+          }
+          const runNights = [...nightSet].sort((a, b) => a - b);
+          const slot = new Map(runNights.map((n, i) => [n, i]));
+          const labels = runNights.map(n => nightCommit.get(n).id.slice(0, 7));
 
-          // aligned[seriesIdx][slot] = data point at that run, or null if the series had no run there.
+          // aligned[seriesIdx][slot] = data point at that night, or null if the series had no run there.
           const aligned = series.map(({ dataPoints }) => {
-            const arr = new Array(runIndices.length).fill(null);
-            for (const dp of dataPoints) arr[slot.get(dp.entryIndex)] = dp;
+            const arr = new Array(runNights.length).fill(null);
+            for (const dp of dataPoints) arr[slot.get(dp.night)] = dp;
             return arr;
           });
 
