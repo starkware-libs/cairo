@@ -6,7 +6,7 @@ use cairo_lang_sierra::program::{Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::write_comma_separated;
+use itertools::Itertools;
 use thiserror::Error;
 
 use crate::invocations::InvocationError;
@@ -137,9 +137,7 @@ impl ApplyApChange for ReferenceExpression {
 
 impl core::fmt::Display for ReferenceExpression {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[")?;
-        write_comma_separated(f, &self.cells)?;
-        write!(f, "]")
+        write!(f, "[{}]", self.cells.iter().format(", "))
     }
 }
 
