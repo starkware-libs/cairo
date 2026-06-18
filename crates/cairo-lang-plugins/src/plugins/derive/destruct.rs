@@ -31,7 +31,7 @@ pub fn handle_destruct(info: &PluginTypeInfo<'_>) -> String {
             TypeVariant::Struct => {
                 format!(
                     "let {ty} {{ {} }} = self;{}",
-                    info.members_info.iter().map(|member| &member.name).join(", "),
+                    info.members_info.iter().map(|member| &member.name).format(", "),
                     info.members_info
                         .iter()
                         .map(|member| format!(
@@ -39,7 +39,7 @@ pub fn handle_destruct(info: &PluginTypeInfo<'_>) -> String {
                             member.name,
                             imp = member.impl_name(DESTRUCT_TRAIT),
                         ))
-                        .join(""),
+                        .format(""),
                 )
             }
         },

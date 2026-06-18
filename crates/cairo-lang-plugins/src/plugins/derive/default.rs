@@ -50,7 +50,7 @@ pub fn handle_default<'db>(
                         .is_generics_dependent
                         .then(|| format!("impl {imp}: {DEFAULT_TRAIT}<{}>", default_variant.ty))
                 )
-                .join(", "),
+                .format(", "),
             );
 
             Some(formatdoc! {"

@@ -2516,8 +2516,11 @@ where
     while let Some(item) = format_next_item(&mut felts) {
         items.push(item.quote_if_string());
     }
-    let panic_values_string =
-        if let [item] = &items[..] { item.clone() } else { format!("({})", items.join(", ")) };
+    let panic_values_string = if let [item] = &items[..] {
+        item.clone()
+    } else {
+        format!("({})", items.iter().format(", "))
+    };
     format!("Panicked with {panic_values_string}.")
 }
 

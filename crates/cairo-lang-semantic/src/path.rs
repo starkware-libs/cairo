@@ -60,7 +60,7 @@ impl<'db> ItemAccessInfo<'db> {
             self.path_segments.iter().rev().map(|id| id.name(db).long(db)),
             [self.name.long(db)]
         )
-        .join("::");
+        .format("::");
         format!("{prefix}{path}")
     }
 

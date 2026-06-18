@@ -94,7 +94,7 @@ pub fn handle_trait<'db>(
     let forward_impl_name = format!("{base_name}ForwardImpl");
     let unsafe_new_state_trait_name = format!("UnsafeNewContractStateTraitFor{forward_impl_name}");
     let implicit_precedence_attr =
-        format!("#[{IMPLICIT_PRECEDENCE_ATTR}({})]", IMPLICIT_PRECEDENCE.iter().join(", "));
+        format!("#[{IMPLICIT_PRECEDENCE_ATTR}({})]", IMPLICIT_PRECEDENCE.iter().format(", "));
     let dispatcher_trait_name = format!("{base_name}DispatcherTrait");
     let safe_dispatcher_trait_name = format!("{base_name}SafeDispatcherTrait");
     let contract_caller_name = format!("{base_name}Dispatcher");
