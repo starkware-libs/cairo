@@ -179,7 +179,7 @@ fn test_block_level_analysis() {
 
     let analyzer = BlockCounter::default();
     let mut analysis = ForwardDataflowAnalysis::new(lowered, analyzer);
-    let _ = analysis.run();
+    analysis.run();
 
     // Block-level analyzer should have counted multiple blocks
     assert!(
@@ -206,7 +206,7 @@ fn test_forward_single_block() {
 
     let analyzer = ReachabilityAnalyzer::default();
     let mut analysis = ForwardDataflowAnalysis::new(lowered, analyzer);
-    let _ = analysis.run();
+    analysis.run();
 
     // Should have visited at least the root block
     assert!(!analysis.analyzer.reachable_blocks.is_empty());
@@ -234,7 +234,7 @@ fn test_forward_with_branching() {
 
     let analyzer = ReachabilityAnalyzer::default();
     let mut analysis = ForwardDataflowAnalysis::new(lowered, analyzer);
-    let exit_info = analysis.run().clone();
+    let exit_info = analysis.run();
 
     // With branching, should visit multiple blocks
     assert!(

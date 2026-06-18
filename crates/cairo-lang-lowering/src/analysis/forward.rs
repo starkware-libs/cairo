@@ -53,8 +53,9 @@ impl<'db, 'a, TAnalyzer: DataflowAnalyzer<'db, 'a>> ForwardDataflowAnalysis<'db,
         while let Some(block_id) = ready.pop() {
             let block = &self.lowered.blocks[block_id];
 
-            // Get entry info from incoming edges.
-            let mut info = self.incoming[block_id.0].clone().unwrap();
+            // Get entry info from incoming edges. Can move out, since we are working in
+            // topological order.
+            let mut info = self.incoming[block_id.0].take().unwrap();
 
             // Process block.
             self.analyzer.visit_block_start(&mut info, block_id, block);
@@ -62,10 +63,8 @@ impl<'db, 'a, TAnalyzer: DataflowAnalyzer<'db, 'a>> ForwardDataflowAnalysis<'db,
 
             // Transfer to successors and check readiness.
             self.propagate_to_successors(block_id, &info, &mut ready);
-
             block_info[block_id.0] = Some(info);
         }
-
         block_info
     }
 
