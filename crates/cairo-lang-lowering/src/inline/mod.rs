@@ -227,16 +227,12 @@ fn inner_apply_inlining<'db>(
 ) -> Maybe<()> {
     lowered.blocks.has_root()?;
 
-    let mut blocks: BlocksBuilder<'db> = BlocksBuilder::new();
+    // Seed the builder by moving the existing blocks in (they are discarded at the end of this
+    // function when `lowered.blocks` is overwritten), rather than deep-cloning each block.
+    let mut blocks: BlocksBuilder<'db> = lowered.blocks.into_builder();
 
-    let mut stack: Vec<std::vec::IntoIter<BlockId>> = vec![
-        lowered
-            .blocks
-            .iter()
-            .map(|(_, block)| blocks.alloc(block.clone()))
-            .collect_vec()
-            .into_iter(),
-    ];
+    let mut stack: Vec<std::vec::IntoIter<BlockId>> =
+        vec![(0..blocks.len()).map(BlockId).collect_vec().into_iter()];
 
     let mut const_folding_ctx =
         ConstFoldingContext::new(db, calling_function_id, &mut lowered.variables);

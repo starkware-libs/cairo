@@ -123,6 +123,13 @@ impl<'db> Blocks<'db> {
     pub fn reset_block(&mut self, block_id: BlockId, block: Block<'db>) {
         self.0[block_id.0] = block;
     }
+
+    /// Moves the blocks out into a [`BlocksBuilder`], leaving an empty (errored-like) `Blocks` in
+    /// place. Used by passes that rebuild the block list from scratch, to avoid cloning every
+    /// block when the original is discarded anyway.
+    pub fn into_builder(&mut self) -> BlocksBuilder<'db> {
+        BlocksBuilder(std::mem::take(&mut self.0))
+    }
 }
 impl<'db> IntoIterator for Blocks<'db> {
     type Item = Block<'db>;
