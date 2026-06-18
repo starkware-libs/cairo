@@ -143,6 +143,17 @@ use crate::{FormatterConfig, get_formatted_file};
     true,
     true
 )]
+// Merge enabled, module-level sorting disabled: merged braces must still honor the
+// `self`-first convention.
+#[test_case(
+    "test_data/cairo_files/use_merge_no_sort.cairo",
+    "test_data/expected_results/use_merge_no_sort.cairo",
+    false,
+    false,
+    false,
+    true,
+    false
+)]
 fn format_and_compare_file(
     unformatted_filename: &str,
     expected_filename: &str,
