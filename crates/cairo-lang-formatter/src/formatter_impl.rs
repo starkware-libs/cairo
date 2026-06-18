@@ -32,10 +32,19 @@ struct UseTree {
 }
 
 /// Represents a terminal node in a `UseTree`, corresponding to a specific `use` path.
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 struct Leaf {
     name: String,
     alias: Option<String>,
+}
+impl std::fmt::Display for Leaf {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(alias) = &self.alias {
+            write!(f, "{} as {alias}", self.name)
+        } else {
+            write!(f, "{}", self.name)
+        }
+    }
 }
 
 impl UseTree {
@@ -64,17 +73,7 @@ impl UseTree {
     }
 
     /// Merge and organize the `use` paths in a hierarchical structure.
-    pub fn create_merged_use_items(self, allow_duplicate_uses: bool) -> Vec<String> {
-        let mut leaf_paths: Vec<String> = self
-            .leaves
-            .into_iter()
-            .map(
-                |Leaf { name, alias }| {
-                    if let Some(alias) = alias { format!("{name} as {alias}") } else { name }
-                },
-            )
-            .collect();
-
+    pub fn create_merged_use_items(mut self, allow_duplicate_uses: bool) -> Vec<String> {
         let mut nested_paths = vec![];
         for (segment, subtree) in self.children {
             let subtree_merged_use_items = subtree.create_merged_use_items(allow_duplicate_uses);
@@ -84,15 +83,16 @@ impl UseTree {
         }
 
         if !allow_duplicate_uses {
-            leaf_paths.sort();
-            leaf_paths.dedup();
+            self.leaves.sort_by(|a, b| {
+                compare_names(&a.name, &b.name).then_with(|| a.alias.cmp(&b.alias))
+            });
+            self.leaves.dedup();
         }
-
-        match leaf_paths.len() {
-            0 => {}
-            1 if nested_paths.is_empty() => return leaf_paths,
-            1 => nested_paths.extend(leaf_paths),
-            _ => nested_paths.push(format!("{{{}}}", leaf_paths.join(", "))),
+        match self.leaves.as_slice() {
+            [] => {}
+            [leaf] if nested_paths.is_empty() => return vec![leaf.to_string()],
+            [leaf] => nested_paths.push(leaf.to_string()),
+            leaves => nested_paths.push(format!("{{{}}}", leaves.iter().format(", "))),
         }
 
         nested_paths
@@ -1347,9 +1347,13 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
     }
 }
 
-/// Compares two names, with special handling for "super" and "crate".
+/// Compares two names, with special handling for the glob `*` (first), `self` (first) and
+/// `super`/`crate` (last) — matching the ordering of `compare_use_paths`.
 fn compare_names(a: &str, b: &str) -> Ordering {
     match (a, b) {
+        ("*", "*") => Ordering::Equal,
+        ("*", _) => Ordering::Less,
+        (_, "*") => Ordering::Greater,
         ("super" | "crate", "super" | "crate") => a.cmp(b),
         ("self", "self") => Ordering::Equal,
         ("super" | "crate", _) | (_, "self") => Ordering::Greater,
