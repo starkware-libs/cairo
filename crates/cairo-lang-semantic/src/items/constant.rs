@@ -46,7 +46,7 @@ use crate::items::imp::ImplSemantic;
 use crate::items::structure::StructSemantic;
 use crate::items::trt::TraitSemantic;
 use crate::resolve::{Resolver, ResolverData};
-use crate::substitution::{GenericSubstitution, SemanticRewriter};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
@@ -517,6 +517,19 @@ struct ConstantEvaluateContext<'a, 'r, 'mt> {
     depth: usize,
     diagnostics: &'mt mut SemanticDiagnostics<'a>,
 }
+
+/// Evaluates the `Ok` value of an expression, or returning the `Err` value from the function.
+macro_rules! or_return {
+    ($expr:expr) => {
+        match $expr {
+            Ok(value) => value,
+            Err(err) => {
+                return err;
+            }
+        }
+    };
+}
+
 impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
     /// Validate the given expression can be used as constant.
     fn validate(&mut self, expr_id: ExprId) {
@@ -673,10 +686,9 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                         .report(expr.stable_ptr, SemanticDiagnosticKind::UnsupportedConstant),
                 )
             }),
-            Expr::Constant(expr) => self
-                .generic_substitution
-                .substitute(self.db, expr.const_value_id)
-                .unwrap_or_else(to_missing),
+            Expr::Constant(expr) => {
+                or_return!(self.substitute(expr.const_value_id).map_err(to_missing))
+            }
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) => {
                 for statement_id in statements {
                     match &self.arenas.statements[*statement_id] {
@@ -722,10 +734,8 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 concrete_struct_id,
                 ..
             }) => {
-                let member_order = match db.concrete_struct_members(*concrete_struct_id) {
-                    Ok(member_order) => member_order,
-                    Err(diag_add) => return to_missing(diag_add),
-                };
+                let member_order =
+                    or_return!(db.concrete_struct_members(*concrete_struct_id).map_err(to_missing));
                 ConstValue::Struct(
                     member_order
                         .values()
@@ -736,7 +746,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                                 .map(|(expr_id, _)| self.evaluate(*expr_id))
                                 // Semantic validation already reported an error, suppress cascading
                                 // errors from const evaluation.
-                                .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic()).intern(db))
+                                .unwrap_or_else(|| to_missing(skip_diagnostic()))
                         })
                         .collect(),
                     *ty,
@@ -876,10 +886,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             ));
         }
         let concrete_function =
-            match self.generic_substitution.substitute(db, expr.function.get_concrete(db)) {
-                Ok(v) => v,
-                Err(err) => return to_missing(err),
-            };
+            or_return!(self.substitute(expr.function.get_concrete(db)).map_err(to_missing));
         if let Some(calc_result) =
             self.evaluate_const_function_call(&concrete_function, &args, expr)
         {
@@ -964,7 +971,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
     ) -> Option<ConstValueId<'a>> {
         let db = self.db;
         if let GenericFunctionId::Extern(extern_fn) = concrete_function.generic_function {
-            let expr_ty = self.generic_substitution.substitute(db, expr.ty).ok()?;
+            let expr_ty = self.substitute(expr.ty).ok()?;
             if self.upcast_fns.contains(&extern_fn) {
                 let [arg] = args else { return None };
                 return Some(ConstValueId::from_int(db, expr_ty, arg.to_int(db)?));
@@ -1216,6 +1223,17 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         }
     }
 
+    /// Substitutes generic parameters in the given object.
+    fn substitute<'w, Obj>(&'w self, obj: Obj) -> Maybe<Obj>
+    where
+        SubstitutionRewriter<'a, 'w>: SemanticRewriter<Obj, DiagnosticAdded>,
+    {
+        if self.generic_substitution.is_empty() {
+            Ok(obj)
+        } else {
+            self.generic_substitution.substitute(self.db, obj)
+        }
+    }
     /// Compares two const values for value equality, treating `felt252` as a field.
     ///
     /// Direct `felt252` literals are stored in their original signed form (`-1` vs `PRIME - 1` are
