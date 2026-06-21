@@ -159,6 +159,50 @@ fn test_complex_consts() {
     assert_eq!(IF_CONST_FALSE, 7);
 }
 
+#[derive(Copy, Drop, PartialEq, Debug)]
+struct Pair<T> {
+    a: T,
+    b: T,
+}
+
+#[derive(Copy, Drop, PartialEq, Debug)]
+enum Either<T> {
+    Left: T,
+    Right: T,
+}
+
+const fn make_pair<T, +Copy<T>, +Drop<T>>(a: T, b: T) -> Pair<T> {
+    Pair { a, b }
+}
+
+const fn make_tuple<T, +Copy<T>, +Drop<T>>(a: T, b: T) -> (T, T) {
+    (a, b)
+}
+
+const fn make_left<T, +Copy<T>, +Drop<T>>(value: T) -> Either<T> {
+    Either::Left(value)
+}
+
+// A generic const fn returning an aggregate must tag the result with the concrete (substituted)
+// type, rather than the generic type from the function body.
+#[test]
+fn test_const_generic_struct_ctor() {
+    const RESULT: Pair<felt252> = make_pair(1, 2);
+    assert_eq!(RESULT, Pair { a: 1, b: 2 });
+}
+
+#[test]
+fn test_const_generic_tuple_return() {
+    const RESULT: (felt252, felt252) = make_tuple(1, 2);
+    assert_eq!(RESULT, (1, 2));
+}
+
+#[test]
+fn test_const_generic_enum_return() {
+    const RESULT: Either<felt252> = make_left(7);
+    assert_eq!(RESULT, Either::Left(7));
+}
+
 #[test]
 fn test_const_casts_from_felt252() {
     const _U8_UNDER_RANGE: () = assert((-1_felt252).try_into() == None::<u8>, 'U8 under range');
