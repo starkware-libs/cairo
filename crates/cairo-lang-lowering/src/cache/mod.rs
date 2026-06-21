@@ -73,7 +73,7 @@ pub fn load_cached_crate_functions<'db>(
     let semantic_loading_data = db.cached_crate_semantic_data(crate_id)?.loading_data;
 
     let (lookups, lowerings): LookupCache =
-        CacheBlobReader::read_section(db, content, LOWERING_CACHE_SECTION, &crate_id);
+        CacheBlobReader::read_section(db, content, LOWERING_CACHE_SECTION, crate_id);
 
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
 
@@ -151,6 +151,11 @@ pub fn generate_crate_cache<'db>(
         .collect::<Maybe<Vec<_>>>()?;
 
     let mut artifact = Vec::<u8>::new();
+
+    // External (plugin-generated) file content comes first: it's filesystem-layer content (served
+    // by `ext_as_virtual`) that the phase sections below depend on, and putting it first lets the
+    // `external_file_contents` query (in defs) read it without deserializing them.
+    write_cache_section(&mut artifact, ctx.semantic_ctx.defs_ctx.external_file_contents())?;
 
     write_cache_section(
         &mut artifact,
