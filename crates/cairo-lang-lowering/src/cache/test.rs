@@ -1,5 +1,8 @@
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_filesystem::db::{FilesGroup, files_group_input, set_crate_configs_input};
-use cairo_lang_filesystem::ids::BlobLongId;
+use cairo_lang_filesystem::ids::{BlobLongId, FileLongId};
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::test_utils::setup_test_function_ex;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -26,23 +29,11 @@ fn test_cache_check(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
-
     let function = &inputs["function_code"];
     let function_name = &inputs["function_name"];
     let module_code = inputs.get("module_code").map_or("", String::as_str);
-    let (test_function, _semantic_diagnostics) =
-        setup_test_function_ex(db, function, function_name, module_code, None, None).split();
 
-    let artifact = generate_crate_cache(db, test_function.module_id.owning_crate(db)).unwrap();
-    let core_artifact = generate_crate_cache(db, db.core_crate()).unwrap();
-    let mut new_db = LoweringDatabaseForTesting::new();
-    let crt = new_db.crate_input(new_db.core_crate());
-    let mut crate_configs = files_group_input(&new_db).crate_configs(&new_db).clone().unwrap();
-    let config = crate_configs.get_mut(crt).unwrap();
-    config.cache_file = Some(BlobLongId::Virtual(core_artifact));
-    set_crate_configs_input(&mut new_db, Some(crate_configs));
-
+    let (new_db, artifact) = generate_cached_db(function, function_name, module_code);
     let cached_file = BlobLongId::Virtual(artifact).intern(&new_db);
     let (test_function, semantic_diagnostics) = setup_test_function_ex(
         &new_db,
@@ -77,4 +68,64 @@ fn test_cache_check(
         ]),
         error,
     }
+}
+
+/// Compiles `function`/`module_code` to generate the crate cache (and the corelib cache), then
+/// returns a fresh db with the corelib cache loaded plus the crate-cache artifact. Callers wire the
+/// artifact in as the test crate's `cache_file` via
+/// `setup_test_function_ex(.., Some(BlobLongId::Virtual(artifact).intern(&db)))`.
+fn generate_cached_db(
+    function: &str,
+    function_name: &str,
+    module_code: &str,
+) -> (LoweringDatabaseForTesting, Vec<u8>) {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let (test_function, _) =
+        setup_test_function_ex(db, function, function_name, module_code, None, None).split();
+
+    let artifact = generate_crate_cache(db, test_function.module_id.owning_crate(db)).unwrap();
+    let core_artifact = generate_crate_cache(db, db.core_crate()).unwrap();
+
+    let mut new_db = LoweringDatabaseForTesting::new();
+    let crt = new_db.crate_input(new_db.core_crate());
+    let mut crate_configs = files_group_input(&new_db).crate_configs(&new_db).clone().unwrap();
+    crate_configs.get_mut(crt).unwrap().cache_file = Some(BlobLongId::Virtual(core_artifact));
+    set_crate_configs_input(&mut new_db, Some(crate_configs));
+    (new_db, artifact)
+}
+
+/// File syntax roots are canonical (file-keyed via `SyntaxNode::new_canonical_root`). For an
+/// external (plugin-generated) file restored from a crate cache, the root reached from a cached
+/// stable ptr must therefore be the very node `db.file_syntax` mints — not a detached duplicate.
+#[test]
+fn cached_external_file_root_is_canonical() {
+    let function = "fn foo() {}";
+    let module_code = "\
+#[derive(Drop)]
+struct MyStruct {
+    x: felt252,
+}";
+    let (db, artifact) = generate_cached_db(function, "foo", module_code);
+    let cached_file = BlobLongId::Virtual(artifact).intern(&db);
+    let (cached_function, _) =
+        setup_test_function_ex(&db, function, "foo", module_code, None, Some(cached_file)).split();
+
+    // The `#[derive(Drop)]` impl lives in an external file; its cached stable ptr must resolve to
+    // the canonical `file_syntax` root.
+    let mut checked = 0;
+    for impl_id in db.module_impls_ids(cached_function.module_id).unwrap() {
+        let stable_ptr = impl_id.untyped_stable_ptr(&db);
+        let ext_file = stable_ptr.file_id(&db);
+        if !matches!(ext_file.long(&db), FileLongId::External(_)) {
+            continue;
+        }
+        let root = stable_ptr.0.ancestors_with_self(&db).last().unwrap();
+        assert_eq!(
+            root,
+            db.file_syntax(ext_file).unwrap(),
+            "external root differs from file_syntax (detached node minted on load?)"
+        );
+        checked += 1;
+    }
+    assert!(checked > 0, "expected at least one external (derive-generated) file");
 }

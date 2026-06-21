@@ -178,9 +178,10 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode<'_> {
         terminal_plus.into(),
         terminal5.into(),
     );
-    // SyntaxNode::new_root only accepts ast::SyntaxFileGreen, but we only have an expression.
+    // SyntaxNode::new_detached_root only accepts ast::SyntaxFileGreen, but we only have an
+    // expression.
     // This is a hack to crate a green id of "SyntaxFile" from "Expr".
     let root = SyntaxFileGreen(expr.0);
     let file_id = FileLongId::OnDisk(PathBuf::default()).intern(db);
-    SyntaxNode::new_root(db, file_id, root.0)
+    SyntaxNode::new_detached_root(db, file_id, root.0)
 }

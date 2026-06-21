@@ -978,7 +978,7 @@ impl<'a> FormatterImpl<'a> {
             let file_id = syntax_node.stable_ptr(self.db).file_id(self.db);
 
             if let Some(wrapped_arg_list) = as_wrapped_arg_list {
-                let new_syntax_node = SyntaxNode::new_root_with_offset(
+                let new_syntax_node = SyntaxNode::new_detached_root_with_offset(
                     self.db,
                     file_id,
                     wrapped_arg_list.0,
