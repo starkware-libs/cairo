@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781918541335,
+  "lastUpdate": 1782004103030,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -6447,6 +6447,142 @@ window.BENCHMARK_DATA = {
             "name": "cache-to-sierra/cairo_level_tests",
             "value": 4053429741,
             "range": "± 41530630",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "89146492af6ed83b36cb2d6cee71cee95b74a77e",
+          "message": "refactor(utils): Removed `write_comma_separated` using equivalent .format all around. (#10125)",
+          "timestamp": "2026-06-18T09:34:35Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/89146492af6ed83b36cb2d6cee71cee95b74a77e"
+        },
+        "date": 1782004102570,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "cairo-to-sierra/fib",
+            "value": 294187826,
+            "range": "± 3976643",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-sierra/corelib",
+            "value": 1996158826,
+            "range": "± 36254128",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-sierra/cairo_level_tests",
+            "value": 4001181742,
+            "range": "± 47450108",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-sierra/big_array",
+            "value": 1814594637,
+            "range": "± 23916305",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-sierra/large_struct",
+            "value": 581831104,
+            "range": "± 12003538",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-sierra/wide_enum",
+            "value": 505219800,
+            "range": "± 16208399",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-sierra/deep_nesting",
+            "value": 441083007,
+            "range": "± 7132798",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-sierra/nested_loops",
+            "value": 712014624,
+            "range": "± 11603561",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-diagnostics/fib",
+            "value": 501601575,
+            "range": "± 24755043",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-diagnostics/corelib",
+            "value": 5406993016,
+            "range": "± 307829114",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-diagnostics/bug_samples",
+            "value": 872143773,
+            "range": "± 26344960",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-diagnostics/cairo_level_tests",
+            "value": 2705567466,
+            "range": "± 79696024",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-cache/fib",
+            "value": 397903632,
+            "range": "± 6179902",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-cache/corelib",
+            "value": 7555375610,
+            "range": "± 191429731",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-cache/bug_samples",
+            "value": 966742148,
+            "range": "± 6665152",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-cache/cairo_level_tests",
+            "value": 3471249718,
+            "range": "± 52227486",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache-to-sierra/fib",
+            "value": 274378462,
+            "range": "± 8456680",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache-to-sierra/corelib",
+            "value": 1671436881,
+            "range": "± 6421601",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache-to-sierra/cairo_level_tests",
+            "value": 3779656069,
+            "range": "± 27221353",
             "unit": "ns/iter"
           }
         ]
