@@ -68,7 +68,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::AwesomeEvent(val) => {
@@ -86,16 +86,16 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("AwesomeEvent") {
-            return Option::Some(Event::AwesomeEvent(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::AwesomeEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("BestEventEver") {
-            return Option::Some(Event::BestEventEver(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::BestEventEver(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventAwesomeEventIntoEvent of Into<AwesomeEvent, Event> {
@@ -126,13 +126,13 @@ starknet_derive:
 
 impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
     fn append_keys_and_data(
-        self: @AwesomeEvent, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @AwesomeEvent, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<AwesomeEvent> {
-        Option::Some(AwesomeEvent {})
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<AwesomeEvent> {
+        core::option::Option::Some(AwesomeEvent {})
     }
 }
 
@@ -152,13 +152,13 @@ starknet_derive:
 
 impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
     fn append_keys_and_data(
-        self: @BestEventEver, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @BestEventEver, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<BestEventEver> {
-        Option::Some(BestEventEver {})
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<BestEventEver> {
+        core::option::Option::Some(BestEventEver {})
     }
 }
 

@@ -87,6 +87,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         embedded_impl: "embedded_impl",
         raw_output: "raw_output",
         storage: "storage",
+        shadowed_prelude_types: "shadowed_prelude_types",
         new_storage_interface: "new_storage_interface",
         dispatcher: "dispatcher",
         user_defined_types: "user_defined_types",
