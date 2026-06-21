@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
-use cairo_lang_filesystem::db::{FilesGroup, init_files_group};
+use cairo_lang_filesystem::db::init_files_group;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
@@ -11,6 +11,7 @@ use cairo_lang_utils::Intern;
 use itertools::chain;
 
 use crate::ParserDiagnostic;
+use crate::db::ParserGroup;
 use crate::parser::Parser;
 
 /// A salsa database for parsing only.
@@ -141,10 +142,9 @@ pub fn get_syntax_file_and_diagnostics<'a>(
     db: &'a SimpleParserDatabase,
     file_id: FileId<'a>,
 ) -> (SyntaxFile<'a>, Diagnostics<'a, ParserDiagnostic<'a>>) {
-    let mut diagnostics = DiagnosticsBuilder::default();
-    let contents = db.file_content(file_id).unwrap();
-    let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
-    (syntax_file, diagnostics.build())
+    let diagnostics = db.file_syntax_diagnostics(file_id).clone();
+    let syntax_file = db.file_module_syntax(file_id).unwrap();
+    (syntax_file, diagnostics)
 }
 
 /// Collects the content string and start offset from a struct implementing

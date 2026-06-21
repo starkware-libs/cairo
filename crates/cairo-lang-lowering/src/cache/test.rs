@@ -3,6 +3,7 @@ use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_filesystem::db::{FilesGroup, files_group_input, set_crate_configs_input};
 use cairo_lang_filesystem::ids::{BlobLongId, CodeMapping, FileId, FileKind, FileLongId};
 use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::test_utils::setup_test_function_ex;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -117,17 +118,25 @@ fn external_file_snapshot<'db>(
 }
 
 /// Collects every external file backing a derive-generated impl in `module_id`, keyed by full
-/// path (stable across databases).
+/// path (stable across databases). Also asserts each external root reached from the cache *is* the
+/// canonical `file_syntax` root, i.e. no detached duplicate node was minted on load.
 fn external_files<'db>(
     db: &'db LoweringDatabaseForTesting,
     module_id: ModuleId<'db>,
 ) -> OrderedHashMap<String, ExternalFileSnapshot> {
     let mut map = OrderedHashMap::default();
     for impl_id in db.module_impls_ids(module_id).unwrap() {
-        let ext_file = impl_id.untyped_stable_ptr(db).file_id(db);
+        let stable_ptr = impl_id.untyped_stable_ptr(db);
+        let ext_file = stable_ptr.file_id(db);
         if !matches!(ext_file.long(db), FileLongId::External(_)) {
             continue;
         }
+        let root = stable_ptr.0.ancestors_with_self(db).last().unwrap();
+        assert_eq!(
+            root,
+            db.file_syntax(ext_file).unwrap(),
+            "external root differs from file_syntax (detached node minted on load?)"
+        );
         map.entry(ext_file.long(db).full_path(db))
             .or_insert_with(|| external_file_snapshot(db, ext_file));
     }

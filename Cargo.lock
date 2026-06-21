@@ -740,6 +740,7 @@ dependencies = [
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
+ "cairo-lang-parser",
  "cairo-lang-plugins",
  "cairo-lang-proc-macros",
  "cairo-lang-semantic",
