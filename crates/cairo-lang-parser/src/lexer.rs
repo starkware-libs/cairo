@@ -4,7 +4,7 @@ mod test;
 
 use std::sync::Arc;
 
-use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
@@ -12,7 +12,6 @@ use cairo_lang_syntax::node::ast::{
     TokenWhitespace, TriviumGreen,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_utils::deque::Deque;
 use salsa::Database;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -23,8 +22,9 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn position(&self) -> TextOffset {
-        self.current_position
+    /// Creates a new lexer with the given text.
+    pub fn new(text: Arc<str>) -> Self {
+        Self { text, previous_position: TextOffset::START, current_position: TextOffset::START }
     }
 
     // Helpers.
@@ -253,7 +253,7 @@ impl Lexer {
         }
     }
 
-    fn match_terminal<'a>(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
+    pub fn match_terminal<'a>(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
         let leading_trivia = self.match_trivia(db, true);
 
         let kind = if let Some(current) = self.peek() {
@@ -323,27 +323,6 @@ impl Lexer {
         // TODO(yuval): log(verbose) "consumed text: ..."
         LexerTerminal { text, kind: terminal_kind, leading_trivia, trailing_trivia }
     }
-}
-
-/// Tokenizes the entire text and returns a deque of terminals.
-#[salsa::tracked]
-pub fn tokenize_all<'a>(
-    db: &'a dyn Database,
-    _tracked: Tracked,
-    text: Arc<str>,
-) -> cairo_lang_utils::deque::Deque<LexerTerminal<'a>> {
-    let mut lexer =
-        Lexer { text, previous_position: TextOffset::START, current_position: TextOffset::START };
-    let mut result: Deque<LexerTerminal<'a>> = Default::default();
-    loop {
-        let terminal = lexer.match_terminal(db);
-        let is_eof = terminal.kind == SyntaxKind::TerminalEndOfFile;
-        result.push_back(terminal);
-        if is_eof {
-            break;
-        }
-    }
-    result
 }
 
 /// Output terminal emitted by the lexer.
