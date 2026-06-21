@@ -1251,11 +1251,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
     where
         SubstitutionRewriter<'a, 'w>: SemanticRewriter<Obj, DiagnosticAdded>,
     {
-        if self.generic_substitution.is_empty() {
-            Ok(obj)
-        } else {
-            self.generic_substitution.substitute(self.db, obj)
-        }
+        self.generic_substitution.substitute(self.db, obj)
     }
     /// Compares two const values for value equality, treating `felt252` as a field.
     ///
