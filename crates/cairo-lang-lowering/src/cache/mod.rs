@@ -58,7 +58,7 @@ use crate::{
 
 type LookupCache = (CacheLookups, Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>);
 
-const LOWERING_CACHE_SECTION: u8 = 2;
+const LOWERING_CACHE_SECTION: u8 = 3;
 
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_functions<'db>(
@@ -73,7 +73,7 @@ pub fn load_cached_crate_functions<'db>(
     let semantic_loading_data = db.cached_crate_semantic_data(crate_id)?.loading_data;
 
     let (lookups, lowerings): LookupCache =
-        CacheBlobReader::read_section(db, content, LOWERING_CACHE_SECTION, &crate_id);
+        CacheBlobReader::read_section(db, content, LOWERING_CACHE_SECTION, crate_id);
 
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
 
@@ -151,6 +151,16 @@ pub fn generate_crate_cache<'db>(
         .collect::<Maybe<Vec<_>>>()?;
 
     let mut artifact = Vec::<u8>::new();
+
+    write_cache_section(
+        &mut artifact,
+        &(CachedCrateMetadata::new(crate_id, db), def_cache, &ctx.semantic_ctx.defs_ctx.lookups),
+    )?;
+    // External (plugin-generated) file content comes first: it's filesystem-layer content (served
+    // by `ext_as_virtual`) that the phase sections below depend on, and putting it first lets the
+    // `external_file_contents` query (in defs) read it without deserializing them.
+    let external = ctx.semantic_ctx.defs_ctx.serialize_external_file_contents()?;
+    write_cache_section(&mut artifact, &external);
 
     write_cache_section(
         &mut artifact,

@@ -64,7 +64,7 @@ use crate::{
 
 type SemanticCache<'db> = (CrateSemanticCache, SemanticCacheLookups);
 
-const SEMANTIC_CACHE_SECTION: u8 = 1;
+const SEMANTIC_CACHE_SECTION: u8 = 2;
 
 /// Load the cached semantic of a crate if it has a cache file configuration.
 pub fn load_cached_crate_modules_semantic<'db>(
@@ -79,7 +79,7 @@ pub fn load_cached_crate_modules_semantic<'db>(
     };
 
     let (module_data, semantic_lookups): SemanticCache<'_> =
-        CacheBlobReader::read_section(db, content, SEMANTIC_CACHE_SECTION, &crate_id);
+        CacheBlobReader::read_section(db, content, SEMANTIC_CACHE_SECTION, crate_id);
 
     let mut ctx = SemanticCacheLoadingContext::new(db, semantic_lookups, def_loading_data);
     Some(ModuleSemanticDataCacheAndLoadingData {
