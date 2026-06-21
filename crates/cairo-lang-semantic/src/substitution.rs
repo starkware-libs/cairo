@@ -93,7 +93,11 @@ impl<'db> GenericSubstitution<'db> {
         'db: 'a,
         SubstitutionRewriter<'a, 'r>: SemanticRewriter<Obj, DiagnosticAdded>,
     {
-        SubstitutionRewriter { db, substitution: self }.rewrite(obj)
+        if self.is_empty() {
+            Ok(obj)
+        } else {
+            SubstitutionRewriter { db, substitution: self }.rewrite(obj)
+        }
     }
 }
 impl<'db> Deref for GenericSubstitution<'db> {
