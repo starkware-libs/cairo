@@ -6,7 +6,8 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_filesystem::db::{ExtAsVirtual, FilesGroup, files_group_input};
 use cairo_lang_filesystem::ids::{
-    CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, SmolStrId, Tracked, VirtualFile,
+    BlobId, CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, SmolStrId, Tracked,
+    VirtualFile,
 };
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
@@ -25,7 +26,10 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain};
 use salsa::{Database, Setter};
 
-use crate::cache::{DefCacheLoadingData, load_cached_crate_modules};
+use crate::cache::{
+    DefCacheLoadingData, ExternalFileContentCached, ExternalFileKey, load_cached_crate_modules,
+    load_external_file_contents,
+};
 use crate::ids::*;
 use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, MacroPluginMetadata, PluginDiagnostic};
 use crate::plugin_utils::try_extract_unnamed_arg;
@@ -1110,13 +1114,64 @@ pub fn init_external_files<T: DefsGroup>(db: &mut T) {
     files_group_input(db).set_ext_as_virtual_obj(db).to(Some(ext_as_virtual_impl));
 }
 
+/// The external-file content table from a crate's cache blob, keyed only on the blob. Depends
+/// solely on `blob_content`, so reading it from `ext_as_virtual` adds no edge into module data —
+/// keeping cache loading cycle-free.
+#[salsa::tracked(returns(ref))]
+fn external_file_contents<'db>(
+    db: &'db dyn Database,
+    blob_id: BlobId<'db>,
+) -> OrderedHashMap<ExternalFileKey, ExternalFileContentCached> {
+    let Some(content) = db.blob_content(blob_id) else {
+        return Default::default();
+    };
+    load_external_file_contents(content)
+}
+
+/// Rebuilds an external file's `VirtualFile` from the cache blob (parent taken from the runtime
+/// stable ptr). `None` if the owning crate has no cache blob or the blob lacks this file — then
+/// `ext_as_virtual_impl` falls back to `module_sub_files`.
+#[salsa::tracked(returns(ref))]
+fn cached_external_virtual_file<'db>(
+    db: &'db dyn Database,
+    external_file: FileId<'db>,
+) -> Option<VirtualFile<'db>> {
+    let FileLongId::External(raw_external_id) = external_file.long(db) else {
+        return None;
+    };
+    let long_id = PluginGeneratedFileId::from_intern_id(*raw_external_id).long(db);
+    let blob_id = db.crate_config(long_id.module_id.owning_crate(db))?.cache_file?;
+    // Parse/plugin/mint-free, so it cannot re-enter the cache. See `ExternalFileKey::new`.
+    let key = ExternalFileKey::new(db, external_file);
+    let content = external_file_contents(db, blob_id).get(&key)?;
+    Some(content.to_virtual_file(db, &long_id.name, Some(long_id.stable_ptr.span_in_file(db))))
+}
+
 /// Returns the `VirtualFile` matching the given external id.
 pub fn ext_as_virtual_impl<'db>(
     db: &'db dyn Database,
     external_id: salsa::Id,
 ) -> &'db VirtualFile<'db> {
-    let long_id = PluginGeneratedFileId::from_intern_id(external_id).long(db);
     let file_id = FileLongId::External(external_id).intern(db);
+    // Serve from the cache blob first (no module-data edge); see `external_file_contents`.
+    if let Some(virtual_file) = cached_external_virtual_file(db, file_id) {
+        return virtual_file;
+    }
+    let long_id = PluginGeneratedFileId::from_intern_id(external_id).long(db);
+    // If the crate's cache blob actually loaded, it collected every external file at save time, so
+    // a miss means a stale/corrupt cache — and falling back to `module_sub_files` would
+    // re-enter the in-flight cache load (cycle), so fail loudly. If the blob is
+    // absent/unreadable the crate isn't really cache-backed and the live fallback below is
+    // safe.
+    if let Some(blob_id) =
+        db.crate_config(long_id.module_id.owning_crate(db)).and_then(|config| config.cache_file)
+    {
+        assert!(
+            db.blob_content(blob_id).is_none(),
+            "external file missing from a loaded crate cache: {:?}",
+            file_id.long(db)
+        );
+    }
     let data =
         module_sub_files(db, long_id.module_id, long_id.stable_ptr.file_id(db)).as_ref().unwrap();
     &data.files[&file_id]

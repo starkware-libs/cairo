@@ -21,7 +21,7 @@ use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, SyntaxNodeId, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use salsa::Database;
 use serde::{Deserialize, Serialize};
 
@@ -94,12 +94,8 @@ pub fn load_cached_crate_modules<'db>(
         return Default::default();
     };
 
-    let size = usize::from_be_bytes(content[..8].try_into().unwrap());
-
-    let content = &content[8..size + 8];
-
-    let (metadata, module_data, defs_lookups): DefCache<'_> = postcard::from_bytes(content)
-        .unwrap_or_else(|e| {
+    let (metadata, module_data, defs_lookups): DefCache<'_> =
+        postcard::from_bytes(def_cache_bytes(content)).unwrap_or_else(|e| {
             panic!(
                 "failed to deserialize modules cache for crate `{}`: {e}",
                 crate_id.long(db).name().long(db),
@@ -123,6 +119,25 @@ pub fn load_cached_crate_modules<'db>(
             .into(),
         ctx.data.into(),
     ))
+}
+
+/// The def-cache byte section of a cache blob (strips the leading length prefix).
+fn def_cache_bytes(blob_content: &[u8]) -> &[u8] {
+    let size = usize::from_be_bytes(blob_content[..8].try_into().unwrap());
+    &blob_content[8..size + 8]
+}
+
+/// Decodes the external-file content table from a cache blob. Cached per blob by the
+/// `external_file_contents` query.
+pub(crate) fn load_external_file_contents(
+    blob_content: &[u8],
+) -> OrderedHashMap<ExternalFileKey, ExternalFileContentCached> {
+    // TODO(eytan-starkware): this decodes the whole `DefCache` (module data included) to read only
+    // `external_file_contents`; a dedicated length-prefixed blob section would avoid that.
+    let (_metadata, _module_data, defs_lookups): DefCache<'_> =
+        postcard::from_bytes(def_cache_bytes(blob_content))
+            .unwrap_or_else(|e| panic!("failed to deserialize modules cache: {e}"));
+    defs_lookups.external_file_contents
 }
 
 #[derive(Serialize, Deserialize)]
@@ -667,6 +682,11 @@ pub struct DefCacheLookups {
 
     syntax_node_lookup: Vec<SyntaxNodeIdCached>,
     file_ids_lookup: Vec<FileCached>,
+
+    /// Content of every external (plugin-generated) file in this crate's cached module data, keyed
+    /// by [`ExternalFileKey`]. Served by `ext_as_virtual` so loading the cache needn't re-run
+    /// plugins.
+    external_file_contents: OrderedHashMap<ExternalFileKey, ExternalFileContentCached>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -1872,6 +1892,91 @@ impl FileCached {
     }
 }
 
+/// A portable, parse-free, `FileId`-free identity for a file: the key into the external-file
+/// content table. `ext_as_virtual` computes it during cache load, so it reads only
+/// already-materialized fields — never parsing, re-running plugins, or minting a `FileId` (any of
+/// which would cycle back into the cache) — recursing down the generation chain to an on-disk or
+/// parentless-virtual root.
+#[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq, Debug)]
+pub(crate) enum ExternalFileKey {
+    /// An on-disk file, identified by its path.
+    OnDisk(PathBuf),
+    /// A virtual file: its parent (key + the span where it was placed), name, and a hash of its
+    /// content. Span and content-hash disambiguate files sharing a parent and name; the content is
+    /// hashed, not stored, so a virtual ancestor shared by many generated files isn't duplicated at
+    /// full length across their keys.
+    Virtual { parent: Option<(Box<ExternalFileKey>, TextSpan)>, name: String, content_hash: u64 },
+    /// A plugin-generated file: the key of the file the plugin ran on, the stable-ptr offset within
+    /// it, and the generated name.
+    Generated { parent: Box<ExternalFileKey>, offset: u32, name: String },
+}
+
+impl ExternalFileKey {
+    /// Computes the key for `file_id`; see the type docs for why this is parse/plugin/mint-free.
+    pub(crate) fn new<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Self {
+        match file_id.long(db) {
+            FileLongId::OnDisk(path) => ExternalFileKey::OnDisk(path.clone()),
+            FileLongId::Virtual(vf) => ExternalFileKey::Virtual {
+                parent: vf.parent.map(|parent| {
+                    (Box::new(ExternalFileKey::new(db, parent.file_id)), parent.span)
+                }),
+                name: vf.name.long(db).to_string(),
+                content_hash: {
+                    let mut hasher = xxhash_rust::xxh3::Xxh3::default();
+                    vf.content.long(db).as_str().hash(&mut hasher);
+                    hasher.finish()
+                },
+            },
+            FileLongId::External(external_id) => {
+                let long_id = PluginGeneratedFileId::from_intern_id(*external_id).long(db);
+                ExternalFileKey::Generated {
+                    parent: Box::new(ExternalFileKey::new(db, long_id.stable_ptr.file_id(db))),
+                    offset: long_id.stable_ptr.0.offset(db).as_u32(),
+                    name: long_id.name.clone(),
+                }
+            }
+        }
+    }
+}
+
+/// An external file's content, enough to rebuild its `VirtualFile` on load. `parent` and `name` are
+/// not stored — they come from the runtime `PluginGeneratedFileLongId` at lookup.
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
+pub(crate) struct ExternalFileContentCached {
+    content: String,
+    code_mappings: Vec<CodeMapping>,
+    kind: FileKind,
+    original_item_removed: bool,
+}
+
+impl ExternalFileContentCached {
+    fn new<'db>(virtual_file: &VirtualFile<'db>, db: &'db dyn Database) -> Self {
+        Self {
+            content: virtual_file.content.to_string(db),
+            code_mappings: virtual_file.code_mappings.to_vec(),
+            kind: virtual_file.kind,
+            original_item_removed: virtual_file.original_item_removed,
+        }
+    }
+
+    /// Rebuilds the `VirtualFile`; `parent` and `name` come from the runtime stable ptr / long id.
+    pub(crate) fn to_virtual_file<'db>(
+        &self,
+        db: &'db dyn Database,
+        name: &str,
+        parent: Option<SpanInFile<'db>>,
+    ) -> VirtualFile<'db> {
+        VirtualFile {
+            parent,
+            name: SmolStrId::from(db, name.to_string()),
+            content: SmolStrId::from(db, self.content.clone()),
+            code_mappings: self.code_mappings.clone().into(),
+            kind: self.kind,
+            original_item_removed: self.original_item_removed,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update, Debug)]
 pub struct FileIdCached(usize);
 impl FileIdCached {
@@ -1879,7 +1984,29 @@ impl FileIdCached {
         if let Some(cached_id) = ctx.file_ids.get(&id) {
             return *cached_id;
         }
-        let cached = FileCached::new(id.long(ctx.db), ctx);
+        let long_id = id.long(ctx.db);
+        // For external (plugin-generated) files, also cache their content so `ext_as_virtual` can
+        // serve it from the blob instead of re-running plugins.
+        if let FileLongId::External(external_id) = long_id {
+            // Distinct `FileId`s can map to the same `ExternalFileKey` (the key is coarser), so
+            // dedup against the keys already stored in `external_file_contents`.
+            let key = ExternalFileKey::new(ctx.db, id);
+            let virtual_file = cairo_lang_filesystem::db::ext_as_virtual(ctx.db, *external_id);
+            let content = ExternalFileContentCached::new(virtual_file, ctx.db);
+            match ctx.external_file_contents.entry(key) {
+                Entry::Vacant(entry) => {
+                    entry.insert(content);
+                }
+                // Two distinct external files collapsing to one key must carry identical content,
+                // else the load would serve the wrong bytes. Holds today (generated files have
+                // distinct parent+offset); guard it so a future key change fails loud, not silent.
+                Entry::Occupied(entry) => debug_assert!(
+                    *entry.get() == content,
+                    "external file content key collision with differing content"
+                ),
+            }
+        }
+        let cached = FileCached::new(long_id, ctx);
         let cached_id = FileIdCached(ctx.file_ids_lookup.len());
         ctx.file_ids_lookup.push(cached);
         ctx.file_ids.insert(id, cached_id);
