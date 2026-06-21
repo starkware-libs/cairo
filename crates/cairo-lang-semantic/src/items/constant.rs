@@ -590,9 +590,12 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     self.validate(*item);
                 }
             }
-            Expr::StructCtor(ExprStructCtor { members, base_struct: None, .. }) => {
+            Expr::StructCtor(ExprStructCtor { members, base_struct, .. }) => {
                 for (expr_id, _) in members {
                     self.validate(*expr_id);
+                }
+                if let Some(base) = base_struct {
+                    self.validate(*base);
                 }
             }
             Expr::EnumVariantCtor(expr) => self.validate(expr.value_expr),
@@ -730,27 +733,39 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             .intern(db),
             Expr::StructCtor(ExprStructCtor {
                 members,
-                base_struct: None,
+                base_struct,
                 ty,
                 concrete_struct_id,
                 ..
             }) => {
                 let member_order =
                     or_return!(db.concrete_struct_members(*concrete_struct_id).map_err(to_missing));
+                let ty = or_return!(self.substitute(*ty).map_err(to_missing));
+                let base_members = match base_struct {
+                    Some(base) => match self.evaluate(*base).long(db) {
+                        ConstValue::Struct(values, base_ty) if *base_ty == ty => {
+                            Some(values.as_slice())
+                        }
+                        _ => return to_missing(skip_diagnostic()),
+                    },
+                    None => None,
+                };
                 ConstValue::Struct(
                     member_order
                         .values()
-                        .map(|m| {
+                        .enumerate()
+                        .map(|(index, m)| {
                             members
                                 .iter()
                                 .find(|(_, member_id)| m.id == *member_id)
                                 .map(|(expr_id, _)| self.evaluate(*expr_id))
+                                .or_else(|| Some(base_members?[index]))
                                 // Semantic validation already reported an error, suppress cascading
                                 // errors from const evaluation.
                                 .unwrap_or_else(|| to_missing(skip_diagnostic()))
                         })
                         .collect(),
-                    or_return!(self.substitute(*ty).map_err(to_missing)),
+                    ty,
                 )
                 .intern(db)
             }
