@@ -23,8 +23,9 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn position(&self) -> TextOffset {
-        self.current_position
+    /// Creates a new lexer with the given text.
+    pub fn new(text: Arc<str>) -> Self {
+        Self { text, previous_position: TextOffset::START, current_position: TextOffset::START }
     }
 
     // Helpers.
@@ -253,7 +254,7 @@ impl Lexer {
         }
     }
 
-    fn match_terminal<'a>(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
+    pub fn match_terminal<'a>(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
         let leading_trivia = self.match_trivia(db, true);
 
         let kind = if let Some(current) = self.peek() {
