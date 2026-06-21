@@ -30,6 +30,7 @@ thiserror.workspace = true
 tracing = { workspace = true, features = ["log"] }
 
 [dev-dependencies]
+cairo-lang-parser = { path = "../cairo-lang-parser" }
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }

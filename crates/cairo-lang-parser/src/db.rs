@@ -57,14 +57,20 @@ struct SyntaxData<'db> {
 #[salsa::tracked(returns(ref))]
 fn file_syntax_data<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> SyntaxData<'db> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db) {
-        FileKind::Module => Parser::parse_file(db, &mut diagnostics, file_id, s).as_syntax_node(),
-        FileKind::Expr => {
-            Parser::parse_file_expr(db, &mut diagnostics, file_id, s).as_syntax_node()
-        }
-        FileKind::StatementList => {
-            Parser::parse_file_statement_list(db, &mut diagnostics, file_id, s).as_syntax_node()
-        }
+    let syntax = db.file_content(file_id).to_maybe().map(|s| {
+        let green = match file_id.kind(db) {
+            FileKind::Module => Parser::parse_file_green(db, &mut diagnostics, file_id, s).0,
+            FileKind::Expr => Parser::parse_file_expr_green(db, &mut diagnostics, file_id, s).0,
+            FileKind::StatementList => {
+                Parser::parse_file_statement_list_green(db, &mut diagnostics, file_id, s).0
+            }
+        };
+        // Seed the canonical root from this file-keyed query (not a green-keyed detached
+        // constructor), so reparsing a changed file reuses the previous node ids. This keeps
+        // stable ptrs (and ids derived from them) stable across edits, which early cutoff
+        // downstream relies on. This is the *only* place a canonical root is created; every other
+        // consumer reaches it via `db.file_syntax(file_id)`.
+        SyntaxNode::new_canonical_root(db, file_id, green)
     });
     SyntaxData::new(db, diagnostics.build(), syntax)
 }

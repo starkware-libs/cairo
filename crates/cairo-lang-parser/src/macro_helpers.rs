@@ -63,7 +63,12 @@ pub fn as_expr_macro_token_tree<'a>(
     let expr_green = parser.parse_expr();
     let expr = ast::Expr::from_syntax_node(
         db,
-        SyntaxNode::new_root_with_offset(db, file_id, expr_green.0, Some(first_token.offset(db))),
+        SyntaxNode::new_detached_root_with_offset(
+            db,
+            file_id,
+            expr_green.0,
+            Some(first_token.offset(db)),
+        ),
     );
     Some(expr)
 }
@@ -93,7 +98,7 @@ impl<'a> AsLegacyInlineMacro<'a> for ExprInlineMacro<'a> {
         let offset = self.stable_ptr(db).0.lookup(db).offset(db);
         Some(LegacyExprInlineMacro::from_syntax_node(
             db,
-            SyntaxNode::new_root_with_offset(db, file_id, legacy_green.0, Some(offset)),
+            SyntaxNode::new_detached_root_with_offset(db, file_id, legacy_green.0, Some(offset)),
         ))
     }
 }
@@ -123,7 +128,7 @@ impl<'a> AsLegacyInlineMacro<'a> for ItemInlineMacro<'a> {
         let offset = self.stable_ptr(db).0.lookup(db).offset(db);
         Some(LegacyItemInlineMacro::from_syntax_node(
             db,
-            SyntaxNode::new_root_with_offset(db, file_id, legacy_green.0, Some(offset)),
+            SyntaxNode::new_detached_root_with_offset(db, file_id, legacy_green.0, Some(offset)),
         ))
     }
 }

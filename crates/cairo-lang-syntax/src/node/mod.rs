@@ -89,7 +89,8 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
 ///
 /// This is a public wrapper around a private tracked struct. Construction only happens through
 /// tracked functions to ensure uniqueness of SyntaxNodes.
-/// Use `SyntaxNode::new_root` or `SyntaxNode::new_root_with_offset` to create root nodes.
+/// The canonical tree of a file comes from `db.file_syntax(file_id)` (created via
+/// [`SyntaxNode::new_canonical_root`]); standalone trees use [`SyntaxNode::new_detached_root`].
 #[derive(Clone, Copy, PartialEq, Eq, Hash, salsa::Update, HeapSize)]
 pub struct SyntaxNode<'a> {
     data: SyntaxNodeData<'a>,
@@ -218,9 +219,14 @@ pub fn new_syntax_node<'db>(
     SyntaxNode { data, parent, kind, parent_kind }
 }
 
-/// A tracked function to prevent root duplication.
+/// Green-keyed query backing the *detached* root constructors. Keyed by `(file_id, green,
+/// offset)`, it deduplicates roots built from the same green tree (so repeated detached
+/// construction returns one node) and provides the tracked-function context salsa needs to mint a
+/// root's tracked struct. Because the key includes `green`, a detached root's id changes whenever
+/// the content does — fine for transient trees, but never use it for the canonical file tree
+/// (see [`SyntaxNode::new_canonical_root`]).
 #[salsa::tracked]
-fn new_root_node<'db>(
+fn new_detached_root_node<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
     green: GreenId<'db>,
@@ -232,19 +238,43 @@ fn new_root_node<'db>(
 
 // Construction methods
 impl<'a> SyntaxNode<'a> {
-    /// Creates a new root syntax node.
-    pub fn new_root(db: &'a dyn Database, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
-        new_root_node(db, file_id, green, TextOffset::START)
+    /// Creates **the canonical root** for a file's syntax tree. Must be called only from the
+    /// per-file parse query (`file_syntax_data`): the root's tracked struct is then seeded by that
+    /// *file-keyed* query, so reparsing changed content reuses the same node ids instead of
+    /// minting fresh ones. That id stability is what lets downstream early cutoff fire across
+    /// edits. Every other consumer must obtain this tree via `db.file_syntax(file_id)`, not by
+    /// constructing a root directly.
+    pub fn new_canonical_root(
+        db: &'a dyn Database,
+        file_id: FileId<'a>,
+        green: GreenId<'a>,
+    ) -> Self {
+        let kind = green.long(db).kind;
+        new_syntax_node(db, green, TextOffset::START, SyntaxNodeId::Root(file_id), kind)
     }
 
-    /// Creates a new root syntax node with a custom initial offset.
-    pub fn new_root_with_offset(
+    /// Creates a **detached** root: a standalone tree built directly from `green`, not unified with
+    /// the file's canonical tree. For transient/standalone parses (proc-macro token streams,
+    /// snippet formatting, tests) that have no per-file parse query to seed from. Its node ids are
+    /// green-keyed, so they are *not* stable across content changes — do not use it to back a file
+    /// that an editor mutates; use `db.file_syntax(file_id)` for that.
+    pub fn new_detached_root(
+        db: &'a dyn Database,
+        file_id: FileId<'a>,
+        green: GreenId<'a>,
+    ) -> Self {
+        new_detached_root_node(db, file_id, green, TextOffset::START)
+    }
+
+    /// A [`Self::new_detached_root`] with a custom initial offset, for embedding a standalone
+    /// subtree (e.g. a macro expansion) at its position in the parent file.
+    pub fn new_detached_root_with_offset(
         db: &'a dyn Database,
         file_id: FileId<'a>,
         green: GreenId<'a>,
         initial_offset: Option<TextOffset>,
     ) -> Self {
-        new_root_node(db, file_id, green, initial_offset.unwrap_or_default())
+        new_detached_root_node(db, file_id, green, initial_offset.unwrap_or_default())
     }
 
     // Basic accessors

@@ -11,6 +11,7 @@ use cairo_lang_filesystem::ids::{
     VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{
     FunctionWithBodyPtr, GenericParamPtr, ItemConstantPtr, ItemEnumPtr, ItemExternFunctionPtr,
     ItemExternTypePtr, ItemImplAliasPtr, ItemImplPtr, ItemInlineMacroPtr, ItemMacroDeclarationPtr,
@@ -1702,7 +1703,11 @@ struct SyntaxNodeCached(usize);
 
 #[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq, Debug)]
 enum SyntaxNodeIdCached {
-    Root(FileIdCached, GreenIdCached),
+    /// A file root, re-derived at load via `db.file_syntax` (no green stored), so cached stable
+    /// ptrs unify with the live tree. External files' content is served from the blob by
+    /// `ext_as_virtual` (see [`ExternalFileContentCached`]), so re-deriving never cycles back into
+    /// module data.
+    Root(FileIdCached),
     Child {
         parent: SyntaxNodeCached,
         kind: SyntaxKind,
@@ -1718,10 +1723,7 @@ impl SyntaxNodeIdCached {
         syntax_node: SyntaxNode<'db>,
     ) -> Self {
         match id {
-            SyntaxNodeId::Root(file_id) => {
-                let green = syntax_node.green_node(ctx.db).clone().intern(ctx.db);
-                Self::Root(FileIdCached::new(*file_id, ctx), GreenIdCached::new(green, ctx))
-            }
+            SyntaxNodeId::Root(file_id) => Self::Root(FileIdCached::new(*file_id, ctx)),
             SyntaxNodeId::Child { parent, key_fields, index } => Self::Child {
                 parent: SyntaxNodeCached::new(*parent, ctx),
                 kind: syntax_node.kind(ctx.db),
@@ -1772,10 +1774,18 @@ impl SyntaxNodeCached {
         }
         let id_cached = ctx.syntax_node_lookup[self.0].clone();
         match &id_cached {
-            SyntaxNodeIdCached::Root(file_id, green_id) => {
+            SyntaxNodeIdCached::Root(file_id) => {
+                // Re-derive the canonical tree via `file_syntax`; walking `get_children` below
+                // lands the cached stable ptrs on those canonical nodes. See
+                // `SyntaxNodeIdCached::Root`.
                 let fid = file_id.embed(ctx);
-                let green = green_id.embed(ctx);
-                let syntax = cairo_lang_syntax::node::SyntaxNode::new_root(ctx.db, fid, green);
+                let syntax = ctx.db.file_syntax(fid).unwrap_or_else(|_| {
+                    panic!(
+                        "defs cache: cannot re-derive syntax for file {:?}; its content must be \
+                         available to load the cache",
+                        fid.long(ctx.db)
+                    )
+                });
                 ctx.syntax_nodes.insert(*self, syntax);
             }
             SyntaxNodeIdCached::Child { parent, .. } => {
