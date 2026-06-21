@@ -724,7 +724,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             Expr::Literal(expr) => ConstValueId::from_int(db, expr.ty, &expr.value),
             Expr::Tuple(expr) => ConstValue::Struct(
                 expr.items.iter().map(|expr_id| self.evaluate(*expr_id)).collect(),
-                expr.ty,
+                or_return!(self.substitute(expr.ty).map_err(to_missing)),
             )
             .intern(db),
             Expr::StructCtor(ExprStructCtor {
@@ -749,13 +749,15 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                                 .unwrap_or_else(|| to_missing(skip_diagnostic()))
                         })
                         .collect(),
-                    *ty,
+                    or_return!(self.substitute(*ty).map_err(to_missing)),
                 )
                 .intern(db)
             }
-            Expr::EnumVariantCtor(expr) => {
-                ConstValue::Enum(expr.variant, self.evaluate(expr.value_expr)).intern(db)
-            }
+            Expr::EnumVariantCtor(expr) => ConstValue::Enum(
+                or_return!(self.substitute(expr.variant).map_err(to_missing)),
+                self.evaluate(expr.value_expr),
+            )
+            .intern(db),
             Expr::MemberAccess(expr) => {
                 self.evaluate_member_access(expr).unwrap_or_else(to_missing)
             }
@@ -777,7 +779,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                         }
                     }
                 },
-                expr.ty,
+                or_return!(self.substitute(expr.ty).map_err(to_missing)),
             )
             .intern(db),
             Expr::Snapshot(expr) => self.evaluate(expr.inner),
