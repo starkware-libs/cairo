@@ -159,6 +159,22 @@ fn test_complex_consts() {
     assert_eq!(IF_CONST_FALSE, 7);
 }
 
+#[derive(Copy, Drop, PartialEq, Debug)]
+struct Point {
+    x: felt252,
+    y: felt252,
+    z: felt252,
+}
+
+#[test]
+fn test_const_struct_update() {
+    const BASE: Point = Point { x: 1, y: 2, z: 3 };
+    const UPDATED: Point = Point { y: 20, ..BASE };
+    assert_eq!(UPDATED, Point { x: 1, y: 20, z: 3 });
+    const FROM_UPDATED: Point = Point { x: 10, z: 30, ..UPDATED };
+    assert_eq!(FROM_UPDATED, Point { x: 10, y: 20, z: 30 });
+}
+
 #[test]
 fn test_const_casts_from_felt252() {
     const _U8_UNDER_RANGE: () = assert((-1_felt252).try_into() == None::<u8>, 'U8 under range');
