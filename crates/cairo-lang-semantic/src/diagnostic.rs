@@ -663,8 +663,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     "Ambiguous path. Multiple matching items: {}",
                     module_items
                         .iter()
-                        .map(|item| format!("`{}`", item.full_path(db)))
-                        .format(", ")
+                        .format_with(", ", |item, f| f(&format_args!("`{}`", item.full_path(db))))
                 )
             }
             SemanticDiagnosticKind::UseSelfNonMulti => {
@@ -718,10 +717,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     } else {
                         format!(
                             " through any of the modules: {}",
-                            containing_modules
-                                .iter()
-                                .map(|module_id| format!("`{}`", module_id.full_path(db)))
-                                .format(", ")
+                            containing_modules.iter().format_with(", ", |module_id, f| {
+                                f(&format_args!("`{}`", module_id.full_path(db)))
+                            })
                         )
                     }
                 )
@@ -779,7 +777,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::MissingItemsInImpl(item_names) => {
                 format!(
                     "Not all trait items are implemented. Missing: {}.",
-                    item_names.iter().map(|name| format!("'{}'", name.long(db))).format(", ")
+                    item_names
+                        .iter()
+                        .format_with(", ", |name, f| f(&format_args!("'{}'", name.long(db))))
                 )
             }
             SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {
@@ -918,15 +918,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 if !relevant_traits.is_empty() {
                     let suggestions = relevant_traits
                         .iter()
-                        .map(|trait_path| format!("`{trait_path}`"))
-                        .format(", ");
+                        .format_with(", ", |trait_path, f| f(&format_args!("`{trait_path}`")));
 
                     format!(
                         "Method `{}` not found on type `{}`. Consider importing one of the \
-                         following traits: {}.",
+                         following traits: {suggestions}.",
                         method_name.long(db),
                         ty.format(db),
-                        suggestions
                     )
                 } else {
                     format!(

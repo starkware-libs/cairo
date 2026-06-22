@@ -32,14 +32,11 @@ pub fn handle_destruct(info: &PluginTypeInfo<'_>) -> String {
                 format!(
                     "let {ty} {{ {} }} = self;{}",
                     info.members_info.iter().map(|member| &member.name).format(", "),
-                    info.members_info
-                        .iter()
-                        .map(|member| format!(
-                            "\n{imp}::destruct({});",
-                            member.name,
-                            imp = member.impl_name(DESTRUCT_TRAIT),
-                        ))
-                        .format(""),
+                    info.members_info.iter().format_with("", |member, f| f(&format_args!(
+                        "\n{imp}::destruct({});",
+                        member.name,
+                        imp = member.impl_name(DESTRUCT_TRAIT),
+                    ))),
                 )
             }
         },

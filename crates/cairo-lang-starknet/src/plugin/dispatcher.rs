@@ -545,7 +545,7 @@ fn declaration_method_impl<'db>(
         RewriteNode::Text(if unwrap {
             ret_decode.clone()
         } else {
-            ret_decode.split('\n').map(|x| format!("    {x}")).join("\n")
+            ret_decode.split('\n').format_with("\n", |x, f| f(&format_args!("    {x}"))).to_string()
         })
     };
     let return_code = RewriteNode::interpolate_patched(
