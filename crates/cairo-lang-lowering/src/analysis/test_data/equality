@@ -1236,6 +1236,7 @@ fn foo(a: felt252, b: felt252) -> Array<felt252> {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_arr(x: @Array<felt252>) nopanic;
 
 //! > semantic_diagnostics
@@ -1350,6 +1351,7 @@ fn foo(a: felt252, b: felt252) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_snap_felt(x: @felt252) nopanic;
 
 //! > semantic_diagnostics
@@ -1457,6 +1459,7 @@ fn foo(a: felt252, b: felt252) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_snap_felt(x: @felt252) nopanic;
 
 //! > semantic_diagnostics
@@ -1552,6 +1555,7 @@ fn foo(mut arr: Array<felt252>) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_snap_felt(x: @felt252) nopanic;
 
 //! > semantic_diagnostics
@@ -1943,6 +1947,7 @@ fn foo(x: felt252, y: felt252) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_boxes(a: Box<Option<felt252>>, b: Box<Option<felt252>>) nopanic;
 
 //! > semantic_diagnostics

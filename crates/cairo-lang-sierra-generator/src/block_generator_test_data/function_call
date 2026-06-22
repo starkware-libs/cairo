@@ -129,6 +129,7 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
 
 //! > semantic_diagnostics

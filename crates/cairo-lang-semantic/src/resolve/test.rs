@@ -24,7 +24,9 @@ fn test_resolve_path() {
         db,
         indoc! {"
             use core::Box;
+            #[allow(extern_outside_corelib)]
             extern type S<T>;
+            #[allow(extern_outside_corelib)]
             extern fn bar<T>(value: S::<felt252>) -> S::<()> nopanic;
 
             fn foo<Q>(value: S::<felt252>, b: Q, c: Box::<Q>) {

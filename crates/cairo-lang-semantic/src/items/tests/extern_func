@@ -12,15 +12,18 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar() -> bad_type;
 
 //! > expected_diagnostics
 error[E0006]: Type not found.
- --> lib.cairo:1:20
+ --> lib.cairo:2:20
 extern fn bar() -> bad_type;
                    ^^^^^^^^
 
 error[E2116]: An extern function must be marked as nopanic.
- --> lib.cairo:1:1
-extern fn bar() -> bad_type;
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ --> lib.cairo:1:1-2:28
+  #[allow(extern_outside_corelib)]
+ _^
+| extern fn bar() -> bad_type;
+|____________________________^

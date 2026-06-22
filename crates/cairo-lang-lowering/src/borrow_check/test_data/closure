@@ -130,17 +130,18 @@ struct S {
     a: u32,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn use_s(s: S) nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3001]: Variable was previously moved.
- --> lib.cairo:13:13
+ --> lib.cairo:14:13
     let _ = a.a;
             ^^^
 note: variable was previously used here:
-  --> lib.cairo:9:15
+  --> lib.cairo:10:15
         use_s(a)
               ^
 note: Trait has no implementation in context: core::traits::Copy::<test::S>.
@@ -149,7 +150,7 @@ note: Trait has no implementation in context: core::traits::Copy::<test::S>.
 Parameters: v0: test::S
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:8:5: 8:7}) <- struct_construct(v0{`a`})
+  (v1: {closure@lib.cairo:9:5: 9:7}) <- struct_construct(v0{`a`})
   (v3: ()) <- struct_construct()
 End:
   Return(v3)
@@ -174,11 +175,12 @@ fn foo(mut a: Array<u32>) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_f<T>(f: T) nopanic;
 
 //! > semantic_diagnostics
 error[E2188]: Capture of mutable variables in a closure is not supported
- --> lib.cairo:4:17
+ --> lib.cairo:5:17
         let _ = a.append(b);
                 ^
 
@@ -208,6 +210,7 @@ fn foo(a: Array<u32>) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_value<T>(f: T) nopanic;
 
 //! > semantic_diagnostics
@@ -219,9 +222,9 @@ Parameters: v0: core::array::Array::<core::integer::u32>
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::integer::u32>, v2: @core::array::Array::<core::integer::u32>) <- snapshot(v0{`a`})
-  (v3: {closure@lib.cairo:3:13: 3:22}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
+  (v3: {closure@lib.cairo:4:13: 4:22}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
   () <- test::use_value::<core::array::Array::<core::integer::u32>>(v1{`a`})
-  () <- test::use_value::<{closure@lib.cairo:3:13: 3:22}>(v3{`f`})
+  () <- test::use_value::<{closure@lib.cairo:4:13: 4:22}>(v3{`f`})
   (v4: ()) <- struct_construct()
 End:
   Return(v4)
@@ -245,11 +248,12 @@ fn foo(mut a: Array<u32>) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_f<T>(f: T) nopanic;
 
 //! > semantic_diagnostics
 error[E2188]: Capture of mutable variables in a closure is not supported
- --> lib.cairo:4:9
+ --> lib.cairo:5:9
         a = array![];
         ^
 

@@ -16,6 +16,7 @@ fn foo() -> Option<u16> {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn get_option() -> Option<u16> nopanic;
 
 //! > semantic_diagnostics
@@ -158,6 +159,7 @@ fn foo(a: felt252) -> Option<u16> {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn get_option() -> Option<u16> nopanic;
 
 //! > semantic_diagnostics
@@ -340,6 +342,7 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn get_option() -> Option<felt252> nopanic;
 
 //! > semantic_diagnostics
@@ -1990,6 +1993,7 @@ fn foo(b: bool) -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_var(a: bool) nopanic;
 
 fn bar(b: bool) -> felt252 {

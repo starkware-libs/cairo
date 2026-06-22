@@ -258,6 +258,7 @@ test::foo@F0([0]: Snapshot<test::Color>) -> (felt252);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn enum_snapshot_match<T>(e: @T) -> never nopanic;
 
 fn foo(n: @never) -> never {

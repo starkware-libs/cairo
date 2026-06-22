@@ -549,17 +549,29 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn felt252_const<const VALUE: felt252>() -> felt252 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u8_const<const VALUE: u8>() -> u8 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u16_const<const VALUE: u16>() -> u16 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u32_const<const VALUE: u32>() -> u32 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u64_const<const VALUE: u64>() -> u64 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u128_const<const VALUE: u128>() -> u128 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i8_const<const VALUE: i8>() -> i8 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i16_const<const VALUE: i16>() -> i16 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i32_const<const VALUE: i32>() -> i32 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i64_const<const VALUE: i64>() -> i64 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i128_const<const VALUE: i128>() -> i128 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn bytes31_const<const VALUE: felt252>() -> bytes31 nopanic;
 
 #[feature("deprecated-starknet-consts")]

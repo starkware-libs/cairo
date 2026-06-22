@@ -1,12 +1,15 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ImplDefId, TraitId};
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_syntax::attribute::consts::EXTERN_OUTSIDE_CORELIB;
 use cairo_lang_syntax::node::ast::ExprPath;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use salsa::Database;
 
-use crate::diagnostic::SemanticDiagnosticKind::NotATrait;
+use crate::corelib::CorelibSemantic;
+use crate::diagnostic::SemanticDiagnosticKind::{ExternItemOutsideCorelib, NotATrait};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver};
 
@@ -55,6 +58,24 @@ fn resolve_trait_path<'db>(
         ResolvedGenericItem::Trait
     )
     .ok_or_else(|| diagnostics.report(trait_path_syntax.stable_ptr(db), NotATrait))
+}
+
+/// Reports a warning if an extern type or function is declared outside the core library, unless the
+/// `extern_outside_corelib` lint is allowed for the item.
+fn report_extern_item_outside_corelib<'db>(
+    db: &'db dyn Database,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    resolver: &Resolver<'db>,
+    item: &impl TypedSyntaxNode<'db>,
+) {
+    if resolver.owning_crate_id == db.core_crate() {
+        return;
+    }
+    if resolver.feature_config.allowed_lints.contains(&SmolStrId::from(db, EXTERN_OUTSIDE_CORELIB))
+    {
+        return;
+    }
+    diagnostics.report(item.stable_ptr(db).untyped(), ExternItemOutsideCorelib);
 }
 
 /// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
