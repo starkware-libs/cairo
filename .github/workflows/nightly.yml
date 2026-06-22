@@ -107,6 +107,24 @@ jobs:
           # this step then reuses. Reordering or removing the timing step will break this one.
           skip-fetch-gh-pages: true
 
+      - name: Run language-server re-execution benchmark
+        run: cargo bench --bench ls_reexec
+
+      - name: Store language-server re-execution benchmark results
+        uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b
+        with:
+          name: Cairo Language Server Re-execution Benchmarks
+          tool: 'customSmallerIsBetter'
+          output-file-path: target/ls-reexec/ls-reexec-output.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          fail-on-alert: true
+          alert-threshold: '150%'
+          # Like the heap step, reuses the gh-pages worktree fetched by the timing step.
+          skip-fetch-gh-pages: true
+
       - name: Push results to gh-pages
         run: git push origin gh-pages
 
