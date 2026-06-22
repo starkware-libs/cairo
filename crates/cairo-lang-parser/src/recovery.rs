@@ -90,6 +90,7 @@ macro_rules! module_item_kw {
             | SyntaxKind::TerminalExtern
             | SyntaxKind::TerminalFunction
             | SyntaxKind::TerminalImpl
+            | SyntaxKind::TerminalMacro
             | SyntaxKind::TerminalModule
             | SyntaxKind::TerminalStruct
             | SyntaxKind::TerminalTrait
