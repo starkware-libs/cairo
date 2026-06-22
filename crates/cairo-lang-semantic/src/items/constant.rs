@@ -22,6 +22,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, require, try_extract_matches};
 use itertools::Itertools;
 use num_bigint::BigInt;
+use num_integer::Integer;
 use num_traits::{ToPrimitive, Zero};
 use salsa::Database;
 use starknet_types_core::felt::{CAIRO_PRIME_BIGINT, Felt as Felt252};
@@ -931,12 +932,17 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             id if id == self.ge_fn => return bool_value(args[0].v >= args[1].v),
             id if id == self.div_rem_fn => {
                 // No need for non-zero check as this is type checked to begin with.
-                // Also results are always in the range of the input type, so `unwrap`s are ok.
+                let (q, r) = args[0].v.div_rem(&args[1].v);
+                let ty = args[0].ty;
+                // The quotient may overflow for signed `MIN / -1`, so it must be validated.
+                if let Err(err) = validate_literal(db, ty, &q) {
+                    return to_missing(self.diagnostics.report(
+                        expr.stable_ptr.untyped(),
+                        SemanticDiagnosticKind::LiteralError(err),
+                    ));
+                }
                 return ConstValue::Struct(
-                    vec![
-                        ConstValueId::from_int(db, args[0].ty, &(&args[0].v / &args[1].v)),
-                        ConstValueId::from_int(db, args[0].ty, &(&args[0].v % &args[1].v)),
-                    ],
+                    vec![ConstValueId::from_int(db, ty, &q), ConstValueId::from_int(db, ty, &r)],
                     expr.ty,
                 )
                 .intern(db);

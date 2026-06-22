@@ -211,6 +211,9 @@ const VALID_LE: () = assert(1_usize <= 1);
 const VALID_GT: () = assert(2_usize > 1);
 const VALID_GE: () = assert(1_usize >= 1);
 const VALID_DIVREM: () = assert(DivRem::div_rem(5_u8, 2) == (2, 1));
+// The quotient of signed `MIN / -1` overflows the type, and should emit a clean diagnostic
+// rather than silently storing an out-of-range value (which later ICEs in sierra-gen).
+const DIVREM_SIGNED_MIN_OVERFLOW: (i8, i8) = DivRem::div_rem(-128_i8, -1);
 
 const MATCH_VALUE: () = assert(match 1_u8 {
     _ => 1,
@@ -300,22 +303,27 @@ note: In `test::assert`:
         core::panic_with_felt252('failed assertion')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+error[E2008]: The value does not fit within the range of type core::integer::i8.
+ --> lib.cairo:69:46
+const DIVREM_SIGNED_MIN_OVERFLOW: (i8, i8) = DivRem::div_rem(-128_i8, -1);
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 error[E2129]: Constant calculation depth exceeded.
- --> lib.cairo:92:43
+ --> lib.cairo:95:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
 error[E2130]: Failed to calculate constant.
- --> lib.cairo:99:37
+ --> lib.cairo:102:37
 const NON_ZERO_ZERO: NonZero<u64> = my_unwrap(ZERO.try_into());
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: In `test::my_unwrap::<core::zeroable::NonZero::<core::integer::u64>>`:
-  --> lib.cairo:105:17
+  --> lib.cairo:108:17
         None => core::panic_with_felt252('bad value'),
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2128]: Failed to calculate constant.
- --> lib.cairo:111:9
+ --> lib.cairo:114:9
         core::panic_with_felt252('should fail')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
