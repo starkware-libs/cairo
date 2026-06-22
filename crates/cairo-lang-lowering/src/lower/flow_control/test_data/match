@@ -1746,6 +1746,7 @@ struct MyStruct {
     c: u8,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar(ref x: felt252) -> MyEnum nopanic;
 
 //! > graph
@@ -1872,6 +1873,7 @@ fn foo() -> felt252 {
 }
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar() -> Option<felt252> nopanic;
 
 //! > graph
@@ -1949,6 +1951,7 @@ fn foo() -> felt252 {
 }
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar() -> Option<felt252> nopanic;
 
 //! > graph

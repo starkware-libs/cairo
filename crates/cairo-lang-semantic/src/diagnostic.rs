@@ -804,6 +804,12 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::PanicableExternFunction => {
                 "An extern function must be marked as nopanic.".into()
             }
+            SemanticDiagnosticKind::ExternItemOutsideCorelib => {
+                "Extern types and functions are expected only in the core library. To allow them, \
+                 use `#[allow(extern_outside_corelib)]`, but note that they may cause compiler \
+                 crashes."
+                    .into()
+            }
             SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
@@ -1238,6 +1244,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             | SemanticDiagnosticKind::UnusedConstant
             | SemanticDiagnosticKind::UnusedUse
             | SemanticDiagnosticKind::PatternMissingArgs(_)
+            | SemanticDiagnosticKind::ExternItemOutsideCorelib
             | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
@@ -1468,6 +1475,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::NonNeverLetElseType => error_code!(E2195),
             SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => error_code!(E2196),
             SemanticDiagnosticKind::UnsupportedItemInStatement => error_code!(E2197),
+            SemanticDiagnosticKind::ExternItemOutsideCorelib => error_code!(E2201),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1763,6 +1771,7 @@ pub enum SemanticDiagnosticKind<'db> {
     },
     PanicableFromNonPanicable,
     PanicableExternFunction,
+    ExternItemOutsideCorelib,
     MacroGeneratedCodeParserDiagnostic(ParserDiagnostic<'db>),
     PluginDiagnostic(PluginDiagnostic<'db>),
     NameDefinedMultipleTimes(SmolStrId<'db>),

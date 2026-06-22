@@ -547,6 +547,7 @@ enum A {
     Three: (),
 }
 
+#[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
 
 //! > semantic_diagnostics
@@ -692,6 +693,7 @@ enum A {
     Two: (),
 }
 
+#[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
 
 //! > semantic_diagnostics
@@ -1429,6 +1431,7 @@ enum A {
     Three: (),
     Four: (),
 }
+#[allow(extern_outside_corelib)]
 extern fn get_bool() -> bool nopanic;
 
 //! > semantic_diagnostics
@@ -3152,6 +3155,7 @@ enum A {
     One: Option<Option<felt252>>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
 
 //! > semantic_diagnostics
@@ -3228,6 +3232,7 @@ enum A {
     One: @Option<@@Option<@felt252>>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
 
 //! > semantic_diagnostics
@@ -3466,6 +3471,7 @@ foo
 //! > module_code
 enum A {}
 
+#[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
 
 //! > semantic_diagnostics

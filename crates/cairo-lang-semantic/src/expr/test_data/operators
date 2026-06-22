@@ -12,11 +12,12 @@ fn foo(a: MyType) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern type MyType;
 
 //! > expected_diagnostics
 error[E2311]: Trait has no implementation in context: core::traits::Add::<test::MyType>.
- --> lib.cairo:3:5
+ --> lib.cairo:4:5
     a + a * a;
     ^^^^^^^^^
 

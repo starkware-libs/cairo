@@ -24,6 +24,7 @@ fn test_resolve() {
         &db_val,
         indoc! {"
             fn foo() -> felt252 { 5 }
+            #[allow(extern_outside_corelib)]
             extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
         "},
     )

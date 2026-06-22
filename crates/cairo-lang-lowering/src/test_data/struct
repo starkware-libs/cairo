@@ -165,7 +165,9 @@ struct MyStruct {
     a: (),
     c: (felt252, felt252),
 }
+#[allow(extern_outside_corelib)]
 extern fn f1() -> felt252 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn f2() -> (felt252, felt252) nopanic;
 
 //! > semantic_diagnostics

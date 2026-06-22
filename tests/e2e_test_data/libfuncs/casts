@@ -707,6 +707,7 @@ test::foo@F0([0]: RangeCheck, [1]: u16) -> (RangeCheck, core::option::Option::<c
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 fn foo(a: i8) -> Option<BoundedInt<-3, 5>> {
@@ -780,6 +781,7 @@ test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<te
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 fn foo(a: i8) -> Option<BoundedInt<0, 5>> {
@@ -853,6 +855,7 @@ test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<te
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 fn foo(a: i8) -> Option<BoundedInt<-5, 0>> {
@@ -926,6 +929,7 @@ test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<te
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 fn foo(a: i8) -> Option<BoundedInt<-5, -1>> {
@@ -998,6 +1002,7 @@ test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::option::Option::<te
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 fn foo(a: BoundedInt<100, 200>) -> Option<BoundedInt<120, 180>> {
@@ -1071,6 +1076,7 @@ test::foo: SmallOrderedMap({Const: 940})
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 fn foo(

@@ -140,6 +140,7 @@ fn foo(a: felt252) -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn consume(arg: (felt252, Array<felt252>)) nopanic;
 
 //! > semantic_diagnostics
@@ -280,6 +281,7 @@ fn foo(a: felt252) -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_tuple<T>(a: (felt252, T)) nopanic;
 
 //! > semantic_diagnostics
@@ -382,6 +384,7 @@ fn foo(a: felt252) -> (felt252, felt252) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_tuple<T>(a: (felt252, T)) nopanic;
 
 //! > semantic_diagnostics
@@ -468,6 +471,7 @@ fn foo(a: felt252) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_tuple<T>(a: (felt252, T)) nopanic;
 
 //! > semantic_diagnostics
@@ -559,8 +563,10 @@ fn foo(a: felt252) -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_tuple<T>(a: (felt252, T)) nopanic;
 
+#[allow(extern_outside_corelib)]
 extern fn get_tuple<T>() -> (felt252, T) nopanic;
 
 //! > semantic_diagnostics
@@ -865,7 +871,9 @@ fn foo(a: felt252, e: ThreeCases) -> (felt252, NonDupStruct) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_tuple<T>(a: (felt252, T)) nopanic;
+#[allow(extern_outside_corelib)]
 extern fn use_struct(a: NonDupStruct) nopanic;
 
 struct NonDupStruct {

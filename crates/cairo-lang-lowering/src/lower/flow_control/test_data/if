@@ -122,6 +122,7 @@ fn foo(mut x: felt252, mut y: felt252) -> felt252 {
 }
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn modify(ref x: felt252) -> felt252 nopanic;
 
 //! > graph
@@ -212,6 +213,7 @@ struct MyStruct {
     b: felt252,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn modify(ref x: felt252) -> felt252 nopanic;
 
 //! > graph

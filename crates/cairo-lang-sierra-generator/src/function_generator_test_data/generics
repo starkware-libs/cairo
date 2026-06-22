@@ -13,6 +13,7 @@ foo
 
 //! > module_code
 // Function needs to be a real libfunc for the test
+#[allow(extern_outside_corelib)]
 extern fn span_from_tuple<T, +Copy<T>>(x: Box<@T>) -> @Array<felt252> nopanic;
 
 //! > semantic_diagnostics
@@ -157,6 +158,7 @@ fn bar<Ph>() -> felt252 {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn drop_ph<Ph>(ph: Ph) nopanic;
 
 //! > semantic_diagnostics

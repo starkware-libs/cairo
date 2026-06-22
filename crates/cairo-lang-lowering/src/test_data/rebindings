@@ -14,6 +14,7 @@ fn foo(ref a: felt252, b: felt252, c: felt252) -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar() -> felt252 nopanic;
 
 //! > semantic_diagnostics

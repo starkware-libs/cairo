@@ -7,6 +7,7 @@ test_expr_semantics
 fn foo(x: u8) {
     6;
 }
+#[allow(extern_outside_corelib)]
 extern fn get_coupon() -> foo::Coupon nopanic;
 
 //! > expr_code

@@ -15,9 +15,13 @@ fn foo(ref a: felt252, b: felt252) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn f(ref a: felt252, b: felt252) -> felt252 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn g(ref a: felt252, b: felt252) -> (felt252,) nopanic;
+#[allow(extern_outside_corelib)]
 extern fn h(ref a: felt252, b: felt252) -> (felt252, felt252) nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i(ref a: felt252, b: felt252) -> ((felt252,),) nopanic;
 
 //! > semantic_diagnostics
@@ -61,6 +65,7 @@ enum MyEnum {
     B: (felt252,),
     C: (felt252, felt252),
 }
+#[allow(extern_outside_corelib)]
 extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
@@ -118,6 +123,7 @@ enum MyEnum {
     B: (felt252,),
     C: (felt252, felt252),
 }
+#[allow(extern_outside_corelib)]
 extern fn f(a: felt252, b: felt252) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
@@ -175,6 +181,7 @@ enum MyEnum {
     B: (felt252,),
     C: (felt252, felt252),
 }
+#[allow(extern_outside_corelib)]
 extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
@@ -233,6 +240,7 @@ enum MyEnum {
     B: (felt252,),
     C: (felt252, felt252),
 }
+#[allow(extern_outside_corelib)]
 extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
@@ -290,6 +298,7 @@ enum MyEnum {
     B: (felt252,),
     C: (felt252, felt252),
 }
+#[allow(extern_outside_corelib)]
 extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
@@ -344,6 +353,7 @@ foo
 enum MyEnum {
     A: felt252,
 }
+#[allow(extern_outside_corelib)]
 extern fn f(ref arr: Array<felt252>, ref b: (felt252,)) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
