@@ -139,7 +139,7 @@ impl ContractStateTransferImpl of
 }
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OwnableBalanceImpl__constructor(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -156,7 +156,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::constructor(ref contract_state, __arg_owner, __arg_initial);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -164,7 +164,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OwnableBalanceImpl__get_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -174,7 +174,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = OwnableBalanceImpl::get_balance(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -183,7 +183,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OwnableBalanceImpl__set_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -196,7 +196,7 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::set_balance(ref contract_state, __arg_new_balance);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -244,16 +244,16 @@ pub mod __constructor {
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 #[doc(hidden)]
@@ -396,7 +396,7 @@ impl ContractStateTransferImpl of
 }
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OwnableBalanceImpl__constructor(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -413,7 +413,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::constructor(ref contract_state, __arg_owner, __arg_initial);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -421,7 +421,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OwnableBalanceImpl__get_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -431,7 +431,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = OwnableBalanceImpl::get_balance(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -440,7 +440,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OwnableBalanceImpl__set_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -453,7 +453,7 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     OwnableBalanceImpl::set_balance(ref contract_state, __arg_new_balance);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -501,16 +501,16 @@ pub mod __constructor {
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 #[doc(hidden)]

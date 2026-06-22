@@ -1,4 +1,4 @@
-//! > Test valid expansion of a simple starknet contract.
+//! > Test that user types shadowing prelude type names (Array/Span/Option) do not break codegen.
 
 //! > test_runner_name
 ExpandContractTestRunner(expect_diagnostics: false)
@@ -9,11 +9,15 @@ mod test_contract {
     #[storage]
     struct Storage {}
 
-    #[l1_handler]
-    fn good_l1_handler(ref self: ContractState, from_address: felt252, arg: felt252) {}
+    // User types whose names shadow prelude types referenced by the generated code.
+    struct Array {}
+    struct Span {}
+    enum Option {}
 
-    #[l1_handler]
-    fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252) {}
+    #[external(v0)]
+    fn get_value(self: @ContractState, value: felt252) -> felt252 {
+        value
+    }
 }
 
 //! > generated_cairo_code
@@ -24,11 +28,15 @@ mod test_contract {
     #[storage]
     struct Storage {}
 
-    #[l1_handler]
-    fn good_l1_handler(ref self: ContractState, from_address: felt252, arg: felt252) {}
+    // User types whose names shadow prelude types referenced by the generated code.
+    struct Array {}
+    struct Span {}
+    enum Option {}
 
-    #[l1_handler]
-    fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252) {}
+    #[external(v0)]
+    fn get_value(self: @ContractState, value: felt252) -> felt252 {
+        value
+    }
 }
 
 lib.cairo:1:1
@@ -105,66 +113,37 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: starknet::ClassHash = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76.try_into().unwrap();
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2462d52c48bf7ed89c3a104e46620bb2516623714234b78744bf64278c9366d.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__good_l1_handler(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+fn __wrapper__get_value(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    let __arg_from_address = core::option::OptionTraitImpl::expect(
+    let __arg_value = core::option::OptionTraitImpl::expect(
         core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
-    let __arg_arg = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<felt252>::deserialize(ref data),
-        'Failed to deserialize param #2'
-    );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
-    good_l1_handler(ref contract_state, __arg_from_address, __arg_arg);
+    let res = get_value(@contract_state, __arg_value);
     let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
-    core::array::ArrayTrait::span(@arr)
-}
-
-#[doc(hidden)]
-#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__good_l1_handler_ignored(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    let Some(_) = core::gas::withdraw_gas() else {
-        core::panic_with_felt252('Out of gas');
-    };
-    let __arg__from_address = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<felt252>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    let __arg_arg = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<felt252>::deserialize(ref data),
-        'Failed to deserialize param #2'
-    );
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let mut contract_state = unsafe_new_contract_state();
-    good_l1_handler_ignored(ref contract_state, __arg__from_address, __arg_arg);
-    let mut arr = core::array::ArrayTrait::new();
-    // References.
-    // Result.
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
     core::array::ArrayTrait::span(@arr)
 }
 
 
 #[doc(hidden)]
 pub mod __external {
+    pub use super::__wrapper__get_value as get_value;
 }
 #[doc(hidden)]
 pub mod __l1_handler {
-    pub use super::__wrapper__good_l1_handler as good_l1_handler;
-    pub use super::__wrapper__good_l1_handler_ignored as good_l1_handler_ignored;
 }
 #[doc(hidden)]
 pub mod __constructor {
@@ -242,62 +221,3 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-
-//! > ==========================================================================
-
-//! > Test erroneous expansion of a simple starknet contract.
-
-//! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: true)
-
-//! > cairo_code
-#[starknet::contract]
-mod test_contract {
-    #[l1_handler]
-    fn l1_handler_no_params(ref self: ContractState) {}
-
-    #[l1_handler]
-    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
-
-    #[l1_handler]
-    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
-}
-
-//! > generated_cairo_code
-lib.cairo:
-
-#[starknet::contract]
-mod test_contract {
-    #[l1_handler]
-    fn l1_handler_no_params(ref self: ContractState) {}
-
-    #[l1_handler]
-    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
-
-    #[l1_handler]
-    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
-}
-
-//! > expected_diagnostics
-error[E2200]: Plugin diagnostic: Contracts must define a 'Storage' struct.
- --> lib.cairo:1:1-11:1
-  #[starknet::contract]
- _^
-| ...
-| }
-|_^
-
-error[E0006]: Type not found.
- --> lib.cairo:4:39
-    fn l1_handler_no_params(ref self: ContractState) {}
-                                      ^^^^^^^^^^^^^
-
-error[E0006]: Type not found.
- --> lib.cairo:7:52
-    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
-                                                   ^^^^^^^^^^^^^
-
-error[E0006]: Type not found.
- --> lib.cairo:10:52
-    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
-                                                   ^^^^^^^^^^^^^

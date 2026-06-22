@@ -75,13 +75,14 @@ fn handle_struct<'db>(
             "
             impl $struct_name$IsEvent of {EVENT_TRAIT}<$struct_name$> {{
                 fn append_keys_and_data(
-                    self: @$struct_name$, ref keys: Array<felt252>, ref data: Array<felt252>
+                    self: @$struct_name$, ref keys: core::array::Array<felt252>, ref data: \
+             core::array::Array<felt252>
                 ) {{$append_members$
                 }}
                 fn deserialize(
-                    ref keys: Span<felt252>, ref data: Span<felt252>,
-                ) -> Option<$struct_name$> {{
-                    Option::Some($struct_name$ {{$ctor$}})
+                    ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+                ) -> core::option::Option<$struct_name$> {{
+                    core::option::Option::Some($struct_name$ {{$ctor$}})
                 }}
             }}
             "
@@ -233,10 +234,10 @@ fn handle_enum<'db>(
             let mut keys = keys;
             let mut data = data;
             match {} {{
-                Option::Some(val) => {{
-                    return Option::Some($enum_name$::$variant_name$(val));
+                core::option::Option::Some(val) => {{
+                    return core::option::Option::Some($enum_name$::$variant_name$(val));
                 }},
-                Option::None => {{}},
+                core::option::Option::None => {{}},
             }};
         }}
         ",
@@ -254,7 +255,7 @@ fn handle_enum<'db>(
                 &format!(
                     "\
         if {SELECTOR} == selector!(\"$variant_name$\") {{
-            return Option::Some($enum_name$::$variant_name$({}?));
+            return core::option::Option::Some($enum_name$::$variant_name$({}?));
         }}
         ",
                     deserialize_member_code(member_kind)
@@ -301,17 +302,18 @@ fn handle_enum<'db>(
             "
             impl $enum_name$IsEvent of {EVENT_TRAIT}<$enum_name$> {{
                 fn append_keys_and_data(
-                    self: @$enum_name$, ref keys: Array<felt252>, ref data: Array<felt252>
+                    self: @$enum_name$, ref keys: core::array::Array<felt252>, ref data: \
+             core::array::Array<felt252>
                 ) {{
                     match self {{$append_variants$
                     }}
                 }}
                 fn deserialize(
-                    ref keys: Span<felt252>, ref data: Span<felt252>,
-                ) -> Option<$enum_name$> {{
+                    ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+                ) -> core::option::Option<$enum_name$> {{
                     $deserialize_flat_variants$let {SELECTOR} = \
              *core::array::SpanTrait::pop_front(ref keys)?;
-                    $deserialize_nested_variants$Option::None
+                    $deserialize_nested_variants$core::option::Option::None
                 }}
             }}
             $event_into_impls$

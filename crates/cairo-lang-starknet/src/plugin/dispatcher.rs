@@ -268,7 +268,7 @@ pub fn handle_trait<'db>(
                     +Drop<{GENERIC_CONTRACT_STATE_NAME}>, impl \
                     UnsafeNewContractState: \
                     {unsafe_new_state_trait_name}<{GENERIC_CONTRACT_STATE_NAME}>>\
-                    (data: Span::<felt252>) -> Span::<felt252> {{
+                    (data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {{
                         let Some(_) = core::gas::withdraw_gas() else {{
                             core::panic_with_felt252('Out of gas');
                         }};

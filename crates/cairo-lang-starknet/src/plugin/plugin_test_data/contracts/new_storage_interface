@@ -1453,7 +1453,7 @@ trait UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__increase_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__increase_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1468,7 +1468,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__increase_balance<TContractState, im
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1483,7 +1483,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__get_balance<TContractState, impl FC
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_user_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_user_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1498,7 +1498,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__get_user_balance<TContractState, im
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__set_user_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__set_user_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1513,7 +1513,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__set_user_balance<TContractState, im
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_legacy_user_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_legacy_user_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1528,7 +1528,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__get_legacy_user_balance<TContractSt
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__set_legacy_user_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__set_legacy_user_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1543,7 +1543,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__set_legacy_user_balance<TContractSt
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_user_balance_subbalance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_user_balance_subbalance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1558,7 +1558,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__get_user_balance_subbalance<TContra
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_balance_pair_balance1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_balance_pair_balance1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1573,7 +1573,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__get_balance_pair_balance1<TContract
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_balance_pair_balance2<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_balance_pair_balance2<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1588,7 +1588,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__get_balance_pair_balance2<TContract
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__set_balance_pair_balance1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__set_balance_pair_balance1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1603,7 +1603,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__set_balance_pair_balance1<TContract
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_balance_trio_sub_member<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_balance_trio_sub_member<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1618,7 +1618,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__get_balance_trio_sub_member<TContra
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__set_balance_trio_sub_member<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__set_balance_trio_sub_member<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1633,7 +1633,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__set_balance_trio_sub_member<TContra
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_third_list_value<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_third_list_value<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1648,7 +1648,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__get_third_list_value<TContractState
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_arr_at<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_arr_at<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1663,7 +1663,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__get_arr_at<TContractState, impl FCH
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__append_to_arr<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__append_to_arr<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -1678,7 +1678,7 @@ fn __wrapper__HelloStarknetTraitForwardImpl__append_to_arr<TContractState, impl 
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_queryable_enum<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetTraitForwardImpl__get_queryable_enum<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -3649,7 +3649,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3656be188a3ea1c67b67e871882de
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__increase_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3662,7 +3662,7 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3670,7 +3670,7 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3680,7 +3680,7 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<usize>::serialize(@res, ref arr);
@@ -3689,7 +3689,7 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_user_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3702,7 +3702,7 @@ fn __wrapper__HelloStarknetImpl__get_user_balance(mut data: Span::<felt252>) -> 
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_user_balance(@contract_state, __arg_user_id);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<usize>::serialize(@res, ref arr);
@@ -3711,7 +3711,7 @@ fn __wrapper__HelloStarknetImpl__get_user_balance(mut data: Span::<felt252>) -> 
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_legacy_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_legacy_user_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3724,7 +3724,7 @@ fn __wrapper__HelloStarknetImpl__get_legacy_user_balance(mut data: Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_legacy_user_balance(@contract_state, __arg_user_id);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<usize>::serialize(@res, ref arr);
@@ -3733,7 +3733,7 @@ fn __wrapper__HelloStarknetImpl__get_legacy_user_balance(mut data: Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__set_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__set_user_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3750,7 +3750,7 @@ fn __wrapper__HelloStarknetImpl__set_user_balance(mut data: Span::<felt252>) -> 
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::set_user_balance(ref contract_state, __arg_user_id, __arg_balance);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3758,7 +3758,7 @@ fn __wrapper__HelloStarknetImpl__set_user_balance(mut data: Span::<felt252>) -> 
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__set_legacy_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__set_legacy_user_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3775,7 +3775,7 @@ fn __wrapper__HelloStarknetImpl__set_legacy_user_balance(mut data: Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::set_legacy_user_balance(ref contract_state, __arg_user_id, __arg_balance);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3783,7 +3783,7 @@ fn __wrapper__HelloStarknetImpl__set_legacy_user_balance(mut data: Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_user_balance_subbalance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_user_balance_subbalance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3800,7 +3800,7 @@ fn __wrapper__HelloStarknetImpl__get_user_balance_subbalance(mut data: Span::<fe
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_user_balance_subbalance(@contract_state, __arg_user_id, __arg_subbalance_id);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<usize>::serialize(@res, ref arr);
@@ -3809,7 +3809,7 @@ fn __wrapper__HelloStarknetImpl__get_user_balance_subbalance(mut data: Span::<fe
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_balance_pair_balance1(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_balance_pair_balance1(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3819,7 +3819,7 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance1(mut data: Span::<felt
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance_pair_balance1(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -3828,7 +3828,7 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance1(mut data: Span::<felt
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_balance_pair_balance2(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_balance_pair_balance2(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3838,7 +3838,7 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance2(mut data: Span::<felt
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance_pair_balance2(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -3847,7 +3847,7 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance2(mut data: Span::<felt
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__set_balance_pair_balance1(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__set_balance_pair_balance1(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3860,7 +3860,7 @@ fn __wrapper__HelloStarknetImpl__set_balance_pair_balance1(mut data: Span::<felt
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::set_balance_pair_balance1(ref contract_state, __arg_value);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3868,7 +3868,7 @@ fn __wrapper__HelloStarknetImpl__set_balance_pair_balance1(mut data: Span::<felt
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_balance_trio_sub_member(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_balance_trio_sub_member(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3878,7 +3878,7 @@ fn __wrapper__HelloStarknetImpl__get_balance_trio_sub_member(mut data: Span::<fe
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance_trio_sub_member(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -3887,7 +3887,7 @@ fn __wrapper__HelloStarknetImpl__get_balance_trio_sub_member(mut data: Span::<fe
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__set_balance_trio_sub_member(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__set_balance_trio_sub_member(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3900,7 +3900,7 @@ fn __wrapper__HelloStarknetImpl__set_balance_trio_sub_member(mut data: Span::<fe
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::set_balance_trio_sub_member(ref contract_state, __arg_value);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3908,7 +3908,7 @@ fn __wrapper__HelloStarknetImpl__set_balance_trio_sub_member(mut data: Span::<fe
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_third_list_value(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_third_list_value(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3918,7 +3918,7 @@ fn __wrapper__HelloStarknetImpl__get_third_list_value(mut data: Span::<felt252>)
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_third_list_value(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -3927,7 +3927,7 @@ fn __wrapper__HelloStarknetImpl__get_third_list_value(mut data: Span::<felt252>)
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_arr_at(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_arr_at(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3940,7 +3940,7 @@ fn __wrapper__HelloStarknetImpl__get_arr_at(mut data: Span::<felt252>) -> Span::
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_arr_at(@contract_state, __arg_index);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<usize>::serialize(@res, ref arr);
@@ -3949,7 +3949,7 @@ fn __wrapper__HelloStarknetImpl__get_arr_at(mut data: Span::<felt252>) -> Span::
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__append_to_arr(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__append_to_arr(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3962,7 +3962,7 @@ fn __wrapper__HelloStarknetImpl__append_to_arr(mut data: Span::<felt252>) -> Spa
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::append_to_arr(ref contract_state, __arg_value);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3970,7 +3970,7 @@ fn __wrapper__HelloStarknetImpl__append_to_arr(mut data: Span::<felt252>) -> Spa
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_queryable_enum(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__HelloStarknetImpl__get_queryable_enum(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3980,7 +3980,7 @@ fn __wrapper__HelloStarknetImpl__get_queryable_enum(mut data: Span::<felt252>) -
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_queryable_enum(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -4049,16 +4049,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 

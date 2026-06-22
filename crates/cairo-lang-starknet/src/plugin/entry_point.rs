@@ -297,7 +297,7 @@ fn generate_entry_point_wrapper<'db>(
     } else {
         formatdoc! {"
             {let_res}$wrapped_function_path$({contract_state_arg}, {arg_names_str});
-                let mut arr = ArrayTrait::new();
+                let mut arr = core::array::ArrayTrait::new();
                 // References.$ref_appends$
                 // Result.{append_res}
                 core::array::ArrayTrait::span(@arr)"
@@ -322,7 +322,8 @@ fn generate_entry_point_wrapper<'db>(
         &formatdoc! {"
             #[doc(hidden)]
             $implicit_precedence$
-            fn $wrapper_function_name$$generic_params$(mut data: Span::<felt252>) -> Span::<felt252> {{
+            fn $wrapper_function_name$$generic_params$(mut data: core::array::Span::<felt252>) -> \
+             core::array::Span::<felt252> {{
                 core::internal::require_implicit::<System>();
                 core::internal::revoke_ap_tracking();
                 let Some(_) = core::gas::withdraw_gas() else {{

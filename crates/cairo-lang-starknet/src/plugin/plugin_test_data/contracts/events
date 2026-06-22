@@ -102,15 +102,15 @@ starknet_derive:
 
 impl AIsEvent of starknet::Event<A> {
     fn append_keys_and_data(
-        self: @A, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @A, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
             core::serde::Serde::serialize(self.x, ref data);
                 core::serde::Serde::serialize(self.data, ref keys);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<A> {
-        Option::Some(A {x: core::serde::Serde::deserialize(ref data)?, data: core::serde::Serde::deserialize(ref keys)?, })
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<A> {
+        core::option::Option::Some(A {x: core::serde::Serde::deserialize(ref data)?, data: core::serde::Serde::deserialize(ref keys)?, })
     }
 }
 impl AStore<> of starknet::Store::<A> {
@@ -267,14 +267,14 @@ starknet_derive:
 
 impl BIsEvent of starknet::Event<B> {
     fn append_keys_and_data(
-        self: @B, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @B, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
             core::serde::Serde::serialize(self.x, ref data);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<B> {
-        Option::Some(B {x: core::serde::Serde::deserialize(ref data)?, })
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<B> {
+        core::option::Option::Some(B {x: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 
@@ -303,7 +303,7 @@ starknet_derive:
 
 impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
     fn append_keys_and_data(
-        self: @NestedEventEnum, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @NestedEventEnum, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             NestedEventEnum::B(val) => {
@@ -315,13 +315,13 @@ impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<NestedEventEnum> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<NestedEventEnum> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("B") {
-            return Option::Some(NestedEventEnum::B(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(NestedEventEnum::B(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl NestedEventEnumBIntoEvent of Into<B, NestedEventEnum> {
@@ -377,7 +377,7 @@ starknet_derive:
 
 impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
     fn append_keys_and_data(
-        self: @MyEventEnum, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @MyEventEnum, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             MyEventEnum::A(val) => {
@@ -405,36 +405,36 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<MyEventEnum> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<MyEventEnum> {
         {
             let mut keys = keys;
             let mut data = data;
             match starknet::Event::deserialize(ref keys, ref data) {
-                Option::Some(val) => {
-                    return Option::Some(MyEventEnum::C(val));
+                core::option::Option::Some(val) => {
+                    return core::option::Option::Some(MyEventEnum::C(val));
                 },
-                Option::None => {},
+                core::option::Option::None => {},
             };
         }
         {
             let mut keys = keys;
             let mut data = data;
             match starknet::Event::deserialize(ref keys, ref data) {
-                Option::Some(val) => {
-                    return Option::Some(MyEventEnum::D(val));
+                core::option::Option::Some(val) => {
+                    return core::option::Option::Some(MyEventEnum::D(val));
                 },
-                Option::None => {},
+                core::option::Option::None => {},
             };
         }
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("A") {
-            return Option::Some(MyEventEnum::A(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(MyEventEnum::A(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("B") {
-            return Option::Some(MyEventEnum::B(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(MyEventEnum::B(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl MyEventEnumAIntoEvent of Into<A, MyEventEnum> {

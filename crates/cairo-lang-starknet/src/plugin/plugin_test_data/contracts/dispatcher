@@ -222,7 +222,7 @@ trait UnsafeNewContractStateTraitForIContractForwardImpl<TContractState> {
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IContractForwardImpl__get_something<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIContractForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IContractForwardImpl__get_something<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIContractForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
@@ -237,7 +237,7 @@ fn __wrapper__IContractForwardImpl__get_something<TContractState, impl FCH: star
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IContractForwardImpl__empty<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIContractForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IContractForwardImpl__empty<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIContractForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
