@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::mem;
 use std::sync::Arc;
 
@@ -11,7 +12,6 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use cairo_lang_utils::deque::Deque;
 use cairo_lang_utils::{extract_matches, require};
 use salsa::Database;
 use syntax::node::green::{GreenNode, GreenNodeDetails};
@@ -19,7 +19,7 @@ use syntax::node::ids::GreenId;
 
 use crate::ParserDiagnostic;
 use crate::diagnostic::ParserDiagnosticKind;
-use crate::lexer::{LexerTerminal, tokenize_all};
+use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
 use crate::utils::primitive_token_stream_content_and_offset;
@@ -47,8 +47,13 @@ enum MacroParsingContext {
 pub struct Parser<'a, 'mt> {
     db: &'a dyn Database,
     file_id: FileId<'a>,
-    /// A queue of lexed tokens to be parsed.
-    terminals: Deque<LexerTerminal<'a>>,
+    /// The lexer producing the tokens, pulled lazily into `current_terminals` as parsing advances.
+    lexer: Lexer,
+    /// A small lookahead window of already-lexed, not-yet-consumed terminals, kept filled by
+    /// `ensure_next_k_exists`. The front is the next terminal to parse.
+    current_terminals: VecDeque<LexerTerminal<'a>>,
+    /// Whether the lexer has produced the end-of-file terminal (no more tokens to pull).
+    eof: bool,
     /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
     pending_trivia: Vec<TriviumGreen<'a>>,
     /// The current offset, excluding the current terminal.
@@ -67,19 +72,32 @@ pub struct Parser<'a, 'mt> {
 
 impl<'a> Parser<'a, '_> {
     fn next_terminal(&self) -> &LexerTerminal<'a> {
-        &self.terminals[0]
+        &self.current_terminals[0]
     }
 
     fn next_next_terminal(&self) -> &LexerTerminal<'a> {
-        &self.terminals[1]
+        &self.current_terminals[1]
     }
 
     fn advance(&mut self) -> LexerTerminal<'a> {
-        self.terminals.pop_front().unwrap()
+        // Keep the two-terminal lookahead (`next_terminal`/`next_next_terminal`) valid after the
+        // pop by refilling to 3 (the popped terminal plus the two peeked ones) before popping.
+        self.ensure_next_k_exists(3);
+        self.current_terminals.pop_front().unwrap()
+    }
+
+    /// Pulls terminals from the lexer until the lookahead window holds at least `k` of them (or the
+    /// lexer reaches end-of-file).
+    fn ensure_next_k_exists(&mut self, k: usize) {
+        while !self.eof && self.current_terminals.len() < k {
+            let terminal = self.lexer.match_terminal(self.db);
+            self.eof = terminal.kind == SyntaxKind::TerminalEndOfFile;
+            self.current_terminals.push_back(terminal);
+        }
     }
 
     fn next_terminal_mut(&mut self) -> &mut LexerTerminal<'a> {
-        &mut self.terminals[0]
+        &mut self.current_terminals[0]
     }
 }
 
@@ -147,11 +165,12 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         text: &'a str,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     ) -> Self {
-        let tokens: Deque<LexerTerminal<'a>> = tokenize_all(db, (), Arc::from(text));
-        Parser {
+        let mut parser = Parser {
             db,
             file_id,
-            terminals: tokens,
+            lexer: Lexer::new(Arc::from(text)),
+            current_terminals: VecDeque::with_capacity(8),
+            eof: false,
             pending_trivia: Vec::new(),
             offset: Default::default(),
             current_width: Default::default(),
@@ -159,7 +178,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             diagnostics,
             pending_skipped_token_diagnostics: Vec::new(),
             macro_parsing_context: MacroParsingContext::None,
-        }
+        };
+        parser.ensure_next_k_exists(2);
+        parser
     }
 
     /// Adds a diagnostic to the parser diagnostics collection.
@@ -3530,14 +3551,14 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         // Consume the original token and grab its trivia.
         let orig = self.advance();
         // Pushing the second first, with the trailing trivia.
-        self.terminals.push_front(LexerTerminal {
+        self.current_terminals.push_front(LexerTerminal {
             text: SmolStrId::from(self.db, second),
             kind: Second::KIND,
             leading_trivia: vec![],
             trailing_trivia: orig.trailing_trivia,
         });
         // Pushing the first second, with the leading trivia.
-        self.terminals.push_front(LexerTerminal {
+        self.current_terminals.push_front(LexerTerminal {
             text: SmolStrId::from(self.db, first),
             kind: First::KIND,
             leading_trivia: orig.leading_trivia,
