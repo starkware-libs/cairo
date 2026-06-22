@@ -23,6 +23,7 @@ impl MyImpl of MyTrait<felt252> {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn immovable<T>(t: T) -> T nopanic;
 
 //! > semantic_diagnostics

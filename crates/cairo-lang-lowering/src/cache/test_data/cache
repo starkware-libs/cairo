@@ -18,12 +18,16 @@ fn foo(x: ACopy, y: ADrop) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern type ACopy;
 impl ACopyCopy of Copy<ACopy>;
+#[allow(extern_outside_corelib)]
 extern type ADrop;
 impl ADropDrop of Drop<ADrop>;
 
+#[allow(extern_outside_corelib)]
 extern fn use_a_copy(x: ACopy) nopanic;
+#[allow(extern_outside_corelib)]
 extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > semantic_diagnostics

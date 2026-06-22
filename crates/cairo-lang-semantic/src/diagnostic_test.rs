@@ -109,6 +109,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                 builder.add_modified(RewriteNode::interpolate_patched(
                     indoc! {"
                         mod inner_mod {{
+                            #[allow(extern_outside_corelib)]
                             extern type NewType;
                             // Comment 1.
                             // Comment $$.

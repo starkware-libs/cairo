@@ -17,7 +17,9 @@ struct Point {
     x: u32,
     y: u32,
 }
+#[allow(extern_outside_corelib)]
 extern fn bar(x: &u32) nopanic;
+#[allow(extern_outside_corelib)]
 extern fn baz(y: &u32) nopanic;
 
 //! > semantic_diagnostics
@@ -55,6 +57,7 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar(x: &u32, y: &&u32, z: &&&u32) nopanic;
 
 //! > semantic_diagnostics
@@ -93,6 +96,7 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar(x: &u32) nopanic;
 
 //! > semantic_diagnostics
@@ -125,6 +129,7 @@ fn foo(x: @u32) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar(x: &@u32) nopanic;
 
 //! > semantic_diagnostics
@@ -160,6 +165,7 @@ fn foo(opt: Option<u32>) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar(x: &u32) nopanic;
 
 //! > semantic_diagnostics

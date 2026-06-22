@@ -563,6 +563,7 @@ End:
 test_variable_forwarding
 
 //! > function_code
+#[allow(extern_outside_corelib)]
 extern fn keep_snap(s: @Option<Array<felt252>>) -> bool nopanic;
 
 fn foo(arr: Array<felt252>) -> Array<felt252> {
@@ -689,7 +690,9 @@ End:
 test_variable_forwarding
 
 //! > function_code
+#[allow(extern_outside_corelib)]
 extern fn drop_nondrop<T>(c: T) nopanic;
+#[allow(extern_outside_corelib)]
 extern fn make_mixed() -> Mixed nopanic;
 
 fn foo() -> Array<felt252> {
@@ -756,8 +759,11 @@ End:
 test_variable_forwarding
 
 //! > function_code
+#[allow(extern_outside_corelib)]
 extern fn make_arr() -> Array<felt252> nopanic;
+#[allow(extern_outside_corelib)]
 extern fn make_copy_only() -> CopyOnly nopanic;
+#[allow(extern_outside_corelib)]
 extern fn consume_copy_only(c: CopyOnly) nopanic;
 
 fn foo() -> Array<felt252> {
@@ -844,6 +850,7 @@ fn foo(a: felt252) -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn consume(arg: (felt252, Array<felt252>)) nopanic;
 
 //! > semantic_diagnostics
@@ -1207,6 +1214,7 @@ End:
 test_variable_forwarding
 
 //! > function_code
+#[allow(extern_outside_corelib)]
 extern fn sink(a: Array<felt252>) -> felt252 nopanic;
 
 fn foo(flag: bool, a: Array<felt252>) -> felt252 {

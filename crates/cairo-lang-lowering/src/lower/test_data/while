@@ -311,6 +311,7 @@ enum MyEnum {
     B,
     C,
 }
+#[allow(extern_outside_corelib)]
 extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics

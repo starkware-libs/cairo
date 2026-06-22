@@ -25,6 +25,7 @@ struct B {
 struct C {
     f: felt252,
 }
+#[allow(extern_outside_corelib)]
 extern fn mutate(ref f: felt252) nopanic;
 
 //! > semantic_diagnostics

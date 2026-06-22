@@ -734,6 +734,7 @@ struct NonSimplePath {}
 fn unsupportedItem() {}
 
 #[derive(Clone)]
+#[allow(extern_outside_corelib)]
 extern type NotCloneable;
 
 #[derive(Default)]
@@ -767,6 +768,7 @@ struct NonSimplePath {}
 fn unsupportedItem() {}
 
 #[derive(Clone)]
+#[allow(extern_outside_corelib)]
 extern type NotCloneable;
 
 #[derive(Default)]
@@ -826,12 +828,12 @@ error: `derive` may only be applied to `struct`s and `enum`s
 
 
 error: derive `Default` for enum only supported with a default variant.
- --> test_src/lib.cairo:19:10
+ --> test_src/lib.cairo:20:10
 #[derive(Default)]
          ^^^^^^^
 
 
 error: Multiple variants annotated with `#[default]`
- --> test_src/lib.cairo:29:5
+ --> test_src/lib.cairo:30:5
     #[default]
     ^^^^^^^^^^

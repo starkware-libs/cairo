@@ -64,6 +64,7 @@ SmallE2ETestRunner
 
 //! > cairo_code
 impl DropCoupon<T, impl DropImpl: Drop<T>> of Drop<bar::<T, DropImpl>::Coupon>;
+#[allow(extern_outside_corelib)]
 extern fn coupon_buy<T>() -> T nopanic;
 
 fn foo() {
@@ -150,6 +151,7 @@ test::bar::<core::integer::u8, core::integer::u8Drop>@F2([0]: u8) -> (felt252);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn coupon_refund<T>(c: T) nopanic;
 
 fn foo(c: bar::<u8>::Coupon) {
@@ -214,6 +216,7 @@ test::bar::<core::integer::u8, core::integer::u8Drop>@F1([0]: u8) -> (felt252);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn drop<T>(c: T) nopanic;
 
 struct NonDroppable {
@@ -321,7 +324,9 @@ test::destruct@F0([0]: Bitwise, [1]: Array<Tuple<test::NonDroppable, Coupon<user
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn coupon_buy<T>() -> T nopanic;
+#[allow(extern_outside_corelib)]
 extern fn coupon_refund<T>(c: T) nopanic;
 impl CouponRecursiveBuyDrop of Drop<recursive_buy::<u8>::Coupon>;
 impl CouponRecursiveRefundDrop of Drop<recursive_refund::<u8>::Coupon>;

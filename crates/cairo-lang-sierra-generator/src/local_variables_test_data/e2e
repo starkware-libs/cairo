@@ -169,6 +169,7 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn dup<T, +Copy<T>>(value: T) -> (T, T) nopanic;
 
 fn revoke_ap() -> felt252 {
