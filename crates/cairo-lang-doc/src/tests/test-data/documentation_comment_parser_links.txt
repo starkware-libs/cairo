@@ -393,3 +393,88 @@ MarkdownLink {
     dest_span: None,
     dest_text: None,
 }
+
+//! > ==========================================================================
+
+//! > Inline link whose label ends in bare emphasis markers.
+
+//! > test_runner_name
+documentation_comment_parser_links_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+/// See [**bold**](path) and [*em*](path2).
+
+fn foo() {}
+
+//! > expected_diagnostics
+
+//! > Doc comment #1
+/// See [**bold**](path) and [*em*](path2).
+
+//! > Doc comment #1 links
+MarkdownLink {
+    link_span: TextSpan {
+        start: TextOffset(
+            TextWidth(
+                8,
+            ),
+        ),
+        end: TextOffset(
+            TextWidth(
+                24,
+            ),
+        ),
+    },
+    dest_span: Some(
+        TextSpan {
+            start: TextOffset(
+                TextWidth(
+                    19,
+                ),
+            ),
+            end: TextOffset(
+                TextWidth(
+                    23,
+                ),
+            ),
+        },
+    ),
+    dest_text: Some(
+        "path",
+    ),
+}
+MarkdownLink {
+    link_span: TextSpan {
+        start: TextOffset(
+            TextWidth(
+                29,
+            ),
+        ),
+        end: TextOffset(
+            TextWidth(
+                42,
+            ),
+        ),
+    },
+    dest_span: Some(
+        TextSpan {
+            start: TextOffset(
+                TextWidth(
+                    36,
+                ),
+            ),
+            end: TextOffset(
+                TextWidth(
+                    41,
+                ),
+            ),
+        },
+    ),
+    dest_text: Some(
+        "path2",
+    ),
+}
