@@ -7,7 +7,9 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
-use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_flat};
+use cairo_lang_defs::db::{
+    DefsGroup, get_all_path_leaves, get_all_path_stars, validate_attributes_flat,
+};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId, MemberId,
@@ -4868,6 +4870,10 @@ pub fn compute_and_append_statement_semantic<'db>(
                             );
                         }
                         ast::ModuleItem::Use(use_syntax) => {
+                            for star in get_all_path_stars(db, use_syntax) {
+                                ctx.diagnostics
+                                    .report(star.stable_ptr(db), UnsupportedUseItemInStatement);
+                            }
                             for leaf in get_all_path_leaves(db, use_syntax) {
                                 let stable_ptr = leaf.stable_ptr(db);
                                 let resolved_item = ctx.resolver.resolve_use_path(
