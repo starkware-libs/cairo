@@ -14,7 +14,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
 use salsa::Database;
 
-use crate::blocks::{Blocks, BlocksBuilder};
+use crate::blocks::Blocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{
     LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
@@ -221,40 +221,31 @@ impl<'db, 'mt> Rebuilder<'db> for Mapper<'db, 'mt, '_> {
 /// error case.
 fn inner_apply_inlining<'db>(
     db: &'db dyn Database,
-    lowered: &mut Lowered<'db>,
+    Lowered { blocks, variables, .. }: &mut Lowered<'db>,
     calling_function_id: ConcreteFunctionWithBodyId<'db>,
     mut enable_const_folding: bool,
 ) -> Maybe<()> {
-    lowered.blocks.has_root()?;
+    blocks.has_root()?;
 
-    let mut blocks: BlocksBuilder<'db> = BlocksBuilder::new();
+    let mut stack: Vec<std::vec::IntoIter<BlockId>> =
+        vec![(0..blocks.len()).map(BlockId).collect_vec().into_iter()];
 
-    let mut stack: Vec<std::vec::IntoIter<BlockId>> = vec![
-        lowered
-            .blocks
-            .iter()
-            .map(|(_, block)| blocks.alloc(block.clone()))
-            .collect_vec()
-            .into_iter(),
-    ];
-
-    let mut const_folding_ctx =
-        ConstFoldingContext::new(db, calling_function_id, &mut lowered.variables);
+    let mut const_folding_ctx = ConstFoldingContext::new(db, calling_function_id, variables);
 
     enable_const_folding = enable_const_folding && !const_folding_ctx.should_skip_const_folding(db);
 
     while let Some(mut func_blocks) = stack.pop() {
         for block_id in func_blocks.by_ref() {
-            let blocks = &mut blocks;
+            let blocks = &mut *blocks;
             if enable_const_folding
-                && !const_folding_ctx.visit_block_start(block_id, |block_id| &blocks.0[block_id.0])
+                && !const_folding_ctx.visit_block_start(block_id, |block_id| &blocks[block_id])
             {
                 continue;
             }
 
             // Read the next block id before `blocks` is borrowed.
             let next_block_id = blocks.len();
-            let block = blocks.get_mut_block(block_id);
+            let block = &mut blocks[block_id];
 
             let mut opt_inline_info = None;
             for (idx, statement) in block.statements.iter_mut().enumerate() {
@@ -303,16 +294,16 @@ fn inner_apply_inlining<'db>(
             );
 
             // Apply the mapper to the inlined blocks and add them as a contiguous chunk to the
-            // blocks builder.
+            // blocks.
             let mut inlined_blocks_ids = inlined_lowered
                 .blocks
                 .iter()
-                .map(|(_block_id, block)| blocks.alloc(inline_mapper.rebuild_block(block)))
+                .map(|(_block_id, block)| blocks.push(inline_mapper.rebuild_block(block)))
                 .collect_vec();
 
             // Move the remaining statements and the original block end to a new return block.
             let return_block_id =
-                blocks.alloc(Block { statements: remaining_statements, end: orig_block_end });
+                blocks.push(Block { statements: remaining_statements, end: orig_block_end });
             assert_eq!(return_block_id, inline_mapper.return_block_id);
 
             // Append the id of the return block to the list of blocks in the inlined function.
@@ -328,7 +319,6 @@ fn inner_apply_inlining<'db>(
         }
     }
 
-    lowered.blocks = blocks.build().unwrap();
     Ok(())
 }
 
