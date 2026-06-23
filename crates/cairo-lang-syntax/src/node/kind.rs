@@ -2,6 +2,7 @@
 use core::fmt;
 
 use serde::{Deserialize, Serialize};
+/// The lexical identity shared by a terminal node and the token that backs it.
 #[derive(
     Copy,
     Clone,
@@ -14,7 +15,190 @@ use serde::{Deserialize, Serialize};
     salsa::Update,
     cairo_lang_proc_macros::HeapSize,
 )]
+pub enum LexemeKind {
+    Identifier,
+    LiteralNumber,
+    ShortString,
+    String,
+    As,
+    Const,
+    Else,
+    Enum,
+    Extern,
+    False,
+    Function,
+    If,
+    While,
+    For,
+    Loop,
+    Impl,
+    Implicits,
+    Let,
+    Macro,
+    Match,
+    Module,
+    Mut,
+    NoPanic,
+    Of,
+    Ref,
+    Continue,
+    Return,
+    Break,
+    Struct,
+    Trait,
+    True,
+    Type,
+    Use,
+    Pub,
+    And,
+    AndAnd,
+    Arrow,
+    At,
+    BadCharacters,
+    Colon,
+    ColonColon,
+    Comma,
+    Div,
+    DivEq,
+    Dollar,
+    Dot,
+    DotDot,
+    DotDotEq,
+    EndOfFile,
+    Eq,
+    EqEq,
+    GE,
+    GT,
+    Hash,
+    LBrace,
+    LBrack,
+    LE,
+    LParen,
+    LT,
+    MatchArrow,
+    Minus,
+    MinusEq,
+    Mod,
+    ModEq,
+    Mul,
+    MulEq,
+    Neq,
+    Not,
+    BitNot,
+    Or,
+    OrOr,
+    Plus,
+    PlusEq,
+    QuestionMark,
+    RBrace,
+    RBrack,
+    RParen,
+    Semicolon,
+    Underscore,
+    Xor,
+    Empty,
+}
+impl LexemeKind {
+    /// Whether this lexeme is a keyword (e.g. `fn`, `const`, `if`).
+    pub fn is_keyword(&self) -> bool {
+        matches!(
+            self,
+            LexemeKind::As
+                | LexemeKind::Const
+                | LexemeKind::Else
+                | LexemeKind::Enum
+                | LexemeKind::Extern
+                | LexemeKind::False
+                | LexemeKind::Function
+                | LexemeKind::If
+                | LexemeKind::While
+                | LexemeKind::For
+                | LexemeKind::Loop
+                | LexemeKind::Impl
+                | LexemeKind::Implicits
+                | LexemeKind::Let
+                | LexemeKind::Macro
+                | LexemeKind::Match
+                | LexemeKind::Module
+                | LexemeKind::Mut
+                | LexemeKind::NoPanic
+                | LexemeKind::Of
+                | LexemeKind::Ref
+                | LexemeKind::Continue
+                | LexemeKind::Return
+                | LexemeKind::Break
+                | LexemeKind::Struct
+                | LexemeKind::Trait
+                | LexemeKind::True
+                | LexemeKind::Type
+                | LexemeKind::Use
+                | LexemeKind::Pub
+        )
+    }
+}
+/// Token kinds with no backing terminal: whitespace, newlines, comments and skipped text.
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    salsa::Update,
+    cairo_lang_proc_macros::HeapSize,
+)]
+pub enum TriviaKind {
+    SingleLineComment,
+    SingleLineInnerComment,
+    SingleLineDocComment,
+    Whitespace,
+    Newline,
+    Skipped,
+}
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    salsa::Update,
+    cairo_lang_proc_macros::HeapSize,
+)]
+pub enum MissingKind {
+    Expr,
+    PathSegment,
+    WrappedArgList,
+    Statement,
+    ModuleItem,
+    TraitItem,
+    ImplItem,
+    TokenTree,
+    WrappedTokenTree,
+    MacroRepetitionOperator,
+    MacroParamKind,
+    Token,
+}
+#[derive(
+    Copy,
+    Clone,
+    Hash,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    salsa::Update,
+    cairo_lang_proc_macros::HeapSize,
+)]
 pub enum SyntaxKind {
+    Token(LexemeKind),
+    TriviaToken(TriviaKind),
+    Terminal(LexemeKind),
+    Missing(MissingKind),
     Trivia,
     ExprList,
     Arg,
@@ -23,13 +207,11 @@ pub enum SyntaxKind {
     ArgClauseFieldInitShorthand,
     ExprFieldInitShorthand,
     ArgList,
-    ExprMissing,
     PathSegmentSimple,
     OptionTerminalColonColonEmpty,
     PathSegmentWithGenericArgs,
     ExprPath,
     OptionTerminalDollarEmpty,
-    PathSegmentMissing,
     ExprPathInner,
     ExprParenthesized,
     ExprUnary,
@@ -67,7 +249,6 @@ pub enum SyntaxKind {
     StructArgList,
     ArgListBraced,
     ArgListBracketed,
-    WrappedArgListMissing,
     PatternIdentifier,
     PatternStruct,
     PatternStructParamList,
@@ -84,7 +265,6 @@ pub enum SyntaxKind {
     ReturnTypeClause,
     OptionReturnTypeClauseEmpty,
     StatementList,
-    StatementMissing,
     StatementLet,
     LetElseClause,
     OptionLetElseClauseEmpty,
@@ -110,7 +290,6 @@ pub enum SyntaxKind {
     Variant,
     VariantList,
     ModuleItemList,
-    ModuleItemMissing,
     Attribute,
     AttributeList,
     VisibilityDefault,
@@ -127,7 +306,6 @@ pub enum SyntaxKind {
     ItemTrait,
     TraitBody,
     TraitItemList,
-    TraitItemMissing,
     TraitItemFunction,
     TraitItemType,
     TraitItemConstant,
@@ -136,7 +314,6 @@ pub enum SyntaxKind {
     ItemHeaderDoc,
     ImplBody,
     ImplItemList,
-    ImplItemMissing,
     ItemImplAlias,
     ItemStruct,
     ItemEnum,
@@ -170,8 +347,6 @@ pub enum SyntaxKind {
     TokenTreeNode,
     TokenTreeRepetition,
     TokenTreeParam,
-    TokenTreeMissing,
-    WrappedTokenTreeMissing,
     ParenthesizedTokenTree,
     BracedTokenTree,
     BracketedTokenTree,
@@ -185,10 +360,8 @@ pub enum SyntaxKind {
     MacroParam,
     MacroRepetition,
     OptionTerminalCommaEmpty,
-    MacroRepetitionOperatorMissing,
     ParamIdent,
     ParamExpr,
-    MacroParamKindMissing,
     MacroElements,
     MacroWrapper,
     ParenthesizedMacro,
@@ -197,443 +370,256 @@ pub enum SyntaxKind {
     LegacyExprInlineMacro,
     LegacyItemInlineMacro,
     TriviumSkippedNode,
-    TokenIdentifier,
-    TerminalIdentifier,
-    TokenLiteralNumber,
-    TerminalLiteralNumber,
-    TokenShortString,
-    TerminalShortString,
-    TokenString,
-    TerminalString,
-    TokenAs,
-    TerminalAs,
-    TokenConst,
-    TerminalConst,
-    TokenElse,
-    TerminalElse,
-    TokenEnum,
-    TerminalEnum,
-    TokenExtern,
-    TerminalExtern,
-    TokenFalse,
-    TerminalFalse,
-    TokenFunction,
-    TerminalFunction,
-    TokenIf,
-    TerminalIf,
-    TokenWhile,
-    TerminalWhile,
-    TokenFor,
-    TerminalFor,
-    TokenLoop,
-    TerminalLoop,
-    TokenImpl,
-    TerminalImpl,
-    TokenImplicits,
-    TerminalImplicits,
-    TokenLet,
-    TerminalLet,
-    TokenMacro,
-    TerminalMacro,
-    TokenMatch,
-    TerminalMatch,
-    TokenModule,
-    TerminalModule,
-    TokenMut,
-    TerminalMut,
-    TokenNoPanic,
-    TerminalNoPanic,
-    TokenOf,
-    TerminalOf,
-    TokenRef,
-    TerminalRef,
-    TokenContinue,
-    TerminalContinue,
-    TokenReturn,
-    TerminalReturn,
-    TokenBreak,
-    TerminalBreak,
-    TokenStruct,
-    TerminalStruct,
-    TokenTrait,
-    TerminalTrait,
-    TokenTrue,
-    TerminalTrue,
-    TokenType,
-    TerminalType,
-    TokenUse,
-    TerminalUse,
-    TokenPub,
-    TerminalPub,
-    TokenAnd,
-    TerminalAnd,
-    TokenAndAnd,
-    TerminalAndAnd,
-    TokenArrow,
-    TerminalArrow,
-    TokenAt,
-    TerminalAt,
-    TokenBadCharacters,
-    TerminalBadCharacters,
-    TokenColon,
-    TerminalColon,
-    TokenColonColon,
-    TerminalColonColon,
-    TokenComma,
-    TerminalComma,
-    TokenDiv,
-    TerminalDiv,
-    TokenDivEq,
-    TerminalDivEq,
-    TokenDollar,
-    TerminalDollar,
-    TokenDot,
-    TerminalDot,
-    TokenDotDot,
-    TerminalDotDot,
-    TokenDotDotEq,
-    TerminalDotDotEq,
-    TokenEndOfFile,
-    TerminalEndOfFile,
-    TokenEq,
-    TerminalEq,
-    TokenEqEq,
-    TerminalEqEq,
-    TokenGE,
-    TerminalGE,
-    TokenGT,
-    TerminalGT,
-    TokenHash,
-    TerminalHash,
-    TokenLBrace,
-    TerminalLBrace,
-    TokenLBrack,
-    TerminalLBrack,
-    TokenLE,
-    TerminalLE,
-    TokenLParen,
-    TerminalLParen,
-    TokenLT,
-    TerminalLT,
-    TokenMatchArrow,
-    TerminalMatchArrow,
-    TokenMinus,
-    TerminalMinus,
-    TokenMinusEq,
-    TerminalMinusEq,
-    TokenMod,
-    TerminalMod,
-    TokenModEq,
-    TerminalModEq,
-    TokenMul,
-    TerminalMul,
-    TokenMulEq,
-    TerminalMulEq,
-    TokenNeq,
-    TerminalNeq,
-    TokenNot,
-    TerminalNot,
-    TokenBitNot,
-    TerminalBitNot,
-    TokenOr,
-    TerminalOr,
-    TokenOrOr,
-    TerminalOrOr,
-    TokenPlus,
-    TerminalPlus,
-    TokenPlusEq,
-    TerminalPlusEq,
-    TokenQuestionMark,
-    TerminalQuestionMark,
-    TokenRBrace,
-    TerminalRBrace,
-    TokenRBrack,
-    TerminalRBrack,
-    TokenRParen,
-    TerminalRParen,
-    TokenSemicolon,
-    TerminalSemicolon,
-    TokenUnderscore,
-    TerminalUnderscore,
-    TokenXor,
-    TerminalXor,
     SyntaxFile,
-    TokenEmpty,
-    TerminalEmpty,
-    TokenSingleLineComment,
-    TokenSingleLineInnerComment,
-    TokenSingleLineDocComment,
-    TokenWhitespace,
-    TokenNewline,
-    TokenMissing,
-    TokenSkipped,
 }
 impl SyntaxKind {
     pub fn is_token(&self) -> bool {
-        matches!(
-            *self,
-            SyntaxKind::TokenIdentifier
-                | SyntaxKind::TokenLiteralNumber
-                | SyntaxKind::TokenShortString
-                | SyntaxKind::TokenString
-                | SyntaxKind::TokenAs
-                | SyntaxKind::TokenConst
-                | SyntaxKind::TokenElse
-                | SyntaxKind::TokenEnum
-                | SyntaxKind::TokenExtern
-                | SyntaxKind::TokenFalse
-                | SyntaxKind::TokenFunction
-                | SyntaxKind::TokenIf
-                | SyntaxKind::TokenWhile
-                | SyntaxKind::TokenFor
-                | SyntaxKind::TokenLoop
-                | SyntaxKind::TokenImpl
-                | SyntaxKind::TokenImplicits
-                | SyntaxKind::TokenLet
-                | SyntaxKind::TokenMacro
-                | SyntaxKind::TokenMatch
-                | SyntaxKind::TokenModule
-                | SyntaxKind::TokenMut
-                | SyntaxKind::TokenNoPanic
-                | SyntaxKind::TokenOf
-                | SyntaxKind::TokenRef
-                | SyntaxKind::TokenContinue
-                | SyntaxKind::TokenReturn
-                | SyntaxKind::TokenBreak
-                | SyntaxKind::TokenStruct
-                | SyntaxKind::TokenTrait
-                | SyntaxKind::TokenTrue
-                | SyntaxKind::TokenType
-                | SyntaxKind::TokenUse
-                | SyntaxKind::TokenPub
-                | SyntaxKind::TokenAnd
-                | SyntaxKind::TokenAndAnd
-                | SyntaxKind::TokenArrow
-                | SyntaxKind::TokenAt
-                | SyntaxKind::TokenBadCharacters
-                | SyntaxKind::TokenColon
-                | SyntaxKind::TokenColonColon
-                | SyntaxKind::TokenComma
-                | SyntaxKind::TokenDiv
-                | SyntaxKind::TokenDivEq
-                | SyntaxKind::TokenDollar
-                | SyntaxKind::TokenDot
-                | SyntaxKind::TokenDotDot
-                | SyntaxKind::TokenDotDotEq
-                | SyntaxKind::TokenEndOfFile
-                | SyntaxKind::TokenEq
-                | SyntaxKind::TokenEqEq
-                | SyntaxKind::TokenGE
-                | SyntaxKind::TokenGT
-                | SyntaxKind::TokenHash
-                | SyntaxKind::TokenLBrace
-                | SyntaxKind::TokenLBrack
-                | SyntaxKind::TokenLE
-                | SyntaxKind::TokenLParen
-                | SyntaxKind::TokenLT
-                | SyntaxKind::TokenMatchArrow
-                | SyntaxKind::TokenMinus
-                | SyntaxKind::TokenMinusEq
-                | SyntaxKind::TokenMod
-                | SyntaxKind::TokenModEq
-                | SyntaxKind::TokenMul
-                | SyntaxKind::TokenMulEq
-                | SyntaxKind::TokenNeq
-                | SyntaxKind::TokenNot
-                | SyntaxKind::TokenBitNot
-                | SyntaxKind::TokenOr
-                | SyntaxKind::TokenOrOr
-                | SyntaxKind::TokenPlus
-                | SyntaxKind::TokenPlusEq
-                | SyntaxKind::TokenQuestionMark
-                | SyntaxKind::TokenRBrace
-                | SyntaxKind::TokenRBrack
-                | SyntaxKind::TokenRParen
-                | SyntaxKind::TokenSemicolon
-                | SyntaxKind::TokenUnderscore
-                | SyntaxKind::TokenXor
-                | SyntaxKind::TokenEmpty
-                | SyntaxKind::TokenSingleLineComment
-                | SyntaxKind::TokenSingleLineInnerComment
-                | SyntaxKind::TokenSingleLineDocComment
-                | SyntaxKind::TokenWhitespace
-                | SyntaxKind::TokenNewline
-                | SyntaxKind::TokenMissing
-                | SyntaxKind::TokenSkipped
-        )
+        matches!(self, SyntaxKind::Token(_) | SyntaxKind::TriviaToken(_))
     }
     pub fn is_terminal(&self) -> bool {
-        matches!(
-            *self,
-            SyntaxKind::TerminalIdentifier
-                | SyntaxKind::TerminalLiteralNumber
-                | SyntaxKind::TerminalShortString
-                | SyntaxKind::TerminalString
-                | SyntaxKind::TerminalAs
-                | SyntaxKind::TerminalConst
-                | SyntaxKind::TerminalElse
-                | SyntaxKind::TerminalEnum
-                | SyntaxKind::TerminalExtern
-                | SyntaxKind::TerminalFalse
-                | SyntaxKind::TerminalFunction
-                | SyntaxKind::TerminalIf
-                | SyntaxKind::TerminalWhile
-                | SyntaxKind::TerminalFor
-                | SyntaxKind::TerminalLoop
-                | SyntaxKind::TerminalImpl
-                | SyntaxKind::TerminalImplicits
-                | SyntaxKind::TerminalLet
-                | SyntaxKind::TerminalMacro
-                | SyntaxKind::TerminalMatch
-                | SyntaxKind::TerminalModule
-                | SyntaxKind::TerminalMut
-                | SyntaxKind::TerminalNoPanic
-                | SyntaxKind::TerminalOf
-                | SyntaxKind::TerminalRef
-                | SyntaxKind::TerminalContinue
-                | SyntaxKind::TerminalReturn
-                | SyntaxKind::TerminalBreak
-                | SyntaxKind::TerminalStruct
-                | SyntaxKind::TerminalTrait
-                | SyntaxKind::TerminalTrue
-                | SyntaxKind::TerminalType
-                | SyntaxKind::TerminalUse
-                | SyntaxKind::TerminalPub
-                | SyntaxKind::TerminalAnd
-                | SyntaxKind::TerminalAndAnd
-                | SyntaxKind::TerminalArrow
-                | SyntaxKind::TerminalAt
-                | SyntaxKind::TerminalBadCharacters
-                | SyntaxKind::TerminalColon
-                | SyntaxKind::TerminalColonColon
-                | SyntaxKind::TerminalComma
-                | SyntaxKind::TerminalDiv
-                | SyntaxKind::TerminalDivEq
-                | SyntaxKind::TerminalDollar
-                | SyntaxKind::TerminalDot
-                | SyntaxKind::TerminalDotDot
-                | SyntaxKind::TerminalDotDotEq
-                | SyntaxKind::TerminalEndOfFile
-                | SyntaxKind::TerminalEq
-                | SyntaxKind::TerminalEqEq
-                | SyntaxKind::TerminalGE
-                | SyntaxKind::TerminalGT
-                | SyntaxKind::TerminalHash
-                | SyntaxKind::TerminalLBrace
-                | SyntaxKind::TerminalLBrack
-                | SyntaxKind::TerminalLE
-                | SyntaxKind::TerminalLParen
-                | SyntaxKind::TerminalLT
-                | SyntaxKind::TerminalMatchArrow
-                | SyntaxKind::TerminalMinus
-                | SyntaxKind::TerminalMinusEq
-                | SyntaxKind::TerminalMod
-                | SyntaxKind::TerminalModEq
-                | SyntaxKind::TerminalMul
-                | SyntaxKind::TerminalMulEq
-                | SyntaxKind::TerminalNeq
-                | SyntaxKind::TerminalNot
-                | SyntaxKind::TerminalBitNot
-                | SyntaxKind::TerminalOr
-                | SyntaxKind::TerminalOrOr
-                | SyntaxKind::TerminalPlus
-                | SyntaxKind::TerminalPlusEq
-                | SyntaxKind::TerminalQuestionMark
-                | SyntaxKind::TerminalRBrace
-                | SyntaxKind::TerminalRBrack
-                | SyntaxKind::TerminalRParen
-                | SyntaxKind::TerminalSemicolon
-                | SyntaxKind::TerminalUnderscore
-                | SyntaxKind::TerminalXor
-                | SyntaxKind::TerminalEmpty
-        )
+        matches!(self, SyntaxKind::Terminal(_))
     }
     pub fn is_keyword_token(&self) -> bool {
-        matches!(
-            *self,
-            SyntaxKind::TokenAs
-                | SyntaxKind::TokenConst
-                | SyntaxKind::TokenElse
-                | SyntaxKind::TokenEnum
-                | SyntaxKind::TokenExtern
-                | SyntaxKind::TokenFalse
-                | SyntaxKind::TokenFunction
-                | SyntaxKind::TokenIf
-                | SyntaxKind::TokenWhile
-                | SyntaxKind::TokenFor
-                | SyntaxKind::TokenLoop
-                | SyntaxKind::TokenImpl
-                | SyntaxKind::TokenImplicits
-                | SyntaxKind::TokenLet
-                | SyntaxKind::TokenMacro
-                | SyntaxKind::TokenMatch
-                | SyntaxKind::TokenModule
-                | SyntaxKind::TokenMut
-                | SyntaxKind::TokenNoPanic
-                | SyntaxKind::TokenOf
-                | SyntaxKind::TokenRef
-                | SyntaxKind::TokenContinue
-                | SyntaxKind::TokenReturn
-                | SyntaxKind::TokenBreak
-                | SyntaxKind::TokenStruct
-                | SyntaxKind::TokenTrait
-                | SyntaxKind::TokenTrue
-                | SyntaxKind::TokenType
-                | SyntaxKind::TokenUse
-                | SyntaxKind::TokenPub
-        )
+        matches!(self, SyntaxKind::Token(lexeme) if lexeme.is_keyword())
     }
     pub fn is_keyword_terminal(&self) -> bool {
-        matches!(
-            *self,
-            SyntaxKind::TerminalAs
-                | SyntaxKind::TerminalConst
-                | SyntaxKind::TerminalElse
-                | SyntaxKind::TerminalEnum
-                | SyntaxKind::TerminalExtern
-                | SyntaxKind::TerminalFalse
-                | SyntaxKind::TerminalFunction
-                | SyntaxKind::TerminalIf
-                | SyntaxKind::TerminalWhile
-                | SyntaxKind::TerminalFor
-                | SyntaxKind::TerminalLoop
-                | SyntaxKind::TerminalImpl
-                | SyntaxKind::TerminalImplicits
-                | SyntaxKind::TerminalLet
-                | SyntaxKind::TerminalMacro
-                | SyntaxKind::TerminalMatch
-                | SyntaxKind::TerminalModule
-                | SyntaxKind::TerminalMut
-                | SyntaxKind::TerminalNoPanic
-                | SyntaxKind::TerminalOf
-                | SyntaxKind::TerminalRef
-                | SyntaxKind::TerminalContinue
-                | SyntaxKind::TerminalReturn
-                | SyntaxKind::TerminalBreak
-                | SyntaxKind::TerminalStruct
-                | SyntaxKind::TerminalTrait
-                | SyntaxKind::TerminalTrue
-                | SyntaxKind::TerminalType
-                | SyntaxKind::TerminalUse
-                | SyntaxKind::TerminalPub
-        )
+        matches!(self, SyntaxKind::Terminal(lexeme) if lexeme.is_keyword())
     }
     pub fn is_missing(&self) -> bool {
-        matches!(
-            *self,
-            SyntaxKind::ExprMissing
-                | SyntaxKind::PathSegmentMissing
-                | SyntaxKind::WrappedArgListMissing
-                | SyntaxKind::StatementMissing
-                | SyntaxKind::ModuleItemMissing
-                | SyntaxKind::TraitItemMissing
-                | SyntaxKind::ImplItemMissing
-                | SyntaxKind::TokenTreeMissing
-                | SyntaxKind::WrappedTokenTreeMissing
-                | SyntaxKind::MacroRepetitionOperatorMissing
-                | SyntaxKind::MacroParamKindMissing
-                | SyntaxKind::TokenMissing
-        )
+        matches!(self, SyntaxKind::Missing(_))
+    }
+}
+
+impl fmt::Debug for SyntaxKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SyntaxKind::Token(kind) => write!(f, "Token{kind:?}"),
+            SyntaxKind::TriviaToken(kind) => write!(f, "Token{kind:?}"),
+            SyntaxKind::Terminal(kind) => write!(f, "Terminal{kind:?}"),
+            SyntaxKind::Missing(kind) => write!(f, "{kind:?}Missing"),
+            SyntaxKind::Trivia => f.write_str(stringify!(Trivia)),
+            SyntaxKind::ExprList => f.write_str(stringify!(ExprList)),
+            SyntaxKind::Arg => f.write_str(stringify!(Arg)),
+            SyntaxKind::ArgClauseNamed => f.write_str(stringify!(ArgClauseNamed)),
+            SyntaxKind::ArgClauseUnnamed => f.write_str(stringify!(ArgClauseUnnamed)),
+            SyntaxKind::ArgClauseFieldInitShorthand => {
+                f.write_str(stringify!(ArgClauseFieldInitShorthand))
+            }
+            SyntaxKind::ExprFieldInitShorthand => f.write_str(stringify!(ExprFieldInitShorthand)),
+            SyntaxKind::ArgList => f.write_str(stringify!(ArgList)),
+            SyntaxKind::PathSegmentSimple => f.write_str(stringify!(PathSegmentSimple)),
+            SyntaxKind::OptionTerminalColonColonEmpty => {
+                f.write_str(stringify!(OptionTerminalColonColonEmpty))
+            }
+            SyntaxKind::PathSegmentWithGenericArgs => {
+                f.write_str(stringify!(PathSegmentWithGenericArgs))
+            }
+            SyntaxKind::ExprPath => f.write_str(stringify!(ExprPath)),
+            SyntaxKind::OptionTerminalDollarEmpty => {
+                f.write_str(stringify!(OptionTerminalDollarEmpty))
+            }
+            SyntaxKind::ExprPathInner => f.write_str(stringify!(ExprPathInner)),
+            SyntaxKind::ExprParenthesized => f.write_str(stringify!(ExprParenthesized)),
+            SyntaxKind::ExprUnary => f.write_str(stringify!(ExprUnary)),
+            SyntaxKind::ExprBinary => f.write_str(stringify!(ExprBinary)),
+            SyntaxKind::ExprListParenthesized => f.write_str(stringify!(ExprListParenthesized)),
+            SyntaxKind::ExprFunctionCall => f.write_str(stringify!(ExprFunctionCall)),
+            SyntaxKind::ArgListParenthesized => f.write_str(stringify!(ArgListParenthesized)),
+            SyntaxKind::OptionArgListParenthesizedEmpty => {
+                f.write_str(stringify!(OptionArgListParenthesizedEmpty))
+            }
+            SyntaxKind::ExprStructCtorCall => f.write_str(stringify!(ExprStructCtorCall)),
+            SyntaxKind::StructArgListBraced => f.write_str(stringify!(StructArgListBraced)),
+            SyntaxKind::ExprBlock => f.write_str(stringify!(ExprBlock)),
+            SyntaxKind::ExprMatch => f.write_str(stringify!(ExprMatch)),
+            SyntaxKind::MatchArms => f.write_str(stringify!(MatchArms)),
+            SyntaxKind::MatchArm => f.write_str(stringify!(MatchArm)),
+            SyntaxKind::ExprIf => f.write_str(stringify!(ExprIf)),
+            SyntaxKind::ConditionListAnd => f.write_str(stringify!(ConditionListAnd)),
+            SyntaxKind::ConditionLet => f.write_str(stringify!(ConditionLet)),
+            SyntaxKind::ConditionExpr => f.write_str(stringify!(ConditionExpr)),
+            SyntaxKind::ExprLoop => f.write_str(stringify!(ExprLoop)),
+            SyntaxKind::ExprWhile => f.write_str(stringify!(ExprWhile)),
+            SyntaxKind::ExprFor => f.write_str(stringify!(ExprFor)),
+            SyntaxKind::ElseClause => f.write_str(stringify!(ElseClause)),
+            SyntaxKind::OptionElseClauseEmpty => f.write_str(stringify!(OptionElseClauseEmpty)),
+            SyntaxKind::ExprErrorPropagate => f.write_str(stringify!(ExprErrorPropagate)),
+            SyntaxKind::ExprIndexed => f.write_str(stringify!(ExprIndexed)),
+            SyntaxKind::ExprFixedSizeArray => f.write_str(stringify!(ExprFixedSizeArray)),
+            SyntaxKind::FixedSizeArraySize => f.write_str(stringify!(FixedSizeArraySize)),
+            SyntaxKind::OptionFixedSizeArraySizeEmpty => {
+                f.write_str(stringify!(OptionFixedSizeArraySizeEmpty))
+            }
+            SyntaxKind::ExprClosure => f.write_str(stringify!(ExprClosure)),
+            SyntaxKind::ClosureParams => f.write_str(stringify!(ClosureParams)),
+            SyntaxKind::StructArgExpr => f.write_str(stringify!(StructArgExpr)),
+            SyntaxKind::OptionStructArgExprEmpty => {
+                f.write_str(stringify!(OptionStructArgExprEmpty))
+            }
+            SyntaxKind::StructArgSingle => f.write_str(stringify!(StructArgSingle)),
+            SyntaxKind::StructArgTail => f.write_str(stringify!(StructArgTail)),
+            SyntaxKind::StructArgList => f.write_str(stringify!(StructArgList)),
+            SyntaxKind::ArgListBraced => f.write_str(stringify!(ArgListBraced)),
+            SyntaxKind::ArgListBracketed => f.write_str(stringify!(ArgListBracketed)),
+            SyntaxKind::PatternIdentifier => f.write_str(stringify!(PatternIdentifier)),
+            SyntaxKind::PatternStruct => f.write_str(stringify!(PatternStruct)),
+            SyntaxKind::PatternStructParamList => f.write_str(stringify!(PatternStructParamList)),
+            SyntaxKind::PatternTuple => f.write_str(stringify!(PatternTuple)),
+            SyntaxKind::PatternFixedSizeArray => f.write_str(stringify!(PatternFixedSizeArray)),
+            SyntaxKind::PatternList => f.write_str(stringify!(PatternList)),
+            SyntaxKind::PatternListOr => f.write_str(stringify!(PatternListOr)),
+            SyntaxKind::PatternStructParamWithExpr => {
+                f.write_str(stringify!(PatternStructParamWithExpr))
+            }
+            SyntaxKind::PatternEnum => f.write_str(stringify!(PatternEnum)),
+            SyntaxKind::PatternEnumInnerPattern => f.write_str(stringify!(PatternEnumInnerPattern)),
+            SyntaxKind::OptionPatternEnumInnerPatternEmpty => {
+                f.write_str(stringify!(OptionPatternEnumInnerPatternEmpty))
+            }
+            SyntaxKind::TypeClause => f.write_str(stringify!(TypeClause)),
+            SyntaxKind::OptionTypeClauseEmpty => f.write_str(stringify!(OptionTypeClauseEmpty)),
+            SyntaxKind::ReturnTypeClause => f.write_str(stringify!(ReturnTypeClause)),
+            SyntaxKind::OptionReturnTypeClauseEmpty => {
+                f.write_str(stringify!(OptionReturnTypeClauseEmpty))
+            }
+            SyntaxKind::StatementList => f.write_str(stringify!(StatementList)),
+            SyntaxKind::StatementLet => f.write_str(stringify!(StatementLet)),
+            SyntaxKind::LetElseClause => f.write_str(stringify!(LetElseClause)),
+            SyntaxKind::OptionLetElseClauseEmpty => {
+                f.write_str(stringify!(OptionLetElseClauseEmpty))
+            }
+            SyntaxKind::OptionTerminalSemicolonEmpty => {
+                f.write_str(stringify!(OptionTerminalSemicolonEmpty))
+            }
+            SyntaxKind::StatementExpr => f.write_str(stringify!(StatementExpr)),
+            SyntaxKind::StatementContinue => f.write_str(stringify!(StatementContinue)),
+            SyntaxKind::ExprClause => f.write_str(stringify!(ExprClause)),
+            SyntaxKind::OptionExprClauseEmpty => f.write_str(stringify!(OptionExprClauseEmpty)),
+            SyntaxKind::StatementReturn => f.write_str(stringify!(StatementReturn)),
+            SyntaxKind::StatementBreak => f.write_str(stringify!(StatementBreak)),
+            SyntaxKind::StatementItem => f.write_str(stringify!(StatementItem)),
+            SyntaxKind::Param => f.write_str(stringify!(Param)),
+            SyntaxKind::ModifierList => f.write_str(stringify!(ModifierList)),
+            SyntaxKind::ParamList => f.write_str(stringify!(ParamList)),
+            SyntaxKind::ImplicitsClause => f.write_str(stringify!(ImplicitsClause)),
+            SyntaxKind::ImplicitsList => f.write_str(stringify!(ImplicitsList)),
+            SyntaxKind::OptionImplicitsClauseEmpty => {
+                f.write_str(stringify!(OptionImplicitsClauseEmpty))
+            }
+            SyntaxKind::OptionTerminalNoPanicEmpty => {
+                f.write_str(stringify!(OptionTerminalNoPanicEmpty))
+            }
+            SyntaxKind::OptionTerminalConstEmpty => {
+                f.write_str(stringify!(OptionTerminalConstEmpty))
+            }
+            SyntaxKind::FunctionSignature => f.write_str(stringify!(FunctionSignature)),
+            SyntaxKind::Member => f.write_str(stringify!(Member)),
+            SyntaxKind::MemberList => f.write_str(stringify!(MemberList)),
+            SyntaxKind::Variant => f.write_str(stringify!(Variant)),
+            SyntaxKind::VariantList => f.write_str(stringify!(VariantList)),
+            SyntaxKind::ModuleItemList => f.write_str(stringify!(ModuleItemList)),
+            SyntaxKind::Attribute => f.write_str(stringify!(Attribute)),
+            SyntaxKind::AttributeList => f.write_str(stringify!(AttributeList)),
+            SyntaxKind::VisibilityDefault => f.write_str(stringify!(VisibilityDefault)),
+            SyntaxKind::VisibilityPubArgumentClause => {
+                f.write_str(stringify!(VisibilityPubArgumentClause))
+            }
+            SyntaxKind::OptionVisibilityPubArgumentClauseEmpty => {
+                f.write_str(stringify!(OptionVisibilityPubArgumentClauseEmpty))
+            }
+            SyntaxKind::VisibilityPub => f.write_str(stringify!(VisibilityPub)),
+            SyntaxKind::ItemModule => f.write_str(stringify!(ItemModule)),
+            SyntaxKind::ModuleBody => f.write_str(stringify!(ModuleBody)),
+            SyntaxKind::FunctionDeclaration => f.write_str(stringify!(FunctionDeclaration)),
+            SyntaxKind::ItemConstant => f.write_str(stringify!(ItemConstant)),
+            SyntaxKind::FunctionWithBody => f.write_str(stringify!(FunctionWithBody)),
+            SyntaxKind::ItemExternFunction => f.write_str(stringify!(ItemExternFunction)),
+            SyntaxKind::ItemExternType => f.write_str(stringify!(ItemExternType)),
+            SyntaxKind::ItemTrait => f.write_str(stringify!(ItemTrait)),
+            SyntaxKind::TraitBody => f.write_str(stringify!(TraitBody)),
+            SyntaxKind::TraitItemList => f.write_str(stringify!(TraitItemList)),
+            SyntaxKind::TraitItemFunction => f.write_str(stringify!(TraitItemFunction)),
+            SyntaxKind::TraitItemType => f.write_str(stringify!(TraitItemType)),
+            SyntaxKind::TraitItemConstant => f.write_str(stringify!(TraitItemConstant)),
+            SyntaxKind::TraitItemImpl => f.write_str(stringify!(TraitItemImpl)),
+            SyntaxKind::ItemImpl => f.write_str(stringify!(ItemImpl)),
+            SyntaxKind::ItemHeaderDoc => f.write_str(stringify!(ItemHeaderDoc)),
+            SyntaxKind::ImplBody => f.write_str(stringify!(ImplBody)),
+            SyntaxKind::ImplItemList => f.write_str(stringify!(ImplItemList)),
+            SyntaxKind::ItemImplAlias => f.write_str(stringify!(ItemImplAlias)),
+            SyntaxKind::ItemStruct => f.write_str(stringify!(ItemStruct)),
+            SyntaxKind::ItemEnum => f.write_str(stringify!(ItemEnum)),
+            SyntaxKind::ItemTypeAlias => f.write_str(stringify!(ItemTypeAlias)),
+            SyntaxKind::ItemUse => f.write_str(stringify!(ItemUse)),
+            SyntaxKind::UsePathLeaf => f.write_str(stringify!(UsePathLeaf)),
+            SyntaxKind::UsePathSingle => f.write_str(stringify!(UsePathSingle)),
+            SyntaxKind::UsePathMulti => f.write_str(stringify!(UsePathMulti)),
+            SyntaxKind::UsePathStar => f.write_str(stringify!(UsePathStar)),
+            SyntaxKind::UsePathList => f.write_str(stringify!(UsePathList)),
+            SyntaxKind::AliasClause => f.write_str(stringify!(AliasClause)),
+            SyntaxKind::OptionAliasClauseEmpty => f.write_str(stringify!(OptionAliasClauseEmpty)),
+            SyntaxKind::GenericArgNamed => f.write_str(stringify!(GenericArgNamed)),
+            SyntaxKind::GenericArgUnnamed => f.write_str(stringify!(GenericArgUnnamed)),
+            SyntaxKind::GenericArgs => f.write_str(stringify!(GenericArgs)),
+            SyntaxKind::GenericArgList => f.write_str(stringify!(GenericArgList)),
+            SyntaxKind::AssociatedItemConstraint => {
+                f.write_str(stringify!(AssociatedItemConstraint))
+            }
+            SyntaxKind::AssociatedItemConstraints => {
+                f.write_str(stringify!(AssociatedItemConstraints))
+            }
+            SyntaxKind::AssociatedItemConstraintList => {
+                f.write_str(stringify!(AssociatedItemConstraintList))
+            }
+            SyntaxKind::OptionAssociatedItemConstraintsEmpty => {
+                f.write_str(stringify!(OptionAssociatedItemConstraintsEmpty))
+            }
+            SyntaxKind::OptionWrappedGenericParamListEmpty => {
+                f.write_str(stringify!(OptionWrappedGenericParamListEmpty))
+            }
+            SyntaxKind::WrappedGenericParamList => f.write_str(stringify!(WrappedGenericParamList)),
+            SyntaxKind::GenericParamList => f.write_str(stringify!(GenericParamList)),
+            SyntaxKind::GenericParamType => f.write_str(stringify!(GenericParamType)),
+            SyntaxKind::GenericParamConst => f.write_str(stringify!(GenericParamConst)),
+            SyntaxKind::GenericParamImplNamed => f.write_str(stringify!(GenericParamImplNamed)),
+            SyntaxKind::GenericParamImplAnonymous => {
+                f.write_str(stringify!(GenericParamImplAnonymous))
+            }
+            SyntaxKind::GenericParamNegativeImpl => {
+                f.write_str(stringify!(GenericParamNegativeImpl))
+            }
+            SyntaxKind::TokenList => f.write_str(stringify!(TokenList)),
+            SyntaxKind::TokenTreeLeaf => f.write_str(stringify!(TokenTreeLeaf)),
+            SyntaxKind::TokenTreeNode => f.write_str(stringify!(TokenTreeNode)),
+            SyntaxKind::TokenTreeRepetition => f.write_str(stringify!(TokenTreeRepetition)),
+            SyntaxKind::TokenTreeParam => f.write_str(stringify!(TokenTreeParam)),
+            SyntaxKind::ParenthesizedTokenTree => f.write_str(stringify!(ParenthesizedTokenTree)),
+            SyntaxKind::BracedTokenTree => f.write_str(stringify!(BracedTokenTree)),
+            SyntaxKind::BracketedTokenTree => f.write_str(stringify!(BracketedTokenTree)),
+            SyntaxKind::ExprInlineMacro => f.write_str(stringify!(ExprInlineMacro)),
+            SyntaxKind::ItemInlineMacro => f.write_str(stringify!(ItemInlineMacro)),
+            SyntaxKind::ItemMacroDeclaration => f.write_str(stringify!(ItemMacroDeclaration)),
+            SyntaxKind::MacroRulesList => f.write_str(stringify!(MacroRulesList)),
+            SyntaxKind::MacroRule => f.write_str(stringify!(MacroRule)),
+            SyntaxKind::ParamKind => f.write_str(stringify!(ParamKind)),
+            SyntaxKind::OptionParamKindEmpty => f.write_str(stringify!(OptionParamKindEmpty)),
+            SyntaxKind::MacroParam => f.write_str(stringify!(MacroParam)),
+            SyntaxKind::MacroRepetition => f.write_str(stringify!(MacroRepetition)),
+            SyntaxKind::OptionTerminalCommaEmpty => {
+                f.write_str(stringify!(OptionTerminalCommaEmpty))
+            }
+            SyntaxKind::ParamIdent => f.write_str(stringify!(ParamIdent)),
+            SyntaxKind::ParamExpr => f.write_str(stringify!(ParamExpr)),
+            SyntaxKind::MacroElements => f.write_str(stringify!(MacroElements)),
+            SyntaxKind::MacroWrapper => f.write_str(stringify!(MacroWrapper)),
+            SyntaxKind::ParenthesizedMacro => f.write_str(stringify!(ParenthesizedMacro)),
+            SyntaxKind::BracedMacro => f.write_str(stringify!(BracedMacro)),
+            SyntaxKind::BracketedMacro => f.write_str(stringify!(BracketedMacro)),
+            SyntaxKind::LegacyExprInlineMacro => f.write_str(stringify!(LegacyExprInlineMacro)),
+            SyntaxKind::LegacyItemInlineMacro => f.write_str(stringify!(LegacyItemInlineMacro)),
+            SyntaxKind::TriviumSkippedNode => f.write_str(stringify!(TriviumSkippedNode)),
+            SyntaxKind::SyntaxFile => f.write_str(stringify!(SyntaxFile)),
+        }
     }
 }
 impl fmt::Display for SyntaxKind {

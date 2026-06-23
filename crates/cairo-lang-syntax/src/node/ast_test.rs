@@ -10,7 +10,7 @@ use super::ast::{
     ExprBinary, ExprPath, PathSegmentGreen, PathSegmentSimple, SyntaxFileGreen, TerminalIdentifier,
     TerminalPlus, TokenIdentifier, TokenPlus, TokenWhitespace, Trivia,
 };
-use super::kind::SyntaxKind;
+use super::kind::{LexemeKind, SyntaxKind, TriviaKind};
 use super::{SyntaxNode, Terminal, Token};
 use crate::node::ast::{
     ExprPathInner, OptionTerminalDollarEmpty, TerminalLiteralNumber, TokenLiteralNumber,
@@ -44,14 +44,14 @@ fn test_ast() {
             (SyntaxKind::ExprPathInner, None, TextOffset::START, TextWidth::new_for_testing(4)),
             (SyntaxKind::PathSegmentSimple, None, TextOffset::START, TextWidth::new_for_testing(4)),
             (
-                SyntaxKind::TerminalIdentifier,
+                SyntaxKind::Terminal(LexemeKind::Identifier),
                 None,
                 TextOffset::START,
                 TextWidth::new_for_testing(4)
             ),
             (SyntaxKind::Trivia, None, TextOffset::START, TextWidth::new_for_testing(0)),
             (
-                SyntaxKind::TokenIdentifier,
+                SyntaxKind::Token(LexemeKind::Identifier),
                 Some("foo"),
                 TextOffset::START,
                 TextWidth::new_for_testing(3)
@@ -63,13 +63,13 @@ fn test_ast() {
                 TextWidth::new_for_testing(1)
             ),
             (
-                SyntaxKind::TokenWhitespace,
+                SyntaxKind::TriviaToken(TriviaKind::Whitespace),
                 Some(" "),
                 TextWidth::new_for_testing(3).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
             (
-                SyntaxKind::TerminalPlus,
+                SyntaxKind::Terminal(LexemeKind::Plus),
                 None,
                 TextWidth::new_for_testing(4).as_offset(),
                 TextWidth::new_for_testing(2)
@@ -81,7 +81,7 @@ fn test_ast() {
                 TextWidth::new_for_testing(0)
             ),
             (
-                SyntaxKind::TokenPlus,
+                SyntaxKind::Token(LexemeKind::Plus),
                 Some("+"),
                 TextWidth::new_for_testing(4).as_offset(),
                 TextWidth::new_for_testing(1)
@@ -93,13 +93,13 @@ fn test_ast() {
                 TextWidth::new_for_testing(1)
             ),
             (
-                SyntaxKind::TokenWhitespace,
+                SyntaxKind::TriviaToken(TriviaKind::Whitespace),
                 Some(" "),
                 TextWidth::new_for_testing(5).as_offset(),
                 TextWidth::new_for_testing(1)
             ),
             (
-                SyntaxKind::TerminalLiteralNumber,
+                SyntaxKind::Terminal(LexemeKind::LiteralNumber),
                 None,
                 TextWidth::new_for_testing(6).as_offset(),
                 TextWidth::new_for_testing(1)
@@ -111,7 +111,7 @@ fn test_ast() {
                 TextWidth::new_for_testing(0)
             ),
             (
-                SyntaxKind::TokenLiteralNumber,
+                SyntaxKind::Token(LexemeKind::LiteralNumber),
                 Some("5"),
                 TextWidth::new_for_testing(6).as_offset(),
                 TextWidth::new_for_testing(1)

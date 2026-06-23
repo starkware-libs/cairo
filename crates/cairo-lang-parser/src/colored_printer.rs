@@ -1,6 +1,6 @@
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::kind::{LexemeKind, MissingKind, SyntaxKind, TriviaKind};
 use colored::{ColoredString, Colorize};
 use salsa::Database;
 
@@ -15,7 +15,7 @@ impl ColoredPrinter<'_> {
         let node = syntax_node.green_node(self.db);
         match &node.details {
             GreenNodeDetails::Token(text) => {
-                if self.verbose && node.kind == SyntaxKind::TokenMissing {
+                if self.verbose && node.kind == SyntaxKind::Missing(MissingKind::Token) {
                     self.result.push_str(&format!("{}", "<m>".red()));
                 } else {
                     self.result.push_str(&set_color(text.long(self.db), node.kind).to_string());
@@ -50,81 +50,100 @@ pub fn is_empty_kind(kind: SyntaxKind) -> bool {
 }
 
 fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
-    // TODO(yuval): use tags on SyntaxKind
     match kind {
-        SyntaxKind::TokenIdentifier => text.truecolor(255, 255, 100), // Yellow
-        SyntaxKind::TokenPlus
-        | SyntaxKind::TokenMinus
-        | SyntaxKind::TokenMul
-        | SyntaxKind::TokenDiv
-        | SyntaxKind::TokenMod
-        | SyntaxKind::TokenDot => text.bright_magenta(),
-        SyntaxKind::TokenLiteralNumber
-        | SyntaxKind::TokenFalse
-        | SyntaxKind::TokenTrue
-        | SyntaxKind::TokenShortString
-        | SyntaxKind::TokenString => text.bright_cyan(),
-        SyntaxKind::TokenExtern
-        | SyntaxKind::TokenType
-        | SyntaxKind::TokenFunction
-        | SyntaxKind::TokenModule
-        | SyntaxKind::TokenEnum
-        | SyntaxKind::TokenStruct
-        | SyntaxKind::TokenTrait
-        | SyntaxKind::TokenImpl => text.bright_blue(),
-        SyntaxKind::TokenOf
-        | SyntaxKind::TokenLet
-        | SyntaxKind::TokenReturn
-        | SyntaxKind::TokenMatch
-        | SyntaxKind::TokenIf
-        | SyntaxKind::TokenElse
-        | SyntaxKind::TokenUse
-        | SyntaxKind::TokenImplicits
-        | SyntaxKind::TokenRef
-        | SyntaxKind::TokenMut
-        | SyntaxKind::TokenNoPanic => text.bright_blue(),
-        SyntaxKind::TokenArrow
-        | SyntaxKind::TokenMatchArrow
-        | SyntaxKind::TokenColon
-        | SyntaxKind::TokenColonColon
-        | SyntaxKind::TokenDotDot
-        | SyntaxKind::TokenDotDotEq
-        | SyntaxKind::TokenSemicolon
-        | SyntaxKind::TokenAnd
-        | SyntaxKind::TokenAndAnd
-        | SyntaxKind::TokenOr
-        | SyntaxKind::TokenOrOr
-        | SyntaxKind::TokenXor
-        | SyntaxKind::TokenNot
-        | SyntaxKind::TokenQuestionMark
-        | SyntaxKind::TokenUnderscore
-        | SyntaxKind::TokenHash => text.truecolor(255, 180, 255), // Pink
-        SyntaxKind::TokenEq
-        | SyntaxKind::TokenEqEq
-        | SyntaxKind::TokenGE
-        | SyntaxKind::TokenGT
-        | SyntaxKind::TokenLE
-        | SyntaxKind::TokenLT
-        | SyntaxKind::TokenNeq => {
-            text.truecolor(255, 165, 0) // Orange
-        }
-        SyntaxKind::TokenLBrace
-        | SyntaxKind::TokenRBrace
-        | SyntaxKind::TokenLBrack
-        | SyntaxKind::TokenRBrack
-        | SyntaxKind::TokenLParen
-        | SyntaxKind::TokenRParen
-        | SyntaxKind::TokenComma => text.clear(),
-        SyntaxKind::TokenEndOfFile => text.clear(),
-        SyntaxKind::TokenBadCharacters => text.red(),
-        SyntaxKind::TokenMissing => text.clear(),
-        SyntaxKind::TokenSkipped => text.on_red(), // red background
-        SyntaxKind::TokenSingleLineComment
-        | SyntaxKind::TokenWhitespace
-        | SyntaxKind::TokenNewline
-        | SyntaxKind::TokenEmpty => text.clear(),
-        // TODO(yuval): Can this be made exhaustive?
-        _ => panic!("Unexpected syntax kind: {kind:?}"),
+        SyntaxKind::Token(lexeme) => set_lexeme_color(text, lexeme),
+        SyntaxKind::TriviaToken(TriviaKind::Skipped) => text.on_red(), // red background
+        SyntaxKind::TriviaToken(_) | SyntaxKind::Missing(MissingKind::Token) => text.clear(),
+        _ => unreachable!("Only tokens get `set_color`, got {kind:?}."),
+    }
+}
+
+/// Colors the token backing a terminal, exhaustively over `LexemeKind` so a newly-added lexeme
+/// forces a coloring decision here.
+fn set_lexeme_color(text: &str, lexeme: LexemeKind) -> ColoredString {
+    // TODO(yuval): drive coloring from tags on `LexemeKind`.
+    match lexeme {
+        LexemeKind::Identifier => text.truecolor(255, 255, 100), // Yellow
+        LexemeKind::Plus
+        | LexemeKind::Minus
+        | LexemeKind::Mul
+        | LexemeKind::Div
+        | LexemeKind::Mod
+        | LexemeKind::Dot
+        | LexemeKind::At
+        | LexemeKind::BitNot => text.bright_magenta(),
+        LexemeKind::LiteralNumber
+        | LexemeKind::False
+        | LexemeKind::True
+        | LexemeKind::ShortString
+        | LexemeKind::String => text.bright_cyan(),
+        LexemeKind::Extern
+        | LexemeKind::Type
+        | LexemeKind::Function
+        | LexemeKind::Module
+        | LexemeKind::Enum
+        | LexemeKind::Struct
+        | LexemeKind::Trait
+        | LexemeKind::Impl
+        | LexemeKind::Const
+        | LexemeKind::Macro
+        | LexemeKind::Pub => text.bright_blue(),
+        LexemeKind::Of
+        | LexemeKind::Let
+        | LexemeKind::Return
+        | LexemeKind::Match
+        | LexemeKind::If
+        | LexemeKind::Else
+        | LexemeKind::Use
+        | LexemeKind::Implicits
+        | LexemeKind::Ref
+        | LexemeKind::Mut
+        | LexemeKind::NoPanic
+        | LexemeKind::As
+        | LexemeKind::While
+        | LexemeKind::For
+        | LexemeKind::Loop
+        | LexemeKind::Continue
+        | LexemeKind::Break => text.bright_blue(),
+        LexemeKind::Arrow
+        | LexemeKind::MatchArrow
+        | LexemeKind::Colon
+        | LexemeKind::ColonColon
+        | LexemeKind::DotDot
+        | LexemeKind::DotDotEq
+        | LexemeKind::Semicolon
+        | LexemeKind::And
+        | LexemeKind::AndAnd
+        | LexemeKind::Or
+        | LexemeKind::OrOr
+        | LexemeKind::Xor
+        | LexemeKind::Not
+        | LexemeKind::QuestionMark
+        | LexemeKind::Underscore
+        | LexemeKind::Hash
+        | LexemeKind::Dollar => text.truecolor(255, 180, 255), // Pink
+        LexemeKind::Eq
+        | LexemeKind::EqEq
+        | LexemeKind::GE
+        | LexemeKind::GT
+        | LexemeKind::LE
+        | LexemeKind::LT
+        | LexemeKind::Neq
+        | LexemeKind::PlusEq
+        | LexemeKind::MinusEq
+        | LexemeKind::MulEq
+        | LexemeKind::DivEq
+        | LexemeKind::ModEq => text.truecolor(255, 165, 0), // Orange
+        LexemeKind::LBrace
+        | LexemeKind::RBrace
+        | LexemeKind::LBrack
+        | LexemeKind::RBrack
+        | LexemeKind::LParen
+        | LexemeKind::RParen
+        | LexemeKind::Comma => text.clear(),
+        LexemeKind::EndOfFile => text.clear(),
+        LexemeKind::BadCharacters => text.red(),
+        LexemeKind::Empty => text.clear(),
     }
 }
 

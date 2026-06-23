@@ -2,10 +2,10 @@
 /// of the supplied groups.
 macro_rules! is_of_kind {
     ($($element:ident),*) => {
-        |kind: SyntaxKind| {
+        |kind: LexemeKind| {
             match kind{
                 $($crate::recovery::$element!() => true,)*
-                SyntaxKind::TerminalEndOfFile => true,
+                LexemeKind::EndOfFile => true,
                 _ => false
             }
         }
@@ -15,94 +15,94 @@ pub(crate) use is_of_kind;
 
 macro_rules! match_arrow {
     () => {
-        SyntaxKind::TerminalMatchArrow
+        LexemeKind::MatchArrow
     };
 }
 pub(crate) use match_arrow;
 
 macro_rules! lbrace {
     () => {
-        SyntaxKind::TerminalLBrace
+        LexemeKind::LBrace
     };
 }
 pub(crate) use lbrace;
 
 macro_rules! rbrace {
     () => {
-        SyntaxKind::TerminalRBrace
+        LexemeKind::RBrace
     };
 }
 pub(crate) use rbrace;
 
 macro_rules! rparen {
     () => {
-        SyntaxKind::TerminalRParen
+        LexemeKind::RParen
     };
 }
 pub(crate) use rparen;
 
 macro_rules! rbrack {
     () => {
-        SyntaxKind::TerminalRBrack
+        LexemeKind::RBrack
     };
 }
 pub(crate) use rbrack;
 
 macro_rules! rangle {
     () => {
-        SyntaxKind::TerminalGT | SyntaxKind::TerminalGE
+        LexemeKind::GT | LexemeKind::GE
     };
 }
 pub(crate) use rangle;
 
 macro_rules! or {
     () => {
-        SyntaxKind::TerminalOr
+        LexemeKind::Or
     };
 }
 pub(crate) use or;
 
 macro_rules! comma {
     () => {
-        SyntaxKind::TerminalComma
+        LexemeKind::Comma
     };
 }
 pub(crate) use comma;
 
 macro_rules! semicolon {
     () => {
-        SyntaxKind::TerminalSemicolon
+        LexemeKind::Semicolon
     };
 }
 pub(crate) use semicolon;
 
 macro_rules! eq {
     () => {
-        SyntaxKind::TerminalEq
+        LexemeKind::Eq
     };
 }
 pub(crate) use eq;
 
 macro_rules! module_item_kw {
     () => {
-        SyntaxKind::TerminalConst
-            | SyntaxKind::TerminalEnum
-            | SyntaxKind::TerminalExtern
-            | SyntaxKind::TerminalFunction
-            | SyntaxKind::TerminalImpl
-            | SyntaxKind::TerminalMacro
-            | SyntaxKind::TerminalModule
-            | SyntaxKind::TerminalStruct
-            | SyntaxKind::TerminalTrait
-            | SyntaxKind::TerminalType
-            | SyntaxKind::TerminalUse
+        LexemeKind::Const
+            | LexemeKind::Enum
+            | LexemeKind::Extern
+            | LexemeKind::Function
+            | LexemeKind::Impl
+            | LexemeKind::Macro
+            | LexemeKind::Module
+            | LexemeKind::Struct
+            | LexemeKind::Trait
+            | LexemeKind::Type
+            | LexemeKind::Use
     };
 }
 pub(crate) use module_item_kw;
 
 macro_rules! block {
     () => {
-        SyntaxKind::TerminalLet | SyntaxKind::TerminalMatch | SyntaxKind::TerminalReturn
+        LexemeKind::Let | LexemeKind::Match | LexemeKind::Return
     };
 }
 pub(crate) use block;
