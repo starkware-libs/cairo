@@ -60,6 +60,11 @@ impl<'db, 'a, TAnalyzer: DataflowAnalyzer<'db, 'a>> ForwardDataflowAnalysis<'db,
             self.propagate_to_successors(block_id, &info, &mut ready);
             block_info[block_id.0] = Some(info);
         }
+        assert!(
+            self.predecessor_counts.iter().all(|c| *c == 0),
+            "Post run, all blocks should have 0 predecessors, actual: {:?}",
+            self.predecessor_counts
+        );
         block_info
     }
 
