@@ -1284,13 +1284,8 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
     match (a, b) {
         // Case for multi vs multi.
         (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
-            let empty_string = "".into();
             let get_min_child = |multi: &ast::UsePathMulti<'a>| {
-                multi.use_paths(db).elements(db).min_by_key(|child| match child {
-                    UsePath::Leaf(leaf) => leaf.extract_ident(db),
-                    UsePath::Single(single) => single.extract_ident(db),
-                    _ => &empty_string,
-                })
+                multi.use_paths(db).elements(db).min_by(|a, b| compare_use_paths(a, b, db))
             };
             match (get_min_child(a_multi), get_min_child(b_multi)) {
                 (Some(a_min), Some(b_min)) => compare_use_paths(&a_min, &b_min, db),
