@@ -2,6 +2,8 @@
 //!
 //! This module provides `FwdAnalysis`, which traverses the control flow graph in forward
 //! (topological) order, computing dataflow information from function entry to exits.
+use itertools::Itertools;
+
 use crate::analysis::core::{DataflowAnalyzer, Direction, Edge};
 use crate::{BlockEnd, BlockId, Lowered};
 
@@ -60,6 +62,11 @@ impl<'db, 'a, TAnalyzer: DataflowAnalyzer<'db, 'a>> ForwardDataflowAnalysis<'db,
             self.propagate_to_successors(block_id, &info, &mut ready);
             block_info[block_id.0] = Some(info);
         }
+        assert!(
+            self.incoming.iter().all(Option::is_none),
+            "Post run, there should be no-incoming. Actual: {:?}",
+            self.incoming.iter().map(Option::is_some).zip(&self.predecessor_counts).collect_vec()
+        );
         block_info
     }
 
@@ -119,15 +126,18 @@ fn compute_predecessor_counts(lowered: &Lowered<'_>) -> Vec<usize> {
     let n_blocks = lowered.blocks.len();
     let mut counts = vec![0usize; n_blocks];
 
-    for (_, block) in lowered.blocks.iter() {
-        match &block.end {
-            BlockEnd::Goto(target, _) => {
-                counts[target.0] += 1;
+    let mut stack = vec![BlockId::root()];
+    while let Some(b) = stack.pop() {
+        let mut handle_target = |target: BlockId| {
+            if counts[target.0] == 0 {
+                stack.push(target);
             }
+            counts[target.0] += 1;
+        };
+        match &lowered.blocks[b].end {
+            BlockEnd::Goto(target, _) => handle_target(*target),
             BlockEnd::Match { info } => {
-                for arm in info.arms() {
-                    counts[arm.block_id.0] += 1;
-                }
+                info.arms().iter().for_each(|arm| handle_target(arm.block_id));
             }
             BlockEnd::Return(..) | BlockEnd::Panic(_) | BlockEnd::NotSet => {}
         }
