@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782177768735,
+  "lastUpdate": 1782178008576,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -9260,6 +9260,40 @@ window.BENCHMARK_DATA = {
             "name": "cairo-to-sierra-total_bytes/nested_loops",
             "value": 383729937,
             "unit": "bytes"
+          }
+        ]
+      }
+    ],
+    "Cairo Language Server Re-execution Benchmarks": [
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "798b0ab5dc0350ae092ccf85a0de41e3a53fe206",
+          "message": "performance(parser): Stream the lexer with a lookahead window instead of cloning all tokens. (#10141)",
+          "timestamp": "2026-06-22T13:35:13Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/798b0ab5dc0350ae092ccf85a0de41e3a53fe206"
+        },
+        "date": 1782178008396,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 52749,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 40181,
+            "unit": "queries"
           }
         ]
       }
