@@ -484,3 +484,38 @@ ExprInlineMacro
             │           │       └── leaf (kind: TokenIdentifier): 'x'
             │           └── rparen (kind: TokenRParen): ')'
             └── rparen (kind: TokenRParen): ')'
+
+//! > ==========================================================================
+
+//! > Test inline macro call with the `macro` keyword as a leaf token (regression for #10144 - previously ICEd).
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn main() -> u32 {
+    foo!(macro)
+}
+
+//! > top_level_kind
+ExprInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprInlineMacro
+    ├── path (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'foo'
+    ├── bang (kind: TokenNot): '!'
+    └── arguments (kind: TokenTreeNode)
+        └── subtree (kind: ParenthesizedTokenTree)
+            ├── lparen (kind: TokenLParen): '('
+            ├── tokens (kind: TokenList)
+            │   └── child #0 (kind: TokenTreeLeaf)
+            │       └── leaf (kind: TokenMacro): 'macro'
+            └── rparen (kind: TokenRParen): ')'

@@ -66,3 +66,37 @@ error[E1029]: Expected either ';' or '{' after module name. Use ';' for an exter
  --> dummy_file.cairo:1:11
 mod my_mod const X: felt252 = 5;
           ^
+
+//! > ==========================================================================
+
+//! > Error recovery stops at a following `macro` declaration.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+const X
+macro m {
+    ($x: expr) => { $x };
+}
+
+//! > expected_diagnostics
+error[E1004]: Unexpected token, expected ':' followed by a type.
+ --> dummy_file.cairo:1:8
+const X
+       ^
+
+error[E1001]: Missing token '='.
+ --> dummy_file.cairo:1:8
+const X
+       ^
+
+error[E1002]: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:1:8
+const X
+       ^
+
+error[E1001]: Missing token ';'.
+ --> dummy_file.cairo:1:8
+const X
+       ^

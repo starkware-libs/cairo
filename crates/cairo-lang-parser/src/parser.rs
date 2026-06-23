@@ -1893,6 +1893,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             SyntaxKind::TerminalImpl => self.take::<TerminalImpl<'_>>().into(),
             SyntaxKind::TerminalImplicits => self.take::<TerminalImplicits<'_>>().into(),
             SyntaxKind::TerminalLet => self.take::<TerminalLet<'_>>().into(),
+            SyntaxKind::TerminalMacro => self.take::<TerminalMacro<'_>>().into(),
             SyntaxKind::TerminalMatch => self.take::<TerminalMatch<'_>>().into(),
             SyntaxKind::TerminalModule => self.take::<TerminalModule<'_>>().into(),
             SyntaxKind::TerminalMut => self.take::<TerminalMut<'_>>().into(),
