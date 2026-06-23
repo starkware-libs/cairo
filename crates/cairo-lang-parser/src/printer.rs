@@ -1,6 +1,6 @@
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::kind::{LexemeKind, MissingKind, SyntaxKind, TriviaKind};
 use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
 use colored::{ColoredString, Colorize};
@@ -124,13 +124,13 @@ impl<'a> Printer<'a> {
         text: &str,
         kind: SyntaxKind,
     ) {
-        let text = if kind == SyntaxKind::TokenMissing {
+        let text = if kind == SyntaxKind::Missing(MissingKind::Token) {
             format!("{}: {}", self.blue(field_description.into()), self.red("Missing".into()))
         } else {
             let token_text = match kind {
-                SyntaxKind::TokenWhitespace
-                | SyntaxKind::TokenNewline
-                | SyntaxKind::TokenEndOfFile => ".".to_string(),
+                SyntaxKind::TriviaToken(TriviaKind::Whitespace)
+                | SyntaxKind::TriviaToken(TriviaKind::Newline)
+                | SyntaxKind::Token(LexemeKind::EndOfFile) => ".".to_string(),
                 _ => format!(": '{}'", self.green(self.bold(text.into()))),
             };
             format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), kind)

@@ -7,7 +7,7 @@ use cairo_lang_syntax::node::ast::{
     LegacyExprInlineMacro, LegacyItemInlineMacro, TerminalNotGreen, TerminalSemicolonGreen,
     TokenTree, TokenTreeNode, WrappedArgListGreen,
 };
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::kind::LexemeKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use salsa::Database;
 

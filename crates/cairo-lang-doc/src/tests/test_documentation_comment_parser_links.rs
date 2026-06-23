@@ -2,7 +2,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::kind::{SyntaxKind, TriviaKind};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
@@ -24,7 +24,7 @@ fn collect_doc_comments<'db>(
     node: SyntaxNode<'db>,
     comments: &mut Vec<SyntaxNode<'db>>,
 ) {
-    if node.kind(db) == SyntaxKind::TokenSingleLineDocComment {
+    if node.kind(db) == SyntaxKind::TriviaToken(TriviaKind::SingleLineDocComment) {
         comments.push(node);
     }
     for &child in node.get_children(db) {

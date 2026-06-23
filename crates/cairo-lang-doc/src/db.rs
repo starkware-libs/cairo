@@ -6,7 +6,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId, Tracked};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::kind::{SyntaxKind, TriviaKind};
 use itertools::{Itertools, intersperse};
 use salsa::Database;
 
@@ -256,7 +256,9 @@ fn get_embedded_markdown_links<'db>(
     node: SyntaxNode<'db>,
 ) -> Vec<MarkdownLink> {
     match node.kind(db) {
-        SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenSingleLineInnerComment => {
+        SyntaxKind::TriviaToken(
+            TriviaKind::SingleLineDocComment | TriviaKind::SingleLineInnerComment,
+        ) => {
             let content = node.get_text(db);
             let base_span = node.span(db);
             parse_embedded_markdown_links(content, base_span.start)

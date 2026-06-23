@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::kind::{LexemeKind, SyntaxKind, TriviaKind};
 use cairo_lang_test_utils::test;
 use itertools::Itertools;
 use salsa::Database;
@@ -13,10 +13,10 @@ use crate::utils::SimpleParserDatabase;
 
 // TODO(spapini): Use snapshot/regression tests.
 
-fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
+fn terminal_kind_to_text(kind: LexemeKind) -> Vec<&'static str> {
     match kind {
-        SyntaxKind::TerminalIdentifier => vec!["abc", "_az12f", "A90g5__"],
-        SyntaxKind::TerminalLiteralNumber => {
+        LexemeKind::Identifier => vec!["abc", "_az12f", "A90g5__"],
+        LexemeKind::LiteralNumber => {
             vec![
                 "0",
                 "0xA2",
@@ -29,10 +29,10 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
                 "0xA2_u128",
             ]
         }
-        SyntaxKind::TerminalShortString => {
+        LexemeKind::ShortString => {
             vec!["''", "'a'", "'abc'", "'1234567890123456789012345678901'"]
         }
-        SyntaxKind::TerminalString => {
+        LexemeKind::String => {
             vec![
                 "\"\"",
                 "\"a\"",
@@ -41,148 +41,145 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
                 "\"12345678901234567890123456789012\"",
             ]
         }
-        SyntaxKind::TerminalFalse => vec!["false"],
-        SyntaxKind::TerminalExtern => vec!["extern"],
-        SyntaxKind::TerminalType => vec!["type"],
-        SyntaxKind::TerminalFunction => vec!["fn"],
-        SyntaxKind::TerminalTrait => vec!["trait"],
-        SyntaxKind::TerminalImpl => vec!["impl"],
-        SyntaxKind::TerminalOf => vec!["of"],
-        SyntaxKind::TerminalLet => vec!["let"],
-        SyntaxKind::TerminalMut => vec!["mut"],
-        SyntaxKind::TerminalRef => vec!["ref"],
-        SyntaxKind::TerminalNoPanic => vec!["nopanic"],
-        SyntaxKind::TerminalModule => vec!["mod"],
-        SyntaxKind::TerminalStruct => vec!["struct"],
-        SyntaxKind::TerminalEnum => vec!["enum"],
-        SyntaxKind::TerminalTrue => vec!["true"],
-        SyntaxKind::TerminalReturn => vec!["return"],
-        SyntaxKind::TerminalMatch => vec!["match"],
-        SyntaxKind::TerminalIf => vec!["if"],
-        SyntaxKind::TerminalLoop => vec!["loop"],
-        SyntaxKind::TerminalBreak => vec!["break"],
-        SyntaxKind::TerminalElse => vec!["else"],
-        SyntaxKind::TerminalUse => vec!["use"],
-        SyntaxKind::TerminalAnd => vec!["&"],
-        SyntaxKind::TerminalAndAnd => vec!["&&"],
-        SyntaxKind::TerminalAt => vec!["@"],
-        SyntaxKind::TerminalColon => vec![":"],
-        SyntaxKind::TerminalColonColon => vec!["::"],
-        SyntaxKind::TerminalComma => vec![","],
-        SyntaxKind::TerminalDiv => vec!["/"],
-        SyntaxKind::TerminalDivEq => vec!["/="],
-        SyntaxKind::TerminalMod => vec!["%"],
-        SyntaxKind::TerminalModEq => vec!["%="],
-        SyntaxKind::TerminalDot => vec!["."],
-        SyntaxKind::TerminalDotDot => vec![".."],
-        SyntaxKind::TerminalDotDotEq => vec!["..="],
-        SyntaxKind::TerminalEq => vec!["="],
-        SyntaxKind::TerminalEqEq => vec!["=="],
-        SyntaxKind::TerminalGE => vec![">="],
-        SyntaxKind::TerminalGT => vec![">"],
-        SyntaxKind::TerminalLE => vec!["<="],
-        SyntaxKind::TerminalLT => vec!["<"],
-        SyntaxKind::TerminalMinus => vec!["-"],
-        SyntaxKind::TerminalMinusEq => vec!["-="],
-        SyntaxKind::TerminalMul => vec!["*"],
-        SyntaxKind::TerminalMulEq => vec!["*="],
-        SyntaxKind::TerminalNeq => vec!["!="],
-        SyntaxKind::TerminalNot => vec!["!"],
-        SyntaxKind::TerminalBitNot => vec!["~"],
-        SyntaxKind::TerminalOr => vec!["|"],
-        SyntaxKind::TerminalOrOr => vec!["||"],
-        SyntaxKind::TerminalXor => vec!["^"],
-        SyntaxKind::TerminalPlus => vec!["+"],
-        SyntaxKind::TerminalPlusEq => vec!["+="],
-        SyntaxKind::TerminalSemicolon => vec![";"],
-        SyntaxKind::TerminalQuestionMark => vec!["?"],
-        SyntaxKind::TerminalUnderscore => vec!["_"],
-        SyntaxKind::TerminalLBrace => vec!["{"],
-        SyntaxKind::TerminalRBrace => vec!["}"],
-        SyntaxKind::TerminalLBrack => vec!["["],
-        SyntaxKind::TerminalRBrack => vec!["]"],
-        SyntaxKind::TerminalLParen => vec!["("],
-        SyntaxKind::TerminalRParen => vec![")"],
-        SyntaxKind::TerminalArrow => vec!["->"],
-        SyntaxKind::TerminalMatchArrow => vec!["=>"],
-        SyntaxKind::TerminalEndOfFile => vec![],
-        _ => {
-            assert!(!kind.is_terminal());
-            vec![]
-        }
+        LexemeKind::False => vec!["false"],
+        LexemeKind::Extern => vec!["extern"],
+        LexemeKind::Type => vec!["type"],
+        LexemeKind::Function => vec!["fn"],
+        LexemeKind::Trait => vec!["trait"],
+        LexemeKind::Impl => vec!["impl"],
+        LexemeKind::Of => vec!["of"],
+        LexemeKind::Let => vec!["let"],
+        LexemeKind::Mut => vec!["mut"],
+        LexemeKind::Ref => vec!["ref"],
+        LexemeKind::NoPanic => vec!["nopanic"],
+        LexemeKind::Module => vec!["mod"],
+        LexemeKind::Struct => vec!["struct"],
+        LexemeKind::Enum => vec!["enum"],
+        LexemeKind::True => vec!["true"],
+        LexemeKind::Return => vec!["return"],
+        LexemeKind::Match => vec!["match"],
+        LexemeKind::If => vec!["if"],
+        LexemeKind::Loop => vec!["loop"],
+        LexemeKind::Break => vec!["break"],
+        LexemeKind::Else => vec!["else"],
+        LexemeKind::Use => vec!["use"],
+        LexemeKind::And => vec!["&"],
+        LexemeKind::AndAnd => vec!["&&"],
+        LexemeKind::At => vec!["@"],
+        LexemeKind::Colon => vec![":"],
+        LexemeKind::ColonColon => vec!["::"],
+        LexemeKind::Comma => vec![","],
+        LexemeKind::Div => vec!["/"],
+        LexemeKind::DivEq => vec!["/="],
+        LexemeKind::Mod => vec!["%"],
+        LexemeKind::ModEq => vec!["%="],
+        LexemeKind::Dot => vec!["."],
+        LexemeKind::DotDot => vec![".."],
+        LexemeKind::DotDotEq => vec!["..="],
+        LexemeKind::Eq => vec!["="],
+        LexemeKind::EqEq => vec!["=="],
+        LexemeKind::GE => vec![">="],
+        LexemeKind::GT => vec![">"],
+        LexemeKind::LE => vec!["<="],
+        LexemeKind::LT => vec!["<"],
+        LexemeKind::Minus => vec!["-"],
+        LexemeKind::MinusEq => vec!["-="],
+        LexemeKind::Mul => vec!["*"],
+        LexemeKind::MulEq => vec!["*="],
+        LexemeKind::Neq => vec!["!="],
+        LexemeKind::Not => vec!["!"],
+        LexemeKind::BitNot => vec!["~"],
+        LexemeKind::Or => vec!["|"],
+        LexemeKind::OrOr => vec!["||"],
+        LexemeKind::Xor => vec!["^"],
+        LexemeKind::Plus => vec!["+"],
+        LexemeKind::PlusEq => vec!["+="],
+        LexemeKind::Semicolon => vec![";"],
+        LexemeKind::QuestionMark => vec!["?"],
+        LexemeKind::Underscore => vec!["_"],
+        LexemeKind::LBrace => vec!["{"],
+        LexemeKind::RBrace => vec!["}"],
+        LexemeKind::LBrack => vec!["["],
+        LexemeKind::RBrack => vec!["]"],
+        LexemeKind::LParen => vec!["("],
+        LexemeKind::RParen => vec![")"],
+        LexemeKind::Arrow => vec!["->"],
+        LexemeKind::MatchArrow => vec!["=>"],
+        LexemeKind::EndOfFile => vec![],
+        _ => vec![],
     }
 }
 
-fn terminal_kinds() -> Vec<SyntaxKind> {
+fn terminal_kinds() -> Vec<LexemeKind> {
     vec![
-        SyntaxKind::TerminalIdentifier,
-        SyntaxKind::TerminalLiteralNumber,
-        SyntaxKind::TerminalFalse,
-        SyntaxKind::TerminalTrue,
-        SyntaxKind::TerminalExtern,
-        SyntaxKind::TerminalType,
-        SyntaxKind::TerminalFunction,
-        SyntaxKind::TerminalTrait,
-        SyntaxKind::TerminalImpl,
-        SyntaxKind::TerminalOf,
-        SyntaxKind::TerminalModule,
-        SyntaxKind::TerminalStruct,
-        SyntaxKind::TerminalEnum,
-        SyntaxKind::TerminalLet,
-        SyntaxKind::TerminalMut,
-        SyntaxKind::TerminalRef,
-        SyntaxKind::TerminalNoPanic,
-        SyntaxKind::TerminalReturn,
-        SyntaxKind::TerminalMatch,
-        SyntaxKind::TerminalIf,
-        SyntaxKind::TerminalLoop,
-        SyntaxKind::TerminalBreak,
-        SyntaxKind::TerminalElse,
-        SyntaxKind::TerminalUse,
-        SyntaxKind::TerminalAnd,
-        SyntaxKind::TerminalAndAnd,
-        SyntaxKind::TerminalAt,
-        SyntaxKind::TerminalOr,
-        SyntaxKind::TerminalOrOr,
-        SyntaxKind::TerminalXor,
-        SyntaxKind::TerminalEqEq,
-        SyntaxKind::TerminalNeq,
-        SyntaxKind::TerminalGE,
-        SyntaxKind::TerminalGT,
-        SyntaxKind::TerminalLE,
-        SyntaxKind::TerminalLT,
-        SyntaxKind::TerminalNot,
-        SyntaxKind::TerminalPlus,
-        SyntaxKind::TerminalPlusEq,
-        SyntaxKind::TerminalMinus,
-        SyntaxKind::TerminalMinusEq,
-        SyntaxKind::TerminalMul,
-        SyntaxKind::TerminalMulEq,
-        SyntaxKind::TerminalDiv,
-        SyntaxKind::TerminalDivEq,
-        SyntaxKind::TerminalMod,
-        SyntaxKind::TerminalModEq,
-        SyntaxKind::TerminalColon,
-        SyntaxKind::TerminalColonColon,
-        SyntaxKind::TerminalComma,
-        SyntaxKind::TerminalDot,
-        SyntaxKind::TerminalDotDot,
-        SyntaxKind::TerminalDotDotEq,
-        SyntaxKind::TerminalEq,
-        SyntaxKind::TerminalSemicolon,
-        SyntaxKind::TerminalQuestionMark,
-        SyntaxKind::TerminalUnderscore,
-        SyntaxKind::TerminalLBrace,
-        SyntaxKind::TerminalRBrace,
-        SyntaxKind::TerminalLBrack,
-        SyntaxKind::TerminalRBrack,
-        SyntaxKind::TerminalLParen,
-        SyntaxKind::TerminalRParen,
-        SyntaxKind::TerminalArrow,
-        SyntaxKind::TerminalMatchArrow,
-        SyntaxKind::TerminalEndOfFile,
-        SyntaxKind::TerminalShortString,
-        SyntaxKind::TerminalString,
+        LexemeKind::Identifier,
+        LexemeKind::LiteralNumber,
+        LexemeKind::False,
+        LexemeKind::True,
+        LexemeKind::Extern,
+        LexemeKind::Type,
+        LexemeKind::Function,
+        LexemeKind::Trait,
+        LexemeKind::Impl,
+        LexemeKind::Of,
+        LexemeKind::Module,
+        LexemeKind::Struct,
+        LexemeKind::Enum,
+        LexemeKind::Let,
+        LexemeKind::Mut,
+        LexemeKind::Ref,
+        LexemeKind::NoPanic,
+        LexemeKind::Return,
+        LexemeKind::Match,
+        LexemeKind::If,
+        LexemeKind::Loop,
+        LexemeKind::Break,
+        LexemeKind::Else,
+        LexemeKind::Use,
+        LexemeKind::And,
+        LexemeKind::AndAnd,
+        LexemeKind::At,
+        LexemeKind::Or,
+        LexemeKind::OrOr,
+        LexemeKind::Xor,
+        LexemeKind::EqEq,
+        LexemeKind::Neq,
+        LexemeKind::GE,
+        LexemeKind::GT,
+        LexemeKind::LE,
+        LexemeKind::LT,
+        LexemeKind::Not,
+        LexemeKind::Plus,
+        LexemeKind::PlusEq,
+        LexemeKind::Minus,
+        LexemeKind::MinusEq,
+        LexemeKind::Mul,
+        LexemeKind::MulEq,
+        LexemeKind::Div,
+        LexemeKind::DivEq,
+        LexemeKind::Mod,
+        LexemeKind::ModEq,
+        LexemeKind::Colon,
+        LexemeKind::ColonColon,
+        LexemeKind::Comma,
+        LexemeKind::Dot,
+        LexemeKind::DotDot,
+        LexemeKind::DotDotEq,
+        LexemeKind::Eq,
+        LexemeKind::Semicolon,
+        LexemeKind::QuestionMark,
+        LexemeKind::Underscore,
+        LexemeKind::LBrace,
+        LexemeKind::RBrace,
+        LexemeKind::LBrack,
+        LexemeKind::RBrack,
+        LexemeKind::LParen,
+        LexemeKind::RParen,
+        LexemeKind::Arrow,
+        LexemeKind::MatchArrow,
+        LexemeKind::EndOfFile,
+        LexemeKind::ShortString,
+        LexemeKind::String,
     ]
 }
 
@@ -191,21 +188,21 @@ fn token_separators() -> Vec<&'static str> {
 }
 
 fn need_separator(
-    kind0: SyntaxKind,
+    kind0: LexemeKind,
     text0: &'static str,
-    kind1: SyntaxKind,
+    kind1: LexemeKind,
     text1: &'static str,
 ) -> bool {
     if is_identifier_like(kind0)
-        && (is_identifier_like(kind1) || matches!(kind1, SyntaxKind::TerminalLiteralNumber))
+        && (is_identifier_like(kind1) || matches!(kind1, LexemeKind::LiteralNumber))
     {
         return true;
     }
-    if kind0 == SyntaxKind::TerminalLiteralNumber && (kind0 == kind1 || is_identifier_like(kind1)) {
+    if kind0 == LexemeKind::LiteralNumber && (kind0 == kind1 || is_identifier_like(kind1)) {
         return true;
     }
-    if kind0 == SyntaxKind::TerminalShortString
-        && matches!(kind1, SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalUnderscore)
+    if kind0 == LexemeKind::ShortString
+        && matches!(kind1, LexemeKind::Identifier | LexemeKind::Underscore)
     {
         return true;
     }
@@ -220,20 +217,19 @@ fn need_separator(
         || (text0 == "-" && (text1.starts_with('>') || text1.starts_with('=')))
         || ((text0 == "+" || text0 == "*" || text0 == "/" || text0 == "%")
             || (text0 == "..") && text1.starts_with('='))
-        || (kind0 == SyntaxKind::TerminalLiteralNumber && kind0 == kind1)
+        || (kind0 == LexemeKind::LiteralNumber && kind0 == kind1)
     {
         return true;
     }
     false
 }
 
-fn is_identifier_like(kind: SyntaxKind) -> bool {
-    matches!(kind, SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalUnderscore)
-        || kind.is_keyword_terminal()
+fn is_identifier_like(kind: LexemeKind) -> bool {
+    matches!(kind, LexemeKind::Identifier | LexemeKind::Underscore) || kind.is_keyword()
 }
 
-fn terminal_kind_and_text() -> Vec<(SyntaxKind, &'static str)> {
-    let mut res: Vec<(SyntaxKind, &'static str)> = Vec::new();
+fn terminal_kind_and_text() -> Vec<(LexemeKind, &'static str)> {
+    let mut res: Vec<(LexemeKind, &'static str)> = Vec::new();
     for kind in terminal_kinds() {
         for text in terminal_kind_to_text(kind) {
             res.push((kind, text));
@@ -243,13 +239,19 @@ fn terminal_kind_and_text() -> Vec<(SyntaxKind, &'static str)> {
 }
 
 fn trivia_kinds() -> Vec<SyntaxKind> {
-    vec![SyntaxKind::TokenWhitespace, SyntaxKind::TokenNewline, SyntaxKind::TokenSingleLineComment]
+    vec![
+        SyntaxKind::TriviaToken(TriviaKind::Whitespace),
+        SyntaxKind::TriviaToken(TriviaKind::Newline),
+        SyntaxKind::TriviaToken(TriviaKind::SingleLineComment),
+    ]
 }
 fn trivia_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
     match kind {
-        SyntaxKind::TokenSingleLineComment => vec!["// abc def\n", "///\n", "//=\n"],
-        SyntaxKind::TokenWhitespace => vec![" ", "\t", "\r"],
-        SyntaxKind::TokenNewline => vec!["\n"],
+        SyntaxKind::TriviaToken(TriviaKind::SingleLineComment) => {
+            vec!["// abc def\n", "///\n", "//=\n"]
+        }
+        SyntaxKind::TriviaToken(TriviaKind::Whitespace) => vec![" ", "\t", "\r"],
+        SyntaxKind::TriviaToken(TriviaKind::Newline) => vec!["\n"],
         _ => vec![],
     }
 }
@@ -276,7 +278,7 @@ fn test_lex_single_token() {
 
         assert_eq!(
             terminals[1].kind,
-            SyntaxKind::TerminalEndOfFile,
+            LexemeKind::EndOfFile,
             "Wrong eof token, with text: \"{text}\"."
         );
         assert_eq!(terminals.len(), 2, "Expected exactly 2 terminals (token + EOF).");
@@ -300,7 +302,7 @@ fn test_lex_double_token() {
                 let token_text = terminal.text(db);
                 assert_eq!(
                     terminal.kind, kind0,
-                    "Wrong first token kind: {}, expected: {kind0}. Text: \"{}\".",
+                    "Wrong first token kind: {:?}, expected: {kind0:?}. Text: \"{}\".",
                     terminal.kind, token_text
                 );
                 assert_eq!(
@@ -313,7 +315,7 @@ fn test_lex_double_token() {
                 let token_text = terminal.text(db);
                 assert_eq!(
                     terminal.kind, kind1,
-                    "Wrong second token kind {}, expected: {kind1}. Text: \"{token_text}\".",
+                    "Wrong second token kind {:?}, expected: {kind1:?}. Text: \"{token_text}\".",
                     terminal.kind
                 );
                 assert_eq!(
@@ -323,7 +325,7 @@ fn test_lex_double_token() {
 
                 assert_eq!(
                     terminals[2].kind,
-                    SyntaxKind::TerminalEndOfFile,
+                    LexemeKind::EndOfFile,
                     "Wrong eof token, with text: \"{text}\".",
                 );
                 assert_eq!(
@@ -353,7 +355,7 @@ fn test_lex_token_with_trivia() {
 
                 assert_eq!(
                     terminals[1].kind,
-                    SyntaxKind::TerminalEndOfFile,
+                    LexemeKind::EndOfFile,
                     "Wrong eof token, with text: \"{text}\"."
                 );
                 assert_eq!(terminals.len(), 2, "Expected exactly 2 terminals (token + EOF).");
@@ -372,7 +374,7 @@ fn test_cases() {
         vec![
             LexerTerminal {
                 text: SmolStrId::from(db, "let"),
-                kind: SyntaxKind::TerminalLet,
+                kind: LexemeKind::Let,
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
@@ -380,13 +382,13 @@ fn test_cases() {
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "x"),
-                kind: SyntaxKind::TerminalIdentifier,
+                kind: LexemeKind::Identifier,
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
             },
             LexerTerminal {
                 text: SmolStrId::from(db, ":"),
-                kind: SyntaxKind::TerminalColon,
+                kind: LexemeKind::Colon,
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
@@ -394,13 +396,13 @@ fn test_cases() {
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "&"),
-                kind: SyntaxKind::TerminalAnd,
+                kind: LexemeKind::And,
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "T"),
-                kind: SyntaxKind::TerminalIdentifier,
+                kind: LexemeKind::Identifier,
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
@@ -408,7 +410,7 @@ fn test_cases() {
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "="),
-                kind: SyntaxKind::TerminalEq,
+                kind: LexemeKind::Eq,
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
@@ -416,7 +418,7 @@ fn test_cases() {
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "`"),
-                kind: SyntaxKind::TerminalBadCharacters,
+                kind: LexemeKind::BadCharacters,
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
@@ -424,13 +426,13 @@ fn test_cases() {
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "6"),
-                kind: SyntaxKind::TerminalLiteralNumber,
+                kind: LexemeKind::LiteralNumber,
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
             },
             LexerTerminal {
                 text: SmolStrId::from(db, ";"),
-                kind: SyntaxKind::TerminalSemicolon,
+                kind: LexemeKind::Semicolon,
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into(),
@@ -439,7 +441,7 @@ fn test_cases() {
             },
             LexerTerminal {
                 text: SmolStrId::from(db, ""),
-                kind: SyntaxKind::TerminalEndOfFile,
+                kind: LexemeKind::EndOfFile,
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
             }
@@ -458,16 +460,16 @@ fn test_doc_comment_classification() {
     assert_eq!(
         terminal.leading_trivia.into_iter().map(|t| t.0.long(db).kind).collect_vec(),
         [
-            SyntaxKind::TokenSingleLineComment,
-            SyntaxKind::TokenNewline,
-            SyntaxKind::TokenSingleLineDocComment,
-            SyntaxKind::TokenNewline,
-            SyntaxKind::TokenSingleLineInnerComment,
-            SyntaxKind::TokenNewline,
-            SyntaxKind::TokenSingleLineComment,
-            SyntaxKind::TokenNewline,
-            SyntaxKind::TokenSingleLineComment,
-            SyntaxKind::TokenNewline
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineComment),
+            SyntaxKind::TriviaToken(TriviaKind::Newline),
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineDocComment),
+            SyntaxKind::TriviaToken(TriviaKind::Newline),
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineInnerComment),
+            SyntaxKind::TriviaToken(TriviaKind::Newline),
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineComment),
+            SyntaxKind::TriviaToken(TriviaKind::Newline),
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineComment),
+            SyntaxKind::TriviaToken(TriviaKind::Newline)
         ]
     );
 }
@@ -483,16 +485,12 @@ fn test_bad_character() {
     let token_text = terminal.text(db);
     assert_eq!(
         terminal.kind,
-        SyntaxKind::TerminalBadCharacters,
+        LexemeKind::BadCharacters,
         "Wrong token kind, with text: \"{text}\".",
     );
     assert_eq!(token_text, text, "Wrong token text.");
 
-    assert_eq!(
-        terminals[1].kind,
-        SyntaxKind::TerminalEndOfFile,
-        "Wrong eof token, with text: \"{text}\"."
-    );
+    assert_eq!(terminals[1].kind, LexemeKind::EndOfFile, "Wrong eof token, with text: \"{text}\".");
     assert_eq!(terminals.len(), 2, "Expected exactly 2 terminals (bad char + EOF).");
 }
 
@@ -502,7 +500,7 @@ pub fn tokenize_all<'db>(db: &'db dyn Database, text: Arc<str>) -> Vec<LexerTerm
     let mut result = vec![];
     loop {
         let terminal = lexer.match_terminal(db);
-        let is_eof = terminal.kind == SyntaxKind::TerminalEndOfFile;
+        let is_eof = terminal.kind == LexemeKind::EndOfFile;
         result.push(terminal);
         if is_eof {
             break;
