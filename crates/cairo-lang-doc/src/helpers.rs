@@ -12,7 +12,7 @@ use cairo_lang_semantic::items::us::UseSemantic;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::{ConcreteTypeId, GenericParam, TypeId, TypeLongId};
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::kind::{LexemeKind, SyntaxKind};
 use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, green};
 use itertools::Itertools;
 use salsa::Database;
@@ -106,14 +106,14 @@ pub fn get_syntactic_evaluation<'db>(
             for child in syntax_node.get_children(db).iter() {
                 let kind = child.kind(db);
                 if !matches!(kind, SyntaxKind::Trivia) {
-                    if matches!(kind, SyntaxKind::TerminalSemicolon) {
+                    if matches!(kind, SyntaxKind::Terminal(LexemeKind::Semicolon)) {
                         buff.push(';');
                         return Ok(buff);
                     }
                     if is_after_evaluation_value {
                         buff.push_str(&SyntaxNode::get_text_without_all_comment_trivia(child, db));
                     };
-                    if matches!(kind, SyntaxKind::TerminalEq) {
+                    if matches!(kind, SyntaxKind::Terminal(LexemeKind::Eq)) {
                         is_after_evaluation_value = true;
                     }
                 }

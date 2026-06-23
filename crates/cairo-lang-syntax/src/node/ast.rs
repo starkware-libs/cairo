@@ -13,7 +13,7 @@ use salsa::Database;
 
 use super::element_list::ElementList;
 use super::green::GreenNodeDetails;
-use super::kind::SyntaxKind;
+use super::kind::{LexemeKind, MissingKind, SyntaxKind, TriviaKind};
 use super::{
     GreenId, GreenNode, SyntaxNode, SyntaxStablePtrId, Terminal, Token, TypedStablePtr,
     TypedSyntaxNode,
@@ -198,20 +198,26 @@ impl<'db> TypedSyntaxNode<'db> for Trivium<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TokenSingleLineComment => {
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineComment) => {
                 Trivium::SingleLineComment(TokenSingleLineComment::from_syntax_node(db, node))
             }
-            SyntaxKind::TokenSingleLineDocComment => {
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineDocComment) => {
                 Trivium::SingleLineDocComment(TokenSingleLineDocComment::from_syntax_node(db, node))
             }
-            SyntaxKind::TokenSingleLineInnerComment => Trivium::SingleLineInnerComment(
-                TokenSingleLineInnerComment::from_syntax_node(db, node),
-            ),
-            SyntaxKind::TokenWhitespace => {
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineInnerComment) => {
+                Trivium::SingleLineInnerComment(TokenSingleLineInnerComment::from_syntax_node(
+                    db, node,
+                ))
+            }
+            SyntaxKind::TriviaToken(TriviaKind::Whitespace) => {
                 Trivium::Whitespace(TokenWhitespace::from_syntax_node(db, node))
             }
-            SyntaxKind::TokenNewline => Trivium::Newline(TokenNewline::from_syntax_node(db, node)),
-            SyntaxKind::TokenSkipped => Trivium::Skipped(TokenSkipped::from_syntax_node(db, node)),
+            SyntaxKind::TriviaToken(TriviaKind::Newline) => {
+                Trivium::Newline(TokenNewline::from_syntax_node(db, node))
+            }
+            SyntaxKind::TriviaToken(TriviaKind::Skipped) => {
+                Trivium::Skipped(TokenSkipped::from_syntax_node(db, node))
+            }
             SyntaxKind::TriviumSkippedNode => {
                 Trivium::SkippedNode(TriviumSkippedNode::from_syntax_node(db, node))
             }
@@ -221,22 +227,26 @@ impl<'db> TypedSyntaxNode<'db> for Trivium<'db> {
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TokenSingleLineComment => {
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineComment) => {
                 Some(Trivium::SingleLineComment(TokenSingleLineComment::from_syntax_node(db, node)))
             }
-            SyntaxKind::TokenSingleLineDocComment => Some(Trivium::SingleLineDocComment(
-                TokenSingleLineDocComment::from_syntax_node(db, node),
-            )),
-            SyntaxKind::TokenSingleLineInnerComment => Some(Trivium::SingleLineInnerComment(
-                TokenSingleLineInnerComment::from_syntax_node(db, node),
-            )),
-            SyntaxKind::TokenWhitespace => {
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineDocComment) => {
+                Some(Trivium::SingleLineDocComment(TokenSingleLineDocComment::from_syntax_node(
+                    db, node,
+                )))
+            }
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineInnerComment) => {
+                Some(Trivium::SingleLineInnerComment(
+                    TokenSingleLineInnerComment::from_syntax_node(db, node),
+                ))
+            }
+            SyntaxKind::TriviaToken(TriviaKind::Whitespace) => {
                 Some(Trivium::Whitespace(TokenWhitespace::from_syntax_node(db, node)))
             }
-            SyntaxKind::TokenNewline => {
+            SyntaxKind::TriviaToken(TriviaKind::Newline) => {
                 Some(Trivium::Newline(TokenNewline::from_syntax_node(db, node)))
             }
-            SyntaxKind::TokenSkipped => {
+            SyntaxKind::TriviaToken(TriviaKind::Skipped) => {
                 Some(Trivium::Skipped(TokenSkipped::from_syntax_node(db, node)))
             }
             SyntaxKind::TriviumSkippedNode => {
@@ -265,12 +275,12 @@ impl<'db> Trivium<'db> {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::TokenSingleLineComment
-                | SyntaxKind::TokenSingleLineDocComment
-                | SyntaxKind::TokenSingleLineInnerComment
-                | SyntaxKind::TokenWhitespace
-                | SyntaxKind::TokenNewline
-                | SyntaxKind::TokenSkipped
+            SyntaxKind::TriviaToken(TriviaKind::SingleLineComment)
+                | SyntaxKind::TriviaToken(TriviaKind::SingleLineDocComment)
+                | SyntaxKind::TriviaToken(TriviaKind::SingleLineInnerComment)
+                | SyntaxKind::TriviaToken(TriviaKind::Whitespace)
+                | SyntaxKind::TriviaToken(TriviaKind::Newline)
+                | SyntaxKind::TriviaToken(TriviaKind::Skipped)
                 | SyntaxKind::TriviumSkippedNode
         )
     }
@@ -593,15 +603,21 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
         let kind = node.kind(db);
         match kind {
             SyntaxKind::ExprPath => Expr::Path(ExprPath::from_syntax_node(db, node)),
-            SyntaxKind::TerminalLiteralNumber => {
+            SyntaxKind::Terminal(LexemeKind::LiteralNumber) => {
                 Expr::Literal(TerminalLiteralNumber::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalShortString => {
+            SyntaxKind::Terminal(LexemeKind::ShortString) => {
                 Expr::ShortString(TerminalShortString::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalString => Expr::String(TerminalString::from_syntax_node(db, node)),
-            SyntaxKind::TerminalFalse => Expr::False(TerminalFalse::from_syntax_node(db, node)),
-            SyntaxKind::TerminalTrue => Expr::True(TerminalTrue::from_syntax_node(db, node)),
+            SyntaxKind::Terminal(LexemeKind::String) => {
+                Expr::String(TerminalString::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::False) => {
+                Expr::False(TerminalFalse::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::True) => {
+                Expr::True(TerminalTrue::from_syntax_node(db, node))
+            }
             SyntaxKind::ExprParenthesized => {
                 Expr::Parenthesized(ExprParenthesized::from_syntax_node(db, node))
             }
@@ -636,10 +652,12 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
             SyntaxKind::ExprFixedSizeArray => {
                 Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalUnderscore => {
+            SyntaxKind::Terminal(LexemeKind::Underscore) => {
                 Expr::Underscore(TerminalUnderscore::from_syntax_node(db, node))
             }
-            SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
+            SyntaxKind::Missing(MissingKind::Expr) => {
+                Expr::Missing(ExprMissing::from_syntax_node(db, node))
+            }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
     }
@@ -647,19 +665,21 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
         let kind = node.kind(db);
         match kind {
             SyntaxKind::ExprPath => Some(Expr::Path(ExprPath::from_syntax_node(db, node))),
-            SyntaxKind::TerminalLiteralNumber => {
+            SyntaxKind::Terminal(LexemeKind::LiteralNumber) => {
                 Some(Expr::Literal(TerminalLiteralNumber::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalShortString => {
+            SyntaxKind::Terminal(LexemeKind::ShortString) => {
                 Some(Expr::ShortString(TerminalShortString::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalString => {
+            SyntaxKind::Terminal(LexemeKind::String) => {
                 Some(Expr::String(TerminalString::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalFalse => {
+            SyntaxKind::Terminal(LexemeKind::False) => {
                 Some(Expr::False(TerminalFalse::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalTrue => Some(Expr::True(TerminalTrue::from_syntax_node(db, node))),
+            SyntaxKind::Terminal(LexemeKind::True) => {
+                Some(Expr::True(TerminalTrue::from_syntax_node(db, node)))
+            }
             SyntaxKind::ExprParenthesized => {
                 Some(Expr::Parenthesized(ExprParenthesized::from_syntax_node(db, node)))
             }
@@ -694,10 +714,12 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
             SyntaxKind::ExprFixedSizeArray => {
                 Some(Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalUnderscore => {
+            SyntaxKind::Terminal(LexemeKind::Underscore) => {
                 Some(Expr::Underscore(TerminalUnderscore::from_syntax_node(db, node)))
             }
-            SyntaxKind::ExprMissing => Some(Expr::Missing(ExprMissing::from_syntax_node(db, node))),
+            SyntaxKind::Missing(MissingKind::Expr) => {
+                Some(Expr::Missing(ExprMissing::from_syntax_node(db, node)))
+            }
             _ => None,
         }
     }
@@ -741,11 +763,11 @@ impl<'db> Expr<'db> {
         matches!(
             kind,
             SyntaxKind::ExprPath
-                | SyntaxKind::TerminalLiteralNumber
-                | SyntaxKind::TerminalShortString
-                | SyntaxKind::TerminalString
-                | SyntaxKind::TerminalFalse
-                | SyntaxKind::TerminalTrue
+                | SyntaxKind::Terminal(LexemeKind::LiteralNumber)
+                | SyntaxKind::Terminal(LexemeKind::ShortString)
+                | SyntaxKind::Terminal(LexemeKind::String)
+                | SyntaxKind::Terminal(LexemeKind::False)
+                | SyntaxKind::Terminal(LexemeKind::True)
                 | SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprUnary
                 | SyntaxKind::ExprBinary
@@ -764,8 +786,8 @@ impl<'db> Expr<'db> {
                 | SyntaxKind::ExprIndexed
                 | SyntaxKind::ExprInlineMacro
                 | SyntaxKind::ExprFixedSizeArray
-                | SyntaxKind::TerminalUnderscore
-                | SyntaxKind::ExprMissing
+                | SyntaxKind::Terminal(LexemeKind::Underscore)
+                | SyntaxKind::Missing(MissingKind::Expr)
         )
     }
 }
@@ -1542,7 +1564,7 @@ impl<'db> ExprMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprMissingGreen(
             GreenNode {
-                kind: SyntaxKind::ExprMissing,
+                kind: SyntaxKind::Missing(MissingKind::Expr),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -1570,13 +1592,13 @@ impl<'db> From<ExprMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct ExprMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Missing(MissingKind::Expr));
     type StablePtr = ExprMissingPtr<'db>;
     type Green = ExprMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         ExprMissingGreen(
             GreenNode {
-                kind: SyntaxKind::ExprMissing,
+                kind: SyntaxKind::Missing(MissingKind::Expr),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -1589,16 +1611,20 @@ impl<'db> TypedSyntaxNode<'db> for ExprMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ExprMissing,
+            SyntaxKind::Missing(MissingKind::Expr),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ExprMissing
+            SyntaxKind::Missing(MissingKind::Expr)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::ExprMissing { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Missing(MissingKind::Expr) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -1677,7 +1703,7 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
             SyntaxKind::PathSegmentWithGenericArgs => {
                 PathSegment::WithGenericArgs(PathSegmentWithGenericArgs::from_syntax_node(db, node))
             }
-            SyntaxKind::PathSegmentMissing => {
+            SyntaxKind::Missing(MissingKind::PathSegment) => {
                 PathSegment::Missing(PathSegmentMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "PathSegment"),
@@ -1692,7 +1718,7 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
             SyntaxKind::PathSegmentWithGenericArgs => Some(PathSegment::WithGenericArgs(
                 PathSegmentWithGenericArgs::from_syntax_node(db, node),
             )),
-            SyntaxKind::PathSegmentMissing => {
+            SyntaxKind::Missing(MissingKind::PathSegment) => {
                 Some(PathSegment::Missing(PathSegmentMissing::from_syntax_node(db, node)))
             }
             _ => None,
@@ -1716,7 +1742,7 @@ impl<'db> PathSegment<'db> {
             kind,
             SyntaxKind::PathSegmentSimple
                 | SyntaxKind::PathSegmentWithGenericArgs
-                | SyntaxKind::PathSegmentMissing
+                | SyntaxKind::Missing(MissingKind::PathSegment)
         )
     }
 }
@@ -1863,9 +1889,11 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalColonColon<'db> {
             SyntaxKind::OptionTerminalColonColonEmpty => OptionTerminalColonColon::Empty(
                 OptionTerminalColonColonEmpty::from_syntax_node(db, node),
             ),
-            SyntaxKind::TerminalColonColon => OptionTerminalColonColon::TerminalColonColon(
-                TerminalColonColon::from_syntax_node(db, node),
-            ),
+            SyntaxKind::Terminal(LexemeKind::ColonColon) => {
+                OptionTerminalColonColon::TerminalColonColon(TerminalColonColon::from_syntax_node(
+                    db, node,
+                ))
+            }
             _ => panic!(
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionTerminalColonColon"
@@ -1878,9 +1906,11 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalColonColon<'db> {
             SyntaxKind::OptionTerminalColonColonEmpty => Some(OptionTerminalColonColon::Empty(
                 OptionTerminalColonColonEmpty::from_syntax_node(db, node),
             )),
-            SyntaxKind::TerminalColonColon => Some(OptionTerminalColonColon::TerminalColonColon(
-                TerminalColonColon::from_syntax_node(db, node),
-            )),
+            SyntaxKind::Terminal(LexemeKind::ColonColon) => {
+                Some(OptionTerminalColonColon::TerminalColonColon(
+                    TerminalColonColon::from_syntax_node(db, node),
+                ))
+            }
             _ => None,
         }
     }
@@ -1897,7 +1927,11 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalColonColon<'db> {
 impl<'db> OptionTerminalColonColon<'db> {
     /// Checks if a kind of a variant of [OptionTerminalColonColon].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::OptionTerminalColonColonEmpty | SyntaxKind::TerminalColonColon)
+        matches!(
+            kind,
+            SyntaxKind::OptionTerminalColonColonEmpty
+                | SyntaxKind::Terminal(LexemeKind::ColonColon)
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -2226,7 +2260,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalDollar<'db> {
             SyntaxKind::OptionTerminalDollarEmpty => {
                 OptionTerminalDollar::Empty(OptionTerminalDollarEmpty::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDollar => {
+            SyntaxKind::Terminal(LexemeKind::Dollar) => {
                 OptionTerminalDollar::TerminalDollar(TerminalDollar::from_syntax_node(db, node))
             }
             _ => panic!(
@@ -2241,7 +2275,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalDollar<'db> {
             SyntaxKind::OptionTerminalDollarEmpty => Some(OptionTerminalDollar::Empty(
                 OptionTerminalDollarEmpty::from_syntax_node(db, node),
             )),
-            SyntaxKind::TerminalDollar => Some(OptionTerminalDollar::TerminalDollar(
+            SyntaxKind::Terminal(LexemeKind::Dollar) => Some(OptionTerminalDollar::TerminalDollar(
                 TerminalDollar::from_syntax_node(db, node),
             )),
             _ => None,
@@ -2260,7 +2294,10 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalDollar<'db> {
 impl<'db> OptionTerminalDollar<'db> {
     /// Checks if a kind of a variant of [OptionTerminalDollar].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::OptionTerminalDollarEmpty | SyntaxKind::TerminalDollar)
+        matches!(
+            kind,
+            SyntaxKind::OptionTerminalDollarEmpty | SyntaxKind::Terminal(LexemeKind::Dollar)
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -2356,7 +2393,7 @@ impl<'db> PathSegmentMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PathSegmentMissingGreen(
             GreenNode {
-                kind: SyntaxKind::PathSegmentMissing,
+                kind: SyntaxKind::Missing(MissingKind::PathSegment),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -2388,13 +2425,13 @@ impl<'db> From<PathSegmentMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct PathSegmentMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PathSegmentMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Missing(MissingKind::PathSegment));
     type StablePtr = PathSegmentMissingPtr<'db>;
     type Green = PathSegmentMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         PathSegmentMissingGreen(
             GreenNode {
-                kind: SyntaxKind::PathSegmentMissing,
+                kind: SyntaxKind::Missing(MissingKind::PathSegment),
                 details: GreenNodeDetails::Node {
                     children: [TerminalIdentifier::missing(db).0].into(),
                     width: TextWidth::default(),
@@ -2407,16 +2444,16 @@ impl<'db> TypedSyntaxNode<'db> for PathSegmentMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::PathSegmentMissing,
+            SyntaxKind::Missing(MissingKind::PathSegment),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::PathSegmentMissing
+            SyntaxKind::Missing(MissingKind::PathSegment)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::PathSegmentMissing {
+        if kind == SyntaxKind::Missing(MissingKind::PathSegment) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -2816,18 +2853,22 @@ impl<'db> TypedSyntaxNode<'db> for UnaryOperator<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalNot => UnaryOperator::Not(TerminalNot::from_syntax_node(db, node)),
-            SyntaxKind::TerminalBitNot => {
+            SyntaxKind::Terminal(LexemeKind::Not) => {
+                UnaryOperator::Not(TerminalNot::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::BitNot) => {
                 UnaryOperator::BitNot(TerminalBitNot::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMinus => {
+            SyntaxKind::Terminal(LexemeKind::Minus) => {
                 UnaryOperator::Minus(TerminalMinus::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalAt => UnaryOperator::At(TerminalAt::from_syntax_node(db, node)),
-            SyntaxKind::TerminalMul => {
+            SyntaxKind::Terminal(LexemeKind::At) => {
+                UnaryOperator::At(TerminalAt::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::Mul) => {
                 UnaryOperator::Desnap(TerminalMul::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalAnd => {
+            SyntaxKind::Terminal(LexemeKind::And) => {
                 UnaryOperator::Reference(TerminalAnd::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "UnaryOperator"),
@@ -2836,22 +2877,22 @@ impl<'db> TypedSyntaxNode<'db> for UnaryOperator<'db> {
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalNot => {
+            SyntaxKind::Terminal(LexemeKind::Not) => {
                 Some(UnaryOperator::Not(TerminalNot::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalBitNot => {
+            SyntaxKind::Terminal(LexemeKind::BitNot) => {
                 Some(UnaryOperator::BitNot(TerminalBitNot::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMinus => {
+            SyntaxKind::Terminal(LexemeKind::Minus) => {
                 Some(UnaryOperator::Minus(TerminalMinus::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalAt => {
+            SyntaxKind::Terminal(LexemeKind::At) => {
                 Some(UnaryOperator::At(TerminalAt::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMul => {
+            SyntaxKind::Terminal(LexemeKind::Mul) => {
                 Some(UnaryOperator::Desnap(TerminalMul::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalAnd => {
+            SyntaxKind::Terminal(LexemeKind::And) => {
                 Some(UnaryOperator::Reference(TerminalAnd::from_syntax_node(db, node)))
             }
             _ => None,
@@ -2876,12 +2917,12 @@ impl<'db> UnaryOperator<'db> {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::TerminalNot
-                | SyntaxKind::TerminalBitNot
-                | SyntaxKind::TerminalMinus
-                | SyntaxKind::TerminalAt
-                | SyntaxKind::TerminalMul
-                | SyntaxKind::TerminalAnd
+            SyntaxKind::Terminal(LexemeKind::Not)
+                | SyntaxKind::Terminal(LexemeKind::BitNot)
+                | SyntaxKind::Terminal(LexemeKind::Minus)
+                | SyntaxKind::Terminal(LexemeKind::At)
+                | SyntaxKind::Terminal(LexemeKind::Mul)
+                | SyntaxKind::Terminal(LexemeKind::And)
         )
     }
 }
@@ -3300,54 +3341,82 @@ impl<'db> TypedSyntaxNode<'db> for BinaryOperator<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalDot => BinaryOperator::Dot(TerminalDot::from_syntax_node(db, node)),
-            SyntaxKind::TerminalNot => BinaryOperator::Not(TerminalNot::from_syntax_node(db, node)),
-            SyntaxKind::TerminalMul => BinaryOperator::Mul(TerminalMul::from_syntax_node(db, node)),
-            SyntaxKind::TerminalMulEq => {
+            SyntaxKind::Terminal(LexemeKind::Dot) => {
+                BinaryOperator::Dot(TerminalDot::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::Not) => {
+                BinaryOperator::Not(TerminalNot::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::Mul) => {
+                BinaryOperator::Mul(TerminalMul::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::MulEq) => {
                 BinaryOperator::MulEq(TerminalMulEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDiv => BinaryOperator::Div(TerminalDiv::from_syntax_node(db, node)),
-            SyntaxKind::TerminalDivEq => {
+            SyntaxKind::Terminal(LexemeKind::Div) => {
+                BinaryOperator::Div(TerminalDiv::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::DivEq) => {
                 BinaryOperator::DivEq(TerminalDivEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMod => BinaryOperator::Mod(TerminalMod::from_syntax_node(db, node)),
-            SyntaxKind::TerminalModEq => {
+            SyntaxKind::Terminal(LexemeKind::Mod) => {
+                BinaryOperator::Mod(TerminalMod::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::ModEq) => {
                 BinaryOperator::ModEq(TerminalModEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalPlus => {
+            SyntaxKind::Terminal(LexemeKind::Plus) => {
                 BinaryOperator::Plus(TerminalPlus::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalPlusEq => {
+            SyntaxKind::Terminal(LexemeKind::PlusEq) => {
                 BinaryOperator::PlusEq(TerminalPlusEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMinus => {
+            SyntaxKind::Terminal(LexemeKind::Minus) => {
                 BinaryOperator::Minus(TerminalMinus::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMinusEq => {
+            SyntaxKind::Terminal(LexemeKind::MinusEq) => {
                 BinaryOperator::MinusEq(TerminalMinusEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalEqEq => {
+            SyntaxKind::Terminal(LexemeKind::EqEq) => {
                 BinaryOperator::EqEq(TerminalEqEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalNeq => BinaryOperator::Neq(TerminalNeq::from_syntax_node(db, node)),
-            SyntaxKind::TerminalEq => BinaryOperator::Eq(TerminalEq::from_syntax_node(db, node)),
-            SyntaxKind::TerminalAnd => BinaryOperator::And(TerminalAnd::from_syntax_node(db, node)),
-            SyntaxKind::TerminalAndAnd => {
+            SyntaxKind::Terminal(LexemeKind::Neq) => {
+                BinaryOperator::Neq(TerminalNeq::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::Eq) => {
+                BinaryOperator::Eq(TerminalEq::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::And) => {
+                BinaryOperator::And(TerminalAnd::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::AndAnd) => {
                 BinaryOperator::AndAnd(TerminalAndAnd::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalOr => BinaryOperator::Or(TerminalOr::from_syntax_node(db, node)),
-            SyntaxKind::TerminalOrOr => {
+            SyntaxKind::Terminal(LexemeKind::Or) => {
+                BinaryOperator::Or(TerminalOr::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::OrOr) => {
                 BinaryOperator::OrOr(TerminalOrOr::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalXor => BinaryOperator::Xor(TerminalXor::from_syntax_node(db, node)),
-            SyntaxKind::TerminalLE => BinaryOperator::LE(TerminalLE::from_syntax_node(db, node)),
-            SyntaxKind::TerminalGE => BinaryOperator::GE(TerminalGE::from_syntax_node(db, node)),
-            SyntaxKind::TerminalLT => BinaryOperator::LT(TerminalLT::from_syntax_node(db, node)),
-            SyntaxKind::TerminalGT => BinaryOperator::GT(TerminalGT::from_syntax_node(db, node)),
-            SyntaxKind::TerminalDotDot => {
+            SyntaxKind::Terminal(LexemeKind::Xor) => {
+                BinaryOperator::Xor(TerminalXor::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::LE) => {
+                BinaryOperator::LE(TerminalLE::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::GE) => {
+                BinaryOperator::GE(TerminalGE::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::LT) => {
+                BinaryOperator::LT(TerminalLT::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::GT) => {
+                BinaryOperator::GT(TerminalGT::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::DotDot) => {
                 BinaryOperator::DotDot(TerminalDotDot::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDotDotEq => {
+            SyntaxKind::Terminal(LexemeKind::DotDotEq) => {
                 BinaryOperator::DotDotEq(TerminalDotDotEq::from_syntax_node(db, node))
             }
             _ => {
@@ -3358,82 +3427,82 @@ impl<'db> TypedSyntaxNode<'db> for BinaryOperator<'db> {
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalDot => {
+            SyntaxKind::Terminal(LexemeKind::Dot) => {
                 Some(BinaryOperator::Dot(TerminalDot::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalNot => {
+            SyntaxKind::Terminal(LexemeKind::Not) => {
                 Some(BinaryOperator::Not(TerminalNot::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMul => {
+            SyntaxKind::Terminal(LexemeKind::Mul) => {
                 Some(BinaryOperator::Mul(TerminalMul::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMulEq => {
+            SyntaxKind::Terminal(LexemeKind::MulEq) => {
                 Some(BinaryOperator::MulEq(TerminalMulEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDiv => {
+            SyntaxKind::Terminal(LexemeKind::Div) => {
                 Some(BinaryOperator::Div(TerminalDiv::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDivEq => {
+            SyntaxKind::Terminal(LexemeKind::DivEq) => {
                 Some(BinaryOperator::DivEq(TerminalDivEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMod => {
+            SyntaxKind::Terminal(LexemeKind::Mod) => {
                 Some(BinaryOperator::Mod(TerminalMod::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalModEq => {
+            SyntaxKind::Terminal(LexemeKind::ModEq) => {
                 Some(BinaryOperator::ModEq(TerminalModEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalPlus => {
+            SyntaxKind::Terminal(LexemeKind::Plus) => {
                 Some(BinaryOperator::Plus(TerminalPlus::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalPlusEq => {
+            SyntaxKind::Terminal(LexemeKind::PlusEq) => {
                 Some(BinaryOperator::PlusEq(TerminalPlusEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMinus => {
+            SyntaxKind::Terminal(LexemeKind::Minus) => {
                 Some(BinaryOperator::Minus(TerminalMinus::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMinusEq => {
+            SyntaxKind::Terminal(LexemeKind::MinusEq) => {
                 Some(BinaryOperator::MinusEq(TerminalMinusEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalEqEq => {
+            SyntaxKind::Terminal(LexemeKind::EqEq) => {
                 Some(BinaryOperator::EqEq(TerminalEqEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalNeq => {
+            SyntaxKind::Terminal(LexemeKind::Neq) => {
                 Some(BinaryOperator::Neq(TerminalNeq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalEq => {
+            SyntaxKind::Terminal(LexemeKind::Eq) => {
                 Some(BinaryOperator::Eq(TerminalEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalAnd => {
+            SyntaxKind::Terminal(LexemeKind::And) => {
                 Some(BinaryOperator::And(TerminalAnd::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalAndAnd => {
+            SyntaxKind::Terminal(LexemeKind::AndAnd) => {
                 Some(BinaryOperator::AndAnd(TerminalAndAnd::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalOr => {
+            SyntaxKind::Terminal(LexemeKind::Or) => {
                 Some(BinaryOperator::Or(TerminalOr::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalOrOr => {
+            SyntaxKind::Terminal(LexemeKind::OrOr) => {
                 Some(BinaryOperator::OrOr(TerminalOrOr::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalXor => {
+            SyntaxKind::Terminal(LexemeKind::Xor) => {
                 Some(BinaryOperator::Xor(TerminalXor::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLE => {
+            SyntaxKind::Terminal(LexemeKind::LE) => {
                 Some(BinaryOperator::LE(TerminalLE::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalGE => {
+            SyntaxKind::Terminal(LexemeKind::GE) => {
                 Some(BinaryOperator::GE(TerminalGE::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLT => {
+            SyntaxKind::Terminal(LexemeKind::LT) => {
                 Some(BinaryOperator::LT(TerminalLT::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalGT => {
+            SyntaxKind::Terminal(LexemeKind::GT) => {
                 Some(BinaryOperator::GT(TerminalGT::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDotDot => {
+            SyntaxKind::Terminal(LexemeKind::DotDot) => {
                 Some(BinaryOperator::DotDot(TerminalDotDot::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDotDotEq => {
+            SyntaxKind::Terminal(LexemeKind::DotDotEq) => {
                 Some(BinaryOperator::DotDotEq(TerminalDotDotEq::from_syntax_node(db, node)))
             }
             _ => None,
@@ -3478,32 +3547,32 @@ impl<'db> BinaryOperator<'db> {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::TerminalDot
-                | SyntaxKind::TerminalNot
-                | SyntaxKind::TerminalMul
-                | SyntaxKind::TerminalMulEq
-                | SyntaxKind::TerminalDiv
-                | SyntaxKind::TerminalDivEq
-                | SyntaxKind::TerminalMod
-                | SyntaxKind::TerminalModEq
-                | SyntaxKind::TerminalPlus
-                | SyntaxKind::TerminalPlusEq
-                | SyntaxKind::TerminalMinus
-                | SyntaxKind::TerminalMinusEq
-                | SyntaxKind::TerminalEqEq
-                | SyntaxKind::TerminalNeq
-                | SyntaxKind::TerminalEq
-                | SyntaxKind::TerminalAnd
-                | SyntaxKind::TerminalAndAnd
-                | SyntaxKind::TerminalOr
-                | SyntaxKind::TerminalOrOr
-                | SyntaxKind::TerminalXor
-                | SyntaxKind::TerminalLE
-                | SyntaxKind::TerminalGE
-                | SyntaxKind::TerminalLT
-                | SyntaxKind::TerminalGT
-                | SyntaxKind::TerminalDotDot
-                | SyntaxKind::TerminalDotDotEq
+            SyntaxKind::Terminal(LexemeKind::Dot)
+                | SyntaxKind::Terminal(LexemeKind::Not)
+                | SyntaxKind::Terminal(LexemeKind::Mul)
+                | SyntaxKind::Terminal(LexemeKind::MulEq)
+                | SyntaxKind::Terminal(LexemeKind::Div)
+                | SyntaxKind::Terminal(LexemeKind::DivEq)
+                | SyntaxKind::Terminal(LexemeKind::Mod)
+                | SyntaxKind::Terminal(LexemeKind::ModEq)
+                | SyntaxKind::Terminal(LexemeKind::Plus)
+                | SyntaxKind::Terminal(LexemeKind::PlusEq)
+                | SyntaxKind::Terminal(LexemeKind::Minus)
+                | SyntaxKind::Terminal(LexemeKind::MinusEq)
+                | SyntaxKind::Terminal(LexemeKind::EqEq)
+                | SyntaxKind::Terminal(LexemeKind::Neq)
+                | SyntaxKind::Terminal(LexemeKind::Eq)
+                | SyntaxKind::Terminal(LexemeKind::And)
+                | SyntaxKind::Terminal(LexemeKind::AndAnd)
+                | SyntaxKind::Terminal(LexemeKind::Or)
+                | SyntaxKind::Terminal(LexemeKind::OrOr)
+                | SyntaxKind::Terminal(LexemeKind::Xor)
+                | SyntaxKind::Terminal(LexemeKind::LE)
+                | SyntaxKind::Terminal(LexemeKind::GE)
+                | SyntaxKind::Terminal(LexemeKind::LT)
+                | SyntaxKind::Terminal(LexemeKind::GT)
+                | SyntaxKind::Terminal(LexemeKind::DotDot)
+                | SyntaxKind::Terminal(LexemeKind::DotDotEq)
         )
     }
 }
@@ -7411,7 +7480,7 @@ impl<'db> TypedSyntaxNode<'db> for WrappedArgList<'db> {
             SyntaxKind::ArgListBraced => {
                 WrappedArgList::BracedArgList(ArgListBraced::from_syntax_node(db, node))
             }
-            SyntaxKind::WrappedArgListMissing => {
+            SyntaxKind::Missing(MissingKind::WrappedArgList) => {
                 WrappedArgList::Missing(WrappedArgListMissing::from_syntax_node(db, node))
             }
             _ => {
@@ -7431,7 +7500,7 @@ impl<'db> TypedSyntaxNode<'db> for WrappedArgList<'db> {
             SyntaxKind::ArgListBraced => {
                 Some(WrappedArgList::BracedArgList(ArgListBraced::from_syntax_node(db, node)))
             }
-            SyntaxKind::WrappedArgListMissing => {
+            SyntaxKind::Missing(MissingKind::WrappedArgList) => {
                 Some(WrappedArgList::Missing(WrappedArgListMissing::from_syntax_node(db, node)))
             }
             _ => None,
@@ -7457,7 +7526,7 @@ impl<'db> WrappedArgList<'db> {
             SyntaxKind::ArgListBracketed
                 | SyntaxKind::ArgListParenthesized
                 | SyntaxKind::ArgListBraced
-                | SyntaxKind::WrappedArgListMissing
+                | SyntaxKind::Missing(MissingKind::WrappedArgList)
         )
     }
 }
@@ -7471,7 +7540,7 @@ impl<'db> WrappedArgListMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         WrappedArgListMissingGreen(
             GreenNode {
-                kind: SyntaxKind::WrappedArgListMissing,
+                kind: SyntaxKind::Missing(MissingKind::WrappedArgList),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -7499,13 +7568,14 @@ impl<'db> From<WrappedArgListMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct WrappedArgListMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for WrappedArgListMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedArgListMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> =
+        Some(SyntaxKind::Missing(MissingKind::WrappedArgList));
     type StablePtr = WrappedArgListMissingPtr<'db>;
     type Green = WrappedArgListMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         WrappedArgListMissingGreen(
             GreenNode {
-                kind: SyntaxKind::WrappedArgListMissing,
+                kind: SyntaxKind::Missing(MissingKind::WrappedArgList),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -7518,16 +7588,16 @@ impl<'db> TypedSyntaxNode<'db> for WrappedArgListMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::WrappedArgListMissing,
+            SyntaxKind::Missing(MissingKind::WrappedArgList),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::WrappedArgListMissing
+            SyntaxKind::Missing(MissingKind::WrappedArgList)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::WrappedArgListMissing {
+        if kind == SyntaxKind::Missing(MissingKind::WrappedArgList) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -7703,18 +7773,22 @@ impl<'db> TypedSyntaxNode<'db> for Pattern<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalUnderscore => {
+            SyntaxKind::Terminal(LexemeKind::Underscore) => {
                 Pattern::Underscore(TerminalUnderscore::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalLiteralNumber => {
+            SyntaxKind::Terminal(LexemeKind::LiteralNumber) => {
                 Pattern::Literal(TerminalLiteralNumber::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalFalse => Pattern::False(TerminalFalse::from_syntax_node(db, node)),
-            SyntaxKind::TerminalTrue => Pattern::True(TerminalTrue::from_syntax_node(db, node)),
-            SyntaxKind::TerminalShortString => {
+            SyntaxKind::Terminal(LexemeKind::False) => {
+                Pattern::False(TerminalFalse::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::True) => {
+                Pattern::True(TerminalTrue::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::ShortString) => {
                 Pattern::ShortString(TerminalShortString::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalString => {
+            SyntaxKind::Terminal(LexemeKind::String) => {
                 Pattern::String(TerminalString::from_syntax_node(db, node))
             }
             SyntaxKind::PatternIdentifier => {
@@ -7733,22 +7807,22 @@ impl<'db> TypedSyntaxNode<'db> for Pattern<'db> {
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalUnderscore => {
+            SyntaxKind::Terminal(LexemeKind::Underscore) => {
                 Some(Pattern::Underscore(TerminalUnderscore::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLiteralNumber => {
+            SyntaxKind::Terminal(LexemeKind::LiteralNumber) => {
                 Some(Pattern::Literal(TerminalLiteralNumber::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalFalse => {
+            SyntaxKind::Terminal(LexemeKind::False) => {
                 Some(Pattern::False(TerminalFalse::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalTrue => {
+            SyntaxKind::Terminal(LexemeKind::True) => {
                 Some(Pattern::True(TerminalTrue::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalShortString => {
+            SyntaxKind::Terminal(LexemeKind::ShortString) => {
                 Some(Pattern::ShortString(TerminalShortString::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalString => {
+            SyntaxKind::Terminal(LexemeKind::String) => {
                 Some(Pattern::String(TerminalString::from_syntax_node(db, node)))
             }
             SyntaxKind::PatternIdentifier => {
@@ -7793,12 +7867,12 @@ impl<'db> Pattern<'db> {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::TerminalUnderscore
-                | SyntaxKind::TerminalLiteralNumber
-                | SyntaxKind::TerminalFalse
-                | SyntaxKind::TerminalTrue
-                | SyntaxKind::TerminalShortString
-                | SyntaxKind::TerminalString
+            SyntaxKind::Terminal(LexemeKind::Underscore)
+                | SyntaxKind::Terminal(LexemeKind::LiteralNumber)
+                | SyntaxKind::Terminal(LexemeKind::False)
+                | SyntaxKind::Terminal(LexemeKind::True)
+                | SyntaxKind::Terminal(LexemeKind::ShortString)
+                | SyntaxKind::Terminal(LexemeKind::String)
                 | SyntaxKind::PatternIdentifier
                 | SyntaxKind::PatternStruct
                 | SyntaxKind::PatternTuple
@@ -8585,7 +8659,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternStructParam<'db> {
             SyntaxKind::PatternStructParamWithExpr => {
                 PatternStructParam::WithExpr(PatternStructParamWithExpr::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDotDot => {
+            SyntaxKind::Terminal(LexemeKind::DotDot) => {
                 PatternStructParam::Tail(TerminalDotDot::from_syntax_node(db, node))
             }
             _ => panic!(
@@ -8603,7 +8677,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternStructParam<'db> {
             SyntaxKind::PatternStructParamWithExpr => Some(PatternStructParam::WithExpr(
                 PatternStructParamWithExpr::from_syntax_node(db, node),
             )),
-            SyntaxKind::TerminalDotDot => {
+            SyntaxKind::Terminal(LexemeKind::DotDot) => {
                 Some(PatternStructParam::Tail(TerminalDotDot::from_syntax_node(db, node)))
             }
             _ => None,
@@ -8627,7 +8701,7 @@ impl<'db> PatternStructParam<'db> {
             kind,
             SyntaxKind::PatternIdentifier
                 | SyntaxKind::PatternStructParamWithExpr
-                | SyntaxKind::TerminalDotDot
+                | SyntaxKind::Terminal(LexemeKind::DotDot)
         )
     }
 }
@@ -9762,7 +9836,7 @@ impl<'db> TypedSyntaxNode<'db> for Statement<'db> {
                 Statement::Break(StatementBreak::from_syntax_node(db, node))
             }
             SyntaxKind::StatementItem => Statement::Item(StatementItem::from_syntax_node(db, node)),
-            SyntaxKind::StatementMissing => {
+            SyntaxKind::Missing(MissingKind::Statement) => {
                 Statement::Missing(StatementMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Statement"),
@@ -9789,7 +9863,7 @@ impl<'db> TypedSyntaxNode<'db> for Statement<'db> {
             SyntaxKind::StatementItem => {
                 Some(Statement::Item(StatementItem::from_syntax_node(db, node)))
             }
-            SyntaxKind::StatementMissing => {
+            SyntaxKind::Missing(MissingKind::Statement) => {
                 Some(Statement::Missing(StatementMissing::from_syntax_node(db, node)))
             }
             _ => None,
@@ -9821,7 +9895,7 @@ impl<'db> Statement<'db> {
                 | SyntaxKind::StatementReturn
                 | SyntaxKind::StatementBreak
                 | SyntaxKind::StatementItem
-                | SyntaxKind::StatementMissing
+                | SyntaxKind::Missing(MissingKind::Statement)
         )
     }
 }
@@ -9912,7 +9986,7 @@ impl<'db> StatementMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementMissingGreen(
             GreenNode {
-                kind: SyntaxKind::StatementMissing,
+                kind: SyntaxKind::Missing(MissingKind::Statement),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -9940,13 +10014,13 @@ impl<'db> From<StatementMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct StatementMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StatementMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Missing(MissingKind::Statement));
     type StablePtr = StatementMissingPtr<'db>;
     type Green = StatementMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         StatementMissingGreen(
             GreenNode {
-                kind: SyntaxKind::StatementMissing,
+                kind: SyntaxKind::Missing(MissingKind::Statement),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -9959,16 +10033,16 @@ impl<'db> TypedSyntaxNode<'db> for StatementMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::StatementMissing,
+            SyntaxKind::Missing(MissingKind::Statement),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::StatementMissing
+            SyntaxKind::Missing(MissingKind::Statement)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::StatementMissing {
+        if kind == SyntaxKind::Missing(MissingKind::Statement) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -10442,9 +10516,11 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalSemicolon<'db> {
             SyntaxKind::OptionTerminalSemicolonEmpty => OptionTerminalSemicolon::Empty(
                 OptionTerminalSemicolonEmpty::from_syntax_node(db, node),
             ),
-            SyntaxKind::TerminalSemicolon => OptionTerminalSemicolon::TerminalSemicolon(
-                TerminalSemicolon::from_syntax_node(db, node),
-            ),
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
+                OptionTerminalSemicolon::TerminalSemicolon(TerminalSemicolon::from_syntax_node(
+                    db, node,
+                ))
+            }
             _ => panic!(
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "OptionTerminalSemicolon"
@@ -10457,9 +10533,11 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalSemicolon<'db> {
             SyntaxKind::OptionTerminalSemicolonEmpty => Some(OptionTerminalSemicolon::Empty(
                 OptionTerminalSemicolonEmpty::from_syntax_node(db, node),
             )),
-            SyntaxKind::TerminalSemicolon => Some(OptionTerminalSemicolon::TerminalSemicolon(
-                TerminalSemicolon::from_syntax_node(db, node),
-            )),
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
+                Some(OptionTerminalSemicolon::TerminalSemicolon(
+                    TerminalSemicolon::from_syntax_node(db, node),
+                ))
+            }
             _ => None,
         }
     }
@@ -10476,7 +10554,10 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalSemicolon<'db> {
 impl<'db> OptionTerminalSemicolon<'db> {
     /// Checks if a kind of a variant of [OptionTerminalSemicolon].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::OptionTerminalSemicolonEmpty | SyntaxKind::TerminalSemicolon)
+        matches!(
+            kind,
+            SyntaxKind::OptionTerminalSemicolonEmpty | SyntaxKind::Terminal(LexemeKind::Semicolon)
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -11546,16 +11627,24 @@ impl<'db> TypedSyntaxNode<'db> for Modifier<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalRef => Modifier::Ref(TerminalRef::from_syntax_node(db, node)),
-            SyntaxKind::TerminalMut => Modifier::Mut(TerminalMut::from_syntax_node(db, node)),
+            SyntaxKind::Terminal(LexemeKind::Ref) => {
+                Modifier::Ref(TerminalRef::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::Mut) => {
+                Modifier::Mut(TerminalMut::from_syntax_node(db, node))
+            }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Modifier"),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalRef => Some(Modifier::Ref(TerminalRef::from_syntax_node(db, node))),
-            SyntaxKind::TerminalMut => Some(Modifier::Mut(TerminalMut::from_syntax_node(db, node))),
+            SyntaxKind::Terminal(LexemeKind::Ref) => {
+                Some(Modifier::Ref(TerminalRef::from_syntax_node(db, node)))
+            }
+            SyntaxKind::Terminal(LexemeKind::Mut) => {
+                Some(Modifier::Mut(TerminalMut::from_syntax_node(db, node)))
+            }
             _ => None,
         }
     }
@@ -11572,7 +11661,10 @@ impl<'db> TypedSyntaxNode<'db> for Modifier<'db> {
 impl<'db> Modifier<'db> {
     /// Checks if a kind of a variant of [Modifier].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::TerminalRef | SyntaxKind::TerminalMut)
+        matches!(
+            kind,
+            SyntaxKind::Terminal(LexemeKind::Ref) | SyntaxKind::Terminal(LexemeKind::Mut)
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -12111,7 +12203,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalNoPanic<'db> {
             SyntaxKind::OptionTerminalNoPanicEmpty => {
                 OptionTerminalNoPanic::Empty(OptionTerminalNoPanicEmpty::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalNoPanic => {
+            SyntaxKind::Terminal(LexemeKind::NoPanic) => {
                 OptionTerminalNoPanic::TerminalNoPanic(TerminalNoPanic::from_syntax_node(db, node))
             }
             _ => panic!(
@@ -12126,9 +12218,9 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalNoPanic<'db> {
             SyntaxKind::OptionTerminalNoPanicEmpty => Some(OptionTerminalNoPanic::Empty(
                 OptionTerminalNoPanicEmpty::from_syntax_node(db, node),
             )),
-            SyntaxKind::TerminalNoPanic => Some(OptionTerminalNoPanic::TerminalNoPanic(
-                TerminalNoPanic::from_syntax_node(db, node),
-            )),
+            SyntaxKind::Terminal(LexemeKind::NoPanic) => Some(
+                OptionTerminalNoPanic::TerminalNoPanic(TerminalNoPanic::from_syntax_node(db, node)),
+            ),
             _ => None,
         }
     }
@@ -12145,7 +12237,10 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalNoPanic<'db> {
 impl<'db> OptionTerminalNoPanic<'db> {
     /// Checks if a kind of a variant of [OptionTerminalNoPanic].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::OptionTerminalNoPanicEmpty | SyntaxKind::TerminalNoPanic)
+        matches!(
+            kind,
+            SyntaxKind::OptionTerminalNoPanicEmpty | SyntaxKind::Terminal(LexemeKind::NoPanic)
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -12283,7 +12378,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalConst<'db> {
             SyntaxKind::OptionTerminalConstEmpty => {
                 OptionTerminalConst::Empty(OptionTerminalConstEmpty::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalConst => {
+            SyntaxKind::Terminal(LexemeKind::Const) => {
                 OptionTerminalConst::TerminalConst(TerminalConst::from_syntax_node(db, node))
             }
             _ => panic!(
@@ -12298,7 +12393,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalConst<'db> {
             SyntaxKind::OptionTerminalConstEmpty => Some(OptionTerminalConst::Empty(
                 OptionTerminalConstEmpty::from_syntax_node(db, node),
             )),
-            SyntaxKind::TerminalConst => {
+            SyntaxKind::Terminal(LexemeKind::Const) => {
                 Some(OptionTerminalConst::TerminalConst(TerminalConst::from_syntax_node(db, node)))
             }
             _ => None,
@@ -12317,7 +12412,10 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalConst<'db> {
 impl<'db> OptionTerminalConst<'db> {
     /// Checks if a kind of a variant of [OptionTerminalConst].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::OptionTerminalConstEmpty | SyntaxKind::TerminalConst)
+        matches!(
+            kind,
+            SyntaxKind::OptionTerminalConstEmpty | SyntaxKind::Terminal(LexemeKind::Const)
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -13170,7 +13268,7 @@ impl<'db> TypedSyntaxNode<'db> for ModuleItem<'db> {
             SyntaxKind::ItemHeaderDoc => {
                 ModuleItem::HeaderDoc(ItemHeaderDoc::from_syntax_node(db, node))
             }
-            SyntaxKind::ModuleItemMissing => {
+            SyntaxKind::Missing(MissingKind::ModuleItem) => {
                 ModuleItem::Missing(ModuleItemMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "ModuleItem"),
@@ -13216,7 +13314,7 @@ impl<'db> TypedSyntaxNode<'db> for ModuleItem<'db> {
             SyntaxKind::ItemHeaderDoc => {
                 Some(ModuleItem::HeaderDoc(ItemHeaderDoc::from_syntax_node(db, node)))
             }
-            SyntaxKind::ModuleItemMissing => {
+            SyntaxKind::Missing(MissingKind::ModuleItem) => {
                 Some(ModuleItem::Missing(ModuleItemMissing::from_syntax_node(db, node)))
             }
             _ => None,
@@ -13266,7 +13364,7 @@ impl<'db> ModuleItem<'db> {
                 | SyntaxKind::ItemInlineMacro
                 | SyntaxKind::ItemMacroDeclaration
                 | SyntaxKind::ItemHeaderDoc
-                | SyntaxKind::ModuleItemMissing
+                | SyntaxKind::Missing(MissingKind::ModuleItem)
         )
     }
 }
@@ -13357,7 +13455,7 @@ impl<'db> ModuleItemMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ModuleItemMissingGreen(
             GreenNode {
-                kind: SyntaxKind::ModuleItemMissing,
+                kind: SyntaxKind::Missing(MissingKind::ModuleItem),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -13385,13 +13483,13 @@ impl<'db> From<ModuleItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct ModuleItemMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ModuleItemMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModuleItemMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Missing(MissingKind::ModuleItem));
     type StablePtr = ModuleItemMissingPtr<'db>;
     type Green = ModuleItemMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         ModuleItemMissingGreen(
             GreenNode {
-                kind: SyntaxKind::ModuleItemMissing,
+                kind: SyntaxKind::Missing(MissingKind::ModuleItem),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -13404,16 +13502,16 @@ impl<'db> TypedSyntaxNode<'db> for ModuleItemMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ModuleItemMissing,
+            SyntaxKind::Missing(MissingKind::ModuleItem),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ModuleItemMissing
+            SyntaxKind::Missing(MissingKind::ModuleItem)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::ModuleItemMissing {
+        if kind == SyntaxKind::Missing(MissingKind::ModuleItem) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -14337,7 +14435,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeModuleBody<'db> {
         let kind = node.kind(db);
         match kind {
             SyntaxKind::ModuleBody => MaybeModuleBody::Some(ModuleBody::from_syntax_node(db, node)),
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 MaybeModuleBody::None(TerminalSemicolon::from_syntax_node(db, node))
             }
             _ => {
@@ -14351,7 +14449,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeModuleBody<'db> {
             SyntaxKind::ModuleBody => {
                 Some(MaybeModuleBody::Some(ModuleBody::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 Some(MaybeModuleBody::None(TerminalSemicolon::from_syntax_node(db, node)))
             }
             _ => None,
@@ -14370,7 +14468,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeModuleBody<'db> {
 impl<'db> MaybeModuleBody<'db> {
     /// Checks if a kind of a variant of [MaybeModuleBody].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::ModuleBody | SyntaxKind::TerminalSemicolon)
+        matches!(kind, SyntaxKind::ModuleBody | SyntaxKind::Terminal(LexemeKind::Semicolon))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -15272,7 +15370,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeTraitBody<'db> {
         let kind = node.kind(db);
         match kind {
             SyntaxKind::TraitBody => MaybeTraitBody::Some(TraitBody::from_syntax_node(db, node)),
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 MaybeTraitBody::None(TerminalSemicolon::from_syntax_node(db, node))
             }
             _ => {
@@ -15286,7 +15384,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeTraitBody<'db> {
             SyntaxKind::TraitBody => {
                 Some(MaybeTraitBody::Some(TraitBody::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 Some(MaybeTraitBody::None(TerminalSemicolon::from_syntax_node(db, node)))
             }
             _ => None,
@@ -15305,7 +15403,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeTraitBody<'db> {
 impl<'db> MaybeTraitBody<'db> {
     /// Checks if a kind of a variant of [MaybeTraitBody].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::TraitBody | SyntaxKind::TerminalSemicolon)
+        matches!(kind, SyntaxKind::TraitBody | SyntaxKind::Terminal(LexemeKind::Semicolon))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -15577,7 +15675,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItem<'db> {
                 TraitItem::Constant(TraitItemConstant::from_syntax_node(db, node))
             }
             SyntaxKind::TraitItemImpl => TraitItem::Impl(TraitItemImpl::from_syntax_node(db, node)),
-            SyntaxKind::TraitItemMissing => {
+            SyntaxKind::Missing(MissingKind::TraitItem) => {
                 TraitItem::Missing(TraitItemMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TraitItem"),
@@ -15598,7 +15696,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItem<'db> {
             SyntaxKind::TraitItemImpl => {
                 Some(TraitItem::Impl(TraitItemImpl::from_syntax_node(db, node)))
             }
-            SyntaxKind::TraitItemMissing => {
+            SyntaxKind::Missing(MissingKind::TraitItem) => {
                 Some(TraitItem::Missing(TraitItemMissing::from_syntax_node(db, node)))
             }
             _ => None,
@@ -15626,7 +15724,7 @@ impl<'db> TraitItem<'db> {
                 | SyntaxKind::TraitItemType
                 | SyntaxKind::TraitItemConstant
                 | SyntaxKind::TraitItemImpl
-                | SyntaxKind::TraitItemMissing
+                | SyntaxKind::Missing(MissingKind::TraitItem)
         )
     }
 }
@@ -15640,7 +15738,7 @@ impl<'db> TraitItemMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemMissingGreen(
             GreenNode {
-                kind: SyntaxKind::TraitItemMissing,
+                kind: SyntaxKind::Missing(MissingKind::TraitItem),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -15668,13 +15766,13 @@ impl<'db> From<TraitItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TraitItemMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TraitItemMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Missing(MissingKind::TraitItem));
     type StablePtr = TraitItemMissingPtr<'db>;
     type Green = TraitItemMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TraitItemMissingGreen(
             GreenNode {
-                kind: SyntaxKind::TraitItemMissing,
+                kind: SyntaxKind::Missing(MissingKind::TraitItem),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -15687,16 +15785,16 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TraitItemMissing,
+            SyntaxKind::Missing(MissingKind::TraitItem),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TraitItemMissing
+            SyntaxKind::Missing(MissingKind::TraitItem)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TraitItemMissing {
+        if kind == SyntaxKind::Missing(MissingKind::TraitItem) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -16231,7 +16329,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeTraitFunctionBody<'db> {
             SyntaxKind::ExprBlock => {
                 MaybeTraitFunctionBody::Some(ExprBlock::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 MaybeTraitFunctionBody::None(TerminalSemicolon::from_syntax_node(db, node))
             }
             _ => panic!(
@@ -16246,7 +16344,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeTraitFunctionBody<'db> {
             SyntaxKind::ExprBlock => {
                 Some(MaybeTraitFunctionBody::Some(ExprBlock::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 Some(MaybeTraitFunctionBody::None(TerminalSemicolon::from_syntax_node(db, node)))
             }
             _ => None,
@@ -16265,7 +16363,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeTraitFunctionBody<'db> {
 impl<'db> MaybeTraitFunctionBody<'db> {
     /// Checks if a kind of a variant of [MaybeTraitFunctionBody].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::ExprBlock | SyntaxKind::TerminalSemicolon)
+        matches!(kind, SyntaxKind::ExprBlock | SyntaxKind::Terminal(LexemeKind::Semicolon))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -16550,7 +16648,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeImplBody<'db> {
         let kind = node.kind(db);
         match kind {
             SyntaxKind::ImplBody => MaybeImplBody::Some(ImplBody::from_syntax_node(db, node)),
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 MaybeImplBody::None(TerminalSemicolon::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "MaybeImplBody"),
@@ -16560,7 +16658,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeImplBody<'db> {
         let kind = node.kind(db);
         match kind {
             SyntaxKind::ImplBody => Some(MaybeImplBody::Some(ImplBody::from_syntax_node(db, node))),
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 Some(MaybeImplBody::None(TerminalSemicolon::from_syntax_node(db, node)))
             }
             _ => None,
@@ -16579,7 +16677,7 @@ impl<'db> TypedSyntaxNode<'db> for MaybeImplBody<'db> {
 impl<'db> MaybeImplBody<'db> {
     /// Checks if a kind of a variant of [MaybeImplBody].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::ImplBody | SyntaxKind::TerminalSemicolon)
+        matches!(kind, SyntaxKind::ImplBody | SyntaxKind::Terminal(LexemeKind::Semicolon))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -16939,7 +17037,7 @@ impl<'db> TypedSyntaxNode<'db> for ImplItem<'db> {
             SyntaxKind::ItemTrait => ImplItem::Trait(ItemTrait::from_syntax_node(db, node)),
             SyntaxKind::ItemStruct => ImplItem::Struct(ItemStruct::from_syntax_node(db, node)),
             SyntaxKind::ItemEnum => ImplItem::Enum(ItemEnum::from_syntax_node(db, node)),
-            SyntaxKind::ImplItemMissing => {
+            SyntaxKind::Missing(MissingKind::ImplItem) => {
                 ImplItem::Missing(ImplItemMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "ImplItem"),
@@ -16975,7 +17073,7 @@ impl<'db> TypedSyntaxNode<'db> for ImplItem<'db> {
                 Some(ImplItem::Struct(ItemStruct::from_syntax_node(db, node)))
             }
             SyntaxKind::ItemEnum => Some(ImplItem::Enum(ItemEnum::from_syntax_node(db, node))),
-            SyntaxKind::ImplItemMissing => {
+            SyntaxKind::Missing(MissingKind::ImplItem) => {
                 Some(ImplItem::Missing(ImplItemMissing::from_syntax_node(db, node)))
             }
             _ => None,
@@ -17017,7 +17115,7 @@ impl<'db> ImplItem<'db> {
                 | SyntaxKind::ItemTrait
                 | SyntaxKind::ItemStruct
                 | SyntaxKind::ItemEnum
-                | SyntaxKind::ImplItemMissing
+                | SyntaxKind::Missing(MissingKind::ImplItem)
         )
     }
 }
@@ -17031,7 +17129,7 @@ impl<'db> ImplItemMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ImplItemMissingGreen(
             GreenNode {
-                kind: SyntaxKind::ImplItemMissing,
+                kind: SyntaxKind::Missing(MissingKind::ImplItem),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -17059,13 +17157,13 @@ impl<'db> From<ImplItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct ImplItemMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ImplItemMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplItemMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Missing(MissingKind::ImplItem));
     type StablePtr = ImplItemMissingPtr<'db>;
     type Green = ImplItemMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         ImplItemMissingGreen(
             GreenNode {
-                kind: SyntaxKind::ImplItemMissing,
+                kind: SyntaxKind::Missing(MissingKind::ImplItem),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -17078,16 +17176,16 @@ impl<'db> TypedSyntaxNode<'db> for ImplItemMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ImplItemMissing,
+            SyntaxKind::Missing(MissingKind::ImplItem),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ImplItemMissing
+            SyntaxKind::Missing(MissingKind::ImplItem)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::ImplItemMissing {
+        if kind == SyntaxKind::Missing(MissingKind::ImplItem) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -21237,7 +21335,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTree<'db> {
             SyntaxKind::TokenTreeParam => {
                 TokenTree::Param(TokenTreeParam::from_syntax_node(db, node))
             }
-            SyntaxKind::TokenTreeMissing => {
+            SyntaxKind::Missing(MissingKind::TokenTree) => {
                 TokenTree::Missing(TokenTreeMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TokenTree"),
@@ -21258,7 +21356,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTree<'db> {
             SyntaxKind::TokenTreeParam => {
                 Some(TokenTree::Param(TokenTreeParam::from_syntax_node(db, node)))
             }
-            SyntaxKind::TokenTreeMissing => {
+            SyntaxKind::Missing(MissingKind::TokenTree) => {
                 Some(TokenTree::Missing(TokenTreeMissing::from_syntax_node(db, node)))
             }
             _ => None,
@@ -21286,7 +21384,7 @@ impl<'db> TokenTree<'db> {
                 | SyntaxKind::TokenTreeNode
                 | SyntaxKind::TokenTreeRepetition
                 | SyntaxKind::TokenTreeParam
-                | SyntaxKind::TokenTreeMissing
+                | SyntaxKind::Missing(MissingKind::TokenTree)
         )
     }
 }
@@ -21300,7 +21398,7 @@ impl<'db> TokenTreeMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeMissingGreen(
             GreenNode {
-                kind: SyntaxKind::TokenTreeMissing,
+                kind: SyntaxKind::Missing(MissingKind::TokenTree),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -21328,13 +21426,13 @@ impl<'db> From<TokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TokenTreeMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Missing(MissingKind::TokenTree));
     type StablePtr = TokenTreeMissingPtr<'db>;
     type Green = TokenTreeMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenTreeMissingGreen(
             GreenNode {
-                kind: SyntaxKind::TokenTreeMissing,
+                kind: SyntaxKind::Missing(MissingKind::TokenTree),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -21347,16 +21445,16 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TokenTreeMissing,
+            SyntaxKind::Missing(MissingKind::TokenTree),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TokenTreeMissing
+            SyntaxKind::Missing(MissingKind::TokenTree)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TokenTreeMissing {
+        if kind == SyntaxKind::Missing(MissingKind::TokenTree) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -21453,7 +21551,7 @@ impl<'db> TypedSyntaxNode<'db> for WrappedTokenTree<'db> {
             SyntaxKind::BracketedTokenTree => {
                 WrappedTokenTree::Bracketed(BracketedTokenTree::from_syntax_node(db, node))
             }
-            SyntaxKind::WrappedTokenTreeMissing => {
+            SyntaxKind::Missing(MissingKind::WrappedTokenTree) => {
                 WrappedTokenTree::Missing(WrappedTokenTreeMissing::from_syntax_node(db, node))
             }
             _ => panic!(
@@ -21474,7 +21572,7 @@ impl<'db> TypedSyntaxNode<'db> for WrappedTokenTree<'db> {
             SyntaxKind::BracketedTokenTree => {
                 Some(WrappedTokenTree::Bracketed(BracketedTokenTree::from_syntax_node(db, node)))
             }
-            SyntaxKind::WrappedTokenTreeMissing => {
+            SyntaxKind::Missing(MissingKind::WrappedTokenTree) => {
                 Some(WrappedTokenTree::Missing(WrappedTokenTreeMissing::from_syntax_node(db, node)))
             }
             _ => None,
@@ -21500,7 +21598,7 @@ impl<'db> WrappedTokenTree<'db> {
             SyntaxKind::ParenthesizedTokenTree
                 | SyntaxKind::BracedTokenTree
                 | SyntaxKind::BracketedTokenTree
-                | SyntaxKind::WrappedTokenTreeMissing
+                | SyntaxKind::Missing(MissingKind::WrappedTokenTree)
         )
     }
 }
@@ -21514,7 +21612,7 @@ impl<'db> WrappedTokenTreeMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         WrappedTokenTreeMissingGreen(
             GreenNode {
-                kind: SyntaxKind::WrappedTokenTreeMissing,
+                kind: SyntaxKind::Missing(MissingKind::WrappedTokenTree),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -21542,13 +21640,14 @@ impl<'db> From<WrappedTokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct WrappedTokenTreeMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for WrappedTokenTreeMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedTokenTreeMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> =
+        Some(SyntaxKind::Missing(MissingKind::WrappedTokenTree));
     type StablePtr = WrappedTokenTreeMissingPtr<'db>;
     type Green = WrappedTokenTreeMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         WrappedTokenTreeMissingGreen(
             GreenNode {
-                kind: SyntaxKind::WrappedTokenTreeMissing,
+                kind: SyntaxKind::Missing(MissingKind::WrappedTokenTree),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -21561,16 +21660,16 @@ impl<'db> TypedSyntaxNode<'db> for WrappedTokenTreeMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::WrappedTokenTreeMissing,
+            SyntaxKind::Missing(MissingKind::WrappedTokenTree),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::WrappedTokenTreeMissing
+            SyntaxKind::Missing(MissingKind::WrappedTokenTree)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::WrappedTokenTreeMissing {
+        if kind == SyntaxKind::Missing(MissingKind::WrappedTokenTree) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -22950,7 +23049,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalComma<'db> {
             SyntaxKind::OptionTerminalCommaEmpty => {
                 OptionTerminalComma::Empty(OptionTerminalCommaEmpty::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalComma => {
+            SyntaxKind::Terminal(LexemeKind::Comma) => {
                 OptionTerminalComma::TerminalComma(TerminalComma::from_syntax_node(db, node))
             }
             _ => panic!(
@@ -22965,7 +23064,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalComma<'db> {
             SyntaxKind::OptionTerminalCommaEmpty => Some(OptionTerminalComma::Empty(
                 OptionTerminalCommaEmpty::from_syntax_node(db, node),
             )),
-            SyntaxKind::TerminalComma => {
+            SyntaxKind::Terminal(LexemeKind::Comma) => {
                 Some(OptionTerminalComma::TerminalComma(TerminalComma::from_syntax_node(db, node)))
             }
             _ => None,
@@ -22984,7 +23083,10 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalComma<'db> {
 impl<'db> OptionTerminalComma<'db> {
     /// Checks if a kind of a variant of [OptionTerminalComma].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::OptionTerminalCommaEmpty | SyntaxKind::TerminalComma)
+        matches!(
+            kind,
+            SyntaxKind::OptionTerminalCommaEmpty | SyntaxKind::Terminal(LexemeKind::Comma)
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -23141,18 +23243,20 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperator<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalQuestionMark => {
+            SyntaxKind::Terminal(LexemeKind::QuestionMark) => {
                 MacroRepetitionOperator::ZeroOrOne(TerminalQuestionMark::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalPlus => {
+            SyntaxKind::Terminal(LexemeKind::Plus) => {
                 MacroRepetitionOperator::OneOrMore(TerminalPlus::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMul => {
+            SyntaxKind::Terminal(LexemeKind::Mul) => {
                 MacroRepetitionOperator::ZeroOrMore(TerminalMul::from_syntax_node(db, node))
             }
-            SyntaxKind::MacroRepetitionOperatorMissing => MacroRepetitionOperator::Missing(
-                MacroRepetitionOperatorMissing::from_syntax_node(db, node),
-            ),
+            SyntaxKind::Missing(MissingKind::MacroRepetitionOperator) => {
+                MacroRepetitionOperator::Missing(MacroRepetitionOperatorMissing::from_syntax_node(
+                    db, node,
+                ))
+            }
             _ => panic!(
                 "Unexpected syntax kind {:?} when constructing {}.",
                 kind, "MacroRepetitionOperator"
@@ -23162,18 +23266,22 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperator<'db> {
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalQuestionMark => Some(MacroRepetitionOperator::ZeroOrOne(
-                TerminalQuestionMark::from_syntax_node(db, node),
-            )),
-            SyntaxKind::TerminalPlus => {
+            SyntaxKind::Terminal(LexemeKind::QuestionMark) => {
+                Some(MacroRepetitionOperator::ZeroOrOne(TerminalQuestionMark::from_syntax_node(
+                    db, node,
+                )))
+            }
+            SyntaxKind::Terminal(LexemeKind::Plus) => {
                 Some(MacroRepetitionOperator::OneOrMore(TerminalPlus::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMul => {
+            SyntaxKind::Terminal(LexemeKind::Mul) => {
                 Some(MacroRepetitionOperator::ZeroOrMore(TerminalMul::from_syntax_node(db, node)))
             }
-            SyntaxKind::MacroRepetitionOperatorMissing => Some(MacroRepetitionOperator::Missing(
-                MacroRepetitionOperatorMissing::from_syntax_node(db, node),
-            )),
+            SyntaxKind::Missing(MissingKind::MacroRepetitionOperator) => {
+                Some(MacroRepetitionOperator::Missing(
+                    MacroRepetitionOperatorMissing::from_syntax_node(db, node),
+                ))
+            }
             _ => None,
         }
     }
@@ -23194,10 +23302,10 @@ impl<'db> MacroRepetitionOperator<'db> {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::TerminalQuestionMark
-                | SyntaxKind::TerminalPlus
-                | SyntaxKind::TerminalMul
-                | SyntaxKind::MacroRepetitionOperatorMissing
+            SyntaxKind::Terminal(LexemeKind::QuestionMark)
+                | SyntaxKind::Terminal(LexemeKind::Plus)
+                | SyntaxKind::Terminal(LexemeKind::Mul)
+                | SyntaxKind::Missing(MissingKind::MacroRepetitionOperator)
         )
     }
 }
@@ -23211,7 +23319,7 @@ impl<'db> MacroRepetitionOperatorMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroRepetitionOperatorMissingGreen(
             GreenNode {
-                kind: SyntaxKind::MacroRepetitionOperatorMissing,
+                kind: SyntaxKind::Missing(MissingKind::MacroRepetitionOperator),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -23239,13 +23347,14 @@ impl<'db> From<MacroRepetitionOperatorMissingPtr<'db>> for SyntaxStablePtrId<'db
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct MacroRepetitionOperatorMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperatorMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRepetitionOperatorMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> =
+        Some(SyntaxKind::Missing(MissingKind::MacroRepetitionOperator));
     type StablePtr = MacroRepetitionOperatorMissingPtr<'db>;
     type Green = MacroRepetitionOperatorMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         MacroRepetitionOperatorMissingGreen(
             GreenNode {
-                kind: SyntaxKind::MacroRepetitionOperatorMissing,
+                kind: SyntaxKind::Missing(MissingKind::MacroRepetitionOperator),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -23258,16 +23367,16 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperatorMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::MacroRepetitionOperatorMissing,
+            SyntaxKind::Missing(MissingKind::MacroRepetitionOperator),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::MacroRepetitionOperatorMissing
+            SyntaxKind::Missing(MissingKind::MacroRepetitionOperator)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::MacroRepetitionOperatorMissing {
+        if kind == SyntaxKind::Missing(MissingKind::MacroRepetitionOperator) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -23514,7 +23623,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroParamKind<'db> {
                 MacroParamKind::Identifier(ParamIdent::from_syntax_node(db, node))
             }
             SyntaxKind::ParamExpr => MacroParamKind::Expr(ParamExpr::from_syntax_node(db, node)),
-            SyntaxKind::MacroParamKindMissing => {
+            SyntaxKind::Missing(MissingKind::MacroParamKind) => {
                 MacroParamKind::Missing(MacroParamKindMissing::from_syntax_node(db, node))
             }
             _ => {
@@ -23531,7 +23640,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroParamKind<'db> {
             SyntaxKind::ParamExpr => {
                 Some(MacroParamKind::Expr(ParamExpr::from_syntax_node(db, node)))
             }
-            SyntaxKind::MacroParamKindMissing => {
+            SyntaxKind::Missing(MissingKind::MacroParamKind) => {
                 Some(MacroParamKind::Missing(MacroParamKindMissing::from_syntax_node(db, node)))
             }
             _ => None,
@@ -23553,7 +23662,9 @@ impl<'db> MacroParamKind<'db> {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::ParamIdent | SyntaxKind::ParamExpr | SyntaxKind::MacroParamKindMissing
+            SyntaxKind::ParamIdent
+                | SyntaxKind::ParamExpr
+                | SyntaxKind::Missing(MissingKind::MacroParamKind)
         )
     }
 }
@@ -23567,7 +23678,7 @@ impl<'db> MacroParamKindMissing<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroParamKindMissingGreen(
             GreenNode {
-                kind: SyntaxKind::MacroParamKindMissing,
+                kind: SyntaxKind::Missing(MissingKind::MacroParamKind),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -23595,13 +23706,14 @@ impl<'db> From<MacroParamKindMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct MacroParamKindMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroParamKindMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroParamKindMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> =
+        Some(SyntaxKind::Missing(MissingKind::MacroParamKind));
     type StablePtr = MacroParamKindMissingPtr<'db>;
     type Green = MacroParamKindMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         MacroParamKindMissingGreen(
             GreenNode {
-                kind: SyntaxKind::MacroParamKindMissing,
+                kind: SyntaxKind::Missing(MissingKind::MacroParamKind),
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -23614,16 +23726,16 @@ impl<'db> TypedSyntaxNode<'db> for MacroParamKindMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::MacroParamKindMissing,
+            SyntaxKind::Missing(MissingKind::MacroParamKind),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::MacroParamKindMissing
+            SyntaxKind::Missing(MissingKind::MacroParamKind)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::MacroParamKindMissing {
+        if kind == SyntaxKind::Missing(MissingKind::MacroParamKind) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -24755,8 +24867,11 @@ pub struct TokenIdentifier<'db> {
 impl<'db> Token<'db> for TokenIdentifier<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenIdentifierGreen(
-            GreenNode { kind: SyntaxKind::TokenIdentifier, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Identifier),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -24787,13 +24902,13 @@ impl<'db> TokenIdentifierGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenIdentifier);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Identifier));
     type StablePtr = TokenIdentifierPtr<'db>;
     type Green = TokenIdentifierGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenIdentifierGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -24802,9 +24917,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenIdentifier)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Identifier)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -24825,7 +24941,7 @@ pub struct TerminalIdentifier<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalIdentifier<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalIdentifier;
+    const KIND: LexemeKind = LexemeKind::Identifier;
     type TokenType = TokenIdentifier<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -24837,7 +24953,7 @@ impl<'db> Terminal<'db> for TerminalIdentifier<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalIdentifierGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalIdentifier,
+                kind: SyntaxKind::Terminal(LexemeKind::Identifier),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -24881,13 +24997,13 @@ impl<'db> From<TerminalIdentifierPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalIdentifierGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalIdentifier<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalIdentifier);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Identifier));
     type StablePtr = TerminalIdentifierPtr<'db>;
     type Green = TerminalIdentifierGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalIdentifierGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalIdentifier,
+                kind: SyntaxKind::Terminal(LexemeKind::Identifier),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -24905,16 +25021,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIdentifier<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalIdentifier,
+            SyntaxKind::Terminal(LexemeKind::Identifier),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalIdentifier
+            SyntaxKind::Terminal(LexemeKind::Identifier)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalIdentifier {
+        if kind == SyntaxKind::Terminal(LexemeKind::Identifier) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -24935,7 +25051,7 @@ impl<'db> Token<'db> for TokenLiteralNumber<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenLiteralNumberGreen(
             GreenNode {
-                kind: SyntaxKind::TokenLiteralNumber,
+                kind: SyntaxKind::Token(LexemeKind::LiteralNumber),
                 details: GreenNodeDetails::Token(text),
             }
             .intern(db),
@@ -24969,13 +25085,13 @@ impl<'db> TokenLiteralNumberGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLiteralNumber);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::LiteralNumber));
     type StablePtr = TokenLiteralNumberPtr<'db>;
     type Green = TokenLiteralNumberGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLiteralNumberGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -24986,7 +25102,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
-                SyntaxKind::TokenLiteralNumber
+                SyntaxKind::Token(LexemeKind::LiteralNumber)
             ),
         }
     }
@@ -25008,7 +25124,7 @@ pub struct TerminalLiteralNumber<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalLiteralNumber<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalLiteralNumber;
+    const KIND: LexemeKind = LexemeKind::LiteralNumber;
     type TokenType = TokenLiteralNumber<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -25020,7 +25136,7 @@ impl<'db> Terminal<'db> for TerminalLiteralNumber<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLiteralNumberGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLiteralNumber,
+                kind: SyntaxKind::Terminal(LexemeKind::LiteralNumber),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -25064,13 +25180,13 @@ impl<'db> From<TerminalLiteralNumberPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalLiteralNumberGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLiteralNumber<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLiteralNumber);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::LiteralNumber));
     type StablePtr = TerminalLiteralNumberPtr<'db>;
     type Green = TerminalLiteralNumberGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalLiteralNumberGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLiteralNumber,
+                kind: SyntaxKind::Terminal(LexemeKind::LiteralNumber),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -25088,16 +25204,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLiteralNumber<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalLiteralNumber,
+            SyntaxKind::Terminal(LexemeKind::LiteralNumber),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalLiteralNumber
+            SyntaxKind::Terminal(LexemeKind::LiteralNumber)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalLiteralNumber {
+        if kind == SyntaxKind::Terminal(LexemeKind::LiteralNumber) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -25118,7 +25234,7 @@ impl<'db> Token<'db> for TokenShortString<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenShortStringGreen(
             GreenNode {
-                kind: SyntaxKind::TokenShortString,
+                kind: SyntaxKind::Token(LexemeKind::ShortString),
                 details: GreenNodeDetails::Token(text),
             }
             .intern(db),
@@ -25152,13 +25268,13 @@ impl<'db> TokenShortStringGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenShortString);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::ShortString));
     type StablePtr = TokenShortStringPtr<'db>;
     type Green = TokenShortStringGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenShortStringGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -25167,9 +25283,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenShortString)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::ShortString)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -25190,7 +25307,7 @@ pub struct TerminalShortString<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalShortString<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalShortString;
+    const KIND: LexemeKind = LexemeKind::ShortString;
     type TokenType = TokenShortString<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -25202,7 +25319,7 @@ impl<'db> Terminal<'db> for TerminalShortString<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalShortStringGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalShortString,
+                kind: SyntaxKind::Terminal(LexemeKind::ShortString),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -25246,13 +25363,13 @@ impl<'db> From<TerminalShortStringPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalShortStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalShortString<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalShortString);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::ShortString));
     type StablePtr = TerminalShortStringPtr<'db>;
     type Green = TerminalShortStringGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalShortStringGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalShortString,
+                kind: SyntaxKind::Terminal(LexemeKind::ShortString),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -25270,16 +25387,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalShortString<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalShortString,
+            SyntaxKind::Terminal(LexemeKind::ShortString),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalShortString
+            SyntaxKind::Terminal(LexemeKind::ShortString)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalShortString {
+        if kind == SyntaxKind::Terminal(LexemeKind::ShortString) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -25299,8 +25416,11 @@ pub struct TokenString<'db> {
 impl<'db> Token<'db> for TokenString<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenStringGreen(
-            GreenNode { kind: SyntaxKind::TokenString, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::String),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -25331,13 +25451,13 @@ impl<'db> TokenStringGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenString);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::String));
     type StablePtr = TokenStringPtr<'db>;
     type Green = TokenStringGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenStringGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -25346,9 +25466,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenString)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::String)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -25369,7 +25490,7 @@ pub struct TerminalString<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalString<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalString;
+    const KIND: LexemeKind = LexemeKind::String;
     type TokenType = TokenString<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -25381,7 +25502,7 @@ impl<'db> Terminal<'db> for TerminalString<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalStringGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalString,
+                kind: SyntaxKind::Terminal(LexemeKind::String),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -25425,13 +25546,13 @@ impl<'db> From<TerminalStringPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalString<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalString);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::String));
     type StablePtr = TerminalStringPtr<'db>;
     type Green = TerminalStringGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalStringGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalString,
+                kind: SyntaxKind::Terminal(LexemeKind::String),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -25449,16 +25570,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalString<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalString,
+            SyntaxKind::Terminal(LexemeKind::String),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalString
+            SyntaxKind::Terminal(LexemeKind::String)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalString {
+        if kind == SyntaxKind::Terminal(LexemeKind::String) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -25478,8 +25599,11 @@ pub struct TokenAs<'db> {
 impl<'db> Token<'db> for TokenAs<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenAsGreen(
-            GreenNode { kind: SyntaxKind::TokenAs, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::As),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -25510,13 +25634,13 @@ impl<'db> TokenAsGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAs);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::As));
     type StablePtr = TokenAsPtr<'db>;
     type Green = TokenAsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenAsGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -25525,9 +25649,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAs)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::As)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -25548,7 +25673,7 @@ pub struct TerminalAs<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalAs<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalAs;
+    const KIND: LexemeKind = LexemeKind::As;
     type TokenType = TokenAs<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -25560,7 +25685,7 @@ impl<'db> Terminal<'db> for TerminalAs<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAsGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalAs,
+                kind: SyntaxKind::Terminal(LexemeKind::As),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -25604,13 +25729,13 @@ impl<'db> From<TerminalAsPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalAsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalAs<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAs);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::As));
     type StablePtr = TerminalAsPtr<'db>;
     type Green = TerminalAsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalAsGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalAs,
+                kind: SyntaxKind::Terminal(LexemeKind::As),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -25628,16 +25753,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAs<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalAs,
+            SyntaxKind::Terminal(LexemeKind::As),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalAs
+            SyntaxKind::Terminal(LexemeKind::As)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalAs { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::As) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -25653,8 +25782,11 @@ pub struct TokenConst<'db> {
 impl<'db> Token<'db> for TokenConst<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenConstGreen(
-            GreenNode { kind: SyntaxKind::TokenConst, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Const),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -25685,13 +25817,13 @@ impl<'db> TokenConstGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenConst);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Const));
     type StablePtr = TokenConstPtr<'db>;
     type Green = TokenConstGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenConstGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -25700,9 +25832,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenConst)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Const)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -25723,7 +25856,7 @@ pub struct TerminalConst<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalConst<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalConst;
+    const KIND: LexemeKind = LexemeKind::Const;
     type TokenType = TokenConst<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -25735,7 +25868,7 @@ impl<'db> Terminal<'db> for TerminalConst<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalConstGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalConst,
+                kind: SyntaxKind::Terminal(LexemeKind::Const),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -25779,13 +25912,13 @@ impl<'db> From<TerminalConstPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalConstGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalConst<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalConst);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Const));
     type StablePtr = TerminalConstPtr<'db>;
     type Green = TerminalConstGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalConstGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalConst,
+                kind: SyntaxKind::Terminal(LexemeKind::Const),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -25803,16 +25936,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalConst<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalConst,
+            SyntaxKind::Terminal(LexemeKind::Const),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalConst
+            SyntaxKind::Terminal(LexemeKind::Const)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalConst {
+        if kind == SyntaxKind::Terminal(LexemeKind::Const) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -25832,8 +25965,11 @@ pub struct TokenElse<'db> {
 impl<'db> Token<'db> for TokenElse<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenElseGreen(
-            GreenNode { kind: SyntaxKind::TokenElse, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Else),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -25864,13 +26000,13 @@ impl<'db> TokenElseGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenElse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Else));
     type StablePtr = TokenElsePtr<'db>;
     type Green = TokenElseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenElseGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -25879,9 +26015,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenElse)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Else)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -25902,7 +26039,7 @@ pub struct TerminalElse<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalElse<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalElse;
+    const KIND: LexemeKind = LexemeKind::Else;
     type TokenType = TokenElse<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -25914,7 +26051,7 @@ impl<'db> Terminal<'db> for TerminalElse<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalElseGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalElse,
+                kind: SyntaxKind::Terminal(LexemeKind::Else),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -25958,13 +26095,13 @@ impl<'db> From<TerminalElsePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalElseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalElse<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalElse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Else));
     type StablePtr = TerminalElsePtr<'db>;
     type Green = TerminalElseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalElseGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalElse,
+                kind: SyntaxKind::Terminal(LexemeKind::Else),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -25982,16 +26119,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalElse<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalElse,
+            SyntaxKind::Terminal(LexemeKind::Else),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalElse
+            SyntaxKind::Terminal(LexemeKind::Else)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalElse { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Else) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -26007,8 +26148,11 @@ pub struct TokenEnum<'db> {
 impl<'db> Token<'db> for TokenEnum<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenEnumGreen(
-            GreenNode { kind: SyntaxKind::TokenEnum, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Enum),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26039,13 +26183,13 @@ impl<'db> TokenEnumGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEnum);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Enum));
     type StablePtr = TokenEnumPtr<'db>;
     type Green = TokenEnumGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEnumGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -26054,9 +26198,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEnum)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Enum)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -26077,7 +26222,7 @@ pub struct TerminalEnum<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalEnum<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalEnum;
+    const KIND: LexemeKind = LexemeKind::Enum;
     type TokenType = TokenEnum<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -26089,7 +26234,7 @@ impl<'db> Terminal<'db> for TerminalEnum<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEnumGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEnum,
+                kind: SyntaxKind::Terminal(LexemeKind::Enum),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -26133,13 +26278,13 @@ impl<'db> From<TerminalEnumPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalEnumGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEnum<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEnum);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Enum));
     type StablePtr = TerminalEnumPtr<'db>;
     type Green = TerminalEnumGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalEnumGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEnum,
+                kind: SyntaxKind::Terminal(LexemeKind::Enum),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -26157,16 +26302,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEnum<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalEnum,
+            SyntaxKind::Terminal(LexemeKind::Enum),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalEnum
+            SyntaxKind::Terminal(LexemeKind::Enum)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalEnum { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Enum) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -26182,8 +26331,11 @@ pub struct TokenExtern<'db> {
 impl<'db> Token<'db> for TokenExtern<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenExternGreen(
-            GreenNode { kind: SyntaxKind::TokenExtern, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Extern),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26214,13 +26366,13 @@ impl<'db> TokenExternGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenExtern);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Extern));
     type StablePtr = TokenExternPtr<'db>;
     type Green = TokenExternGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenExternGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -26229,9 +26381,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenExtern)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Extern)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -26252,7 +26405,7 @@ pub struct TerminalExtern<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalExtern<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalExtern;
+    const KIND: LexemeKind = LexemeKind::Extern;
     type TokenType = TokenExtern<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -26264,7 +26417,7 @@ impl<'db> Terminal<'db> for TerminalExtern<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalExternGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalExtern,
+                kind: SyntaxKind::Terminal(LexemeKind::Extern),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -26308,13 +26461,13 @@ impl<'db> From<TerminalExternPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalExternGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalExtern<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalExtern);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Extern));
     type StablePtr = TerminalExternPtr<'db>;
     type Green = TerminalExternGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalExternGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalExtern,
+                kind: SyntaxKind::Terminal(LexemeKind::Extern),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -26332,16 +26485,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalExtern<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalExtern,
+            SyntaxKind::Terminal(LexemeKind::Extern),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalExtern
+            SyntaxKind::Terminal(LexemeKind::Extern)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalExtern {
+        if kind == SyntaxKind::Terminal(LexemeKind::Extern) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -26361,8 +26514,11 @@ pub struct TokenFalse<'db> {
 impl<'db> Token<'db> for TokenFalse<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenFalseGreen(
-            GreenNode { kind: SyntaxKind::TokenFalse, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::False),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26393,13 +26549,13 @@ impl<'db> TokenFalseGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFalse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::False));
     type StablePtr = TokenFalsePtr<'db>;
     type Green = TokenFalseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenFalseGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -26408,9 +26564,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFalse)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::False)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -26431,7 +26588,7 @@ pub struct TerminalFalse<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalFalse<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalFalse;
+    const KIND: LexemeKind = LexemeKind::False;
     type TokenType = TokenFalse<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -26443,7 +26600,7 @@ impl<'db> Terminal<'db> for TerminalFalse<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalFalseGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalFalse,
+                kind: SyntaxKind::Terminal(LexemeKind::False),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -26487,13 +26644,13 @@ impl<'db> From<TerminalFalsePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalFalseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalFalse<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFalse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::False));
     type StablePtr = TerminalFalsePtr<'db>;
     type Green = TerminalFalseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalFalseGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalFalse,
+                kind: SyntaxKind::Terminal(LexemeKind::False),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -26511,16 +26668,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFalse<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalFalse,
+            SyntaxKind::Terminal(LexemeKind::False),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalFalse
+            SyntaxKind::Terminal(LexemeKind::False)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalFalse {
+        if kind == SyntaxKind::Terminal(LexemeKind::False) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -26540,8 +26697,11 @@ pub struct TokenFunction<'db> {
 impl<'db> Token<'db> for TokenFunction<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenFunctionGreen(
-            GreenNode { kind: SyntaxKind::TokenFunction, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Function),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26572,13 +26732,13 @@ impl<'db> TokenFunctionGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFunction);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Function));
     type StablePtr = TokenFunctionPtr<'db>;
     type Green = TokenFunctionGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenFunctionGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -26587,9 +26747,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFunction)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Function)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -26610,7 +26771,7 @@ pub struct TerminalFunction<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalFunction<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalFunction;
+    const KIND: LexemeKind = LexemeKind::Function;
     type TokenType = TokenFunction<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -26622,7 +26783,7 @@ impl<'db> Terminal<'db> for TerminalFunction<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalFunctionGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalFunction,
+                kind: SyntaxKind::Terminal(LexemeKind::Function),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -26666,13 +26827,13 @@ impl<'db> From<TerminalFunctionPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalFunctionGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalFunction<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFunction);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Function));
     type StablePtr = TerminalFunctionPtr<'db>;
     type Green = TerminalFunctionGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalFunctionGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalFunction,
+                kind: SyntaxKind::Terminal(LexemeKind::Function),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -26690,16 +26851,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFunction<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalFunction,
+            SyntaxKind::Terminal(LexemeKind::Function),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalFunction
+            SyntaxKind::Terminal(LexemeKind::Function)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalFunction {
+        if kind == SyntaxKind::Terminal(LexemeKind::Function) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -26719,8 +26880,11 @@ pub struct TokenIf<'db> {
 impl<'db> Token<'db> for TokenIf<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenIfGreen(
-            GreenNode { kind: SyntaxKind::TokenIf, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::If),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26751,13 +26915,13 @@ impl<'db> TokenIfGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenIf);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::If));
     type StablePtr = TokenIfPtr<'db>;
     type Green = TokenIfGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenIfGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -26766,9 +26930,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenIf)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::If)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -26789,7 +26954,7 @@ pub struct TerminalIf<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalIf<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalIf;
+    const KIND: LexemeKind = LexemeKind::If;
     type TokenType = TokenIf<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -26801,7 +26966,7 @@ impl<'db> Terminal<'db> for TerminalIf<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalIfGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalIf,
+                kind: SyntaxKind::Terminal(LexemeKind::If),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -26845,13 +27010,13 @@ impl<'db> From<TerminalIfPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalIfGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalIf<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalIf);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::If));
     type StablePtr = TerminalIfPtr<'db>;
     type Green = TerminalIfGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalIfGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalIf,
+                kind: SyntaxKind::Terminal(LexemeKind::If),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -26869,16 +27034,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIf<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalIf,
+            SyntaxKind::Terminal(LexemeKind::If),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalIf
+            SyntaxKind::Terminal(LexemeKind::If)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalIf { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::If) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -26894,8 +27063,11 @@ pub struct TokenWhile<'db> {
 impl<'db> Token<'db> for TokenWhile<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenWhileGreen(
-            GreenNode { kind: SyntaxKind::TokenWhile, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::While),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26926,13 +27098,13 @@ impl<'db> TokenWhileGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenWhile);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::While));
     type StablePtr = TokenWhilePtr<'db>;
     type Green = TokenWhileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenWhileGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -26941,9 +27113,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenWhile)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::While)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -26964,7 +27137,7 @@ pub struct TerminalWhile<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalWhile<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalWhile;
+    const KIND: LexemeKind = LexemeKind::While;
     type TokenType = TokenWhile<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -26976,7 +27149,7 @@ impl<'db> Terminal<'db> for TerminalWhile<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalWhileGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalWhile,
+                kind: SyntaxKind::Terminal(LexemeKind::While),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -27020,13 +27193,13 @@ impl<'db> From<TerminalWhilePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalWhileGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalWhile<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalWhile);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::While));
     type StablePtr = TerminalWhilePtr<'db>;
     type Green = TerminalWhileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalWhileGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalWhile,
+                kind: SyntaxKind::Terminal(LexemeKind::While),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -27044,16 +27217,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalWhile<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalWhile,
+            SyntaxKind::Terminal(LexemeKind::While),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalWhile
+            SyntaxKind::Terminal(LexemeKind::While)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalWhile {
+        if kind == SyntaxKind::Terminal(LexemeKind::While) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -27073,8 +27246,11 @@ pub struct TokenFor<'db> {
 impl<'db> Token<'db> for TokenFor<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenForGreen(
-            GreenNode { kind: SyntaxKind::TokenFor, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::For),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27105,13 +27281,13 @@ impl<'db> TokenForGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFor);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::For));
     type StablePtr = TokenForPtr<'db>;
     type Green = TokenForGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenForGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -27120,9 +27296,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenFor)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::For)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -27143,7 +27320,7 @@ pub struct TerminalFor<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalFor<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalFor;
+    const KIND: LexemeKind = LexemeKind::For;
     type TokenType = TokenFor<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -27155,7 +27332,7 @@ impl<'db> Terminal<'db> for TerminalFor<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalForGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalFor,
+                kind: SyntaxKind::Terminal(LexemeKind::For),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -27199,13 +27376,13 @@ impl<'db> From<TerminalForPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalForGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalFor<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFor);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::For));
     type StablePtr = TerminalForPtr<'db>;
     type Green = TerminalForGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalForGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalFor,
+                kind: SyntaxKind::Terminal(LexemeKind::For),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -27223,16 +27400,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFor<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalFor,
+            SyntaxKind::Terminal(LexemeKind::For),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalFor
+            SyntaxKind::Terminal(LexemeKind::For)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalFor { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::For) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -27248,8 +27429,11 @@ pub struct TokenLoop<'db> {
 impl<'db> Token<'db> for TokenLoop<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenLoopGreen(
-            GreenNode { kind: SyntaxKind::TokenLoop, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Loop),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27280,13 +27464,13 @@ impl<'db> TokenLoopGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLoop);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Loop));
     type StablePtr = TokenLoopPtr<'db>;
     type Green = TokenLoopGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLoopGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -27295,9 +27479,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLoop)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Loop)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -27318,7 +27503,7 @@ pub struct TerminalLoop<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalLoop<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalLoop;
+    const KIND: LexemeKind = LexemeKind::Loop;
     type TokenType = TokenLoop<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -27330,7 +27515,7 @@ impl<'db> Terminal<'db> for TerminalLoop<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLoopGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLoop,
+                kind: SyntaxKind::Terminal(LexemeKind::Loop),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -27374,13 +27559,13 @@ impl<'db> From<TerminalLoopPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalLoopGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLoop<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLoop);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Loop));
     type StablePtr = TerminalLoopPtr<'db>;
     type Green = TerminalLoopGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalLoopGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLoop,
+                kind: SyntaxKind::Terminal(LexemeKind::Loop),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -27398,16 +27583,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLoop<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalLoop,
+            SyntaxKind::Terminal(LexemeKind::Loop),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalLoop
+            SyntaxKind::Terminal(LexemeKind::Loop)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalLoop { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Loop) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -27423,8 +27612,11 @@ pub struct TokenImpl<'db> {
 impl<'db> Token<'db> for TokenImpl<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenImplGreen(
-            GreenNode { kind: SyntaxKind::TokenImpl, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Impl),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27455,13 +27647,13 @@ impl<'db> TokenImplGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenImpl);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Impl));
     type StablePtr = TokenImplPtr<'db>;
     type Green = TokenImplGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenImplGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -27470,9 +27662,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenImpl)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Impl)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -27493,7 +27686,7 @@ pub struct TerminalImpl<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalImpl<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalImpl;
+    const KIND: LexemeKind = LexemeKind::Impl;
     type TokenType = TokenImpl<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -27505,7 +27698,7 @@ impl<'db> Terminal<'db> for TerminalImpl<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalImplGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalImpl,
+                kind: SyntaxKind::Terminal(LexemeKind::Impl),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -27549,13 +27742,13 @@ impl<'db> From<TerminalImplPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalImplGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalImpl<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalImpl);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Impl));
     type StablePtr = TerminalImplPtr<'db>;
     type Green = TerminalImplGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalImplGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalImpl,
+                kind: SyntaxKind::Terminal(LexemeKind::Impl),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -27573,16 +27766,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImpl<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalImpl,
+            SyntaxKind::Terminal(LexemeKind::Impl),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalImpl
+            SyntaxKind::Terminal(LexemeKind::Impl)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalImpl { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Impl) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -27598,8 +27795,11 @@ pub struct TokenImplicits<'db> {
 impl<'db> Token<'db> for TokenImplicits<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenImplicitsGreen(
-            GreenNode { kind: SyntaxKind::TokenImplicits, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Implicits),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27630,13 +27830,13 @@ impl<'db> TokenImplicitsGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenImplicits);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Implicits));
     type StablePtr = TokenImplicitsPtr<'db>;
     type Green = TokenImplicitsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenImplicitsGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -27645,9 +27845,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenImplicits)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Implicits)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -27668,7 +27869,7 @@ pub struct TerminalImplicits<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalImplicits<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalImplicits;
+    const KIND: LexemeKind = LexemeKind::Implicits;
     type TokenType = TokenImplicits<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -27680,7 +27881,7 @@ impl<'db> Terminal<'db> for TerminalImplicits<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalImplicitsGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalImplicits,
+                kind: SyntaxKind::Terminal(LexemeKind::Implicits),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -27724,13 +27925,13 @@ impl<'db> From<TerminalImplicitsPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalImplicitsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalImplicits<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalImplicits);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Implicits));
     type StablePtr = TerminalImplicitsPtr<'db>;
     type Green = TerminalImplicitsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalImplicitsGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalImplicits,
+                kind: SyntaxKind::Terminal(LexemeKind::Implicits),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -27748,16 +27949,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImplicits<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalImplicits,
+            SyntaxKind::Terminal(LexemeKind::Implicits),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalImplicits
+            SyntaxKind::Terminal(LexemeKind::Implicits)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalImplicits {
+        if kind == SyntaxKind::Terminal(LexemeKind::Implicits) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -27777,8 +27978,11 @@ pub struct TokenLet<'db> {
 impl<'db> Token<'db> for TokenLet<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenLetGreen(
-            GreenNode { kind: SyntaxKind::TokenLet, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Let),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27809,13 +28013,13 @@ impl<'db> TokenLetGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLet);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Let));
     type StablePtr = TokenLetPtr<'db>;
     type Green = TokenLetGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLetGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -27824,9 +28028,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLet)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Let)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -27847,7 +28052,7 @@ pub struct TerminalLet<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalLet<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalLet;
+    const KIND: LexemeKind = LexemeKind::Let;
     type TokenType = TokenLet<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -27859,7 +28064,7 @@ impl<'db> Terminal<'db> for TerminalLet<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLetGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLet,
+                kind: SyntaxKind::Terminal(LexemeKind::Let),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -27903,13 +28108,13 @@ impl<'db> From<TerminalLetPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalLetGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLet<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLet);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Let));
     type StablePtr = TerminalLetPtr<'db>;
     type Green = TerminalLetGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalLetGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLet,
+                kind: SyntaxKind::Terminal(LexemeKind::Let),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -27927,16 +28132,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLet<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalLet,
+            SyntaxKind::Terminal(LexemeKind::Let),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalLet
+            SyntaxKind::Terminal(LexemeKind::Let)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalLet { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Let) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -27952,8 +28161,11 @@ pub struct TokenMacro<'db> {
 impl<'db> Token<'db> for TokenMacro<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenMacroGreen(
-            GreenNode { kind: SyntaxKind::TokenMacro, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Macro),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27984,13 +28196,13 @@ impl<'db> TokenMacroGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMacro);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Macro));
     type StablePtr = TokenMacroPtr<'db>;
     type Green = TokenMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMacroGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -27999,9 +28211,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMacro)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Macro)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -28022,7 +28235,7 @@ pub struct TerminalMacro<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalMacro<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalMacro;
+    const KIND: LexemeKind = LexemeKind::Macro;
     type TokenType = TokenMacro<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -28034,7 +28247,7 @@ impl<'db> Terminal<'db> for TerminalMacro<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMacroGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMacro,
+                kind: SyntaxKind::Terminal(LexemeKind::Macro),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -28078,13 +28291,13 @@ impl<'db> From<TerminalMacroPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMacro<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMacro);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Macro));
     type StablePtr = TerminalMacroPtr<'db>;
     type Green = TerminalMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalMacroGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMacro,
+                kind: SyntaxKind::Terminal(LexemeKind::Macro),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -28102,16 +28315,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMacro<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalMacro,
+            SyntaxKind::Terminal(LexemeKind::Macro),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalMacro
+            SyntaxKind::Terminal(LexemeKind::Macro)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalMacro {
+        if kind == SyntaxKind::Terminal(LexemeKind::Macro) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -28131,8 +28344,11 @@ pub struct TokenMatch<'db> {
 impl<'db> Token<'db> for TokenMatch<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenMatchGreen(
-            GreenNode { kind: SyntaxKind::TokenMatch, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Match),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28163,13 +28379,13 @@ impl<'db> TokenMatchGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMatch);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Match));
     type StablePtr = TokenMatchPtr<'db>;
     type Green = TokenMatchGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMatchGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -28178,9 +28394,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMatch)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Match)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -28201,7 +28418,7 @@ pub struct TerminalMatch<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalMatch<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalMatch;
+    const KIND: LexemeKind = LexemeKind::Match;
     type TokenType = TokenMatch<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -28213,7 +28430,7 @@ impl<'db> Terminal<'db> for TerminalMatch<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMatchGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMatch,
+                kind: SyntaxKind::Terminal(LexemeKind::Match),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -28257,13 +28474,13 @@ impl<'db> From<TerminalMatchPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalMatchGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMatch<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMatch);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Match));
     type StablePtr = TerminalMatchPtr<'db>;
     type Green = TerminalMatchGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalMatchGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMatch,
+                kind: SyntaxKind::Terminal(LexemeKind::Match),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -28281,16 +28498,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatch<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalMatch,
+            SyntaxKind::Terminal(LexemeKind::Match),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalMatch
+            SyntaxKind::Terminal(LexemeKind::Match)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalMatch {
+        if kind == SyntaxKind::Terminal(LexemeKind::Match) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -28310,8 +28527,11 @@ pub struct TokenModule<'db> {
 impl<'db> Token<'db> for TokenModule<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenModuleGreen(
-            GreenNode { kind: SyntaxKind::TokenModule, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Module),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28342,13 +28562,13 @@ impl<'db> TokenModuleGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenModule);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Module));
     type StablePtr = TokenModulePtr<'db>;
     type Green = TokenModuleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenModuleGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -28357,9 +28577,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenModule)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Module)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -28380,7 +28601,7 @@ pub struct TerminalModule<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalModule<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalModule;
+    const KIND: LexemeKind = LexemeKind::Module;
     type TokenType = TokenModule<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -28392,7 +28613,7 @@ impl<'db> Terminal<'db> for TerminalModule<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalModuleGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalModule,
+                kind: SyntaxKind::Terminal(LexemeKind::Module),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -28436,13 +28657,13 @@ impl<'db> From<TerminalModulePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalModuleGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalModule<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalModule);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Module));
     type StablePtr = TerminalModulePtr<'db>;
     type Green = TerminalModuleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalModuleGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalModule,
+                kind: SyntaxKind::Terminal(LexemeKind::Module),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -28460,16 +28681,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModule<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalModule,
+            SyntaxKind::Terminal(LexemeKind::Module),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalModule
+            SyntaxKind::Terminal(LexemeKind::Module)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalModule {
+        if kind == SyntaxKind::Terminal(LexemeKind::Module) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -28489,8 +28710,11 @@ pub struct TokenMut<'db> {
 impl<'db> Token<'db> for TokenMut<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenMutGreen(
-            GreenNode { kind: SyntaxKind::TokenMut, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Mut),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28521,13 +28745,13 @@ impl<'db> TokenMutGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMut);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Mut));
     type StablePtr = TokenMutPtr<'db>;
     type Green = TokenMutGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMutGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -28536,9 +28760,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMut)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Mut)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -28559,7 +28784,7 @@ pub struct TerminalMut<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalMut<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalMut;
+    const KIND: LexemeKind = LexemeKind::Mut;
     type TokenType = TokenMut<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -28571,7 +28796,7 @@ impl<'db> Terminal<'db> for TerminalMut<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMutGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMut,
+                kind: SyntaxKind::Terminal(LexemeKind::Mut),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -28615,13 +28840,13 @@ impl<'db> From<TerminalMutPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalMutGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMut<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMut);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Mut));
     type StablePtr = TerminalMutPtr<'db>;
     type Green = TerminalMutGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalMutGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMut,
+                kind: SyntaxKind::Terminal(LexemeKind::Mut),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -28639,16 +28864,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMut<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalMut,
+            SyntaxKind::Terminal(LexemeKind::Mut),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalMut
+            SyntaxKind::Terminal(LexemeKind::Mut)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalMut { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Mut) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -28664,8 +28893,11 @@ pub struct TokenNoPanic<'db> {
 impl<'db> Token<'db> for TokenNoPanic<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenNoPanicGreen(
-            GreenNode { kind: SyntaxKind::TokenNoPanic, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::NoPanic),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28696,13 +28928,13 @@ impl<'db> TokenNoPanicGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNoPanic);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::NoPanic));
     type StablePtr = TokenNoPanicPtr<'db>;
     type Green = TokenNoPanicGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenNoPanicGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -28711,9 +28943,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNoPanic)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::NoPanic)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -28734,7 +28967,7 @@ pub struct TerminalNoPanic<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalNoPanic<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalNoPanic;
+    const KIND: LexemeKind = LexemeKind::NoPanic;
     type TokenType = TokenNoPanic<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -28746,7 +28979,7 @@ impl<'db> Terminal<'db> for TerminalNoPanic<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalNoPanicGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalNoPanic,
+                kind: SyntaxKind::Terminal(LexemeKind::NoPanic),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -28790,13 +29023,13 @@ impl<'db> From<TerminalNoPanicPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalNoPanicGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalNoPanic<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNoPanic);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::NoPanic));
     type StablePtr = TerminalNoPanicPtr<'db>;
     type Green = TerminalNoPanicGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalNoPanicGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalNoPanic,
+                kind: SyntaxKind::Terminal(LexemeKind::NoPanic),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -28814,16 +29047,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNoPanic<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalNoPanic,
+            SyntaxKind::Terminal(LexemeKind::NoPanic),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalNoPanic
+            SyntaxKind::Terminal(LexemeKind::NoPanic)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalNoPanic {
+        if kind == SyntaxKind::Terminal(LexemeKind::NoPanic) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -28843,8 +29076,11 @@ pub struct TokenOf<'db> {
 impl<'db> Token<'db> for TokenOf<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenOfGreen(
-            GreenNode { kind: SyntaxKind::TokenOf, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Of),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28875,13 +29111,13 @@ impl<'db> TokenOfGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenOf);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Of));
     type StablePtr = TokenOfPtr<'db>;
     type Green = TokenOfGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenOfGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -28890,9 +29126,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenOf)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Of)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -28913,7 +29150,7 @@ pub struct TerminalOf<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalOf<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalOf;
+    const KIND: LexemeKind = LexemeKind::Of;
     type TokenType = TokenOf<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -28925,7 +29162,7 @@ impl<'db> Terminal<'db> for TerminalOf<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalOfGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalOf,
+                kind: SyntaxKind::Terminal(LexemeKind::Of),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -28969,13 +29206,13 @@ impl<'db> From<TerminalOfPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalOfGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalOf<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalOf);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Of));
     type StablePtr = TerminalOfPtr<'db>;
     type Green = TerminalOfGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalOfGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalOf,
+                kind: SyntaxKind::Terminal(LexemeKind::Of),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -28993,16 +29230,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOf<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalOf,
+            SyntaxKind::Terminal(LexemeKind::Of),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalOf
+            SyntaxKind::Terminal(LexemeKind::Of)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalOf { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Of) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -29018,8 +29259,11 @@ pub struct TokenRef<'db> {
 impl<'db> Token<'db> for TokenRef<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenRefGreen(
-            GreenNode { kind: SyntaxKind::TokenRef, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Ref),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29050,13 +29294,13 @@ impl<'db> TokenRefGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRef);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Ref));
     type StablePtr = TokenRefPtr<'db>;
     type Green = TokenRefGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenRefGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -29065,9 +29309,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRef)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Ref)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -29088,7 +29333,7 @@ pub struct TerminalRef<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalRef<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalRef;
+    const KIND: LexemeKind = LexemeKind::Ref;
     type TokenType = TokenRef<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -29100,7 +29345,7 @@ impl<'db> Terminal<'db> for TerminalRef<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRefGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalRef,
+                kind: SyntaxKind::Terminal(LexemeKind::Ref),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -29144,13 +29389,13 @@ impl<'db> From<TerminalRefPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalRefGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalRef<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRef);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Ref));
     type StablePtr = TerminalRefPtr<'db>;
     type Green = TerminalRefGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalRefGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalRef,
+                kind: SyntaxKind::Terminal(LexemeKind::Ref),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -29168,16 +29413,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRef<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalRef,
+            SyntaxKind::Terminal(LexemeKind::Ref),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalRef
+            SyntaxKind::Terminal(LexemeKind::Ref)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalRef { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Ref) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -29193,8 +29442,11 @@ pub struct TokenContinue<'db> {
 impl<'db> Token<'db> for TokenContinue<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenContinueGreen(
-            GreenNode { kind: SyntaxKind::TokenContinue, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Continue),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29225,13 +29477,13 @@ impl<'db> TokenContinueGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenContinue);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Continue));
     type StablePtr = TokenContinuePtr<'db>;
     type Green = TokenContinueGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenContinueGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -29240,9 +29492,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenContinue)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Continue)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -29263,7 +29516,7 @@ pub struct TerminalContinue<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalContinue<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalContinue;
+    const KIND: LexemeKind = LexemeKind::Continue;
     type TokenType = TokenContinue<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -29275,7 +29528,7 @@ impl<'db> Terminal<'db> for TerminalContinue<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalContinueGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalContinue,
+                kind: SyntaxKind::Terminal(LexemeKind::Continue),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -29319,13 +29572,13 @@ impl<'db> From<TerminalContinuePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalContinueGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalContinue<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalContinue);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Continue));
     type StablePtr = TerminalContinuePtr<'db>;
     type Green = TerminalContinueGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalContinueGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalContinue,
+                kind: SyntaxKind::Terminal(LexemeKind::Continue),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -29343,16 +29596,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalContinue<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalContinue,
+            SyntaxKind::Terminal(LexemeKind::Continue),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalContinue
+            SyntaxKind::Terminal(LexemeKind::Continue)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalContinue {
+        if kind == SyntaxKind::Terminal(LexemeKind::Continue) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -29372,8 +29625,11 @@ pub struct TokenReturn<'db> {
 impl<'db> Token<'db> for TokenReturn<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenReturnGreen(
-            GreenNode { kind: SyntaxKind::TokenReturn, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Return),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29404,13 +29660,13 @@ impl<'db> TokenReturnGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenReturn);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Return));
     type StablePtr = TokenReturnPtr<'db>;
     type Green = TokenReturnGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenReturnGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -29419,9 +29675,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenReturn)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Return)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -29442,7 +29699,7 @@ pub struct TerminalReturn<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalReturn<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalReturn;
+    const KIND: LexemeKind = LexemeKind::Return;
     type TokenType = TokenReturn<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -29454,7 +29711,7 @@ impl<'db> Terminal<'db> for TerminalReturn<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalReturnGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalReturn,
+                kind: SyntaxKind::Terminal(LexemeKind::Return),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -29498,13 +29755,13 @@ impl<'db> From<TerminalReturnPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalReturnGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalReturn<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalReturn);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Return));
     type StablePtr = TerminalReturnPtr<'db>;
     type Green = TerminalReturnGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalReturnGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalReturn,
+                kind: SyntaxKind::Terminal(LexemeKind::Return),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -29522,16 +29779,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalReturn<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalReturn,
+            SyntaxKind::Terminal(LexemeKind::Return),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalReturn
+            SyntaxKind::Terminal(LexemeKind::Return)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalReturn {
+        if kind == SyntaxKind::Terminal(LexemeKind::Return) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -29551,8 +29808,11 @@ pub struct TokenBreak<'db> {
 impl<'db> Token<'db> for TokenBreak<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenBreakGreen(
-            GreenNode { kind: SyntaxKind::TokenBreak, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Break),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29583,13 +29843,13 @@ impl<'db> TokenBreakGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenBreak);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Break));
     type StablePtr = TokenBreakPtr<'db>;
     type Green = TokenBreakGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenBreakGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -29598,9 +29858,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenBreak)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Break)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -29621,7 +29882,7 @@ pub struct TerminalBreak<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalBreak<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalBreak;
+    const KIND: LexemeKind = LexemeKind::Break;
     type TokenType = TokenBreak<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -29633,7 +29894,7 @@ impl<'db> Terminal<'db> for TerminalBreak<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalBreakGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalBreak,
+                kind: SyntaxKind::Terminal(LexemeKind::Break),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -29677,13 +29938,13 @@ impl<'db> From<TerminalBreakPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalBreakGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalBreak<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalBreak);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Break));
     type StablePtr = TerminalBreakPtr<'db>;
     type Green = TerminalBreakGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalBreakGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalBreak,
+                kind: SyntaxKind::Terminal(LexemeKind::Break),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -29701,16 +29962,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBreak<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalBreak,
+            SyntaxKind::Terminal(LexemeKind::Break),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalBreak
+            SyntaxKind::Terminal(LexemeKind::Break)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalBreak {
+        if kind == SyntaxKind::Terminal(LexemeKind::Break) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -29730,8 +29991,11 @@ pub struct TokenStruct<'db> {
 impl<'db> Token<'db> for TokenStruct<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenStructGreen(
-            GreenNode { kind: SyntaxKind::TokenStruct, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Struct),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29762,13 +30026,13 @@ impl<'db> TokenStructGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenStruct);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Struct));
     type StablePtr = TokenStructPtr<'db>;
     type Green = TokenStructGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenStructGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -29777,9 +30041,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenStruct)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Struct)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -29800,7 +30065,7 @@ pub struct TerminalStruct<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalStruct<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalStruct;
+    const KIND: LexemeKind = LexemeKind::Struct;
     type TokenType = TokenStruct<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -29812,7 +30077,7 @@ impl<'db> Terminal<'db> for TerminalStruct<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalStructGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalStruct,
+                kind: SyntaxKind::Terminal(LexemeKind::Struct),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -29856,13 +30121,13 @@ impl<'db> From<TerminalStructPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalStructGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalStruct<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalStruct);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Struct));
     type StablePtr = TerminalStructPtr<'db>;
     type Green = TerminalStructGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalStructGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalStruct,
+                kind: SyntaxKind::Terminal(LexemeKind::Struct),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -29880,16 +30145,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalStruct<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalStruct,
+            SyntaxKind::Terminal(LexemeKind::Struct),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalStruct
+            SyntaxKind::Terminal(LexemeKind::Struct)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalStruct {
+        if kind == SyntaxKind::Terminal(LexemeKind::Struct) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -29909,8 +30174,11 @@ pub struct TokenTrait<'db> {
 impl<'db> Token<'db> for TokenTrait<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenTraitGreen(
-            GreenNode { kind: SyntaxKind::TokenTrait, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Trait),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29941,13 +30209,13 @@ impl<'db> TokenTraitGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTrait);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Trait));
     type StablePtr = TokenTraitPtr<'db>;
     type Green = TokenTraitGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenTraitGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -29956,9 +30224,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenTrait)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Trait)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -29979,7 +30248,7 @@ pub struct TerminalTrait<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalTrait<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalTrait;
+    const KIND: LexemeKind = LexemeKind::Trait;
     type TokenType = TokenTrait<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -29991,7 +30260,7 @@ impl<'db> Terminal<'db> for TerminalTrait<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalTraitGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalTrait,
+                kind: SyntaxKind::Terminal(LexemeKind::Trait),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -30035,13 +30304,13 @@ impl<'db> From<TerminalTraitPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalTraitGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalTrait<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalTrait);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Trait));
     type StablePtr = TerminalTraitPtr<'db>;
     type Green = TerminalTraitGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalTraitGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalTrait,
+                kind: SyntaxKind::Terminal(LexemeKind::Trait),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -30059,16 +30328,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrait<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalTrait,
+            SyntaxKind::Terminal(LexemeKind::Trait),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalTrait
+            SyntaxKind::Terminal(LexemeKind::Trait)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalTrait {
+        if kind == SyntaxKind::Terminal(LexemeKind::Trait) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -30088,8 +30357,11 @@ pub struct TokenTrue<'db> {
 impl<'db> Token<'db> for TokenTrue<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenTrueGreen(
-            GreenNode { kind: SyntaxKind::TokenTrue, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::True),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30120,13 +30392,13 @@ impl<'db> TokenTrueGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTrue);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::True));
     type StablePtr = TokenTruePtr<'db>;
     type Green = TokenTrueGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenTrueGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -30135,9 +30407,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenTrue)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::True)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -30158,7 +30431,7 @@ pub struct TerminalTrue<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalTrue<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalTrue;
+    const KIND: LexemeKind = LexemeKind::True;
     type TokenType = TokenTrue<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -30170,7 +30443,7 @@ impl<'db> Terminal<'db> for TerminalTrue<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalTrueGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalTrue,
+                kind: SyntaxKind::Terminal(LexemeKind::True),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -30214,13 +30487,13 @@ impl<'db> From<TerminalTruePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalTrueGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalTrue<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalTrue);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::True));
     type StablePtr = TerminalTruePtr<'db>;
     type Green = TerminalTrueGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalTrueGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalTrue,
+                kind: SyntaxKind::Terminal(LexemeKind::True),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -30238,16 +30511,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrue<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalTrue,
+            SyntaxKind::Terminal(LexemeKind::True),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalTrue
+            SyntaxKind::Terminal(LexemeKind::True)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalTrue { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::True) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -30263,8 +30540,11 @@ pub struct TokenType<'db> {
 impl<'db> Token<'db> for TokenType<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenTypeGreen(
-            GreenNode { kind: SyntaxKind::TokenType, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Type),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30295,13 +30575,13 @@ impl<'db> TokenTypeGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenType);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Type));
     type StablePtr = TokenTypePtr<'db>;
     type Green = TokenTypeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenTypeGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -30310,9 +30590,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenType)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Type)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -30333,7 +30614,7 @@ pub struct TerminalType<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalType<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalType;
+    const KIND: LexemeKind = LexemeKind::Type;
     type TokenType = TokenType<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -30345,7 +30626,7 @@ impl<'db> Terminal<'db> for TerminalType<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalTypeGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalType,
+                kind: SyntaxKind::Terminal(LexemeKind::Type),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -30389,13 +30670,13 @@ impl<'db> From<TerminalTypePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalTypeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalType<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalType);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Type));
     type StablePtr = TerminalTypePtr<'db>;
     type Green = TerminalTypeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalTypeGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalType,
+                kind: SyntaxKind::Terminal(LexemeKind::Type),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -30413,16 +30694,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalType<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalType,
+            SyntaxKind::Terminal(LexemeKind::Type),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalType
+            SyntaxKind::Terminal(LexemeKind::Type)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalType { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Type) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -30438,8 +30723,11 @@ pub struct TokenUse<'db> {
 impl<'db> Token<'db> for TokenUse<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenUseGreen(
-            GreenNode { kind: SyntaxKind::TokenUse, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Use),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30470,13 +30758,13 @@ impl<'db> TokenUseGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenUse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Use));
     type StablePtr = TokenUsePtr<'db>;
     type Green = TokenUseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenUseGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -30485,9 +30773,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenUse)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Use)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -30508,7 +30797,7 @@ pub struct TerminalUse<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalUse<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalUse;
+    const KIND: LexemeKind = LexemeKind::Use;
     type TokenType = TokenUse<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -30520,7 +30809,7 @@ impl<'db> Terminal<'db> for TerminalUse<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalUseGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalUse,
+                kind: SyntaxKind::Terminal(LexemeKind::Use),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -30564,13 +30853,13 @@ impl<'db> From<TerminalUsePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalUseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalUse<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalUse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Use));
     type StablePtr = TerminalUsePtr<'db>;
     type Green = TerminalUseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalUseGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalUse,
+                kind: SyntaxKind::Terminal(LexemeKind::Use),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -30588,16 +30877,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUse<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalUse,
+            SyntaxKind::Terminal(LexemeKind::Use),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalUse
+            SyntaxKind::Terminal(LexemeKind::Use)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalUse { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Use) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -30613,8 +30906,11 @@ pub struct TokenPub<'db> {
 impl<'db> Token<'db> for TokenPub<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenPubGreen(
-            GreenNode { kind: SyntaxKind::TokenPub, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Pub),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30645,13 +30941,13 @@ impl<'db> TokenPubGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenPub);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Pub));
     type StablePtr = TokenPubPtr<'db>;
     type Green = TokenPubGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenPubGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -30660,9 +30956,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenPub)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Pub)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -30683,7 +30980,7 @@ pub struct TerminalPub<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalPub<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalPub;
+    const KIND: LexemeKind = LexemeKind::Pub;
     type TokenType = TokenPub<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -30695,7 +30992,7 @@ impl<'db> Terminal<'db> for TerminalPub<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalPubGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalPub,
+                kind: SyntaxKind::Terminal(LexemeKind::Pub),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -30739,13 +31036,13 @@ impl<'db> From<TerminalPubPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalPubGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalPub<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalPub);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Pub));
     type StablePtr = TerminalPubPtr<'db>;
     type Green = TerminalPubGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalPubGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalPub,
+                kind: SyntaxKind::Terminal(LexemeKind::Pub),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -30763,16 +31060,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPub<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalPub,
+            SyntaxKind::Terminal(LexemeKind::Pub),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalPub
+            SyntaxKind::Terminal(LexemeKind::Pub)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalPub { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Pub) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -30788,8 +31089,11 @@ pub struct TokenAnd<'db> {
 impl<'db> Token<'db> for TokenAnd<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenAndGreen(
-            GreenNode { kind: SyntaxKind::TokenAnd, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::And),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30820,13 +31124,13 @@ impl<'db> TokenAndGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAnd);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::And));
     type StablePtr = TokenAndPtr<'db>;
     type Green = TokenAndGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenAndGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -30835,9 +31139,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAnd)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::And)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -30858,7 +31163,7 @@ pub struct TerminalAnd<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalAnd<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalAnd;
+    const KIND: LexemeKind = LexemeKind::And;
     type TokenType = TokenAnd<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -30870,7 +31175,7 @@ impl<'db> Terminal<'db> for TerminalAnd<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAndGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalAnd,
+                kind: SyntaxKind::Terminal(LexemeKind::And),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -30914,13 +31219,13 @@ impl<'db> From<TerminalAndPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalAnd<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAnd);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::And));
     type StablePtr = TerminalAndPtr<'db>;
     type Green = TerminalAndGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalAndGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalAnd,
+                kind: SyntaxKind::Terminal(LexemeKind::And),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -30938,16 +31243,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAnd<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalAnd,
+            SyntaxKind::Terminal(LexemeKind::And),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalAnd
+            SyntaxKind::Terminal(LexemeKind::And)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalAnd { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::And) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -30963,8 +31272,11 @@ pub struct TokenAndAnd<'db> {
 impl<'db> Token<'db> for TokenAndAnd<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenAndAndGreen(
-            GreenNode { kind: SyntaxKind::TokenAndAnd, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::AndAnd),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30995,13 +31307,13 @@ impl<'db> TokenAndAndGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAndAnd);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::AndAnd));
     type StablePtr = TokenAndAndPtr<'db>;
     type Green = TokenAndAndGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenAndAndGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -31010,9 +31322,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAndAnd)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::AndAnd)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -31033,7 +31346,7 @@ pub struct TerminalAndAnd<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalAndAnd<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalAndAnd;
+    const KIND: LexemeKind = LexemeKind::AndAnd;
     type TokenType = TokenAndAnd<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -31045,7 +31358,7 @@ impl<'db> Terminal<'db> for TerminalAndAnd<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAndAndGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalAndAnd,
+                kind: SyntaxKind::Terminal(LexemeKind::AndAnd),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -31089,13 +31402,13 @@ impl<'db> From<TerminalAndAndPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalAndAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalAndAnd<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAndAnd);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::AndAnd));
     type StablePtr = TerminalAndAndPtr<'db>;
     type Green = TerminalAndAndGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalAndAndGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalAndAnd,
+                kind: SyntaxKind::Terminal(LexemeKind::AndAnd),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -31113,16 +31426,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAndAnd<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalAndAnd,
+            SyntaxKind::Terminal(LexemeKind::AndAnd),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalAndAnd
+            SyntaxKind::Terminal(LexemeKind::AndAnd)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalAndAnd {
+        if kind == SyntaxKind::Terminal(LexemeKind::AndAnd) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -31142,8 +31455,11 @@ pub struct TokenArrow<'db> {
 impl<'db> Token<'db> for TokenArrow<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenArrowGreen(
-            GreenNode { kind: SyntaxKind::TokenArrow, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Arrow),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31174,13 +31490,13 @@ impl<'db> TokenArrowGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenArrow);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Arrow));
     type StablePtr = TokenArrowPtr<'db>;
     type Green = TokenArrowGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenArrowGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -31189,9 +31505,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenArrow)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Arrow)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -31212,7 +31529,7 @@ pub struct TerminalArrow<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalArrow<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalArrow;
+    const KIND: LexemeKind = LexemeKind::Arrow;
     type TokenType = TokenArrow<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -31224,7 +31541,7 @@ impl<'db> Terminal<'db> for TerminalArrow<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalArrowGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalArrow,
+                kind: SyntaxKind::Terminal(LexemeKind::Arrow),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -31268,13 +31585,13 @@ impl<'db> From<TerminalArrowPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalArrow<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalArrow);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Arrow));
     type StablePtr = TerminalArrowPtr<'db>;
     type Green = TerminalArrowGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalArrowGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalArrow,
+                kind: SyntaxKind::Terminal(LexemeKind::Arrow),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -31292,16 +31609,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalArrow<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalArrow,
+            SyntaxKind::Terminal(LexemeKind::Arrow),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalArrow
+            SyntaxKind::Terminal(LexemeKind::Arrow)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalArrow {
+        if kind == SyntaxKind::Terminal(LexemeKind::Arrow) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -31321,8 +31638,11 @@ pub struct TokenAt<'db> {
 impl<'db> Token<'db> for TokenAt<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenAtGreen(
-            GreenNode { kind: SyntaxKind::TokenAt, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::At),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31353,13 +31673,13 @@ impl<'db> TokenAtGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAt);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::At));
     type StablePtr = TokenAtPtr<'db>;
     type Green = TokenAtGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenAtGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -31368,9 +31688,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAt)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::At)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -31391,7 +31712,7 @@ pub struct TerminalAt<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalAt<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalAt;
+    const KIND: LexemeKind = LexemeKind::At;
     type TokenType = TokenAt<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -31403,7 +31724,7 @@ impl<'db> Terminal<'db> for TerminalAt<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAtGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalAt,
+                kind: SyntaxKind::Terminal(LexemeKind::At),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -31447,13 +31768,13 @@ impl<'db> From<TerminalAtPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalAtGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalAt<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAt);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::At));
     type StablePtr = TerminalAtPtr<'db>;
     type Green = TerminalAtGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalAtGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalAt,
+                kind: SyntaxKind::Terminal(LexemeKind::At),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -31471,16 +31792,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAt<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalAt,
+            SyntaxKind::Terminal(LexemeKind::At),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalAt
+            SyntaxKind::Terminal(LexemeKind::At)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalAt { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::At) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -31497,7 +31822,7 @@ impl<'db> Token<'db> for TokenBadCharacters<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenBadCharactersGreen(
             GreenNode {
-                kind: SyntaxKind::TokenBadCharacters,
+                kind: SyntaxKind::Token(LexemeKind::BadCharacters),
                 details: GreenNodeDetails::Token(text),
             }
             .intern(db),
@@ -31531,13 +31856,13 @@ impl<'db> TokenBadCharactersGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenBadCharacters);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::BadCharacters));
     type StablePtr = TokenBadCharactersPtr<'db>;
     type Green = TokenBadCharactersGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenBadCharactersGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -31548,7 +31873,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
-                SyntaxKind::TokenBadCharacters
+                SyntaxKind::Token(LexemeKind::BadCharacters)
             ),
         }
     }
@@ -31570,7 +31895,7 @@ pub struct TerminalBadCharacters<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalBadCharacters<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalBadCharacters;
+    const KIND: LexemeKind = LexemeKind::BadCharacters;
     type TokenType = TokenBadCharacters<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -31582,7 +31907,7 @@ impl<'db> Terminal<'db> for TerminalBadCharacters<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalBadCharactersGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalBadCharacters,
+                kind: SyntaxKind::Terminal(LexemeKind::BadCharacters),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -31626,13 +31951,13 @@ impl<'db> From<TerminalBadCharactersPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalBadCharactersGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalBadCharacters<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalBadCharacters);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::BadCharacters));
     type StablePtr = TerminalBadCharactersPtr<'db>;
     type Green = TerminalBadCharactersGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalBadCharactersGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalBadCharacters,
+                kind: SyntaxKind::Terminal(LexemeKind::BadCharacters),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -31650,16 +31975,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBadCharacters<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalBadCharacters,
+            SyntaxKind::Terminal(LexemeKind::BadCharacters),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalBadCharacters
+            SyntaxKind::Terminal(LexemeKind::BadCharacters)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalBadCharacters {
+        if kind == SyntaxKind::Terminal(LexemeKind::BadCharacters) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -31679,8 +32004,11 @@ pub struct TokenColon<'db> {
 impl<'db> Token<'db> for TokenColon<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenColonGreen(
-            GreenNode { kind: SyntaxKind::TokenColon, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Colon),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31711,13 +32039,13 @@ impl<'db> TokenColonGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenColon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Colon));
     type StablePtr = TokenColonPtr<'db>;
     type Green = TokenColonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenColonGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -31726,9 +32054,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenColon)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Colon)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -31749,7 +32078,7 @@ pub struct TerminalColon<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalColon<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalColon;
+    const KIND: LexemeKind = LexemeKind::Colon;
     type TokenType = TokenColon<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -31761,7 +32090,7 @@ impl<'db> Terminal<'db> for TerminalColon<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalColonGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalColon,
+                kind: SyntaxKind::Terminal(LexemeKind::Colon),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -31805,13 +32134,13 @@ impl<'db> From<TerminalColonPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalColon<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalColon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Colon));
     type StablePtr = TerminalColonPtr<'db>;
     type Green = TerminalColonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalColonGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalColon,
+                kind: SyntaxKind::Terminal(LexemeKind::Colon),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -31829,16 +32158,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColon<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalColon,
+            SyntaxKind::Terminal(LexemeKind::Colon),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalColon
+            SyntaxKind::Terminal(LexemeKind::Colon)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalColon {
+        if kind == SyntaxKind::Terminal(LexemeKind::Colon) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -31858,8 +32187,11 @@ pub struct TokenColonColon<'db> {
 impl<'db> Token<'db> for TokenColonColon<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenColonColonGreen(
-            GreenNode { kind: SyntaxKind::TokenColonColon, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::ColonColon),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31890,13 +32222,13 @@ impl<'db> TokenColonColonGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenColonColon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::ColonColon));
     type StablePtr = TokenColonColonPtr<'db>;
     type Green = TokenColonColonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenColonColonGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -31905,9 +32237,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenColonColon)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::ColonColon)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -31928,7 +32261,7 @@ pub struct TerminalColonColon<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalColonColon<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalColonColon;
+    const KIND: LexemeKind = LexemeKind::ColonColon;
     type TokenType = TokenColonColon<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -31940,7 +32273,7 @@ impl<'db> Terminal<'db> for TerminalColonColon<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalColonColonGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalColonColon,
+                kind: SyntaxKind::Terminal(LexemeKind::ColonColon),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -31984,13 +32317,13 @@ impl<'db> From<TerminalColonColonPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalColonColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalColonColon<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalColonColon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::ColonColon));
     type StablePtr = TerminalColonColonPtr<'db>;
     type Green = TerminalColonColonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalColonColonGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalColonColon,
+                kind: SyntaxKind::Terminal(LexemeKind::ColonColon),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -32008,16 +32341,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColonColon<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalColonColon,
+            SyntaxKind::Terminal(LexemeKind::ColonColon),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalColonColon
+            SyntaxKind::Terminal(LexemeKind::ColonColon)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalColonColon {
+        if kind == SyntaxKind::Terminal(LexemeKind::ColonColon) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -32037,8 +32370,11 @@ pub struct TokenComma<'db> {
 impl<'db> Token<'db> for TokenComma<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenCommaGreen(
-            GreenNode { kind: SyntaxKind::TokenComma, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Comma),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32069,13 +32405,13 @@ impl<'db> TokenCommaGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenComma);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Comma));
     type StablePtr = TokenCommaPtr<'db>;
     type Green = TokenCommaGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenCommaGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -32084,9 +32420,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenComma)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Comma)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -32107,7 +32444,7 @@ pub struct TerminalComma<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalComma<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalComma;
+    const KIND: LexemeKind = LexemeKind::Comma;
     type TokenType = TokenComma<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -32119,7 +32456,7 @@ impl<'db> Terminal<'db> for TerminalComma<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalCommaGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalComma,
+                kind: SyntaxKind::Terminal(LexemeKind::Comma),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -32163,13 +32500,13 @@ impl<'db> From<TerminalCommaPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalCommaGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalComma<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalComma);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Comma));
     type StablePtr = TerminalCommaPtr<'db>;
     type Green = TerminalCommaGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalCommaGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalComma,
+                kind: SyntaxKind::Terminal(LexemeKind::Comma),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -32187,16 +32524,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalComma<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalComma,
+            SyntaxKind::Terminal(LexemeKind::Comma),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalComma
+            SyntaxKind::Terminal(LexemeKind::Comma)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalComma {
+        if kind == SyntaxKind::Terminal(LexemeKind::Comma) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -32216,8 +32553,11 @@ pub struct TokenDiv<'db> {
 impl<'db> Token<'db> for TokenDiv<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenDivGreen(
-            GreenNode { kind: SyntaxKind::TokenDiv, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Div),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32248,13 +32588,13 @@ impl<'db> TokenDivGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDiv);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Div));
     type StablePtr = TokenDivPtr<'db>;
     type Green = TokenDivGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDivGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -32263,9 +32603,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDiv)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Div)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -32286,7 +32627,7 @@ pub struct TerminalDiv<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalDiv<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalDiv;
+    const KIND: LexemeKind = LexemeKind::Div;
     type TokenType = TokenDiv<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -32298,7 +32639,7 @@ impl<'db> Terminal<'db> for TerminalDiv<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDivGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDiv,
+                kind: SyntaxKind::Terminal(LexemeKind::Div),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -32342,13 +32683,13 @@ impl<'db> From<TerminalDivPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalDivGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDiv<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDiv);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Div));
     type StablePtr = TerminalDivPtr<'db>;
     type Green = TerminalDivGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalDivGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDiv,
+                kind: SyntaxKind::Terminal(LexemeKind::Div),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -32366,16 +32707,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDiv<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalDiv,
+            SyntaxKind::Terminal(LexemeKind::Div),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalDiv
+            SyntaxKind::Terminal(LexemeKind::Div)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalDiv { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Div) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -32391,8 +32736,11 @@ pub struct TokenDivEq<'db> {
 impl<'db> Token<'db> for TokenDivEq<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenDivEqGreen(
-            GreenNode { kind: SyntaxKind::TokenDivEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::DivEq),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32423,13 +32771,13 @@ impl<'db> TokenDivEqGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDivEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::DivEq));
     type StablePtr = TokenDivEqPtr<'db>;
     type Green = TokenDivEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDivEqGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -32438,9 +32786,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDivEq)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::DivEq)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -32461,7 +32810,7 @@ pub struct TerminalDivEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalDivEq<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalDivEq;
+    const KIND: LexemeKind = LexemeKind::DivEq;
     type TokenType = TokenDivEq<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -32473,7 +32822,7 @@ impl<'db> Terminal<'db> for TerminalDivEq<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDivEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDivEq,
+                kind: SyntaxKind::Terminal(LexemeKind::DivEq),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -32517,13 +32866,13 @@ impl<'db> From<TerminalDivEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalDivEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDivEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDivEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::DivEq));
     type StablePtr = TerminalDivEqPtr<'db>;
     type Green = TerminalDivEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalDivEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDivEq,
+                kind: SyntaxKind::Terminal(LexemeKind::DivEq),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -32541,16 +32890,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDivEq<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalDivEq,
+            SyntaxKind::Terminal(LexemeKind::DivEq),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalDivEq
+            SyntaxKind::Terminal(LexemeKind::DivEq)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalDivEq {
+        if kind == SyntaxKind::Terminal(LexemeKind::DivEq) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -32570,8 +32919,11 @@ pub struct TokenDollar<'db> {
 impl<'db> Token<'db> for TokenDollar<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenDollarGreen(
-            GreenNode { kind: SyntaxKind::TokenDollar, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Dollar),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32602,13 +32954,13 @@ impl<'db> TokenDollarGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDollar);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Dollar));
     type StablePtr = TokenDollarPtr<'db>;
     type Green = TokenDollarGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDollarGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -32617,9 +32969,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDollar)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Dollar)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -32640,7 +32993,7 @@ pub struct TerminalDollar<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalDollar<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalDollar;
+    const KIND: LexemeKind = LexemeKind::Dollar;
     type TokenType = TokenDollar<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -32652,7 +33005,7 @@ impl<'db> Terminal<'db> for TerminalDollar<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDollarGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDollar,
+                kind: SyntaxKind::Terminal(LexemeKind::Dollar),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -32696,13 +33049,13 @@ impl<'db> From<TerminalDollarPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalDollarGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDollar<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDollar);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Dollar));
     type StablePtr = TerminalDollarPtr<'db>;
     type Green = TerminalDollarGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalDollarGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDollar,
+                kind: SyntaxKind::Terminal(LexemeKind::Dollar),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -32720,16 +33073,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDollar<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalDollar,
+            SyntaxKind::Terminal(LexemeKind::Dollar),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalDollar
+            SyntaxKind::Terminal(LexemeKind::Dollar)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalDollar {
+        if kind == SyntaxKind::Terminal(LexemeKind::Dollar) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -32749,8 +33102,11 @@ pub struct TokenDot<'db> {
 impl<'db> Token<'db> for TokenDot<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenDotGreen(
-            GreenNode { kind: SyntaxKind::TokenDot, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Dot),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32781,13 +33137,13 @@ impl<'db> TokenDotGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Dot));
     type StablePtr = TokenDotPtr<'db>;
     type Green = TokenDotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDotGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -32796,9 +33152,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDot)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Dot)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -32819,7 +33176,7 @@ pub struct TerminalDot<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalDot<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalDot;
+    const KIND: LexemeKind = LexemeKind::Dot;
     type TokenType = TokenDot<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -32831,7 +33188,7 @@ impl<'db> Terminal<'db> for TerminalDot<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDotGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDot,
+                kind: SyntaxKind::Terminal(LexemeKind::Dot),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -32875,13 +33232,13 @@ impl<'db> From<TerminalDotPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDot<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Dot));
     type StablePtr = TerminalDotPtr<'db>;
     type Green = TerminalDotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalDotGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDot,
+                kind: SyntaxKind::Terminal(LexemeKind::Dot),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -32899,16 +33256,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDot<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalDot,
+            SyntaxKind::Terminal(LexemeKind::Dot),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalDot
+            SyntaxKind::Terminal(LexemeKind::Dot)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalDot { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Dot) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -32924,8 +33285,11 @@ pub struct TokenDotDot<'db> {
 impl<'db> Token<'db> for TokenDotDot<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenDotDotGreen(
-            GreenNode { kind: SyntaxKind::TokenDotDot, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::DotDot),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32956,13 +33320,13 @@ impl<'db> TokenDotDotGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDotDot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::DotDot));
     type StablePtr = TokenDotDotPtr<'db>;
     type Green = TokenDotDotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDotDotGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -32971,9 +33335,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDotDot)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::DotDot)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -32994,7 +33359,7 @@ pub struct TerminalDotDot<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalDotDot<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalDotDot;
+    const KIND: LexemeKind = LexemeKind::DotDot;
     type TokenType = TokenDotDot<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -33006,7 +33371,7 @@ impl<'db> Terminal<'db> for TerminalDotDot<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDotDotGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDotDot,
+                kind: SyntaxKind::Terminal(LexemeKind::DotDot),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -33050,13 +33415,13 @@ impl<'db> From<TerminalDotDotPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalDotDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDotDot<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDotDot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::DotDot));
     type StablePtr = TerminalDotDotPtr<'db>;
     type Green = TerminalDotDotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalDotDotGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDotDot,
+                kind: SyntaxKind::Terminal(LexemeKind::DotDot),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -33074,16 +33439,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDot<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalDotDot,
+            SyntaxKind::Terminal(LexemeKind::DotDot),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalDotDot
+            SyntaxKind::Terminal(LexemeKind::DotDot)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalDotDot {
+        if kind == SyntaxKind::Terminal(LexemeKind::DotDot) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -33103,8 +33468,11 @@ pub struct TokenDotDotEq<'db> {
 impl<'db> Token<'db> for TokenDotDotEq<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenDotDotEqGreen(
-            GreenNode { kind: SyntaxKind::TokenDotDotEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::DotDotEq),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33135,13 +33503,13 @@ impl<'db> TokenDotDotEqGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDotDotEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::DotDotEq));
     type StablePtr = TokenDotDotEqPtr<'db>;
     type Green = TokenDotDotEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDotDotEqGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -33150,9 +33518,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenDotDotEq)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::DotDotEq)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -33173,7 +33542,7 @@ pub struct TerminalDotDotEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalDotDotEq<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalDotDotEq;
+    const KIND: LexemeKind = LexemeKind::DotDotEq;
     type TokenType = TokenDotDotEq<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -33185,7 +33554,7 @@ impl<'db> Terminal<'db> for TerminalDotDotEq<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDotDotEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDotDotEq,
+                kind: SyntaxKind::Terminal(LexemeKind::DotDotEq),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -33229,13 +33598,13 @@ impl<'db> From<TerminalDotDotEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalDotDotEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDotDotEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDotDotEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::DotDotEq));
     type StablePtr = TerminalDotDotEqPtr<'db>;
     type Green = TerminalDotDotEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalDotDotEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalDotDotEq,
+                kind: SyntaxKind::Terminal(LexemeKind::DotDotEq),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -33253,16 +33622,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDotEq<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalDotDotEq,
+            SyntaxKind::Terminal(LexemeKind::DotDotEq),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalDotDotEq
+            SyntaxKind::Terminal(LexemeKind::DotDotEq)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalDotDotEq {
+        if kind == SyntaxKind::Terminal(LexemeKind::DotDotEq) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -33282,8 +33651,11 @@ pub struct TokenEndOfFile<'db> {
 impl<'db> Token<'db> for TokenEndOfFile<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenEndOfFileGreen(
-            GreenNode { kind: SyntaxKind::TokenEndOfFile, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::EndOfFile),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33314,13 +33686,13 @@ impl<'db> TokenEndOfFileGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEndOfFile);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::EndOfFile));
     type StablePtr = TokenEndOfFilePtr<'db>;
     type Green = TokenEndOfFileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEndOfFileGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -33329,9 +33701,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEndOfFile)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::EndOfFile)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -33352,7 +33725,7 @@ pub struct TerminalEndOfFile<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalEndOfFile<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalEndOfFile;
+    const KIND: LexemeKind = LexemeKind::EndOfFile;
     type TokenType = TokenEndOfFile<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -33364,7 +33737,7 @@ impl<'db> Terminal<'db> for TerminalEndOfFile<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEndOfFileGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEndOfFile,
+                kind: SyntaxKind::Terminal(LexemeKind::EndOfFile),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -33408,13 +33781,13 @@ impl<'db> From<TerminalEndOfFilePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalEndOfFileGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEndOfFile<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEndOfFile);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::EndOfFile));
     type StablePtr = TerminalEndOfFilePtr<'db>;
     type Green = TerminalEndOfFileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalEndOfFileGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEndOfFile,
+                kind: SyntaxKind::Terminal(LexemeKind::EndOfFile),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -33432,16 +33805,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEndOfFile<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalEndOfFile,
+            SyntaxKind::Terminal(LexemeKind::EndOfFile),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalEndOfFile
+            SyntaxKind::Terminal(LexemeKind::EndOfFile)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalEndOfFile {
+        if kind == SyntaxKind::Terminal(LexemeKind::EndOfFile) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -33461,8 +33834,11 @@ pub struct TokenEq<'db> {
 impl<'db> Token<'db> for TokenEq<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenEqGreen(
-            GreenNode { kind: SyntaxKind::TokenEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Eq),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33493,13 +33869,13 @@ impl<'db> TokenEqGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Eq));
     type StablePtr = TokenEqPtr<'db>;
     type Green = TokenEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEqGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -33508,9 +33884,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEq)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Eq)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -33531,7 +33908,7 @@ pub struct TerminalEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalEq<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalEq;
+    const KIND: LexemeKind = LexemeKind::Eq;
     type TokenType = TokenEq<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -33543,7 +33920,7 @@ impl<'db> Terminal<'db> for TerminalEq<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEq,
+                kind: SyntaxKind::Terminal(LexemeKind::Eq),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -33587,13 +33964,13 @@ impl<'db> From<TerminalEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Eq));
     type StablePtr = TerminalEqPtr<'db>;
     type Green = TerminalEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEq,
+                kind: SyntaxKind::Terminal(LexemeKind::Eq),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -33611,16 +33988,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEq<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalEq,
+            SyntaxKind::Terminal(LexemeKind::Eq),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalEq
+            SyntaxKind::Terminal(LexemeKind::Eq)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalEq { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Eq) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -33636,8 +34017,11 @@ pub struct TokenEqEq<'db> {
 impl<'db> Token<'db> for TokenEqEq<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenEqEqGreen(
-            GreenNode { kind: SyntaxKind::TokenEqEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::EqEq),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33668,13 +34052,13 @@ impl<'db> TokenEqEqGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEqEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::EqEq));
     type StablePtr = TokenEqEqPtr<'db>;
     type Green = TokenEqEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEqEqGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -33683,9 +34067,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEqEq)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::EqEq)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -33706,7 +34091,7 @@ pub struct TerminalEqEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalEqEq<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalEqEq;
+    const KIND: LexemeKind = LexemeKind::EqEq;
     type TokenType = TokenEqEq<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -33718,7 +34103,7 @@ impl<'db> Terminal<'db> for TerminalEqEq<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEqEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEqEq,
+                kind: SyntaxKind::Terminal(LexemeKind::EqEq),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -33762,13 +34147,13 @@ impl<'db> From<TerminalEqEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalEqEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEqEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEqEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::EqEq));
     type StablePtr = TerminalEqEqPtr<'db>;
     type Green = TerminalEqEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalEqEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEqEq,
+                kind: SyntaxKind::Terminal(LexemeKind::EqEq),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -33786,16 +34171,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEqEq<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalEqEq,
+            SyntaxKind::Terminal(LexemeKind::EqEq),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalEqEq
+            SyntaxKind::Terminal(LexemeKind::EqEq)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalEqEq { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::EqEq) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -33811,8 +34200,11 @@ pub struct TokenGE<'db> {
 impl<'db> Token<'db> for TokenGE<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenGEGreen(
-            GreenNode { kind: SyntaxKind::TokenGE, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::GE),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33843,13 +34235,13 @@ impl<'db> TokenGEGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenGE);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::GE));
     type StablePtr = TokenGEPtr<'db>;
     type Green = TokenGEGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenGEGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -33858,9 +34250,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenGE)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::GE)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -33881,7 +34274,7 @@ pub struct TerminalGE<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalGE<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalGE;
+    const KIND: LexemeKind = LexemeKind::GE;
     type TokenType = TokenGE<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -33893,7 +34286,7 @@ impl<'db> Terminal<'db> for TerminalGE<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalGEGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalGE,
+                kind: SyntaxKind::Terminal(LexemeKind::GE),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -33937,13 +34330,13 @@ impl<'db> From<TerminalGEPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalGEGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalGE<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalGE);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::GE));
     type StablePtr = TerminalGEPtr<'db>;
     type Green = TerminalGEGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalGEGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalGE,
+                kind: SyntaxKind::Terminal(LexemeKind::GE),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -33961,16 +34354,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGE<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalGE,
+            SyntaxKind::Terminal(LexemeKind::GE),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalGE
+            SyntaxKind::Terminal(LexemeKind::GE)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalGE { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::GE) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -33986,8 +34383,11 @@ pub struct TokenGT<'db> {
 impl<'db> Token<'db> for TokenGT<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenGTGreen(
-            GreenNode { kind: SyntaxKind::TokenGT, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::GT),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34018,13 +34418,13 @@ impl<'db> TokenGTGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenGT);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::GT));
     type StablePtr = TokenGTPtr<'db>;
     type Green = TokenGTGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenGTGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -34033,9 +34433,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenGT)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::GT)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -34056,7 +34457,7 @@ pub struct TerminalGT<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalGT<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalGT;
+    const KIND: LexemeKind = LexemeKind::GT;
     type TokenType = TokenGT<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -34068,7 +34469,7 @@ impl<'db> Terminal<'db> for TerminalGT<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalGTGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalGT,
+                kind: SyntaxKind::Terminal(LexemeKind::GT),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -34112,13 +34513,13 @@ impl<'db> From<TerminalGTPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalGTGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalGT<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalGT);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::GT));
     type StablePtr = TerminalGTPtr<'db>;
     type Green = TerminalGTGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalGTGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalGT,
+                kind: SyntaxKind::Terminal(LexemeKind::GT),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -34136,16 +34537,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGT<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalGT,
+            SyntaxKind::Terminal(LexemeKind::GT),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalGT
+            SyntaxKind::Terminal(LexemeKind::GT)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalGT { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::GT) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -34161,8 +34566,11 @@ pub struct TokenHash<'db> {
 impl<'db> Token<'db> for TokenHash<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenHashGreen(
-            GreenNode { kind: SyntaxKind::TokenHash, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Hash),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34193,13 +34601,13 @@ impl<'db> TokenHashGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenHash);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Hash));
     type StablePtr = TokenHashPtr<'db>;
     type Green = TokenHashGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenHashGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -34208,9 +34616,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenHash)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Hash)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -34231,7 +34640,7 @@ pub struct TerminalHash<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalHash<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalHash;
+    const KIND: LexemeKind = LexemeKind::Hash;
     type TokenType = TokenHash<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -34243,7 +34652,7 @@ impl<'db> Terminal<'db> for TerminalHash<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalHashGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalHash,
+                kind: SyntaxKind::Terminal(LexemeKind::Hash),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -34287,13 +34696,13 @@ impl<'db> From<TerminalHashPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalHashGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalHash<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalHash);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Hash));
     type StablePtr = TerminalHashPtr<'db>;
     type Green = TerminalHashGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalHashGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalHash,
+                kind: SyntaxKind::Terminal(LexemeKind::Hash),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -34311,16 +34720,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalHash<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalHash,
+            SyntaxKind::Terminal(LexemeKind::Hash),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalHash
+            SyntaxKind::Terminal(LexemeKind::Hash)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalHash { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Hash) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -34336,8 +34749,11 @@ pub struct TokenLBrace<'db> {
 impl<'db> Token<'db> for TokenLBrace<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenLBraceGreen(
-            GreenNode { kind: SyntaxKind::TokenLBrace, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::LBrace),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34368,13 +34784,13 @@ impl<'db> TokenLBraceGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLBrace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::LBrace));
     type StablePtr = TokenLBracePtr<'db>;
     type Green = TokenLBraceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLBraceGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -34383,9 +34799,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLBrace)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::LBrace)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -34406,7 +34823,7 @@ pub struct TerminalLBrace<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalLBrace<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalLBrace;
+    const KIND: LexemeKind = LexemeKind::LBrace;
     type TokenType = TokenLBrace<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -34418,7 +34835,7 @@ impl<'db> Terminal<'db> for TerminalLBrace<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLBraceGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLBrace,
+                kind: SyntaxKind::Terminal(LexemeKind::LBrace),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -34462,13 +34879,13 @@ impl<'db> From<TerminalLBracePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalLBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLBrace<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLBrace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::LBrace));
     type StablePtr = TerminalLBracePtr<'db>;
     type Green = TerminalLBraceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalLBraceGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLBrace,
+                kind: SyntaxKind::Terminal(LexemeKind::LBrace),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -34486,16 +34903,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrace<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalLBrace,
+            SyntaxKind::Terminal(LexemeKind::LBrace),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalLBrace
+            SyntaxKind::Terminal(LexemeKind::LBrace)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalLBrace {
+        if kind == SyntaxKind::Terminal(LexemeKind::LBrace) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -34515,8 +34932,11 @@ pub struct TokenLBrack<'db> {
 impl<'db> Token<'db> for TokenLBrack<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenLBrackGreen(
-            GreenNode { kind: SyntaxKind::TokenLBrack, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::LBrack),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34547,13 +34967,13 @@ impl<'db> TokenLBrackGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLBrack);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::LBrack));
     type StablePtr = TokenLBrackPtr<'db>;
     type Green = TokenLBrackGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLBrackGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -34562,9 +34982,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLBrack)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::LBrack)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -34585,7 +35006,7 @@ pub struct TerminalLBrack<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalLBrack<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalLBrack;
+    const KIND: LexemeKind = LexemeKind::LBrack;
     type TokenType = TokenLBrack<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -34597,7 +35018,7 @@ impl<'db> Terminal<'db> for TerminalLBrack<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLBrackGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLBrack,
+                kind: SyntaxKind::Terminal(LexemeKind::LBrack),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -34641,13 +35062,13 @@ impl<'db> From<TerminalLBrackPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalLBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLBrack<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLBrack);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::LBrack));
     type StablePtr = TerminalLBrackPtr<'db>;
     type Green = TerminalLBrackGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalLBrackGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLBrack,
+                kind: SyntaxKind::Terminal(LexemeKind::LBrack),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -34665,16 +35086,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrack<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalLBrack,
+            SyntaxKind::Terminal(LexemeKind::LBrack),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalLBrack
+            SyntaxKind::Terminal(LexemeKind::LBrack)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalLBrack {
+        if kind == SyntaxKind::Terminal(LexemeKind::LBrack) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -34694,8 +35115,11 @@ pub struct TokenLE<'db> {
 impl<'db> Token<'db> for TokenLE<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenLEGreen(
-            GreenNode { kind: SyntaxKind::TokenLE, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::LE),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34726,13 +35150,13 @@ impl<'db> TokenLEGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLE);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::LE));
     type StablePtr = TokenLEPtr<'db>;
     type Green = TokenLEGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLEGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -34741,9 +35165,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLE)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::LE)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -34764,7 +35189,7 @@ pub struct TerminalLE<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalLE<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalLE;
+    const KIND: LexemeKind = LexemeKind::LE;
     type TokenType = TokenLE<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -34776,7 +35201,7 @@ impl<'db> Terminal<'db> for TerminalLE<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLEGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLE,
+                kind: SyntaxKind::Terminal(LexemeKind::LE),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -34820,13 +35245,13 @@ impl<'db> From<TerminalLEPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalLEGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLE<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLE);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::LE));
     type StablePtr = TerminalLEPtr<'db>;
     type Green = TerminalLEGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalLEGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLE,
+                kind: SyntaxKind::Terminal(LexemeKind::LE),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -34844,16 +35269,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLE<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalLE,
+            SyntaxKind::Terminal(LexemeKind::LE),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalLE
+            SyntaxKind::Terminal(LexemeKind::LE)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalLE { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::LE) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -34869,8 +35298,11 @@ pub struct TokenLParen<'db> {
 impl<'db> Token<'db> for TokenLParen<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenLParenGreen(
-            GreenNode { kind: SyntaxKind::TokenLParen, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::LParen),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34901,13 +35333,13 @@ impl<'db> TokenLParenGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLParen);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::LParen));
     type StablePtr = TokenLParenPtr<'db>;
     type Green = TokenLParenGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLParenGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -34916,9 +35348,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLParen)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::LParen)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -34939,7 +35372,7 @@ pub struct TerminalLParen<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalLParen<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalLParen;
+    const KIND: LexemeKind = LexemeKind::LParen;
     type TokenType = TokenLParen<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -34951,7 +35384,7 @@ impl<'db> Terminal<'db> for TerminalLParen<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLParenGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLParen,
+                kind: SyntaxKind::Terminal(LexemeKind::LParen),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -34995,13 +35428,13 @@ impl<'db> From<TerminalLParenPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalLParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLParen<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLParen);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::LParen));
     type StablePtr = TerminalLParenPtr<'db>;
     type Green = TerminalLParenGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalLParenGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLParen,
+                kind: SyntaxKind::Terminal(LexemeKind::LParen),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -35019,16 +35452,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLParen<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalLParen,
+            SyntaxKind::Terminal(LexemeKind::LParen),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalLParen
+            SyntaxKind::Terminal(LexemeKind::LParen)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalLParen {
+        if kind == SyntaxKind::Terminal(LexemeKind::LParen) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -35048,8 +35481,11 @@ pub struct TokenLT<'db> {
 impl<'db> Token<'db> for TokenLT<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenLTGreen(
-            GreenNode { kind: SyntaxKind::TokenLT, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::LT),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35080,13 +35516,13 @@ impl<'db> TokenLTGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLT);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::LT));
     type StablePtr = TokenLTPtr<'db>;
     type Green = TokenLTGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLTGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -35095,9 +35531,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenLT)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::LT)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -35118,7 +35555,7 @@ pub struct TerminalLT<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalLT<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalLT;
+    const KIND: LexemeKind = LexemeKind::LT;
     type TokenType = TokenLT<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -35130,7 +35567,7 @@ impl<'db> Terminal<'db> for TerminalLT<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLTGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLT,
+                kind: SyntaxKind::Terminal(LexemeKind::LT),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -35174,13 +35611,13 @@ impl<'db> From<TerminalLTPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalLTGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLT<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLT);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::LT));
     type StablePtr = TerminalLTPtr<'db>;
     type Green = TerminalLTGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalLTGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalLT,
+                kind: SyntaxKind::Terminal(LexemeKind::LT),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -35198,16 +35635,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLT<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalLT,
+            SyntaxKind::Terminal(LexemeKind::LT),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalLT
+            SyntaxKind::Terminal(LexemeKind::LT)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalLT { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::LT) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -35223,8 +35664,11 @@ pub struct TokenMatchArrow<'db> {
 impl<'db> Token<'db> for TokenMatchArrow<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenMatchArrowGreen(
-            GreenNode { kind: SyntaxKind::TokenMatchArrow, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::MatchArrow),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35255,13 +35699,13 @@ impl<'db> TokenMatchArrowGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMatchArrow);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::MatchArrow));
     type StablePtr = TokenMatchArrowPtr<'db>;
     type Green = TokenMatchArrowGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMatchArrowGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -35270,9 +35714,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMatchArrow)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::MatchArrow)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -35293,7 +35738,7 @@ pub struct TerminalMatchArrow<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalMatchArrow<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalMatchArrow;
+    const KIND: LexemeKind = LexemeKind::MatchArrow;
     type TokenType = TokenMatchArrow<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -35305,7 +35750,7 @@ impl<'db> Terminal<'db> for TerminalMatchArrow<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMatchArrowGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMatchArrow,
+                kind: SyntaxKind::Terminal(LexemeKind::MatchArrow),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -35349,13 +35794,13 @@ impl<'db> From<TerminalMatchArrowPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalMatchArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMatchArrow<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMatchArrow);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::MatchArrow));
     type StablePtr = TerminalMatchArrowPtr<'db>;
     type Green = TerminalMatchArrowGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalMatchArrowGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMatchArrow,
+                kind: SyntaxKind::Terminal(LexemeKind::MatchArrow),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -35373,16 +35818,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatchArrow<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalMatchArrow,
+            SyntaxKind::Terminal(LexemeKind::MatchArrow),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalMatchArrow
+            SyntaxKind::Terminal(LexemeKind::MatchArrow)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalMatchArrow {
+        if kind == SyntaxKind::Terminal(LexemeKind::MatchArrow) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -35402,8 +35847,11 @@ pub struct TokenMinus<'db> {
 impl<'db> Token<'db> for TokenMinus<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenMinusGreen(
-            GreenNode { kind: SyntaxKind::TokenMinus, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Minus),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35434,13 +35882,13 @@ impl<'db> TokenMinusGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMinus);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Minus));
     type StablePtr = TokenMinusPtr<'db>;
     type Green = TokenMinusGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMinusGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -35449,9 +35897,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMinus)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Minus)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -35472,7 +35921,7 @@ pub struct TerminalMinus<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalMinus<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalMinus;
+    const KIND: LexemeKind = LexemeKind::Minus;
     type TokenType = TokenMinus<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -35484,7 +35933,7 @@ impl<'db> Terminal<'db> for TerminalMinus<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMinusGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMinus,
+                kind: SyntaxKind::Terminal(LexemeKind::Minus),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -35528,13 +35977,13 @@ impl<'db> From<TerminalMinusPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalMinusGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMinus<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMinus);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Minus));
     type StablePtr = TerminalMinusPtr<'db>;
     type Green = TerminalMinusGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalMinusGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMinus,
+                kind: SyntaxKind::Terminal(LexemeKind::Minus),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -35552,16 +36001,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinus<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalMinus,
+            SyntaxKind::Terminal(LexemeKind::Minus),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalMinus
+            SyntaxKind::Terminal(LexemeKind::Minus)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalMinus {
+        if kind == SyntaxKind::Terminal(LexemeKind::Minus) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -35581,8 +36030,11 @@ pub struct TokenMinusEq<'db> {
 impl<'db> Token<'db> for TokenMinusEq<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenMinusEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMinusEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::MinusEq),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35613,13 +36065,13 @@ impl<'db> TokenMinusEqGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMinusEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::MinusEq));
     type StablePtr = TokenMinusEqPtr<'db>;
     type Green = TokenMinusEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMinusEqGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -35628,9 +36080,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMinusEq)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::MinusEq)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -35651,7 +36104,7 @@ pub struct TerminalMinusEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalMinusEq<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalMinusEq;
+    const KIND: LexemeKind = LexemeKind::MinusEq;
     type TokenType = TokenMinusEq<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -35663,7 +36116,7 @@ impl<'db> Terminal<'db> for TerminalMinusEq<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMinusEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMinusEq,
+                kind: SyntaxKind::Terminal(LexemeKind::MinusEq),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -35707,13 +36160,13 @@ impl<'db> From<TerminalMinusEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalMinusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMinusEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMinusEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::MinusEq));
     type StablePtr = TerminalMinusEqPtr<'db>;
     type Green = TerminalMinusEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalMinusEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMinusEq,
+                kind: SyntaxKind::Terminal(LexemeKind::MinusEq),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -35731,16 +36184,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinusEq<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalMinusEq,
+            SyntaxKind::Terminal(LexemeKind::MinusEq),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalMinusEq
+            SyntaxKind::Terminal(LexemeKind::MinusEq)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalMinusEq {
+        if kind == SyntaxKind::Terminal(LexemeKind::MinusEq) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -35760,8 +36213,11 @@ pub struct TokenMod<'db> {
 impl<'db> Token<'db> for TokenMod<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenModGreen(
-            GreenNode { kind: SyntaxKind::TokenMod, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Mod),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35792,13 +36248,13 @@ impl<'db> TokenModGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMod);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Mod));
     type StablePtr = TokenModPtr<'db>;
     type Green = TokenModGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenModGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -35807,9 +36263,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMod)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Mod)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -35830,7 +36287,7 @@ pub struct TerminalMod<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalMod<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalMod;
+    const KIND: LexemeKind = LexemeKind::Mod;
     type TokenType = TokenMod<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -35842,7 +36299,7 @@ impl<'db> Terminal<'db> for TerminalMod<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalModGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMod,
+                kind: SyntaxKind::Terminal(LexemeKind::Mod),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -35886,13 +36343,13 @@ impl<'db> From<TerminalModPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalModGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMod<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMod);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Mod));
     type StablePtr = TerminalModPtr<'db>;
     type Green = TerminalModGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalModGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMod,
+                kind: SyntaxKind::Terminal(LexemeKind::Mod),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -35910,16 +36367,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMod<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalMod,
+            SyntaxKind::Terminal(LexemeKind::Mod),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalMod
+            SyntaxKind::Terminal(LexemeKind::Mod)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalMod { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Mod) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -35935,8 +36396,11 @@ pub struct TokenModEq<'db> {
 impl<'db> Token<'db> for TokenModEq<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenModEqGreen(
-            GreenNode { kind: SyntaxKind::TokenModEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::ModEq),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35967,13 +36431,13 @@ impl<'db> TokenModEqGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenModEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::ModEq));
     type StablePtr = TokenModEqPtr<'db>;
     type Green = TokenModEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenModEqGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -35982,9 +36446,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenModEq)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::ModEq)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -36005,7 +36470,7 @@ pub struct TerminalModEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalModEq<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalModEq;
+    const KIND: LexemeKind = LexemeKind::ModEq;
     type TokenType = TokenModEq<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -36017,7 +36482,7 @@ impl<'db> Terminal<'db> for TerminalModEq<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalModEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalModEq,
+                kind: SyntaxKind::Terminal(LexemeKind::ModEq),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -36061,13 +36526,13 @@ impl<'db> From<TerminalModEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalModEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalModEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalModEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::ModEq));
     type StablePtr = TerminalModEqPtr<'db>;
     type Green = TerminalModEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalModEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalModEq,
+                kind: SyntaxKind::Terminal(LexemeKind::ModEq),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -36085,16 +36550,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModEq<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalModEq,
+            SyntaxKind::Terminal(LexemeKind::ModEq),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalModEq
+            SyntaxKind::Terminal(LexemeKind::ModEq)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalModEq {
+        if kind == SyntaxKind::Terminal(LexemeKind::ModEq) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -36114,8 +36579,11 @@ pub struct TokenMul<'db> {
 impl<'db> Token<'db> for TokenMul<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenMulGreen(
-            GreenNode { kind: SyntaxKind::TokenMul, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Mul),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36146,13 +36614,13 @@ impl<'db> TokenMulGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMul);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Mul));
     type StablePtr = TokenMulPtr<'db>;
     type Green = TokenMulGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMulGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -36161,9 +36629,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMul)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Mul)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -36184,7 +36653,7 @@ pub struct TerminalMul<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalMul<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalMul;
+    const KIND: LexemeKind = LexemeKind::Mul;
     type TokenType = TokenMul<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -36196,7 +36665,7 @@ impl<'db> Terminal<'db> for TerminalMul<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMulGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMul,
+                kind: SyntaxKind::Terminal(LexemeKind::Mul),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -36240,13 +36709,13 @@ impl<'db> From<TerminalMulPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalMulGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMul<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMul);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Mul));
     type StablePtr = TerminalMulPtr<'db>;
     type Green = TerminalMulGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalMulGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMul,
+                kind: SyntaxKind::Terminal(LexemeKind::Mul),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -36264,16 +36733,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMul<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalMul,
+            SyntaxKind::Terminal(LexemeKind::Mul),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalMul
+            SyntaxKind::Terminal(LexemeKind::Mul)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalMul { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Mul) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -36289,8 +36762,11 @@ pub struct TokenMulEq<'db> {
 impl<'db> Token<'db> for TokenMulEq<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenMulEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMulEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::MulEq),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36321,13 +36797,13 @@ impl<'db> TokenMulEqGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMulEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::MulEq));
     type StablePtr = TokenMulEqPtr<'db>;
     type Green = TokenMulEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMulEqGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -36336,9 +36812,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMulEq)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::MulEq)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -36359,7 +36836,7 @@ pub struct TerminalMulEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalMulEq<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalMulEq;
+    const KIND: LexemeKind = LexemeKind::MulEq;
     type TokenType = TokenMulEq<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -36371,7 +36848,7 @@ impl<'db> Terminal<'db> for TerminalMulEq<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMulEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMulEq,
+                kind: SyntaxKind::Terminal(LexemeKind::MulEq),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -36415,13 +36892,13 @@ impl<'db> From<TerminalMulEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalMulEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMulEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMulEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::MulEq));
     type StablePtr = TerminalMulEqPtr<'db>;
     type Green = TerminalMulEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalMulEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalMulEq,
+                kind: SyntaxKind::Terminal(LexemeKind::MulEq),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -36439,16 +36916,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMulEq<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalMulEq,
+            SyntaxKind::Terminal(LexemeKind::MulEq),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalMulEq
+            SyntaxKind::Terminal(LexemeKind::MulEq)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalMulEq {
+        if kind == SyntaxKind::Terminal(LexemeKind::MulEq) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -36468,8 +36945,11 @@ pub struct TokenNeq<'db> {
 impl<'db> Token<'db> for TokenNeq<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenNeqGreen(
-            GreenNode { kind: SyntaxKind::TokenNeq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Neq),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36500,13 +36980,13 @@ impl<'db> TokenNeqGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNeq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Neq));
     type StablePtr = TokenNeqPtr<'db>;
     type Green = TokenNeqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenNeqGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -36515,9 +36995,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNeq)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Neq)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -36538,7 +37019,7 @@ pub struct TerminalNeq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalNeq<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalNeq;
+    const KIND: LexemeKind = LexemeKind::Neq;
     type TokenType = TokenNeq<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -36550,7 +37031,7 @@ impl<'db> Terminal<'db> for TerminalNeq<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalNeqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalNeq,
+                kind: SyntaxKind::Terminal(LexemeKind::Neq),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -36594,13 +37075,13 @@ impl<'db> From<TerminalNeqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalNeqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalNeq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNeq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Neq));
     type StablePtr = TerminalNeqPtr<'db>;
     type Green = TerminalNeqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalNeqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalNeq,
+                kind: SyntaxKind::Terminal(LexemeKind::Neq),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -36618,16 +37099,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNeq<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalNeq,
+            SyntaxKind::Terminal(LexemeKind::Neq),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalNeq
+            SyntaxKind::Terminal(LexemeKind::Neq)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalNeq { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Neq) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -36643,8 +37128,11 @@ pub struct TokenNot<'db> {
 impl<'db> Token<'db> for TokenNot<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenNotGreen(
-            GreenNode { kind: SyntaxKind::TokenNot, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Not),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36675,13 +37163,13 @@ impl<'db> TokenNotGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Not));
     type StablePtr = TokenNotPtr<'db>;
     type Green = TokenNotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenNotGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -36690,9 +37178,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNot)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Not)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -36713,7 +37202,7 @@ pub struct TerminalNot<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalNot<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalNot;
+    const KIND: LexemeKind = LexemeKind::Not;
     type TokenType = TokenNot<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -36725,7 +37214,7 @@ impl<'db> Terminal<'db> for TerminalNot<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalNotGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalNot,
+                kind: SyntaxKind::Terminal(LexemeKind::Not),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -36769,13 +37258,13 @@ impl<'db> From<TerminalNotPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalNot<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Not));
     type StablePtr = TerminalNotPtr<'db>;
     type Green = TerminalNotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalNotGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalNot,
+                kind: SyntaxKind::Terminal(LexemeKind::Not),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -36793,16 +37282,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNot<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalNot,
+            SyntaxKind::Terminal(LexemeKind::Not),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalNot
+            SyntaxKind::Terminal(LexemeKind::Not)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalNot { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Not) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -36818,8 +37311,11 @@ pub struct TokenBitNot<'db> {
 impl<'db> Token<'db> for TokenBitNot<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenBitNotGreen(
-            GreenNode { kind: SyntaxKind::TokenBitNot, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::BitNot),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36850,13 +37346,13 @@ impl<'db> TokenBitNotGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenBitNot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::BitNot));
     type StablePtr = TokenBitNotPtr<'db>;
     type Green = TokenBitNotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenBitNotGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -36865,9 +37361,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenBitNot)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::BitNot)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -36888,7 +37385,7 @@ pub struct TerminalBitNot<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalBitNot<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalBitNot;
+    const KIND: LexemeKind = LexemeKind::BitNot;
     type TokenType = TokenBitNot<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -36900,7 +37397,7 @@ impl<'db> Terminal<'db> for TerminalBitNot<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalBitNotGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalBitNot,
+                kind: SyntaxKind::Terminal(LexemeKind::BitNot),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -36944,13 +37441,13 @@ impl<'db> From<TerminalBitNotPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalBitNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalBitNot<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalBitNot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::BitNot));
     type StablePtr = TerminalBitNotPtr<'db>;
     type Green = TerminalBitNotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalBitNotGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalBitNot,
+                kind: SyntaxKind::Terminal(LexemeKind::BitNot),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -36968,16 +37465,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBitNot<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalBitNot,
+            SyntaxKind::Terminal(LexemeKind::BitNot),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalBitNot
+            SyntaxKind::Terminal(LexemeKind::BitNot)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalBitNot {
+        if kind == SyntaxKind::Terminal(LexemeKind::BitNot) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -36997,8 +37494,11 @@ pub struct TokenOr<'db> {
 impl<'db> Token<'db> for TokenOr<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenOrGreen(
-            GreenNode { kind: SyntaxKind::TokenOr, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Or),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37029,13 +37529,13 @@ impl<'db> TokenOrGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenOr);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Or));
     type StablePtr = TokenOrPtr<'db>;
     type Green = TokenOrGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenOrGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -37044,9 +37544,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenOr)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Or)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -37067,7 +37568,7 @@ pub struct TerminalOr<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalOr<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalOr;
+    const KIND: LexemeKind = LexemeKind::Or;
     type TokenType = TokenOr<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -37079,7 +37580,7 @@ impl<'db> Terminal<'db> for TerminalOr<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalOrGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalOr,
+                kind: SyntaxKind::Terminal(LexemeKind::Or),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -37123,13 +37624,13 @@ impl<'db> From<TerminalOrPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalOr<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalOr);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Or));
     type StablePtr = TerminalOrPtr<'db>;
     type Green = TerminalOrGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalOrGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalOr,
+                kind: SyntaxKind::Terminal(LexemeKind::Or),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -37147,16 +37648,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOr<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalOr,
+            SyntaxKind::Terminal(LexemeKind::Or),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalOr
+            SyntaxKind::Terminal(LexemeKind::Or)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalOr { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Or) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -37172,8 +37677,11 @@ pub struct TokenOrOr<'db> {
 impl<'db> Token<'db> for TokenOrOr<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenOrOrGreen(
-            GreenNode { kind: SyntaxKind::TokenOrOr, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::OrOr),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37204,13 +37712,13 @@ impl<'db> TokenOrOrGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenOrOr);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::OrOr));
     type StablePtr = TokenOrOrPtr<'db>;
     type Green = TokenOrOrGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenOrOrGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -37219,9 +37727,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenOrOr)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::OrOr)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -37242,7 +37751,7 @@ pub struct TerminalOrOr<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalOrOr<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalOrOr;
+    const KIND: LexemeKind = LexemeKind::OrOr;
     type TokenType = TokenOrOr<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -37254,7 +37763,7 @@ impl<'db> Terminal<'db> for TerminalOrOr<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalOrOrGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalOrOr,
+                kind: SyntaxKind::Terminal(LexemeKind::OrOr),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -37298,13 +37807,13 @@ impl<'db> From<TerminalOrOrPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalOrOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalOrOr<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalOrOr);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::OrOr));
     type StablePtr = TerminalOrOrPtr<'db>;
     type Green = TerminalOrOrGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalOrOrGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalOrOr,
+                kind: SyntaxKind::Terminal(LexemeKind::OrOr),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -37322,16 +37831,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOrOr<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalOrOr,
+            SyntaxKind::Terminal(LexemeKind::OrOr),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalOrOr
+            SyntaxKind::Terminal(LexemeKind::OrOr)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalOrOr { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::OrOr) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -37347,8 +37860,11 @@ pub struct TokenPlus<'db> {
 impl<'db> Token<'db> for TokenPlus<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenPlusGreen(
-            GreenNode { kind: SyntaxKind::TokenPlus, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Plus),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37379,13 +37895,13 @@ impl<'db> TokenPlusGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenPlus);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Plus));
     type StablePtr = TokenPlusPtr<'db>;
     type Green = TokenPlusGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenPlusGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -37394,9 +37910,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenPlus)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Plus)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -37417,7 +37934,7 @@ pub struct TerminalPlus<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalPlus<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalPlus;
+    const KIND: LexemeKind = LexemeKind::Plus;
     type TokenType = TokenPlus<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -37429,7 +37946,7 @@ impl<'db> Terminal<'db> for TerminalPlus<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalPlusGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalPlus,
+                kind: SyntaxKind::Terminal(LexemeKind::Plus),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -37473,13 +37990,13 @@ impl<'db> From<TerminalPlusPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalPlusGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalPlus<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalPlus);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Plus));
     type StablePtr = TerminalPlusPtr<'db>;
     type Green = TerminalPlusGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalPlusGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalPlus,
+                kind: SyntaxKind::Terminal(LexemeKind::Plus),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -37497,16 +38014,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlus<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalPlus,
+            SyntaxKind::Terminal(LexemeKind::Plus),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalPlus
+            SyntaxKind::Terminal(LexemeKind::Plus)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalPlus { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Plus) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -37522,8 +38043,11 @@ pub struct TokenPlusEq<'db> {
 impl<'db> Token<'db> for TokenPlusEq<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenPlusEqGreen(
-            GreenNode { kind: SyntaxKind::TokenPlusEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::PlusEq),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37554,13 +38078,13 @@ impl<'db> TokenPlusEqGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenPlusEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::PlusEq));
     type StablePtr = TokenPlusEqPtr<'db>;
     type Green = TokenPlusEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenPlusEqGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -37569,9 +38093,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenPlusEq)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::PlusEq)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -37592,7 +38117,7 @@ pub struct TerminalPlusEq<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalPlusEq<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalPlusEq;
+    const KIND: LexemeKind = LexemeKind::PlusEq;
     type TokenType = TokenPlusEq<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -37604,7 +38129,7 @@ impl<'db> Terminal<'db> for TerminalPlusEq<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalPlusEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalPlusEq,
+                kind: SyntaxKind::Terminal(LexemeKind::PlusEq),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -37648,13 +38173,13 @@ impl<'db> From<TerminalPlusEqPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalPlusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalPlusEq<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalPlusEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::PlusEq));
     type StablePtr = TerminalPlusEqPtr<'db>;
     type Green = TerminalPlusEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalPlusEqGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalPlusEq,
+                kind: SyntaxKind::Terminal(LexemeKind::PlusEq),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -37672,16 +38197,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlusEq<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalPlusEq,
+            SyntaxKind::Terminal(LexemeKind::PlusEq),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalPlusEq
+            SyntaxKind::Terminal(LexemeKind::PlusEq)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalPlusEq {
+        if kind == SyntaxKind::Terminal(LexemeKind::PlusEq) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -37702,7 +38227,7 @@ impl<'db> Token<'db> for TokenQuestionMark<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenQuestionMarkGreen(
             GreenNode {
-                kind: SyntaxKind::TokenQuestionMark,
+                kind: SyntaxKind::Token(LexemeKind::QuestionMark),
                 details: GreenNodeDetails::Token(text),
             }
             .intern(db),
@@ -37736,13 +38261,13 @@ impl<'db> TokenQuestionMarkGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenQuestionMark);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::QuestionMark));
     type StablePtr = TokenQuestionMarkPtr<'db>;
     type Green = TokenQuestionMarkGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenQuestionMarkGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -37751,9 +38276,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenQuestionMark)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::QuestionMark)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -37774,7 +38300,7 @@ pub struct TerminalQuestionMark<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalQuestionMark<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalQuestionMark;
+    const KIND: LexemeKind = LexemeKind::QuestionMark;
     type TokenType = TokenQuestionMark<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -37786,7 +38312,7 @@ impl<'db> Terminal<'db> for TerminalQuestionMark<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalQuestionMarkGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalQuestionMark,
+                kind: SyntaxKind::Terminal(LexemeKind::QuestionMark),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -37830,13 +38356,13 @@ impl<'db> From<TerminalQuestionMarkPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalQuestionMarkGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalQuestionMark<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalQuestionMark);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::QuestionMark));
     type StablePtr = TerminalQuestionMarkPtr<'db>;
     type Green = TerminalQuestionMarkGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalQuestionMarkGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalQuestionMark,
+                kind: SyntaxKind::Terminal(LexemeKind::QuestionMark),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -37854,16 +38380,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalQuestionMark<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalQuestionMark,
+            SyntaxKind::Terminal(LexemeKind::QuestionMark),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalQuestionMark
+            SyntaxKind::Terminal(LexemeKind::QuestionMark)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalQuestionMark {
+        if kind == SyntaxKind::Terminal(LexemeKind::QuestionMark) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -37883,8 +38409,11 @@ pub struct TokenRBrace<'db> {
 impl<'db> Token<'db> for TokenRBrace<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenRBraceGreen(
-            GreenNode { kind: SyntaxKind::TokenRBrace, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::RBrace),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37915,13 +38444,13 @@ impl<'db> TokenRBraceGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRBrace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::RBrace));
     type StablePtr = TokenRBracePtr<'db>;
     type Green = TokenRBraceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenRBraceGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -37930,9 +38459,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRBrace)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::RBrace)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -37953,7 +38483,7 @@ pub struct TerminalRBrace<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalRBrace<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalRBrace;
+    const KIND: LexemeKind = LexemeKind::RBrace;
     type TokenType = TokenRBrace<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -37965,7 +38495,7 @@ impl<'db> Terminal<'db> for TerminalRBrace<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRBraceGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalRBrace,
+                kind: SyntaxKind::Terminal(LexemeKind::RBrace),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -38009,13 +38539,13 @@ impl<'db> From<TerminalRBracePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalRBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalRBrace<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRBrace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::RBrace));
     type StablePtr = TerminalRBracePtr<'db>;
     type Green = TerminalRBraceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalRBraceGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalRBrace,
+                kind: SyntaxKind::Terminal(LexemeKind::RBrace),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -38033,16 +38563,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrace<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalRBrace,
+            SyntaxKind::Terminal(LexemeKind::RBrace),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalRBrace
+            SyntaxKind::Terminal(LexemeKind::RBrace)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalRBrace {
+        if kind == SyntaxKind::Terminal(LexemeKind::RBrace) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -38062,8 +38592,11 @@ pub struct TokenRBrack<'db> {
 impl<'db> Token<'db> for TokenRBrack<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenRBrackGreen(
-            GreenNode { kind: SyntaxKind::TokenRBrack, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::RBrack),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38094,13 +38627,13 @@ impl<'db> TokenRBrackGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRBrack);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::RBrack));
     type StablePtr = TokenRBrackPtr<'db>;
     type Green = TokenRBrackGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenRBrackGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -38109,9 +38642,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRBrack)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::RBrack)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -38132,7 +38666,7 @@ pub struct TerminalRBrack<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalRBrack<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalRBrack;
+    const KIND: LexemeKind = LexemeKind::RBrack;
     type TokenType = TokenRBrack<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -38144,7 +38678,7 @@ impl<'db> Terminal<'db> for TerminalRBrack<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRBrackGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalRBrack,
+                kind: SyntaxKind::Terminal(LexemeKind::RBrack),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -38188,13 +38722,13 @@ impl<'db> From<TerminalRBrackPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalRBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalRBrack<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRBrack);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::RBrack));
     type StablePtr = TerminalRBrackPtr<'db>;
     type Green = TerminalRBrackGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalRBrackGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalRBrack,
+                kind: SyntaxKind::Terminal(LexemeKind::RBrack),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -38212,16 +38746,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrack<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalRBrack,
+            SyntaxKind::Terminal(LexemeKind::RBrack),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalRBrack
+            SyntaxKind::Terminal(LexemeKind::RBrack)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalRBrack {
+        if kind == SyntaxKind::Terminal(LexemeKind::RBrack) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -38241,8 +38775,11 @@ pub struct TokenRParen<'db> {
 impl<'db> Token<'db> for TokenRParen<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenRParenGreen(
-            GreenNode { kind: SyntaxKind::TokenRParen, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::RParen),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38273,13 +38810,13 @@ impl<'db> TokenRParenGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRParen);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::RParen));
     type StablePtr = TokenRParenPtr<'db>;
     type Green = TokenRParenGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenRParenGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -38288,9 +38825,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenRParen)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::RParen)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -38311,7 +38849,7 @@ pub struct TerminalRParen<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalRParen<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalRParen;
+    const KIND: LexemeKind = LexemeKind::RParen;
     type TokenType = TokenRParen<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -38323,7 +38861,7 @@ impl<'db> Terminal<'db> for TerminalRParen<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRParenGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalRParen,
+                kind: SyntaxKind::Terminal(LexemeKind::RParen),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -38367,13 +38905,13 @@ impl<'db> From<TerminalRParenPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalRParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalRParen<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRParen);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::RParen));
     type StablePtr = TerminalRParenPtr<'db>;
     type Green = TerminalRParenGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalRParenGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalRParen,
+                kind: SyntaxKind::Terminal(LexemeKind::RParen),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -38391,16 +38929,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRParen<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalRParen,
+            SyntaxKind::Terminal(LexemeKind::RParen),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalRParen
+            SyntaxKind::Terminal(LexemeKind::RParen)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalRParen {
+        if kind == SyntaxKind::Terminal(LexemeKind::RParen) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -38420,8 +38958,11 @@ pub struct TokenSemicolon<'db> {
 impl<'db> Token<'db> for TokenSemicolon<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenSemicolonGreen(
-            GreenNode { kind: SyntaxKind::TokenSemicolon, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Semicolon),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38452,13 +38993,13 @@ impl<'db> TokenSemicolonGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSemicolon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Semicolon));
     type StablePtr = TokenSemicolonPtr<'db>;
     type Green = TokenSemicolonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSemicolonGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -38467,9 +39008,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenSemicolon)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Semicolon)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -38490,7 +39032,7 @@ pub struct TerminalSemicolon<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalSemicolon<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalSemicolon;
+    const KIND: LexemeKind = LexemeKind::Semicolon;
     type TokenType = TokenSemicolon<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -38502,7 +39044,7 @@ impl<'db> Terminal<'db> for TerminalSemicolon<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalSemicolonGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalSemicolon,
+                kind: SyntaxKind::Terminal(LexemeKind::Semicolon),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -38546,13 +39088,13 @@ impl<'db> From<TerminalSemicolonPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalSemicolonGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalSemicolon<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalSemicolon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Semicolon));
     type StablePtr = TerminalSemicolonPtr<'db>;
     type Green = TerminalSemicolonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalSemicolonGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalSemicolon,
+                kind: SyntaxKind::Terminal(LexemeKind::Semicolon),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -38570,16 +39112,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalSemicolon<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalSemicolon,
+            SyntaxKind::Terminal(LexemeKind::Semicolon),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalSemicolon
+            SyntaxKind::Terminal(LexemeKind::Semicolon)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalSemicolon {
+        if kind == SyntaxKind::Terminal(LexemeKind::Semicolon) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -38599,8 +39141,11 @@ pub struct TokenUnderscore<'db> {
 impl<'db> Token<'db> for TokenUnderscore<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenUnderscoreGreen(
-            GreenNode { kind: SyntaxKind::TokenUnderscore, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Underscore),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38631,13 +39176,13 @@ impl<'db> TokenUnderscoreGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenUnderscore);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Underscore));
     type StablePtr = TokenUnderscorePtr<'db>;
     type Green = TokenUnderscoreGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenUnderscoreGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -38646,9 +39191,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenUnderscore)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Underscore)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -38669,7 +39215,7 @@ pub struct TerminalUnderscore<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalUnderscore<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalUnderscore;
+    const KIND: LexemeKind = LexemeKind::Underscore;
     type TokenType = TokenUnderscore<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -38681,7 +39227,7 @@ impl<'db> Terminal<'db> for TerminalUnderscore<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalUnderscoreGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalUnderscore,
+                kind: SyntaxKind::Terminal(LexemeKind::Underscore),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -38725,13 +39271,13 @@ impl<'db> From<TerminalUnderscorePtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalUnderscoreGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalUnderscore<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalUnderscore);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Underscore));
     type StablePtr = TerminalUnderscorePtr<'db>;
     type Green = TerminalUnderscoreGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalUnderscoreGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalUnderscore,
+                kind: SyntaxKind::Terminal(LexemeKind::Underscore),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -38749,16 +39295,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUnderscore<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalUnderscore,
+            SyntaxKind::Terminal(LexemeKind::Underscore),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalUnderscore
+            SyntaxKind::Terminal(LexemeKind::Underscore)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalUnderscore {
+        if kind == SyntaxKind::Terminal(LexemeKind::Underscore) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -38778,8 +39324,11 @@ pub struct TokenXor<'db> {
 impl<'db> Token<'db> for TokenXor<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenXorGreen(
-            GreenNode { kind: SyntaxKind::TokenXor, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Xor),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38810,13 +39359,13 @@ impl<'db> TokenXorGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenXor);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Xor));
     type StablePtr = TokenXorPtr<'db>;
     type Green = TokenXorGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenXorGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -38825,9 +39374,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenXor)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Xor)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -38848,7 +39398,7 @@ pub struct TerminalXor<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalXor<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalXor;
+    const KIND: LexemeKind = LexemeKind::Xor;
     type TokenType = TokenXor<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -38860,7 +39410,7 @@ impl<'db> Terminal<'db> for TerminalXor<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalXorGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalXor,
+                kind: SyntaxKind::Terminal(LexemeKind::Xor),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -38904,13 +39454,13 @@ impl<'db> From<TerminalXorPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalXorGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalXor<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalXor);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Xor));
     type StablePtr = TerminalXorPtr<'db>;
     type Green = TerminalXorGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalXorGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalXor,
+                kind: SyntaxKind::Terminal(LexemeKind::Xor),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -38928,16 +39478,20 @@ impl<'db> TypedSyntaxNode<'db> for TerminalXor<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalXor,
+            SyntaxKind::Terminal(LexemeKind::Xor),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalXor
+            SyntaxKind::Terminal(LexemeKind::Xor)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalXor { Some(Self::from_syntax_node(db, node)) } else { None }
+        if kind == SyntaxKind::Terminal(LexemeKind::Xor) {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
     }
     fn as_syntax_node(&self) -> SyntaxNode<'db> {
         self.node
@@ -39042,8 +39596,11 @@ pub struct TokenEmpty<'db> {
 impl<'db> Token<'db> for TokenEmpty<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenEmptyGreen(
-            GreenNode { kind: SyntaxKind::TokenEmpty, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Token(LexemeKind::Empty),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39074,13 +39631,13 @@ impl<'db> TokenEmptyGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEmpty);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Token(LexemeKind::Empty));
     type StablePtr = TokenEmptyPtr<'db>;
     type Green = TokenEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEmptyGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -39089,9 +39646,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenEmpty)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Token(LexemeKind::Empty)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -39112,7 +39670,7 @@ pub struct TerminalEmpty<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> Terminal<'db> for TerminalEmpty<'db> {
-    const KIND: SyntaxKind = SyntaxKind::TerminalEmpty;
+    const KIND: LexemeKind = LexemeKind::Empty;
     type TokenType = TokenEmpty<'db>;
     fn new_green(
         db: &'db dyn Database,
@@ -39124,7 +39682,7 @@ impl<'db> Terminal<'db> for TerminalEmpty<'db> {
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEmptyGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEmpty,
+                kind: SyntaxKind::Terminal(LexemeKind::Empty),
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
@@ -39168,13 +39726,13 @@ impl<'db> From<TerminalEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct TerminalEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEmpty<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEmpty);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Terminal(LexemeKind::Empty));
     type StablePtr = TerminalEmptyPtr<'db>;
     type Green = TerminalEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TerminalEmptyGreen(
             GreenNode {
-                kind: SyntaxKind::TerminalEmpty,
+                kind: SyntaxKind::Terminal(LexemeKind::Empty),
                 details: GreenNodeDetails::Node {
                     children: [
                         Trivia::missing(db).0,
@@ -39192,16 +39750,16 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEmpty<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TerminalEmpty,
+            SyntaxKind::Terminal(LexemeKind::Empty),
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TerminalEmpty
+            SyntaxKind::Terminal(LexemeKind::Empty)
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TerminalEmpty {
+        if kind == SyntaxKind::Terminal(LexemeKind::Empty) {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -39222,7 +39780,7 @@ impl<'db> Token<'db> for TokenSingleLineComment<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenSingleLineCommentGreen(
             GreenNode {
-                kind: SyntaxKind::TokenSingleLineComment,
+                kind: SyntaxKind::TriviaToken(TriviaKind::SingleLineComment),
                 details: GreenNodeDetails::Token(text),
             }
             .intern(db),
@@ -39256,13 +39814,14 @@ impl<'db> TokenSingleLineCommentGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSingleLineComment);
+    const OPTIONAL_KIND: Option<SyntaxKind> =
+        Some(SyntaxKind::TriviaToken(TriviaKind::SingleLineComment));
     type StablePtr = TokenSingleLineCommentPtr<'db>;
     type Green = TokenSingleLineCommentGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSingleLineCommentGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -39273,7 +39832,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
-                SyntaxKind::TokenSingleLineComment
+                SyntaxKind::TriviaToken(TriviaKind::SingleLineComment)
             ),
         }
     }
@@ -39298,7 +39857,7 @@ impl<'db> Token<'db> for TokenSingleLineInnerComment<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenSingleLineInnerCommentGreen(
             GreenNode {
-                kind: SyntaxKind::TokenSingleLineInnerComment,
+                kind: SyntaxKind::TriviaToken(TriviaKind::SingleLineInnerComment),
                 details: GreenNodeDetails::Token(text),
             }
             .intern(db),
@@ -39332,13 +39891,14 @@ impl<'db> TokenSingleLineInnerCommentGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSingleLineInnerComment);
+    const OPTIONAL_KIND: Option<SyntaxKind> =
+        Some(SyntaxKind::TriviaToken(TriviaKind::SingleLineInnerComment));
     type StablePtr = TokenSingleLineInnerCommentPtr<'db>;
     type Green = TokenSingleLineInnerCommentGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSingleLineInnerCommentGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -39349,7 +39909,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
-                SyntaxKind::TokenSingleLineInnerComment
+                SyntaxKind::TriviaToken(TriviaKind::SingleLineInnerComment)
             ),
         }
     }
@@ -39374,7 +39934,7 @@ impl<'db> Token<'db> for TokenSingleLineDocComment<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenSingleLineDocCommentGreen(
             GreenNode {
-                kind: SyntaxKind::TokenSingleLineDocComment,
+                kind: SyntaxKind::TriviaToken(TriviaKind::SingleLineDocComment),
                 details: GreenNodeDetails::Token(text),
             }
             .intern(db),
@@ -39408,13 +39968,14 @@ impl<'db> TokenSingleLineDocCommentGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSingleLineDocComment);
+    const OPTIONAL_KIND: Option<SyntaxKind> =
+        Some(SyntaxKind::TriviaToken(TriviaKind::SingleLineDocComment));
     type StablePtr = TokenSingleLineDocCommentPtr<'db>;
     type Green = TokenSingleLineDocCommentGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSingleLineDocCommentGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -39425,7 +39986,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
                 "Expected a token {:?}, not an internal node",
-                SyntaxKind::TokenSingleLineDocComment
+                SyntaxKind::TriviaToken(TriviaKind::SingleLineDocComment)
             ),
         }
     }
@@ -39449,8 +40010,11 @@ pub struct TokenWhitespace<'db> {
 impl<'db> Token<'db> for TokenWhitespace<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenWhitespaceGreen(
-            GreenNode { kind: SyntaxKind::TokenWhitespace, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TriviaToken(TriviaKind::Whitespace),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39481,13 +40045,13 @@ impl<'db> TokenWhitespaceGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenWhitespace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TriviaToken(TriviaKind::Whitespace));
     type StablePtr = TokenWhitespacePtr<'db>;
     type Green = TokenWhitespaceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenWhitespaceGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -39496,9 +40060,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenWhitespace)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::TriviaToken(TriviaKind::Whitespace)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -39521,8 +40086,11 @@ pub struct TokenNewline<'db> {
 impl<'db> Token<'db> for TokenNewline<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenNewlineGreen(
-            GreenNode { kind: SyntaxKind::TokenNewline, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TriviaToken(TriviaKind::Newline),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39553,13 +40121,13 @@ impl<'db> TokenNewlineGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNewline);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TriviaToken(TriviaKind::Newline));
     type StablePtr = TokenNewlinePtr<'db>;
     type Green = TokenNewlineGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenNewlineGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -39568,9 +40136,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNewline)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::TriviaToken(TriviaKind::Newline)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -39593,8 +40162,11 @@ pub struct TokenMissing<'db> {
 impl<'db> Token<'db> for TokenMissing<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenMissingGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::Missing(MissingKind::Token),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39625,13 +40197,13 @@ impl<'db> TokenMissingGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Missing(MissingKind::Token));
     type StablePtr = TokenMissingPtr<'db>;
     type Green = TokenMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMissingGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -39640,9 +40212,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMissing)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::Missing(MissingKind::Token)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -39665,8 +40238,11 @@ pub struct TokenSkipped<'db> {
 impl<'db> Token<'db> for TokenSkipped<'db> {
     fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
         TokenSkippedGreen(
-            GreenNode { kind: SyntaxKind::TokenSkipped, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TriviaToken(TriviaKind::Skipped),
+                details: GreenNodeDetails::Token(text),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39697,13 +40273,13 @@ impl<'db> TokenSkippedGreen<'db> {
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSkipped);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TriviaToken(TriviaKind::Skipped));
     type StablePtr = TokenSkippedPtr<'db>;
     type Green = TokenSkippedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSkippedGreen(
             GreenNode {
-                kind: SyntaxKind::TokenMissing,
+                kind: SyntaxKind::Missing(MissingKind::Token),
                 details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
             }
             .intern(db),
@@ -39712,9 +40288,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenSkipped)
-            }
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::TriviaToken(TriviaKind::Skipped)
+            ),
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
@@ -40652,227 +41229,247 @@ impl<'db> TypedSyntaxNode<'db> for TokenNode<'db> {
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalIdentifier => {
+            SyntaxKind::Terminal(LexemeKind::Identifier) => {
                 TokenNode::TerminalIdentifier(TerminalIdentifier::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalLiteralNumber => {
+            SyntaxKind::Terminal(LexemeKind::LiteralNumber) => {
                 TokenNode::TerminalLiteralNumber(TerminalLiteralNumber::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalShortString => {
+            SyntaxKind::Terminal(LexemeKind::ShortString) => {
                 TokenNode::TerminalShortString(TerminalShortString::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalString => {
+            SyntaxKind::Terminal(LexemeKind::String) => {
                 TokenNode::TerminalString(TerminalString::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalAs => TokenNode::TerminalAs(TerminalAs::from_syntax_node(db, node)),
-            SyntaxKind::TerminalConst => {
+            SyntaxKind::Terminal(LexemeKind::As) => {
+                TokenNode::TerminalAs(TerminalAs::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::Const) => {
                 TokenNode::TerminalConst(TerminalConst::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalElse => {
+            SyntaxKind::Terminal(LexemeKind::Else) => {
                 TokenNode::TerminalElse(TerminalElse::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalEnum => {
+            SyntaxKind::Terminal(LexemeKind::Enum) => {
                 TokenNode::TerminalEnum(TerminalEnum::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalExtern => {
+            SyntaxKind::Terminal(LexemeKind::Extern) => {
                 TokenNode::TerminalExtern(TerminalExtern::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalFalse => {
+            SyntaxKind::Terminal(LexemeKind::False) => {
                 TokenNode::TerminalFalse(TerminalFalse::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalFunction => {
+            SyntaxKind::Terminal(LexemeKind::Function) => {
                 TokenNode::TerminalFunction(TerminalFunction::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalIf => TokenNode::TerminalIf(TerminalIf::from_syntax_node(db, node)),
-            SyntaxKind::TerminalWhile => {
+            SyntaxKind::Terminal(LexemeKind::If) => {
+                TokenNode::TerminalIf(TerminalIf::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::While) => {
                 TokenNode::TerminalWhile(TerminalWhile::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalFor => {
+            SyntaxKind::Terminal(LexemeKind::For) => {
                 TokenNode::TerminalFor(TerminalFor::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalLoop => {
+            SyntaxKind::Terminal(LexemeKind::Loop) => {
                 TokenNode::TerminalLoop(TerminalLoop::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalImpl => {
+            SyntaxKind::Terminal(LexemeKind::Impl) => {
                 TokenNode::TerminalImpl(TerminalImpl::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalImplicits => {
+            SyntaxKind::Terminal(LexemeKind::Implicits) => {
                 TokenNode::TerminalImplicits(TerminalImplicits::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalLet => {
+            SyntaxKind::Terminal(LexemeKind::Let) => {
                 TokenNode::TerminalLet(TerminalLet::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMacro => {
+            SyntaxKind::Terminal(LexemeKind::Macro) => {
                 TokenNode::TerminalMacro(TerminalMacro::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMatch => {
+            SyntaxKind::Terminal(LexemeKind::Match) => {
                 TokenNode::TerminalMatch(TerminalMatch::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalModule => {
+            SyntaxKind::Terminal(LexemeKind::Module) => {
                 TokenNode::TerminalModule(TerminalModule::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMut => {
+            SyntaxKind::Terminal(LexemeKind::Mut) => {
                 TokenNode::TerminalMut(TerminalMut::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalNoPanic => {
+            SyntaxKind::Terminal(LexemeKind::NoPanic) => {
                 TokenNode::TerminalNoPanic(TerminalNoPanic::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalOf => TokenNode::TerminalOf(TerminalOf::from_syntax_node(db, node)),
-            SyntaxKind::TerminalRef => {
+            SyntaxKind::Terminal(LexemeKind::Of) => {
+                TokenNode::TerminalOf(TerminalOf::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::Ref) => {
                 TokenNode::TerminalRef(TerminalRef::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalContinue => {
+            SyntaxKind::Terminal(LexemeKind::Continue) => {
                 TokenNode::TerminalContinue(TerminalContinue::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalReturn => {
+            SyntaxKind::Terminal(LexemeKind::Return) => {
                 TokenNode::TerminalReturn(TerminalReturn::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalBreak => {
+            SyntaxKind::Terminal(LexemeKind::Break) => {
                 TokenNode::TerminalBreak(TerminalBreak::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalStruct => {
+            SyntaxKind::Terminal(LexemeKind::Struct) => {
                 TokenNode::TerminalStruct(TerminalStruct::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalTrait => {
+            SyntaxKind::Terminal(LexemeKind::Trait) => {
                 TokenNode::TerminalTrait(TerminalTrait::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalTrue => {
+            SyntaxKind::Terminal(LexemeKind::True) => {
                 TokenNode::TerminalTrue(TerminalTrue::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalType => {
+            SyntaxKind::Terminal(LexemeKind::Type) => {
                 TokenNode::TerminalType(TerminalType::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalUse => {
+            SyntaxKind::Terminal(LexemeKind::Use) => {
                 TokenNode::TerminalUse(TerminalUse::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalPub => {
+            SyntaxKind::Terminal(LexemeKind::Pub) => {
                 TokenNode::TerminalPub(TerminalPub::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalAnd => {
+            SyntaxKind::Terminal(LexemeKind::And) => {
                 TokenNode::TerminalAnd(TerminalAnd::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalAndAnd => {
+            SyntaxKind::Terminal(LexemeKind::AndAnd) => {
                 TokenNode::TerminalAndAnd(TerminalAndAnd::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalArrow => {
+            SyntaxKind::Terminal(LexemeKind::Arrow) => {
                 TokenNode::TerminalArrow(TerminalArrow::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalAt => TokenNode::TerminalAt(TerminalAt::from_syntax_node(db, node)),
-            SyntaxKind::TerminalBadCharacters => {
+            SyntaxKind::Terminal(LexemeKind::At) => {
+                TokenNode::TerminalAt(TerminalAt::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::BadCharacters) => {
                 TokenNode::TerminalBadCharacters(TerminalBadCharacters::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalColon => {
+            SyntaxKind::Terminal(LexemeKind::Colon) => {
                 TokenNode::TerminalColon(TerminalColon::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalColonColon => {
+            SyntaxKind::Terminal(LexemeKind::ColonColon) => {
                 TokenNode::TerminalColonColon(TerminalColonColon::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalComma => {
+            SyntaxKind::Terminal(LexemeKind::Comma) => {
                 TokenNode::TerminalComma(TerminalComma::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDiv => {
+            SyntaxKind::Terminal(LexemeKind::Div) => {
                 TokenNode::TerminalDiv(TerminalDiv::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDivEq => {
+            SyntaxKind::Terminal(LexemeKind::DivEq) => {
                 TokenNode::TerminalDivEq(TerminalDivEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDollar => {
+            SyntaxKind::Terminal(LexemeKind::Dollar) => {
                 TokenNode::TerminalDollar(TerminalDollar::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDot => {
+            SyntaxKind::Terminal(LexemeKind::Dot) => {
                 TokenNode::TerminalDot(TerminalDot::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDotDot => {
+            SyntaxKind::Terminal(LexemeKind::DotDot) => {
                 TokenNode::TerminalDotDot(TerminalDotDot::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalDotDotEq => {
+            SyntaxKind::Terminal(LexemeKind::DotDotEq) => {
                 TokenNode::TerminalDotDotEq(TerminalDotDotEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalEndOfFile => {
+            SyntaxKind::Terminal(LexemeKind::EndOfFile) => {
                 TokenNode::TerminalEndOfFile(TerminalEndOfFile::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalEq => TokenNode::TerminalEq(TerminalEq::from_syntax_node(db, node)),
-            SyntaxKind::TerminalEqEq => {
+            SyntaxKind::Terminal(LexemeKind::Eq) => {
+                TokenNode::TerminalEq(TerminalEq::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::EqEq) => {
                 TokenNode::TerminalEqEq(TerminalEqEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalGE => TokenNode::TerminalGE(TerminalGE::from_syntax_node(db, node)),
-            SyntaxKind::TerminalGT => TokenNode::TerminalGT(TerminalGT::from_syntax_node(db, node)),
-            SyntaxKind::TerminalHash => {
+            SyntaxKind::Terminal(LexemeKind::GE) => {
+                TokenNode::TerminalGE(TerminalGE::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::GT) => {
+                TokenNode::TerminalGT(TerminalGT::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::Hash) => {
                 TokenNode::TerminalHash(TerminalHash::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalLBrace => {
+            SyntaxKind::Terminal(LexemeKind::LBrace) => {
                 TokenNode::TerminalLBrace(TerminalLBrace::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalLBrack => {
+            SyntaxKind::Terminal(LexemeKind::LBrack) => {
                 TokenNode::TerminalLBrack(TerminalLBrack::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalLE => TokenNode::TerminalLE(TerminalLE::from_syntax_node(db, node)),
-            SyntaxKind::TerminalLParen => {
+            SyntaxKind::Terminal(LexemeKind::LE) => {
+                TokenNode::TerminalLE(TerminalLE::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::LParen) => {
                 TokenNode::TerminalLParen(TerminalLParen::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalLT => TokenNode::TerminalLT(TerminalLT::from_syntax_node(db, node)),
-            SyntaxKind::TerminalMatchArrow => {
+            SyntaxKind::Terminal(LexemeKind::LT) => {
+                TokenNode::TerminalLT(TerminalLT::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::MatchArrow) => {
                 TokenNode::TerminalMatchArrow(TerminalMatchArrow::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMinus => {
+            SyntaxKind::Terminal(LexemeKind::Minus) => {
                 TokenNode::TerminalMinus(TerminalMinus::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMinusEq => {
+            SyntaxKind::Terminal(LexemeKind::MinusEq) => {
                 TokenNode::TerminalMinusEq(TerminalMinusEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMod => {
+            SyntaxKind::Terminal(LexemeKind::Mod) => {
                 TokenNode::TerminalMod(TerminalMod::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalModEq => {
+            SyntaxKind::Terminal(LexemeKind::ModEq) => {
                 TokenNode::TerminalModEq(TerminalModEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMul => {
+            SyntaxKind::Terminal(LexemeKind::Mul) => {
                 TokenNode::TerminalMul(TerminalMul::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalMulEq => {
+            SyntaxKind::Terminal(LexemeKind::MulEq) => {
                 TokenNode::TerminalMulEq(TerminalMulEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalNeq => {
+            SyntaxKind::Terminal(LexemeKind::Neq) => {
                 TokenNode::TerminalNeq(TerminalNeq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalNot => {
+            SyntaxKind::Terminal(LexemeKind::Not) => {
                 TokenNode::TerminalNot(TerminalNot::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalBitNot => {
+            SyntaxKind::Terminal(LexemeKind::BitNot) => {
                 TokenNode::TerminalBitNot(TerminalBitNot::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalOr => TokenNode::TerminalOr(TerminalOr::from_syntax_node(db, node)),
-            SyntaxKind::TerminalOrOr => {
+            SyntaxKind::Terminal(LexemeKind::Or) => {
+                TokenNode::TerminalOr(TerminalOr::from_syntax_node(db, node))
+            }
+            SyntaxKind::Terminal(LexemeKind::OrOr) => {
                 TokenNode::TerminalOrOr(TerminalOrOr::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalPlus => {
+            SyntaxKind::Terminal(LexemeKind::Plus) => {
                 TokenNode::TerminalPlus(TerminalPlus::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalPlusEq => {
+            SyntaxKind::Terminal(LexemeKind::PlusEq) => {
                 TokenNode::TerminalPlusEq(TerminalPlusEq::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalQuestionMark => {
+            SyntaxKind::Terminal(LexemeKind::QuestionMark) => {
                 TokenNode::TerminalQuestionMark(TerminalQuestionMark::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalRBrace => {
+            SyntaxKind::Terminal(LexemeKind::RBrace) => {
                 TokenNode::TerminalRBrace(TerminalRBrace::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalRBrack => {
+            SyntaxKind::Terminal(LexemeKind::RBrack) => {
                 TokenNode::TerminalRBrack(TerminalRBrack::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalRParen => {
+            SyntaxKind::Terminal(LexemeKind::RParen) => {
                 TokenNode::TerminalRParen(TerminalRParen::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 TokenNode::TerminalSemicolon(TerminalSemicolon::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalUnderscore => {
+            SyntaxKind::Terminal(LexemeKind::Underscore) => {
                 TokenNode::TerminalUnderscore(TerminalUnderscore::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalXor => {
+            SyntaxKind::Terminal(LexemeKind::Xor) => {
                 TokenNode::TerminalXor(TerminalXor::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalEmpty => {
+            SyntaxKind::Terminal(LexemeKind::Empty) => {
                 TokenNode::TerminalEmpty(TerminalEmpty::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TokenNode"),
@@ -40881,247 +41478,247 @@ impl<'db> TypedSyntaxNode<'db> for TokenNode<'db> {
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::TerminalIdentifier => {
+            SyntaxKind::Terminal(LexemeKind::Identifier) => {
                 Some(TokenNode::TerminalIdentifier(TerminalIdentifier::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLiteralNumber => Some(TokenNode::TerminalLiteralNumber(
-                TerminalLiteralNumber::from_syntax_node(db, node),
-            )),
-            SyntaxKind::TerminalShortString => Some(TokenNode::TerminalShortString(
+            SyntaxKind::Terminal(LexemeKind::LiteralNumber) => Some(
+                TokenNode::TerminalLiteralNumber(TerminalLiteralNumber::from_syntax_node(db, node)),
+            ),
+            SyntaxKind::Terminal(LexemeKind::ShortString) => Some(TokenNode::TerminalShortString(
                 TerminalShortString::from_syntax_node(db, node),
             )),
-            SyntaxKind::TerminalString => {
+            SyntaxKind::Terminal(LexemeKind::String) => {
                 Some(TokenNode::TerminalString(TerminalString::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalAs => {
+            SyntaxKind::Terminal(LexemeKind::As) => {
                 Some(TokenNode::TerminalAs(TerminalAs::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalConst => {
+            SyntaxKind::Terminal(LexemeKind::Const) => {
                 Some(TokenNode::TerminalConst(TerminalConst::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalElse => {
+            SyntaxKind::Terminal(LexemeKind::Else) => {
                 Some(TokenNode::TerminalElse(TerminalElse::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalEnum => {
+            SyntaxKind::Terminal(LexemeKind::Enum) => {
                 Some(TokenNode::TerminalEnum(TerminalEnum::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalExtern => {
+            SyntaxKind::Terminal(LexemeKind::Extern) => {
                 Some(TokenNode::TerminalExtern(TerminalExtern::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalFalse => {
+            SyntaxKind::Terminal(LexemeKind::False) => {
                 Some(TokenNode::TerminalFalse(TerminalFalse::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalFunction => {
+            SyntaxKind::Terminal(LexemeKind::Function) => {
                 Some(TokenNode::TerminalFunction(TerminalFunction::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalIf => {
+            SyntaxKind::Terminal(LexemeKind::If) => {
                 Some(TokenNode::TerminalIf(TerminalIf::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalWhile => {
+            SyntaxKind::Terminal(LexemeKind::While) => {
                 Some(TokenNode::TerminalWhile(TerminalWhile::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalFor => {
+            SyntaxKind::Terminal(LexemeKind::For) => {
                 Some(TokenNode::TerminalFor(TerminalFor::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLoop => {
+            SyntaxKind::Terminal(LexemeKind::Loop) => {
                 Some(TokenNode::TerminalLoop(TerminalLoop::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalImpl => {
+            SyntaxKind::Terminal(LexemeKind::Impl) => {
                 Some(TokenNode::TerminalImpl(TerminalImpl::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalImplicits => {
+            SyntaxKind::Terminal(LexemeKind::Implicits) => {
                 Some(TokenNode::TerminalImplicits(TerminalImplicits::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLet => {
+            SyntaxKind::Terminal(LexemeKind::Let) => {
                 Some(TokenNode::TerminalLet(TerminalLet::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMacro => {
+            SyntaxKind::Terminal(LexemeKind::Macro) => {
                 Some(TokenNode::TerminalMacro(TerminalMacro::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMatch => {
+            SyntaxKind::Terminal(LexemeKind::Match) => {
                 Some(TokenNode::TerminalMatch(TerminalMatch::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalModule => {
+            SyntaxKind::Terminal(LexemeKind::Module) => {
                 Some(TokenNode::TerminalModule(TerminalModule::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMut => {
+            SyntaxKind::Terminal(LexemeKind::Mut) => {
                 Some(TokenNode::TerminalMut(TerminalMut::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalNoPanic => {
+            SyntaxKind::Terminal(LexemeKind::NoPanic) => {
                 Some(TokenNode::TerminalNoPanic(TerminalNoPanic::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalOf => {
+            SyntaxKind::Terminal(LexemeKind::Of) => {
                 Some(TokenNode::TerminalOf(TerminalOf::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalRef => {
+            SyntaxKind::Terminal(LexemeKind::Ref) => {
                 Some(TokenNode::TerminalRef(TerminalRef::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalContinue => {
+            SyntaxKind::Terminal(LexemeKind::Continue) => {
                 Some(TokenNode::TerminalContinue(TerminalContinue::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalReturn => {
+            SyntaxKind::Terminal(LexemeKind::Return) => {
                 Some(TokenNode::TerminalReturn(TerminalReturn::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalBreak => {
+            SyntaxKind::Terminal(LexemeKind::Break) => {
                 Some(TokenNode::TerminalBreak(TerminalBreak::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalStruct => {
+            SyntaxKind::Terminal(LexemeKind::Struct) => {
                 Some(TokenNode::TerminalStruct(TerminalStruct::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalTrait => {
+            SyntaxKind::Terminal(LexemeKind::Trait) => {
                 Some(TokenNode::TerminalTrait(TerminalTrait::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalTrue => {
+            SyntaxKind::Terminal(LexemeKind::True) => {
                 Some(TokenNode::TerminalTrue(TerminalTrue::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalType => {
+            SyntaxKind::Terminal(LexemeKind::Type) => {
                 Some(TokenNode::TerminalType(TerminalType::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalUse => {
+            SyntaxKind::Terminal(LexemeKind::Use) => {
                 Some(TokenNode::TerminalUse(TerminalUse::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalPub => {
+            SyntaxKind::Terminal(LexemeKind::Pub) => {
                 Some(TokenNode::TerminalPub(TerminalPub::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalAnd => {
+            SyntaxKind::Terminal(LexemeKind::And) => {
                 Some(TokenNode::TerminalAnd(TerminalAnd::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalAndAnd => {
+            SyntaxKind::Terminal(LexemeKind::AndAnd) => {
                 Some(TokenNode::TerminalAndAnd(TerminalAndAnd::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalArrow => {
+            SyntaxKind::Terminal(LexemeKind::Arrow) => {
                 Some(TokenNode::TerminalArrow(TerminalArrow::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalAt => {
+            SyntaxKind::Terminal(LexemeKind::At) => {
                 Some(TokenNode::TerminalAt(TerminalAt::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalBadCharacters => Some(TokenNode::TerminalBadCharacters(
-                TerminalBadCharacters::from_syntax_node(db, node),
-            )),
-            SyntaxKind::TerminalColon => {
+            SyntaxKind::Terminal(LexemeKind::BadCharacters) => Some(
+                TokenNode::TerminalBadCharacters(TerminalBadCharacters::from_syntax_node(db, node)),
+            ),
+            SyntaxKind::Terminal(LexemeKind::Colon) => {
                 Some(TokenNode::TerminalColon(TerminalColon::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalColonColon => {
+            SyntaxKind::Terminal(LexemeKind::ColonColon) => {
                 Some(TokenNode::TerminalColonColon(TerminalColonColon::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalComma => {
+            SyntaxKind::Terminal(LexemeKind::Comma) => {
                 Some(TokenNode::TerminalComma(TerminalComma::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDiv => {
+            SyntaxKind::Terminal(LexemeKind::Div) => {
                 Some(TokenNode::TerminalDiv(TerminalDiv::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDivEq => {
+            SyntaxKind::Terminal(LexemeKind::DivEq) => {
                 Some(TokenNode::TerminalDivEq(TerminalDivEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDollar => {
+            SyntaxKind::Terminal(LexemeKind::Dollar) => {
                 Some(TokenNode::TerminalDollar(TerminalDollar::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDot => {
+            SyntaxKind::Terminal(LexemeKind::Dot) => {
                 Some(TokenNode::TerminalDot(TerminalDot::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDotDot => {
+            SyntaxKind::Terminal(LexemeKind::DotDot) => {
                 Some(TokenNode::TerminalDotDot(TerminalDotDot::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalDotDotEq => {
+            SyntaxKind::Terminal(LexemeKind::DotDotEq) => {
                 Some(TokenNode::TerminalDotDotEq(TerminalDotDotEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalEndOfFile => {
+            SyntaxKind::Terminal(LexemeKind::EndOfFile) => {
                 Some(TokenNode::TerminalEndOfFile(TerminalEndOfFile::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalEq => {
+            SyntaxKind::Terminal(LexemeKind::Eq) => {
                 Some(TokenNode::TerminalEq(TerminalEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalEqEq => {
+            SyntaxKind::Terminal(LexemeKind::EqEq) => {
                 Some(TokenNode::TerminalEqEq(TerminalEqEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalGE => {
+            SyntaxKind::Terminal(LexemeKind::GE) => {
                 Some(TokenNode::TerminalGE(TerminalGE::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalGT => {
+            SyntaxKind::Terminal(LexemeKind::GT) => {
                 Some(TokenNode::TerminalGT(TerminalGT::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalHash => {
+            SyntaxKind::Terminal(LexemeKind::Hash) => {
                 Some(TokenNode::TerminalHash(TerminalHash::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLBrace => {
+            SyntaxKind::Terminal(LexemeKind::LBrace) => {
                 Some(TokenNode::TerminalLBrace(TerminalLBrace::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLBrack => {
+            SyntaxKind::Terminal(LexemeKind::LBrack) => {
                 Some(TokenNode::TerminalLBrack(TerminalLBrack::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLE => {
+            SyntaxKind::Terminal(LexemeKind::LE) => {
                 Some(TokenNode::TerminalLE(TerminalLE::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLParen => {
+            SyntaxKind::Terminal(LexemeKind::LParen) => {
                 Some(TokenNode::TerminalLParen(TerminalLParen::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalLT => {
+            SyntaxKind::Terminal(LexemeKind::LT) => {
                 Some(TokenNode::TerminalLT(TerminalLT::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMatchArrow => {
+            SyntaxKind::Terminal(LexemeKind::MatchArrow) => {
                 Some(TokenNode::TerminalMatchArrow(TerminalMatchArrow::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMinus => {
+            SyntaxKind::Terminal(LexemeKind::Minus) => {
                 Some(TokenNode::TerminalMinus(TerminalMinus::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMinusEq => {
+            SyntaxKind::Terminal(LexemeKind::MinusEq) => {
                 Some(TokenNode::TerminalMinusEq(TerminalMinusEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMod => {
+            SyntaxKind::Terminal(LexemeKind::Mod) => {
                 Some(TokenNode::TerminalMod(TerminalMod::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalModEq => {
+            SyntaxKind::Terminal(LexemeKind::ModEq) => {
                 Some(TokenNode::TerminalModEq(TerminalModEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMul => {
+            SyntaxKind::Terminal(LexemeKind::Mul) => {
                 Some(TokenNode::TerminalMul(TerminalMul::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalMulEq => {
+            SyntaxKind::Terminal(LexemeKind::MulEq) => {
                 Some(TokenNode::TerminalMulEq(TerminalMulEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalNeq => {
+            SyntaxKind::Terminal(LexemeKind::Neq) => {
                 Some(TokenNode::TerminalNeq(TerminalNeq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalNot => {
+            SyntaxKind::Terminal(LexemeKind::Not) => {
                 Some(TokenNode::TerminalNot(TerminalNot::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalBitNot => {
+            SyntaxKind::Terminal(LexemeKind::BitNot) => {
                 Some(TokenNode::TerminalBitNot(TerminalBitNot::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalOr => {
+            SyntaxKind::Terminal(LexemeKind::Or) => {
                 Some(TokenNode::TerminalOr(TerminalOr::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalOrOr => {
+            SyntaxKind::Terminal(LexemeKind::OrOr) => {
                 Some(TokenNode::TerminalOrOr(TerminalOrOr::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalPlus => {
+            SyntaxKind::Terminal(LexemeKind::Plus) => {
                 Some(TokenNode::TerminalPlus(TerminalPlus::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalPlusEq => {
+            SyntaxKind::Terminal(LexemeKind::PlusEq) => {
                 Some(TokenNode::TerminalPlusEq(TerminalPlusEq::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalQuestionMark => Some(TokenNode::TerminalQuestionMark(
-                TerminalQuestionMark::from_syntax_node(db, node),
-            )),
-            SyntaxKind::TerminalRBrace => {
+            SyntaxKind::Terminal(LexemeKind::QuestionMark) => Some(
+                TokenNode::TerminalQuestionMark(TerminalQuestionMark::from_syntax_node(db, node)),
+            ),
+            SyntaxKind::Terminal(LexemeKind::RBrace) => {
                 Some(TokenNode::TerminalRBrace(TerminalRBrace::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalRBrack => {
+            SyntaxKind::Terminal(LexemeKind::RBrack) => {
                 Some(TokenNode::TerminalRBrack(TerminalRBrack::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalRParen => {
+            SyntaxKind::Terminal(LexemeKind::RParen) => {
                 Some(TokenNode::TerminalRParen(TerminalRParen::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalSemicolon => {
+            SyntaxKind::Terminal(LexemeKind::Semicolon) => {
                 Some(TokenNode::TerminalSemicolon(TerminalSemicolon::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalUnderscore => {
+            SyntaxKind::Terminal(LexemeKind::Underscore) => {
                 Some(TokenNode::TerminalUnderscore(TerminalUnderscore::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalXor => {
+            SyntaxKind::Terminal(LexemeKind::Xor) => {
                 Some(TokenNode::TerminalXor(TerminalXor::from_syntax_node(db, node)))
             }
-            SyntaxKind::TerminalEmpty => {
+            SyntaxKind::Terminal(LexemeKind::Empty) => {
                 Some(TokenNode::TerminalEmpty(TerminalEmpty::from_syntax_node(db, node)))
             }
             _ => None,
@@ -41221,87 +41818,87 @@ impl<'db> TokenNode<'db> {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::TerminalIdentifier
-                | SyntaxKind::TerminalLiteralNumber
-                | SyntaxKind::TerminalShortString
-                | SyntaxKind::TerminalString
-                | SyntaxKind::TerminalAs
-                | SyntaxKind::TerminalConst
-                | SyntaxKind::TerminalElse
-                | SyntaxKind::TerminalEnum
-                | SyntaxKind::TerminalExtern
-                | SyntaxKind::TerminalFalse
-                | SyntaxKind::TerminalFunction
-                | SyntaxKind::TerminalIf
-                | SyntaxKind::TerminalWhile
-                | SyntaxKind::TerminalFor
-                | SyntaxKind::TerminalLoop
-                | SyntaxKind::TerminalImpl
-                | SyntaxKind::TerminalImplicits
-                | SyntaxKind::TerminalLet
-                | SyntaxKind::TerminalMacro
-                | SyntaxKind::TerminalMatch
-                | SyntaxKind::TerminalModule
-                | SyntaxKind::TerminalMut
-                | SyntaxKind::TerminalNoPanic
-                | SyntaxKind::TerminalOf
-                | SyntaxKind::TerminalRef
-                | SyntaxKind::TerminalContinue
-                | SyntaxKind::TerminalReturn
-                | SyntaxKind::TerminalBreak
-                | SyntaxKind::TerminalStruct
-                | SyntaxKind::TerminalTrait
-                | SyntaxKind::TerminalTrue
-                | SyntaxKind::TerminalType
-                | SyntaxKind::TerminalUse
-                | SyntaxKind::TerminalPub
-                | SyntaxKind::TerminalAnd
-                | SyntaxKind::TerminalAndAnd
-                | SyntaxKind::TerminalArrow
-                | SyntaxKind::TerminalAt
-                | SyntaxKind::TerminalBadCharacters
-                | SyntaxKind::TerminalColon
-                | SyntaxKind::TerminalColonColon
-                | SyntaxKind::TerminalComma
-                | SyntaxKind::TerminalDiv
-                | SyntaxKind::TerminalDivEq
-                | SyntaxKind::TerminalDollar
-                | SyntaxKind::TerminalDot
-                | SyntaxKind::TerminalDotDot
-                | SyntaxKind::TerminalDotDotEq
-                | SyntaxKind::TerminalEndOfFile
-                | SyntaxKind::TerminalEq
-                | SyntaxKind::TerminalEqEq
-                | SyntaxKind::TerminalGE
-                | SyntaxKind::TerminalGT
-                | SyntaxKind::TerminalHash
-                | SyntaxKind::TerminalLBrace
-                | SyntaxKind::TerminalLBrack
-                | SyntaxKind::TerminalLE
-                | SyntaxKind::TerminalLParen
-                | SyntaxKind::TerminalLT
-                | SyntaxKind::TerminalMatchArrow
-                | SyntaxKind::TerminalMinus
-                | SyntaxKind::TerminalMinusEq
-                | SyntaxKind::TerminalMod
-                | SyntaxKind::TerminalModEq
-                | SyntaxKind::TerminalMul
-                | SyntaxKind::TerminalMulEq
-                | SyntaxKind::TerminalNeq
-                | SyntaxKind::TerminalNot
-                | SyntaxKind::TerminalBitNot
-                | SyntaxKind::TerminalOr
-                | SyntaxKind::TerminalOrOr
-                | SyntaxKind::TerminalPlus
-                | SyntaxKind::TerminalPlusEq
-                | SyntaxKind::TerminalQuestionMark
-                | SyntaxKind::TerminalRBrace
-                | SyntaxKind::TerminalRBrack
-                | SyntaxKind::TerminalRParen
-                | SyntaxKind::TerminalSemicolon
-                | SyntaxKind::TerminalUnderscore
-                | SyntaxKind::TerminalXor
-                | SyntaxKind::TerminalEmpty
+            SyntaxKind::Terminal(LexemeKind::Identifier)
+                | SyntaxKind::Terminal(LexemeKind::LiteralNumber)
+                | SyntaxKind::Terminal(LexemeKind::ShortString)
+                | SyntaxKind::Terminal(LexemeKind::String)
+                | SyntaxKind::Terminal(LexemeKind::As)
+                | SyntaxKind::Terminal(LexemeKind::Const)
+                | SyntaxKind::Terminal(LexemeKind::Else)
+                | SyntaxKind::Terminal(LexemeKind::Enum)
+                | SyntaxKind::Terminal(LexemeKind::Extern)
+                | SyntaxKind::Terminal(LexemeKind::False)
+                | SyntaxKind::Terminal(LexemeKind::Function)
+                | SyntaxKind::Terminal(LexemeKind::If)
+                | SyntaxKind::Terminal(LexemeKind::While)
+                | SyntaxKind::Terminal(LexemeKind::For)
+                | SyntaxKind::Terminal(LexemeKind::Loop)
+                | SyntaxKind::Terminal(LexemeKind::Impl)
+                | SyntaxKind::Terminal(LexemeKind::Implicits)
+                | SyntaxKind::Terminal(LexemeKind::Let)
+                | SyntaxKind::Terminal(LexemeKind::Macro)
+                | SyntaxKind::Terminal(LexemeKind::Match)
+                | SyntaxKind::Terminal(LexemeKind::Module)
+                | SyntaxKind::Terminal(LexemeKind::Mut)
+                | SyntaxKind::Terminal(LexemeKind::NoPanic)
+                | SyntaxKind::Terminal(LexemeKind::Of)
+                | SyntaxKind::Terminal(LexemeKind::Ref)
+                | SyntaxKind::Terminal(LexemeKind::Continue)
+                | SyntaxKind::Terminal(LexemeKind::Return)
+                | SyntaxKind::Terminal(LexemeKind::Break)
+                | SyntaxKind::Terminal(LexemeKind::Struct)
+                | SyntaxKind::Terminal(LexemeKind::Trait)
+                | SyntaxKind::Terminal(LexemeKind::True)
+                | SyntaxKind::Terminal(LexemeKind::Type)
+                | SyntaxKind::Terminal(LexemeKind::Use)
+                | SyntaxKind::Terminal(LexemeKind::Pub)
+                | SyntaxKind::Terminal(LexemeKind::And)
+                | SyntaxKind::Terminal(LexemeKind::AndAnd)
+                | SyntaxKind::Terminal(LexemeKind::Arrow)
+                | SyntaxKind::Terminal(LexemeKind::At)
+                | SyntaxKind::Terminal(LexemeKind::BadCharacters)
+                | SyntaxKind::Terminal(LexemeKind::Colon)
+                | SyntaxKind::Terminal(LexemeKind::ColonColon)
+                | SyntaxKind::Terminal(LexemeKind::Comma)
+                | SyntaxKind::Terminal(LexemeKind::Div)
+                | SyntaxKind::Terminal(LexemeKind::DivEq)
+                | SyntaxKind::Terminal(LexemeKind::Dollar)
+                | SyntaxKind::Terminal(LexemeKind::Dot)
+                | SyntaxKind::Terminal(LexemeKind::DotDot)
+                | SyntaxKind::Terminal(LexemeKind::DotDotEq)
+                | SyntaxKind::Terminal(LexemeKind::EndOfFile)
+                | SyntaxKind::Terminal(LexemeKind::Eq)
+                | SyntaxKind::Terminal(LexemeKind::EqEq)
+                | SyntaxKind::Terminal(LexemeKind::GE)
+                | SyntaxKind::Terminal(LexemeKind::GT)
+                | SyntaxKind::Terminal(LexemeKind::Hash)
+                | SyntaxKind::Terminal(LexemeKind::LBrace)
+                | SyntaxKind::Terminal(LexemeKind::LBrack)
+                | SyntaxKind::Terminal(LexemeKind::LE)
+                | SyntaxKind::Terminal(LexemeKind::LParen)
+                | SyntaxKind::Terminal(LexemeKind::LT)
+                | SyntaxKind::Terminal(LexemeKind::MatchArrow)
+                | SyntaxKind::Terminal(LexemeKind::Minus)
+                | SyntaxKind::Terminal(LexemeKind::MinusEq)
+                | SyntaxKind::Terminal(LexemeKind::Mod)
+                | SyntaxKind::Terminal(LexemeKind::ModEq)
+                | SyntaxKind::Terminal(LexemeKind::Mul)
+                | SyntaxKind::Terminal(LexemeKind::MulEq)
+                | SyntaxKind::Terminal(LexemeKind::Neq)
+                | SyntaxKind::Terminal(LexemeKind::Not)
+                | SyntaxKind::Terminal(LexemeKind::BitNot)
+                | SyntaxKind::Terminal(LexemeKind::Or)
+                | SyntaxKind::Terminal(LexemeKind::OrOr)
+                | SyntaxKind::Terminal(LexemeKind::Plus)
+                | SyntaxKind::Terminal(LexemeKind::PlusEq)
+                | SyntaxKind::Terminal(LexemeKind::QuestionMark)
+                | SyntaxKind::Terminal(LexemeKind::RBrace)
+                | SyntaxKind::Terminal(LexemeKind::RBrack)
+                | SyntaxKind::Terminal(LexemeKind::RParen)
+                | SyntaxKind::Terminal(LexemeKind::Semicolon)
+                | SyntaxKind::Terminal(LexemeKind::Underscore)
+                | SyntaxKind::Terminal(LexemeKind::Xor)
+                | SyntaxKind::Terminal(LexemeKind::Empty)
         )
     }
 }
