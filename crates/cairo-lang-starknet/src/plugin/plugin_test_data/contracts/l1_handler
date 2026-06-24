@@ -108,6 +108,20 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76.try_into().unwrap();
 
 #[doc(hidden)]
+pub mod __class_hash__ {
+    extern fn __externally_provided_const__() -> starknet::ClassHash nopanic;
+    pub fn class_hash() -> starknet::ClassHash {
+        __externally_provided_const__()
+    }
+    #[feature("forward-impl")]
+    pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {
+        fn class_hash(self: @T) -> starknet::ClassHash {
+            class_hash()
+        }
+    }
+}
+
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__good_l1_handler(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();

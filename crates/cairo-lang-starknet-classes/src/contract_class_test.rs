@@ -3,6 +3,7 @@ use std::io::BufReader;
 use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
+use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
 
 use crate::contract_class::{
@@ -51,6 +52,26 @@ fn test_serialization() {
     );
 
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
+}
+
+#[test]
+fn test_class_hash_is_deterministic_and_sensitive() {
+    let contract_path = get_example_file_path("hello_starknet__hello_starknet.contract_class.json");
+    let contract: ContractClass =
+        serde_json::from_reader(BufReader::new(std::fs::File::open(contract_path).unwrap()))
+            .unwrap();
+
+    let class_hash = contract.class_hash();
+    // Deterministic.
+    assert_eq!(class_hash, contract.class_hash());
+    // Non-trivial.
+    assert_ne!(class_hash, Felt252::ZERO);
+
+    // Sensitive to the entry points: flipping an external entry point's function index changes the
+    // hash.
+    let mut modified = contract.clone();
+    modified.entry_points_by_type.external[0].function_idx += 1;
+    assert_ne!(modified.class_hash(), class_hash);
 }
 
 // Tests the serialization and deserialization of a contract.

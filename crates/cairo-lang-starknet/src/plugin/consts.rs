@@ -4,6 +4,8 @@ use const_format::formatcp;
 pub const EXTERNAL_MODULE: &str = "__external";
 pub const L1_HANDLER_MODULE: &str = "__l1_handler";
 pub const CONSTRUCTOR_MODULE: &str = "__constructor";
+/// The hidden inner module holding the contract's own class hash accessor (`class_hash()`).
+pub const CLASS_HASH_MODULE: &str = "__class_hash__";
 pub const WRAPPER_PREFIX: &str = "__wrapper__";
 pub const STORAGE_STRUCT_NAME: &str = "Storage";
 pub const EVENT_TYPE_NAME: &str = "Event";

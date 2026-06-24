@@ -5,6 +5,7 @@ use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
+use cairo_lang_sierra_generator::db::EXTERNALLY_PROVIDED_CONST;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::ast::{Attribute, OptionTypeClause};
 use cairo_lang_syntax::node::helpers::{
@@ -21,9 +22,9 @@ use salsa::Database;
 use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerationData};
 use super::{StarknetModuleKind, grand_grand_parent_starknet_module};
 use crate::plugin::consts::{
-    ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, COMPONENT_INLINE_MACRO,
-    CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, EVENT_TRAIT, EVENT_TYPE_NAME,
-    EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, STORAGE_STRUCT_NAME, SUBSTORAGE_ATTR,
+    ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, CLASS_HASH_MODULE,
+    COMPONENT_INLINE_MACRO, CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, EVENT_TRAIT,
+    EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, STORAGE_STRUCT_NAME, SUBSTORAGE_ATTR,
 };
 use crate::plugin::entry_point::{
     EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData, GetEntryPointKind,
@@ -36,6 +37,7 @@ use crate::plugin::utils::{find_v0_attribute_ex, forbid_attributes_in_impl};
 #[derive(Default)]
 pub struct ContractSpecificGenerationData<'db> {
     test_config: RewriteNode<'db>,
+    class_hash_code: RewriteNode<'db>,
     entry_points_code: EntryPointsGenerationData<'db>,
     components_data: ComponentsGenerationData<'db>,
 }
@@ -222,11 +224,13 @@ impl<'db> ContractSpecificGenerationData<'db> {
                 #[allow(unused_imports)]
                 use starknet::storage::Map as LegacyMap;
                 $test_config$
+                $class_hash_code$
                 $entry_points_code$
                 {EVENT_EMITTER_CODE}
                 $components_code$"},
             &[
                 ("test_config".to_string(), self.test_config),
+                ("class_hash_code".to_string(), self.class_hash_code),
                 ("entry_points_code".to_string(), self.entry_points_code.into_rewrite_node()),
                 (
                     "components_code".to_string(),
@@ -339,7 +343,41 @@ pub(super) fn generate_contract_specific_code<'db, 'a>(
     generation_data.specific.test_config =
         RewriteNode::new_modified(vec![test_class_hash_node, deploy_function_node]);
 
+    generation_data.specific.class_hash_code = generate_class_hash_code();
+
     generation_data.into_rewrite_node(db, diagnostics)
+}
+
+/// Generates a hidden inner module exposing the contract's own class hash as a compile-time
+/// constant.
+///
+/// `class_hash()` returns the value injected for the reserved `__externally_provided_const__`
+/// extern at the Sierra generation stage (the contract's own class hash, computed via
+/// stub-then-hash). It is placed in a hidden inner module so it is not directly in the contract's
+/// namespace.
+///
+/// The module also exposes `ForwardingClassHashImpl`, a generic implementation of
+/// `starknet::ForwardingClassHash<T>` returning this contract's class hash. It is generic over the
+/// contract state `T` (rather than this contract's own `ContractState`) so a *forwarding* contract
+/// can import it and use it as the forwarding impl that statically points at this contract's class.
+fn generate_class_hash_code<'db>() -> RewriteNode<'db> {
+    RewriteNode::Text(formatdoc!(
+        "
+            #[doc(hidden)]
+            pub mod {CLASS_HASH_MODULE} {{
+                extern fn {EXTERNALLY_PROVIDED_CONST}() -> starknet::ClassHash nopanic;
+                pub fn class_hash() -> starknet::ClassHash {{
+                    {EXTERNALLY_PROVIDED_CONST}()
+                }}
+                #[feature(\"forward-impl\")]
+                pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {{
+                    fn class_hash(self: @T) -> starknet::ClassHash {{
+                        class_hash()
+                    }}
+                }}
+            }}
+        "
+    ))
 }
 
 /// Generates the contract class hash for deploying contracts using cairo-test.
