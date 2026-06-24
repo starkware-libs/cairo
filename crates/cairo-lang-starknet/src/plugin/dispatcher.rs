@@ -87,6 +87,8 @@ pub fn handle_trait<'db>(
     let mut library_caller_method_impls = vec![];
     let mut safe_contract_caller_method_impls = vec![];
     let mut safe_library_caller_method_impls = vec![];
+    let mut call_builder_signatures = vec![];
+    let mut call_builder_method_impls = vec![];
     let mut forward_method_wrappers = vec![];
     let mut forward_external_fns = vec![];
     let mut forward_impl_method_stubs = vec![];
@@ -101,6 +103,8 @@ pub fn handle_trait<'db>(
     let safe_contract_caller_name = format!("{base_name}SafeDispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
     let safe_library_caller_name = format!("{base_name}SafeLibraryDispatcher");
+    let call_builder_trait_name = format!("{base_name}CallBuilderTrait");
+    let call_builder_name = format!("{base_name}CallBuilder");
     for item_ast in body.iter_items(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
@@ -287,20 +291,23 @@ pub fn handle_trait<'db>(
                 };
                 dispatcher_signatures.push(RewriteNode::interpolate_patched(
                     "\n$func_decl$;",
-                    &[("func_decl".to_string(), dispatcher_signature(db, &declaration, "T", true))]
+                    &[(
+                        "func_decl".to_string(),
+                        dispatcher_signature(db, &declaration, "T", ReturnStyle::Raw),
+                    )]
                         .into(),
                 ));
                 safe_dispatcher_signatures.push(RewriteNode::interpolate_patched(
                     "\n    #[unstable(feature: \"safe_dispatcher\")]\n$func_decl$;",
                     &[(
                         "func_decl".to_string(),
-                        dispatcher_signature(db, &declaration, "T", false),
+                        dispatcher_signature(db, &declaration, "T", ReturnStyle::SyscallResult),
                     )]
                     .into(),
                 ));
                 let entry_point_selector = RewriteNode::Text(format!("selector!(\"{fn_name}\")"));
                 contract_caller_method_impls.push(declaration_method_impl(
-                    dispatcher_signature(db, &declaration, &contract_caller_name, true),
+                    dispatcher_signature(db, &declaration, &contract_caller_name, ReturnStyle::Raw),
                     entry_point_selector.clone(),
                     "contract_address",
                     "syscalls::call_contract_syscall",
@@ -309,7 +316,7 @@ pub fn handle_trait<'db>(
                     true,
                 ));
                 library_caller_method_impls.push(declaration_method_impl(
-                    dispatcher_signature(db, &declaration, &library_caller_name, true),
+                    dispatcher_signature(db, &declaration, &library_caller_name, ReturnStyle::Raw),
                     entry_point_selector.clone(),
                     "class_hash",
                     "syscalls::library_call_syscall",
@@ -318,7 +325,12 @@ pub fn handle_trait<'db>(
                     true,
                 ));
                 safe_contract_caller_method_impls.push(declaration_method_impl(
-                    dispatcher_signature(db, &declaration, &safe_contract_caller_name, false),
+                    dispatcher_signature(
+                        db,
+                        &declaration,
+                        &safe_contract_caller_name,
+                        ReturnStyle::SyscallResult,
+                    ),
                     entry_point_selector.clone(),
                     "contract_address",
                     "syscalls::call_contract_syscall",
@@ -326,8 +338,26 @@ pub fn handle_trait<'db>(
                     ret_decode.clone(),
                     false,
                 ));
+                call_builder_signatures.push(RewriteNode::interpolate_patched(
+                    "\n    #[unstable(feature: \"call_builder\")]\n$func_decl$;",
+                    &[(
+                        "func_decl".to_string(),
+                        dispatcher_signature(db, &declaration, "T", ReturnStyle::Call),
+                    )]
+                    .into(),
+                ));
+                call_builder_method_impls.push(call_builder_method_impl(
+                    dispatcher_signature(db, &declaration, &call_builder_name, ReturnStyle::Call),
+                    entry_point_selector.clone(),
+                    serialization_code.clone(),
+                ));
                 safe_library_caller_method_impls.push(declaration_method_impl(
-                    dispatcher_signature(db, &declaration, &safe_library_caller_name, false),
+                    dispatcher_signature(
+                        db,
+                        &declaration,
+                        &safe_library_caller_name,
+                        ReturnStyle::SyscallResult,
+                    ),
                     entry_point_selector,
                     "class_hash",
                     "syscalls::library_call_syscall",
@@ -419,6 +449,35 @@ pub fn handle_trait<'db>(
              {safe_dispatcher_trait_name}<{safe_contract_caller_name}> {{
             $safe_contract_caller_method_impls$
             }}
+
+            {DISPATCHER_DOC_GROUP_ATTR}
+            $visibility$trait {call_builder_trait_name}<T> {{$call_builder_signatures$
+            }}
+
+            {DISPATCHER_DOC_GROUP_ATTR}
+            #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
+            $visibility$struct {call_builder_name} {{
+                pub contract_address: starknet::ContractAddress,
+            }}
+
+            {DISPATCHER_DOC_GROUP_ATTR}
+            impl {call_builder_name}Impl of {call_builder_trait_name}<{call_builder_name}> {{
+            $call_builder_method_impls$
+            }}
+
+            {DISPATCHER_DOC_GROUP_ATTR}
+            $visibility$trait {contract_caller_name}BuilderTrait<T> {{
+                #[unstable(feature: \"call_builder\")]
+                fn builder(self: T) -> {call_builder_name};
+            }}
+
+            {DISPATCHER_DOC_GROUP_ATTR}
+            impl {contract_caller_name}BuilderImpl of \
+             {contract_caller_name}BuilderTrait<{contract_caller_name}> {{
+                fn builder(self: {contract_caller_name}) -> {call_builder_name} {{
+                    {call_builder_name} {{ contract_address: self.contract_address }}
+                }}
+            }}
             ",
         ),
         &[
@@ -442,6 +501,14 @@ pub fn handle_trait<'db>(
             (
                 "safe_library_caller_method_impls".to_string(),
                 RewriteNode::new_modified(safe_library_caller_method_impls),
+            ),
+            (
+                "call_builder_signatures".to_string(),
+                RewriteNode::new_modified(call_builder_signatures),
+            ),
+            (
+                "call_builder_method_impls".to_string(),
+                RewriteNode::new_modified(call_builder_method_impls),
             ),
             (
                 "visibility".to_string(),
@@ -578,6 +645,36 @@ fn declaration_method_impl<'db>(
     )
 }
 
+/// Returns the method implementation for a call builder: serializes the arguments into
+/// `__calldata__` and returns a `starknet::account::Call` targeting `self.contract_address`.
+/// Unlike a dispatcher method, it performs no syscall and never deserializes a return value.
+fn call_builder_method_impl<'db>(
+    func_declaration: RewriteNode<'db>,
+    entry_point_selector: RewriteNode<'db>,
+    serialization_code: Vec<RewriteNode<'db>>,
+) -> RewriteNode<'db> {
+    RewriteNode::interpolate_patched(
+        &formatdoc!(
+            "$func_decl$ {{
+                    let mut {CALLDATA_PARAM_NAME} = core::traits::Default::default();
+            $serialization_code$
+                    starknet::account::Call {{
+                        to: self.contract_address,
+                        selector: $entry_point_selector$,
+                        calldata: core::array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
+                    }}
+                }}
+        "
+        ),
+        &[
+            ("func_decl".to_string(), func_declaration),
+            ("entry_point_selector".to_string(), entry_point_selector),
+            ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
+        ]
+        .into(),
+    )
+}
+
 /// Replaces the `self` parameter of `declaration` (and the trailing comma, if any) with
 /// `replacement` (e.g. `self: SomeDispatcher`), returning the rewritten declaration for
 /// optional further modification (such as rewriting the return type).
@@ -602,16 +699,27 @@ fn replace_self_param<'db>(
     func_declaration
 }
 
-/// Returns the matching signature for a dispatcher implementation for the given declaration.
+/// How a dispatcher-family method signature rewrites the interface method's return type.
+enum ReturnStyle {
+    /// Keep the declared return type as-is (panicking dispatchers).
+    Raw,
+    /// Wrap the declared return type in `starknet::SyscallResult<...>` (safe dispatchers).
+    SyscallResult,
+    /// Replace the declared return type with `starknet::account::Call` (call builder).
+    Call,
+}
+
+/// Returns the signature for a dispatcher-family method: `declaration` with its `self`
+/// parameter replaced by `self_type_name`, and its return type rewritten per `return_style`.
 fn dispatcher_signature<'db>(
     db: &'db dyn Database,
     declaration: &ast::FunctionDeclaration<'db>,
     self_type_name: &str,
-    unwrap: bool,
+    return_style: ReturnStyle,
 ) -> RewriteNode<'db> {
     let mut func_declaration =
         replace_self_param(db, declaration, &format!("self: {self_type_name}"));
-    if unwrap {
+    if matches!(return_style, ReturnStyle::Raw) {
         return func_declaration;
     }
     let return_type = func_declaration
@@ -621,18 +729,24 @@ fn dispatcher_signature<'db>(
         .children
         .as_mut()
         .unwrap();
-
-    if return_type.is_empty() {
-        let new_ret_type = RewriteNode::text(" -> starknet::SyscallResult<()>");
-        return_type.splice(0..0, [new_ret_type]);
-    } else {
-        let previous_ret_type = RewriteNode::new_modified(return_type[1..2].into());
-        let new_ret_type = RewriteNode::interpolate_patched(
-            "starknet::SyscallResult<$ret_type$>",
-            &[("ret_type".to_string(), previous_ret_type)].into(),
-        );
-        return_type.splice(1..2, [new_ret_type]);
-    };
-
+    match return_style {
+        // The interface method's own return type is irrelevant when only building a `Call`.
+        ReturnStyle::Call => {
+            return_type
+                .splice(0..return_type.len(), [RewriteNode::text(" -> starknet::account::Call")]);
+        }
+        ReturnStyle::SyscallResult if return_type.is_empty() => {
+            return_type.splice(0..0, [RewriteNode::text(" -> starknet::SyscallResult<()>")]);
+        }
+        ReturnStyle::SyscallResult => {
+            let previous_ret_type = RewriteNode::new_modified(return_type[1..2].into());
+            let new_ret_type = RewriteNode::interpolate_patched(
+                "starknet::SyscallResult<$ret_type$>",
+                &[("ret_type".to_string(), previous_ret_type)].into(),
+            );
+            return_type.splice(1..2, [new_ret_type]);
+        }
+        ReturnStyle::Raw => unreachable!("`Raw` returns early before touching the return type"),
+    }
     func_declaration
 }

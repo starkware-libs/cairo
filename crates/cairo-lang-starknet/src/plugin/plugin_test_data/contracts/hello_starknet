@@ -371,6 +371,61 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
     }
 
 }
+
+#[doc(group: "dispatchers")]
+trait HelloStarknetTraitCallBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    // Increases the balance by the given amount.
+    fn increase_balance(self: T, amount: usize) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    // Returns the current balance.
+    fn get_balance(self: T)  -> starknet::account::Call;
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct HelloStarknetTraitCallBuilder {
+    pub contract_address: starknet::ContractAddress,
+}
+
+#[doc(group: "dispatchers")]
+impl HelloStarknetTraitCallBuilderImpl of HelloStarknetTraitCallBuilderTrait<HelloStarknetTraitCallBuilder> {
+    // Increases the balance by the given amount.
+    fn increase_balance(self: HelloStarknetTraitCallBuilder, amount: usize) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("increase_balance"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    // Returns the current balance.
+    fn get_balance(self: HelloStarknetTraitCallBuilder)  -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("get_balance"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+
+}
+
+#[doc(group: "dispatchers")]
+trait HelloStarknetTraitDispatcherBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn builder(self: T) -> HelloStarknetTraitCallBuilder;
+}
+
+#[doc(group: "dispatchers")]
+impl HelloStarknetTraitDispatcherBuilderImpl of HelloStarknetTraitDispatcherBuilderTrait<HelloStarknetTraitDispatcher> {
+    fn builder(self: HelloStarknetTraitDispatcher) -> HelloStarknetTraitCallBuilder {
+        HelloStarknetTraitCallBuilder { contract_address: self.contract_address }
+    }
+}
 #[feature("forward-impl")]
 #[unstable(feature: "forward-impl")]
 #[starknet::forward_impl]
@@ -854,6 +909,112 @@ impl HelloStarknetTraitSafeDispatcherSubPointersMutImpl of starknet::storage::Su
         }
     }
 }
+#[doc(group: "dispatchers")]
+impl HelloStarknetTraitCallBuilderCopy<> of core::traits::Copy::<HelloStarknetTraitCallBuilder>;
+#[doc(group: "dispatchers")]
+impl HelloStarknetTraitCallBuilderDrop<> of core::traits::Drop::<HelloStarknetTraitCallBuilder>;
+#[doc(group: "dispatchers")]
+impl HelloStarknetTraitCallBuilderSerde<> of core::serde::Serde::<HelloStarknetTraitCallBuilder> {
+    fn serialize(self: @HelloStarknetTraitCallBuilder, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitCallBuilder> {
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        core::option::Option::Some(HelloStarknetTraitCallBuilder {
+            contract_address: __serde_member_contract_address.value,
+        })
+    }
+}
+impl HelloStarknetTraitCallBuilderStore<> of starknet::Store::<HelloStarknetTraitCallBuilder> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            HelloStarknetTraitCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: HelloStarknetTraitCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let HelloStarknetTraitCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            HelloStarknetTraitCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: HelloStarknetTraitCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let HelloStarknetTraitCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+struct HelloStarknetTraitCallBuilderSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl HelloStarknetTraitCallBuilderSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitCallBuilder> {
+    type SubPointersType = HelloStarknetTraitCallBuilderSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitCallBuilder>) -> HelloStarknetTraitCallBuilderSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                HelloStarknetTraitCallBuilderSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+struct HelloStarknetTraitCallBuilderSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl HelloStarknetTraitCallBuilderSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitCallBuilder> {
+    type SubPointersType = HelloStarknetTraitCallBuilderSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitCallBuilder>>) -> HelloStarknetTraitCallBuilderSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                HelloStarknetTraitCallBuilderSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
 #[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcherSubPointers>;
 #[doc(hidden)]
@@ -886,6 +1047,14 @@ impl HelloStarknetTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<H
 impl HelloStarknetTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
 #[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
+#[doc(hidden)]
+impl HelloStarknetTraitCallBuilderSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitCallBuilderSubPointers>;
+#[doc(hidden)]
+impl HelloStarknetTraitCallBuilderSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitCallBuilderSubPointers>;
+#[doc(hidden)]
+impl HelloStarknetTraitCallBuilderSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitCallBuilderSubPointersMut>;
+#[doc(hidden)]
+impl HelloStarknetTraitCallBuilderSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitCallBuilderSubPointersMut>;
 
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     #[storage]

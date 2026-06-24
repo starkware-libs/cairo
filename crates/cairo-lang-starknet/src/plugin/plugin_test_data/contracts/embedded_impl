@@ -252,6 +252,58 @@ impl OutsideTraitSafeDispatcherImpl of OutsideTraitSafeDispatcherTrait<OutsideTr
     }
 
 }
+
+#[doc(group: "dispatchers")]
+trait OutsideTraitCallBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn ret_3(self: T)  -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn ret_identity(self: T, from_address: felt252, value: felt252)  -> starknet::account::Call;
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct OutsideTraitCallBuilder {
+    pub contract_address: starknet::ContractAddress,
+}
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitCallBuilderImpl of OutsideTraitCallBuilderTrait<OutsideTraitCallBuilder> {
+    fn ret_3(self: OutsideTraitCallBuilder)  -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("ret_3"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn ret_identity(self: OutsideTraitCallBuilder, from_address: felt252, value: felt252)  -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<felt252>::serialize(@from_address, ref __calldata__);
+        core::serde::Serde::<felt252>::serialize(@value, ref __calldata__);
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("ret_identity"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+
+}
+
+#[doc(group: "dispatchers")]
+trait OutsideTraitDispatcherBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn builder(self: T) -> OutsideTraitCallBuilder;
+}
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitDispatcherBuilderImpl of OutsideTraitDispatcherBuilderTrait<OutsideTraitDispatcher> {
+    fn builder(self: OutsideTraitDispatcher) -> OutsideTraitCallBuilder {
+        OutsideTraitCallBuilder { contract_address: self.contract_address }
+    }
+}
 #[feature("forward-impl")]
 #[unstable(feature: "forward-impl")]
 #[starknet::forward_impl]
@@ -866,6 +918,126 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
+impl OutsideTraitCallBuilderCopy<> of core::traits::Copy::<OutsideTraitCallBuilder>;
+#[doc(group: "dispatchers")]
+impl OutsideTraitCallBuilderDrop<> of core::traits::Drop::<OutsideTraitCallBuilder>;
+#[doc(group: "dispatchers")]
+impl OutsideTraitCallBuilderSerde<> of core::serde::Serde::<OutsideTraitCallBuilder> {
+    fn serialize(self: @OutsideTraitCallBuilder, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitCallBuilder> {
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        core::option::Option::Some(OutsideTraitCallBuilder {
+            contract_address: __serde_member_contract_address.value,
+        })
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl OutsideTraitCallBuilderStore<> of starknet::Store::<OutsideTraitCallBuilder> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            OutsideTraitCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            OutsideTraitCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct OutsideTraitCallBuilderSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl OutsideTraitCallBuilderSubPointersImpl of starknet::storage::SubPointers<OutsideTraitCallBuilder> {
+    type SubPointersType = OutsideTraitCallBuilderSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<OutsideTraitCallBuilder>) -> OutsideTraitCallBuilderSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                OutsideTraitCallBuilderSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct OutsideTraitCallBuilderSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl OutsideTraitCallBuilderSubPointersMutImpl of starknet::storage::SubPointersMut<OutsideTraitCallBuilder> {
+    type SubPointersType = OutsideTraitCallBuilderSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<OutsideTraitCallBuilder>>) -> OutsideTraitCallBuilderSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                OutsideTraitCallBuilderSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
 #[doc(hidden)]
 impl OutsideTraitDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitDispatcherSubPointers>;
 #[doc(hidden)]
@@ -947,6 +1119,28 @@ impls:
 impl OutsideTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitSafeDispatcherSubPointersMut>;
 #[doc(hidden)]
 impl OutsideTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitSafeDispatcherSubPointersMut>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl OutsideTraitCallBuilderSubPointersDrop<> of core::traits::Drop::<OutsideTraitCallBuilderSubPointers>;
+#[doc(hidden)]
+impl OutsideTraitCallBuilderSubPointersCopy<> of core::traits::Copy::<OutsideTraitCallBuilderSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl OutsideTraitCallBuilderSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitCallBuilderSubPointersMut>;
+#[doc(hidden)]
+impl OutsideTraitCallBuilderSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitCallBuilderSubPointersMut>;
 
 
 lib.cairo:17:1
@@ -1333,6 +1527,45 @@ impl OutsideTraitWithDestructSafeDispatcherImpl of OutsideTraitWithDestructSafeD
     }
 
 }
+
+#[doc(group: "dispatchers")]
+trait OutsideTraitWithDestructCallBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn ret_3(self: T)  -> starknet::account::Call;
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct OutsideTraitWithDestructCallBuilder {
+    pub contract_address: starknet::ContractAddress,
+}
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDestructCallBuilderImpl of OutsideTraitWithDestructCallBuilderTrait<OutsideTraitWithDestructCallBuilder> {
+    fn ret_3(self: OutsideTraitWithDestructCallBuilder)  -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("ret_3"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+
+}
+
+#[doc(group: "dispatchers")]
+trait OutsideTraitWithDestructDispatcherBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn builder(self: T) -> OutsideTraitWithDestructCallBuilder;
+}
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDestructDispatcherBuilderImpl of OutsideTraitWithDestructDispatcherBuilderTrait<OutsideTraitWithDestructDispatcher> {
+    fn builder(self: OutsideTraitWithDestructDispatcher) -> OutsideTraitWithDestructCallBuilder {
+        OutsideTraitWithDestructCallBuilder { contract_address: self.contract_address }
+    }
+}
 #[feature("forward-impl")]
 #[unstable(feature: "forward-impl")]
 #[starknet::forward_impl]
@@ -1535,6 +1768,45 @@ impl OutsideTraitWithPanicDestructSafeDispatcherImpl of OutsideTraitWithPanicDes
         )
     }
 
+}
+
+#[doc(group: "dispatchers")]
+trait OutsideTraitWithPanicDestructCallBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn ret_5(self: T)  -> starknet::account::Call;
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct OutsideTraitWithPanicDestructCallBuilder {
+    pub contract_address: starknet::ContractAddress,
+}
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithPanicDestructCallBuilderImpl of OutsideTraitWithPanicDestructCallBuilderTrait<OutsideTraitWithPanicDestructCallBuilder> {
+    fn ret_5(self: OutsideTraitWithPanicDestructCallBuilder)  -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("ret_5"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+
+}
+
+#[doc(group: "dispatchers")]
+trait OutsideTraitWithPanicDestructDispatcherBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn builder(self: T) -> OutsideTraitWithPanicDestructCallBuilder;
+}
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithPanicDestructDispatcherBuilderImpl of OutsideTraitWithPanicDestructDispatcherBuilderTrait<OutsideTraitWithPanicDestructDispatcher> {
+    fn builder(self: OutsideTraitWithPanicDestructDispatcher) -> OutsideTraitWithPanicDestructCallBuilder {
+        OutsideTraitWithPanicDestructCallBuilder { contract_address: self.contract_address }
+    }
 }
 #[feature("forward-impl")]
 #[unstable(feature: "forward-impl")]
@@ -2099,6 +2371,126 @@ impl OutsideTraitWithDestructSafeDispatcherSubPointersMutImpl of starknet::stora
 }
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDestructCallBuilderCopy<> of core::traits::Copy::<OutsideTraitWithDestructCallBuilder>;
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDestructCallBuilderDrop<> of core::traits::Drop::<OutsideTraitWithDestructCallBuilder>;
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDestructCallBuilderSerde<> of core::serde::Serde::<OutsideTraitWithDestructCallBuilder> {
+    fn serialize(self: @OutsideTraitWithDestructCallBuilder, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDestructCallBuilder> {
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        core::option::Option::Some(OutsideTraitWithDestructCallBuilder {
+            contract_address: __serde_member_contract_address.value,
+        })
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl OutsideTraitWithDestructCallBuilderStore<> of starknet::Store::<OutsideTraitWithDestructCallBuilder> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDestructCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            OutsideTraitWithDestructCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDestructCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDestructCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDestructCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            OutsideTraitWithDestructCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDestructCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDestructCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct OutsideTraitWithDestructCallBuilderSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl OutsideTraitWithDestructCallBuilderSubPointersImpl of starknet::storage::SubPointers<OutsideTraitWithDestructCallBuilder> {
+    type SubPointersType = OutsideTraitWithDestructCallBuilderSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<OutsideTraitWithDestructCallBuilder>) -> OutsideTraitWithDestructCallBuilderSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                OutsideTraitWithDestructCallBuilderSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct OutsideTraitWithDestructCallBuilderSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl OutsideTraitWithDestructCallBuilderSubPointersMutImpl of starknet::storage::SubPointersMut<OutsideTraitWithDestructCallBuilder> {
+    type SubPointersType = OutsideTraitWithDestructCallBuilderSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<OutsideTraitWithDestructCallBuilder>>) -> OutsideTraitWithDestructCallBuilderSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                OutsideTraitWithDestructCallBuilderSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+
+
 lib.cairo:15:1
 #[starknet::interface]
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -2579,6 +2971,126 @@ impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutImpl of starknet::
 }
 
 
+lib.cairo:15:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithPanicDestructCallBuilderCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructCallBuilder>;
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithPanicDestructCallBuilderDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructCallBuilder>;
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithPanicDestructCallBuilderSerde<> of core::serde::Serde::<OutsideTraitWithPanicDestructCallBuilder> {
+    fn serialize(self: @OutsideTraitWithPanicDestructCallBuilder, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithPanicDestructCallBuilder> {
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        core::option::Option::Some(OutsideTraitWithPanicDestructCallBuilder {
+            contract_address: __serde_member_contract_address.value,
+        })
+    }
+}
+
+
+lib.cairo:15:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl OutsideTraitWithPanicDestructCallBuilderStore<> of starknet::Store::<OutsideTraitWithPanicDestructCallBuilder> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithPanicDestructCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            OutsideTraitWithPanicDestructCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithPanicDestructCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithPanicDestructCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithPanicDestructCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            OutsideTraitWithPanicDestructCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithPanicDestructCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithPanicDestructCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct OutsideTraitWithPanicDestructCallBuilderSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl OutsideTraitWithPanicDestructCallBuilderSubPointersImpl of starknet::storage::SubPointers<OutsideTraitWithPanicDestructCallBuilder> {
+    type SubPointersType = OutsideTraitWithPanicDestructCallBuilderSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<OutsideTraitWithPanicDestructCallBuilder>) -> OutsideTraitWithPanicDestructCallBuilderSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                OutsideTraitWithPanicDestructCallBuilderSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct OutsideTraitWithPanicDestructCallBuilderSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl OutsideTraitWithPanicDestructCallBuilderSubPointersMutImpl of starknet::storage::SubPointersMut<OutsideTraitWithPanicDestructCallBuilder> {
+    type SubPointersType = OutsideTraitWithPanicDestructCallBuilderSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<OutsideTraitWithPanicDestructCallBuilder>>) -> OutsideTraitWithPanicDestructCallBuilderSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                OutsideTraitWithPanicDestructCallBuilderSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+
+
 lib.cairo:1:1
 #[starknet::interface]
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -2667,6 +3179,28 @@ impl OutsideTraitWithDestructSafeDispatcherSubPointersMutDrop<> of core::traits:
 impl OutsideTraitWithDestructSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDestructSafeDispatcherSubPointersMut>;
 
 
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl OutsideTraitWithDestructCallBuilderSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDestructCallBuilderSubPointers>;
+#[doc(hidden)]
+impl OutsideTraitWithDestructCallBuilderSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDestructCallBuilderSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl OutsideTraitWithDestructCallBuilderSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDestructCallBuilderSubPointersMut>;
+#[doc(hidden)]
+impl OutsideTraitWithDestructCallBuilderSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDestructCallBuilderSubPointersMut>;
+
+
 lib.cairo:15:1
 #[starknet::interface]
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -2753,6 +3287,28 @@ impls:
 impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructSafeDispatcherSubPointersMut>;
 #[doc(hidden)]
 impl OutsideTraitWithPanicDestructSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructSafeDispatcherSubPointersMut>;
+
+
+lib.cairo:15:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl OutsideTraitWithPanicDestructCallBuilderSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructCallBuilderSubPointers>;
+#[doc(hidden)]
+impl OutsideTraitWithPanicDestructCallBuilderSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructCallBuilderSubPointers>;
+
+
+lib.cairo:15:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl OutsideTraitWithPanicDestructCallBuilderSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithPanicDestructCallBuilderSubPointersMut>;
+#[doc(hidden)]
+impl OutsideTraitWithPanicDestructCallBuilderSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithPanicDestructCallBuilderSubPointersMut>;
 
 
 lib.cairo:29:1
@@ -3112,6 +3668,45 @@ impl OutsideTraitWithDropSafeDispatcherImpl of OutsideTraitWithDropSafeDispatche
         )
     }
 
+}
+
+#[doc(group: "dispatchers")]
+trait OutsideTraitWithDropCallBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn ret_8(self: T)  -> starknet::account::Call;
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct OutsideTraitWithDropCallBuilder {
+    pub contract_address: starknet::ContractAddress,
+}
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDropCallBuilderImpl of OutsideTraitWithDropCallBuilderTrait<OutsideTraitWithDropCallBuilder> {
+    fn ret_8(self: OutsideTraitWithDropCallBuilder)  -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("ret_8"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+
+}
+
+#[doc(group: "dispatchers")]
+trait OutsideTraitWithDropDispatcherBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn builder(self: T) -> OutsideTraitWithDropCallBuilder;
+}
+
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDropDispatcherBuilderImpl of OutsideTraitWithDropDispatcherBuilderTrait<OutsideTraitWithDropDispatcher> {
+    fn builder(self: OutsideTraitWithDropDispatcher) -> OutsideTraitWithDropCallBuilder {
+        OutsideTraitWithDropCallBuilder { contract_address: self.contract_address }
+    }
 }
 #[feature("forward-impl")]
 #[unstable(feature: "forward-impl")]
@@ -3681,6 +4276,126 @@ lib.cairo:1:1
 ^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDropCallBuilderCopy<> of core::traits::Copy::<OutsideTraitWithDropCallBuilder>;
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDropCallBuilderDrop<> of core::traits::Drop::<OutsideTraitWithDropCallBuilder>;
+#[doc(group: "dispatchers")]
+impl OutsideTraitWithDropCallBuilderSerde<> of core::serde::Serde::<OutsideTraitWithDropCallBuilder> {
+    fn serialize(self: @OutsideTraitWithDropCallBuilder, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<OutsideTraitWithDropCallBuilder> {
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        core::option::Option::Some(OutsideTraitWithDropCallBuilder {
+            contract_address: __serde_member_contract_address.value,
+        })
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl OutsideTraitWithDropCallBuilderStore<> of starknet::Store::<OutsideTraitWithDropCallBuilder> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<OutsideTraitWithDropCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            OutsideTraitWithDropCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: OutsideTraitWithDropCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let OutsideTraitWithDropCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OutsideTraitWithDropCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            OutsideTraitWithDropCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: OutsideTraitWithDropCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let OutsideTraitWithDropCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct OutsideTraitWithDropCallBuilderSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl OutsideTraitWithDropCallBuilderSubPointersImpl of starknet::storage::SubPointers<OutsideTraitWithDropCallBuilder> {
+    type SubPointersType = OutsideTraitWithDropCallBuilderSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<OutsideTraitWithDropCallBuilder>) -> OutsideTraitWithDropCallBuilderSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                OutsideTraitWithDropCallBuilderSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct OutsideTraitWithDropCallBuilderSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl OutsideTraitWithDropCallBuilderSubPointersMutImpl of starknet::storage::SubPointersMut<OutsideTraitWithDropCallBuilder> {
+    type SubPointersType = OutsideTraitWithDropCallBuilderSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<OutsideTraitWithDropCallBuilder>>) -> OutsideTraitWithDropCallBuilderSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                OutsideTraitWithDropCallBuilderSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
 #[doc(hidden)]
 impl OutsideTraitWithDropDispatcherSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDropDispatcherSubPointers>;
 #[doc(hidden)]
@@ -3762,6 +4477,28 @@ impls:
 impl OutsideTraitWithDropSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDropSafeDispatcherSubPointersMut>;
 #[doc(hidden)]
 impl OutsideTraitWithDropSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDropSafeDispatcherSubPointersMut>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl OutsideTraitWithDropCallBuilderSubPointersDrop<> of core::traits::Drop::<OutsideTraitWithDropCallBuilderSubPointers>;
+#[doc(hidden)]
+impl OutsideTraitWithDropCallBuilderSubPointersCopy<> of core::traits::Copy::<OutsideTraitWithDropCallBuilderSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl OutsideTraitWithDropCallBuilderSubPointersMutDrop<> of core::traits::Drop::<OutsideTraitWithDropCallBuilderSubPointersMut>;
+#[doc(hidden)]
+impl OutsideTraitWithDropCallBuilderSubPointersMutCopy<> of core::traits::Copy::<OutsideTraitWithDropCallBuilderSubPointersMut>;
 
 
 lib.cairo:15:1
