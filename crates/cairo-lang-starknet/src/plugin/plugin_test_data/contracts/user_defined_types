@@ -203,6 +203,20 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x175e3ea08fbd92b73ad06ddc3822cc0689ed2771dc573e3f7bd095442d98491.try_into().unwrap();
 
+#[doc(hidden)]
+pub mod __class_hash__ {
+    extern fn __externally_provided_const__() -> starknet::ClassHash nopanic;
+    pub fn class_hash() -> starknet::ClassHash {
+        __externally_provided_const__()
+    }
+    #[feature("forward-impl")]
+    pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {
+        fn class_hash(self: @T) -> starknet::ClassHash {
+            class_hash()
+        }
+    }
+}
+
 
 #[doc(hidden)]
 pub mod __external {

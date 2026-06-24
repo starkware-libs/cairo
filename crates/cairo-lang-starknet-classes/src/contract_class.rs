@@ -5,6 +5,7 @@ use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use starknet_types_core::felt::Felt as Felt252;
+use starknet_types_core::hash::{Poseidon, StarkHash};
 use thiserror::Error;
 
 use crate::abi::Contract;
@@ -13,6 +14,7 @@ use crate::compiler_version::{VersionId, current_compiler_version_id, current_si
 use crate::felt252_serde::{
     Felt252SerdeError, sierra_from_felt252s, sierra_to_felt252s, version_id_from_felt252s,
 };
+use crate::keccak::starknet_keccak;
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -79,6 +81,42 @@ impl ContractClass {
         Ok(ExtractedSierraProgram { program, sierra_version, compiler_version })
     }
 
+    /// Computes the Starknet class hash of this (Sierra) contract class.
+    ///
+    /// Mirrors the algorithm used downstream (the sequencer / `starknet_api`): a Poseidon hash
+    /// over the contract-class version marker, the three entry-point groups, the ABI hash, and the
+    /// Sierra program hash.
+    ///
+    /// NOTE: this duplicates security-sensitive logic that normally lives outside the compiler. In
+    /// particular, the ABI is hashed via its canonical [`Contract::json`] string representation;
+    /// the exact serialization affects the resulting hash, so this implementation must be validated
+    /// against known class-hash reference vectors before being relied upon.
+    pub fn class_hash(&self) -> Felt252 {
+        let entry_points_hash = |entry_points: &[ContractEntryPoint]| {
+            let mut elements = vec![];
+            for entry_point in entry_points {
+                elements.push(Felt252::from(&entry_point.selector));
+                elements.push(Felt252::from(entry_point.function_idx));
+            }
+            Poseidon::hash_array(&elements)
+        };
+        let abi_hash = self
+            .abi
+            .as_ref()
+            .map_or(Felt252::ZERO, |abi| Felt252::from(&starknet_keccak(abi.json().as_bytes())));
+        let sierra_program_hash = Poseidon::hash_array(
+            &self.sierra_program.iter().map(|felt| Felt252::from(&felt.value)).collect::<Vec<_>>(),
+        );
+        Poseidon::hash_array(&[
+            Felt252::from_bytes_be_slice(CONTRACT_CLASS_VERSION_MARKER),
+            entry_points_hash(&self.entry_points_by_type.external),
+            entry_points_hash(&self.entry_points_by_type.l1_handler),
+            entry_points_hash(&self.entry_points_by_type.constructor),
+            abi_hash,
+            sierra_program_hash,
+        ])
+    }
+
     /// Sanity checks the contract class.
     /// Currently only checks that if ABI exists, its counts match the entry points counts.
     pub fn sanity_check(&self) {
@@ -134,6 +172,10 @@ impl ExtractedSierraProgram {
 }
 
 const DEFAULT_CONTRACT_CLASS_VERSION: &str = "0.1.0";
+
+/// The version marker hashed into the Sierra contract class hash (see
+/// [`ContractClass::class_hash`]).
+const CONTRACT_CLASS_VERSION_MARKER: &[u8] = b"CONTRACT_CLASS_V0.1.0";
 
 #[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractEntryPoints {

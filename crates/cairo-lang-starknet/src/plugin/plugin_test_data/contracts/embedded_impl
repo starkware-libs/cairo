@@ -1032,6 +1032,20 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x24989c51cc02d16815c925171e8167063fde5b6487bb15a58d126a7bc4f3591.try_into().unwrap();
 
+#[doc(hidden)]
+pub mod __class_hash__ {
+    extern fn __externally_provided_const__() -> starknet::ClassHash nopanic;
+    pub fn class_hash() -> starknet::ClassHash {
+        __externally_provided_const__()
+    }
+    #[feature("forward-impl")]
+    pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {
+        fn class_hash(self: @T) -> starknet::ClassHash {
+            class_hash()
+        }
+    }
+}
+
 impl ContractStateOutsideImpl of
     super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
@@ -2831,6 +2845,20 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b.try_into().unwrap();
 
+#[doc(hidden)]
+pub mod __class_hash__ {
+    extern fn __externally_provided_const__() -> starknet::ClassHash nopanic;
+    pub fn class_hash() -> starknet::ClassHash {
+        __externally_provided_const__()
+    }
+    #[feature("forward-impl")]
+    pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {
+        fn class_hash(self: @T) -> starknet::ClassHash {
+            class_hash()
+        }
+    }
+}
+
 impl ContractStateOutsideImplWithDestruct of
     super::UnsafeNewContractStateTraitForOutsideImplWithDestruct<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
@@ -3839,6 +3867,20 @@ pub fn contract_state_for_testing() -> ContractState {
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47.try_into().unwrap();
+
+#[doc(hidden)]
+pub mod __class_hash__ {
+    extern fn __externally_provided_const__() -> starknet::ClassHash nopanic;
+    pub fn class_hash() -> starknet::ClassHash {
+        __externally_provided_const__()
+    }
+    #[feature("forward-impl")]
+    pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {
+        fn class_hash(self: @T) -> starknet::ClassHash {
+            class_hash()
+        }
+    }
+}
 
 impl ContractStateOutsideImplWithDrop of
     super::UnsafeNewContractStateTraitForOutsideImplWithDrop<ContractState> {

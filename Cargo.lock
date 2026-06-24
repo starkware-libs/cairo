@@ -1071,6 +1071,7 @@ dependencies = [
  "indent",
  "indoc",
  "itertools 0.14.0",
+ "num-bigint",
  "pretty_assertions",
  "rayon",
  "salsa",

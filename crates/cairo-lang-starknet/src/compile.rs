@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::{CompilerConfig, ensure_diagnostics};
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
@@ -10,6 +12,7 @@ use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -22,8 +25,10 @@ use cairo_lang_starknet_classes::contract_class::{
 };
 use cairo_lang_utils::CloneableDatabase;
 use itertools::{Itertools, chain};
+use num_bigint::BigInt;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use salsa::Database;
+use starknet_types_core::felt::Felt as Felt252;
 
 use crate::abi::AbiBuilder;
 use crate::aliased::Aliased;
@@ -57,8 +62,45 @@ pub fn compile_path(
     let main_crate_inputs = setup_project(&mut db, path)?;
     compiler_config.diagnostics_reporter =
         compiler_config.diagnostics_reporter.with_crates(&main_crate_inputs);
+
+    // The generated `class_hash()` accessor injects the contract's own class hash at the Sierra
+    // generation stage via the reserved `__externally_provided_const__` extern. Since the hash is
+    // derived from the compiled program, we compute it in two passes: first with the extern stubbed
+    // to zero (to obtain the class hash), then with that hash injected. Embedding the hash changes
+    // the bytecode, so the final class's true hash differs from the injected value (a deliberate,
+    // documented approximation).
+    //
+    // `main_crate_ids` are re-derived after each provider change, as the crate ids are bound to the
+    // database and cannot be held across a mutation.
+    set_class_hash_provider(&mut db, Felt252::ZERO);
+    let stub_main_crate_ids = CrateInput::into_crate_ids(&db, main_crate_inputs.clone());
+    let stub_class = compile_contract_in_prepared_db(
+        &db,
+        contract_path,
+        stub_main_crate_ids,
+        CompilerConfig {
+            // Scope to the main crate (like the final pass) and stay silent: the real diagnostics
+            // are reported by the second pass.
+            diagnostics_reporter: DiagnosticsReporter::ignoring()
+                .with_crates(&main_crate_inputs)
+                .allow_warnings(),
+            ..Default::default()
+        },
+    )?;
+    set_class_hash_provider(&mut db, stub_class.class_hash());
+
     let main_crate_ids = CrateInput::into_crate_ids(&db, main_crate_inputs);
     compile_contract_in_prepared_db(&db, contract_path, main_crate_ids, compiler_config)
+}
+
+/// Installs an [`cairo_lang_sierra_generator::db::ExternalConstProvider`] that resolves every call
+/// to the reserved `__externally_provided_const__` extern function (used by the generated
+/// `class_hash()` accessor) to `value`, as a constant of the call's declared return type.
+fn set_class_hash_provider(db: &mut RootDatabase, value: Felt252) {
+    let value = BigInt::from(value.to_biguint());
+    db.set_external_const_provider(Some(Arc::new(move |db, _full_path, ty| {
+        Ok(ConstValueId::from_int(db, ty, &value))
+    })));
 }
 
 /// Runs Starknet contract compiler on the specified contract.

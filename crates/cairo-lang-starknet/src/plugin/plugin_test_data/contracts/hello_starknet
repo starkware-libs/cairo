@@ -100,6 +100,20 @@ pub fn unsafe_new_contract_state() -> ContractState {
 use starknet::storage::Map as LegacyMap;
 
 #[doc(hidden)]
+pub mod __class_hash__ {
+    extern fn __externally_provided_const__() -> starknet::ClassHash nopanic;
+    pub fn class_hash() -> starknet::ClassHash {
+        __externally_provided_const__()
+    }
+    #[feature("forward-impl")]
+    pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {
+        fn class_hash(self: @T) -> starknet::ClassHash {
+            class_hash()
+        }
+    }
+}
+
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -968,6 +982,20 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
+
+#[doc(hidden)]
+pub mod __class_hash__ {
+    extern fn __externally_provided_const__() -> starknet::ClassHash nopanic;
+    pub fn class_hash() -> starknet::ClassHash {
+        __externally_provided_const__()
+    }
+    #[feature("forward-impl")]
+    pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {
+        fn class_hash(self: @T) -> starknet::ClassHash {
+            class_hash()
+        }
+    }
+}
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]

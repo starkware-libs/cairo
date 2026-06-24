@@ -1,7 +1,10 @@
+use cairo_lang_compiler::CompilerConfig;
+use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use test_case::test_case;
 
+use crate::compile::compile_path;
 use crate::test_utils::{get_example_file_path, get_test_contract};
 
 /// Tests that the Sierra compiled from a contract in the contracts crate is the same as in
@@ -46,4 +49,30 @@ fn test_compile_path_from_contracts_crate(example_contract_path: &str) {
         &get_example_file_path(format!("{example_file_name}.sierra").as_str()),
         extracted.program.to_string(),
     );
+}
+
+/// Tests the two-pass class-hash injection: the contract's external `get_class_hash` calls the
+/// generated `__class_hash__::class_hash()`, making the reserved `__externally_provided_const__`
+/// extern reachable. Compilation succeeds only because `compile_path` installs a provider for it
+/// (computing the contract's own class hash); otherwise Sierra generation would fail. The result
+/// is also deterministic across runs.
+#[test]
+fn class_hash_injection_compiles() {
+    let path = get_example_file_path("class_hash_test_contract.cairo");
+    let compile = || {
+        compile_path(
+            &path,
+            None,
+            CompilerConfig { replace_ids: true, ..Default::default() },
+            InliningStrategy::default(),
+        )
+        .unwrap()
+    };
+
+    let contract = compile();
+    assert_eq!(contract.entry_points_by_type.external.len(), 1);
+    contract.sanity_check();
+
+    // The injected class hash is deterministic, so recompilation yields an identical program.
+    assert_eq!(contract.sierra_program, compile().sierra_program);
 }

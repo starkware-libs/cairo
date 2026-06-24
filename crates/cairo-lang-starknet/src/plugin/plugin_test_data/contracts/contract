@@ -181,6 +181,20 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x512a6d7124a897370409ddf4a36e94192a8e84b6eb12aa805962db55776618.try_into().unwrap();
 
 #[doc(hidden)]
+pub mod __class_hash__ {
+    extern fn __externally_provided_const__() -> starknet::ClassHash nopanic;
+    pub fn class_hash() -> starknet::ClassHash {
+        __externally_provided_const__()
+    }
+    #[feature("forward-impl")]
+    pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {
+        fn class_hash(self: @T) -> starknet::ClassHash {
+            class_hash()
+        }
+    }
+}
+
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__get_something(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -567,6 +581,20 @@ pub fn contract_state_for_testing() -> ContractState {
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x19e877991b74c1b921fadcea48b83b3d8a5a0e86737a0ad2db0c95d8768eaea.try_into().unwrap();
+
+#[doc(hidden)]
+pub mod __class_hash__ {
+    extern fn __externally_provided_const__() -> starknet::ClassHash nopanic;
+    pub fn class_hash() -> starknet::ClassHash {
+        __externally_provided_const__()
+    }
+    #[feature("forward-impl")]
+    pub impl ForwardingClassHashImpl<T> of starknet::ForwardingClassHash<T> {
+        fn class_hash(self: @T) -> starknet::ClassHash {
+            class_hash()
+        }
+    }
+}
 
 
 #[doc(hidden)]
