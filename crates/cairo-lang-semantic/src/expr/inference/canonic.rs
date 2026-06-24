@@ -38,8 +38,8 @@ use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
     ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
     ExprId, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId, GenericArgumentId,
-    GenericParam, MatchArmSelector, Parameter, Signature, TypeId, TypeLongId, ValueSelectorArm,
-    add_basic_rewrites,
+    GenericParam, MatchArmSelector, MemberAccessKind, Parameter, Signature, TypeId, TypeLongId,
+    ValueSelectorArm, add_basic_rewrites,
 };
 
 /// A canonical representation of a concrete trait that needs to be solved.
