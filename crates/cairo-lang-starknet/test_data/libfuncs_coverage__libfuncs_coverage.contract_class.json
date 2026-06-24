@@ -14934,16 +14934,8 @@
         "store_temp<Array<u64>>"
       ],
       [
-<<<<<<< HEAD
-        1477,
-        "function_call<user@core::keccak::keccak_u256s_be_inputs[652-819]>"
-||||||| df923bfa7
-        1477,
-        "function_call<user@core::keccak::keccak_u256s_be_inputs[646-813]>"
-=======
         781,
         "function_call<user@core::sha2_64_core::compute_sha2_64_byte_array[340-1652]>"
->>>>>>> origin/dev-v2.19.0
       ],
       [
         782,
@@ -18223,7 +18215,7 @@
       ],
       [
         1601,
-        "function_call<user@core::keccak::keccak_u256s_be_inputs[646-813]>"
+        "function_call<user@core::keccak::keccak_u256s_be_inputs[652-819]>"
       ],
       [
         1602,
@@ -19177,13 +19169,7 @@
       ],
       [
         188,
-<<<<<<< HEAD
-        "core::keccak::keccak_u256s_be_inputs[652-819]"
-||||||| df923bfa7
-        "core::keccak::keccak_u256s_be_inputs[646-813]"
-=======
         "core::integer::u256_wide_mul"
->>>>>>> origin/dev-v2.19.0
       ],
       [
         189,
@@ -19207,7 +19193,7 @@
       ],
       [
         194,
-        "core::keccak::keccak_u256s_be_inputs[646-813]"
+        "core::keccak::keccak_u256s_be_inputs[652-819]"
       ],
       [
         195,
