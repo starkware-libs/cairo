@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::{self as lowering, LoweringStage, ids};
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
@@ -10,8 +13,10 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use lowering::fmt::LoweredFormatter;
 use lowering::ids::ConcreteFunctionWithBodyId;
+use num_bigint::BigInt;
 
 use super::generate_function_result;
+use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::find_variable_lifetime;
 use crate::replace_ids::replace_sierra_ids;
@@ -28,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         serialization: "serialization",
         early_return: "early_return",
         panic: "panic",
+        externally_provided_const: "externally_provided_const",
     },
     block_generator_test
 );
@@ -42,6 +48,13 @@ fn block_generator_test(
     // unnecessary complication to them.
     let add_withdraw_gas_flag_id = FlagLongId(Flag::ADD_WITHDRAW_GAS.into());
     db.set_flag(add_withdraw_gas_flag_id, Some(Flag::AddWithdrawGas(false)));
+
+    // Install a test provider for the `__externally_provided_const__` extern function. It is inert
+    // unless that extern is actually called, and resolves every call to the constant `7777` of the
+    // declared return type.
+    db.set_external_const_provider(Some(Arc::new(|db, _full_path, ty| {
+        Ok(ConstValueId::from_int(db, ty, &BigInt::from(7777)))
+    })));
 
     // Parse code and create semantic model.
     let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
