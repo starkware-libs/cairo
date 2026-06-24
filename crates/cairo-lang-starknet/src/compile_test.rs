@@ -76,3 +76,24 @@ fn class_hash_injection_compiles() {
     // The injected class hash is deterministic, so recompilation yields an identical program.
     assert_eq!(contract.sierra_program, compile().sierra_program);
 }
+
+/// Tests STATIC interface forwarding via the compile-time class-hash feature: `static_proxy`
+/// forwards `ICounterContract` to `counter_contract`'s class using the generated
+/// `counter_contract::__class_hash__::ForwardingClassHashImpl` (no stored class hash, no
+/// constructor). Verifies the proxy compiles to a class exposing the forwarded entry points; the
+/// forwarded class hash is injected by the two-pass in `compile_path`.
+#[test]
+fn static_forwarding_compiles() {
+    let path = get_example_file_path("static_forwarding_contract.cairo");
+    let contract = compile_path(
+        &path,
+        Some("static_forwarding_contract::static_forwarding_contract::static_proxy"),
+        CompilerConfig { replace_ids: true, ..Default::default() },
+        InliningStrategy::default(),
+    )
+    .unwrap();
+
+    // The two `ICounterContract` methods are forwarded as external entry points on the proxy.
+    assert_eq!(contract.entry_points_by_type.external.len(), 2);
+    contract.sanity_check();
+}
