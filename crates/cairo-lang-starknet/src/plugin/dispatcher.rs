@@ -215,22 +215,7 @@ pub fn handle_trait<'db>(
                 } else {
                     format!("self: @{GENERIC_CONTRACT_STATE_NAME}")
                 };
-                let stub_decl = {
-                    let mut func_declaration = RewriteNode::from_ast(&declaration);
-                    let params = func_declaration
-                        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
-                        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
-                        .modify(db)
-                        .children
-                        .as_mut()
-                        .unwrap();
-                    let maybe_comma = if params.len() > 2 { ", " } else { "" };
-                    params.splice(
-                        0..std::cmp::min(2, params.len()),
-                        [RewriteNode::Text(format!("{self_stub_text}{maybe_comma}"))],
-                    );
-                    func_declaration
-                };
+                let stub_decl = replace_self_param(db, &declaration, &self_stub_text);
                 let self_for_class_hash =
                     if self_param.is_ref_param(db) { "@self" } else { "self" };
                 let dispatch_args = sig_params
@@ -600,19 +585,8 @@ fn dispatcher_signature<'db>(
     self_type_name: &str,
     unwrap: bool,
 ) -> RewriteNode<'db> {
-    let mut func_declaration = RewriteNode::from_ast(declaration);
-    let params = func_declaration
-        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
-        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
-        .modify(db)
-        .children
-        .as_mut()
-        .unwrap();
-    let maybe_comma = if params.len() > 2 { ", " } else { "" };
-    params.splice(
-        0..std::cmp::min(2, params.len()),
-        [RewriteNode::Text(format!("self: {self_type_name}{maybe_comma}"))],
-    );
+    let mut func_declaration =
+        replace_self_param(db, declaration, &format!("self: {self_type_name}"));
     if unwrap {
         return func_declaration;
     }
@@ -636,5 +610,29 @@ fn dispatcher_signature<'db>(
         return_type.splice(1..2, [new_ret_type]);
     };
 
+    func_declaration
+}
+
+/// Replaces the `self` parameter of `declaration` (and the trailing comma, if any) with
+/// `replacement` (e.g. `self: SomeDispatcher`), returning the rewritten declaration for
+/// optional further modification (such as rewriting the return type).
+fn replace_self_param<'db>(
+    db: &'db dyn Database,
+    declaration: &ast::FunctionDeclaration<'db>,
+    replacement: &str,
+) -> RewriteNode<'db> {
+    let mut func_declaration = RewriteNode::from_ast(declaration);
+    let params = func_declaration
+        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
+        .modify(db)
+        .children
+        .as_mut()
+        .unwrap();
+    let maybe_comma = if params.len() > 2 { ", " } else { "" };
+    params.splice(
+        0..std::cmp::min(2, params.len()),
+        [RewriteNode::Text(format!("{replacement}{maybe_comma}"))],
+    );
     func_declaration
 }
