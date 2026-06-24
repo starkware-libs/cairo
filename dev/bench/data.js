@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782263783048,
+  "lastUpdate": 1782264029418,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -9541,6 +9541,38 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/798b0ab5dc0350ae092ccf85a0de41e3a53fe206"
         },
         "date": 1782178008396,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 52749,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 40181,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "bf991a1eaf476442a2da2c407ed2f741def086b7",
+          "message": "chore(lowering): assert forward analysis processes every block (#10155)",
+          "timestamp": "2026-06-23T16:03:58Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/bf991a1eaf476442a2da2c407ed2f741def086b7"
+        },
+        "date": 1782264029239,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
