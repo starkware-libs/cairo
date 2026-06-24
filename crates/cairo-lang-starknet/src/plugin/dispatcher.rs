@@ -87,6 +87,8 @@ pub fn handle_trait<'db>(
     let mut library_caller_method_impls = vec![];
     let mut safe_contract_caller_method_impls = vec![];
     let mut safe_library_caller_method_impls = vec![];
+    let mut call_builder_signatures = vec![];
+    let mut call_builder_method_impls = vec![];
     let mut forward_method_wrappers = vec![];
     let mut forward_external_fns = vec![];
     let mut forward_impl_method_stubs = vec![];
@@ -101,6 +103,8 @@ pub fn handle_trait<'db>(
     let safe_contract_caller_name = format!("{base_name}SafeDispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
     let safe_library_caller_name = format!("{base_name}SafeLibraryDispatcher");
+    let call_builder_trait_name = format!("{base_name}CallBuilderTrait");
+    let call_builder_name = format!("{base_name}CallBuilder");
     for item_ast in body.iter_items(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
@@ -341,6 +345,19 @@ pub fn handle_trait<'db>(
                     ret_decode.clone(),
                     false,
                 ));
+                call_builder_signatures.push(RewriteNode::interpolate_patched(
+                    "\n    #[unstable(feature: \"call_builder\")]\n$func_decl$;",
+                    &[(
+                        "func_decl".to_string(),
+                        call_builder_signature(db, &declaration, "T"),
+                    )]
+                    .into(),
+                ));
+                call_builder_method_impls.push(call_builder_method_impl(
+                    call_builder_signature(db, &declaration, &call_builder_name),
+                    entry_point_selector.clone(),
+                    serialization_code.clone(),
+                ));
                 safe_library_caller_method_impls.push(declaration_method_impl(
                     dispatcher_signature(db, &declaration, &safe_library_caller_name, false),
                     entry_point_selector,
@@ -434,6 +451,21 @@ pub fn handle_trait<'db>(
              {safe_dispatcher_trait_name}<{safe_contract_caller_name}> {{
             $safe_contract_caller_method_impls$
             }}
+
+            {DISPATCHER_DOC_GROUP_ATTR}
+            $visibility$trait {call_builder_trait_name}<T> {{$call_builder_signatures$
+            }}
+
+            {DISPATCHER_DOC_GROUP_ATTR}
+            #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
+            $visibility$struct {call_builder_name} {{
+                pub contract_address: starknet::ContractAddress,
+            }}
+
+            {DISPATCHER_DOC_GROUP_ATTR}
+            impl {call_builder_name}Impl of {call_builder_trait_name}<{call_builder_name}> {{
+            $call_builder_method_impls$
+            }}
             ",
         ),
         &[
@@ -457,6 +489,14 @@ pub fn handle_trait<'db>(
             (
                 "safe_library_caller_method_impls".to_string(),
                 RewriteNode::new_modified(safe_library_caller_method_impls),
+            ),
+            (
+                "call_builder_signatures".to_string(),
+                RewriteNode::new_modified(call_builder_signatures),
+            ),
+            (
+                "call_builder_method_impls".to_string(),
+                RewriteNode::new_modified(call_builder_method_impls),
             ),
             (
                 "visibility".to_string(),
@@ -591,6 +631,69 @@ fn declaration_method_impl<'db>(
         ]
         .into(),
     )
+}
+
+/// Returns the method implementation for a call builder: serializes the arguments into
+/// `__calldata__` and returns a `starknet::account::Call` targeting `self.contract_address`.
+/// Unlike a dispatcher method, it performs no syscall and never deserializes a return value.
+fn call_builder_method_impl<'db>(
+    func_declaration: RewriteNode<'db>,
+    entry_point_selector: RewriteNode<'db>,
+    serialization_code: Vec<RewriteNode<'db>>,
+) -> RewriteNode<'db> {
+    RewriteNode::interpolate_patched(
+        &formatdoc!(
+            "$func_decl$ {{
+                    let mut {CALLDATA_PARAM_NAME} = core::traits::Default::default();
+            $serialization_code$
+                    starknet::account::Call {{
+                        to: self.contract_address,
+                        selector: $entry_point_selector$,
+                        calldata: core::array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
+                    }}
+                }}
+        "
+        ),
+        &[
+            ("func_decl".to_string(), func_declaration),
+            ("entry_point_selector".to_string(), entry_point_selector),
+            ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
+        ]
+        .into(),
+    )
+}
+
+/// Returns the signature for a call-builder method: the declaration's parameters with `self`
+/// replaced by `self_type_name`, and the return type forced to `starknet::account::Call`
+/// (the interface method's own return type is irrelevant when only building a `Call`).
+fn call_builder_signature<'db>(
+    db: &'db dyn Database,
+    declaration: &ast::FunctionDeclaration<'db>,
+    self_type_name: &str,
+) -> RewriteNode<'db> {
+    let mut func_declaration = RewriteNode::from_ast(declaration);
+    let params = func_declaration
+        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
+        .modify(db)
+        .children
+        .as_mut()
+        .unwrap();
+    let maybe_comma = if params.len() > 2 { ", " } else { "" };
+    params.splice(
+        0..std::cmp::min(2, params.len()),
+        [RewriteNode::Text(format!("self: {self_type_name}{maybe_comma}"))],
+    );
+    let return_type = func_declaration
+        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+        .modify_child(db, ast::FunctionSignature::INDEX_RET_TY)
+        .modify(db)
+        .children
+        .as_mut()
+        .unwrap();
+    // Replace the whole return-type clause (empty or not) with `-> Call`.
+    return_type.splice(0..return_type.len(), [RewriteNode::text(" -> starknet::account::Call")]);
+    func_declaration
 }
 
 /// Returns the matching signature for a dispatcher implementation for the given declaration.
