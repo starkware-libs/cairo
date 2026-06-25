@@ -203,6 +203,29 @@ fn test_const_generic_enum_return() {
     assert_eq!(RESULT, Either::Left(7));
 }
 
+trait AssocConst<const N: usize> {
+    const VALUE: usize;
+}
+
+impl AssocConstImpl of AssocConst<7> {
+    const VALUE: usize = 70;
+}
+
+const fn assoc_const_via_generic<const N: usize, impl A: AssocConst<N>>() -> usize {
+    A::VALUE
+}
+
+// Associated-const (impl-constant projection) evaluation in const context: both direct concrete
+// access (evaluated under an empty substitution) and through a generic const fn must yield the
+// concrete value, not an unresolved projection.
+#[test]
+fn test_const_assoc_const() {
+    const DIRECT: usize = AssocConstImpl::VALUE;
+    assert_eq!(DIRECT, 70);
+    const VIA_GENERIC: usize = assoc_const_via_generic::<7, AssocConstImpl>();
+    assert_eq!(VIA_GENERIC, 70);
+}
+
 #[derive(Copy, Drop, PartialEq, Debug)]
 struct Point {
     x: felt252,
