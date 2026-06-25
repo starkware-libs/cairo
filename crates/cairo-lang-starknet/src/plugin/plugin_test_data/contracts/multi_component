@@ -580,6 +580,45 @@ impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDi
     }
 
 }
+
+#[doc(group: "dispatchers")]
+pub trait GetSupplyCallBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn get_total_supply_plus_1(self: T) -> starknet::account::Call;
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+pub struct GetSupplyCallBuilder {
+    pub contract_address: starknet::ContractAddress,
+}
+
+#[doc(group: "dispatchers")]
+impl GetSupplyCallBuilderImpl of GetSupplyCallBuilderTrait<GetSupplyCallBuilder> {
+    fn get_total_supply_plus_1(self: GetSupplyCallBuilder) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("get_total_supply_plus_1"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+
+}
+
+#[doc(group: "dispatchers")]
+pub trait GetSupplyDispatcherBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn builder(self: T) -> GetSupplyCallBuilder;
+}
+
+#[doc(group: "dispatchers")]
+impl GetSupplyDispatcherBuilderImpl of GetSupplyDispatcherBuilderTrait<GetSupplyDispatcher> {
+    fn builder(self: GetSupplyDispatcher) -> GetSupplyCallBuilder {
+        GetSupplyCallBuilder { contract_address: self.contract_address }
+    }
+}
 #[feature("forward-impl")]
 #[unstable(feature: "forward-impl")]
 #[starknet::forward_impl]
@@ -1042,6 +1081,112 @@ impl GetSupplySafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
         }
     }
 }
+#[doc(group: "dispatchers")]
+impl GetSupplyCallBuilderCopy<> of core::traits::Copy::<GetSupplyCallBuilder>;
+#[doc(group: "dispatchers")]
+impl GetSupplyCallBuilderDrop<> of core::traits::Drop::<GetSupplyCallBuilder>;
+#[doc(group: "dispatchers")]
+impl GetSupplyCallBuilderSerde<> of core::serde::Serde::<GetSupplyCallBuilder> {
+    fn serialize(self: @GetSupplyCallBuilder, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyCallBuilder> {
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        core::option::Option::Some(GetSupplyCallBuilder {
+            contract_address: __serde_member_contract_address.value,
+        })
+    }
+}
+impl GetSupplyCallBuilderStore<> of starknet::Store::<GetSupplyCallBuilder> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            GetSupplyCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: GetSupplyCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let GetSupplyCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyCallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            GetSupplyCallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: GetSupplyCallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let GetSupplyCallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct GetSupplyCallBuilderSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl GetSupplyCallBuilderSubPointersImpl of starknet::storage::SubPointers<GetSupplyCallBuilder> {
+    type SubPointersType = GetSupplyCallBuilderSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyCallBuilder>) -> GetSupplyCallBuilderSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplyCallBuilderSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct GetSupplyCallBuilderSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl GetSupplyCallBuilderSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplyCallBuilder> {
+    type SubPointersType = GetSupplyCallBuilderSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyCallBuilder>>) -> GetSupplyCallBuilderSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplyCallBuilderSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
 #[doc(hidden)]
 impl GetSupplyDispatcherSubPointersDrop<> of core::traits::Drop::<GetSupplyDispatcherSubPointers>;
 #[doc(hidden)]
@@ -1074,6 +1219,14 @@ impl GetSupplySafeDispatcherSubPointersCopy<> of core::traits::Copy::<GetSupplyS
 impl GetSupplySafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<GetSupplySafeDispatcherSubPointersMut>;
 #[doc(hidden)]
 impl GetSupplySafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<GetSupplySafeDispatcherSubPointersMut>;
+#[doc(hidden)]
+impl GetSupplyCallBuilderSubPointersDrop<> of core::traits::Drop::<GetSupplyCallBuilderSubPointers>;
+#[doc(hidden)]
+impl GetSupplyCallBuilderSubPointersCopy<> of core::traits::Copy::<GetSupplyCallBuilderSubPointers>;
+#[doc(hidden)]
+impl GetSupplyCallBuilderSubPointersMutDrop<> of core::traits::Drop::<GetSupplyCallBuilderSubPointersMut>;
+#[doc(hidden)]
+impl GetSupplyCallBuilderSubPointersMutCopy<> of core::traits::Copy::<GetSupplyCallBuilderSubPointersMut>;
 
     use starknet::ContractAddress;
     use crate::components::erc20::erc20 as erc20_comp;

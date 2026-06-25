@@ -1,5 +1,6 @@
-use starknet::SyscallResultTrait;
 use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
+use starknet::{ContractAddress, SyscallResultTrait};
+use super::utils::serialized;
 
 #[starknet::interface]
 trait IContract<T> {
@@ -76,6 +77,39 @@ fn test_flow_safe_dispatcher() {
     // Library calls.
     let mut library = IContractSafeLibraryDispatcher { class_hash: contract_a::TEST_CLASS_HASH };
     assert_eq!(library.foo(300), Ok(0));
+}
+
+#[starknet::interface]
+trait ICallTarget<T> {
+    fn transfer(self: @T, recipient: ContractAddress, amount: u256);
+    fn poke(self: @T);
+}
+
+// Verifies that the generated call builder produces a `Call` with the right `to`, `selector`, and
+// (Serde-encoded) `calldata`, both standalone and via the dispatcher's `.builder()` accessor.
+#[test]
+#[feature("call_builder")]
+fn test_call_builder() {
+    let token: ContractAddress = 0x1234.try_into().unwrap();
+    let recipient: ContractAddress = 0x5678.try_into().unwrap();
+    let amount = 0x42_u256;
+
+    let call = ICallTargetCallBuilder { contract_address: token }.transfer(recipient, amount);
+    assert_eq!(call.to, token);
+    assert_eq!(call.selector, selector!("transfer"));
+    // calldata = serialize(recipient) ++ serialize(amount) = [recipient, amount.low, amount.high].
+    assert_eq!(call.calldata, [0x5678, 0x42, 0x0].span());
+
+    // A method with no arguments yields empty calldata.
+    let poke = ICallTargetCallBuilder { contract_address: token }.poke();
+    assert_eq!(poke.selector, selector!("poke"));
+    assert_eq!(poke.calldata.len(), 0);
+
+    // The dispatcher's `.builder()` accessor produces the same `Call`.
+    let via_dispatcher = ICallTargetDispatcher { contract_address: token }
+        .builder()
+        .transfer(recipient, amount);
+    assert_eq!(serialized(via_dispatcher), serialized(call));
 }
 
 // If the test is failing due to gas usage changes, update the gas limit by taking `test_flow` test

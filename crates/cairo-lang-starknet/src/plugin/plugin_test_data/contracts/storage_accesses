@@ -1235,6 +1235,156 @@ self: IERC20SafeDispatcher, spender: ContractAddress, subtracted_value: u256,
     }
 
 }
+
+#[doc(group: "dispatchers")]
+trait IERC20CallBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn get_name(self: T) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn get_symbol(self: T) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn get_decimals(self: T) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn get_total_supply(self: T) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn balance_of(self: T, account: ContractAddress) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn allowance(self: T, owner: ContractAddress, spender: ContractAddress) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn decrease_allowance(
+self: T, spender: ContractAddress, subtracted_value: u256,
+    ) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn write_info(self: T, user_info: UserInfo) -> starknet::account::Call;
+    #[unstable(feature: "call_builder")]
+    fn get_info(self: T) -> starknet::account::Call;
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IERC20CallBuilder {
+    pub contract_address: starknet::ContractAddress,
+}
+
+#[doc(group: "dispatchers")]
+impl IERC20CallBuilderImpl of IERC20CallBuilderTrait<IERC20CallBuilder> {
+    fn get_name(self: IERC20CallBuilder) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("get_name"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn get_symbol(self: IERC20CallBuilder) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("get_symbol"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn get_decimals(self: IERC20CallBuilder) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("get_decimals"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn get_total_supply(self: IERC20CallBuilder) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("get_total_supply"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn balance_of(self: IERC20CallBuilder, account: ContractAddress) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@account, ref __calldata__);
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("balance_of"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn allowance(self: IERC20CallBuilder, owner: ContractAddress, spender: ContractAddress) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@owner, ref __calldata__);
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("allowance"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn increase_allowance(self: IERC20CallBuilder, spender: ContractAddress, added_value: u256) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256>::serialize(@added_value, ref __calldata__);
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("increase_allowance"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn decrease_allowance(
+self: IERC20CallBuilder, spender: ContractAddress, subtracted_value: u256,
+    ) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256>::serialize(@subtracted_value, ref __calldata__);
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("decrease_allowance"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn write_info(self: IERC20CallBuilder, user_info: UserInfo) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<UserInfo>::serialize(@user_info, ref __calldata__);
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("write_info"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+    fn get_info(self: IERC20CallBuilder) -> starknet::account::Call {
+        let mut __calldata__ = core::traits::Default::default();
+
+        starknet::account::Call {
+            to: self.contract_address,
+            selector: selector!("get_info"),
+            calldata: core::array::ArrayTrait::span(@__calldata__),
+        }
+    }
+
+}
+
+#[doc(group: "dispatchers")]
+trait IERC20DispatcherBuilderTrait<T> {
+    #[unstable(feature: "call_builder")]
+    fn builder(self: T) -> IERC20CallBuilder;
+}
+
+#[doc(group: "dispatchers")]
+impl IERC20DispatcherBuilderImpl of IERC20DispatcherBuilderTrait<IERC20Dispatcher> {
+    fn builder(self: IERC20Dispatcher) -> IERC20CallBuilder {
+        IERC20CallBuilder { contract_address: self.contract_address }
+    }
+}
 #[feature("forward-impl")]
 #[unstable(feature: "forward-impl")]
 #[starknet::forward_impl]
@@ -2153,6 +2303,112 @@ impl IERC20SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
         }
     }
 }
+#[doc(group: "dispatchers")]
+impl IERC20CallBuilderCopy<> of core::traits::Copy::<IERC20CallBuilder>;
+#[doc(group: "dispatchers")]
+impl IERC20CallBuilderDrop<> of core::traits::Drop::<IERC20CallBuilder>;
+#[doc(group: "dispatchers")]
+impl IERC20CallBuilderSerde<> of core::serde::Serde::<IERC20CallBuilder> {
+    fn serialize(self: @IERC20CallBuilder, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20CallBuilder> {
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        core::option::Option::Some(IERC20CallBuilder {
+            contract_address: __serde_member_contract_address.value,
+        })
+    }
+}
+impl IERC20CallBuilderStore<> of starknet::Store::<IERC20CallBuilder> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IERC20CallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            IERC20CallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: IERC20CallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let IERC20CallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IERC20CallBuilder> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            IERC20CallBuilder {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: IERC20CallBuilder) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let IERC20CallBuilder {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+struct IERC20CallBuilderSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl IERC20CallBuilderSubPointersImpl of starknet::storage::SubPointers<IERC20CallBuilder> {
+    type SubPointersType = IERC20CallBuilderSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<IERC20CallBuilder>) -> IERC20CallBuilderSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20CallBuilderSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+struct IERC20CallBuilderSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl IERC20CallBuilderSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20CallBuilder> {
+    type SubPointersType = IERC20CallBuilderSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20CallBuilder>>) -> IERC20CallBuilderSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20CallBuilderSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
 #[doc(hidden)]
 impl UserInfoSubPointersDrop<> of core::traits::Drop::<UserInfoSubPointers>;
 #[doc(hidden)]
@@ -2209,6 +2465,14 @@ impl IERC20SafeDispatcherSubPointersCopy<> of core::traits::Copy::<IERC20SafeDis
 impl IERC20SafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IERC20SafeDispatcherSubPointersMut>;
 #[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
+#[doc(hidden)]
+impl IERC20CallBuilderSubPointersDrop<> of core::traits::Drop::<IERC20CallBuilderSubPointers>;
+#[doc(hidden)]
+impl IERC20CallBuilderSubPointersCopy<> of core::traits::Copy::<IERC20CallBuilderSubPointers>;
+#[doc(hidden)]
+impl IERC20CallBuilderSubPointersMutDrop<> of core::traits::Drop::<IERC20CallBuilderSubPointersMut>;
+#[doc(hidden)]
+impl IERC20CallBuilderSubPointersMutCopy<> of core::traits::Copy::<IERC20CallBuilderSubPointersMut>;
 
     use core::num::traits::Zero;
     use starknet::storage::{
