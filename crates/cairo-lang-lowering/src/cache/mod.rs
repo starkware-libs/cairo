@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs as defs;
 use cairo_lang_defs::cache::{
-    CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext, LanguageElementCached,
-    SyntaxStablePtrIdCached,
+    CacheBlobReader, CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext,
+    LanguageElementCached, SyntaxStablePtrIdCached, write_cache_section,
 };
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -20,9 +20,9 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::cache::{
     ConcreteEnumCached, ConcreteVariantCached, ConstValueIdCached, ExprVarMemberPathCached,
-    ImplIdCached, MatchArmSelectorCached, SemanticCacheLoadingData, SemanticCacheSavingContext,
-    SemanticCacheSavingData, SemanticConcreteFunctionWithBodyCached, SemanticFunctionIdCached,
-    TypeIdCached, all_crate_modules_for_cache, generate_crate_def_cache,
+    ImplIdCached, MatchArmSelectorCached, SEMANTIC_CACHE_SECTION, SemanticCacheLoadingData,
+    SemanticCacheSavingContext, SemanticCacheSavingData, SemanticConcreteFunctionWithBodyCached,
+    SemanticFunctionIdCached, TypeIdCached, all_crate_modules_for_cache, generate_crate_def_cache,
     generate_crate_semantic_cache,
 };
 use cairo_lang_semantic::db::SemanticGroup;
@@ -58,6 +58,8 @@ use crate::{
 
 type LookupCache = (CacheLookups, Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>);
 
+const LOWERING_CACHE_SECTION: u8 = SEMANTIC_CACHE_SECTION + 1;
+
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_functions<'db>(
     db: &'db dyn Database,
@@ -70,23 +72,8 @@ pub fn load_cached_crate_functions<'db>(
 
     let semantic_loading_data = db.cached_crate_semantic_data(crate_id)?.loading_data;
 
-    let def_size = usize::from_be_bytes(content[..8].try_into().unwrap()); // def_size is the first 8 bytes of the blob.
-    let semantic_start = 8 + def_size;
-    let semantic_size =
-        usize::from_be_bytes(content[semantic_start..semantic_start + 8].try_into().unwrap()); // semantic_size is the next 8 bytes.
-
-    let lowering_start = semantic_start + semantic_size + 8;
-    let lowering_size =
-        usize::from_be_bytes(content[lowering_start..lowering_start + 8].try_into().unwrap()); // lowering_size is the next 8 bytes.
-
-    let content = &content[lowering_start + 8..lowering_start + 8 + lowering_size];
-
-    let (lookups, lowerings): LookupCache = postcard::from_bytes(content).unwrap_or_else(|e| {
-        panic!(
-            "failed to deserialize lookup cache for crate `{}`: {e}",
-            crate_id.long(db).name().long(db),
-        )
-    });
+    let (lookups, lowerings): LookupCache =
+        CacheBlobReader::read_section(db, content, LOWERING_CACHE_SECTION, &crate_id);
 
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
 
@@ -111,7 +98,7 @@ pub enum CrateCacheError {
     #[error("Failed compilation of crate.")]
     CompilationFailed,
     #[error("Cache encoding/decoding failed: {0}")]
-    CacheError(#[from] postcard::Error),
+    CacheError(#[from] cairo_lang_defs::cache::CacheError),
 }
 
 impl From<DiagnosticAdded> for CrateCacheError {
@@ -165,21 +152,14 @@ pub fn generate_crate_cache<'db>(
 
     let mut artifact = Vec::<u8>::new();
 
-    let def = postcard::to_allocvec(&(
-        CachedCrateMetadata::new(crate_id, db),
-        def_cache,
-        &ctx.semantic_ctx.defs_ctx.lookups,
-    ))?;
-    artifact.extend(def.len().to_be_bytes());
-    artifact.extend(def);
+    write_cache_section(
+        &mut artifact,
+        &(CachedCrateMetadata::new(crate_id, db), def_cache, &ctx.semantic_ctx.defs_ctx.lookups),
+    )?;
 
-    let semantic = postcard::to_allocvec(&(semantic_cache, &ctx.semantic_ctx.lookups))?;
-    artifact.extend(semantic.len().to_be_bytes());
-    artifact.extend(semantic);
+    write_cache_section(&mut artifact, &(semantic_cache, &ctx.semantic_ctx.lookups))?;
 
-    let lowered = postcard::to_allocvec(&(&ctx.lookups, cached))?;
-    artifact.extend(lowered.len().to_be_bytes());
-    artifact.extend(lowered);
+    write_cache_section(&mut artifact, &(&ctx.lookups, cached))?;
 
     Ok(artifact)
 }

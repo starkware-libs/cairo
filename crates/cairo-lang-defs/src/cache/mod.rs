@@ -24,6 +24,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::db::{
     ModuleData, ModuleDataCacheAndLoadingData, ModuleFilesData, ModuleNamedItemsData,
@@ -39,6 +40,9 @@ use crate::ids::{
     SubmoduleLongId, TraitId, TraitLongId, UseId, UseLongId,
 };
 use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
+
+/// The index of the `def` section in a crate cache blob.
+pub const DEF_CACHE_SECTION: u8 = 0;
 
 /// Metadata for a cached crate.
 #[derive(Serialize, Deserialize)]
@@ -94,17 +98,8 @@ pub fn load_cached_crate_modules<'db>(
         return Default::default();
     };
 
-    let size = usize::from_be_bytes(content[..8].try_into().unwrap());
-
-    let content = &content[8..size + 8];
-
-    let (metadata, module_data, defs_lookups): DefCache<'_> = postcard::from_bytes(content)
-        .unwrap_or_else(|e| {
-            panic!(
-                "failed to deserialize modules cache for crate `{}`: {e}",
-                crate_id.long(db).name().long(db),
-            )
-        });
+    let (metadata, module_data, defs_lookups): DefCache<'_> =
+        CacheBlobReader::read_section(db, content, DEF_CACHE_SECTION, &crate_id);
 
     validate_metadata(crate_id, &metadata, db);
 
@@ -123,6 +118,80 @@ pub fn load_cached_crate_modules<'db>(
             .into(),
         ctx.data.into(),
     ))
+}
+
+/// An error produced while encoding or decoding a crate cache blob.
+#[derive(Debug, Error)]
+pub enum CacheError {
+    #[error("Cache encoding/decoding failed: {0}")]
+    Postcard(#[from] postcard::Error),
+}
+
+/// Serializes `section` and appends it to a cache blob as one length-prefixed section: a big-endian
+/// `u64` byte length followed by the payload. Sections are read back in write order by
+/// [`CacheBlobReader`].
+pub fn write_cache_section<T: Serialize>(
+    blob: &mut Vec<u8>,
+    section: &T,
+) -> Result<(), CacheError> {
+    let section = postcard::to_allocvec(section)?;
+    blob.extend(section.len().to_be_bytes());
+    blob.extend(section);
+    Ok(())
+}
+
+/// A cursor over the length-prefixed sections of a crate cache blob (see [`write_cache_section`]).
+///
+/// A blob is a sequence of sections in the order `[def, semantic, lowering]`; each consumer
+/// advances past the sections preceding the one it needs with [`Self::next_section`].
+/// Use [`Self::read_section`] to read and parse a specific section only.
+/// Each section should have its index as a const in the cache mod, see [`DEF_CACHE_SECTION`] et al.
+#[derive(Debug, Clone, Copy)]
+pub struct CacheBlobReader<'a> {
+    content: &'a [u8],
+}
+
+impl<'a> CacheBlobReader<'a> {
+    pub fn new(content: &'a [u8]) -> Self {
+        Self { content }
+    }
+
+    /// Returns the next section's payload and advances the cursor past it. Panics if the blob is
+    /// truncated mid-section.
+    pub fn next_section(&mut self) -> &'a [u8] {
+        let size = usize::from_be_bytes(
+            self.content
+                .get(..8)
+                .unwrap_or_else(|| panic!("cache blob is truncated"))
+                .try_into()
+                .unwrap(),
+        );
+        let section =
+            self.content.get(8..8 + size).unwrap_or_else(|| panic!("cache blob is truncated"));
+        self.content = &self.content[8 + size..];
+        section
+    }
+
+    /// Returns the section's parse to T result. Panics if the
+    /// blob is truncated mid-section.
+    pub fn read_section<'db, T: for<'b> Deserialize<'b>>(
+        db: &'db dyn Database,
+        content: &'a [u8],
+        section: u8,
+        crate_id: &CrateId<'db>,
+    ) -> T {
+        let mut reader = CacheBlobReader::new(content);
+        for _ in 0..section {
+            reader.next_section();
+        }
+        let content = reader.next_section();
+        postcard::from_bytes(content).unwrap_or_else(|e| {
+            panic!(
+                "failed to deserialize cache section {section} for crate `{}`: {e}",
+                crate_id.long(db).name().long(db),
+            )
+        })
+    }
 }
 
 #[derive(Serialize, Deserialize)]

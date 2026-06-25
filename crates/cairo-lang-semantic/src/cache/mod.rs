@@ -3,9 +3,10 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::cache::{
-    CrateDefCache, DefCacheLoadingData, DefCacheSavingContext, GenericParamCached,
-    GlobalUseIdCached, ImplAliasIdCached, ImplDefIdCached, LanguageElementCached, ModuleDataCached,
-    ModuleIdCached, ModuleItemIdCached, SyntaxStablePtrIdCached,
+    CacheBlobReader, CrateDefCache, DEF_CACHE_SECTION, DefCacheLoadingData, DefCacheSavingContext,
+    GenericParamCached, GlobalUseIdCached, ImplAliasIdCached, ImplDefIdCached,
+    LanguageElementCached, ModuleDataCached, ModuleIdCached, ModuleItemIdCached,
+    SyntaxStablePtrIdCached,
 };
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -64,6 +65,8 @@ use crate::{
 
 type SemanticCache<'db> = (CrateSemanticCache, SemanticCacheLookups);
 
+pub const SEMANTIC_CACHE_SECTION: u8 = DEF_CACHE_SECTION + 1;
+
 /// Load the cached semantic of a crate if it has a cache file configuration.
 pub fn load_cached_crate_modules_semantic<'db>(
     db: &'db dyn Database,
@@ -76,21 +79,8 @@ pub fn load_cached_crate_modules_semantic<'db>(
         return Default::default();
     };
 
-    let def_size = usize::from_be_bytes(content[..8].try_into().unwrap());
-
-    let semantic_start = 8 + def_size;
-    let semantic_size =
-        usize::from_be_bytes(content[semantic_start..semantic_start + 8].try_into().unwrap());
-
-    let content = &content[semantic_start + 8..semantic_start + 8 + semantic_size];
-
-    let (module_data, semantic_lookups): SemanticCache<'_> = postcard::from_bytes(content)
-        .unwrap_or_else(|e| {
-            panic!(
-                "failed to deserialize modules cache for crate `{}`: {e}",
-                crate_id.long(db).name().long(db),
-            )
-        });
+    let (module_data, semantic_lookups): SemanticCache<'_> =
+        CacheBlobReader::read_section(db, content, SEMANTIC_CACHE_SECTION, &crate_id);
 
     let mut ctx = SemanticCacheLoadingContext::new(db, semantic_lookups, def_loading_data);
     Some(ModuleSemanticDataCacheAndLoadingData {
