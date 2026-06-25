@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782350618706,
+  "lastUpdate": 1782350876910,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -9841,6 +9841,38 @@ window.BENCHMARK_DATA = {
           {
             "name": "ls_reexec/plain trivia edit",
             "value": 40181,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "TomerStarkware",
+            "username": "TomerStarkware",
+            "email": "144585788+TomerStarkware@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "434b8b2ed250c60073e0b1f53c827391b8f989f3",
+          "message": "feat(lowering): support tuple element access via `t.0` syntax (#10153)\n\nCo-authored-by: Claude Opus 4.8 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-06-24T13:22:20Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/434b8b2ed250c60073e0b1f53c827391b8f989f3"
+        },
+        "date": 1782350876731,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 52346,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 40230,
             "unit": "queries"
           }
         ]
