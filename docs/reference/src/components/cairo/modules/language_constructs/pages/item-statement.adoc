@@ -58,7 +58,8 @@ documentation.
   and may be used where a compile-time constant is required.
 - `use` item statements make the imported names available only within the
   block where they are declared (and any nested blocks), without affecting
-  the surrounding module.
+  the surrounding module. Glob imports (`use path::*`) are not supported in
+  statement position and will produce a compiler error.
 - `type` alias item statements introduce a local alias for a type; the alias
   is not visible outside the enclosing block.
 
