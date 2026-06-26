@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782436988063,
+  "lastUpdate": 1782437236748,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -10131,6 +10131,38 @@ window.BENCHMARK_DATA = {
           {
             "name": "ls_reexec/plain trivia edit",
             "value": 40230,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "7f8d4af829de02c180f57c3a3a2e6f7363160218",
+          "message": "performance(semantic): Made substitute be faster on empty subs. (#10146)",
+          "timestamp": "2026-06-25T11:10:23Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/7f8d4af829de02c180f57c3a3a2e6f7363160218"
+        },
+        "date": 1782437236572,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 52431,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 40187,
             "unit": "queries"
           }
         ]
