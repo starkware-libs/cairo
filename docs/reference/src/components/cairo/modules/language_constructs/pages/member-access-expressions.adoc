@@ -37,15 +37,24 @@ struct Point {
     y: felt252,
 }
 
+struct Line {
+    start: Point,
+    end: Point,
+}
+
 fn example() -> felt252 {
     let p = Point { x: 10, y: 20 };
     let sum = p.x + p.y;
+
+    // Nested struct member access
+    let line = Line { start: Point { x: 0, y: 0 }, end: Point { x: 10, y: 10 } };
+    let end_x: felt252 = line.end.x;
 
     let t: (felt252, u8) = (1, 2_u8);
     let first: felt252 = t.0;
     let second: u8 = t.1;
 
-    sum
+    sum + end_x
 }
 ----
 
