@@ -22,12 +22,12 @@ enum MyEnum {
 }
 
 //! > expected_diagnostics
-error[E2019]: Can not create instances of phantom types.
+error[E2019]: Phantom types cannot be instantiated.
  --> lib.cairo:9:5
     MyStruct {};
     ^^^^^^^^^^^
 
-error[E2019]: Can not create instances of phantom types.
+error[E2019]: Phantom types cannot be instantiated.
  --> lib.cairo:10:5
     MyEnum::a(3);
     ^^^^^^^^^^^^
@@ -50,3 +50,191 @@ foo
 fn f() {}
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Phantom enum inside a generic container in a function signature.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Option<Ph>) -> Option<Ph> {
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {
+    A: felt252,
+    B: (felt252, felt252),
+}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:6:8
+fn foo(x: Option<Ph>) -> Option<Ph> {
+       ^^^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:6:26
+fn foo(x: Option<Ph>) -> Option<Ph> {
+                         ^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:7:5
+    x
+    ^
+
+//! > ==========================================================================
+
+//! > Phantom struct inside a generic container in a function signature.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Option<Ph>) -> Option<Ph> {
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+struct Ph {
+    a: felt252,
+    b: felt252,
+}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:6:8
+fn foo(x: Option<Ph>) -> Option<Ph> {
+       ^^^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:6:26
+fn foo(x: Option<Ph>) -> Option<Ph> {
+                         ^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:7:5
+    x
+    ^
+
+//! > ==========================================================================
+
+//! > Phantom type reached through a non-phantom generic struct's member in a signature.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Wrapper<Ph>) -> Wrapper<Ph> {
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+struct Ph {
+    a: felt252,
+}
+
+struct Wrapper<T> {
+    value: T,
+}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:9:8
+fn foo(x: Wrapper<Ph>) -> Wrapper<Ph> {
+       ^^^^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:9:27
+fn foo(x: Wrapper<Ph>) -> Wrapper<Ph> {
+                          ^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:10:5
+    x
+    ^
+
+//! > ==========================================================================
+
+//! > Phantom type behind a snapshot in a function signature.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: @Ph) {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:3:8
+fn foo(x: @Ph) {}
+       ^^^^^^
+
+//! > ==========================================================================
+
+//! > Phantom type as an implicit parameter.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() implicits(Ph) {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:3:20
+fn foo() implicits(Ph) {}
+                   ^^
+
+//! > ==========================================================================
+
+//! > Phantom type in a closure parameter.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _f = |_x: Option<Ph>| {};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:4:15
+    let _f = |_x: Option<Ph>| {};
+              ^^^^^^^^^^^^^^

@@ -7,6 +7,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_proc_macros::{HeapSize, SemanticObject};
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::PathSegment;
@@ -112,11 +113,24 @@ impl<'db> TypeId<'db> {
         db.priv_type_is_var_free(*self)
     }
 
-    /// Returns whether the type is phantom.
-    /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
-    /// sized array containing it.
+    /// Returns whether the type is, or transitively contains, a phantom type - i.e. a type with no
+    /// runtime representation.
+    ///
+    /// A type is phantom if it carries the `#[phantom]` attribute (or a phantom attribute declared
+    /// by a plugin), or if any of its struct members, enum variants, tuple or fixed-size-array
+    /// elements, or its snapshotted type is (transitively) phantom.
     pub fn is_phantom(&self, db: &dyn Database) -> bool {
-        self.long(db).is_phantom(db)
+        #[salsa::tracked(cycle_result=is_phantom_cycle)]
+        fn is_phantom_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
+            ty.long(db).is_phantom(db)
+        }
+        /// A type that (transitively) contains itself is not made phantom by the cycle - any
+        /// phantom is found through the non-cyclic branches, so the cyclic edge contributes
+        /// `false`.
+        fn is_phantom_cycle<'db>(_db: &'db dyn Database, _id: salsa::Id, _ty: TypeId<'db>) -> bool {
+            false
+        }
+        is_phantom_tracked(db, *self)
     }
 
     /// Short name of the type argument.
@@ -148,39 +162,49 @@ impl<'db> TypeLongId<'db> {
         })
     }
 
-    /// Returns whether the type is phantom.
-    /// Type is considered phantom if it has the `#[phantom]` attribute, (or an other attribute
-    /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
-    /// containing it.
+    /// Returns whether the type is, or transitively contains, a phantom type.
+    /// See [TypeId::is_phantom].
     pub fn is_phantom(&self, db: &dyn Database) -> bool {
+        fn has_phantom_attribute<'db>(
+            db: &'db dyn Database,
+            crate_id: CrateId<'db>,
+            item: impl SemanticQueryAttrs<'db>,
+        ) -> bool {
+            db.declared_phantom_type_attributes(crate_id)
+                .iter()
+                .any(|attr| item.has_attr(db, attr.long(db)).unwrap_or_default())
+        }
         match self {
             TypeLongId::Concrete(id) => match id {
                 ConcreteTypeId::Struct(id) => {
-                    let crate_id = id.struct_id(db).long(db).0.owning_crate(db);
-
-                    db.declared_phantom_type_attributes(crate_id)
-                        .iter()
-                        .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
+                    let struct_id = id.struct_id(db);
+                    if has_phantom_attribute(db, struct_id.long(db).0.owning_crate(db), struct_id) {
+                        return true;
+                    }
+                    let Ok(members) = db.concrete_struct_members(*id) else {
+                        return false;
+                    };
+                    members.iter().any(|(_, m)| m.ty.is_phantom(db))
                 }
                 ConcreteTypeId::Enum(id) => {
-                    let crate_id = id.enum_id(db).long(db).0.owning_crate(db);
-
-                    db.declared_phantom_type_attributes(crate_id)
-                        .iter()
-                        .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
+                    let enum_id = id.enum_id(db);
+                    if has_phantom_attribute(db, enum_id.long(db).0.owning_crate(db), enum_id) {
+                        return true;
+                    }
+                    let Ok(variants) = db.concrete_enum_variants(*id) else {
+                        return false;
+                    };
+                    variants.iter().any(|v| v.ty.is_phantom(db))
                 }
                 ConcreteTypeId::Extern(id) => {
-                    let crate_id = id.extern_type_id(db).long(db).0.owning_crate(db);
-
-                    db.declared_phantom_type_attributes(crate_id)
-                        .iter()
-                        .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
+                    let extern_id = id.extern_type_id(db);
+                    has_phantom_attribute(db, extern_id.long(db).0.owning_crate(db), extern_id)
                 }
             },
             TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_phantom(db),
-            TypeLongId::Snapshot(_)
-            | TypeLongId::GenericParameter(_)
+            TypeLongId::Snapshot(inner) => inner.is_phantom(db),
+            TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
             | TypeLongId::NumericLiteral(_)
             | TypeLongId::Coupon(_)
