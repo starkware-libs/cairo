@@ -265,3 +265,73 @@ blk0 (root):
 Statements:
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Cache Derive Drop
+
+//! > test_runner_name
+test_cache_check
+
+//! > function_code
+fn foo() -> felt252 {
+    let s = MyStruct { x: 5 };
+    s.x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct MyStruct {
+    x: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Cache Derive in Submodule
+
+//! > test_runner_name
+test_cache_check
+
+//! > function_code
+fn foo() -> felt252 {
+    let s = inner::InnerStruct { x: 5 };
+    s.x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod inner {
+    #[derive(Drop)]
+    pub struct InnerStruct {
+        pub x: felt252,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+End:
+  Return(v0)
