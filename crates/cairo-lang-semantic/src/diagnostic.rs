@@ -1066,8 +1066,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::EmptyPathAfterResolverModifier => {
                 "Expected path after modifier.".into()
             }
-            SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
-                "Can not create instances of phantom types.".into()
+            SemanticDiagnosticKind::InstancesOfPhantomTypes => {
+                "Phantom types cannot be instantiated.".into()
             }
             SemanticDiagnosticKind::NonPhantomTypeContainingPhantomType => {
                 "Non-phantom type containing phantom type.".into()
@@ -1280,7 +1280,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::GenericsNotSupportedInItem { .. } => error_code!(E2016),
             SemanticDiagnosticKind::UnexpectedGenericArgs => error_code!(E2017),
             SemanticDiagnosticKind::UnknownMember => error_code!(E2018),
-            SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => error_code!(E2019),
+            SemanticDiagnosticKind::InstancesOfPhantomTypes => error_code!(E2019),
             SemanticDiagnosticKind::NonPhantomTypeContainingPhantomType => error_code!(E2020),
             SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => error_code!(E2021),
             SemanticDiagnosticKind::StructBaseStructExpressionNotLast => error_code!(E2022),
@@ -1535,7 +1535,7 @@ pub enum SemanticDiagnosticKind<'db> {
     },
     UnexpectedGenericArgs,
     UnknownMember,
-    CannotCreateInstancesOfPhantomTypes,
+    InstancesOfPhantomTypes,
     NonPhantomTypeContainingPhantomType,
     MemberSpecifiedMoreThanOnce,
     StructBaseStructExpressionNotLast,

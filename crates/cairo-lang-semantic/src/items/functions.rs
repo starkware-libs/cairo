@@ -751,6 +751,23 @@ impl<'db> Signature<'db> {
         );
         let return_type =
             function_signature_return_type(diagnostics, db, resolver, &signature_syntax);
+        // Phantom types (and types transitively containing one through a struct member, enum
+        // variant or tuple/array element, e.g. `Option<Ph>`) have no runtime representation and
+        // cannot be used as values, so they may not appear in a function signature.
+        for param in &params {
+            if param.ty.is_phantom(db) {
+                diagnostics
+                    .report(param.stable_ptr(db), SemanticDiagnosticKind::InstancesOfPhantomTypes);
+            }
+        }
+        if let ast::OptionReturnTypeClause::ReturnTypeClause(syntax) = signature_syntax.ret_ty(db)
+            && return_type.is_phantom(db)
+        {
+            diagnostics.report(
+                syntax.ty(db).stable_ptr(db),
+                SemanticDiagnosticKind::InstancesOfPhantomTypes,
+            );
+        }
         let implicits =
             function_signature_implicit_parameters(diagnostics, db, resolver, &signature_syntax);
         let panicable = match signature_syntax.optional_no_panic(db) {
@@ -796,7 +813,16 @@ pub fn function_signature_implicit_parameters<'db>(
     };
     let ast_implicits = implicits.elements(db);
     ast_implicits
-        .map(|implicit| resolve_type(db, diagnostics, resolver, &ast::Expr::Path(implicit)))
+        .map(|implicit| {
+            let stable_ptr = implicit.stable_ptr(db);
+            let ty = resolve_type(db, diagnostics, resolver, &ast::Expr::Path(implicit));
+            // An implicit of a phantom type would be a hidden runtime parameter with no
+            // representation, just like an explicit phantom parameter.
+            if ty.is_phantom(db) {
+                diagnostics.report(stable_ptr, SemanticDiagnosticKind::InstancesOfPhantomTypes);
+            }
+            ty
+        })
         .collect()
 }
 
