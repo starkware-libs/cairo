@@ -270,7 +270,7 @@ fn test_lex_single_token() {
     for (kind, text) in terminal_kind_and_text() {
         let terminals = tokenize_all(db, Arc::from(text));
         let terminal = &terminals[0];
-        // TODO(spapini): Remove calling new_root on non root elements.
+        // TODO(spapini): Remove calling new_detached_root on non root elements.
         assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
         assert_eq!(terminal.text.long(db), text, "Wrong token text.");
 

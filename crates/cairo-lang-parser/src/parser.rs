@@ -195,18 +195,30 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         file_id: FileId<'a>,
         text: &'a str,
     ) -> SyntaxFile<'a> {
-        let parser = Parser::new(db, file_id, text, diagnostics);
-        let green = parser.parse_syntax_file();
-        SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+        let green = Self::parse_file_green(db, diagnostics, file_id, text);
+        SyntaxFile::from_syntax_node(db, SyntaxNode::new_detached_root(db, file_id, green.0))
     }
 
-    /// Parses a file expr.
-    pub fn parse_file_expr(
+    /// Parses a file, returning the green root. Used by callers that control root node creation,
+    /// such as the canonical parsing query, which creates the root in its own query context so
+    /// that node ids are reused when the file is reparsed.
+    pub fn parse_file_green(
         db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
-    ) -> Expr<'a> {
+    ) -> SyntaxFileGreen<'a> {
+        let parser = Parser::new(db, file_id, text, diagnostics);
+        parser.parse_syntax_file()
+    }
+
+    /// Parses a file expr, returning the green root. See [Self::parse_file_green].
+    pub fn parse_file_expr_green(
+        db: &'a dyn Database,
+        diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
+        file_id: FileId<'a>,
+        text: &'a str,
+    ) -> ExprGreen<'a> {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
         let green = parser.parse_expr();
@@ -216,23 +228,23 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 span,
             );
         }
-        Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+        green
     }
 
-    /// Parses a file as a list of statements.
-    pub fn parse_file_statement_list(
+    /// Parses a file as a list of statements, returning the green root. See
+    /// [Self::parse_file_green].
+    pub fn parse_file_statement_list_green(
         db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
-    ) -> StatementList<'a> {
+    ) -> StatementListGreen<'a> {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
-        let statements = StatementList::new_green(
+        StatementList::new_green(
             db,
             &parser.parse_list(Self::try_parse_statement, Self::is_eof, "statement"),
-        );
-        StatementList::from_syntax_node(db, SyntaxNode::new_root(db, file_id, statements.0))
+        )
     }
 
     /// Checks if the given kind is an end of file token.
@@ -260,7 +272,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(
             db,
-            SyntaxNode::new_root_with_offset(db, file_id, green.0, offset),
+            SyntaxNode::new_detached_root_with_offset(db, file_id, green.0, offset),
         )
     }
 
@@ -281,7 +293,10 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 span,
             });
         }
-        Expr::from_syntax_node(db, SyntaxNode::new_root_with_offset(db, file_id, green.0, offset))
+        Expr::from_syntax_node(
+            db,
+            SyntaxNode::new_detached_root_with_offset(db, file_id, green.0, offset),
+        )
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.
