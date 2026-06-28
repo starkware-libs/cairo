@@ -1067,7 +1067,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 "Expected path after modifier.".into()
             }
             SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
-                "Can not create instances of phantom types.".into()
+                "Phantom types cannot be instantiated.".into()
             }
             SemanticDiagnosticKind::NonPhantomTypeContainingPhantomType => {
                 "Non-phantom type containing phantom type.".into()
