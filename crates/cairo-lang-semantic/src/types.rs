@@ -935,7 +935,29 @@ fn single_value_type_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> May
     single_value_type(db, ty)
 }
 
-/// Adds diagnostics for a type, post semantic analysis of types.
+/// Adds diagnostics for a type used as a value - in a parameter, return type, or expression.
+///
+/// Like [add_type_based_diagnostics], but additionally rejects a phantom type: a phantom type has
+/// no runtime representation and so cannot be used as a value. Type definitions (e.g. struct
+/// members and enum variants) allow phantom types and so use [add_type_based_diagnostics] directly.
+pub fn add_value_type_based_diagnostics<'db>(
+    db: &'db dyn Database,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    ty: TypeId<'db>,
+    stable_ptr: impl Into<SyntaxStablePtrId<'db>> + Copy,
+) {
+    if ty.is_phantom(db) {
+        diagnostics.report(stable_ptr, InstancesOfPhantomTypes);
+    } else {
+        add_type_based_diagnostics(db, diagnostics, ty, stable_ptr);
+    }
+}
+
+/// Adds diagnostics based on a type's structure: an infinitely-sized type, or an array of
+/// zero-sized or phantom elements.
+///
+/// This does not reject the type itself being phantom; a value position should use
+/// [add_value_type_based_diagnostics] for that.
 pub fn add_type_based_diagnostics<'db>(
     db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,

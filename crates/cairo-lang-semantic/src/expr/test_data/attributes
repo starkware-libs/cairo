@@ -84,11 +84,6 @@ error[E2019]: Phantom types cannot be instantiated.
 fn foo(x: Option<Ph>) -> Option<Ph> {
                          ^^^^^^^^^^
 
-error[E2019]: Phantom types cannot be instantiated.
- --> lib.cairo:7:5
-    x
-    ^
-
 //! > ==========================================================================
 
 //! > Phantom struct inside a generic container in a function signature.
@@ -121,11 +116,6 @@ error[E2019]: Phantom types cannot be instantiated.
  --> lib.cairo:6:26
 fn foo(x: Option<Ph>) -> Option<Ph> {
                          ^^^^^^^^^^
-
-error[E2019]: Phantom types cannot be instantiated.
- --> lib.cairo:7:5
-    x
-    ^
 
 //! > ==========================================================================
 
@@ -162,11 +152,6 @@ error[E2019]: Phantom types cannot be instantiated.
  --> lib.cairo:9:27
 fn foo(x: Wrapper<Ph>) -> Wrapper<Ph> {
                           ^^^^^^^^^^^
-
-error[E2019]: Phantom types cannot be instantiated.
- --> lib.cairo:10:5
-    x
-    ^
 
 //! > ==========================================================================
 

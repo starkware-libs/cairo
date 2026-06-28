@@ -95,7 +95,7 @@ use crate::resolve::{
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::{HasDb, SemanticRewriter};
 use crate::types::{
-    ClosureTypeLongId, ConcreteTypeId, add_type_based_diagnostics, are_coupons_enabled,
+    ClosureTypeLongId, ConcreteTypeId, add_value_type_based_diagnostics, are_coupons_enabled,
     extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex, resolve_type_ex,
     verify_fixed_size_array_size, wrap_in_snapshots,
 };
@@ -447,6 +447,13 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
     /// Applies inference rewriter to all the rewritable things in the computation context.
     pub fn apply_inference_rewriter(&mut self) {
         let mut analyzed_types = UnorderedHashSet::<_>::default();
+        if let ContextFunction::Function(Ok(function_id)) = self.function_id
+            && let Ok(sig) = self.db.concrete_function_signature(function_id)
+        {
+            analyzed_types.extend(sig.params.iter().map(|p| p.ty));
+            analyzed_types.extend(sig.implicits.iter().copied());
+            analyzed_types.insert(sig.return_type);
+        }
         let inference = &mut self.resolver.inference();
         for (_id, expr) in &mut self.arenas.exprs {
             if let Expr::Literal(literal) = expr {
@@ -456,10 +463,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             }
             // Adding an error only once per type.
             if analyzed_types.insert(expr.ty()) {
-                add_type_based_diagnostics(self.db, self.diagnostics, expr.ty(), &*expr);
-                if expr.ty().is_phantom(self.db) {
-                    self.diagnostics.report(&*expr, InstancesOfPhantomTypes);
-                }
+                add_value_type_based_diagnostics(self.db, self.diagnostics, expr.ty(), &*expr);
             }
         }
         for (_id, pattern) in &mut self.arenas.patterns {
@@ -1605,9 +1609,6 @@ fn compute_expr_function_call_semantic<'db>(
         ResolvedConcreteItem::Variant(variant) => {
             let concrete_enum_type =
                 TypeLongId::Concrete(ConcreteTypeId::Enum(variant.concrete_enum_id)).intern(db);
-            if concrete_enum_type.is_phantom(db) {
-                ctx.diagnostics.report(syntax.stable_ptr(db), InstancesOfPhantomTypes);
-            }
 
             let named_args: Vec<_> = args_syntax
                 .elements(db)
@@ -2462,12 +2463,11 @@ fn compute_expr_closure_semantic<'db>(
             );
         }
         for param in &params {
+            let stable_ptr = param.stable_ptr(ctx.db);
             if param.mutability == Mutability::Reference {
-                new_ctx.diagnostics.report(param.stable_ptr(ctx.db), RefClosureParam);
+                new_ctx.diagnostics.report(stable_ptr, RefClosureParam);
             }
-            if param.ty.is_phantom(ctx.db) {
-                new_ctx.diagnostics.report(param.stable_ptr(ctx.db), InstancesOfPhantomTypes);
-            }
+            add_value_type_based_diagnostics(ctx.db, new_ctx.diagnostics, param.ty, stable_ptr);
         }
 
         new_ctx.variable_tracker.extend_from_environment(&new_ctx.environment);
@@ -2484,10 +2484,9 @@ fn compute_expr_closure_semantic<'db>(
                 new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr(db).untyped()))
             }
         };
-        if let OptionReturnTypeClause::ReturnTypeClause(ty_syntax) = syntax.ret_ty(db)
-            && return_type.is_phantom(ctx.db)
-        {
-            new_ctx.diagnostics.report(ty_syntax.ty(db).stable_ptr(db), InstancesOfPhantomTypes);
+        if let OptionReturnTypeClause::ReturnTypeClause(ty_syntax) = syntax.ret_ty(db) {
+            let stable_ptr = ty_syntax.ty(db).stable_ptr(db);
+            add_value_type_based_diagnostics(ctx.db, new_ctx.diagnostics, return_type, stable_ptr);
         }
 
         let old_inner_ctx = new_ctx
@@ -3569,10 +3568,6 @@ fn struct_ctor_expr<'db>(
     let concrete_struct_id = *try_extract_matches!(ty.long(ctx.db), TypeLongId::Concrete)
         .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
         .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(db), NotAStruct))?;
-
-    if ty.is_phantom(db) {
-        ctx.diagnostics.report(ctor_syntax.stable_ptr(db), InstancesOfPhantomTypes);
-    }
 
     let members = db.concrete_struct_members(concrete_struct_id)?;
     let mut member_exprs: OrderedHashMap<MemberId<'_>, Option<ExprId>> = OrderedHashMap::default();
