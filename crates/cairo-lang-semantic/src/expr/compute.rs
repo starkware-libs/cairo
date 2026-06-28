@@ -457,6 +457,9 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             // Adding an error only once per type.
             if analyzed_types.insert(expr.ty()) {
                 add_type_based_diagnostics(self.db, self.diagnostics, expr.ty(), &*expr);
+                if expr.ty().is_phantom(self.db) {
+                    self.diagnostics.report(&*expr, InstancesOfPhantomTypes);
+                }
             }
         }
         for (_id, pattern) in &mut self.arenas.patterns {
@@ -1603,7 +1606,7 @@ fn compute_expr_function_call_semantic<'db>(
             let concrete_enum_type =
                 TypeLongId::Concrete(ConcreteTypeId::Enum(variant.concrete_enum_id)).intern(db);
             if concrete_enum_type.is_phantom(db) {
-                ctx.diagnostics.report(syntax.stable_ptr(db), CannotCreateInstancesOfPhantomTypes);
+                ctx.diagnostics.report(syntax.stable_ptr(db), InstancesOfPhantomTypes);
             }
 
             let named_args: Vec<_> = args_syntax
@@ -2458,10 +2461,14 @@ fn compute_expr_closure_semantic<'db>(
                 syntax.stable_ptr(db).untyped(),
             );
         }
-
-        params.iter().filter(|param| param.mutability == Mutability::Reference).for_each(|param| {
-            new_ctx.diagnostics.report(param.stable_ptr(ctx.db), RefClosureParam);
-        });
+        for param in &params {
+            if param.mutability == Mutability::Reference {
+                new_ctx.diagnostics.report(param.stable_ptr(ctx.db), RefClosureParam);
+            }
+            if param.ty.is_phantom(ctx.db) {
+                new_ctx.diagnostics.report(param.stable_ptr(ctx.db), InstancesOfPhantomTypes);
+            }
+        }
 
         new_ctx.variable_tracker.extend_from_environment(&new_ctx.environment);
 
@@ -2477,6 +2484,11 @@ fn compute_expr_closure_semantic<'db>(
                 new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr(db).untyped()))
             }
         };
+        if let OptionReturnTypeClause::ReturnTypeClause(ty_syntax) = syntax.ret_ty(db)
+            && return_type.is_phantom(ctx.db)
+        {
+            new_ctx.diagnostics.report(ty_syntax.ty(db).stable_ptr(db), InstancesOfPhantomTypes);
+        }
 
         let old_inner_ctx = new_ctx
             .inner_ctx
@@ -3559,7 +3571,7 @@ fn struct_ctor_expr<'db>(
         .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(db), NotAStruct))?;
 
     if ty.is_phantom(db) {
-        ctx.diagnostics.report(ctor_syntax.stable_ptr(db), CannotCreateInstancesOfPhantomTypes);
+        ctx.diagnostics.report(ctor_syntax.stable_ptr(db), InstancesOfPhantomTypes);
     }
 
     let members = db.concrete_struct_members(concrete_struct_id)?;

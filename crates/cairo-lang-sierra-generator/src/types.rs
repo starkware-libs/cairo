@@ -40,42 +40,20 @@ pub fn get_concrete_type_id<'db>(
         ) if db.is_self_referential(type_id)? => {
             return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)));
         }
-        // Extern phantom types - and tuples/arrays of them - keep their dedicated `Phantom` long
-        // id: their identity matters to the libfuncs that consume them (e.g. circuit
-        // gates).
-        _ if contains_extern_phantom(db, type_id) => {
+        // An extern phantom type (e.g. a circuit gate) keeps its dedicated `Phantom` long id: its
+        // identity matters to the libfuncs that consume it. Other phantom types are diagnosed in
+        // the front end, and any that slip through (only concrete after generic substitution) fall
+        // through to their regular representation below.
+        semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Extern(_))
+            if type_id.is_phantom(db) =>
+        {
             return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)));
-        }
-        // A user-defined phantom struct/enum is uninhabited, so represent it as the (representable)
-        // `never` type - it has no values, but a container of it (e.g. `Option<Ph>`) must still
-        // specialize. A tuple/array of user phantoms falls through to the regular representation
-        // below, keeping its struct shape with `never` members.
-        semantic::TypeLongId::Concrete(
-            semantic::ConcreteTypeId::Enum(_) | semantic::ConcreteTypeId::Struct(_),
-        ) if type_id.is_phantom(db) => {
-            return Ok(db.get_concrete_type_id(semantic::corelib::never_ty(db))?.clone());
         }
         _ => {}
     }
     Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
         db.get_concrete_long_type_id(type_id)?.clone(),
     )))
-}
-
-/// Whether `ty` is, or transitively (through tuples / fixed-size arrays) contains, an extern
-/// phantom type. Such types keep their dedicated `Phantom` Sierra long id, since the libfuncs that
-/// consume them (e.g. circuit gates) rely on it; other phantom types are represented as `never`.
-fn contains_extern_phantom<'db>(db: &'db dyn Database, ty: semantic::TypeId<'db>) -> bool {
-    match ty.long(db) {
-        semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Extern(_)) => ty.is_phantom(db),
-        semantic::TypeLongId::Tuple(types) => {
-            types.iter().any(|inner| contains_extern_phantom(db, *inner))
-        }
-        semantic::TypeLongId::FixedSizeArray { type_id, .. } => {
-            contains_extern_phantom(db, *type_id)
-        }
-        _ => false,
-    }
 }
 
 /// See [SierraGenGroup::get_index_enum_type_id] for documentation.
