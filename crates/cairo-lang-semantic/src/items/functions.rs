@@ -751,6 +751,25 @@ impl<'db> Signature<'db> {
         );
         let return_type =
             function_signature_return_type(diagnostics, db, resolver, &signature_syntax);
+        // Phantom types (and types transitively containing one through a struct member, enum
+        // variant or tuple/array element, e.g. `Option<Ph>`) have no runtime representation and
+        // cannot be used as values, so they may not appear in a function signature.
+        for param in &params {
+            if param.ty.is_phantom(db) {
+                diagnostics.report(
+                    param.stable_ptr(db),
+                    SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes,
+                );
+            }
+        }
+        if let ast::OptionReturnTypeClause::ReturnTypeClause(syntax) = signature_syntax.ret_ty(db)
+            && return_type.is_phantom(db)
+        {
+            diagnostics.report(
+                syntax.ty(db).stable_ptr(db),
+                SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes,
+            );
+        }
         let implicits =
             function_signature_implicit_parameters(diagnostics, db, resolver, &signature_syntax);
         let panicable = match signature_syntax.optional_no_panic(db) {

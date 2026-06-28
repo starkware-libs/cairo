@@ -457,6 +457,9 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             // Adding an error only once per type.
             if analyzed_types.insert(expr.ty()) {
                 add_type_based_diagnostics(self.db, self.diagnostics, expr.ty(), &*expr);
+                if expr.ty().is_phantom(self.db) {
+                    self.diagnostics.report(&*expr, CannotCreateInstancesOfPhantomTypes);
+                }
             }
         }
         for (_id, pattern) in &mut self.arenas.patterns {
