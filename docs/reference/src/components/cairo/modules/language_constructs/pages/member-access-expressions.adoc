@@ -1,31 +1,34 @@
 = Member access expressions
 
-A member access expression is an expression that accesses a member (field) of a xref:structs.adoc[struct].
-Additionally, if a type implements the `Deref` trait, member access expressions can access members of the `Deref::Target` type.
+A member access expression accesses a field of a xref:structs.adoc[struct] or an element of a
+xref:tuple-types.adoc[tuple].
+Additionally, if a type implements the `Deref` trait, member access expressions can access members
+of the `Deref::Target` type.
 
 == Syntax
 
-The syntax for member access expressions is:
+For structs, `member_name` is a field name:
 
 [source,cairo]
 ----
 expression.member_name
 ----
 
-where `member_name` is an identifier corresponding to a field name in the struct type.
+For tuples, the index is a plain decimal integer literal (no type suffix, no leading zeros,
+no hex prefix):
+
+[source,cairo]
+----
+expression.0
+expression.1
+----
 
 == Semantics
 
-A member access expression is evaluated by:
-
-1. First evaluating the primary expression (left side of the dot)
-2. Then accessing the specified member from the resulting value
-
-The type of the member access expression is the type of the accessed member.
+The expression on the left is evaluated first, then the specified member or element is accessed.
+The type of the result is the type of the accessed field or tuple element.
 
 == Examples
-
-Valid examples:
 
 [source,cairo]
 ----
@@ -41,35 +44,33 @@ struct Line {
 
 fn example() -> felt252 {
     let p = Point { x: 10, y: 20 };
+    let sum = p.x + p.y;
 
-    // Basic member access
-    let x_val: felt252 = p.x;
-
-    // Member access in expressions
-    let sum: felt252 = p.x + p.y;
-
-    // Nested struct member access
     let line = Line {
         start: Point { x: 0, y: 0 },
-        end: Point { x: 10, y: 10 }
+        end: Point { x: 10, y: 10 },
     };
     let end_x: felt252 = line.end.x;
+
+    let t: (felt252, u8) = (1, 2_u8);
+    let first: felt252 = t.0;
+    let second: u8 = t.1;
 
     sum
 }
 ----
 
-Invalid examples (illustrative):
+Assignment to a mutable tuple element is also supported:
 
-- Accessing non-existent member: `p.z` when `Point` only has `x` and `y`
-- Missing dot operator: `px` instead of `p.x`
-- Accessing member on non-struct type: `5.field`
-
-NOTE: Tuples in Cairo currently do not support member access syntax. To access tuple
-elements, use pattern matching with `let` destructuring: `let (first, second, third) = tuple;`
+[source,cairo]
+----
+fn mutate(mut t: (felt252, u8)) {
+    t.0 = 5;
+}
+----
 
 == Related
 
 - xref:structs.adoc[Structs]
-- xref:tuple-types.adoc[Tuple types] (note: tuples use destructuring, not member access)
+- xref:tuple-types.adoc[Tuple types]
 - xref:method-calls.adoc[Method calls]

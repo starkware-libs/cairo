@@ -17,4 +17,6 @@ Examples:
 ---
 
 Values of this type are constructed using xref:tuple-expressions.adoc[tuple expressions].
-Tuples can be deconstructed using xref:patterns.adoc[patterns].
+Tuple elements can be accessed by index using xref:member-access-expressions.adoc[member access]
+syntax (e.g. `t.0`, `t.1`).
+Tuples can also be deconstructed using xref:patterns.adoc[patterns].
