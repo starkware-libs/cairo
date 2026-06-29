@@ -57,11 +57,6 @@ fn foo(x: Option<Ph>) -> felt252 {
        ^^^^^^^^^^^^^
 
 error[E2019]: Phantom types cannot be instantiated.
- --> lib.cairo:4:11
-    match x {
-          ^
-
-error[E2019]: Phantom types cannot be instantiated.
  --> lib.cairo:5:34
         Option::Some(p) => match p {},
                                  ^

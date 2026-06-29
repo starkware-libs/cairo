@@ -34,7 +34,7 @@ use crate::items::imp::ImplSemantic;
 use crate::items::trt::TraitSemantic;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::GenericSubstitution;
-use crate::types::resolve_type;
+use crate::types::{add_value_type_based_diagnostics, resolve_type};
 use crate::{
     ConcreteImplId, ConcreteImplLongId, ConcreteTraitLongId, GenericArgumentId, GenericParam,
     SemanticDiagnostic, TypeId, semantic, semantic_object_for_id,
@@ -751,21 +751,15 @@ impl<'db> Signature<'db> {
         );
         let return_type =
             function_signature_return_type(diagnostics, db, resolver, &signature_syntax);
-        // Phantom types (and types transitively containing one through a struct member, enum
-        // variant or tuple/array element, e.g. `Option<Ph>`) have no runtime representation and
-        // cannot be used as values, so they may not appear in a function signature.
         for param in &params {
-            if param.ty.is_phantom(db) {
-                diagnostics
-                    .report(param.stable_ptr(db), SemanticDiagnosticKind::InstancesOfPhantomTypes);
-            }
+            add_value_type_based_diagnostics(db, diagnostics, param.ty, param.stable_ptr(db));
         }
-        if let ast::OptionReturnTypeClause::ReturnTypeClause(syntax) = signature_syntax.ret_ty(db)
-            && return_type.is_phantom(db)
-        {
-            diagnostics.report(
+        if let ast::OptionReturnTypeClause::ReturnTypeClause(syntax) = signature_syntax.ret_ty(db) {
+            add_value_type_based_diagnostics(
+                db,
+                diagnostics,
+                return_type,
                 syntax.ty(db).stable_ptr(db),
-                SemanticDiagnosticKind::InstancesOfPhantomTypes,
             );
         }
         let implicits =
@@ -816,11 +810,7 @@ pub fn function_signature_implicit_parameters<'db>(
         .map(|implicit| {
             let stable_ptr = implicit.stable_ptr(db);
             let ty = resolve_type(db, diagnostics, resolver, &ast::Expr::Path(implicit));
-            // An implicit of a phantom type would be a hidden runtime parameter with no
-            // representation, just like an explicit phantom parameter.
-            if ty.is_phantom(db) {
-                diagnostics.report(stable_ptr, SemanticDiagnosticKind::InstancesOfPhantomTypes);
-            }
+            add_value_type_based_diagnostics(db, diagnostics, ty, stable_ptr);
             ty
         })
         .collect()
