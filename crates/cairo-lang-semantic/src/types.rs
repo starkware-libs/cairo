@@ -1234,7 +1234,7 @@ pub fn priv_type_short_name(db: &dyn Database, ty: TypeId<'_>) -> String {
             format!("@{}", ty.short_name(db))
         }
         TypeLongId::FixedSizeArray { type_id, size } => {
-            format!("[{}; {:?}", type_id.short_name(db), size.debug(db))
+            format!("[{}; {:?}]", type_id.short_name(db), size.debug(db))
         }
         TypeLongId::NumericLiteral(_) => "{numeric}".to_string(),
         other => other.format(db),
