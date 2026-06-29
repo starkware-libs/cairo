@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782696103195,
+  "lastUpdate": 1782696331283,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -11001,6 +11001,38 @@ window.BENCHMARK_DATA = {
           {
             "name": "ls_reexec/plain trivia edit",
             "value": 40187,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "eytan-starkware",
+            "username": "eytan-starkware",
+            "email": "eytan.s@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "55eae8aa1df895a1f093f9eb11ebe43f2011e308",
+          "message": "(opt): keep syntax node ids stable across reparses (#10105)",
+          "timestamp": "2026-06-28T14:33:34Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/55eae8aa1df895a1f093f9eb11ebe43f2011e308"
+        },
+        "date": 1782696331104,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3076,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3056,
             "unit": "queries"
           }
         ]
