@@ -311,19 +311,19 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a.try_into().unwrap();
 #[cfg(target: 'test')]
 pub fn deploy_for_test(
-    class_hash: starknet::ClassHash,
-    deployment_params: starknet::deployment::DeploymentParams,
+    __deploy_class_hash__: starknet::ClassHash,
+    __deploy_params__: starknet::deployment::DeploymentParams,
     
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
-    let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+    let mut __deploy_calldata__: core::array::Array<felt252> = core::array::ArrayTrait::new();
 
     
 
     starknet::syscalls::deploy_syscall(
-        class_hash,
-        deployment_params.salt,
-        core::array::ArrayTrait::span(@calldata),
-        deployment_params.deploy_from_zero,
+        __deploy_class_hash__,
+        __deploy_params__.salt,
+        core::array::ArrayTrait::span(@__deploy_calldata__),
+        __deploy_params__.deploy_from_zero,
     )
 }
 
