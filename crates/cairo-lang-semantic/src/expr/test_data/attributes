@@ -223,3 +223,94 @@ error[E2019]: Phantom types cannot be instantiated.
  --> lib.cairo:4:15
     let _f = |_x: Option<Ph>| {};
               ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Array of a phantom type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Array<Ph>) -> Array<Ph> {
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {
+    A: felt252,
+}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:5:8
+fn foo(x: Array<Ph>) -> Array<Ph> {
+       ^^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:5:25
+fn foo(x: Array<Ph>) -> Array<Ph> {
+                        ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Array of an empty phantom struct is reported as phantom, not zero-sized.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Array<Ph>) -> Array<Ph> {
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+struct Ph {}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:3:8
+fn foo(x: Array<Ph>) -> Array<Ph> {
+       ^^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:3:25
+fn foo(x: Array<Ph>) -> Array<Ph> {
+                        ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Array of a phantom type as a struct member.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {
+    A: felt252,
+}
+
+struct S {
+    x: Array<Ph>,
+}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:7:5
+    x: Array<Ph>,
+    ^^^^^^^^^^^^
