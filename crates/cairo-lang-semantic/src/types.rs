@@ -25,7 +25,7 @@ use crate::corelib::{
     CorelibSemantic, concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
     concrete_panic_destruct_trait, core_box_ty, get_usize_ty, unit_ty,
 };
-use crate::diagnostic::SemanticDiagnosticKind::*;
+use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, compute_expr_semantic};
 use crate::expr::inference::canonic::{CanonicalTrait, ResultNoErrEx};
@@ -953,8 +953,8 @@ pub fn add_value_type_based_diagnostics<'db>(
     }
 }
 
-/// Adds diagnostics based on a type's structure: an infinitely-sized type, or an array of
-/// zero-sized or phantom elements.
+/// Adds diagnostics based on a type's structure: an infinitely-sized type, or a (possibly nested)
+/// array of zero-sized or phantom elements.
 ///
 /// This does not reject the type itself being phantom; a value position should use
 /// [add_value_type_based_diagnostics] for that.
@@ -967,17 +967,120 @@ pub fn add_type_based_diagnostics<'db>(
     if db.type_size_info(ty) == Ok(TypeSizeInformation::Infinite) {
         diagnostics.report(stable_ptr, InfiniteSizeType(ty));
     }
-    if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.long(db) {
-        let long_id = extrn.long(db);
-        if long_id.extern_type_id.name(db).long(db) == "Array"
-            && let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..]
-        {
-            if arg_ty.is_phantom(db) {
-                diagnostics.report(stable_ptr, InstancesOfPhantomTypes);
-            } else if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
-                diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));
+    if let Some(violation) = array_element_violation(db, ty) {
+        diagnostics.report(stable_ptr, violation.to_kind());
+    }
+}
+
+/// A reason a type cannot be used as a value: it (transitively) contains an array whose element
+/// type cannot be instantiated.
+#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+enum ArrayElementViolation<'db> {
+    /// An array of a phantom element.
+    Phantom,
+    /// An array of a zero-sized element (carries the element type, for the diagnostic).
+    ZeroSized(TypeId<'db>),
+}
+impl<'db> ArrayElementViolation<'db> {
+    /// The diagnostic kind reported for this violation.
+    fn to_kind(&self) -> SemanticDiagnosticKind<'db> {
+        match self {
+            Self::Phantom => InstancesOfPhantomTypes,
+            Self::ZeroSized(ty) => ArrayOfZeroSizedElements(*ty),
+        }
+    }
+}
+
+/// Whether `ty` (transitively) contains an array whose element type cannot be instantiated - a
+/// phantom or zero-sized element - and so cannot be used as a value, e.g. `Span<Ph>` or
+/// `Span<[(); 0]>` (which nest `Array<...>`). Memoized.
+///
+/// A phantom type is reported on its own (see [add_value_type_based_diagnostics] for a value, or
+/// the `NonPhantomTypeContainingPhantomType` check for a definition), so it is not descended into.
+/// Only concrete types are searched; a generic parameter is assumed instantiable, so a generic
+/// `Array<T>` is only diagnosed once `T` is concretely disallowed.
+#[salsa::tracked(cycle_result=array_element_violation_cycle)]
+fn array_element_violation<'db>(
+    db: &'db dyn Database,
+    ty: TypeId<'db>,
+) -> Option<ArrayElementViolation<'db>> {
+    if ty.is_phantom(db) {
+        return None;
+    }
+    array_element_deps_or_issue(db, ty, |dep| array_element_violation(db, dep))
+}
+
+/// Cycle handling for [array_element_violation], hit when a type is recursive through an array
+/// element (e.g. `Array<Self>`).
+///
+/// Implements the same logic as [array_element_violation], but iteratively over an explicit
+/// work-stack with a visited set so it never re-enters the query. Recursing back into the query
+/// mid-cycle would let salsa cache a false negative for whichever participant is computed first -
+/// its violation may be reachable only through the rest of the cycle.
+fn array_element_violation_cycle<'db>(
+    db: &'db dyn Database,
+    _id: salsa::Id,
+    ty: TypeId<'db>,
+) -> Option<ArrayElementViolation<'db>> {
+    let mut visited: OrderedHashSet<TypeId<'db>> = OrderedHashSet::default();
+    let mut stack = vec![ty];
+    while let Some(ty) = stack.pop() {
+        if ty.is_phantom(db) || !visited.insert(ty) {
+            continue;
+        }
+        if let Some(violation) = array_element_deps_or_issue(db, ty, |dep| {
+            stack.push(dep);
+            None
+        }) {
+            return Some(violation);
+        }
+    }
+    None
+}
+
+/// Searches `ty` for a bad array element. An array's element is checked directly (phantom or
+/// zero-sized); every component to search recursively - struct members, enum variants, tuple /
+/// snapshot / fixed-size-array / closure-capture components, the type wrapped by a `Box` /
+/// `Nullable`, and an array's (otherwise valid) element - is passed to `on_dep`. Returns the first
+/// violation found.
+fn array_element_deps_or_issue<'db>(
+    db: &'db dyn Database,
+    ty: TypeId<'db>,
+    mut on_dep: impl FnMut(TypeId<'db>) -> Option<ArrayElementViolation<'db>>,
+) -> Option<ArrayElementViolation<'db>> {
+    match ty.long(db) {
+        TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) => {
+            let ConcreteExternTypeLongId { extern_type_id, generic_args } = extrn.long(db);
+            match (extern_type_id.name(db).long(db).as_str(), &generic_args[..]) {
+                ("Array", [GenericArgumentId::Type(arg_ty)]) => {
+                    if arg_ty.is_phantom(db) {
+                        Some(ArrayElementViolation::Phantom)
+                    } else if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
+                        Some(ArrayElementViolation::ZeroSized(*arg_ty))
+                    } else {
+                        on_dep(*arg_ty)
+                    }
+                }
+                ("Box" | "Nullable", [GenericArgumentId::Type(arg_ty)]) => on_dep(*arg_ty),
+                _ => None,
             }
         }
+        TypeLongId::Concrete(ConcreteTypeId::Struct(id)) => {
+            db.concrete_struct_members(*id).ok()?.iter().find_map(|(_, member)| on_dep(member.ty))
+        }
+        TypeLongId::Concrete(ConcreteTypeId::Enum(id)) => {
+            db.concrete_enum_variants(*id).ok()?.iter().find_map(|variant| on_dep(variant.ty))
+        }
+        TypeLongId::Tuple(types) => types.iter().find_map(|ty| on_dep(*ty)),
+        TypeLongId::Snapshot(inner) => on_dep(*inner),
+        TypeLongId::FixedSizeArray { type_id, .. } => on_dep(*type_id),
+        TypeLongId::Closure(closure) => closure.captured_types.iter().find_map(|ty| on_dep(*ty)),
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
+        | TypeLongId::Coupon(_)
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Missing(_) => None,
     }
 }
 
