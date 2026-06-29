@@ -1,4 +1,5 @@
 mod builtin_usage_before_unreachable;
+mod derive_associated_type_member;
 mod ecdsa_completeness;
 mod generic_cycles;
 mod inconsistent_gas;
