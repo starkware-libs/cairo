@@ -314,3 +314,137 @@ error[E2019]: Phantom types cannot be instantiated.
  --> lib.cairo:7:5
     x: Array<Ph>,
     ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Phantom type nested in an array inside a Span.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Span<Ph>) -> Span<Ph> {
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {
+    A: felt252,
+}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:5:8
+fn foo(x: Span<Ph>) -> Span<Ph> {
+       ^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:5:24
+fn foo(x: Span<Ph>) -> Span<Ph> {
+                       ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Zero-sized type nested in an array inside a Span.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Span<()>) -> Span<()> {
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E2053]: Cannot have array of type "()" that is zero sized.
+ --> lib.cairo:1:8
+fn foo(x: Span<()>) -> Span<()> {
+       ^^^^^^^^^^^
+
+error[E2053]: Cannot have array of type "()" that is zero sized.
+ --> lib.cairo:1:24
+fn foo(x: Span<()>) -> Span<()> {
+                       ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Phantom array reached through a cycle of array-recursive types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: B, y: A) {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[phantom]
+enum Ph {
+    A: felt252,
+}
+
+struct A {
+    b: Array<B>,
+}
+
+struct B {
+    a: Array<A>,
+    bad: Array<Ph>,
+}
+
+//! > expected_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:7:5
+    b: Array<B>,
+    ^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:11:5
+    a: Array<A>,
+    ^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:12:5
+    bad: Array<Ph>,
+    ^^^^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:14:8
+fn foo(x: B, y: A) {}
+       ^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:14:14
+fn foo(x: B, y: A) {}
+             ^^^^
+
+//! > ==========================================================================
+
+//! > Type recursive through an array with no bad element is fine (cycle terminates).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: A) {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: Array<A>,
+}
+
+//! > expected_diagnostics
