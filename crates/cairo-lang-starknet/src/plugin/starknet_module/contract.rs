@@ -406,8 +406,9 @@ fn generate_deploy_function<'db>(
         let type_text = ty.as_syntax_node().get_text_without_trivia(db).long(db);
 
         param_declarations.push(format!("{name}: {type_text}"));
-        calldata_serialization
-            .push(format!("core::serde::Serde::<{type_text}>::serialize(@{name}, ref calldata);",));
+        calldata_serialization.push(format!(
+            "core::serde::Serde::<{type_text}>::serialize(@{name}, ref __deploy_calldata__);",
+        ));
     }
 
     let param_declarations_str = param_declarations.join(",\n");
@@ -417,19 +418,20 @@ fn generate_deploy_function<'db>(
         "
         #[cfg(target: 'test')]
         pub fn deploy_for_test(
-            class_hash: starknet::ClassHash,
-            deployment_params: starknet::deployment::DeploymentParams,
+            __deploy_class_hash__: starknet::ClassHash,
+            __deploy_params__: starknet::deployment::DeploymentParams,
             {param_declarations_str}
         ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{
-            let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+            let mut __deploy_calldata__: core::array::Array<felt252> = \
+         core::array::ArrayTrait::new();
 
             {calldata_serialization_str}
 
             starknet::syscalls::deploy_syscall(
-                class_hash,
-                deployment_params.salt,
-                core::array::ArrayTrait::span(@calldata),
-                deployment_params.deploy_from_zero,
+                __deploy_class_hash__,
+                __deploy_params__.salt,
+                core::array::ArrayTrait::span(@__deploy_calldata__),
+                __deploy_params__.deploy_from_zero,
             )
         }}
     "

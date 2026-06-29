@@ -51,6 +51,40 @@ pub mod advanced {
     ) {}
 }
 
+/// Contract whose constructor parameters are named exactly like the bindings that
+/// `deploy_for_test` generates for itself (`class_hash` / `deployment_params` /
+/// `calldata`). These must neither collide with those bindings (compile error) nor
+/// shadow them (silently dropping the user's `calldata` argument).
+#[starknet::contract]
+pub mod reserved_ctor_arg_names {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    #[storage]
+    struct Storage {
+        value: felt252,
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState,
+        class_hash: felt252,
+        deployment_params: felt252,
+        calldata: Array<felt252>,
+    ) {
+        self.value.write(class_hash + deployment_params + calldata.len().into());
+    }
+
+    #[abi(embed_v0)]
+    impl ValueImpl of super::IValue<ContractState> {
+        fn get_value(self: @ContractState) -> felt252 {
+            self.value.read()
+        }
+
+        fn set_value(ref self: ContractState, value: felt252) {
+            self.value.write(value);
+        }
+    }
+}
+
 #[test]
 fn test_deploy_in_construct() {
     let (contract_address, _) = deploy_syscall(self_caller::TEST_CLASS_HASH, 0, [].span(), false)
@@ -121,4 +155,17 @@ fn test_typed_deploy_default_with_complex_args() {
             advanced::TEST_CLASS_HASH, 0, calldata.span(), false,
         ) == Err(array!['CONTRACT_ALREADY_DEPLOYED']),
     );
+}
+
+#[test]
+fn test_deploy_for_test_reserved_ctor_arg_names() {
+    // The constructor args named `class_hash` / `deployment_params` / `calldata` must be passed
+    // through correctly. Pre-fix this failed to compile (E2054, parameter redefinition) and the
+    // `calldata` arg was silently dropped.
+    let (contract_address, _) = reserved_ctor_arg_names::deploy_for_test(
+        reserved_ctor_arg_names::TEST_CLASS_HASH, Default::default(), 10, 20, array![1, 2, 3],
+    )
+        .expect('deployment failed');
+    // 10 + 20 + len([1, 2, 3]) == 33; a dropped `calldata` arg would change the sum.
+    assert!(IValueDispatcher { contract_address }.get_value() == 33);
 }
