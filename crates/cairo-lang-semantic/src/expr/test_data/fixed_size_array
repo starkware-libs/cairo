@@ -234,6 +234,7 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar<const N: usize>() -> [felt252; N] nopanic;
 
 //! > expected_diagnostics
@@ -254,11 +255,12 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar<const N: usize>() -> [felt252; N] nopanic;
 
 //! > expected_diagnostics
 error[E2108]: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
- --> lib.cairo:3:9
+ --> lib.cairo:4:9
     let [_a, _b] = bar::<3>();
         ^^^^^^^^
 

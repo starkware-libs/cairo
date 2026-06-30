@@ -937,6 +937,7 @@ test::foo@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: Pedersen, [4]:
 SmallE2ETestRunnerSkipAddGas
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn get_unspent_gas() -> u128 implicits(GasBuiltin) nopanic;
 
 fn foo(x: felt252) -> u128 {
@@ -1025,6 +1026,7 @@ test::bar@F1() -> ();
 SmallE2ETestRunnerSkipAddGas
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn get_unspent_gas() -> u128 implicits(GasBuiltin) nopanic;
 
 fn foo(x: felt252) -> u128 {

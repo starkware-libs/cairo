@@ -1239,7 +1239,9 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn ex(a: u32) nopanic;
+#[allow(extern_outside_corelib)]
 extern fn ex1(a: @B) nopanic;
 #[derive(Drop)]
 struct B {
@@ -1365,7 +1367,9 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn ex(a: @u32) nopanic;
+#[allow(extern_outside_corelib)]
 extern fn ex1(a: B) nopanic;
 #[derive(Drop, Copy)]
 struct B {
@@ -1492,6 +1496,7 @@ foo
 struct A {
     x: felt252,
 }
+#[allow(extern_outside_corelib)]
 extern fn use_a(a: @A) nopanic;
 
 //! > semantic_diagnostics
@@ -3047,6 +3052,7 @@ fn foo() -> Result<(), u32> {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar() -> Result<(), u32> nopanic;
 
 //! > expected_diagnostics
@@ -3517,6 +3523,7 @@ fn foo(a: felt252, b: felt252, c: felt252) -> bool {
         }
     }
 }
+#[allow(extern_outside_corelib)]
 extern fn bar(a: S) nopanic;
 #[derive(Drop, Copy)]
 struct S {
@@ -3726,6 +3733,7 @@ fn foo(s: S) -> bool {
         }
     }
 }
+#[allow(extern_outside_corelib)]
 extern fn bar(a: Outer) nopanic;
 #[derive(Drop, Copy)]
 struct S {

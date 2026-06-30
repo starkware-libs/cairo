@@ -127,6 +127,7 @@ enum MyEnum {
     g: (felt252,),
     h: felt252,
 }
+#[allow(extern_outside_corelib)]
 extern fn bar(ref a: felt252) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
@@ -225,6 +226,7 @@ enum MyEnum {
     g: (felt252,),
     h: felt252,
 }
+#[allow(extern_outside_corelib)]
 extern fn bar() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
@@ -322,6 +324,7 @@ enum MyEnum {
     g: (felt252,),
     h: felt252,
 }
+#[allow(extern_outside_corelib)]
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
@@ -420,6 +423,7 @@ enum MyEnum {
     g: (felt252,),
     h: felt252,
 }
+#[allow(extern_outside_corelib)]
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics

@@ -20,6 +20,7 @@ fn foo(x: foo::Coupon) {
     x.a;
 }
 
+#[allow(extern_outside_corelib)]
 extern fn extern_func() nopanic;
 
 //! > function_name

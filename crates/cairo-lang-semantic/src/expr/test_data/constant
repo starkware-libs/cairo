@@ -930,12 +930,13 @@ fn foo() {}
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern const fn f() -> felt252 nopanic;
 const X: felt252 = f();
 
 //! > expected_diagnostics
 error[E2127]: This expression is not supported as constant.
- --> lib.cairo:2:20
+ --> lib.cairo:3:20
 const X: felt252 = f();
                    ^^^
 

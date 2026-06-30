@@ -189,6 +189,7 @@ use core::blake::{Blake2sInputGuarantee, Blake2sState, blake2s_finalize_guarante
 #[feature("bounded-int-utils")]
 type U32Guarantee =
     core::internal::bounded_int::BoundedIntGuarantee<0, 0xffffffff>;
+#[allow(extern_outside_corelib)]
 extern fn u128_to_u32_guarantees(
     value: u128,
 ) -> (U32Guarantee, U32Guarantee, U32Guarantee, U32Guarantee) nopanic;

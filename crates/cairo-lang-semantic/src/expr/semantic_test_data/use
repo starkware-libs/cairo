@@ -410,7 +410,9 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
 mod X {
+    #[allow(extern_outside_corelib)]
     extern type R;
+    #[allow(extern_outside_corelib)]
     extern fn new_r() -> R nopanic;
 }
 use X::{R as RR, new_r};
@@ -480,7 +482,9 @@ test_expr_semantics(expect_diagnostics: warnings_only)
 
 //! > module_code
 mod X {
+    #[allow(extern_outside_corelib)]
     extern type R<T>;
+    #[allow(extern_outside_corelib)]
     extern fn new_r<T>() -> R<T> nopanic;
 }
 use X::{R as RR, new_r};
@@ -541,12 +545,12 @@ Block(
 
 //! > expected_diagnostics
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:8:9
+ --> lib.cairo:10:9
     let y: RR::<u8> = new_r();
         ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:10:9
+ --> lib.cairo:12:9
     let x: R::<u16> = new_r();
         ^
 

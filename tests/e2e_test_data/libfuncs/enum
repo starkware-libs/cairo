@@ -359,9 +359,11 @@ enum IndexEnum5 {
     Three,
     Four,
 }
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 
+#[allow(extern_outside_corelib)]
 extern fn enum_from_bounded_int<T>(index: BoundedInt<0, 4>) -> T nopanic;
 
 // This wrapper is required so that the compiler won't assume extern `enum_from_bounded_int` is a
@@ -409,9 +411,11 @@ enum IndexEnum2 {
     Zero,
     One,
 }
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 
+#[allow(extern_outside_corelib)]
 extern fn enum_from_bounded_int<T>(index: BoundedInt<0, 1>) -> T nopanic;
 
 // This wrapper is required so that the compiler won't assume extern `enum_from_bounded_int` is a
@@ -457,9 +461,11 @@ SmallE2ETestRunner
 enum IndexEnum1 {
     Zero,
 }
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 
+#[allow(extern_outside_corelib)]
 extern fn enum_from_bounded_int<T>(index: BoundedInt<0, 0>) -> T nopanic;
 
 // This wrapper is required so that the compiler won't assume extern `enum_from_bounded_int` is a
@@ -506,6 +512,7 @@ enum Single {
     Value: felt252,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<T>(e: Box<T>) -> Box<felt252> nopanic;
 
 fn foo(e: Box<Single>) -> Box<felt252> {
@@ -548,6 +555,7 @@ enum BoxedOption {
     None: Box<()>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<T>(e: Box<T>) -> BoxedOption nopanic;
 
 fn foo(e: Box<Option<felt252>>) -> BoxedOption {
@@ -616,6 +624,7 @@ enum BoxedColor {
     Blue: Box<felt252>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<Color>(e: Box<Color>) -> BoxedColor nopanic;
 
 fn foo(e: Box<Color>) -> BoxedColor {
@@ -691,6 +700,7 @@ enum BoxedData {
     Large: Box<(felt252, felt252, felt252)>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<Data>(e: Box<Data>) -> BoxedData nopanic;
 
 fn foo(e: Box<Data>) -> BoxedData {
@@ -756,10 +766,12 @@ enum B {
 }
 
 mod a {
+    #[allow(extern_outside_corelib)]
     extern fn enum_boxed_match<T>(e: Box<T>) -> Box<felt252> nopanic;
 }
 
 mod b {
+    #[allow(extern_outside_corelib)]
     extern fn enum_boxed_match<T>(e: Box<T>) -> Box<super::A> nopanic;
 }
 
@@ -817,6 +829,7 @@ mod a {
         Value1: Box<felt252>,
         Value2: Box<felt252>,
     }
+    #[allow(extern_outside_corelib)]
     extern fn enum_boxed_match<T>(e: Box<T>) -> A nopanic;
 }
 
@@ -825,6 +838,7 @@ mod b {
         Value1: Box<super::A>,
         Value2: Box<(super::A, felt252, felt252)>,
     }
+    #[allow(extern_outside_corelib)]
     extern fn enum_boxed_match<T>(e: Box<T>) -> B nopanic;
 }
 
@@ -920,6 +934,7 @@ enum BoxedSingle {
     Value: Box<felt252>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<T>(e: Box<T>) -> BoxedSingle nopanic;
 
 fn add_123(x: felt252) -> felt252 {
@@ -993,6 +1008,7 @@ enum BoxedOption {
     None: Box<()>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<T>(e: Box<T>) -> BoxedOption nopanic;
 
 fn add_123(x: felt252) -> felt252 {
@@ -1092,6 +1108,7 @@ enum BoxedColor {
     Blue: Box<felt252>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<Color>(e: Box<Color>) -> BoxedColor nopanic;
 
 fn test_blue(x: felt252) -> felt252 {
@@ -1203,6 +1220,7 @@ enum BoxedData {
     Large: Box<(felt252, felt252, felt252)>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<Data>(e: Box<Data>) -> BoxedData nopanic;
 
 fn test_small(x: felt252) -> felt252 {
@@ -1294,6 +1312,7 @@ enum BoxedData {
     Large: Box<(felt252, felt252, felt252)>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<Data>(e: Box<Data>) -> BoxedData nopanic;
 
 fn test_large(x: felt252) -> felt252 {
@@ -1404,6 +1423,7 @@ enum BoxedSingleArray {
     Value: Box<@Array<felt252>>,
 }
 
+#[allow(extern_outside_corelib)]
 extern fn enum_boxed_match<T>(e: Box<T>) -> BoxedSingleArray nopanic;
 
 fn foo(e: Box<@SingleArray>) -> BoxedSingleArray {
