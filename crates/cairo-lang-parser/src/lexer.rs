@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::ast::{
     TokenNewline, TokenSingleLineComment, TokenSingleLineDocComment, TokenSingleLineInnerComment,
     TokenWhitespace, TriviumGreen,
 };
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::kind::LexemeKind;
 use salsa::Database;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -126,7 +126,7 @@ impl Lexer {
     // =================================================================================
 
     /// Takes a number. May be decimal, hex, oct or bin.
-    fn take_token_literal_number(&mut self) -> TokenKind {
+    fn take_token_literal_number(&mut self) -> LexemeKind {
         let special = if self.peek() == Some('0') {
             self.take();
             match self.peek() {
@@ -153,24 +153,24 @@ impl Lexer {
         if self.peek() == Some('_') {
             self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
         }
-        TokenKind::LiteralNumber
+        LexemeKind::LiteralNumber
     }
 
     /// Takes a short string.
-    fn take_token_short_string(&mut self) -> TokenKind {
+    fn take_token_short_string(&mut self) -> LexemeKind {
         self.take_token_string_helper('\'');
 
         // Parse _type suffix.
         if self.peek() == Some('_') {
             self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
         }
-        TokenKind::ShortString
+        LexemeKind::ShortString
     }
 
     /// Takes a string.
-    fn take_token_string(&mut self) -> TokenKind {
+    fn take_token_string(&mut self) -> LexemeKind {
         self.take_token_string_helper('"');
-        TokenKind::String
+        LexemeKind::String
     }
 
     fn take_token_string_helper(&mut self, delimiter: char) {
@@ -190,49 +190,49 @@ impl Lexer {
     }
 
     /// Assumes the next character is [a-zA-Z_].
-    fn take_token_identifier(&mut self) -> TokenKind {
+    fn take_token_identifier(&mut self) -> LexemeKind {
         // TODO(spapini): Support or explicitly report general unicode characters.
         self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
 
         let span = self.peek_text_span();
         match span.take(&self.text) {
-            "as" => TokenKind::As,
-            "const" => TokenKind::Const,
-            "false" => TokenKind::False,
-            "true" => TokenKind::True,
-            "extern" => TokenKind::Extern,
-            "type" => TokenKind::Type,
-            "fn" => TokenKind::Function,
-            "trait" => TokenKind::Trait,
-            "impl" => TokenKind::Impl,
-            "of" => TokenKind::Of,
-            "mod" => TokenKind::Module,
-            "struct" => TokenKind::Struct,
-            "enum" => TokenKind::Enum,
-            "let" => TokenKind::Let,
-            "return" => TokenKind::Return,
-            "match" => TokenKind::Match,
-            "macro" => TokenKind::Macro,
-            "if" => TokenKind::If,
-            "loop" => TokenKind::Loop,
-            "continue" => TokenKind::Continue,
-            "break" => TokenKind::Break,
-            "else" => TokenKind::Else,
-            "while" => TokenKind::While,
-            "use" => TokenKind::Use,
-            "implicits" => TokenKind::Implicits,
-            "ref" => TokenKind::Ref,
-            "mut" => TokenKind::Mut,
-            "for" => TokenKind::For,
-            "nopanic" => TokenKind::NoPanic,
-            "pub" => TokenKind::Pub,
-            "_" => TokenKind::Underscore,
-            _ => TokenKind::Identifier,
+            "as" => LexemeKind::As,
+            "const" => LexemeKind::Const,
+            "false" => LexemeKind::False,
+            "true" => LexemeKind::True,
+            "extern" => LexemeKind::Extern,
+            "type" => LexemeKind::Type,
+            "fn" => LexemeKind::Function,
+            "trait" => LexemeKind::Trait,
+            "impl" => LexemeKind::Impl,
+            "of" => LexemeKind::Of,
+            "mod" => LexemeKind::Module,
+            "struct" => LexemeKind::Struct,
+            "enum" => LexemeKind::Enum,
+            "let" => LexemeKind::Let,
+            "return" => LexemeKind::Return,
+            "match" => LexemeKind::Match,
+            "macro" => LexemeKind::Macro,
+            "if" => LexemeKind::If,
+            "loop" => LexemeKind::Loop,
+            "continue" => LexemeKind::Continue,
+            "break" => LexemeKind::Break,
+            "else" => LexemeKind::Else,
+            "while" => LexemeKind::While,
+            "use" => LexemeKind::Use,
+            "implicits" => LexemeKind::Implicits,
+            "ref" => LexemeKind::Ref,
+            "mut" => LexemeKind::Mut,
+            "for" => LexemeKind::For,
+            "nopanic" => LexemeKind::NoPanic,
+            "pub" => LexemeKind::Pub,
+            "_" => LexemeKind::Underscore,
+            _ => LexemeKind::Identifier,
         }
     }
 
     /// Takes a single character and returns the given kind.
-    fn take_token_of_kind(&mut self, kind: TokenKind) -> TokenKind {
+    fn take_token_of_kind(&mut self, kind: LexemeKind) -> LexemeKind {
         self.take();
         kind
     }
@@ -241,9 +241,9 @@ impl Lexer {
     fn pick_kind(
         &mut self,
         second_char: char,
-        long_kind: TokenKind,
-        short_kind: TokenKind,
-    ) -> TokenKind {
+        long_kind: LexemeKind,
+        short_kind: LexemeKind,
+    ) -> LexemeKind {
         self.take();
         if self.peek() == Some(second_char) {
             self.take();
@@ -261,67 +261,64 @@ impl Lexer {
                 '0'..='9' => self.take_token_literal_number(),
                 '\'' => self.take_token_short_string(),
                 '"' => self.take_token_string(),
-                ',' => self.take_token_of_kind(TokenKind::Comma),
-                ';' => self.take_token_of_kind(TokenKind::Semicolon),
-                '?' => self.take_token_of_kind(TokenKind::QuestionMark),
-                '{' => self.take_token_of_kind(TokenKind::LBrace),
-                '}' => self.take_token_of_kind(TokenKind::RBrace),
-                '[' => self.take_token_of_kind(TokenKind::LBrack),
-                ']' => self.take_token_of_kind(TokenKind::RBrack),
-                '(' => self.take_token_of_kind(TokenKind::LParen),
-                ')' => self.take_token_of_kind(TokenKind::RParen),
+                ',' => self.take_token_of_kind(LexemeKind::Comma),
+                ';' => self.take_token_of_kind(LexemeKind::Semicolon),
+                '?' => self.take_token_of_kind(LexemeKind::QuestionMark),
+                '{' => self.take_token_of_kind(LexemeKind::LBrace),
+                '}' => self.take_token_of_kind(LexemeKind::RBrace),
+                '[' => self.take_token_of_kind(LexemeKind::LBrack),
+                ']' => self.take_token_of_kind(LexemeKind::RBrack),
+                '(' => self.take_token_of_kind(LexemeKind::LParen),
+                ')' => self.take_token_of_kind(LexemeKind::RParen),
                 '.' => {
                     self.take();
                     match self.peek() {
-                        Some('.') => self.pick_kind('=', TokenKind::DotDotEq, TokenKind::DotDot),
-                        _ => TokenKind::Dot,
+                        Some('.') => self.pick_kind('=', LexemeKind::DotDotEq, LexemeKind::DotDot),
+                        _ => LexemeKind::Dot,
                     }
                 }
-                '*' => self.pick_kind('=', TokenKind::MulEq, TokenKind::Mul),
-                '/' => self.pick_kind('=', TokenKind::DivEq, TokenKind::Div),
-                '%' => self.pick_kind('=', TokenKind::ModEq, TokenKind::Mod),
-                '+' => self.pick_kind('=', TokenKind::PlusEq, TokenKind::Plus),
-                '#' => self.take_token_of_kind(TokenKind::Hash),
-                '$' => self.take_token_of_kind(TokenKind::Dollar),
+                '*' => self.pick_kind('=', LexemeKind::MulEq, LexemeKind::Mul),
+                '/' => self.pick_kind('=', LexemeKind::DivEq, LexemeKind::Div),
+                '%' => self.pick_kind('=', LexemeKind::ModEq, LexemeKind::Mod),
+                '+' => self.pick_kind('=', LexemeKind::PlusEq, LexemeKind::Plus),
+                '#' => self.take_token_of_kind(LexemeKind::Hash),
+                '$' => self.take_token_of_kind(LexemeKind::Dollar),
                 '-' => {
                     self.take();
                     match self.peek() {
-                        Some('>') => self.take_token_of_kind(TokenKind::Arrow),
-                        Some('=') => self.take_token_of_kind(TokenKind::MinusEq),
-                        _ => TokenKind::Minus,
+                        Some('>') => self.take_token_of_kind(LexemeKind::Arrow),
+                        Some('=') => self.take_token_of_kind(LexemeKind::MinusEq),
+                        _ => LexemeKind::Minus,
                     }
                 }
-                '<' => self.pick_kind('=', TokenKind::LE, TokenKind::LT),
-                '>' => self.pick_kind('=', TokenKind::GE, TokenKind::GT),
+                '<' => self.pick_kind('=', LexemeKind::LE, LexemeKind::LT),
+                '>' => self.pick_kind('=', LexemeKind::GE, LexemeKind::GT),
                 'a'..='z' | 'A'..='Z' | '_' => self.take_token_identifier(),
-                ':' => self.pick_kind(':', TokenKind::ColonColon, TokenKind::Colon),
-                '!' => self.pick_kind('=', TokenKind::Neq, TokenKind::Not),
-                '~' => self.take_token_of_kind(TokenKind::BitNot),
+                ':' => self.pick_kind(':', LexemeKind::ColonColon, LexemeKind::Colon),
+                '!' => self.pick_kind('=', LexemeKind::Neq, LexemeKind::Not),
+                '~' => self.take_token_of_kind(LexemeKind::BitNot),
                 '=' => {
                     self.take();
                     match self.peek() {
-                        Some('=') => self.take_token_of_kind(TokenKind::EqEq),
-                        Some('>') => self.take_token_of_kind(TokenKind::MatchArrow),
-                        _ => TokenKind::Eq,
+                        Some('=') => self.take_token_of_kind(LexemeKind::EqEq),
+                        Some('>') => self.take_token_of_kind(LexemeKind::MatchArrow),
+                        _ => LexemeKind::Eq,
                     }
                 }
-                '&' => self.pick_kind('&', TokenKind::AndAnd, TokenKind::And),
-                '|' => self.pick_kind('|', TokenKind::OrOr, TokenKind::Or),
-                '^' => self.take_token_of_kind(TokenKind::Xor),
-                '@' => self.take_token_of_kind(TokenKind::At),
-                _ => self.take_token_of_kind(TokenKind::BadCharacters),
+                '&' => self.pick_kind('&', LexemeKind::AndAnd, LexemeKind::And),
+                '|' => self.pick_kind('|', LexemeKind::OrOr, LexemeKind::Or),
+                '^' => self.take_token_of_kind(LexemeKind::Xor),
+                '@' => self.take_token_of_kind(LexemeKind::At),
+                _ => self.take_token_of_kind(LexemeKind::BadCharacters),
             }
         } else {
-            TokenKind::EndOfFile
+            LexemeKind::EndOfFile
         };
 
         let span = self.consume_text_span();
         let text = SmolStrId::from(db, span.take(&self.text));
         let trailing_trivia = self.match_trivia(db, false);
-        let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
-
-        // TODO(yuval): log(verbose) "consumed text: ..."
-        LexerTerminal { text, kind: terminal_kind, leading_trivia, trailing_trivia }
+        LexerTerminal { text, kind, leading_trivia, trailing_trivia }
     }
 }
 
@@ -330,7 +327,7 @@ impl Lexer {
 pub struct LexerTerminal<'a> {
     pub text: SmolStrId<'a>,
     /// The kind of the inner token of this terminal.
-    pub kind: SyntaxKind,
+    pub kind: LexemeKind,
     pub leading_trivia: Vec<TriviumGreen<'a>>,
     pub trailing_trivia: Vec<TriviumGreen<'a>>,
 }
@@ -343,185 +340,5 @@ impl<'a> LexerTerminal<'a> {
 
     pub fn text(&self, db: &'a dyn Database) -> &'a str {
         self.text.long(db)
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Debug, Eq, Hash)]
-enum TokenKind {
-    Identifier,
-
-    // Literals.
-    LiteralNumber,
-    ShortString,
-    String,
-
-    // Keywords.
-    As,
-    Const,
-    False,
-    True,
-    Extern,
-    Type,
-    Function,
-    Trait,
-    Impl,
-    Of,
-    Module,
-    Struct,
-    Enum,
-    Let,
-    Return,
-    Match,
-    Macro,
-    If,
-    While,
-    For,
-    Loop,
-    Continue,
-    Break,
-    Else,
-    Use,
-    Implicits,
-    NoPanic,
-    Pub,
-
-    // Modifiers.
-    Ref,
-    Mut,
-
-    // Punctuation.
-    And,
-    AndAnd,
-    At,
-    Or,
-    OrOr,
-    Xor,
-    EqEq,
-    Neq,
-    GE,
-    GT,
-    LE,
-    LT,
-    Not,
-    BitNot,
-    Plus,
-    PlusEq,
-    Minus,
-    MinusEq,
-    Mul,
-    MulEq,
-    Div,
-    DivEq,
-    Mod,
-    ModEq,
-
-    Colon,
-    ColonColon,
-    Comma,
-    Dollar,
-    Dot,
-    DotDot,
-    DotDotEq,
-    Eq,
-    Hash,
-    Semicolon,
-    QuestionMark,
-    Underscore,
-    LBrace,
-    RBrace,
-    LBrack,
-    RBrack,
-    LParen,
-    RParen,
-    Arrow,
-    MatchArrow,
-
-    // Meta.
-    EndOfFile,
-    BadCharacters,
-}
-
-fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
-    match kind {
-        TokenKind::As => SyntaxKind::TerminalAs,
-        TokenKind::Const => SyntaxKind::TerminalConst,
-        TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
-        TokenKind::LiteralNumber => SyntaxKind::TerminalLiteralNumber,
-        TokenKind::ShortString => SyntaxKind::TerminalShortString,
-        TokenKind::String => SyntaxKind::TerminalString,
-        TokenKind::False => SyntaxKind::TerminalFalse,
-        TokenKind::True => SyntaxKind::TerminalTrue,
-        TokenKind::Extern => SyntaxKind::TerminalExtern,
-        TokenKind::Type => SyntaxKind::TerminalType,
-        TokenKind::Function => SyntaxKind::TerminalFunction,
-        TokenKind::Trait => SyntaxKind::TerminalTrait,
-        TokenKind::Impl => SyntaxKind::TerminalImpl,
-        TokenKind::Of => SyntaxKind::TerminalOf,
-        TokenKind::Module => SyntaxKind::TerminalModule,
-        TokenKind::Struct => SyntaxKind::TerminalStruct,
-        TokenKind::Enum => SyntaxKind::TerminalEnum,
-        TokenKind::Let => SyntaxKind::TerminalLet,
-        TokenKind::Return => SyntaxKind::TerminalReturn,
-        TokenKind::Match => SyntaxKind::TerminalMatch,
-        TokenKind::If => SyntaxKind::TerminalIf,
-        TokenKind::While => SyntaxKind::TerminalWhile,
-        TokenKind::For => SyntaxKind::TerminalFor,
-        TokenKind::Loop => SyntaxKind::TerminalLoop,
-        TokenKind::Continue => SyntaxKind::TerminalContinue,
-        TokenKind::Break => SyntaxKind::TerminalBreak,
-        TokenKind::Else => SyntaxKind::TerminalElse,
-        TokenKind::Use => SyntaxKind::TerminalUse,
-        TokenKind::Implicits => SyntaxKind::TerminalImplicits,
-        TokenKind::NoPanic => SyntaxKind::TerminalNoPanic,
-        TokenKind::Pub => SyntaxKind::TerminalPub,
-        TokenKind::Macro => SyntaxKind::TerminalMacro,
-        TokenKind::And => SyntaxKind::TerminalAnd,
-        TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
-        TokenKind::At => SyntaxKind::TerminalAt,
-        TokenKind::Or => SyntaxKind::TerminalOr,
-        TokenKind::OrOr => SyntaxKind::TerminalOrOr,
-        TokenKind::Xor => SyntaxKind::TerminalXor,
-        TokenKind::EqEq => SyntaxKind::TerminalEqEq,
-        TokenKind::Neq => SyntaxKind::TerminalNeq,
-        TokenKind::GE => SyntaxKind::TerminalGE,
-        TokenKind::GT => SyntaxKind::TerminalGT,
-        TokenKind::LE => SyntaxKind::TerminalLE,
-        TokenKind::LT => SyntaxKind::TerminalLT,
-        TokenKind::Not => SyntaxKind::TerminalNot,
-        TokenKind::BitNot => SyntaxKind::TerminalBitNot,
-        TokenKind::Plus => SyntaxKind::TerminalPlus,
-        TokenKind::PlusEq => SyntaxKind::TerminalPlusEq,
-        TokenKind::Minus => SyntaxKind::TerminalMinus,
-        TokenKind::MinusEq => SyntaxKind::TerminalMinusEq,
-        TokenKind::Mul => SyntaxKind::TerminalMul,
-        TokenKind::MulEq => SyntaxKind::TerminalMulEq,
-        TokenKind::Div => SyntaxKind::TerminalDiv,
-        TokenKind::DivEq => SyntaxKind::TerminalDivEq,
-        TokenKind::Mod => SyntaxKind::TerminalMod,
-        TokenKind::ModEq => SyntaxKind::TerminalModEq,
-        TokenKind::Colon => SyntaxKind::TerminalColon,
-        TokenKind::ColonColon => SyntaxKind::TerminalColonColon,
-        TokenKind::Comma => SyntaxKind::TerminalComma,
-        TokenKind::Dollar => SyntaxKind::TerminalDollar,
-        TokenKind::Dot => SyntaxKind::TerminalDot,
-        TokenKind::DotDot => SyntaxKind::TerminalDotDot,
-        TokenKind::DotDotEq => SyntaxKind::TerminalDotDotEq,
-        TokenKind::Eq => SyntaxKind::TerminalEq,
-        TokenKind::Hash => SyntaxKind::TerminalHash,
-        TokenKind::Semicolon => SyntaxKind::TerminalSemicolon,
-        TokenKind::QuestionMark => SyntaxKind::TerminalQuestionMark,
-        TokenKind::Underscore => SyntaxKind::TerminalUnderscore,
-        TokenKind::LBrace => SyntaxKind::TerminalLBrace,
-        TokenKind::RBrace => SyntaxKind::TerminalRBrace,
-        TokenKind::LBrack => SyntaxKind::TerminalLBrack,
-        TokenKind::RBrack => SyntaxKind::TerminalRBrack,
-        TokenKind::LParen => SyntaxKind::TerminalLParen,
-        TokenKind::RParen => SyntaxKind::TerminalRParen,
-        TokenKind::Ref => SyntaxKind::TerminalRef,
-        TokenKind::Mut => SyntaxKind::TerminalMut,
-        TokenKind::Arrow => SyntaxKind::TerminalArrow,
-        TokenKind::MatchArrow => SyntaxKind::TerminalMatchArrow,
-        TokenKind::BadCharacters => SyntaxKind::TerminalBadCharacters,
-        TokenKind::EndOfFile => SyntaxKind::TerminalEndOfFile,
     }
 }

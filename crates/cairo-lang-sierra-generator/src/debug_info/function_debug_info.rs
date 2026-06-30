@@ -26,7 +26,7 @@ use cairo_lang_sierra::ids::{FunctionId, VarId};
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, ExprBinary, ParamList, StatementLet, TerminalIdentifier,
 };
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::kind::{LexemeKind, SyntaxKind};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{CloneableDatabase, Intern};
@@ -229,7 +229,7 @@ fn find_identifier_corresponding_to_assigned_variable<'db>(
 
         // If the original node covers whole rhs of the assignment and the operator is a simple eq,
         // we should try to search for the identifier on the lhs.
-        if assignment_expr.op(db).as_syntax_node().kind(db) == SyntaxKind::TerminalEq
+        if assignment_expr.op(db).as_syntax_node().kind(db) == SyntaxKind::Terminal(LexemeKind::Eq)
             && node == assignment_expr.rhs(db).as_syntax_node()
         {
             return find_identifier_in_node(db, lhs);
