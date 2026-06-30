@@ -730,8 +730,10 @@ impl<'a> UsePathLeaf<'a> {
 pub trait IsDependentType<'db> {
     /// Returns true if `self` is dependent on `identifier` in an internal type.
     /// For example given identifier `T` will return true for:
-    /// `T`, `Array<T>`, `Array<Array<T>>`, `(T, felt252)`.
-    /// Does not resolve paths, type aliases or named generics.
+    /// `T`, `Array<T>`, `Array<Array<T>>`, `(T, felt252)`, `T::AssocType`.
+    /// Does not resolve type aliases or named generics. A multi-segment path is considered
+    /// dependent when its head segment is one of the identifiers (e.g. the associated type
+    /// `T::AssocType`), which is a purely syntactic check (no path resolution).
     fn is_dependent_type(&self, db: &'db dyn Database, identifiers: &[SmolStrId<'db>]) -> bool;
 }
 
@@ -743,18 +745,24 @@ impl<'a> IsDependentType<'a> for ast::ExprPath<'a> {
             Some(ast::PathSegment::Simple(simple)) if segments.len() == 0 => {
                 identifiers.contains(&simple.identifier(db))
             }
-            Some(first) => chain!([first], segments).any(|segment| {
-                let ast::PathSegment::WithGenericArgs(with_generics) = segment else {
-                    return false;
-                };
-                with_generics.generic_args(db).generic_args(db).elements(db).any(|arg| {
-                    match arg {
-                        ast::GenericArg::Named(named) => named.value(db),
-                        ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
-                    }
-                    .is_dependent_type(db, identifiers)
-                })
-            }),
+            Some(first) => {
+                // A path whose head segment is one of the identifiers (e.g. the associated type
+                // `T::AssocType`) depends on that identifier. Only the head segment can be a
+                // generic param; a later segment with the same name is an associated-item name.
+                identifiers.contains(&first.identifier(db))
+                    || chain!([first], segments).any(|segment| {
+                        let ast::PathSegment::WithGenericArgs(with_generics) = segment else {
+                            return false;
+                        };
+                        with_generics.generic_args(db).generic_args(db).elements(db).any(|arg| {
+                            match arg {
+                                ast::GenericArg::Named(named) => named.value(db),
+                                ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
+                            }
+                            .is_dependent_type(db, identifiers)
+                        })
+                    })
+            }
         }
     }
 }
