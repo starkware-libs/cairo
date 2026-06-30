@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782783718679,
+  "lastUpdate": 1782783936869,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -11291,6 +11291,38 @@ window.BENCHMARK_DATA = {
           {
             "name": "ls_reexec/plain trivia edit",
             "value": 3056,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "bb80200636520ed6313bc2af144f975f999b14dd",
+          "message": "bugfix(semantic): Reject arrays of phantom elements. (#10171)",
+          "timestamp": "2026-06-29T13:18:10Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/bb80200636520ed6313bc2af144f975f999b14dd"
+        },
+        "date": 1782783936717,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3086,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3066,
             "unit": "queries"
           }
         ]
