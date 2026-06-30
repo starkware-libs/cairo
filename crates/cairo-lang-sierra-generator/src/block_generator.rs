@@ -2,21 +2,24 @@
 #[path = "block_generator_test.rs"]
 mod test;
 
+use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::LocationId;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
 use lowering::analysis::StatementLocation;
 use lowering::{MatchArm, VarUsage};
+use num_bigint::BigInt;
 use sierra::extensions::lib_func::SierraApChange;
 use sierra::program;
 
 use crate::block_generator::sierra::ids::ConcreteLibfuncId;
-use crate::db::SierraGenGroup;
+use crate::db::{EXTERNALLY_PROVIDED_CONST, SierraGenGroup};
 use crate::expr_generator_context::{ExprGenerationResult, ExprGeneratorContext};
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
 use crate::local_variables::MIN_SIZE_FOR_LOCAL_INTO_BOX;
@@ -331,15 +334,24 @@ fn generate_statement_call_code<'db>(
     statement: &lowering::StatementCall<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
+    let db = context.get_db();
+
+    // Handle the reserved `__externally_provided_const__` extern function: replace the call with a
+    // `const_as_immediate` of the value supplied by the installed `ExternalConstProvider`.
+    if let Some((extern_id, _)) = statement.function.get_extern(db)
+        && extern_id.name(db).long(db) == EXTERNALLY_PROVIDED_CONST
+    {
+        return generate_externally_provided_const_code(context, statement);
+    }
+
     // Check if this is a user defined function or a libfunc.
-    let (body, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), statement.function, statement.with_coupon);
+    let (body, libfunc_id) = get_concrete_libfunc_id(db, statement.function, statement.with_coupon);
     // Checks if the call invalidates ap tracking.
-    let libfunc_signature = get_libfunc_signature(context.get_db(), &libfunc_id);
+    let libfunc_signature = get_libfunc_signature(db, &libfunc_id);
     let [branch_signature] = &libfunc_signature.branch_signatures[..] else {
         panic!(
             "Unexpected branches in '{}'.",
-            DebugReplacer { db: context.get_db() }.replace_libfunc_id(&libfunc_id)
+            DebugReplacer { db }.replace_libfunc_id(&libfunc_id)
         );
     };
     if matches!(branch_signature.ap_change, SierraApChange::Unknown) {
@@ -390,6 +402,53 @@ fn generate_statement_call_code<'db>(
         );
         context.push_statement(stmt);
     }
+    Ok(())
+}
+
+/// Generates Sierra code for a call to the reserved `__externally_provided_const__` extern
+/// function, replacing it with a `const_as_immediate`.
+///
+/// When an [`crate::db::ExternalConstProvider`] is installed, the value is taken from it (keyed by
+/// the full path of the extern function, so distinct declarations in different modules resolve
+/// independently) and validated against the declared return type; a provider returning an error
+/// fails Sierra generation. When no provider is installed (e.g. generic compilation, profiling or
+/// size estimation, which don't use the value), it defaults to a zero constant of the declared
+/// type — build flows that need the real value install a provider (e.g. the two-pass class-hash
+/// injection in `starknet`'s `compile_path`).
+fn generate_externally_provided_const_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementCall<'db>,
+) -> Maybe<()> {
+    let db = context.get_db();
+    let [output] = statement.outputs[..] else {
+        panic!("`{EXTERNALLY_PROVIDED_CONST}` must have exactly one output.");
+    };
+    // The declared return type, which the provided value must match.
+    let return_type = context.get_lowered_variable(output).ty;
+
+    let value = match db.external_const_provider() {
+        Some(provider) => {
+            let (extern_id, _) = statement.function.get_extern(db).unwrap();
+            let value = provider(db, &extern_id.full_path(db), return_type)?;
+            // The provider returns a value of an arbitrary type; ensure it matches the declared
+            // one, as a mismatch would produce a type-incorrect Sierra program.
+            if value.ty(db)? != return_type {
+                panic!(
+                    "`{EXTERNALLY_PROVIDED_CONST}` provider returned a value whose type does not \
+                     match the declared return type."
+                );
+            }
+            value
+        }
+        None => ConstValueId::from_int(db, return_type, &BigInt::ZERO),
+    };
+
+    let output_var = context.get_sierra_variable(output);
+    context.push_statement(simple_basic_statement(
+        const_libfunc_id_by_type(db, value, false),
+        &[],
+        &[output_var],
+    ));
     Ok(())
 }
 

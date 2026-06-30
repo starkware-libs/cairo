@@ -1004,6 +1004,7 @@ dependencies = [
  "indoc",
  "itertools 0.14.0",
  "log",
+ "num-bigint",
  "num-traits",
  "pretty_assertions",
  "rayon",
