@@ -6,7 +6,6 @@ use num_bigint::{BigInt, ToBigInt};
 use num_traits::{One, Signed, ToPrimitive, Zero};
 use starknet_types_core::felt::Felt as Felt252;
 
-use super::int::unsigned128::Uint128Type;
 use super::non_zero::{NonZeroType, nonzero_ty};
 use super::range_check::RangeCheckType;
 use super::utils::{Range, reinterpret_cast_signature};
@@ -711,12 +710,13 @@ impl NoGenericArgsGenericLibfunc for U128ToU32GuaranteesLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let u128_guarantee_ty =
+            bounded_int_guarantee_ty(context, BigInt::ZERO, BigInt::from(u128::MAX))?;
         let u32_guarantee_ty =
             bounded_int_guarantee_ty(context, BigInt::ZERO, BigInt::from(u32::MAX))?;
 
         Ok(LibfuncSignature::new_non_branch(
-            vec![u128_ty],
+            vec![u128_guarantee_ty],
             vec![
                 OutputVarInfo {
                     ty: u32_guarantee_ty.clone(),

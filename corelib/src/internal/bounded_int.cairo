@@ -251,6 +251,14 @@ extern const fn bounded_int_is_zero<T>(
     value: T,
 ) -> crate::zeroable::IsZeroResult<T> implicits() nopanic;
 
+extern fn bounded_int_to_guarantee<const MIN: felt252, const MAX: felt252>(
+    value: BoundedInt<MIN, MAX>,
+) -> BoundedIntGuarantee<MIN, MAX> implicits() nopanic;
+
+extern fn bounded_int_guarantee_content<const MIN: felt252, const MAX: felt252>(
+    ref value: BoundedIntGuarantee<MIN, MAX>,
+) -> BoundedInt<MIN, MAX> implicits() nopanic;
+
 /// Returns the negation of the given `felt252` value.
 trait NegFelt252<const NUM: felt252> {
     /// The negation of the given `felt252` value.
@@ -343,6 +351,7 @@ impl NonZeroMulMinusOneNegateHelper<
 
 pub use {
     bounded_int_add as add, bounded_int_constrain as constrain, bounded_int_div_rem as div_rem,
-    bounded_int_is_zero as is_zero, bounded_int_mul as mul, bounded_int_sub as sub,
+    bounded_int_guarantee_content as guarantee_content, bounded_int_is_zero as is_zero,
+    bounded_int_mul as mul, bounded_int_sub as sub, bounded_int_to_guarantee as to_guarantee,
     bounded_int_trim_max as trim_max, bounded_int_trim_min as trim_min,
 };

@@ -1346,12 +1346,13 @@ SmallE2ETestRunner
 //! > cairo_code
 extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
 type U32Guarantee = BoundedIntGuarantee<0, 0xffffffff>;
+type U128Guarantee = BoundedIntGuarantee<0, 0xffffffffffffffffffffffffffffffff>;
 
 extern fn u128_to_u32_guarantees(
-    value: u128,
+    value: U128Guarantee,
 ) -> (U32Guarantee, U32Guarantee, U32Guarantee, U32Guarantee) nopanic;
 
-fn foo(value: u128) -> (U32Guarantee, U32Guarantee, U32Guarantee, U32Guarantee) {
+fn foo(value: U128Guarantee) -> (U32Guarantee, U32Guarantee, U32Guarantee, U32Guarantee) {
     u128_to_u32_guarantees(value)
 }
 
@@ -1376,7 +1377,7 @@ ret;
 test::foo: SmallOrderedMap({Const: 1100})
 
 //! > sierra_code
-type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedIntGuarantee<0, 340282366920938463463374607431768211455> = BoundedIntGuarantee<0, 340282366920938463463374607431768211455> [storable: true, drop: false, dup: false, zero_sized: false];
 type BoundedIntGuarantee<0, 4294967295> = BoundedIntGuarantee<0, 4294967295> [storable: true, drop: false, dup: false, zero_sized: false];
 type Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>> = Struct<ut@Tuple, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>> [storable: true, drop: false, dup: false, zero_sized: false];
 
@@ -1390,4 +1391,4 @@ struct_construct<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0
 store_temp<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>>([5]) -> ([5]);
 return([5]);
 
-test::foo@F0([0]: u128) -> (Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>);
+test::foo@F0([0]: BoundedIntGuarantee<0, 340282366920938463463374607431768211455>) -> (Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>);
