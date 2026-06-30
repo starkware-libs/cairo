@@ -91,6 +91,7 @@ define_libfunc_hierarchy! {
         ToGuarantee(BoundedIntToGuaranteeLibfunc),
         GuaranteeContent(BoundedIntGuaranteeContentLibfunc),
         GuaranteeVerify(BoundedIntGuaranteeVerifyLibfunc),
+        GuaranteeSplit(BoundedIntGuaranteeSplitLibfunc),
         U128ToU32Guarantees(U128ToU32GuaranteesLibfunc),
     }, BoundedIntConcreteLibfunc
 }
@@ -678,6 +679,84 @@ impl SignatureBasedConcreteLibfunc for BoundedIntGuaranteeVerifyConcreteLibfunc 
     }
 }
 
+/// Libfunc for a splitting a guarantee into 2 separate smaller guarantees by division by the given
+/// constant.
+#[derive(Default)]
+pub struct BoundedIntGuaranteeSplitLibfunc {}
+impl NamedLibfunc for BoundedIntGuaranteeSplitLibfunc {
+    type Concrete = BoundedIntGuaranteeSplitConcreteLibfunc;
+
+    const STR_ID: &'static str = "bounded_int_guarantee_split";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(BoundedIntGuaranteeSplitConcreteLibfunc::new(context, args)?.signature)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        BoundedIntGuaranteeSplitConcreteLibfunc::new(context, args)
+    }
+}
+
+pub struct BoundedIntGuaranteeSplitConcreteLibfunc {
+    pub divisor: BigInt,
+    signature: LibfuncSignature,
+}
+impl BoundedIntGuaranteeSplitConcreteLibfunc {
+    fn new(
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self, SpecializationError> {
+        let [GenericArg::Value(min), GenericArg::Value(max), GenericArg::Value(divisor)] = args
+        else {
+            return Err(if args.len() == 3 {
+                SpecializationError::UnsupportedGenericArg
+            } else {
+                SpecializationError::WrongNumberOfGenericArgs
+            });
+        };
+        require(*divisor > BigInt::one()).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        // Currently only u32 guarantees are supported.
+        require(is_valid_guarantee_range(min, max))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let q_min = min / divisor;
+        let q_max = max / divisor;
+        require(is_valid_guarantee_range(&q_min, &q_max))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let r_min = BigInt::ZERO;
+        let r_max = divisor - 1;
+        require(is_valid_guarantee_range(&r_min, &r_max))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let signature = LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature::new(bounded_int_guarantee_ty(context, min.clone(), max.clone())?)],
+            vec![
+                OutputVarInfo {
+                    ty: bounded_int_guarantee_ty(context, q_min, q_max)?,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                },
+                OutputVarInfo {
+                    ty: bounded_int_guarantee_ty(context, r_min, r_max)?,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        );
+        Ok(Self { divisor: divisor.clone(), signature })
+    }
+}
+impl SignatureBasedConcreteLibfunc for BoundedIntGuaranteeSplitConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
 /// Returns the concrete type for a BoundedInt<min, max>.
 pub fn bounded_int_ty(
     context: &dyn SignatureSpecializationContext,
@@ -751,7 +830,11 @@ fn extract_bounds(args: &[GenericArg]) -> Result<(&BigInt, &BigInt), Specializat
 
 /// Checks if the given bounds match allowed bounded int guarantee ranges.
 fn is_valid_guarantee_range(min: &BigInt, max: &BigInt) -> bool {
-    min.is_zero() && matches!(max.to_u128(), Some(0xffffffff | u128::MAX))
+    min.is_zero()
+        && matches!(
+            max.to_u128(),
+            Some(0xffffffff | 0xffffffffffffffff | 0xffffffffffffffffffffffff | u128::MAX)
+        )
 }
 
 /// Helper to specialize bounded int types.

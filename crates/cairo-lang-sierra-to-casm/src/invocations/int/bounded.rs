@@ -52,6 +52,9 @@ pub fn build(
         BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
             build_guarantee_verify(builder, libfunc)
         }
+        BoundedIntConcreteLibfunc::GuaranteeSplit(libfunc) => {
+            build_guarantee_split(builder, &libfunc.divisor)
+        }
         BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => build_u128_to_u32_guarantees(builder),
     }
 }
@@ -285,6 +288,35 @@ fn build_guarantee_verify(
             }],
             extra_costs: None,
         },
+    ))
+}
+
+/// Build the split of a single guarantee into smaller guarantees.
+fn build_guarantee_split(
+    builder: CompiledInvocationBuilder<'_>,
+    divisor: &BigInt,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [value] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::with_capacity(3, 0);
+    add_input_variables!(casm_builder, deref value;);
+
+    casm_build_extend! {casm_builder,
+        const divisor = divisor.clone();
+        tempvar q_shifted;
+        tempvar q;
+        tempvar r;
+
+        hint DivMod { lhs: value, rhs: divisor } into { quotient: q, remainder: r };
+        ap += 1;
+        assert q_shifted = q * divisor;
+        assert value = q_shifted + r;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[q], &[r]], None)],
+        Default::default(),
     ))
 }
 

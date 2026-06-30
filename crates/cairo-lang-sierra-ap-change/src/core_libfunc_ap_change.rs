@@ -441,6 +441,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                     + if &libfunc.range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
                 vec![ApChange::Known(ap_change)]
             }
+            BoundedIntConcreteLibfunc::GuaranteeSplit(_) => {
+                vec![ApChange::Known(3)]
+            }
             BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => {
                 vec![ApChange::Known(9)]
             }
