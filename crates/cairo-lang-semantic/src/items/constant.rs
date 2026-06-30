@@ -644,7 +644,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
 
     /// Returns true if the given function is allowed to be called in constant context.
     fn is_function_const(&self, function_id: FunctionId<'a>) -> bool {
-        if function_id == self.panic_with_felt252 {
+        if function_id == self.panic_with_felt252 || function_id == self.u256_from_felt252 {
             return true;
         }
         let db = self.db;
@@ -902,6 +902,25 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 expr.stable_ptr.untyped(),
                 SemanticDiagnosticKind::FailedConstantCalculation,
             ));
+        }
+        if expr.function == self.u256_from_felt252 {
+            let [arg] = &args[..] else {
+                return to_missing(
+                    self.diagnostics
+                        .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::ConstCycle),
+                );
+            };
+            let Some(value) = arg.long(db).to_int() else {
+                return to_missing(self.diagnostics.report(
+                    expr.stable_ptr.untyped(),
+                    SemanticDiagnosticKind::ContinueOnlyAllowedInsideALoop,
+                ));
+            };
+            return ConstValueId::from_int(
+                db,
+                expr.ty,
+                &felt252_for_downcast(value, &BigInt::ZERO),
+            );
         }
         let concrete_function =
             or_return!(self.substitute(expr.function.get_concrete(db)).map_err(to_missing));
@@ -1350,6 +1369,8 @@ pub struct ConstCalcInfo<'db> {
     false_const: ConstValueId<'db>,
     /// The function for panicking with a felt252.
     panic_with_felt252: FunctionId<'db>,
+    /// The function for converting a felt252 to u256.
+    u256_from_felt252: FunctionId<'db>,
     /// The integer `upcast` style functions.
     pub upcast_fns: UnorderedHashSet<ExternFunctionId<'db>>,
     /// The integer `downcast` style functions, mapping to whether it returns a reversed Option
@@ -1408,6 +1429,7 @@ impl<'db> ConstCalcInfo<'db> {
             false_const: ConstValue::Enum(false_variant(db), unit_const).intern(db),
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
+            u256_from_felt252: integer.function_id("u256_from_felt252", vec![]),
             upcast_fns: FromIterator::from_iter([
                 bounded_int.extern_function_id("upcast"),
                 integer.extern_function_id("u8_to_felt252"),

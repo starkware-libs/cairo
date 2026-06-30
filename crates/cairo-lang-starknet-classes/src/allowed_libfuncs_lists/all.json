@@ -217,6 +217,7 @@
         "u128_const",
         "u128_eq",
         "u128_guarantee_mul",
+        "u128_guarantees_from_felt252",
         "u128_is_zero",
         "u128_mul_guarantee_verify",
         "u128_overflowing_add",

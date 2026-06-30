@@ -1102,10 +1102,12 @@ impl U256BitOr of BitOr<u256> {
     }
 }
 
-const fn u256_from_felt252(lhs: felt252) -> u256 implicits(RangeCheck) nopanic {
-    match u128s_from_felt252(lhs) {
-        U128sFromFelt252Result::Narrow(low) => u256 { low, high: 0_u128 },
-        U128sFromFelt252Result::Wide((high, low)) => u256 { low, high },
+#[feature("bounded-int-utils")]
+fn u256_from_felt252(lhs: felt252) -> u256 implicits(RangeCheck) nopanic {
+    let (mut high, mut low) = core::internal::bounded_int::u128_guarantees_from_felt252(lhs);
+    u256 {
+        low: upcast(core::internal::bounded_int::guarantee_content(ref low)),
+        high: upcast(core::internal::bounded_int::guarantee_content(ref high)),
     }
 }
 

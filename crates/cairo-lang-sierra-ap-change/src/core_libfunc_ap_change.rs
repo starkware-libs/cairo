@@ -447,6 +447,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => {
                 vec![ApChange::Known(9)]
             }
+            BoundedIntConcreteLibfunc::U128GuaranteesFromFelt252(_) => {
+                vec![ApChange::Known(5)]
+            }
         },
         Circuit(CircuitConcreteLibfunc::TryIntoCircuitModulus(_)) => {
             vec![ApChange::Known(1), ApChange::Known(1)]
