@@ -551,9 +551,9 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::IsZero(_) => {
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }
-            BoundedIntConcreteLibfunc::WrapNonZero(_) => {
-                vec![ConstCost::steps(0).into()]
-            }
+            BoundedIntConcreteLibfunc::WrapNonZero(_) => vec![ConstCost::steps(0).into()],
+            BoundedIntConcreteLibfunc::ToGuarantee(_) => vec![ConstCost::steps(0).into()],
+            BoundedIntConcreteLibfunc::GuaranteeContent(_) => vec![ConstCost::steps(0).into()],
             BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
                 let u128_bound = BigInt::one().shl(128);
                 let range_checks = if libfunc.range.size() == u128_bound { 1 } else { 2 };

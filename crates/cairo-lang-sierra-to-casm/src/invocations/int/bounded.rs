@@ -14,7 +14,7 @@ use num_traits::{One, Zero};
 use crate::invocations::casts::{validate_ge, validate_lt};
 use crate::invocations::felt252::build_felt252_op_with_var;
 use crate::invocations::int::u128_bound;
-use crate::invocations::misc::{build_identity, build_is_zero};
+use crate::invocations::misc::{build_dup, build_identity, build_is_zero};
 use crate::invocations::{
     BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
     InvocationError, add_input_variables, get_non_fallthrough_statement_id,
@@ -47,6 +47,8 @@ pub fn build(
         }
         BoundedIntConcreteLibfunc::IsZero(_) => build_is_zero(builder),
         BoundedIntConcreteLibfunc::WrapNonZero(_) => build_identity(builder),
+        BoundedIntConcreteLibfunc::ToGuarantee(_) => build_identity(builder),
+        BoundedIntConcreteLibfunc::GuaranteeContent(_) => build_dup(builder),
         BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
             build_guarantee_verify(builder, libfunc)
         }

@@ -433,9 +433,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(ap_change), ApChange::Known(ap_change)]
             }
             BoundedIntConcreteLibfunc::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
-            BoundedIntConcreteLibfunc::WrapNonZero(_) => {
-                vec![ApChange::Known(0)]
-            }
+            BoundedIntConcreteLibfunc::WrapNonZero(_) => vec![ApChange::Known(0)],
+            BoundedIntConcreteLibfunc::ToGuarantee(_) => vec![ApChange::Known(0)],
+            BoundedIntConcreteLibfunc::GuaranteeContent(_) => vec![ApChange::Known(0)],
             BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
                 let ap_change = if libfunc.range.lower.is_zero() { 0 } else { 1 }
                     + if &libfunc.range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
