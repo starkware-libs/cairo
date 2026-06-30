@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782782858856,
+  "lastUpdate": 1782783718679,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -11292,6 +11292,70 @@ window.BENCHMARK_DATA = {
             "name": "ls_reexec/plain trivia edit",
             "value": 3056,
             "unit": "queries"
+          }
+        ]
+      }
+    ],
+    "Cairo LS-Flow Memory Benchmarks": [
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "bb80200636520ed6313bc2af144f975f999b14dd",
+          "message": "bugfix(semantic): Reject arrays of phantom elements. (#10171)",
+          "timestamp": "2026-06-29T13:18:10Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/bb80200636520ed6313bc2af144f975f999b14dd"
+        },
+        "date": 1782783718636,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit",
+            "value": 388,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit",
+            "value": 739780370,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-body-edit",
+            "value": 4467,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-body-edit",
+            "value": 740534356,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit-plain",
+            "value": 388,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit-plain",
+            "value": 739685888,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-new-item-edit",
+            "value": 29052,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-new-item-edit",
+            "value": 740995700,
+            "unit": "bytes"
           }
         ]
       }
