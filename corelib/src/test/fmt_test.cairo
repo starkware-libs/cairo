@@ -29,6 +29,16 @@ fn test_format() {
     );
 }
 
+#[test]
+fn test_writeln() {
+    let mut f: core::fmt::Formatter = Default::default();
+    // `writeln!` with no format string writes just a newline.
+    let _ = writeln!(f);
+    assert(f.buffer == "\n", 'empty writeln bad formatting');
+    let _ = writeln!(f, "hello");
+    assert(f.buffer == "\nhello\n", 'writeln bad formatting');
+}
+
 #[derive(Debug, Drop)]
 struct StructExample {
     felt_value: felt252,
