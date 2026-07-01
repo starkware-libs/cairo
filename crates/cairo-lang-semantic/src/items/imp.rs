@@ -1092,17 +1092,13 @@ fn try_get_deref_func_and_target<'db>(
     }
     .intern(db);
 
-    let data = impl_definition_data(db, concrete_impl_id.impl_def_id(db)).clone().unwrap();
-    let mut types_iter = data.item_type_asts.iter();
-    let (impl_item_type_id, _) = types_iter.next().unwrap();
-    if types_iter.next().is_some() {
-        panic!(
-            "get_impl_based_on_single_impl_type called with an impl that has more than one type"
-        );
-    }
-    let ty = db.impl_type_def_resolved_type(*impl_item_type_id).unwrap();
+    let data = impl_definition_data(db, concrete_impl_id.impl_def_id(db)).maybe_as_ref()?;
+    let Ok((impl_item_type_id, _)) = data.item_type_asts.iter().exactly_one() else {
+        return Ok(None);
+    };
+    let ty = db.impl_type_def_resolved_type(*impl_item_type_id)?;
     let substitution: GenericSubstitution<'db> = concrete_impl_id.substitution(db)?;
-    let ty: TypeId<'db> = substitution.substitute(db, ty).unwrap();
+    let ty: TypeId<'db> = substitution.substitute(db, ty)?;
 
     Ok(Some((function_id, ty)))
 }

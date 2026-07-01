@@ -248,3 +248,47 @@ struct A {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Deref impl missing its associated type reports the trait-item mismatch instead of an ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let b = MyBox {};
+    b.get();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct Inner {}
+
+#[derive(Drop)]
+struct MyBox {}
+
+// `type Target` is missing: resolving a method through the deref chain used to ICE.
+impl MyDeref of core::ops::Deref<MyBox> {
+    fn deref(self: MyBox) -> Inner {
+        Inner {}
+    }
+}
+
+//! > expected_diagnostics
+error[E0004]: Not all trait items are implemented. Missing: 'Target'.
+ --> lib.cairo:8:6
+impl MyDeref of core::ops::Deref<MyBox> {
+     ^^^^^^^
+
+error[E0002]: Method `get` could not be called on type `test::MyBox`.
+Candidate `core::array::ArrayTrait::get` inference failed with: Type mismatch: `test::MyBox` and `@core::array::Array::<?0>`.
+Candidate `core::array::SpanTrait::get` inference failed with: Type mismatch: `test::MyBox` and `core::array::Span::<?0>`.
+Candidate `core::dict::Felt252DictTrait::get` inference failed with: Type mismatch: `test::MyBox` and `core::dict::Felt252Dict::<?0>`.
+ --> lib.cairo:15:7
+    b.get();
+      ^^^
