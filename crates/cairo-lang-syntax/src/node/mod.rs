@@ -58,10 +58,11 @@ pub enum SyntaxNodeId<'db> {
 struct SyntaxNodeData<'a> {
     #[tracked]
     green: GreenId<'a>,
-    /// Number of characters from the beginning of the file to the start of the span of this
-    /// syntax subtree.
+    /// This node's span start relative to its parent's (for a root, to the file start). Keeping
+    /// it parent-relative makes `get_children` a pure function of the green tree, independent of
+    /// the node's absolute position. Recover the absolute offset via [`SyntaxNode::offset`].
     #[tracked]
-    offset: TextOffset,
+    offset_in_parent: TextOffset,
     /// Unique identifier for this node.
     #[returns(ref)]
     id: SyntaxNodeId<'a>,
@@ -77,12 +78,25 @@ impl<'db> SyntaxNodeData<'db> {
     }
 }
 
+/// The absolute offset of the node from the beginning of the file: its offset within its parent
+/// plus the (recursively memoized) absolute offset of the parent. A tracked query rather than a
+/// cache inside the node data, as a cache would go stale when a shifted-but-unchanged subtree is
+/// backdated.
+#[salsa::tracked]
+fn absolute_offset<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> TextOffset {
+    match data.parent(db) {
+        Some(parent) => absolute_offset(db, parent.data)
+            .add_width(data.offset_in_parent(db) - TextOffset::START),
+        None => data.offset_in_parent(db),
+    }
+}
+
 impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
         f.debug_struct("SyntaxNode")
             .field("green", &self.green(db).debug(db))
-            .field("offset", &self.offset(db))
+            .field("offset_in_parent", &self.offset_in_parent(db))
             .field("id", &self.id(db).debug(db))
             .finish()
     }
@@ -119,9 +133,9 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNode<'db> {
 }
 
 impl<'db> SyntaxNode<'db> {
-    /// Gets the offset of this syntax node from the beginning of the file.
+    /// Gets the absolute offset of this syntax node from the beginning of the file.
     pub fn offset(self, db: &'db dyn Database) -> TextOffset {
-        self.data.offset(db)
+        absolute_offset(db, self.data)
     }
 
     /// Gets the parent syntax node, if any.
@@ -206,11 +220,12 @@ impl<'db> SyntaxNode<'db> {
     }
 }
 
-/// Creates a new syntax node.
+/// Creates a new syntax node. `offset_in_parent` must be relative to the parent (absolute for a
+/// root) — see `SyntaxNodeData::offset_in_parent`.
 pub fn new_syntax_node<'db>(
     db: &'db dyn Database,
     green: GreenId<'db>,
-    offset: TextOffset,
+    offset_in_parent: TextOffset,
     id: SyntaxNodeId<'db>,
     kind: SyntaxKind,
 ) -> SyntaxNode<'db> {
@@ -218,7 +233,7 @@ pub fn new_syntax_node<'db>(
         SyntaxNodeId::Child { parent, .. } => (Some(parent.data), Some(parent.kind)),
         SyntaxNodeId::Root(_) => (None, None),
     };
-    let data = SyntaxNodeData::new(db, green, offset, id);
+    let data = SyntaxNodeData::new(db, green, offset_in_parent, id);
     SyntaxNode { data, parent, kind, parent_kind }
 }
 
@@ -338,7 +353,9 @@ impl<'a> SyntaxNode<'a> {
 
     /// Implementation of [SyntaxNode::get_children].
     pub(crate) fn get_children_impl(&self, db: &'a dyn Database) -> Vec<SyntaxNode<'a>> {
-        let mut offset = self.offset(db);
+        // Children offsets are relative to this node, so seeding from `TextOffset::START` (rather
+        // than `self.offset(db)`) keeps `get_children` a pure function of the green tree.
+        let mut offset = TextOffset::START;
         let self_green = self.green_node(db);
         let children = self_green.children();
         let mut res: Vec<SyntaxNode<'_>> = Vec::with_capacity(children.len());
