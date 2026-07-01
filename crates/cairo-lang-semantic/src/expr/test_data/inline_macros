@@ -575,11 +575,6 @@ error[E2200]: Plugin diagnostic: Macro expected formatter argument.
     writeln!();
             ^
 
-error[E2200]: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:12:13
-    writeln!(f);
-            ^
-
 error[E2200]: Plugin diagnostic: Formatter argument must not be a string literal.
  --> lib.cairo:15:14
     writeln!("{}", ba);
@@ -941,11 +936,6 @@ error[E1006]: Missing tokens. Expected an argument list wrapped in either parent
 error[E2200]: Plugin diagnostic: Macro `writeln` does not support this bracket type.
  --> lib.cairo:5:13
     println!["{}", ba];
-            ^
-
-error[E2200]: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:13
-    println!();
             ^
 
 error[E2200]: Plugin diagnostic: Format string argument must be a string literal.
