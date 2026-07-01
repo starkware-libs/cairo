@@ -40,6 +40,9 @@ pub enum SyntaxNodeId<'db> {
     Child {
         /// Parent of this node, either another node or if node is root, its file id.
         parent: SyntaxNode<'db>,
+        /// The kind of this node. Part of the identity, as `index` below counts occurrences
+        /// per `(parent, kind, key_fields)`.
+        kind: SyntaxKind,
         /// Chronological index among all nodes with the same (parent, kind, key_fields).
         index: usize,
         /// Which fields are used is determined by each SyntaxKind.
@@ -348,14 +351,14 @@ impl<'a> SyntaxNode<'a> {
             let key_fields: &'a [GreenId<'a>] = &green.children()[rng];
             let index = key_map
                 .iter_mut()
-                .find(|(k, _v)| *k == key_fields)
+                .find(|(k, _v)| *k == (kind, key_fields))
                 .map(|(_k, v)| {
                     let index = *v;
                     *v += 1;
                     index
                 })
                 .unwrap_or_else(|| {
-                    key_map.push((key_fields, 1));
+                    key_map.push(((kind, key_fields), 1));
                     0
                 });
             // Create the SyntaxNode view for the child.
@@ -363,7 +366,12 @@ impl<'a> SyntaxNode<'a> {
                 db,
                 *green_id,
                 offset,
-                SyntaxNodeId::Child { parent: *self, index, key_fields: Box::from(key_fields) },
+                SyntaxNodeId::Child {
+                    parent: *self,
+                    kind,
+                    index,
+                    key_fields: Box::from(key_fields),
+                },
                 kind,
             ));
 

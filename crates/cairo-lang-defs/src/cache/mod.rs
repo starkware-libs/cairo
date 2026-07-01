@@ -1721,16 +1721,12 @@ enum SyntaxNodeIdCached {
 }
 
 impl SyntaxNodeIdCached {
-    fn new<'db>(
-        ctx: &mut DefCacheSavingContext<'db>,
-        id: &SyntaxNodeId<'db>,
-        syntax_node: SyntaxNode<'db>,
-    ) -> Self {
+    fn new<'db>(ctx: &mut DefCacheSavingContext<'db>, id: &SyntaxNodeId<'db>) -> Self {
         match id {
             SyntaxNodeId::Root(file_id) => Self::Root(FileIdCached::new(*file_id, ctx)),
-            SyntaxNodeId::Child { parent, key_fields, index } => Self::Child {
+            SyntaxNodeId::Child { parent, kind, key_fields, index } => Self::Child {
                 parent: SyntaxNodeCached::new(*parent, ctx),
-                kind: syntax_node.kind(ctx.db),
+                kind: *kind,
                 key_fields: key_fields.into_iter().map(|id| GreenIdCached::new(*id, ctx)).collect(),
                 index: *index,
             },
@@ -1766,7 +1762,7 @@ impl SyntaxNodeCached {
         let green = syntax_node.green_node(db);
         GreenIdCached::new(green.clone().intern(db), ctx);
 
-        let id = SyntaxNodeIdCached::new(ctx, syntax_node.raw_id(db), syntax_node);
+        let id = SyntaxNodeIdCached::new(ctx, syntax_node.raw_id(db));
         let cached_node = SyntaxNodeCached(ctx.syntax_node_lookup.len());
         ctx.syntax_node_lookup.push(id);
         ctx.syntax_nodes.insert(syntax_node, cached_node);
@@ -1797,12 +1793,12 @@ impl SyntaxNodeCached {
                 let children = parent_node.get_children(ctx.db);
                 // For each child, create the cached syntax node ID and insert into syntax_nodes map
                 for child in children {
-                    let SyntaxNodeId::Child { index, key_fields, .. } = child.raw_id(ctx.db) else {
+                    let SyntaxNodeId::Child { kind, index, key_fields, .. } = child.raw_id(ctx.db)
+                    else {
                         panic!("Unexpected SyntaxNodeId type root when creating child");
                     };
-                    let kind = child.kind(ctx.db);
                     let Some(child_id) =
-                        SyntaxNodeIdCached::from_raw(ctx, *parent, kind, *index, key_fields)
+                        SyntaxNodeIdCached::from_raw(ctx, *parent, *kind, *index, key_fields)
                     else {
                         continue;
                     };
