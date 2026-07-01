@@ -4,6 +4,7 @@ mod ecdsa_completeness;
 mod generic_cycles;
 mod inconsistent_gas;
 mod indirect_impl_alias;
+mod writeln_no_format_string;
 mod issue2114;
 mod issue2147;
 mod issue2152;
