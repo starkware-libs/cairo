@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783042172588,
+  "lastUpdate": 1783042390886,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -12151,6 +12151,38 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/ba165bb447a29c40ea9a4a73551be6f1b3ddcf2d"
         },
         "date": 1782956197997,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3086,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3066,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "alaningtrump",
+            "username": "alaningtrump",
+            "email": "alaningtrump@outlook.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "a67cb6cc165e2ca7eb7f62b12e61e565148e4f14",
+          "message": "chore: minor improvement for comments (#10185)\n\nSigned-off-by: alaningtrump <alaningtrump@outlook.com>",
+          "timestamp": "2026-07-02T13:55:51Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/a67cb6cc165e2ca7eb7f62b12e61e565148e4f14"
+        },
+        "date": 1783042390707,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
