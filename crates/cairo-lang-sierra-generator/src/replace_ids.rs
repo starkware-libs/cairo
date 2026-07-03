@@ -108,7 +108,12 @@ impl SierraIdReplacer for DebugReplacer<'_> {
     ) -> cairo_lang_sierra::ids::ConcreteTypeId {
         match self.db.lookup_concrete_type(id) {
             SierraGeneratorTypeLongId::Phantom(ty)
-            | SierraGeneratorTypeLongId::CycleBreaker(ty) => ty.format(self.db).into(),
+            | SierraGeneratorTypeLongId::CycleBreaker(ty) => {
+                cairo_lang_sierra::ids::ConcreteTypeId {
+                    id: id.id,
+                    debug_name: Some(ty.format(self.db).into()),
+                }
+            }
             SierraGeneratorTypeLongId::Regular(long_id) => {
                 let mut long_id = long_id.as_ref().clone();
                 self.replace_generic_args(&mut long_id.generic_args);
