@@ -113,7 +113,7 @@ fn generate_code_inner<'db>(
     db: &'db dyn Database,
     with_newline: bool,
 ) -> InlinePluginResult<'db> {
-    let info = match FormattingInfo::extract(db, syntax) {
+    let info = match FormattingInfo::extract(db, syntax, with_newline) {
         Ok(info) => info,
         Err(diagnostics) => return InlinePluginResult { code: None, diagnostics },
     };
@@ -163,6 +163,7 @@ impl<'db> FormattingInfo<'db> {
     fn extract(
         db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
+        with_newline: bool,
     ) -> Result<FormattingInfo<'db>, Vec<PluginDiagnostic<'db>>> {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
             return Err(vec![not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr(db))]);
@@ -206,10 +207,23 @@ impl<'db> FormattingInfo<'db> {
             )]);
         }
         let Some(format_string_arg) = args_iter.next() else {
-            return Err(vec![error_with_inner_span(
-                arguments.lparen(db).as_syntax_node(),
-                "Macro expected format string argument.",
-            )]);
+            // `writeln!(f)` (no format string) writes just a newline; `write!(f)` still errors.
+            // There is no format string, so the arg node is unused here — reuse the formatter's.
+            return if with_newline {
+                Ok(FormattingInfo {
+                    formatter_arg_node: RewriteNode::from_ast_trimmed(&formatter_arg),
+                    format_string_arg: formatter_arg.clone(),
+                    format_string: String::new(),
+                    format_string_source: "",
+                    args: vec![],
+                    macro_ast: syntax.clone(),
+                })
+            } else {
+                Err(vec![error_with_inner_span(
+                    arguments.lparen(db).as_syntax_node(),
+                    "Macro expected format string argument.",
+                )])
+            };
         };
         let Some(format_string_expr) = try_extract_unnamed_arg(db, &format_string_arg) else {
             return Err(vec![error_with_inner_span(
