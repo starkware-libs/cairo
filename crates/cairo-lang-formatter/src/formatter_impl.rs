@@ -1048,6 +1048,16 @@ impl<'a> FormatterImpl<'a> {
         // Format each child node, inserting breaks where specified.
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
+                if child.kind(self.db) == SyntaxKind::StatementList
+                    && let Some(rbrace) = children.get(i + 1)
+                    && !self.has_only_whitespace_trivia(
+                        &ast::TerminalRBrace::from_syntax_node(self.db, *rbrace)
+                            .leading_trivia(self.db)
+                            .as_syntax_node(),
+                    )
+                {
+                    self.line_state.line_buffer.push_space();
+                }
                 continue;
             }
 

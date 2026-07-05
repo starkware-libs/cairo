@@ -17,6 +17,15 @@ use crate::{FormatterConfig, get_formatted_file};
     false
 )]
 #[test_case(
+    "test_data/cairo_files/empty_block_comment.cairo",
+    "test_data/expected_results/empty_block_comment.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
     "test_data/cairo_files/linebreaking.cairo",
     "test_data/expected_results/linebreaking.cairo",
     false,
@@ -182,8 +191,14 @@ fn format_and_compare_file(
         .merge_use_items(Some(merge_use_statements))
         .allow_duplicate_uses(Some(allow_duplicate_uses));
 
-    let formatted_file = get_formatted_file(db, &syntax_root, config);
+    let formatted_file = get_formatted_file(db, &syntax_root, config.clone());
     let expected_file =
         fs::read_to_string(expected_filename).expect("Expected file does not exist.");
     assert_eq!(formatted_file, expected_file);
+
+    // Reformatting the formatted file should be a no-op.
+    let formatted_root =
+        db.parse_virtual(&formatted_file).expect("The formatted file failed parsing.");
+    let reformatted_file = get_formatted_file(db, &formatted_root, config);
+    assert_eq!(reformatted_file, formatted_file, "Formatting is not idempotent.");
 }
