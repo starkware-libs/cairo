@@ -111,9 +111,11 @@ test_expr_diagnostics
 
 //! > module_code
 #[inline(always)]
+#[allow(extern_outside_corelib)]
 extern fn foo() nopanic;
 
 #[inline(never)]
+#[allow(extern_outside_corelib)]
 extern fn bar() nopanic;
 
 //! > function_body
@@ -125,6 +127,6 @@ error[E2142]: `inline` attribute is not allowed for extern functions.
 ^^^^^^^^^^^^^^^^^
 
 error[E2142]: `inline` attribute is not allowed for extern functions.
- --> lib.cairo:4:1
+ --> lib.cairo:5:1
 #[inline(never)]
 ^^^^^^^^^^^^^^^^

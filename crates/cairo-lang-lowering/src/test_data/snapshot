@@ -12,6 +12,7 @@ fn foo(x: felt252) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar(x: @felt252) nopanic;
 
 //! > semantic_diagnostics
@@ -208,6 +209,7 @@ foo
 struct A {
     b: usize,
 }
+#[allow(extern_outside_corelib)]
 extern fn bar(x: @usize) nopanic;
 
 //! > semantic_diagnostics

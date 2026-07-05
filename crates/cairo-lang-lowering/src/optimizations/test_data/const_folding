@@ -334,6 +334,7 @@ End:
 test_match_optimizer
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn use_box<T>(b: @Box<T>) nopanic;
 
 //! > function_code

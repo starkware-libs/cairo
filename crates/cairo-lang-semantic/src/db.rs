@@ -8,7 +8,9 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, SmolStrId, Tracked};
-use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES};
+use cairo_lang_syntax::attribute::consts::{
+    DEPRECATED_ATTR, EXTERN_OUTSIDE_CORELIB, UNUSED_IMPORTS, UNUSED_VARIABLES,
+};
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -349,7 +351,7 @@ fn crate_analyzer_plugins<'db>(
 
 #[salsa::tracked]
 fn declared_allows(db: &dyn Database, crate_id: CrateId<'_>) -> Arc<OrderedHashSet<String>> {
-    let base_lints = [DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES];
+    let base_lints = [DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES, EXTERN_OUTSIDE_CORELIB];
 
     let crate_analyzer_plugins = db.crate_analyzer_plugins(crate_id);
 

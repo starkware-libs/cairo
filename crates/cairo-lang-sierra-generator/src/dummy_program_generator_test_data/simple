@@ -27,6 +27,7 @@ fn baz(x: u32, y: u32) -> u32 {
     bar(x, y, x)
 }
 
+#[allow(extern_outside_corelib)]
 extern fn coupon_refund<T>(c: T) nopanic;
 
 //! > sierra_code

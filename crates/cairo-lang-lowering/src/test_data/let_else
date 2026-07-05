@@ -12,6 +12,7 @@ fn foo(a: MyEnum) {
     bar(x);
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar(x: felt252) nopanic;
 
 //! > function_name
@@ -66,6 +67,7 @@ fn foo(a: MyEnum) {
     bar(x + y + z);
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar(x: felt252) nopanic;
 
 //! > function_name

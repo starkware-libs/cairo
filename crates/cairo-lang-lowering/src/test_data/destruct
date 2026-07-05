@@ -295,6 +295,7 @@ pub impl MyDestruct of Destruct<()> {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn my_fn() nopanic;
 
 //! > semantic_diagnostics

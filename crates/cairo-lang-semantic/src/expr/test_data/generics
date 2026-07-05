@@ -4,7 +4,9 @@
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > function_code
+#[allow(extern_outside_corelib)]
 extern type A<S>;
+#[allow(extern_outside_corelib)]
 extern fn bar<T>(x: T) -> A<T> nopanic;
 
 fn foo(a: A<felt252>) -> A<A<felt252>> {
@@ -18,7 +20,7 @@ foo
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
- --> lib.cairo:6:28
+ --> lib.cairo:8:28
     let _bad: A<A<bool>> = res;
                            ^^^
 
@@ -165,9 +167,13 @@ fn foo() {
 trait MyTrait<T> {}
 impl MyImpl of MyTrait<felt252> {}
 fn bar<impl C: MyTrait<felt252>>() {}
+#[allow(extern_outside_corelib)]
 extern type A<impl C: MyTrait<felt252>>;
+#[allow(extern_outside_corelib)]
 extern type B<T>;
+#[allow(extern_outside_corelib)]
 extern fn hoo<impl C: MyTrait<felt252>>() nopanic;
+#[allow(extern_outside_corelib)]
 extern fn ioo<T, impl C: MyTrait<felt252>, S>() nopanic;
 
 
@@ -179,12 +185,12 @@ foo
 
 //! > expected_diagnostics
 error[E2132]: Extern types with impl generics are not supported.
- --> lib.cairo:4:15
+ --> lib.cairo:5:15
 extern type A<impl C: MyTrait<felt252>>;
               ^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2134]: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::AnotherTrait::<core::felt252>`.
- --> lib.cairo:14:11
+ --> lib.cairo:18:11
     bar::<AnotherImpl>();
           ^^^^^^^^^^^
 
@@ -283,6 +289,7 @@ fn foo() {
 //! > module_code
 struct MyStruct<S, T> {}
 
+#[allow(extern_outside_corelib)]
 extern fn bar<S, T>() -> MyStruct<S, T> nopanic;
 
 //! > function_name
@@ -290,7 +297,7 @@ foo
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
- --> lib.cairo:8:9
+ --> lib.cairo:9:9
     x = bar::<u16, u32>();
         ^^^^^^^^^^^^^^^^^
 
@@ -579,6 +586,7 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn bar<const M: felt252>() nopanic;
 
 //! > function_body
@@ -601,7 +609,9 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern type S<const N: felt252>;
+#[allow(extern_outside_corelib)]
 extern fn bar() -> S<{ 3 + 8 }> nopanic;
 const K: felt252 = 98;
 mod A {
@@ -614,12 +624,12 @@ mod A {
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "test::S::<-1>", found: "test::S::<11>".
- --> lib.cairo:10:28
+ --> lib.cairo:12:28
     let _s: S<{ 1 - 2 }> = bar();
                            ^^^^^
 
 error[E2041]: Unexpected argument type. Expected: "test::S::<107>", found: "test::S::<11>".
- --> lib.cairo:6:46
+ --> lib.cairo:8:46
         let _x: super::S<{ super::K + 9 }> = super::bar();
                                              ^^^^^^^^^^^^
 

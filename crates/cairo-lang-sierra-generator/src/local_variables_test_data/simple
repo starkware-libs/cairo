@@ -99,6 +99,7 @@ fn foo(x: felt252) -> felt252 {
 }
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn dup<T, +Copy<T>>(value: T) -> (T, T) nopanic;
 
 // Revokes ap since this function is recursive.

@@ -6,10 +6,12 @@ test_expand_plugin(expect_diagnostics: false)
 //! > cairo_code
 #[feature("deprecated-panic-with")]
 #[panic_with('1', foo_improved)]
+#[allow(extern_outside_corelib)]
 extern fn foo(a: felt252, ref b: other) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
 #[feature("deprecated-panic-with")]
 #[panic_with('2', bar_changed)]
+#[allow(extern_outside_corelib)]
 extern fn bar() -> Result<felt252, Err> nopanic;
 
 #[feature("deprecated-panic-with")]
@@ -20,6 +22,7 @@ fn non_extern(_a: some_type) -> Option<(felt252, other)> nopanic {
 
 #[feature("deprecated-panic-with")]
 #[panic_with('4', generic_panic)]
+#[allow(extern_outside_corelib)]
 extern fn generic<T>(t: T, v: felt252) -> Result<T, Err> nopanic;
 
 #[feature("deprecated-panic-with")]
@@ -31,10 +34,12 @@ fn possibly_panic() -> Result<felt252, Err> {
 //! > expanded_cairo_code
 #[feature("deprecated-panic-with")]
 #[panic_with('1', foo_improved)]
+#[allow(extern_outside_corelib)]
 extern fn foo(a: felt252, ref b: other) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
 #[feature("deprecated-panic-with")]
 #[panic_with('2', bar_changed)]
+#[allow(extern_outside_corelib)]
 extern fn bar() -> Result<felt252, Err> nopanic;
 
 #[feature("deprecated-panic-with")]
@@ -45,6 +50,7 @@ fn non_extern(_a: some_type) -> Option<(felt252, other)> nopanic {
 
 #[feature("deprecated-panic-with")]
 #[panic_with('4', generic_panic)]
+#[allow(extern_outside_corelib)]
 extern fn generic<T>(t: T, v: felt252) -> Result<T, Err> nopanic;
 
 #[feature("deprecated-panic-with")]
@@ -94,30 +100,38 @@ test_expand_plugin(expect_diagnostics: true)
 
 //! > cairo_code
 #[panic_with(123, foo_bad_err_code)]
+#[allow(extern_outside_corelib)]
 extern fn foo(a: felt252, b: other) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
 #[panic_with(missing_args)]
+#[allow(extern_outside_corelib)]
 extern fn non_extern(_a: some_type) -> Option<(felt252, other)> nopanic;
 
 #[panic_with(missing_args)]
+#[allow(extern_outside_corelib)]
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
 
 #[panic_with('2', bar_changed)]
 #[panic_with('3', bar_changed)]
+#[allow(extern_outside_corelib)]
 extern fn bar() -> Result<felt252, Err> nopanic;
 
 //! > expanded_cairo_code
 #[panic_with(123, foo_bad_err_code)]
+#[allow(extern_outside_corelib)]
 extern fn foo(a: felt252, b: other) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
 #[panic_with(missing_args)]
+#[allow(extern_outside_corelib)]
 extern fn non_extern(_a: some_type) -> Option<(felt252, other)> nopanic;
 
 #[panic_with(missing_args)]
+#[allow(extern_outside_corelib)]
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
 
 #[panic_with('2', bar_changed)]
 #[panic_with('3', bar_changed)]
+#[allow(extern_outside_corelib)]
 extern fn bar() -> Result<felt252, Err> nopanic;
 
 //! > expected_diagnostics
@@ -134,36 +148,36 @@ error: Failed to extract panic data attribute
 
 
 error: Usage of deprecated macro `panic_with` with no `#[feature("deprecated-panic-with")]` attribute. Use simple calculations instead, as these are supported in const context.
- --> test_src/lib.cairo:4:1
+ --> test_src/lib.cairo:5:1
 #[panic_with(missing_args)]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 error: Failed to extract panic data attribute
- --> test_src/lib.cairo:4:1
+ --> test_src/lib.cairo:5:1
 #[panic_with(missing_args)]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 error: Usage of deprecated macro `panic_with` with no `#[feature("deprecated-panic-with")]` attribute. Use simple calculations instead, as these are supported in const context.
- --> test_src/lib.cairo:7:1
+ --> test_src/lib.cairo:9:1
 #[panic_with(missing_args)]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 error: Currently only wrapping functions returning an Option<T> or Result<T, E>
- --> test_src/lib.cairo:8:39
+ --> test_src/lib.cairo:11:39
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
                                       ^^^^^^^^^^
 
 
 error: Usage of deprecated macro `panic_with` with no `#[feature("deprecated-panic-with")]` attribute. Use simple calculations instead, as these are supported in const context.
- --> test_src/lib.cairo:10:1
+ --> test_src/lib.cairo:13:1
 #[panic_with('2', bar_changed)]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 error: `#[panic_with]` cannot be applied multiple times to the same item.
- --> test_src/lib.cairo:11:1
+ --> test_src/lib.cairo:14:1
 #[panic_with('3', bar_changed)]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

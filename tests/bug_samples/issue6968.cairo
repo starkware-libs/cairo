@@ -1,3 +1,4 @@
+#[allow(extern_outside_corelib)]
 extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 
 fn fn1() -> (@Array<felt252>, felt252) {

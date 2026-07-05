@@ -12,6 +12,7 @@ fn foo(a: bool, b: bool) -> bool {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn extern_get_bool() -> bool nopanic;
 #[inline(never)]
 fn get_bool() -> bool {

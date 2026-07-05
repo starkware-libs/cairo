@@ -20,7 +20,9 @@ impl MyImpl of MyTrait::<A>;
 impl MyImpl2<T> of MyTrait::<T> {
     mod a;
     use b;
+    #[allow(extern_outside_corelib)]
     extern fn extern_func() nopanic;
+    #[allow(extern_outside_corelib)]
     extern type DummyType;
 
     trait DummyTrait;
@@ -48,22 +50,22 @@ impl abc of abc;
 
 //! > expected_diagnostics
 error[E1001]: Missing token '='.
- --> lib.cairo:16:20
+ --> lib.cairo:18:20
     impl DummyImpl2 of MyTrait::<T>;
                    ^
 
 error[E1001]: Missing token ';'.
- --> lib.cairo:16:23
+ --> lib.cairo:18:23
     impl DummyImpl2 of MyTrait::<T>;
                       ^
 
 error[E1013]: 'of' is a reserved identifier.
- --> lib.cairo:16:21
+ --> lib.cairo:18:21
     impl DummyImpl2 of MyTrait::<T>;
                     ^^
 
 error[E1000]: Skipped tokens. Expected: Const/Function/Impl/Type or an attribute.
- --> lib.cairo:16:24
+ --> lib.cairo:18:24
     impl DummyImpl2 of MyTrait::<T>;
                        ^^^^^^^^^^^^^
 
@@ -88,32 +90,32 @@ error[E2112]: `use` is not allowed inside impl.
     ^^^
 
 error[E2112]: `extern` is not allowed inside impl.
- --> lib.cairo:11:5
+ --> lib.cairo:12:5
     extern fn extern_func() nopanic;
     ^^^^^^
 
 error[E2112]: `extern` is not allowed inside impl.
- --> lib.cairo:12:5
+ --> lib.cairo:14:5
     extern type DummyType;
     ^^^^^^
 
 error[E2112]: `trait` is not allowed inside impl.
- --> lib.cairo:14:5
+ --> lib.cairo:16:5
     trait DummyTrait;
     ^^^^^
 
 error[E2112]: `struct` is not allowed inside impl.
- --> lib.cairo:18:5
+ --> lib.cairo:20:5
     struct DummyStruct {}
     ^^^^^^
 
 error[E2112]: `enum` is not allowed inside impl.
- --> lib.cairo:20:5
+ --> lib.cairo:22:5
     enum DummyEnum {}
     ^^^^
 
 error[E2014]: Impl item function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
- --> lib.cairo:22:5-24:5
+ --> lib.cairo:24:5-26:5
       fn my_bar() {
  _____^
 | 
@@ -121,27 +123,27 @@ error[E2014]: Impl item function `MyImpl2::my_bar` is not a member of trait `MyT
 |_____^
 
 error[E2029]: The number of parameters in the impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: 1, actual: 3.
- --> lib.cairo:26:19
+ --> lib.cairo:28:19
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2031]: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::u128`, actual: `core::felt252`.
- --> lib.cairo:26:22
+ --> lib.cairo:28:22
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                      ^^^^^^^
 
 error[E2034]: Parameter of impl function MyImpl2::param_test is incompatible with MyTrait::param_test. It should be a reference.
- --> lib.cairo:26:19
+ --> lib.cairo:28:19
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                   ^
 
 error[E2113]: The signature of function `param_test` is incompatible with trait `MyTrait`. The trait function is declared as nopanic.
- --> lib.cairo:26:18
+ --> lib.cairo:28:18
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2042]: Unexpected return type. Expected: "core::integer::u128", found: "()".
- --> lib.cairo:26:63-28:5
+ --> lib.cairo:28:63-30:5
       fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
  _______________________________________________________________^
 | 
@@ -149,32 +151,32 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u128", found: "(
 |_____^
 
 error[E2035]: Parameter of impl function MyImpl2::no_ret_ty is incompatible with MyTrait::no_ret_ty. It should not be a reference.
- --> lib.cairo:30:18
+ --> lib.cairo:32:18
     fn no_ret_ty(ref a: u128) {
                  ^^^
 
 error[E2045]: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `core::felt252`, actual: `()`.
- --> lib.cairo:30:31
+ --> lib.cairo:32:31
     fn no_ret_ty(ref a: u128) {
                               ^
 
 error[E2014]: Impl item impl `MyImpl2::DummyImpl1` is not a member of trait `MyTrait`.
- --> lib.cairo:15:5
+ --> lib.cairo:17:5
     impl DummyImpl1 = MyImpl;
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2014]: Impl item impl `MyImpl2::DummyImpl2` is not a member of trait `MyTrait`.
- --> lib.cairo:16:5
+ --> lib.cairo:18:5
     impl DummyImpl2 of MyTrait::<T>;
     ^^^^^^^^^^^^^^^
 
 error[E0006]: Impl not found.
- --> lib.cairo:16:21
+ --> lib.cairo:18:21
     impl DummyImpl2 of MyTrait::<T>;
                     ^
 
 error[E2012]: Not a trait.
- --> lib.cairo:35:13
+ --> lib.cairo:37:13
 impl abc of abc;
             ^^^
 
@@ -234,6 +236,7 @@ enum D {
     X: felt252,
     Y: NonCopy,
 }
+#[allow(extern_outside_corelib)]
 extern type E;
 
 impl ACopy of Copy<A>;
@@ -253,32 +256,32 @@ impl T2Drop of Drop<(felt252, NonCopy)>;
 
 //! > expected_diagnostics
 error[E2110]: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
- --> lib.cairo:19:1
+ --> lib.cairo:20:1
 impl CCopy of Copy<C>;
 ^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2111]: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
- --> lib.cairo:20:1
+ --> lib.cairo:21:1
 impl CDrop of Drop<C>;
 ^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2110]: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
- --> lib.cairo:21:1
+ --> lib.cairo:22:1
 impl DCopy of Copy<D>;
 ^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2111]: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
- --> lib.cairo:22:1
+ --> lib.cairo:23:1
 impl DDrop of Drop<D>;
 ^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2110]: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
- --> lib.cairo:27:1
+ --> lib.cairo:28:1
 impl T2Copy of Copy<(felt252, NonCopy)>;
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2111]: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
- --> lib.cairo:28:1
+ --> lib.cairo:29:1
 impl T2Drop of Drop<(felt252, NonCopy)>;
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -14,6 +14,7 @@ use salsa::Database;
 use super::function_with_body::get_inline_config;
 use super::functions::{FunctionDeclarationData, GenericFunctionId, InlineConfiguration};
 use super::generics::{GenericParamsData, semantic_generic_params};
+use super::report_extern_item_outside_corelib;
 use crate::corelib::get_core_generic_function_id;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -96,6 +97,8 @@ fn priv_extern_function_declaration_data<'db>(
         FunctionTitleId::Extern(extern_function_id),
         &mut environment,
     );
+
+    report_extern_item_outside_corelib(db, &mut diagnostics, &resolver, &extern_function_syntax);
 
     if signature.panicable {
         let panic_function = extract_matches!(

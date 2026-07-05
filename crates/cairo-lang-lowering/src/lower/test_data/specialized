@@ -18,6 +18,7 @@ fn bar(keep: bool, x: felt252) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(x: felt252) nopanic;
 
 //! > caller_lowering
@@ -65,6 +66,7 @@ fn bar(keep: bool, x: Box<felt252>) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(x: Box<felt252>) nopanic;
 
 //! > caller_lowering
@@ -112,6 +114,7 @@ fn bar(keep: bool, x: Array<felt252>) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(x: Array<felt252>) nopanic;
 
 //! > caller_lowering
@@ -218,6 +221,7 @@ fn bar(keep: bool, x: Array<felt252>) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(x: Array<felt252>) nopanic;
 
 //! > caller_lowering
@@ -269,6 +273,7 @@ fn bar(
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(
     ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252, z: Box<felt252>,
 ) nopanic;
@@ -334,6 +339,7 @@ fn bar(keep: bool, s: S6) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(s: S6) nopanic;
 
 //! > caller_lowering
@@ -392,6 +398,7 @@ fn bar(keep: bool, s: SA1) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(s: SA1) nopanic;
 
 //! > caller_lowering
@@ -455,6 +462,7 @@ fn bar(keep: bool, s: SA1) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(s: SA1) nopanic;
 
 //! > caller_lowering
@@ -531,6 +539,7 @@ fn bar(keep: bool, s: SB) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(s: SB) nopanic;
 
 //! > caller_lowering
@@ -588,6 +597,7 @@ fn bar(keep: bool, s: S) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(s: S) nopanic;
 
 //! > caller_lowering
@@ -650,6 +660,7 @@ fn bar(keep: bool, x: Array<Outer>) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(arr: Array<Outer>) nopanic;
 
 //! > caller_lowering
@@ -722,6 +733,7 @@ fn bar(keep: bool, e: E) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(e: E) nopanic;
 
 //! > semantic_diagnostics
@@ -781,6 +793,7 @@ fn bar(keep: bool, e: E) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(e: E) nopanic;
 
 //! > semantic_diagnostics
@@ -903,6 +916,7 @@ fn bar(keep: bool, t: (felt252, felt252, felt252)) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(t: (felt252, felt252, felt252)) nopanic;
 
 //! > semantic_diagnostics
@@ -953,6 +967,7 @@ fn bar(keep: bool, t: (felt252, felt252, felt252)) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(t: (felt252, felt252, felt252)) nopanic;
 
 //! > semantic_diagnostics
@@ -1002,6 +1017,7 @@ fn bar(keep: bool, arr: [felt252; 3]) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(arr: [felt252; 3]) nopanic;
 
 //! > semantic_diagnostics
@@ -1052,6 +1068,7 @@ fn bar(keep: bool, arr: [felt252; 3]) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(arr: [felt252; 3]) nopanic;
 
 //! > semantic_diagnostics
@@ -1107,6 +1124,7 @@ fn bar(keep: bool, s: S) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(s: S) nopanic;
 
 //! > semantic_diagnostics
@@ -1163,6 +1181,7 @@ fn bar(keep: bool, s: S) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar_ext(s: S) nopanic;
 
 //! > semantic_diagnostics

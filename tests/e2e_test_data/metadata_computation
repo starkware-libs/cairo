@@ -1883,6 +1883,7 @@ ret;
 SmallE2ETestRunnerMetadataComputation
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn coupon_buy<T>() -> T nopanic;
 impl DropCoupon of Drop<bar::Coupon>;
 
@@ -1968,6 +1969,7 @@ ret;
 SmallE2ETestRunnerMetadataComputation
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn coupon_refund<T>(c: T) nopanic;
 
 fn foo(c0: bar20000::Coupon, c1: bar20000::Coupon, c2: bar20000::Coupon) {

@@ -30,6 +30,7 @@ fn foo(x: felt252) -> felt252 {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn get_option() -> Option<u16> nopanic;
 
 //! > semantic_diagnostics
@@ -203,6 +204,7 @@ fn foo() {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn get_option() -> Option<u16> nopanic;
 
 //! > semantic_diagnostics

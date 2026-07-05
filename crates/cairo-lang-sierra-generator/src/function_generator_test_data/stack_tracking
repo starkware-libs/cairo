@@ -57,6 +57,7 @@ fn foo() -> (felt252, felt252) {
 foo
 
 //! > module_code
+#[allow(extern_outside_corelib)]
 extern fn drop<T, +Drop<T>>(value: T) nopanic;
 
 #[inline(never)]

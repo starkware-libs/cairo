@@ -335,6 +335,7 @@ test_profiling
 //! > cairo_code
 use core::num::traits::WrappingAdd;
 
+#[allow(extern_outside_corelib)]
 extern fn coupon_buy<T>() -> T nopanic;
 
 fn add_with_coupon(a: u128, b: u128) -> u128 {

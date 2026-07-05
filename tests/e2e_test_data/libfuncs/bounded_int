@@ -4,11 +4,13 @@
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
 type AddType = BoundedInt<{ MIN_I8 + MIN_I8 }, { MAX_I8 + MAX_I8 }>;
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> AddType nopanic;
 
 fn foo(a: i8, b: i8) -> AddType {
@@ -44,11 +46,13 @@ test::foo@F0([0]: i8, [1]: i8) -> (BoundedInt<-256, 254>);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
 type SubType = BoundedInt<{ MIN_I8 - MAX_I8 }, { MAX_I8 - MIN_I8 }>;
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_sub<T1, T2>(a: T1, b: T2) -> SubType nopanic;
 
 fn foo(a: i8, b: i8) -> SubType {
@@ -84,11 +88,13 @@ test::foo@F0([0]: i8, [1]: i8) -> (BoundedInt<-255, 255>);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
 type MulType = BoundedInt<{ MIN_I8 * MAX_I8 }, { MIN_I8 * MIN_I8 }>;
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_mul<T1, T2>(a: T1, b: T2) -> MulType nopanic;
 
 fn foo(a: i8, b: i8) -> MulType {
@@ -124,11 +130,13 @@ test::foo@F0([0]: i8, [1]: i8) -> (BoundedInt<-16256, 16384>);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
 type MulType = NonZero<BoundedInt<{ MIN_I8 * MAX_I8 }, { MIN_I8 * MIN_I8 }>>;
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_mul<T1, T2>(a: T1, b: T2) -> MulType nopanic;
 
 fn foo(a: NonZero<i8>, b: NonZero<i8>) -> MulType {
@@ -166,11 +174,13 @@ test::foo@F0([0]: NonZero<i8>, [1]: NonZero<i8>) -> (NonZero<BoundedInt<-16256, 
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 const MIN_I8: felt252 = -128;
 const MAX_I8: felt252 = 127;
 type AddType = BoundedInt<{ MIN_I8 + MIN_I8 }, { MAX_I8 + MAX_I8 }>;
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_add<T1, T2>(a: T1, b: T2) -> AddType nopanic;
 
 fn foo(a: i8) -> AddType {
@@ -209,9 +219,11 @@ test::foo@F0([0]: i8) -> (BoundedInt<-256, 254>);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type DivRemType = (BoundedInt<16, 85>, BoundedInt<0, 7>);
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_div_rem<T1, T2>(
     a: T1, b: NonZero<T2>,
 ) -> DivRemType implicits(RangeCheck) nopanic;
@@ -268,12 +280,14 @@ test::foo@F0([0]: RangeCheck, [1]: BoundedInt<128, 255>, [2]: NonZero<BoundedInt
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type DivRemType = (
     BoundedInt<0, 0xffffffffffffffffffffffffffffffff>,
     BoundedInt<0, 0xfffffffffffffffffffffffffffffffe>,
 );
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_div_rem<T1, T2>(
     a: T1, b: NonZero<T2>,
 ) -> DivRemType implicits(RangeCheck) nopanic;
@@ -336,9 +350,11 @@ test::foo@F0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<1, 340282366920
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type DivRemType = (BoundedInt<0, 0xf>, BoundedInt<0, 0xfffffffffffffffffffffffffffffff>);
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_div_rem<T1, T2>(
     a: T1, b: NonZero<T2>,
 ) -> DivRemType implicits(RangeCheck) nopanic;
@@ -400,9 +416,11 @@ test::foo@F0([0]: RangeCheck, [1]: u128, [2]: NonZero<BoundedInt<212676479325586
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = Result<BoundedInt<0, 0x7f>, BoundedInt<0x80, 0xff>>;
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(
     value: T,
 ) -> Res implicits(RangeCheck) nopanic;
@@ -469,9 +487,11 @@ test::foo@F0([0]: RangeCheck, [1]: u8) -> (RangeCheck, core::result::Result::<te
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = Result<BoundedInt<-0x80, -1>, BoundedInt<0, 0x7f>>;
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(
     value: T,
 ) -> Res implicits(RangeCheck) nopanic;
@@ -538,6 +558,7 @@ test::foo@F0([0]: RangeCheck, [1]: i8) -> (RangeCheck, core::result::Result::<te
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res =
     Result<
@@ -545,6 +566,7 @@ type Res =
         BoundedInt<0x100000000000000000000000000000000, 0x1ffffffffffffffffffffffffffffffff>,
     >;
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(
     value: T,
 ) -> Res implicits(RangeCheck) nopanic;
@@ -611,9 +633,11 @@ test::foo@F0([0]: RangeCheck, [1]: BoundedInt<0, 6805647338418769269267492148635
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = Result<NonZero<BoundedInt<0, 0x7f>>, NonZero<BoundedInt<0x80, 0xff>>>;
 
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_constrain<T, const BOUNDARY: felt252>(
     value: T,
 ) -> Res implicits(RangeCheck) nopanic;
@@ -684,6 +708,7 @@ SmallE2ETestRunner
 
 //! > cairo_code
 use core::zeroable::IsZeroResult;
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
 
 fn foo(value: i8) -> IsZeroResult<i8> {
@@ -739,7 +764,9 @@ SmallE2ETestRunner
 
 //! > cairo_code
 use core::zeroable::IsZeroResult;
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
 
 fn foo(
@@ -796,7 +823,9 @@ test::foo@F0([0]: BoundedInt<0, 680564733841876926926749214863536422911>) -> (co
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_wrap_non_zero<T>(value: T) -> NonZero<T> implicits() nopanic;
 
 fn foo(
@@ -834,7 +863,9 @@ test::foo@F0([0]: BoundedInt<1, 680564733841876926926749214863536422911>) -> (No
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_wrap_non_zero<T>(value: T) -> NonZero<T> implicits() nopanic;
 
 fn foo(
@@ -872,8 +903,10 @@ test::foo@F0([0]: BoundedInt<-680564733841876926926749214863536422911, -1>) -> (
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = core::internal::OptionRev<BoundedInt<1, 0xff>>;
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_trim_min<T>(value: T) -> Res nopanic;
 
 fn foo(value: u8) -> Res {
@@ -928,8 +961,10 @@ test::foo: SmallOrderedMap({Const: 300})
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = core::internal::OptionRev<BoundedInt<-0xff, -1>>;
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_trim_max<T>(value: T) -> Res nopanic;
 
 fn foo(value: BoundedInt<-0xff, 0>) -> Res {
@@ -984,8 +1019,10 @@ test::foo: SmallOrderedMap({Const: 300})
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = core::internal::OptionRev<BoundedInt<-0x7f, 0x7f>>;
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_trim_min<T>(value: T) -> Res nopanic;
 
 fn foo(value: i8) -> Res {
@@ -1041,8 +1078,10 @@ test::foo: SmallOrderedMap({Const: 400})
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 type Res = core::internal::OptionRev<BoundedInt<0, 0xfe>>;
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_trim_max<T>(value: T) -> Res nopanic;
 
 fn foo(value: u8) -> Res {
@@ -1098,7 +1137,9 @@ test::foo: SmallOrderedMap({Const: 400})
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
+#[allow(extern_outside_corelib)]
 extern fn bounded_int_guarantee_verify<const MIN: felt252, const MAX: felt252>(
     value: BoundedIntGuarantee<MIN, MAX>,
 ) implicits(RangeCheck) nopanic;
@@ -1139,9 +1180,11 @@ test::foo@F0([0]: RangeCheck, [1]: BoundedIntGuarantee<0, 4294967295>) -> (Range
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
 type U32Guarantee = BoundedIntGuarantee<0, 0xffffffff>;
 
+#[allow(extern_outside_corelib)]
 extern fn u128_to_u32_guarantees(
     value: u128,
 ) -> (U32Guarantee, U32Guarantee, U32Guarantee, U32Guarantee) nopanic;
