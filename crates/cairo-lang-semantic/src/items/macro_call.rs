@@ -22,6 +22,10 @@ use crate::items::macro_declaration::{
 use crate::items::module::ModuleSemantic;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
 
+#[cfg(test)]
+#[path = "macro_call_test.rs"]
+mod test;
+
 /// The data associated with a macro call in item context.
 #[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
 pub struct MacroCallData<'db> {
