@@ -2963,3 +2963,79 @@ warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` wit
  --> lib.cairo:6:1
 make_const!();
 ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test distinct module names for repeated item-level macro calls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    MyTrait::foo();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo();
+}
+
+macro make_impl {
+    () => {
+        impl ConflictImpl of $callsite::MyTrait {
+            fn foo() {}
+        }
+    };
+}
+
+make_impl!();
+make_impl!();
+
+//! > expected_diagnostics
+error[E2313]: Trait `test::MyTrait` has multiple implementations, in: `test::make_impl_<156>::ConflictImpl`, `test::make_impl_<171>::ConflictImpl`
+ --> lib.cairo:16:14
+    MyTrait::foo();
+             ^^^
+
+//! > ==========================================================================
+
+//! > Test item-level macro module naming for a macro invoked via a qualified path.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    MyTrait::foo();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo();
+}
+
+mod helpers {
+    pub macro make_impl {
+        () => {
+            impl ConflictImpl of $callsite::MyTrait {
+                fn foo() {}
+            }
+        };
+    }
+}
+
+helpers::make_impl!();
+helpers::make_impl!();
+
+//! > expected_diagnostics
+error[E2313]: Trait `test::MyTrait` has multiple implementations, in: `test::make_impl_<204>::ConflictImpl`, `test::make_impl_<228>::ConflictImpl`
+ --> lib.cairo:18:14
+    MyTrait::foo();
+             ^^^
