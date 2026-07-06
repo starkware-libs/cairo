@@ -333,7 +333,12 @@ impl<'db> ModuleId<'db> {
             ModuleId::CrateRoot(id) => id.long(db).name(),
             ModuleId::Submodule(id) => id.name(db),
             ModuleId::MacroCall { id, .. } => {
-                id.stable_ptr(db).lookup(db).as_syntax_node().get_text_without_trivia(db)
+                // Name the anonymous macro-call module after the invoked macro, disambiguated by
+                // the call's offset in the file.
+                let inline_macro = id.stable_ptr(db).lookup(db);
+                let macro_name = inline_macro.path(db).identifier(db);
+                let offset = inline_macro.as_syntax_node().offset(db).as_u32();
+                SmolStrId::from(db, format!("{}_{}", macro_name.long(db), offset))
             }
         }
     }
