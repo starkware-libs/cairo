@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_semantic::cache::all_crate_modules_for_cache;
+use cairo_lang_semantic::items::macro_call::crate_modules_including_generated;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -41,7 +41,7 @@ pub fn find_executable_function_ids<'db>(
             continue;
         }
 
-        for module in all_crate_modules_for_cache(db, crate_id) {
+        for module in crate_modules_including_generated(db, crate_id) {
             if let Some(free_functions) =
                 module.module_data(db).map(|data| data.free_functions(db)).to_option()
             {

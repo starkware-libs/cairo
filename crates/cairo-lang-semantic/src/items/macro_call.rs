@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CodeOrigin, FileKind, FileLongId, SmolStrId, VirtualFile,
+    CodeMapping, CodeOrigin, CrateId, FileKind, FileLongId, SmolStrId, VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
@@ -329,6 +329,26 @@ pub fn module_macro_modules<'db>(
         }
     }
     modules
+}
+
+/// Returns all modules reachable from the crate root, following both submodule and macro call
+/// edges. This ensures that submodules nested inside MacroCall modules are included.
+pub fn crate_modules_including_generated<'db>(
+    db: &'db dyn Database,
+    crate_id: CrateId<'db>,
+) -> Vec<ModuleId<'db>> {
+    let mut result = vec![ModuleId::CrateRoot(crate_id)];
+    let mut unprocessed = 0;
+    while let Some(module_id) = result.get(unprocessed).copied() {
+        unprocessed += 1;
+        if let Ok(submodule_ids) = db.module_submodules_ids(module_id) {
+            result.extend(submodule_ids.iter().map(|id| ModuleId::Submodule(*id)));
+        }
+        if let Ok(macro_calls) = db.module_macro_calls_ids(module_id) {
+            result.extend(macro_calls.iter().flat_map(|id| db.macro_call_module_id(*id)));
+        }
+    }
+    result
 }
 
 /// Trait for macro call-related semantic queries.
