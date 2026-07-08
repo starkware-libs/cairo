@@ -75,7 +75,7 @@ fn generate_kinds_code() -> rust::Tokens {
     let keyword_terminal_kinds =
         name_tokens(&spec, |k| matches!(k, NodeKind::Terminal { is_keyword, .. } if *is_keyword));
     let missing_kinds = spec.iter().filter_map(|n| match &n.kind {
-        NodeKind::Enum { missing_variant, .. } => missing_variant.as_ref().map(|v| v.kind.as_str()),
+        NodeKind::Missing => Some(n.name.as_str()),
         NodeKind::Token { .. } if n.name == "TokenMissing" => Some(n.name.as_str()),
         _ => None,
     });
@@ -166,7 +166,10 @@ fn generate_key_fields_code() -> rust::Tokens {
                     SyntaxKind::$name => $key_fields_range,
                 });
             }
-            NodeKind::List { .. } | NodeKind::SeparatedList { .. } | NodeKind::Token { .. } => {
+            NodeKind::List { .. }
+            | NodeKind::SeparatedList { .. }
+            | NodeKind::Token { .. }
+            | NodeKind::Missing => {
                 arms.extend(quote! {
                     SyntaxKind::$name => 0..0,
                 });
@@ -232,6 +235,7 @@ fn generate_ast_code() -> rust::Tokens {
                 gen_enum_code(name, variants_list, missing_variant)
             }
             NodeKind::Struct { members } => gen_struct_code(name, members, false),
+            NodeKind::Missing => gen_struct_code(name, vec![], false),
             NodeKind::Terminal { members, .. } => gen_struct_code(name, members, true),
             NodeKind::Token { .. } => gen_token_code(name),
             NodeKind::List { element_type } => gen_list_code(name, element_type),
@@ -408,11 +412,7 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
     }
 }
 
-fn gen_enum_code(
-    name: String,
-    variants: Vec<Variant>,
-    missing_variant: Option<Variant>,
-) -> rust::Tokens {
+fn gen_enum_code(name: String, variants: Vec<Variant>, missing_variant: bool) -> rust::Tokens {
     let ptr_name = format!("{name}Ptr");
     let green_name = format!("{name}Green");
     let mut enum_body = quote! {};
@@ -450,13 +450,15 @@ fn gen_enum_code(
             }
         });
     }
-    let missing_body = match missing_variant {
-        Some(missing) => quote! {
-            $(&green_name)($(missing.kind)::missing(db).0)
-        },
-        None => quote! {
+    let missing_body = if missing_variant {
+        let missing_kind = format!("{name}Missing");
+        quote! {
+            $(&green_name)($(missing_kind)::missing(db).0)
+        }
+    } else {
+        quote! {
             panic!("No missing variant.");
-        },
+        }
     };
     quote! {
         #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]

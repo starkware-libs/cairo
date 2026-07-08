@@ -2015,8 +2015,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     }
                 }
             }
-            // A diagnostic for the missing segment should have been reported from the syntax phase.
-            syntax::node::ast::PathSegment::Missing(_) => return Err(skip_diagnostic()),
         })
     }
     /// Resolves the first segment of a generic path.
@@ -2112,8 +2110,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     }
                 }
             }
-            // A diagnostic for the missing segment should have been reported from the syntax phase.
-            syntax::node::ast::PathSegment::Missing(_) => return Err(skip_diagnostic()),
         })
     }
 
@@ -2132,7 +2128,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
         let db = self.resolver.db;
         let mut curr = None;
         for segment in self.segments.peeking_take_while(|segment| match segment {
-            ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
+            ast::PathSegment::WithGenericArgs(_) => false,
             ast::PathSegment::Simple(simple) => simple.identifier(db).long(db) == SUPER_KW,
         }) {
             let module_id = match curr {

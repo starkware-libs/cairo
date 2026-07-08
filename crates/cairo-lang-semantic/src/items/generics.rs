@@ -401,7 +401,6 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
                 })
                 .collect::<Vec<_>>())
         }
-        ast::PathSegment::Missing(_) => Ok(Vec::new()),
     }
 }
 

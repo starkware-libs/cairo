@@ -31,13 +31,3 @@ error[E1003]: Missing tokens. Expected a path segment.
  --> dummy_file.cairo:2:16
     let x = a::::c;
                ^
-
-error[E1001]: Missing token ';'.
- --> dummy_file.cairo:2:16
-    let x = a::::c;
-               ^
-
-error[E1000]: Skipped tokens. Expected: statement.
- --> dummy_file.cairo:2:16
-    let x = a::::c;
-               ^^

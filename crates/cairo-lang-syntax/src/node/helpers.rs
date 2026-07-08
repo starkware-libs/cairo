@@ -126,12 +126,11 @@ impl<'a> PathSegmentEx<'a> for ast::PathSegment<'a> {
         match self {
             ast::PathSegment::Simple(segment) => segment.ident(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.ident(db),
-            ast::PathSegment::Missing(missing_segment) => missing_segment.ident(db),
         }
     }
     fn generic_args(&self, db: &'a dyn Database) -> Option<Vec<ast::GenericArg<'a>>> {
         match self {
-            ast::PathSegment::Simple(_) | ast::PathSegment::Missing(_) => None,
+            ast::PathSegment::Simple(_) => None,
             ast::PathSegment::WithGenericArgs(segment) => {
                 Some(segment.generic_args(db).generic_args(db).elements_vec(db))
             }
@@ -144,7 +143,6 @@ impl<'a> GetIdentifier<'a> for ast::PathSegment<'a> {
         match self {
             ast::PathSegment::Simple(segment) => segment.identifier(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.identifier(db),
-            ast::PathSegment::Missing(missing_segment) => missing_segment.identifier(db),
         }
     }
 }
@@ -158,16 +156,6 @@ impl<'a> GetIdentifier<'a> for ast::PathSegmentSimple<'a> {
     }
 }
 impl<'a> GetIdentifier<'a> for ast::PathSegmentWithGenericArgs<'a> {
-    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
-        let green_node = self.as_syntax_node().green_node(db);
-        let GreenNodeDetails::Node { children, .. } = &green_node.details else {
-            panic!("Unexpected token");
-        };
-        TerminalIdentifierGreen(children[0]).identifier(db)
-    }
-}
-
-impl<'a> GetIdentifier<'a> for ast::PathSegmentMissing<'a> {
     fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         let green_node = self.as_syntax_node().green_node(db);
         let GreenNodeDetails::Node { children, .. } = &green_node.details else {
