@@ -14,6 +14,7 @@ use self::ids::{GreenId, SyntaxStablePtrId};
 use self::kind::SyntaxKind;
 use crate::node::db::SyntaxGroup;
 use crate::node::iter::{Preorder, WalkEvent};
+use crate::node::kind::LexemeKind;
 
 pub mod ast;
 pub mod db;
@@ -651,7 +652,7 @@ pub trait Token<'a>: TypedSyntaxNode<'a> {
 }
 
 pub trait Terminal<'a>: TypedSyntaxNode<'a> {
-    const KIND: SyntaxKind;
+    const KIND: LexemeKind;
     type TokenType: Token<'a>;
     fn new_green(
         db: &'a dyn Database,

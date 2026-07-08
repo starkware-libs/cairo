@@ -20,7 +20,7 @@ pub enum NodeKind {
     Terminal { is_keyword: bool, members: Vec<Member> },
     List { element_type: String },
     SeparatedList { element_type: String, separator_type: String },
-    Token { is_keyword: bool },
+    Token { is_trivia: bool },
 }
 #[derive(Clone)]
 pub struct Member {
@@ -157,20 +157,20 @@ impl NodesAggregator {
         self
     }
 
-    /// Adds a non-keyword node for a token node (similar to an empty struct).
+    /// Adds a terminal-backed token node (similar to an empty struct).
     pub fn add_token(mut self, pure_name: &str) -> Self {
         self.nodes.push(Node {
             name: format!("Token{pure_name}"),
-            kind: NodeKind::Token { is_keyword: false },
+            kind: NodeKind::Token { is_trivia: false },
         });
         self
     }
 
-    /// Adds a keyword node for a token node (similar to an empty struct).
-    pub fn add_keyword_token(mut self, pure_name: &str) -> Self {
+    /// Adds a trivia token node - a token with no backing terminal (whitespace, comments, ...).
+    pub fn add_trivia_token(mut self, pure_name: &str) -> Self {
         self.nodes.push(Node {
             name: format!("Token{pure_name}"),
-            kind: NodeKind::Token { is_keyword: true },
+            kind: NodeKind::Token { is_trivia: true },
         });
         self
     }
@@ -188,7 +188,7 @@ impl NodesAggregator {
     /// Adds a keyword token node and a keyword terminal node of the relevant names. e.g. for
     /// pure_name="Identifier" it creates TokenIdentifier and TerminalIdentifier.
     pub fn add_keyword_token_and_terminal(self, pure_name: &str) -> Self {
-        self.add_keyword_token(pure_name).add_terminal(pure_name, true)
+        self.add_token(pure_name).add_terminal(pure_name, true)
     }
 
     /// Adds a non-keyword token node and a non-keyword terminal node of the relevant names. e.g.

@@ -116,7 +116,7 @@ get_diagnostics
 type T = Foo<-x>;
 
 //! > expected_diagnostics
-error[E1001]: Missing token TerminalLiteralNumber.
+error[E1001]: Missing token LiteralNumber.
  --> dummy_file.cairo:1:15
 type T = Foo<-x>;
               ^

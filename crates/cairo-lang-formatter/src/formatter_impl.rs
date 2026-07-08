@@ -16,7 +16,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::smol_str::SmolStr;
 use itertools::{Itertools, chain};
 use salsa::Database;
-use syntax::node::kind::SyntaxKind;
+use syntax::node::kind::{LexemeKind, SyntaxKind, TriviaKind};
 
 use crate::FormatterConfig;
 
@@ -1155,8 +1155,9 @@ impl<'a> FormatterImpl<'a> {
             return;
         }
         // Split list into `use` path parts and TokenComma.
-        let (mut sorted_elements, commas): (Vec<_>, Vec<_>) =
-            children.drain(..).partition(|node| node.kind(self.db) != SyntaxKind::TerminalComma);
+        let (mut sorted_elements, commas): (Vec<_>, Vec<_>) = children
+            .drain(..)
+            .partition(|node| node.kind(self.db) != SyntaxKind::Terminal(LexemeKind::Comma));
 
         // Sort the filtered nodes by comparing their `UsePath`.
         sorted_elements.sort_by(|a_node, b_node| {
@@ -1272,7 +1273,7 @@ impl<'a> FormatterImpl<'a> {
             self.line_state.line_buffer.push_space();
         }
         self.line_state.prevent_next_space = syntax_node.force_no_space_after(self.db);
-        if syntax_node.kind(self.db) != SyntaxKind::TokenWhitespace {
+        if syntax_node.kind(self.db) != SyntaxKind::TriviaToken(TriviaKind::Whitespace) {
             self.is_current_line_whitespaces = false;
         }
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
