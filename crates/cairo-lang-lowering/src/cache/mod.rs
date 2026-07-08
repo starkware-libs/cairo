@@ -22,13 +22,14 @@ use cairo_lang_semantic::cache::{
     ConcreteEnumCached, ConcreteVariantCached, ConstValueIdCached, ExprVarMemberPathCached,
     ImplIdCached, MatchArmSelectorCached, SEMANTIC_CACHE_SECTION, SemanticCacheLoadingData,
     SemanticCacheSavingContext, SemanticCacheSavingData, SemanticConcreteFunctionWithBodyCached,
-    SemanticFunctionIdCached, TypeIdCached, all_crate_modules_for_cache, generate_crate_def_cache,
+    SemanticFunctionIdCached, TypeIdCached, generate_crate_def_cache,
     generate_crate_semantic_cache,
 };
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::macro_call::crate_modules_including_generated;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -113,7 +114,7 @@ pub fn generate_crate_cache<'db>(
     crate_id: CrateId<'db>,
 ) -> Result<Vec<u8>, CrateCacheError> {
     let mut function_ids = Vec::new();
-    for module_id in all_crate_modules_for_cache(db, crate_id) {
+    for module_id in crate_modules_including_generated(db, crate_id) {
         for free_func in db.module_free_functions_ids(module_id)?.iter() {
             function_ids.push(FunctionWithBodyId::Free(*free_func));
         }
