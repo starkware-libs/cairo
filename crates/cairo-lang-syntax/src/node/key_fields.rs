@@ -7,6 +7,7 @@ use super::kind::SyntaxKind;
 pub fn key_fields_range(kind: SyntaxKind) -> core::ops::Range<usize> {
     match kind {
         SyntaxKind::Trivia => 0..0,
+        SyntaxKind::ExprMissing => 0..0,
         SyntaxKind::ExprList => 0..0,
         SyntaxKind::Arg => 0..0,
         SyntaxKind::ArgClauseNamed => 0..0,
@@ -14,13 +15,11 @@ pub fn key_fields_range(kind: SyntaxKind) -> core::ops::Range<usize> {
         SyntaxKind::ArgClauseFieldInitShorthand => 0..0,
         SyntaxKind::ExprFieldInitShorthand => 0..0,
         SyntaxKind::ArgList => 0..0,
-        SyntaxKind::ExprMissing => 0..0,
         SyntaxKind::PathSegmentSimple => 0..0,
         SyntaxKind::OptionTerminalColonColonEmpty => 0..0,
         SyntaxKind::PathSegmentWithGenericArgs => 0..0,
         SyntaxKind::ExprPath => 0..0,
         SyntaxKind::OptionTerminalDollarEmpty => 0..0,
-        SyntaxKind::PathSegmentMissing => 0..0,
         SyntaxKind::ExprPathInner => 0..0,
         SyntaxKind::ExprParenthesized => 0..0,
         SyntaxKind::ExprUnary => 0..0,
@@ -77,8 +76,8 @@ pub fn key_fields_range(kind: SyntaxKind) -> core::ops::Range<usize> {
         SyntaxKind::OptionTypeClauseEmpty => 0..0,
         SyntaxKind::ReturnTypeClause => 0..0,
         SyntaxKind::OptionReturnTypeClauseEmpty => 0..0,
-        SyntaxKind::StatementList => 0..0,
         SyntaxKind::StatementMissing => 0..0,
+        SyntaxKind::StatementList => 0..0,
         // Key fields: pattern.
         SyntaxKind::StatementLet => 2..3,
         SyntaxKind::LetElseClause => 0..0,
@@ -107,8 +106,8 @@ pub fn key_fields_range(kind: SyntaxKind) -> core::ops::Range<usize> {
         // Key fields: name.
         SyntaxKind::Variant => 1..2,
         SyntaxKind::VariantList => 0..0,
-        SyntaxKind::ModuleItemList => 0..0,
         SyntaxKind::ModuleItemMissing => 0..0,
+        SyntaxKind::ModuleItemList => 0..0,
         SyntaxKind::Attribute => 0..0,
         SyntaxKind::AttributeList => 0..0,
         SyntaxKind::VisibilityDefault => 0..0,

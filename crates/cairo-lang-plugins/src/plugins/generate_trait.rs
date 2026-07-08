@@ -142,16 +142,6 @@ fn generate_trait_for_impl<'db>(
             builder.add_node(segment.ident(db).as_syntax_node());
             matches!(impl_generic_params, ast::OptionWrappedGenericParamList::Empty(_))
         }
-        ast::PathSegment::Missing(_) => {
-            return PluginResult {
-                code: None,
-                diagnostics: vec![PluginDiagnostic::error(
-                    trait_ast.stable_ptr(db),
-                    "Generated trait cannot have a missing path segment.".to_string(),
-                )],
-                remove_original_item: false,
-            };
-        }
     };
     if !generic_params_match {
         diagnostics.push(PluginDiagnostic::error(

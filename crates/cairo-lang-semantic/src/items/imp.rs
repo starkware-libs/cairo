@@ -618,7 +618,6 @@ fn impl_def_shallow_trait_generic_args_helper<'db>(
                 })
                 .collect::<Vec<_>>())
         }
-        ast::PathSegment::Missing(_) => Ok(Vec::new()),
     }
 }
 
@@ -742,7 +741,6 @@ fn impl_alias_trait_generic_args_helper<'db>(
                 })
                 .collect::<Vec<_>>())
         }
-        ast::PathSegment::Missing(_) => Ok(shallow_args),
     }
 }
 

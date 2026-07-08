@@ -276,6 +276,81 @@ impl<'db> Trivium<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct ExprMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> ExprMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> ExprMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        ExprMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ExprMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> ExprMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct ExprMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> ExprMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for ExprMissingPtr<'db> {
+    type SyntaxNode = ExprMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> ExprMissing<'db> {
+        ExprMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<ExprMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: ExprMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct ExprMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for ExprMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMissing);
+    type StablePtr = ExprMissingPtr<'db>;
+    type Green = ExprMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        ExprMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ExprMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprMissing { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        ExprMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum Expr<'db> {
     Path(ExprPath<'db>),
     Literal(TerminalLiteralNumber<'db>),
@@ -1533,85 +1608,9 @@ impl<'db> TypedSyntaxNode<'db> for ArgList<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct ExprMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> ExprMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> ExprMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        ExprMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ExprMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> ExprMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct ExprMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> ExprMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for ExprMissingPtr<'db> {
-    type SyntaxNode = ExprMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> ExprMissing<'db> {
-        ExprMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<ExprMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: ExprMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ExprMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for ExprMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMissing);
-    type StablePtr = ExprMissingPtr<'db>;
-    type Green = ExprMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        ExprMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ExprMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ExprMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ExprMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::ExprMissing { Some(Self::from_syntax_node(db, node)) } else { None }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        ExprMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum PathSegment<'db> {
     Simple(PathSegmentSimple<'db>),
     WithGenericArgs(PathSegmentWithGenericArgs<'db>),
-    Missing(PathSegmentMissing<'db>),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
 pub struct PathSegmentPtr<'db>(pub SyntaxStablePtrId<'db>);
@@ -1639,11 +1638,6 @@ impl<'db> From<PathSegmentWithGenericArgsPtr<'db>> for PathSegmentPtr<'db> {
         Self(value.0)
     }
 }
-impl<'db> From<PathSegmentMissingPtr<'db>> for PathSegmentPtr<'db> {
-    fn from(value: PathSegmentMissingPtr<'db>) -> Self {
-        Self(value.0)
-    }
-}
 impl<'db> From<PathSegmentSimpleGreen<'db>> for PathSegmentGreen<'db> {
     fn from(value: PathSegmentSimpleGreen<'db>) -> Self {
         Self(value.0)
@@ -1654,11 +1648,6 @@ impl<'db> From<PathSegmentWithGenericArgsGreen<'db>> for PathSegmentGreen<'db> {
         Self(value.0)
     }
 }
-impl<'db> From<PathSegmentMissingGreen<'db>> for PathSegmentGreen<'db> {
-    fn from(value: PathSegmentMissingGreen<'db>) -> Self {
-        Self(value.0)
-    }
-}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct PathSegmentGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
@@ -1666,7 +1655,7 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
     type StablePtr = PathSegmentPtr<'db>;
     type Green = PathSegmentGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
-        PathSegmentGreen(PathSegmentMissing::missing(db).0)
+        panic!("No missing variant.");
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         let kind = node.kind(db);
@@ -1676,9 +1665,6 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
             }
             SyntaxKind::PathSegmentWithGenericArgs => {
                 PathSegment::WithGenericArgs(PathSegmentWithGenericArgs::from_syntax_node(db, node))
-            }
-            SyntaxKind::PathSegmentMissing => {
-                PathSegment::Missing(PathSegmentMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "PathSegment"),
         }
@@ -1692,9 +1678,6 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
             SyntaxKind::PathSegmentWithGenericArgs => Some(PathSegment::WithGenericArgs(
                 PathSegmentWithGenericArgs::from_syntax_node(db, node),
             )),
-            SyntaxKind::PathSegmentMissing => {
-                Some(PathSegment::Missing(PathSegmentMissing::from_syntax_node(db, node)))
-            }
             _ => None,
         }
     }
@@ -1702,7 +1685,6 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
         match self {
             PathSegment::Simple(x) => x.as_syntax_node(),
             PathSegment::WithGenericArgs(x) => x.as_syntax_node(),
-            PathSegment::Missing(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
@@ -1712,12 +1694,7 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
 impl<'db> PathSegment<'db> {
     /// Checks if a kind of a variant of [PathSegment].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(
-            kind,
-            SyntaxKind::PathSegmentSimple
-                | SyntaxKind::PathSegmentWithGenericArgs
-                | SyntaxKind::PathSegmentMissing
-        )
+        matches!(kind, SyntaxKind::PathSegmentSimple | SyntaxKind::PathSegmentWithGenericArgs)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -2340,93 +2317,6 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalDollarEmpty<'db> {
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
         OptionTerminalDollarEmptyPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct PathSegmentMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> PathSegmentMissing<'db> {
-    pub const INDEX_IDENT: usize = 0;
-    pub fn new_green(
-        db: &'db dyn Database,
-        ident: TerminalIdentifierGreen<'db>,
-    ) -> PathSegmentMissingGreen<'db> {
-        let children = [ident.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        PathSegmentMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::PathSegmentMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> PathSegmentMissing<'db> {
-    pub fn ident(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct PathSegmentMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> PathSegmentMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for PathSegmentMissingPtr<'db> {
-    type SyntaxNode = PathSegmentMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> PathSegmentMissing<'db> {
-        PathSegmentMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<PathSegmentMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: PathSegmentMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct PathSegmentMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for PathSegmentMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentMissing);
-    type StablePtr = PathSegmentMissingPtr<'db>;
-    type Green = PathSegmentMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        PathSegmentMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::PathSegmentMissing,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalIdentifier::missing(db).0].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::PathSegmentMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::PathSegmentMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::PathSegmentMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        PathSegmentMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -7328,6 +7218,85 @@ impl<'db> TypedSyntaxNode<'db> for ArgListBracketed<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct WrappedArgListMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> WrappedArgListMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> WrappedArgListMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        WrappedArgListMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::WrappedArgListMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> WrappedArgListMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct WrappedArgListMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> WrappedArgListMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for WrappedArgListMissingPtr<'db> {
+    type SyntaxNode = WrappedArgListMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> WrappedArgListMissing<'db> {
+        WrappedArgListMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<WrappedArgListMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: WrappedArgListMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct WrappedArgListMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for WrappedArgListMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedArgListMissing);
+    type StablePtr = WrappedArgListMissingPtr<'db>;
+    type Green = WrappedArgListMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        WrappedArgListMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::WrappedArgListMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::WrappedArgListMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::WrappedArgListMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::WrappedArgListMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        WrappedArgListMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum WrappedArgList<'db> {
     BracketedArgList(ArgListBracketed<'db>),
     ParenthesizedArgList(ArgListParenthesized<'db>),
@@ -7459,85 +7428,6 @@ impl<'db> WrappedArgList<'db> {
                 | SyntaxKind::ArgListBraced
                 | SyntaxKind::WrappedArgListMissing
         )
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct WrappedArgListMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> WrappedArgListMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> WrappedArgListMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        WrappedArgListMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::WrappedArgListMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> WrappedArgListMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct WrappedArgListMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> WrappedArgListMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for WrappedArgListMissingPtr<'db> {
-    type SyntaxNode = WrappedArgListMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> WrappedArgListMissing<'db> {
-        WrappedArgListMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<WrappedArgListMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: WrappedArgListMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct WrappedArgListMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for WrappedArgListMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedArgListMissing);
-    type StablePtr = WrappedArgListMissingPtr<'db>;
-    type Green = WrappedArgListMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        WrappedArgListMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::WrappedArgListMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::WrappedArgListMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::WrappedArgListMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::WrappedArgListMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        WrappedArgListMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -9643,6 +9533,85 @@ impl<'db> TypedSyntaxNode<'db> for OptionReturnTypeClauseEmpty<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct StatementMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> StatementMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> StatementMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        StatementMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::StatementMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> StatementMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct StatementMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> StatementMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for StatementMissingPtr<'db> {
+    type SyntaxNode = StatementMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> StatementMissing<'db> {
+        StatementMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<StatementMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: StatementMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct StatementMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for StatementMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementMissing);
+    type StablePtr = StatementMissingPtr<'db>;
+    type Green = StatementMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        StatementMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::StatementMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::StatementMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::StatementMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StatementMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        StatementMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum Statement<'db> {
     Let(StatementLet<'db>),
     Expr(StatementExpr<'db>),
@@ -9900,85 +9869,6 @@ impl<'db> TypedSyntaxNode<'db> for StatementList<'db> {
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
         StatementListPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct StatementMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> StatementMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> StatementMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        StatementMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::StatementMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> StatementMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct StatementMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> StatementMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for StatementMissingPtr<'db> {
-    type SyntaxNode = StatementMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> StatementMissing<'db> {
-        StatementMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<StatementMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: StatementMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct StatementMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for StatementMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementMissing);
-    type StablePtr = StatementMissingPtr<'db>;
-    type Green = StatementMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        StatementMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::StatementMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::StatementMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::StatementMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::StatementMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        StatementMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -12931,6 +12821,85 @@ impl<'db> TypedSyntaxNode<'db> for VariantList<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct ModuleItemMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> ModuleItemMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> ModuleItemMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        ModuleItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ModuleItemMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> ModuleItemMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct ModuleItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> ModuleItemMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for ModuleItemMissingPtr<'db> {
+    type SyntaxNode = ModuleItemMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> ModuleItemMissing<'db> {
+        ModuleItemMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<ModuleItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: ModuleItemMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct ModuleItemMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for ModuleItemMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModuleItemMissing);
+    type StablePtr = ModuleItemMissingPtr<'db>;
+    type Green = ModuleItemMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        ModuleItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ModuleItemMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ModuleItemMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ModuleItemMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ModuleItemMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        ModuleItemMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum ModuleItem<'db> {
     Constant(ItemConstant<'db>),
     Module(ItemModule<'db>),
@@ -13345,85 +13314,6 @@ impl<'db> TypedSyntaxNode<'db> for ModuleItemList<'db> {
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
         ModuleItemListPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct ModuleItemMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> ModuleItemMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> ModuleItemMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        ModuleItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ModuleItemMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> ModuleItemMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct ModuleItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> ModuleItemMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for ModuleItemMissingPtr<'db> {
-    type SyntaxNode = ModuleItemMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> ModuleItemMissing<'db> {
-        ModuleItemMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<ModuleItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: ModuleItemMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ModuleItemMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for ModuleItemMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModuleItemMissing);
-    type StablePtr = ModuleItemMissingPtr<'db>;
-    type Green = ModuleItemMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        ModuleItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ModuleItemMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ModuleItemMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ModuleItemMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::ModuleItemMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        ModuleItemMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -15484,6 +15374,85 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemList<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct TraitItemMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> TraitItemMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> TraitItemMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        TraitItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::TraitItemMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> TraitItemMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct TraitItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> TraitItemMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for TraitItemMissingPtr<'db> {
+    type SyntaxNode = TraitItemMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> TraitItemMissing<'db> {
+        TraitItemMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<TraitItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: TraitItemMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct TraitItemMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for TraitItemMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemMissing);
+    type StablePtr = TraitItemMissingPtr<'db>;
+    type Green = TraitItemMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        TraitItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::TraitItemMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TraitItemMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TraitItemMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TraitItemMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        TraitItemMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum TraitItem<'db> {
     Function(TraitItemFunction<'db>),
     Type(TraitItemType<'db>),
@@ -15628,85 +15597,6 @@ impl<'db> TraitItem<'db> {
                 | SyntaxKind::TraitItemImpl
                 | SyntaxKind::TraitItemMissing
         )
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct TraitItemMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> TraitItemMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> TraitItemMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        TraitItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::TraitItemMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> TraitItemMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct TraitItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> TraitItemMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for TraitItemMissingPtr<'db> {
-    type SyntaxNode = TraitItemMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> TraitItemMissing<'db> {
-        TraitItemMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<TraitItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: TraitItemMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct TraitItemMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for TraitItemMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemMissing);
-    type StablePtr = TraitItemMissingPtr<'db>;
-    type Green = TraitItemMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        TraitItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::TraitItemMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::TraitItemMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::TraitItemMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::TraitItemMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        TraitItemMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -16758,6 +16648,85 @@ impl<'db> TypedSyntaxNode<'db> for ImplItemList<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct ImplItemMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> ImplItemMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> ImplItemMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        ImplItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ImplItemMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> ImplItemMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct ImplItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> ImplItemMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for ImplItemMissingPtr<'db> {
+    type SyntaxNode = ImplItemMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> ImplItemMissing<'db> {
+        ImplItemMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<ImplItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: ImplItemMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct ImplItemMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for ImplItemMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplItemMissing);
+    type StablePtr = ImplItemMissingPtr<'db>;
+    type Green = ImplItemMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        ImplItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ImplItemMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ImplItemMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ImplItemMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ImplItemMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        ImplItemMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum ImplItem<'db> {
     Function(FunctionWithBody<'db>),
     Type(ItemTypeAlias<'db>),
@@ -17019,85 +16988,6 @@ impl<'db> ImplItem<'db> {
                 | SyntaxKind::ItemEnum
                 | SyntaxKind::ImplItemMissing
         )
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct ImplItemMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> ImplItemMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> ImplItemMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        ImplItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ImplItemMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> ImplItemMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct ImplItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> ImplItemMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for ImplItemMissingPtr<'db> {
-    type SyntaxNode = ImplItemMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> ImplItemMissing<'db> {
-        ImplItemMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<ImplItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: ImplItemMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ImplItemMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for ImplItemMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplItemMissing);
-    type StablePtr = ImplItemMissingPtr<'db>;
-    type Green = ImplItemMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        ImplItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ImplItemMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ImplItemMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ImplItemMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::ImplItemMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        ImplItemMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -21140,6 +21030,85 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeParam<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct TokenTreeMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> TokenTreeMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> TokenTreeMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        TokenTreeMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::TokenTreeMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> TokenTreeMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct TokenTreeMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> TokenTreeMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for TokenTreeMissingPtr<'db> {
+    type SyntaxNode = TokenTreeMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> TokenTreeMissing<'db> {
+        TokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<TokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: TokenTreeMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct TokenTreeMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeMissing);
+    type StablePtr = TokenTreeMissingPtr<'db>;
+    type Green = TokenTreeMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        TokenTreeMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::TokenTreeMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TokenTreeMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TokenTreeMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TokenTreeMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        TokenTreeMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum TokenTree<'db> {
     Token(TokenTreeLeaf<'db>),
     Subtree(TokenTreeNode<'db>),
@@ -21291,50 +21260,50 @@ impl<'db> TokenTree<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct TokenTreeMissing<'db> {
+pub struct WrappedTokenTreeMissing<'db> {
     node: SyntaxNode<'db>,
 }
-impl<'db> TokenTreeMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> TokenTreeMissingGreen<'db> {
+impl<'db> WrappedTokenTreeMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> WrappedTokenTreeMissingGreen<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        TokenTreeMissingGreen(
+        WrappedTokenTreeMissingGreen(
             GreenNode {
-                kind: SyntaxKind::TokenTreeMissing,
+                kind: SyntaxKind::WrappedTokenTreeMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
         )
     }
 }
-impl<'db> TokenTreeMissing<'db> {}
+impl<'db> WrappedTokenTreeMissing<'db> {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct TokenTreeMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> TokenTreeMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for TokenTreeMissingPtr<'db> {
-    type SyntaxNode = TokenTreeMissing<'db>;
+pub struct WrappedTokenTreeMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> WrappedTokenTreeMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for WrappedTokenTreeMissingPtr<'db> {
+    type SyntaxNode = WrappedTokenTreeMissing<'db>;
     fn untyped(self) -> SyntaxStablePtrId<'db> {
         self.0
     }
-    fn lookup(&self, db: &'db dyn Database) -> TokenTreeMissing<'db> {
-        TokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
+    fn lookup(&self, db: &'db dyn Database) -> WrappedTokenTreeMissing<'db> {
+        WrappedTokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
     }
 }
-impl<'db> From<TokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: TokenTreeMissingPtr<'db>) -> Self {
+impl<'db> From<WrappedTokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: WrappedTokenTreeMissingPtr<'db>) -> Self {
         ptr.untyped()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct TokenTreeMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeMissing);
-    type StablePtr = TokenTreeMissingPtr<'db>;
-    type Green = TokenTreeMissingGreen<'db>;
+pub struct WrappedTokenTreeMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for WrappedTokenTreeMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedTokenTreeMissing);
+    type StablePtr = WrappedTokenTreeMissingPtr<'db>;
+    type Green = WrappedTokenTreeMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
-        TokenTreeMissingGreen(
+        WrappedTokenTreeMissingGreen(
             GreenNode {
-                kind: SyntaxKind::TokenTreeMissing,
+                kind: SyntaxKind::WrappedTokenTreeMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -21347,16 +21316,16 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TokenTreeMissing,
+            SyntaxKind::WrappedTokenTreeMissing,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TokenTreeMissing
+            SyntaxKind::WrappedTokenTreeMissing
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TokenTreeMissing {
+        if kind == SyntaxKind::WrappedTokenTreeMissing {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -21366,7 +21335,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
         self.node
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        TokenTreeMissingPtr(self.node.stable_ptr(db))
+        WrappedTokenTreeMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -21502,85 +21471,6 @@ impl<'db> WrappedTokenTree<'db> {
                 | SyntaxKind::BracketedTokenTree
                 | SyntaxKind::WrappedTokenTreeMissing
         )
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct WrappedTokenTreeMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> WrappedTokenTreeMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> WrappedTokenTreeMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        WrappedTokenTreeMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::WrappedTokenTreeMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> WrappedTokenTreeMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct WrappedTokenTreeMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> WrappedTokenTreeMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for WrappedTokenTreeMissingPtr<'db> {
-    type SyntaxNode = WrappedTokenTreeMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> WrappedTokenTreeMissing<'db> {
-        WrappedTokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<WrappedTokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: WrappedTokenTreeMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct WrappedTokenTreeMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for WrappedTokenTreeMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedTokenTreeMissing);
-    type StablePtr = WrappedTokenTreeMissingPtr<'db>;
-    type Green = WrappedTokenTreeMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        WrappedTokenTreeMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::WrappedTokenTreeMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::WrappedTokenTreeMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::WrappedTokenTreeMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::WrappedTokenTreeMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        WrappedTokenTreeMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -23067,6 +22957,85 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalCommaEmpty<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct MacroRepetitionOperatorMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> MacroRepetitionOperatorMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> MacroRepetitionOperatorMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        MacroRepetitionOperatorMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroRepetitionOperatorMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> MacroRepetitionOperatorMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct MacroRepetitionOperatorMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> MacroRepetitionOperatorMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for MacroRepetitionOperatorMissingPtr<'db> {
+    type SyntaxNode = MacroRepetitionOperatorMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> MacroRepetitionOperatorMissing<'db> {
+        MacroRepetitionOperatorMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<MacroRepetitionOperatorMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: MacroRepetitionOperatorMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct MacroRepetitionOperatorMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperatorMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRepetitionOperatorMissing);
+    type StablePtr = MacroRepetitionOperatorMissingPtr<'db>;
+    type Green = MacroRepetitionOperatorMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        MacroRepetitionOperatorMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroRepetitionOperatorMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroRepetitionOperatorMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroRepetitionOperatorMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroRepetitionOperatorMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        MacroRepetitionOperatorMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum MacroRepetitionOperator<'db> {
     ZeroOrOne(TerminalQuestionMark<'db>),
     OneOrMore(TerminalPlus<'db>),
@@ -23199,85 +23168,6 @@ impl<'db> MacroRepetitionOperator<'db> {
                 | SyntaxKind::TerminalMul
                 | SyntaxKind::MacroRepetitionOperatorMissing
         )
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct MacroRepetitionOperatorMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> MacroRepetitionOperatorMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> MacroRepetitionOperatorMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        MacroRepetitionOperatorMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::MacroRepetitionOperatorMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> MacroRepetitionOperatorMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct MacroRepetitionOperatorMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> MacroRepetitionOperatorMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for MacroRepetitionOperatorMissingPtr<'db> {
-    type SyntaxNode = MacroRepetitionOperatorMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> MacroRepetitionOperatorMissing<'db> {
-        MacroRepetitionOperatorMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<MacroRepetitionOperatorMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: MacroRepetitionOperatorMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct MacroRepetitionOperatorMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperatorMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRepetitionOperatorMissing);
-    type StablePtr = MacroRepetitionOperatorMissingPtr<'db>;
-    type Green = MacroRepetitionOperatorMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        MacroRepetitionOperatorMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::MacroRepetitionOperatorMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::MacroRepetitionOperatorMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::MacroRepetitionOperatorMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::MacroRepetitionOperatorMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        MacroRepetitionOperatorMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
@@ -23447,6 +23337,85 @@ impl<'db> TypedSyntaxNode<'db> for ParamExpr<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct MacroParamKindMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> MacroParamKindMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> MacroParamKindMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        MacroParamKindMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroParamKindMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> MacroParamKindMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct MacroParamKindMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> MacroParamKindMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for MacroParamKindMissingPtr<'db> {
+    type SyntaxNode = MacroParamKindMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> MacroParamKindMissing<'db> {
+        MacroParamKindMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<MacroParamKindMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: MacroParamKindMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct MacroParamKindMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for MacroParamKindMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroParamKindMissing);
+    type StablePtr = MacroParamKindMissingPtr<'db>;
+    type Green = MacroParamKindMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        MacroParamKindMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroParamKindMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroParamKindMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroParamKindMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroParamKindMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        MacroParamKindMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub enum MacroParamKind<'db> {
     Identifier(ParamIdent<'db>),
     Expr(ParamExpr<'db>),
@@ -23555,85 +23524,6 @@ impl<'db> MacroParamKind<'db> {
             kind,
             SyntaxKind::ParamIdent | SyntaxKind::ParamExpr | SyntaxKind::MacroParamKindMissing
         )
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct MacroParamKindMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> MacroParamKindMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> MacroParamKindMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        MacroParamKindMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::MacroParamKindMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> MacroParamKindMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct MacroParamKindMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> MacroParamKindMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for MacroParamKindMissingPtr<'db> {
-    type SyntaxNode = MacroParamKindMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> MacroParamKindMissing<'db> {
-        MacroParamKindMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<MacroParamKindMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: MacroParamKindMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct MacroParamKindMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for MacroParamKindMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroParamKindMissing);
-    type StablePtr = MacroParamKindMissingPtr<'db>;
-    type Green = MacroParamKindMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        MacroParamKindMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::MacroParamKindMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::MacroParamKindMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::MacroParamKindMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::MacroParamKindMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        MacroParamKindMissingPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]

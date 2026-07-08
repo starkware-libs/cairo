@@ -3108,14 +3108,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     ) -> (PathSegmentGreen<'a>, Option<TerminalColonColonGreen<'a>>) {
         let identifier = match self.try_parse_identifier() {
             Ok(identifier) => identifier,
-            Err(_) => {
-                return (
-                    self.create_and_report_missing::<PathSegment<'_>>(
-                        ParserDiagnosticKind::MissingPathSegment,
-                    ),
-                    None,
-                );
-            }
+            Err(_) => self.create_and_report_missing::<TerminalIdentifier<'_>>(
+                ParserDiagnosticKind::MissingPathSegment,
+            ),
         };
         match self.try_parse_token::<TerminalColonColon<'_>>() {
             Ok(separator) if self.peek().kind == SyntaxKind::TerminalLT => (
@@ -3141,14 +3136,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     ) -> (PathSegmentGreen<'a>, Option<TerminalColonColonGreen<'a>>) {
         let identifier = match self.try_parse_identifier() {
             Ok(identifier) => identifier,
-            Err(_) => {
-                return (
-                    self.create_and_report_missing::<PathSegment<'_>>(
-                        ParserDiagnosticKind::MissingPathSegment,
-                    ),
-                    None,
-                );
-            }
+            Err(_) => self.create_and_report_missing::<TerminalIdentifier<'_>>(
+                ParserDiagnosticKind::MissingPathSegment,
+            ),
         };
         match self.try_parse_token::<TerminalColonColon<'_>>() {
             Err(_) if self.peek().kind == SyntaxKind::TerminalLT => (
