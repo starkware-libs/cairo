@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783905789795,
+  "lastUpdate": 1783905975134,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -14211,6 +14211,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/b585bc3ab77e7b6ac7741558fb12684609036f37"
         },
         "date": 1783818532445,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2927,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1924,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3086,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3066,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "eytan-starkware",
+            "username": "eytan-starkware",
+            "email": "eytan.s@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "b585bc3ab77e7b6ac7741558fb12684609036f37",
+          "message": "bugfix(defs): Name macro-call modules by macro name and offset, not raw call text. (#10197)",
+          "timestamp": "2026-07-08T12:02:59Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/b585bc3ab77e7b6ac7741558fb12684609036f37"
+        },
+        "date": 1783905974952,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
