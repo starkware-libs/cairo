@@ -285,12 +285,30 @@ impl TypeResolver<'_> {
         }
 
         // Otherwise, the error type must be a struct with two fields: (panic, data)
-        let Some((_panic_ty, err_data_ty)) = self.extract_struct2(err_ty) else {
+        let Some((panic_ty, err_data_ty)) = self.extract_struct2(err_ty) else {
             return false;
         };
 
+        // The panic field must be the empty struct, as the entry point ABI expects the error
+        // variant to be laid out as an `Array<felt252>` only.
+        if !self.is_empty_struct(panic_ty) {
+            return false;
+        }
+
         // The data field must be an Array<felt252>.
         self.is_felt252_array(err_data_ty)
+    }
+
+    /// Returns true if the type is the empty struct: a struct without any members.
+    fn is_empty_struct(&self, ty: &ConcreteTypeId) -> bool {
+        let long_id = self.get_long_id(ty);
+        if long_id.generic_id != StructType::id() {
+            return false;
+        }
+        let [GenericArg::UserType(_), members @ ..] = long_id.generic_args.as_slice() else {
+            return false;
+        };
+        members.is_empty()
     }
 
     /// Extracts types `TOk`, `TErr` from the type `Result<TOk, TErr>`.
