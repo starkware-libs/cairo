@@ -63,18 +63,3 @@ pub const ABI_ATTR_EMBED_V0_ARG: &str = "embed_v0";
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
 pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
-
-/// Starknet OS required implicit precedence.
-pub(super) const IMPLICIT_PRECEDENCE: &[&str] = &[
-    "core::pedersen::Pedersen",
-    "core::RangeCheck",
-    "core::integer::Bitwise",
-    "core::ec::EcOp",
-    "core::poseidon::Poseidon",
-    "core::SegmentArena",
-    "core::circuit::RangeCheck96",
-    "core::circuit::AddMod",
-    "core::circuit::MulMod",
-    "core::gas::GasBuiltin",
-    "System",
-];

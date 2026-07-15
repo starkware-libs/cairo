@@ -2,6 +2,7 @@ use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_plugins::plugins::HIDDEN_ATTR_SYNTAX;
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
+use cairo_lang_starknet_classes::casm_contract_class::IMPLICIT_PRECEDENCE;
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
     self, Attribute, FunctionWithBody, OptionReturnTypeClause, OptionTypeClause,
@@ -16,8 +17,8 @@ use salsa::Database;
 
 use super::consts::{
     CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
-    IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE,
-    RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
+    L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, RAW_OUTPUT_ATTR,
+    WRAPPER_PREFIX,
 };
 use super::utils::{AstPathExtract, ParamEx, find_v0_attribute, maybe_strip_underscore};
 
@@ -314,7 +315,7 @@ fn generate_entry_point_wrapper<'db>(
     );
 
     let implicit_precedence = RewriteNode::Text(format!("#[{IMPLICIT_PRECEDENCE_ATTR}({})]", {
-        IMPLICIT_PRECEDENCE.iter().format(", ")
+        IMPLICIT_PRECEDENCE.iter().map(|(_, path)| *path).format(", ")
     }));
 
     let arg_definitions = RewriteNode::Text(arg_definitions.join("\n    "));

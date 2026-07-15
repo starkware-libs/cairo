@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
+use cairo_lang_starknet_classes::casm_contract_class::IMPLICIT_PRECEDENCE;
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
     self, MaybeTraitBody, OptionReturnTypeClause, OptionTypeClause,
@@ -14,7 +15,7 @@ use salsa::Database;
 
 use super::consts::{
     CALLDATA_PARAM_NAME, CONSTRUCTOR_MODULE, EXTERNAL_MODULE, FORWARD_IMPL_ATTR,
-    GENERIC_CONTRACT_STATE_NAME, IMPLICIT_PRECEDENCE, L1_HANDLER_MODULE, WRAPPER_PREFIX,
+    GENERIC_CONTRACT_STATE_NAME, L1_HANDLER_MODULE, WRAPPER_PREFIX,
 };
 use super::utils::{AstPathExtract, ParamEx};
 use super::{DEPRECATED_ABI_ATTR, DISPATCHER_DOC_GROUP_ATTR, INTERFACE_ATTR, STORE_TRAIT};
@@ -93,8 +94,10 @@ pub fn handle_trait<'db>(
     let base_name = trait_ast.name(db).text(db).long(db);
     let forward_impl_name = format!("{base_name}ForwardImpl");
     let unsafe_new_state_trait_name = format!("UnsafeNewContractStateTraitFor{forward_impl_name}");
-    let implicit_precedence_attr =
-        format!("#[{IMPLICIT_PRECEDENCE_ATTR}({})]", IMPLICIT_PRECEDENCE.iter().format(", "));
+    let implicit_precedence_attr = format!(
+        "#[{IMPLICIT_PRECEDENCE_ATTR}({})]",
+        IMPLICIT_PRECEDENCE.iter().map(|(_, path)| *path).format(", ")
+    );
     let dispatcher_trait_name = format!("{base_name}DispatcherTrait");
     let safe_dispatcher_trait_name = format!("{base_name}SafeDispatcherTrait");
     let contract_caller_name = format!("{base_name}Dispatcher");

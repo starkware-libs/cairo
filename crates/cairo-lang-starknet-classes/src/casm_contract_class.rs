@@ -94,6 +94,23 @@ pub enum StarknetSierraCompilationError {
     UnsupportedSierraVersion { version_in_contract: VersionId, version_of_compiler: VersionId },
 }
 
+/// The canonical order entry-point builtins must appear in, as expected by the Starknet OS. Shared
+/// so it can't drift: the plugin stamps `#[implicit_precedence(...)]` from the Cairo paths (`.1`),
+/// and `from_contract_class` validates against the Sierra type ids (`.0`).
+pub static IMPLICIT_PRECEDENCE: [(GenericTypeId, &str); 11] = [
+    (PedersenType::ID, "core::pedersen::Pedersen"),
+    (RangeCheckType::ID, "core::RangeCheck"),
+    (BitwiseType::ID, "core::integer::Bitwise"),
+    (EcOpType::ID, "core::ec::EcOp"),
+    (PoseidonType::ID, "core::poseidon::Poseidon"),
+    (SegmentArenaType::ID, "core::SegmentArena"),
+    (RangeCheck96Type::ID, "core::circuit::RangeCheck96"),
+    (AddModType::ID, "core::circuit::AddMod"),
+    (MulModType::ID, "core::circuit::MulMod"),
+    (GasBuiltinType::ID, "core::gas::GasBuiltin"),
+    (SystemType::ID, "System"),
+];
+
 fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
     opt_field.is_none()
 }
@@ -475,19 +492,10 @@ impl CasmContractClass {
             None
         };
 
-        let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
-            RangeCheckType::id(),
-            BitwiseType::id(),
-            PedersenType::id(),
-            EcOpType::id(),
-            PoseidonType::id(),
-            SegmentArenaType::id(),
-            GasBuiltinType::id(),
-            SystemType::id(),
-            RangeCheck96Type::id(),
-            AddModType::id(),
-            MulModType::id(),
-        ]);
+        // The set of valid entry-point builtin types, taken from the single source of truth for
+        // the OS-required order (see [`IMPLICIT_PRECEDENCE`]).
+        let builtin_types: UnorderedHashSet<GenericTypeId> =
+            IMPLICIT_PRECEDENCE.iter().map(|(generic_id, _)| generic_id.clone()).collect();
 
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
             let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
@@ -535,6 +543,14 @@ impl CasmContractClass {
                     StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
                 );
             }
+
+            // Iterator-based subsequence check: the entry point's builtins must be a subsequence of
+            // `IMPLICIT_PRECEDENCE` (i.e. appear in the canonical order the OS expects).
+            let mut canonical = IMPLICIT_PRECEDENCE.iter().map(|(generic_id, _)| generic_id);
+            require(builtins.iter().all(|type_id| {
+                canonical.any(|generic_id| generic_id == type_resolver.get_generic_id(type_id))
+            }))
+            .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder)?;
 
             let builtins = builtins
                 .iter()
