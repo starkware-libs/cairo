@@ -30,7 +30,6 @@ use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
 use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigUint;
@@ -93,6 +92,21 @@ pub enum StarknetSierraCompilationError {
     )]
     UnsupportedSierraVersion { version_in_contract: VersionId, version_of_compiler: VersionId },
 }
+
+/// The canonical order entry-point builtins must appear in, as expected by the Starknet OS,
+/// excluding the trailing gas and system builtins (checked separately in
+/// [`CasmContractClass::from_contract_class`]).
+pub static ENTRY_POINT_BUILTIN_ORDER: [GenericTypeId; 9] = [
+    PedersenType::ID,
+    RangeCheckType::ID,
+    BitwiseType::ID,
+    EcOpType::ID,
+    PoseidonType::ID,
+    SegmentArenaType::ID,
+    RangeCheck96Type::ID,
+    AddModType::ID,
+    MulModType::ID,
+];
 
 fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
     opt_field.is_none()
@@ -428,20 +442,7 @@ impl CasmContractClass {
                 });
             }
         }
-
-        let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
-            RangeCheckType::id(),
-            BitwiseType::id(),
-            PedersenType::id(),
-            EcOpType::id(),
-            PoseidonType::id(),
-            SegmentArenaType::id(),
-            GasBuiltinType::id(),
-            SystemType::id(),
-            RangeCheck96Type::id(),
-            AddModType::id(),
-            MulModType::id(),
-        ]);
+        let type_resolver = TypeResolver { type_decl: &program.type_declarations };
 
         // Validates the entry point's signature, returning its entry statement, function id and
         // builtin names.
@@ -467,15 +468,14 @@ impl CasmContractClass {
             require(input_builtins == output_builtins)
                 .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
-            let type_resolver = TypeResolver { type_decl: &program.type_declarations };
             require(type_resolver.is_felt252_span(input_span))
                 .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
             require(type_resolver.is_valid_entry_point_return_type(panic_result))
                 .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
-            for type_id in input_builtins {
-                if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
+            for type_id in builtins {
+                if !ENTRY_POINT_BUILTIN_ORDER.contains(type_resolver.get_generic_id(type_id)) {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),
                     ));
@@ -490,6 +490,12 @@ impl CasmContractClass {
                     StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
                 );
             }
+
+            let mut order_iter = ENTRY_POINT_BUILTIN_ORDER.iter();
+            require(builtins.iter().all(|type_id| {
+                order_iter.any(|generic_id| generic_id == type_resolver.get_generic_id(type_id))
+            }))
+            .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder)?;
 
             let builtins = builtins
                 .iter()
