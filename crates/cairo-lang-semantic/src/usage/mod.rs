@@ -79,21 +79,8 @@ impl<'db> Usage<'db> {
     /// Removes usage that was introduced current block and usage that is already covered
     /// by containing variables.
     pub fn finalize_as_scope(&mut self) {
-        // Prune introductions from usages.
-        for member_path in prune_and_get_candidates(&mut self.usage, |k| {
-            self.introductions.contains(&k.base_var())
-        }) {
-            // Prune usages that are members of other usages.
-            let mut current_path = &member_path;
-            while let MemberPath::Member { parent, .. } = current_path {
-                current_path = parent.as_ref();
-                if self.usage.contains_key(current_path) {
-                    self.usage.swap_remove(&member_path);
-                    break;
-                }
-            }
-        }
-        // Prune usages and introdictions from snap_usage.
+        // Prune usages and introdictions from snap_usage. Runs before the `changes` pass so that
+        // the promotion below always promotes the top-most snapshotted ancestor.
         for member_path in prune_and_get_candidates(&mut self.snap_usage, |k| {
             self.usage.contains_key(k) || self.introductions.contains(&k.base_var())
         }) {
@@ -114,7 +101,9 @@ impl<'db> Usage<'db> {
             self.introductions.contains(&k.base_var())
         }) {
             // Prune changes that are members of other changes.
-            // Also if a child is changed and its parent is used, then we change the parent.
+            // Also if a child is changed and an ancestor is used as a snapshot, promote the
+            // ancestor into `usage`/`changes` so the whole ancestor is read and written back,
+            // instead of returning the child of a stale snapshot.
             // TODO(TomerStarkware): Deconstruct the parent, and snap_use other members.
             let mut current_path = &member_path;
             while let MemberPath::Member { parent, .. } = current_path {
@@ -129,6 +118,21 @@ impl<'db> Usage<'db> {
                 }
                 if self.changes.contains_key(current_path) {
                     self.changes.swap_remove(&member_path);
+                    break;
+                }
+            }
+        }
+        // Prune introductions from usages. Runs after the `changes` pass so that members of an
+        // ancestor promoted above are pruned as well.
+        for member_path in prune_and_get_candidates(&mut self.usage, |k| {
+            self.introductions.contains(&k.base_var())
+        }) {
+            // Prune usages that are members of other usages.
+            let mut current_path = &member_path;
+            while let MemberPath::Member { parent, .. } = current_path {
+                current_path = parent.as_ref();
+                if self.usage.contains_key(current_path) {
+                    self.usage.swap_remove(&member_path);
                     break;
                 }
             }
