@@ -65,6 +65,8 @@ pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
 pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
 
 /// Starknet OS required implicit precedence.
+/// Checked in `cairo-lang-starknet-classes` during contract-class-to-CASM compilation (see
+/// `ENTRY_POINT_BUILTIN_ORDER` there).
 pub(super) const IMPLICIT_PRECEDENCE: &[&str] = &[
     "core::pedersen::Pedersen",
     "core::RangeCheck",
