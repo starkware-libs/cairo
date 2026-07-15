@@ -4,20 +4,27 @@ use std::collections::HashSet;
 use std::fs;
 use std::io::BufReader;
 
+use cairo_lang_sierra::ProgramParser;
 use cairo_lang_sierra::ids::GenericLibfuncId;
+use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
+use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use indoc::formatdoc;
 use itertools::Itertools;
+use num_bigint::BigUint;
 use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
 
 use crate::allowed_libfuncs::{
     BUILTIN_AUDITED_LIBFUNCS_LIST, ListSelector, lookup_allowed_libfuncs_list,
 };
-use crate::casm_contract_class::{BigUintAsHex, CasmContractClass};
+use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};
 use crate::compiler_version::current_sierra_version_id;
-use crate::contract_class::ContractClass;
+use crate::contract_class::{
+    ContractClass, ContractEntryPoint, ContractEntryPoints, ExtractedSierraProgram,
+};
 use crate::felt252_serde::{Felt252SerdeError, sierra_from_felt252s};
 use crate::test_utils::get_example_file_path;
 
@@ -32,6 +39,138 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
         contract_class.extract_sierra_program(false).err(),
         Some(Felt252SerdeError::InvalidInputForDeserialization)
     );
+}
+
+/// Hand-written Sierra for a contract with a single entry point. `RangeCheck` is fixed as the
+/// first builtin (it feeds `withdraw_gas`, so the entry-point cost is properly accounted); the
+/// next two builtins are `builtin_a` then `builtin_b`, which are just threaded through. Vary
+/// those two to control the builtin order the check sees. Hand-written on purpose: the frontend
+/// always emits builtins in the canonical order, so a non-canonical order can only be built here.
+fn entry_point_sierra(builtin_a: &str, builtin_b: &str) -> String {
+    formatdoc! {"
+        type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+        type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+        type EcOp = EcOp [storable: true, drop: false, dup: false, zero_sized: false];
+        type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+        type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+        type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+        type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+        type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+        type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+        type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+        type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> [storable: true, drop: true, dup: true, zero_sized: true];
+        type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+        type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+
+        libfunc revoke_ap_tracking = revoke_ap_tracking;
+        libfunc withdraw_gas = withdraw_gas;
+        libfunc branch_align = branch_align;
+        libfunc redeposit_gas = redeposit_gas;
+        libfunc struct_construct<Tuple<core::array::Span::<core::felt252>>> = struct_construct<Tuple<core::array::Span::<core::felt252>>>;
+        libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>;
+        libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
+        libfunc array_new<felt252> = array_new<felt252>;
+        libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
+        libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
+        libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>;
+        libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+        libfunc store_temp_a = store_temp<{builtin_a}>;
+        libfunc store_temp_b = store_temp<{builtin_b}>;
+        libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+        libfunc store_temp<System> = store_temp<System>;
+        libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>> = store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>;
+
+        F0:
+        revoke_ap_tracking() -> ();
+        withdraw_gas([0], [3]) {{ fallthrough([6], [7]) F0_B0([8], [9]) }};
+        branch_align() -> ();
+        redeposit_gas([7]) -> ([10]);
+        struct_construct<Tuple<core::array::Span::<core::felt252>>>([5]) -> ([11]);
+        enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([11]) -> ([12]);
+        store_temp<RangeCheck>([6]) -> ([6]);
+        store_temp_a([1]) -> ([1]);
+        store_temp_b([2]) -> ([2]);
+        store_temp<GasBuiltin>([10]) -> ([10]);
+        store_temp<System>([4]) -> ([4]);
+        store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([12]) -> ([12]);
+        return([6], [1], [2], [10], [4], [12]);
+        F0_B0:
+        branch_align() -> ();
+        drop<core::array::Span::<core::felt252>>([5]) -> ();
+        array_new<felt252>() -> ([13]);
+        struct_construct<core::panics::Panic>() -> ([14]);
+        struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([14], [13]) -> ([15]);
+        enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([15]) -> ([16]);
+        store_temp<RangeCheck>([8]) -> ([8]);
+        store_temp_a([1]) -> ([1]);
+        store_temp_b([2]) -> ([2]);
+        store_temp<GasBuiltin>([9]) -> ([9]);
+        store_temp<System>([4]) -> ([4]);
+        store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([16]) -> ([16]);
+        return([8], [1], [2], [9], [4], [16]);
+
+        test::contract::__wrapper__entry@F0([0]: RangeCheck, [1]: {builtin_a}, [2]: {builtin_b}, [3]: GasBuiltin, [4]: System, [5]: core::array::Span::<core::felt252>) -> (RangeCheck, {builtin_a}, {builtin_b}, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+    "}
+}
+
+/// Compiles a hand-written Sierra contract (single external entry point at function 0) to CASM.
+fn compile_hand_written(
+    sierra_text: &str,
+) -> Result<CasmContractClass, StarknetSierraCompilationError> {
+    // `ProgramParser` assigns hash-based ids to named types, but the entry-point `TypeResolver`
+    // indexes type declarations positionally, as in a real (felt-deserialized) contract class.
+    // Canonicalize the ids to sequential with the shared `CanonicalReplacer`.
+    let program = ProgramParser::new().parse(sierra_text).unwrap();
+    let program = CanonicalReplacer::from_program(&program).apply(&program);
+    let extracted = ExtractedSierraProgram {
+        program,
+        sierra_version: current_sierra_version_id(),
+        compiler_version: current_sierra_version_id(),
+    };
+    // `from_contract_class` takes the Sierra program from `extracted`; from the `ContractClass` it
+    // only reads `entry_points_by_type`, so the other fields are left empty.
+    let contract = ContractClass {
+        sierra_program: vec![],
+        sierra_program_debug_info: None,
+        contract_class_version: "0.1.0".to_string(),
+        entry_points_by_type: ContractEntryPoints {
+            external: vec![ContractEntryPoint { selector: BigUint::from(1u32), function_idx: 0 }],
+            l1_handler: vec![],
+            constructor: vec![],
+        },
+        abi: None,
+    };
+    CasmContractClass::from_contract_class(contract, extracted, false, usize::MAX)
+}
+
+/// An entry point whose builtins are in the canonical order (RangeCheck, Bitwise, EcOp) compiles
+/// successfully.
+#[test]
+fn test_entry_point_canonical_builtin_order_accepted() {
+    assert!(compile_hand_written(&entry_point_sierra("Bitwise", "EcOp")).is_ok());
+}
+
+/// The same entry point with two builtins swapped (EcOp before Bitwise, violating the canonical
+/// order) is rejected. This order cannot come from the frontend, so it can only be exercised with
+/// hand-written Sierra.
+#[test]
+fn test_entry_point_non_canonical_builtin_order_rejected() {
+    assert_eq!(
+        compile_hand_written(&entry_point_sierra("EcOp", "Bitwise")).unwrap_err(),
+        StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
+    );
+}
+
+/// Gas and system builtins are only allowed in their fixed trailing slots — an extra `System`
+/// (or `GasBuiltin`) threaded mid-list is rejected even though the trailing pair is in place.
+#[test]
+fn test_entry_point_mid_list_gas_or_system_rejected() {
+    for mid in ["System", "GasBuiltin"] {
+        assert!(matches!(
+            compile_hand_written(&entry_point_sierra("Bitwise", mid)).unwrap_err(),
+            StarknetSierraCompilationError::InvalidBuiltinType(_),
+        ));
+    }
 }
 
 /// Tests that the CASM compiled from a contract in the contract_crate is the same as in

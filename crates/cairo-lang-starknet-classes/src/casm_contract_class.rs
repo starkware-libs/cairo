@@ -94,6 +94,21 @@ pub enum StarknetSierraCompilationError {
     UnsupportedSierraVersion { version_in_contract: VersionId, version_of_compiler: VersionId },
 }
 
+/// The canonical order entry-point builtins must appear in, as expected by the Starknet OS,
+/// excluding the trailing gas and system builtins (checked separately in
+/// [`CasmContractClass::from_contract_class`]).
+pub static ENTRY_POINT_BUILTIN_ORDER: [GenericTypeId; 9] = [
+    PedersenType::ID,
+    RangeCheckType::ID,
+    BitwiseType::ID,
+    EcOpType::ID,
+    PoseidonType::ID,
+    SegmentArenaType::ID,
+    RangeCheck96Type::ID,
+    AddModType::ID,
+    MulModType::ID,
+];
+
 fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
     opt_field.is_none()
 }
@@ -475,19 +490,10 @@ impl CasmContractClass {
             None
         };
 
-        let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
-            RangeCheckType::id(),
-            BitwiseType::id(),
-            PedersenType::id(),
-            EcOpType::id(),
-            PoseidonType::id(),
-            SegmentArenaType::id(),
-            GasBuiltinType::id(),
-            SystemType::id(),
-            RangeCheck96Type::id(),
-            AddModType::id(),
-            MulModType::id(),
-        ]);
+        // The set of valid entry-point builtin types, excluding the trailing gas and system
+        // builtins (checked separately below).
+        let builtin_types: UnorderedHashSet<GenericTypeId> =
+            ENTRY_POINT_BUILTIN_ORDER.iter().cloned().collect();
 
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
             let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
@@ -519,7 +525,7 @@ impl CasmContractClass {
             require(type_resolver.is_valid_entry_point_return_type(panic_result))
                 .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
 
-            for type_id in input_builtins {
+            for type_id in builtins {
                 if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),
@@ -535,6 +541,12 @@ impl CasmContractClass {
                     StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
                 );
             }
+
+            let mut order_iter = ENTRY_POINT_BUILTIN_ORDER.iter();
+            require(builtins.iter().all(|type_id| {
+                order_iter.any(|generic_id| generic_id == type_resolver.get_generic_id(type_id))
+            }))
+            .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder)?;
 
             let builtins = builtins
                 .iter()
