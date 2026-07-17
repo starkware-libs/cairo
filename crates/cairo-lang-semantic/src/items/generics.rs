@@ -713,7 +713,7 @@ fn impl_generic_param_semantic<'db>(
                             concrete_trait_id,
                         },
                     );
-                    return map;
+                    continue;
                 };
 
                 let concrete_trait_type_id =
