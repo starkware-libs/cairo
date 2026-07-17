@@ -367,7 +367,7 @@ enum UseStarResult<'db> {
     /// The path was not found, considering only the `use *` imports.
     PathNotFound,
     /// Item is not visible in the current module, considering only the `use *` imports.
-    ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
+    ItemNotVisible(Option<ModuleItemId<'db>>, Vec<ModuleId<'db>>),
 }
 
 /// A trait for things that can be interpreted as a path of segments.
@@ -775,7 +775,9 @@ impl<'db> Resolver<'db> {
     ) -> UseStarResult<'db> {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
-        let mut other_containing_modules = vec![];
+        let mut non_pub_module_items_found: OrderedHashSet<ModuleItemId<'_>> =
+            OrderedHashSet::default();
+        let mut non_pub_containing_modules = vec![];
         for (item_module_id, info) in self.db.module_imported_modules((), module_id).iter() {
             // Not checking the main module to prevent cycles.
             if *item_module_id == module_id {
@@ -790,34 +792,21 @@ impl<'db> Resolver<'db> {
                     item_info = Some(inner_item_info.clone());
                     module_items_found.insert(inner_item_info.item_id);
                 } else {
-                    other_containing_modules.push(*item_module_id);
+                    non_pub_containing_modules.push(*item_module_id);
+                    non_pub_module_items_found.insert(inner_item_info.item_id);
                 }
             }
         }
         if module_items_found.len() > 1 {
-            return UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect());
+            return UseStarResult::AmbiguousPath(module_items_found.into_iter().collect());
         }
         match item_info {
             Some(item_info) => UseStarResult::UniquePathFound(item_info),
-            None => {
-                for item_module_id in &other_containing_modules {
-                    if let Some(inner_item_info) =
-                        self.resolve_item_in_module_or_expanded_macro(*item_module_id, ident)
-                    {
-                        item_info = Some(inner_item_info.clone());
-                        module_items_found.insert(inner_item_info.item_id);
-                    }
-                }
-                if let Some(item_info) = item_info {
-                    if module_items_found.len() > 1 {
-                        UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect())
-                    } else {
-                        UseStarResult::ItemNotVisible(item_info.item_id, other_containing_modules)
-                    }
-                } else {
-                    UseStarResult::PathNotFound
-                }
-            }
+            None => match non_pub_module_items_found.into_iter().exactly_one() {
+                Ok(item) => UseStarResult::ItemNotVisible(Some(item), non_pub_containing_modules),
+                Err(err) if err.len() == 0 => UseStarResult::PathNotFound,
+                Err(_) => UseStarResult::ItemNotVisible(None, non_pub_containing_modules),
+            },
         }
     }
 
@@ -1699,7 +1688,7 @@ enum ResolvedBase<'db> {
     /// The base module is ambiguous.
     Ambiguous(Vec<ModuleItemId<'db>>),
     /// The base module is inaccessible.
-    ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
+    ItemNotVisible(Option<ModuleItemId<'db>>, Vec<ModuleId<'db>>),
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
@@ -2623,7 +2612,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
         ) {
             self.diagnostics.report(
                 identifier.stable_ptr(self.resolver.db),
-                ItemNotVisible(item_info.item_id, vec![]),
+                ItemNotVisible(Some(item_info.item_id), vec![]),
             );
         }
 

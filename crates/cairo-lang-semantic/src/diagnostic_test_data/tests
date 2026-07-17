@@ -1617,3 +1617,37 @@ error[E0005]: Module file not found. Expected path: non_existent_path.cairo
  _^
 | mod non_existing;
 |_________________^
+
+//! > ==========================================================================
+
+//! > Testing use star with only invisible candidates.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    const AMBIGUOUS: u8 = 1;
+}
+
+mod b {
+    const AMBIGUOUS: u8 = 4;
+}
+use a::*;
+use b::*;
+
+//! > function_body
+
+//! > expr_code
+AMBIGUOUS
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error[E2099]: Item is not visible in this context through any of the modules: `test::a`, `test::b`.
+ --> lib.cairo:11:1
+AMBIGUOUS
+^^^^^^^^^
