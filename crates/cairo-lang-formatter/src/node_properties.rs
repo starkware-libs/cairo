@@ -570,10 +570,11 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     }
                 }
                 SyntaxKind::ParamList => {
+                    let is_optional = !param_list_contains_single_line_comment(db, self);
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        is_optional,
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -850,12 +851,20 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             | SyntaxKind::PatternStructParamList
             | SyntaxKind::StructArgList
             | SyntaxKind::GenericArgList
-            | SyntaxKind::GenericParamList
-            | SyntaxKind::ParamList => BreakLinePointsPositions::List {
+            | SyntaxKind::GenericParamList => BreakLinePointsPositions::List {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
                     true,
+                    true,
+                ),
+                breaking_frequency: 2,
+            },
+            SyntaxKind::ParamList => BreakLinePointsPositions::List {
+                properties: BreakLinePointProperties::new(
+                    5,
+                    BreakLinePointIndentation::NotIndented,
+                    !param_list_contains_single_line_comment(db, self),
                     true,
                 ),
                 breaking_frequency: 2,
@@ -1092,4 +1101,37 @@ fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'
                     | SyntaxKind::TokenSingleLineInnerComment
             )
         })
+}
+
+/// Returns whether a parameter list contains a line comment, including one attached to the
+/// following closing parenthesis as leading trivia.
+fn param_list_contains_single_line_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    contains_single_line_comment(db, node)
+        || node.parent(db).is_some_and(|parent| {
+            let siblings = parent.get_children(db);
+            siblings
+                .iter()
+                .position(|sibling| sibling == node)
+                .and_then(|position| siblings.get(position + 1))
+                .filter(|sibling| sibling.kind(db) == SyntaxKind::TerminalRParen)
+                .is_some_and(|rparen| {
+                    contains_single_line_comment(
+                        db,
+                        &ast::TerminalRParen::from_syntax_node(db, *rparen)
+                            .leading_trivia(db)
+                            .as_syntax_node(),
+                    )
+                })
+        })
+}
+
+fn contains_single_line_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    node.descendants(db).any(|descendant| {
+        matches!(
+            descendant.kind(db),
+            SyntaxKind::TokenSingleLineComment
+                | SyntaxKind::TokenSingleLineDocComment
+                | SyntaxKind::TokenSingleLineInnerComment
+        )
+    })
 }
