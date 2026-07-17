@@ -428,6 +428,17 @@ impl LineBuilder {
             *prev_content += content;
             return;
         }
+        let has_space_before_comment =
+            matches!(active_builder.children.last(), Some(LineComponent::Space))
+                || active_builder.pending_break_line_points.iter().any(|component| {
+                    matches!(
+                        component,
+                        LineComponent::BreakLinePoint(properties) if properties.space_if_not_broken
+                    )
+                });
+        if !is_trailing && !has_space_before_comment {
+            active_builder.push_space();
+        }
         self.push_child(LineComponent::Comment { content: content.to_string(), is_trailing });
         self.push_break_line_point(BreakLinePointProperties::new(
             // Should be greater than any other precedence.
