@@ -28,7 +28,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{Intern, define_short_id, extract_matches};
+use cairo_lang_utils::{Intern, define_short_id, extract_matches, try_extract_matches};
 use itertools::{Itertools, chain, izip};
 use salsa::Database;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -1288,13 +1288,10 @@ fn impl_type_by_trait_type<'db>(
              trait"
         )
     }
-
-    let name = trait_type_id.name(db);
     // If the trait type's name is not found, then a missing item diagnostic is reported.
-    db.impl_item_by_name(impl_def_id, name).and_then(|maybe_item_id| match maybe_item_id {
-        Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Type)),
-        None => Err(skip_diagnostic()),
-    })
+    db.impl_item_by_name(impl_def_id, trait_type_id.name(db))?
+        .and_then(|item_id| try_extract_matches!(item_id, ImplItemId::Type))
+        .ok_or_else(skip_diagnostic)
 }
 
 /// Query implementation of [ImplSemantic::impl_type_by_trait_type].
@@ -1320,13 +1317,10 @@ fn impl_constant_by_trait_constant<'db>(
              the impl's trait"
         )
     }
-
-    let name = trait_constant_id.name(db);
     // If the trait constant's name is not found, then a missing item diagnostic is reported.
-    db.impl_item_by_name(impl_def_id, name).and_then(|maybe_item_id| match maybe_item_id {
-        Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Constant)),
-        None => Err(skip_diagnostic()),
-    })
+    db.impl_item_by_name(impl_def_id, trait_constant_id.name(db))?
+        .and_then(|item_id| try_extract_matches!(item_id, ImplItemId::Constant))
+        .ok_or_else(skip_diagnostic)
 }
 
 /// Query implementation of [PrivImplSemantic::impl_impl_by_id].
@@ -1352,13 +1346,10 @@ fn impl_impl_by_trait_impl<'db>(
              trait"
         )
     }
-
-    let name = trait_impl_id.name(db);
     // If the trait impl's name is not found, then a missing item diagnostic is reported.
-    db.impl_item_by_name(impl_def_id, name).and_then(|maybe_item_id| match maybe_item_id {
-        Some(item_id) => Ok(extract_matches!(item_id, ImplItemId::Impl)),
-        None => Err(skip_diagnostic()),
-    })
+    db.impl_item_by_name(impl_def_id, trait_impl_id.name(db))?
+        .and_then(|item_id| try_extract_matches!(item_id, ImplItemId::Impl))
+        .ok_or_else(skip_diagnostic)
 }
 
 /// Query implementation of [PrivImplSemantic::is_implicit_impl_impl].

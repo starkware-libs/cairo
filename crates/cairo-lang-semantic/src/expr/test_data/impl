@@ -47,3 +47,68 @@ error[E2031]: Parameter type of impl function `MyImpl::foo` is incompatible with
  --> lib.cairo:7:28
     fn foo(x: T, y: u8, z: u16) -> T {}
                            ^^^
+
+//! > ==========================================================================
+
+//! > Impl provides associated type/const/impl items each with the wrong kind (cross-kind collision).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() -> MyImpl::AsType {
+    let _c = MyImpl::AsConst;
+    MyImpl::AsImpl::method(0)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait<T> {
+    fn method(x: T) -> T;
+}
+
+impl OtherImpl of OtherTrait<felt252> {
+    fn method(x: felt252) -> felt252 {
+        x
+    }
+}
+
+trait MyTrait {
+    type AsType;
+    const AsConst: felt252;
+    impl AsImpl: OtherTrait<felt252>;
+}
+
+impl MyImpl of MyTrait {
+    const AsType: felt252 = 5;
+    type AsConst = felt252;
+    type AsImpl = felt252;
+}
+
+//! > expected_diagnostics
+error[E2014]: Impl item type `MyImpl::AsConst` is not a member of trait `MyTrait`.
+ --> lib.cairo:19:5
+    type AsConst = felt252;
+    ^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2014]: Impl item type `MyImpl::AsImpl` is not a member of trait `MyTrait`.
+ --> lib.cairo:20:5
+    type AsImpl = felt252;
+    ^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2014]: Impl item const `MyImpl::AsType` is not a member of trait `MyTrait`.
+ --> lib.cairo:18:5
+    const AsType: felt252 = 5;
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2311]: Trait has no implementation in context: test::MyTrait.
+ --> lib.cairo:22:1
+fn foo() -> MyImpl::AsType {
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2042]: Unexpected return type. Expected: "test::MyImpl::AsType", found: "core::felt252".
+ --> lib.cairo:24:5
+    MyImpl::AsImpl::method(0)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
