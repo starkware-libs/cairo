@@ -658,8 +658,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             if let Some(const_value) = self.as_const(input_var)
                 && let ConstValue::Int(val, ty) = const_value.long(db)
             {
+                const ADDR_BOUND: Felt252 = Felt252::from_hex_unchecked(
+                    "0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00",
+                );
+                let as_felt252 = Felt252::from(val);
+                let normalized =
+                    if as_felt252 >= ADDR_BOUND { as_felt252 - ADDR_BOUND } else { as_felt252 };
                 stmt.inputs.clear();
-                let arg = GenericArgumentId::Constant(ConstValue::Int(val.clone(), *ty).intern(db));
+                let arg = GenericArgumentId::Constant(
+                    ConstValue::Int(normalized.to_bigint(), *ty).intern(db),
+                );
                 stmt.function =
                     self.storage_base_address_const.concretize(db, vec![arg]).lowered(db);
             }
