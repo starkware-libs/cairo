@@ -860,7 +860,7 @@ impl TIntoOption<T> of Into<T, Option<T>> {
     /// # Examples
     ///
     /// ```
-    /// let o: Option<u8> = 67_u8.into()
+    /// let o: Option<u8> = 67_u8.into();
     /// assert_eq!(Some(67), o);
     /// ```
     #[inline]
