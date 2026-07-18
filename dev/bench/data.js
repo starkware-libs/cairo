@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784337580140,
+  "lastUpdate": 1784337752807,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -15711,6 +15711,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/ad70febbf9fdbe3ff498f2faf0f2b8f7dc3bd944"
         },
         "date": 1784251416083,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2927,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1924,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3086,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3066,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "eytan-starkware",
+            "username": "eytan-starkware",
+            "email": "eytan.s@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "ad70febbf9fdbe3ff498f2faf0f2b8f7dc3bd944",
+          "message": "(bug fix): prune usage after change promotion in loop usage finalization (#10201)",
+          "timestamp": "2026-07-14T19:22:29Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/ad70febbf9fdbe3ff498f2faf0f2b8f7dc3bd944"
+        },
+        "date": 1784337752628,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
