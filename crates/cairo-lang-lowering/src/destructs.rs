@@ -367,7 +367,10 @@ pub fn add_destructs<'db>(
         let first_panic_var = variables.new_var(VarRequest { ty: panic_ty, location });
         let mut last_panic_var = first_panic_var;
 
-        for destruction in destructions {
+        for destruction in destructions.into_iter().unique_by(|entry| match entry {
+            DestructionEntry::Plain(d) => d.var_id,
+            DestructionEntry::Panic(d) => d.var_id,
+        }) {
             let output_var = variables.new_var(VarRequest { ty: unit_ty(db), location });
 
             match destruction {
