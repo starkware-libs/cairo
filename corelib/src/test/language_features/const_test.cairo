@@ -159,6 +159,16 @@ fn test_complex_consts() {
     assert_eq!(IF_CONST_FALSE, 7);
 }
 
+#[test]
+fn test_const_bool_bitwise() {
+    const AND: bool = true & false;
+    const OR: bool = true | false;
+    const XOR: bool = true ^ false;
+    assert!(!AND);
+    assert!(OR);
+    assert!(XOR);
+}
+
 #[derive(Copy, Drop, PartialEq, Debug)]
 struct Pair<T> {
     a: T,

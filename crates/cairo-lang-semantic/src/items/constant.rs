@@ -922,8 +922,17 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return bool_value(self.const_values_eq(args[0], args[1]));
         } else if imp.function == self.ne_fn {
             return bool_value(!self.const_values_eq(args[0], args[1]));
-        } else if imp.function == self.not_fn {
-            return bool_value(args[0] == self.false_const);
+        } else if args.iter().all(|arg| [self.false_const, self.true_const].contains(arg)) {
+            let as_bool = |v| v == self.true_const;
+            if imp.function == self.not_fn {
+                return bool_value(!as_bool(args[0]));
+            } else if imp.function == self.bitand_fn {
+                return bool_value(as_bool(args[0]) & as_bool(args[1]));
+            } else if imp.function == self.bitor_fn {
+                return bool_value(as_bool(args[0]) | as_bool(args[1]));
+            } else if imp.function == self.bitxor_fn {
+                return bool_value(as_bool(args[0]) ^ as_bool(args[1]));
+            }
         }
 
         let args = match args
