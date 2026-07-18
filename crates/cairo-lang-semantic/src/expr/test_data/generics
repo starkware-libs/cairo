@@ -754,3 +754,41 @@ error[E2038]: Generic parameter kind of impl function `FooImpl::bar` is incompat
  --> lib.cairo:5:12
     fn bar<+Drop<felt252>>(self: felt252) {}
            ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Multiple invalid associated-item constraints are each reported (not just the first).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    type Real;
+}
+
+fn bar<T, +MyTrait<T>[Bogus1: u8, Bogus2: u16]>() {}
+
+//! > crate_settings
+edition = "2024_07"
+
+[experimental_features]
+negative_impls = false
+associated_item_constraints = true
+
+//! > expected_diagnostics
+error[E2189]: associated type `Bogus1` not found for `MyTrait`
+ --> lib.cairo:5:23
+fn bar<T, +MyTrait<T>[Bogus1: u8, Bogus2: u16]>() {}
+                      ^^^^^^^^^^
+
+error[E2189]: associated type `Bogus2` not found for `MyTrait`
+ --> lib.cairo:5:35
+fn bar<T, +MyTrait<T>[Bogus1: u8, Bogus2: u16]>() {}
+                                  ^^^^^^^^^^^
