@@ -1651,3 +1651,30 @@ error[E2099]: Item is not visible in this context through any of the modules: `t
  --> lib.cairo:11:1
 AMBIGUOUS
 ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Local use alias with a wrong generic-argument count is diagnosed, not an ICE.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+struct Pair<S, T> {
+    a: S,
+    b: T,
+}
+
+//! > function_body
+use Pair as P;
+
+//! > expr_code
+P::<felt252, u8, u16> { a: 0, b: 0 }
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error[E2163]: Expected 2 generic arguments, found 3.
+ --> lib.cairo:6:18
+P::<felt252, u8, u16> { a: 0, b: 0 }
+                 ^^^

@@ -1560,23 +1560,21 @@ impl<'db> Resolver<'db> {
         identifier: &ast::TerminalIdentifier<'db>,
         inner_generic_item: ResolvedGenericItem<'db>,
         generic_args_syntax: Option<Vec<ast::GenericArg<'db>>>,
-    ) -> ResolvedConcreteItem<'db> {
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
         let segment_stable_ptr = segment.stable_ptr(self.db).untyped();
-        let mut specialized_item = self
-            .specialize_generic_module_item(
-                diagnostics,
-                identifier,
-                inner_generic_item,
-                generic_args_syntax.clone(),
-            )
-            .unwrap();
+        let mut specialized_item = self.specialize_generic_module_item(
+            diagnostics,
+            identifier,
+            inner_generic_item,
+            generic_args_syntax.clone(),
+        )?;
         self.handle_same_impl_trait(
             diagnostics,
             &mut specialized_item,
             &generic_args_syntax.unwrap_or_default(),
             segment_stable_ptr,
         );
-        specialized_item
+        Ok(specialized_item)
     }
 }
 
@@ -1899,7 +1897,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                             &identifier,
                             generic_item,
                             segment.generic_args(db),
-                        );
+                        )?;
                         self.resolver.resolved_items.mark_concrete(db, &segment, concrete_item)
                     }
                     ResolvedBase::FoundThroughGlobalUse {
@@ -1974,7 +1972,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                                 &identifier,
                                 generic_item,
                                 segment.generic_args(db),
-                            );
+                            )?;
                             self.resolver.resolved_items.mark_concrete(db, &segment, concrete_item)
                         }
                         ResolvedBase::FoundThroughGlobalUse {
