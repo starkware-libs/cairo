@@ -47,6 +47,34 @@ pub extern fn deploy_syscall(
     deploy_from_zero: bool,
 ) -> SyscallResult<(ContractAddress, Span<felt252>)> implicits(GasBuiltin, System) nopanic;
 
+/// Deploys a new instance of a previously declared class, deriving the deployed contract's address
+/// with the BLAKE2s-based derivation instead of Pedersen.
+///
+/// The request and response are identical to [`deploy_syscall`]; the only difference is how the
+/// deployed contract's address is computed. The address is the BLAKE2s felt-array hash of the same
+/// preimage `deploy_syscall` hashes with Pedersen, incremented until it is provably unreachable by
+/// any Pedersen derivation, so the Blake and Pedersen address spaces are disjoint. `deploy_syscall`
+/// itself remains Pedersen-based and is unchanged.
+///
+/// # Arguments
+///
+/// * `class_hash` - The class hash of the contract to be deployed.
+/// * `contract_address_salt` - The salt, an arbitrary value provided by the deployer, used in the
+///  computation of the contract's address.
+/// * `calldata` - Call arguments for the constructor.
+/// * `deploy_from_zero` - Deploy the contract from the zero address.
+///
+/// # Returns
+///
+/// * The address of the deployed contract.
+/// * The serialized return value of the constructor.
+pub extern fn deploy_v2_syscall(
+    class_hash: ClassHash,
+    contract_address_salt: felt252,
+    calldata: Span<felt252>,
+    deploy_from_zero: bool,
+) -> SyscallResult<(ContractAddress, Span<felt252>)> implicits(GasBuiltin, System) nopanic;
+
 /// Emits an event.
 ///
 /// # Arguments
