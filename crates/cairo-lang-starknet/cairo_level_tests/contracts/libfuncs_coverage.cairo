@@ -173,6 +173,7 @@ enum StarknetLibfuncs {
     StorageRead: starknet::storage::StorageBase<starknet::storage::Map<felt252, u256>>,
     StorageWrite: starknet::storage::StorageBase<starknet::storage::Mutable<ByteArray>>,
     Deploy: (starknet::ClassHash, felt252, Span<felt252>, bool),
+    DeployV2: (starknet::ClassHash, felt252, Span<felt252>, bool),
     EmitEvent: (Span<felt252>, Span<felt252>),
     GetBlockHash: u64,
     GetExecutionInfo,
@@ -519,6 +520,9 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
         StarknetLibfuncs::Deploy((
             class_hash, address, code, is_init,
         )) => use_and_panic(syscalls::deploy_syscall(class_hash, address, code, is_init)),
+        StarknetLibfuncs::DeployV2((
+            class_hash, address, code, is_init,
+        )) => use_and_panic(syscalls::deploy_v2_syscall(class_hash, address, code, is_init)),
         StarknetLibfuncs::EmitEvent((
             keys, data,
         )) => use_and_panic(syscalls::emit_event_syscall(keys, data)),

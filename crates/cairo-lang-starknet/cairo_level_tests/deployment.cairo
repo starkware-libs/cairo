@@ -1,5 +1,5 @@
 use starknet::deployment::DeploymentParams;
-use starknet::syscalls::deploy_syscall;
+use starknet::syscalls::{deploy_syscall, deploy_v2_syscall};
 
 #[starknet::interface]
 trait IValue<TContractState> {
@@ -155,6 +155,21 @@ fn test_typed_deploy_default_with_complex_args() {
             advanced::TEST_CLASS_HASH, 0, calldata.span(), false,
         ) == Err(array!['CONTRACT_ALREADY_DEPLOYED']),
     );
+}
+
+/// `deploy_v2_syscall` derives the deployed address with the Blake-escaped derivation, so for the
+/// same class/salt/calldata it deploys to a *different* address than the Pedersen `deploy_syscall`.
+/// This pins the full path corelib -> sierra -> casm -> runner, including the `DeployV2` selector
+/// string (a wrong selector would panic in the runner's syscall dispatch).
+#[test]
+fn test_deploy_v2_differs_from_deploy() {
+    let (pedersen_address, _) = deploy_syscall(self_caller::TEST_CLASS_HASH, 777, [].span(), true)
+        .expect('deployment failed');
+    let (blake_address, _) = deploy_v2_syscall(self_caller::TEST_CLASS_HASH, 777, [].span(), true)
+        .expect('deploy_v2 failed');
+    assert!(pedersen_address != blake_address);
+    // The constructor ran at the Blake-escaped address (it sets its own value to 1).
+    assert!(IValueDispatcher { contract_address: blake_address }.get_value() == 1);
 }
 
 #[test]
