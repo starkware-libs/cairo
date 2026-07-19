@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784424059524,
+  "lastUpdate": 1784424238961,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -16011,6 +16011,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/ad70febbf9fdbe3ff498f2faf0f2b8f7dc3bd944"
         },
         "date": 1784337752628,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2927,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1924,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3086,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3066,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "daff9bcc0ab74612aac88234399a2b1d34df07bf",
+          "message": "fix(semantic): report a glob name collision of non-visible items as not-visible, not ambiguous (#10209)",
+          "timestamp": "2026-07-18T07:07:17Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/daff9bcc0ab74612aac88234399a2b1d34df07bf"
+        },
+        "date": 1784424238775,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
