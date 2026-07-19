@@ -1407,6 +1407,78 @@ End:
 
 //! > ==========================================================================
 
+//! > StorageBaseAddress const normalization.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function_code
+fn foo() -> [StorageBaseAddress; 6] {
+    [
+        storage_base_address_from_felt252(1), storage_base_address_from_felt252(2),
+        storage_base_address_from_felt252(
+            0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,
+        ),
+        storage_base_address_from_felt252(
+            0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeff,
+        ),
+        storage_base_address_from_felt252(-1), storage_base_address_from_felt252(-2),
+    ]
+}
+
+//! > module_code
+use starknet::StorageBaseAddress;
+use starknet::storage_access::storage_base_address_from_felt252;
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_from_felt252(v0)
+  (v2: core::felt252) <- 2
+  (v3: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_from_felt252(v2)
+  (v4: core::felt252) <- 3618502788666131106986593281521497120414687020801267626233049500247285301247
+  (v5: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_from_felt252(v4)
+  (v6: core::felt252) <- 3618502788666131106986593281521497120414687020801267626233049500247285300991
+  (v7: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_from_felt252(v6)
+  (v8: core::felt252) <- -1
+  (v9: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_from_felt252(v8)
+  (v10: core::felt252) <- -2
+  (v11: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_from_felt252(v10)
+  (v12: [core::starknet::storage_access::StorageBaseAddress; 6]) <- struct_construct(v1, v3, v5, v7, v9, v11)
+End:
+  Return(v12)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_const::<1>()
+  (v2: core::felt252) <- 2
+  (v3: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_const::<2>()
+  (v4: core::felt252) <- 3618502788666131106986593281521497120414687020801267626233049500247285301247
+  (v5: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_const::<255>()
+  (v6: core::felt252) <- 3618502788666131106986593281521497120414687020801267626233049500247285300991
+  (v7: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_const::<3618502788666131106986593281521497120414687020801267626233049500247285300991>()
+  (v8: core::felt252) <- -1
+  (v9: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_const::<106710729501573572985208420194530329073740042555888586719488>()
+  (v10: core::felt252) <- -2
+  (v11: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_const::<106710729501573572985208420194530329073740042555888586719487>()
+  (v12: [core::starknet::storage_access::StorageBaseAddress; 6]) <- struct_construct(v1, v3, v5, v7, v9, v11)
+End:
+  Return(v12)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
 //! > complex StorageBaseAddress const.
 
 //! > test_runner_name
