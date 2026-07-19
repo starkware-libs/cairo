@@ -49,6 +49,7 @@
       "coupon_call": null,
       "coupon_refund": null,
       "deploy_syscall": null,
+      "deploy_v2_syscall": null,
       "disable_ap_tracking": null,
       "downcast": null,
       "drop": null,
