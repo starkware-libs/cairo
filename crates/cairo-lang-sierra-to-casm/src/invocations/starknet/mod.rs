@@ -67,6 +67,9 @@ pub fn build(
         StarknetConcreteLibfunc::Deploy(_) => {
             build_syscalls(builder, "Deploy", [1, 1, 2, 1], [1, 2])
         }
+        StarknetConcreteLibfunc::DeployV2(_) => {
+            build_syscalls(builder, "DeployV2", [1, 1, 2, 1], [1, 2])
+        }
         StarknetConcreteLibfunc::Keccak(_) => build_syscalls(builder, "Keccak", [2], [2]),
         StarknetConcreteLibfunc::Sha256ProcessBlock(_) => {
             build_syscalls(builder, "Sha256ProcessBlock", [1, 1], [1])
