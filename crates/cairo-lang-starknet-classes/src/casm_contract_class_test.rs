@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::io::BufReader;
 
-use cairo_lang_sierra::ids::GenericLibfuncId;
+use cairo_lang_sierra::ids::{ConcreteTypeId, GenericLibfuncId};
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -15,23 +15,96 @@ use test_case::test_case;
 use crate::allowed_libfuncs::{
     BUILTIN_AUDITED_LIBFUNCS_LIST, ListSelector, lookup_allowed_libfuncs_list,
 };
-use crate::casm_contract_class::{BigUintAsHex, CasmContractClass};
+use crate::casm_contract_class::{
+    BigUintAsHex, CasmContractClass, StarknetSierraCompilationError, TypeResolver,
+};
 use crate::compiler_version::current_sierra_version_id;
 use crate::contract_class::ContractClass;
 use crate::felt252_serde::{Felt252SerdeError, sierra_from_felt252s};
 use crate::test_utils::get_example_file_path;
 
+/// Loads the example contract class of `name` from its checked-in JSON.
+fn load_example_contract_class(name: &str) -> ContractClass {
+    let f =
+        std::fs::File::open(get_example_file_path(&format!("{name}.contract_class.json"))).unwrap();
+    serde_json::from_reader(BufReader::new(f)).unwrap()
+}
+
 #[test_case("test_contract__test_contract")]
 #[test_case("new_syntax_test_contract__counter_contract")]
 fn test_casm_contract_from_contract_class_failure(name: &str) {
-    let f =
-        std::fs::File::open(get_example_file_path(&format!("{name}.contract_class.json"))).unwrap();
-    let mut contract_class: ContractClass = serde_json::from_reader(BufReader::new(f)).unwrap();
+    let mut contract_class = load_example_contract_class(name);
     contract_class.sierra_program[17] = BigUintAsHex { value: Felt252::prime() };
     assert_eq!(
         contract_class.extract_sierra_program(false).err(),
         Some(Felt252SerdeError::InvalidInputForDeserialization)
     );
+}
+
+/// Compiles the libfuncs-coverage example contract to CASM, after swapping `builtin_a` and
+/// `builtin_b` in its entry point's signature, yielding a builtin order the frontend can never
+/// emit. Signatures are validated before compilation, so the body is not updated to match.
+fn compile_with_swapped_builtins(
+    builtin_a: &str,
+    builtin_b: &str,
+) -> Result<CasmContractClass, StarknetSierraCompilationError> {
+    let contract_class = load_example_contract_class("libfuncs_coverage__libfuncs_coverage");
+    let mut extracted = contract_class.extract_sierra_program(false).unwrap();
+    let program = &mut extracted.program;
+    let type_resolver = TypeResolver { type_decl: &program.type_declarations };
+    let func_idx = contract_class.entry_points_by_type.external[0].function_idx;
+    let position = |types: &[ConcreteTypeId], name: &str| {
+        types.iter().position(|ty| type_resolver.get_generic_id(ty).0 == name).unwrap()
+    };
+    let func = &program.funcs[func_idx];
+    let param_a = position(&func.signature.param_types, builtin_a);
+    let param_b = position(&func.signature.param_types, builtin_b);
+    let ret_a = position(&func.signature.ret_types, builtin_a);
+    let ret_b = position(&func.signature.ret_types, builtin_b);
+    let func = &mut program.funcs[func_idx];
+    func.signature.param_types.swap(param_a, param_b);
+    func.params.swap(param_a, param_b);
+    func.signature.ret_types.swap(ret_a, ret_b);
+    CasmContractClass::from_contract_class(contract_class, extracted, false, usize::MAX)
+}
+
+/// A no-op swap keeps the canonical order, and the contract compiles (sanity check for
+/// `compile_with_swapped_builtins`).
+#[test]
+fn test_entry_point_noop_swap_accepted() {
+    assert!(compile_with_swapped_builtins("Bitwise", "Bitwise").is_ok());
+}
+
+/// An entry point with two builtins swapped (EcOp before Bitwise, violating the canonical order)
+/// is rejected.
+#[test]
+fn test_entry_point_non_canonical_builtin_order_rejected() {
+    assert_eq!(
+        compile_with_swapped_builtins("Bitwise", "EcOp").unwrap_err(),
+        StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
+    );
+}
+
+/// Gas and system builtins are only allowed in their fixed trailing slots — a `System` (or
+/// `GasBuiltin`) appearing mid-list is rejected.
+#[test]
+fn test_entry_point_mid_list_gas_or_system_rejected() {
+    let contract_class = load_example_contract_class("libfuncs_coverage__libfuncs_coverage");
+    let extracted = contract_class.extract_sierra_program(false).unwrap();
+    for mid in ["System", "GasBuiltin"] {
+        let mid_ty = extracted
+            .program
+            .type_declarations
+            .iter()
+            .find(|decl| decl.long_id.generic_id.0 == mid)
+            .unwrap()
+            .id
+            .clone();
+        assert_eq!(
+            compile_with_swapped_builtins("EcOp", mid).unwrap_err(),
+            StarknetSierraCompilationError::InvalidBuiltinType(mid_ty),
+        );
+    }
 }
 
 /// Tests that the CASM compiled from a contract in the contract_crate is the same as in
@@ -54,10 +127,7 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
 #[test_case("mintable__mintable_erc20_ownable")]
 #[test_case("multi_component__contract_with_4_components")]
 fn test_casm_contract_from_contract_class_from_contracts_crate(name: &str) {
-    let contract_path = get_example_file_path(&format!("{name}.contract_class.json"));
-    let contract: ContractClass =
-        serde_json::from_reader(BufReader::new(std::fs::File::open(contract_path).unwrap()))
-            .unwrap();
+    let contract = load_example_contract_class(name);
     let add_pythonic_hints = true;
     let program = contract.extract_sierra_program(false).unwrap();
     let casm_contract =
