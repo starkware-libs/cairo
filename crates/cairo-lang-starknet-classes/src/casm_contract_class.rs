@@ -442,6 +442,11 @@ impl CasmContractClass {
                 });
             }
         }
+        let program_info = ProgramRegistryInfo::new(&program).map_err(|err| {
+            StarknetSierraCompilationError::CompilationError(Box::new(
+                CompilationError::ProgramRegistryError(err),
+            ))
+        })?;
         let type_resolver = TypeResolver { type_decl: &program.type_declarations };
 
         // Validates the entry point's signature, returning its entry statement, function id and
@@ -533,11 +538,6 @@ impl CasmContractClass {
             skip_non_linear_solver_comparisons: false,
             compute_runtime_costs: false,
         };
-        let program_info = ProgramRegistryInfo::new(&program).map_err(|err| {
-            StarknetSierraCompilationError::CompilationError(Box::new(
-                CompilationError::ProgramRegistryError(err),
-            ))
-        })?;
         let metadata = calc_metadata(&program, &program_info, metadata_computation_config)?;
         let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
             &program,
