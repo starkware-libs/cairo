@@ -3,9 +3,10 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
-use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
+use cairo_lang_defs::plugin_utils::{
+    PluginResultTrait, not_legacy_macro_diagnostic, unsupported_bracket_diagnostic,
+};
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 use salsa::Database;
@@ -23,12 +24,15 @@ impl InlineMacroExprPlugin for FormatMacro {
         syntax: &ast::ExprInlineMacro<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
+        let macro_ast_ptr = syntax.stable_ptr(db);
         let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
             return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
                 syntax.as_syntax_node().stable_ptr(db),
             ));
         };
-        let arguments = syntax.arguments(db);
+        let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) else {
+            return unsupported_bracket_diagnostic(db, &syntax, macro_ast_ptr);
+        };
         let mut builder = PatchBuilder::new(db, &syntax);
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
@@ -36,31 +40,14 @@ impl InlineMacroExprPlugin for FormatMacro {
                     {{
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                         core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
-                            write!$left_bracket${f}, $args$$right_bracket$
+                            write!({f}, $args$)
                         );
                         {f}.buffer
                     }}
                 ",
                 f = "__formatter_for_format_macro__",
             },
-            &[
-                (
-                    "left_bracket".to_string(),
-                    RewriteNode::new_trimmed(arguments.left_bracket_syntax_node(db)),
-                ),
-                (
-                    "right_bracket".to_string(),
-                    RewriteNode::new_trimmed(arguments.right_bracket_syntax_node(db)),
-                ),
-                (
-                    "args".to_string(),
-                    arguments
-                        .arg_list(db)
-                        .as_ref()
-                        .map_or_else(RewriteNode::empty, RewriteNode::from_ast_trimmed),
-                ),
-            ]
-            .into(),
+            &[("args".to_string(), RewriteNode::from_ast_trimmed(&args.arguments(db)))].into(),
         ));
         let (content, code_mappings) = builder.build();
         InlinePluginResult {
