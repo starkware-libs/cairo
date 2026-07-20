@@ -122,6 +122,7 @@ fn foo() {
     let _x: [u32; SIZE] = [1; SIZE];
     let _x: [u32; '1'] = [1; '1'];
     let _x: [u32; 32768] = [1; 32768];
+    let _x = [1_felt252; 32768];
 }
 
 //! > function_name
@@ -152,9 +153,19 @@ error[E2172]: Fixed size array type must have a positive integer size.
                         ^^^^^^^
 
 error[E2174]: Fixed size array size must be smaller than 2^15.
+ --> lib.cairo:6:13
+    let _x: [u32; 32768] = [1; 32768];
+            ^^^^^^^^^^^^
+
+error[E2174]: Fixed size array size must be smaller than 2^15.
  --> lib.cairo:6:28
     let _x: [u32; 32768] = [1; 32768];
                            ^^^^^^^^^^
+
+error[E2174]: Fixed size array size must be smaller than 2^15.
+ --> lib.cairo:7:14
+    let _x = [1_felt252; 32768];
+             ^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
