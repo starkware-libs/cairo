@@ -258,3 +258,31 @@ warning[E2200]: Plugin diagnostic: Failed to generate ABI: `__validate_deploy__`
 | ...
 |         ) {}
 |____________^
+
+//! > ==========================================================================
+
+//! > Test constructor taking `@self` (view) instead of `ref self`.
+
+//! > test_runner_name
+test_abi_failure(expect_diagnostics: warnings_only)
+
+//! > cairo_code
+#[starknet::contract]
+mod contract {
+    #[storage]
+    struct Storage {}
+
+    #[constructor]
+    fn constructor(self: @ContractState) {}
+}
+
+//! > expected_error
+A contract constructor must take `ref self`, not `@self`.
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Failed to generate ABI: A contract constructor must take `ref self`, not `@self`.
+ --> lib.cairo:6:5-7:43
+      #[constructor]
+ _____^
+|     fn constructor(self: @ContractState) {}
+|___________________________________________^
