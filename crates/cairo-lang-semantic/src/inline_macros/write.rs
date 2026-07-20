@@ -166,7 +166,7 @@ impl<'db> FormattingInfo<'db> {
         with_newline: bool,
     ) -> Result<FormattingInfo<'db>, Vec<PluginDiagnostic<'db>>> {
         let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
-            return Err(vec![not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr(db))]);
+            return Err(not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr(db)));
         };
         let ast::WrappedArgList::ParenthesizedArgList(arguments) =
             legacy_inline_macro.arguments(db)

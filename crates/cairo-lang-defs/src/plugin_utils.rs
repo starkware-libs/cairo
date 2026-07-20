@@ -1,6 +1,7 @@
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::require;
 use itertools::Itertools;
 use salsa::Database;
@@ -82,6 +83,25 @@ pub fn not_legacy_macro_diagnostic(stable_ptr: SyntaxStablePtrId<'_>) -> PluginD
          parentheses, brackets, or braces."
             .to_string(),
     )
+}
+
+/// Extracts the legacy inline macro together with its parenthesized argument list. On failure
+/// returns the diagnostic result on a non-legacy-macro call, or a non-parenthesized bracket.
+pub fn extract_parenthesized_macro<'db>(
+    db: &'db dyn Database,
+    syntax: &ast::ExprInlineMacro<'db>,
+) ->  {
+) -> Result<
+    (ast::LegacyExprInlineMacro<'db>, ast::ArgListParenthesized<'db>),
+    InlinePluginResult,
+> {
+    let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
+        return Err(InlinePluginResult::diagnostic_onlynot_legacy_macro_diagnostic(syntax.stable_ptr(db).untyped())));
+    };
+    let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) else {
+        return Err(unsupported_bracket_diagnostic(db, &syntax, syntax.stable_ptr(db)));
+    };
+    Ok((syntax, args))
 }
 
 /// Extracts a single unnamed argument.
