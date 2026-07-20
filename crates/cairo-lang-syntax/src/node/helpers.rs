@@ -537,6 +537,18 @@ impl<'a> QueryAttrs<'a> for SyntaxNode<'a> {
             SyntaxKind::TraitItemFunction => {
                 Some(ast::TraitItemFunction::from_syntax_node(db, *self).attributes(db))
             }
+            SyntaxKind::TraitItemType => {
+                Some(ast::TraitItemType::from_syntax_node(db, *self).attributes(db))
+            }
+            SyntaxKind::TraitItemConstant => {
+                Some(ast::TraitItemConstant::from_syntax_node(db, *self).attributes(db))
+            }
+            SyntaxKind::TraitItemImpl => {
+                Some(ast::TraitItemImpl::from_syntax_node(db, *self).attributes(db))
+            }
+            SyntaxKind::ItemMacroDeclaration => {
+                Some(ast::ItemMacroDeclaration::from_syntax_node(db, *self).attributes(db))
+            }
             SyntaxKind::ItemInlineMacro => {
                 Some(ast::ItemInlineMacro::from_syntax_node(db, *self).attributes(db))
             }
