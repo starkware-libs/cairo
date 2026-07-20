@@ -18,8 +18,8 @@ use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::snapshot::SnapshotType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::structure::StructType;
-use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
-use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
+use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
+use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, StatementIdx, TypeDeclaration};
 use cairo_lang_sierra_to_casm::compiler::{
     CairoProgramDebugInfo, CompilationError, SierraToCasmConfig,
 };
@@ -32,7 +32,7 @@ use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
-use itertools::{Itertools, chain};
+use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::Signed;
@@ -428,52 +428,6 @@ impl CasmContractClass {
                 });
             }
         }
-        let entrypoint_ids = entrypoint_function_indices.map(|idx| program.funcs[idx].id.clone());
-        // TODO(lior): Remove this assert and condition once the equation solver is removed in major
-        //   version 2.
-        assert_eq!(sierra_version.major, 1);
-        const NO_EQ_SOLVER_VERSION: VersionId = VersionId { major: 1, minor: 4, patch: 0 };
-        let no_eq_solver = sierra_version.supports(NO_EQ_SOLVER_VERSION);
-        let metadata_computation_config = MetadataComputationConfig {
-            function_set_costs: entrypoint_ids
-                .map(|id| (id, CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST)])))
-                .collect(),
-            linear_gas_solver: no_eq_solver,
-            linear_ap_change_solver: no_eq_solver,
-            skip_non_linear_solver_comparisons: false,
-            compute_runtime_costs: false,
-        };
-        let program_info = ProgramRegistryInfo::new(&program).map_err(|err| {
-            StarknetSierraCompilationError::CompilationError(Box::new(
-                CompilationError::ProgramRegistryError(err),
-            ))
-        })?;
-        let metadata = calc_metadata(&program, &program_info, metadata_computation_config)?;
-        let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
-            &program,
-            &program_info,
-            &metadata,
-            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size },
-        )?;
-
-        let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
-        let prime = Felt252::prime();
-        let bytecode = bytecode
-            .iter()
-            .map(|big_int| {
-                let (_q, reminder) = big_int.magnitude().div_rem(&prime);
-                BigUintAsHex {
-                    value: if big_int.is_negative() { &prime - reminder } else { reminder },
-                }
-            })
-            .collect_vec();
-
-        const CONTRACT_SEGMENTATION_VERSION: VersionId = VersionId { major: 1, minor: 5, patch: 0 };
-        let bytecode_segment_lengths = if sierra_version.supports(CONTRACT_SEGMENTATION_VERSION) {
-            Some(compute_bytecode_segment_lengths(&program, &cairo_program, bytecode.len())?)
-        } else {
-            None
-        };
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),
@@ -489,11 +443,12 @@ impl CasmContractClass {
             MulModType::id(),
         ]);
 
-        let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
+        // Validates the entry point's signature, returning its entry statement, function id and
+        // builtin names.
+        let validate_entry_point = |contract_entry_point: &ContractEntryPoint| {
             let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
                 return Err(StarknetSierraCompilationError::EntryPointError);
             };
-            let statement_id = function.entry_point;
 
             // The expected return types are [builtins.., gas_builtin, system, PanicResult].
             let (panic_result, output_builtins) = function
@@ -543,32 +498,93 @@ impl CasmContractClass {
                     name => name.to_case(Case::Snake),
                 })
                 .collect_vec();
+            Ok((function.entry_point, &function.id, builtins))
+        };
 
-            let code_offset = cairo_program
-                .debug_info
-                .sierra_statement_info
-                .get(statement_id.0)
-                .ok_or(StarknetSierraCompilationError::EntryPointError)?
-                .start_offset;
-            assert_eq!(
-                metadata.gas_info.function_costs[&function.id],
-                CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
-                "Unexpected entry point cost."
-            );
-            Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
-                selector: contract_entry_point.selector,
-                offset: code_offset,
-                builtins,
+        // Validate all entry-point signatures before the (much heavier) compilation, keeping the
+        // validated info for building the CASM entry points afterwards.
+        let validate_entry_points = |entry_points: &[ContractEntryPoint]| {
+            entry_points.iter().map(validate_entry_point).try_collect::<_, Vec<_>, _>()
+        };
+        let external_infos = validate_entry_points(&contract_class.entry_points_by_type.external)?;
+        let l1_handler_infos =
+            validate_entry_points(&contract_class.entry_points_by_type.l1_handler)?;
+        let constructor_infos =
+            validate_entry_points(&contract_class.entry_points_by_type.constructor)?;
+
+        let entrypoint_ids = entrypoint_function_indices.map(|idx| program.funcs[idx].id.clone());
+        // TODO(lior): Remove this assert and condition once the equation solver is removed in major
+        //   version 2.
+        assert_eq!(sierra_version.major, 1);
+        const NO_EQ_SOLVER_VERSION: VersionId = VersionId { major: 1, minor: 4, patch: 0 };
+        let no_eq_solver = sierra_version.supports(NO_EQ_SOLVER_VERSION);
+        let metadata_computation_config = MetadataComputationConfig {
+            function_set_costs: entrypoint_ids
+                .map(|id| (id, CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST)])))
+                .collect(),
+            linear_gas_solver: no_eq_solver,
+            linear_ap_change_solver: no_eq_solver,
+            skip_non_linear_solver_comparisons: false,
+            compute_runtime_costs: false,
+        };
+        let program_info = ProgramRegistryInfo::new(&program).map_err(|err| {
+            StarknetSierraCompilationError::CompilationError(Box::new(
+                CompilationError::ProgramRegistryError(err),
+            ))
+        })?;
+        let metadata = calc_metadata(&program, &program_info, metadata_computation_config)?;
+        let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
+            &program,
+            &program_info,
+            &metadata,
+            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size },
+        )?;
+
+        let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
+        let prime = Felt252::prime();
+        let bytecode = bytecode
+            .iter()
+            .map(|big_int| {
+                let (_q, reminder) = big_int.magnitude().div_rem(&prime);
+                BigUintAsHex {
+                    value: if big_int.is_negative() { &prime - reminder } else { reminder },
+                }
             })
+            .collect_vec();
+
+        const CONTRACT_SEGMENTATION_VERSION: VersionId = VersionId { major: 1, minor: 5, patch: 0 };
+        let bytecode_segment_lengths = if sierra_version.supports(CONTRACT_SEGMENTATION_VERSION) {
+            Some(compute_bytecode_segment_lengths(&program, &cairo_program, bytecode.len())?)
+        } else {
+            None
         };
 
-        let as_casm_entry_points = |contract_entry_points: Vec<ContractEntryPoint>| {
-            let mut entry_points = vec![];
-            for contract_entry_point in contract_entry_points {
-                entry_points.push(as_casm_entry_point(contract_entry_point)?);
-            }
-            Ok::<Vec<CasmContractEntryPoint>, StarknetSierraCompilationError>(entry_points)
-        };
+        let as_casm_entry_points =
+            |contract_entry_points: Vec<ContractEntryPoint>,
+             infos: Vec<(StatementIdx, &FunctionId, Vec<String>)>| {
+                let mut entry_points = vec![];
+                for (contract_entry_point, (statement_id, function_id, builtins)) in
+                    zip_eq(contract_entry_points, infos)
+                {
+                    let code_offset = cairo_program
+                        .debug_info
+                        .sierra_statement_info
+                        .get(statement_id.0)
+                        .ok_or(StarknetSierraCompilationError::EntryPointError)?
+                        .start_offset;
+                    assert_eq!(
+                        metadata.gas_info.function_costs[function_id],
+                        CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
+                        "Unexpected entry point cost."
+                    );
+                    entry_points.push(CasmContractEntryPoint {
+                        selector: contract_entry_point.selector,
+                        offset: code_offset,
+                        builtins,
+                    });
+                }
+                Ok::<Vec<CasmContractEntryPoint>, StarknetSierraCompilationError>(entry_points)
+            };
 
         let pythonic_hints = if add_pythonic_hints {
             Some(
@@ -592,9 +608,18 @@ impl CasmContractClass {
             hints,
             pythonic_hints,
             entry_points_by_type: CasmContractEntryPoints {
-                external: as_casm_entry_points(contract_class.entry_points_by_type.external)?,
-                l1_handler: as_casm_entry_points(contract_class.entry_points_by_type.l1_handler)?,
-                constructor: as_casm_entry_points(contract_class.entry_points_by_type.constructor)?,
+                external: as_casm_entry_points(
+                    contract_class.entry_points_by_type.external,
+                    external_infos,
+                )?,
+                l1_handler: as_casm_entry_points(
+                    contract_class.entry_points_by_type.l1_handler,
+                    l1_handler_infos,
+                )?,
+                constructor: as_casm_entry_points(
+                    contract_class.entry_points_by_type.constructor,
+                    constructor_infos,
+                )?,
             },
         };
 
