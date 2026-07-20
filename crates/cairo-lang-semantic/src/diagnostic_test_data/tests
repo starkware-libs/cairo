@@ -1678,3 +1678,35 @@ error[E2163]: Expected 2 generic arguments, found 3.
  --> lib.cairo:6:18
 P::<felt252, u8, u16> { a: 0, b: 0 }
                  ^^^
+
+//! > ==========================================================================
+
+//! > Test unstable feature gating through a glob re-export.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod inner {
+    #[unstable(feature: "testing")]
+    pub fn unstable() {}
+}
+use inner::*;
+
+pub use unstable as renamed;
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+warning[E2065]: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
+ --> lib.cairo:7:9
+pub use unstable as renamed;
+        ^^^^^^^^

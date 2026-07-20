@@ -1841,10 +1841,8 @@ impl<'db, 'a> Resolution<'db, 'a> {
         let db = self.resolver.db;
         let generic_args_syntax = segment.generic_args(db);
         let segment_stable_ptr = segment.stable_ptr(db).untyped();
-        self.validate_module_item_usability(module_id, identifier, &inner_item_info);
-        self.resolver.insert_used_use(inner_item_info.item_id);
         let inner_generic_item =
-            ResolvedGenericItem::from_module_item(db, inner_item_info.item_id)?;
+            self.resolve_module_item_as_generic(module_id, identifier, &inner_item_info)?;
         let mut specialized_item = self.resolver.specialize_generic_module_item(
             self.diagnostics,
             identifier,
@@ -2034,11 +2032,14 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     }
                     ResolvedBase::StatementEnvironment(generic_item) => generic_item,
                     ResolvedBase::FoundThroughGlobalUse {
-                        item_info: inner_module_item, ..
+                        item_info: inner_module_item,
+                        containing_module,
                     } => {
-                        self.resolver.insert_used_use(inner_module_item.item_id);
-                        let generic_item =
-                            ResolvedGenericItem::from_module_item(db, inner_module_item.item_id)?;
+                        let generic_item = self.resolve_module_item_as_generic(
+                            containing_module,
+                            &identifier,
+                            &inner_module_item,
+                        )?;
                         self.resolver.resolved_items.mark_generic(
                             db,
                             &self.segments.next().unwrap(),
@@ -2073,11 +2074,14 @@ impl<'db, 'a> Resolution<'db, 'a> {
                         .resolved_items
                         .mark_generic(db, &self.segments.next().unwrap(), generic_item),
                     ResolvedBase::FoundThroughGlobalUse {
-                        item_info: inner_module_item, ..
+                        item_info: inner_module_item,
+                        containing_module,
                     } => {
-                        self.resolver.insert_used_use(inner_module_item.item_id);
-                        let generic_item =
-                            ResolvedGenericItem::from_module_item(db, inner_module_item.item_id)?;
+                        let generic_item = self.resolve_module_item_as_generic(
+                            containing_module,
+                            &identifier,
+                            &inner_module_item,
+                        )?;
                         self.resolver.resolved_items.mark_generic(
                             db,
                             &self.segments.next().unwrap(),
@@ -2486,9 +2490,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
             ResolvedGenericItem::Module(module_id) => {
                 let inner_item_info = self.module_inner_item(module_id, ident, &identifier)?;
 
-                self.validate_module_item_usability(*module_id, &identifier, &inner_item_info);
-                self.resolver.insert_used_use(inner_item_info.item_id);
-                ResolvedGenericItem::from_module_item(db, inner_item_info.item_id)
+                self.resolve_module_item_as_generic(*module_id, &identifier, &inner_item_info)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = db.enum_variants(*enum_id)?;
@@ -2594,26 +2596,29 @@ impl<'db, 'a> Resolution<'db, 'a> {
         }
         Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(&self.macro_info)))
     }
-    /// Validates that an item is usable from the current module or adds a diagnostic.
-    /// This includes visibility checks and feature checks.
-    fn validate_module_item_usability(
+
+    /// Resolves a module item reached through an import into a [`ResolvedGenericItem`].
+    ///
+    /// Additionally enforces that the item is usable from the current context and records the
+    /// import as used.
+    ///
+    /// Every path that turns an imported item into a generic item — a direct import or one reached
+    /// through a glob `use *` — must go through here, so these checks are never skipped.
+    fn resolve_module_item_as_generic(
         &mut self,
-        containing_module_id: ModuleId<'db>,
+        containing_module: ModuleId<'db>,
         identifier: &ast::TerminalIdentifier<'db>,
         item_info: &ModuleItemInfo<'db>,
-    ) {
-        if !self.resolver.is_item_visible_ex(
-            containing_module_id,
-            item_info,
-            self.resolver.active_module_id(&self.macro_info),
-            &self.macro_info,
-        ) {
-            self.diagnostics.report(
-                identifier.stable_ptr(self.resolver.db),
-                ItemNotVisible(Some(item_info.item_id), vec![]),
-            );
+    ) -> Maybe<ResolvedGenericItem<'db>> {
+        let Self { resolver, diagnostics, macro_info, .. } = self;
+        let active_module = resolver.active_module_id(macro_info);
+        if !resolver.is_item_visible_ex(containing_module, item_info, active_module, macro_info) {
+            let stable_ptr = identifier.stable_ptr(resolver.db);
+            diagnostics.report(stable_ptr, ItemNotVisible(Some(item_info.item_id), vec![]));
         }
 
-        self.resolver.validate_feature_constraints(self.diagnostics, identifier, item_info);
+        resolver.validate_feature_constraints(diagnostics, identifier, item_info);
+        resolver.insert_used_use(item_info.item_id);
+        ResolvedGenericItem::from_module_item(resolver.db, item_info.item_id)
     }
 }
