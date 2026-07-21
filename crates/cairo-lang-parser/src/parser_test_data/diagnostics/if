@@ -40,10 +40,15 @@ error[E1002]: Missing tokens. Expected an expression.
     if 0 == if x {1} else {2} {
            ^
 
-error[E1000]: Skipped tokens. Expected: '{'.
- --> dummy_file.cairo:2:13
+error[E1001]: Missing token '{'.
+ --> dummy_file.cairo:2:12
     if 0 == if x {1} else {2} {
-            ^^^^
+           ^
+
+error[E1001]: Missing token '}'.
+ --> dummy_file.cairo:4:2
+}
+ ^
 
 //! > ==========================================================================
 
@@ -315,3 +320,57 @@ error[E1000]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:7:44
     if x += 3 && let x = 10 || false < > { += }
                                            ^^
+
+//! > ==========================================================================
+
+//! > Test broken if header does not swallow a following control-flow statement
+
+//! > test_comments
+// Recovering the broken `if` block must stop at the following `while`, leaving it
+// as its own statement rather than consuming its `{ ... }` as the `if` body.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f(a: felt252, b: bool) {
+    if a ==
+    while b { let _x = 1; }
+    let _y = 2;
+}
+
+//! > expected_diagnostics
+error[E1002]: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:12
+    if a ==
+           ^
+
+error[E1001]: Missing token '{'.
+ --> dummy_file.cairo:2:12
+    if a ==
+           ^
+
+error[E1001]: Missing token '}'.
+ --> dummy_file.cairo:5:2
+}
+ ^
+
+//! > ==========================================================================
+
+//! > Test bad if condition with well-formed braces keeps the inner statement.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f(b: bool) {
+    if {
+        while b {}
+    }
+}
+
+//! > expected_diagnostics
+error[E1002]: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:7
+    if {
+      ^
