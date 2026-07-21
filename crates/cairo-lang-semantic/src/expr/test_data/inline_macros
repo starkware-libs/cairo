@@ -691,7 +691,7 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() {
     let ba: ByteArray = "hello";
 
-    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+    // Bad brackets.
     format!["{}", ba];
 
     // No params.
@@ -731,15 +731,15 @@ error[E1006]: Missing tokens. Expected an argument list wrapped in either parent
     format!;
            ^
 
-error[E2200]: Plugin diagnostic: Macro `write` does not support this bracket type.
+error[E2200]: Plugin diagnostic: Macro `format` does not support this bracket type.
  --> lib.cairo:5:12
     format!["{}", ba];
            ^
 
 error[E2200]: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:12
+ --> lib.cairo:8:5
     format!();
-           ^
+    ^^^^^^^^^
 
 error[E2200]: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:11:13
@@ -792,7 +792,7 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() {
     let ba: ByteArray = "hello";
 
-    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+    // Bad brackets.
     print!["{}", ba];
 
     // No params.
@@ -832,15 +832,15 @@ error[E1006]: Missing tokens. Expected an argument list wrapped in either parent
     print!;
           ^
 
-error[E2200]: Plugin diagnostic: Macro `write` does not support this bracket type.
+error[E2200]: Plugin diagnostic: Macro `print` does not support this bracket type.
  --> lib.cairo:5:11
     print!["{}", ba];
           ^
 
 error[E2200]: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:11
+ --> lib.cairo:8:5
     print!();
-          ^
+    ^^^^^^^^
 
 error[E2200]: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:11:12
@@ -893,7 +893,7 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() {
     let ba: ByteArray = "hello";
 
-    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+    // Bad brackets.
     println!["{}", ba];
 
     // No params.
@@ -933,7 +933,7 @@ error[E1006]: Missing tokens. Expected an argument list wrapped in either parent
     println!;
             ^
 
-error[E2200]: Plugin diagnostic: Macro `writeln` does not support this bracket type.
+error[E2200]: Plugin diagnostic: Macro `println` does not support this bracket type.
  --> lib.cairo:5:13
     println!["{}", ba];
             ^

@@ -5,11 +5,8 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
     PluginGeneratedFile,
 };
-use cairo_lang_defs::plugin_utils::{
-    not_legacy_macro_diagnostic, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
-};
+use cairo_lang_defs::plugin_utils::{extract_parenthesized_macro, try_extract_unnamed_arg};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
-use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::{OptionHelper, try_extract_matches};
 use indoc::indoc;
@@ -165,21 +162,11 @@ impl<'db> FormattingInfo<'db> {
         syntax: &ast::ExprInlineMacro<'db>,
         with_newline: bool,
     ) -> Result<FormattingInfo<'db>, Vec<PluginDiagnostic<'db>>> {
-        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
-            return Err(vec![not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr(db))]);
+        let args = match extract_parenthesized_macro(db, syntax) {
+            Ok(args) => args,
+            Err(diag) => return Err(vec![diag]),
         };
-        let ast::WrappedArgList::ParenthesizedArgList(arguments) =
-            legacy_inline_macro.arguments(db)
-        else {
-            return Err(unsupported_bracket_diagnostic(
-                db,
-                &legacy_inline_macro,
-                syntax.stable_ptr(db),
-            )
-            .diagnostics);
-        };
-        let arguments_var = arguments.arguments(db);
-        let mut args_iter = arguments_var.elements(db);
+        let mut args_iter = args.arguments(db).elements(db);
         let error_with_inner_span = |inner_span: SyntaxNode<'_>, message: &str| {
             PluginDiagnostic::error_with_inner_span(
                 db,
@@ -190,7 +177,7 @@ impl<'db> FormattingInfo<'db> {
         };
         let Some(formatter_arg) = args_iter.next() else {
             return Err(vec![error_with_inner_span(
-                arguments.lparen(db).as_syntax_node(),
+                args.lparen(db).as_syntax_node(),
                 "Macro expected formatter argument.",
             )]);
         };
@@ -220,7 +207,7 @@ impl<'db> FormattingInfo<'db> {
                 })
             } else {
                 Err(vec![error_with_inner_span(
-                    arguments.lparen(db).as_syntax_node(),
+                    args.lparen(db).as_syntax_node(),
                     "Macro expected format string argument.",
                 )])
             };
