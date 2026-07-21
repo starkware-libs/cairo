@@ -154,7 +154,7 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
 
     // Type names annotations use `lookup_concrete_type` query which depends on pre-replaced
     // type declaration ids.
-    let mut maybe_serializable_type_names = compiler_config
+    let maybe_serializable_type_names = compiler_config
         .add_type_names
         .then(|| SerializableTypeNamesDebugInfo::extract_type_names(db, &sierra_program));
 
@@ -181,11 +181,14 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
 
     if compiler_config.add_functions_debug_info {
         annotations.extend(Annotations::from(
-            debug_info.functions_info.extract_serializable_debug_info(db),
+            debug_info
+                .functions_info
+                .replace_function_ids(&replacer)
+                .extract_serializable_debug_info(db),
         ))
     }
 
-    if let Some(serializable_type_names) = maybe_serializable_type_names.take() {
+    if let Some(serializable_type_names) = maybe_serializable_type_names {
         // At this point the type ids in `SerializableTypeNamesDebugInfo` are the original salsa
         // ids. We need to replace them with canonical ids.
         annotations.extend(Annotations::from(serializable_type_names.replace_type_ids(&replacer)));
