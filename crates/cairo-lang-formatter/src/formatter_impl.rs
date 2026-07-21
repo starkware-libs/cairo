@@ -13,7 +13,7 @@ use cairo_lang_syntax::node::ast::{TokenTreeNode, UsePath};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::smol_str::SmolStr;
+use cairo_lang_utils::smol_str::{SmolStr, ToSmolStr};
 use itertools::{Itertools, chain};
 use salsa::Database;
 use syntax::node::kind::SyntaxKind;
@@ -120,11 +120,12 @@ impl UseTree {
         allow_duplicate_uses: bool,
         decorations: String,
     ) -> SyntaxNode<'_> {
-        let mut formatted_use_items = String::new();
         self.organize_self_imports();
-        for statement in self.create_merged_use_items(allow_duplicate_uses) {
-            formatted_use_items.push_str(&format!("{decorations}use {statement};\n"));
-        }
+        let formatted_use_items = self
+            .create_merged_use_items(allow_duplicate_uses)
+            .into_iter()
+            .format_with("", |stmt, f| f(&format_args!("{decorations} use {stmt};\n",)))
+            .to_smolstr();
 
         // Create a virtual file ID for the formatted statements.
         let file_id = FileLongId::Virtual(VirtualFile {
@@ -1104,13 +1105,10 @@ impl<'a> FormatterImpl<'a> {
                 }
 
                 let decorations = chain!(
-                    use_item.attributes(self.db).elements(self.db).map(|attr| attr
-                        .as_syntax_node()
-                        .get_text_without_trivia(self.db)
-                        .long(self.db)
-                        .as_str()),
-                    [use_item.visibility(self.db).as_syntax_node().get_text(self.db)],
+                    use_item.attributes(self.db).elements(self.db).map(|e| e.as_syntax_node()),
+                    [use_item.visibility(self.db).as_syntax_node()]
                 )
+                .map(|n| n.get_text_without_trivia(self.db).long(self.db).as_str())
                 .join("\n");
 
                 let tree = decoration_to_use_tree.entry(decorations).or_default();
