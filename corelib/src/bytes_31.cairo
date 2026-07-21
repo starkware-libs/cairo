@@ -194,5 +194,4 @@ mod helpers {
         upcast(res)
     }
 }
-
 pub(crate) use helpers::get_lsb;
