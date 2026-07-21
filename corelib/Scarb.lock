@@ -3,4 +3,10 @@ version = 1
 
 [[package]]
 name = "core"
+<<<<<<< HEAD
 version = "2.20.0-rc.1"
+||||||| b585bc3ab
+version = "2.19.2"
+=======
+version = "2.19.4"
+>>>>>>> origin/main

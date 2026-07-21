@@ -27,7 +27,13 @@ cairo-lang-sierra = { path = "../crates/cairo-lang-sierra" }
 cairo-lang-sierra-gas = { path = "../crates/cairo-lang-sierra-gas" }
 cairo-lang-sierra-generator = { path = "../crates/cairo-lang-sierra-generator" }
 cairo-lang-sierra-to-casm = { path = "../crates/cairo-lang-sierra-to-casm", features = ["testing"] }
+<<<<<<< HEAD
 cairo-lang-sierra-type-size = { path = "../crates/cairo-lang-sierra-type-size", version = "=2.20.0-rc.1" }
+||||||| b585bc3ab
+cairo-lang-sierra-type-size = { path = "../crates/cairo-lang-sierra-type-size", version = "=2.19.2" }
+=======
+cairo-lang-sierra-type-size = { path = "../crates/cairo-lang-sierra-type-size", version = "=2.19.4" }
+>>>>>>> origin/main
 cairo-lang-starknet = { path = "../crates/cairo-lang-starknet" }
 cairo-lang-syntax = { path = "../crates/cairo-lang-syntax" }
 cairo-lang-test-plugin = { path = "../crates/cairo-lang-test-plugin" }

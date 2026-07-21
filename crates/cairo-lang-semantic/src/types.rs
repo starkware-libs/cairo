@@ -680,14 +680,16 @@ fn maybe_resolve_type<'db>(
                 );
             };
             let ty = resolve_type_ex(db, diagnostics, resolver, ty, ctx);
-            let size =
-                match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)? {
-                    Some(size) => size,
-                    None => {
-                        return Err(diagnostics
-                            .report(ty_syntax.stable_ptr(db), FixedSizeArrayTypeEmptySize));
-                    }
-                };
+            let Some(size) =
+                extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)?
+            else {
+                return Err(
+                    diagnostics.report(ty_syntax.stable_ptr(db), FixedSizeArrayTypeEmptySize)
+                );
+            };
+            if let Some(size_int) = size.to_int(db) {
+                verify_fixed_size_array_size(db, diagnostics, size_int, array_syntax)?;
+            }
             TypeLongId::FixedSizeArray { type_id: ty, size }.intern(db)
         }
         _ => {

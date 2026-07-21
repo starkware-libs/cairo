@@ -3,7 +3,13 @@ core = "src"
 
 [config.global]
 edition = "2025_12"
+<<<<<<< HEAD
 version = "2.20.0-rc.1"
+||||||| b585bc3ab
+version = "2.19.2"
+=======
+version = "2.19.4"
+>>>>>>> origin/main
 
 [config.global.experimental_features]
 associated_item_constraints = true

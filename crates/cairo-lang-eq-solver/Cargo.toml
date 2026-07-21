@@ -7,9 +7,15 @@ license-file.workspace = true
 description = "Equation solving for Sierra generation."
 
 [dependencies]
+<<<<<<< HEAD
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.20.0-rc.1", features = [
   "tracing",
 ] }
+||||||| b585bc3ab
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.19.2", features = ["tracing"] }
+=======
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.19.4", features = ["tracing"] }
+>>>>>>> origin/main
 good_lp.workspace = true
 
 [dev-dependencies]

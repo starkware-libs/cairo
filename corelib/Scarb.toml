@@ -1,6 +1,12 @@
 [package]
 name = "core"
+<<<<<<< HEAD
 version = "2.20.0-rc.1"
+||||||| b585bc3ab
+version = "2.19.2"
+=======
+version = "2.19.4"
+>>>>>>> origin/main
 edition = "2025_12"
 experimental-features = [
   "associated_item_constraints",
@@ -14,4 +20,10 @@ experimental-features = [
 no-core = true
 
 [dev-dependencies]
+<<<<<<< HEAD
 cairo_test = "2.20.0-rc.1"
+||||||| b585bc3ab
+cairo_test = "2.19.2"
+=======
+cairo_test = "2.19.4"
+>>>>>>> origin/main

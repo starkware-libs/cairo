@@ -19,7 +19,7 @@ pub(crate) trait Zeroable<T> {
     /// # Examples
     ///
     /// ```
-    /// assert!(Zeroable::<i32>::zero() == 0);
+    /// assert!(Zeroable::<u32>::zero() == 0);
     /// ```
     #[must_use]
     fn zero() -> T;

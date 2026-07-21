@@ -12,9 +12,19 @@ clap.workspace = true
 dhat = { workspace = true, optional = true }
 mimalloc = { workspace = true, optional = true }
 
+<<<<<<< HEAD
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "=2.20.0-rc.1" }
 cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "=2.20.0-rc.1" }
 cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "=2.20.0-rc.1" }
+||||||| b585bc3ab
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "=2.19.2" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "=2.19.2" }
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "=2.19.2" }
+=======
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "=2.19.4" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "=2.19.4" }
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "=2.19.4" }
+>>>>>>> origin/main
 
 [features]
 dhat = ["dep:dhat"]

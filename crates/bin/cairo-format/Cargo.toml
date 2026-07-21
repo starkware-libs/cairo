@@ -14,10 +14,18 @@ log.workspace = true
 mimalloc = { workspace = true, optional = true }
 tracing.workspace = true
 
+<<<<<<< HEAD
 cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "=2.20.0-rc.1" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.20.0-rc.1", features = [
   "tracing",
 ] }
+||||||| b585bc3ab
+cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "=2.19.2" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.19.2", features = ["tracing"] }
+=======
+cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "=2.19.4" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.19.4", features = ["tracing"] }
+>>>>>>> origin/main
 
 [features]
 mimalloc = ["dep:mimalloc"]
