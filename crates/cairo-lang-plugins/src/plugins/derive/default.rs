@@ -63,6 +63,14 @@ pub fn handle_default<'db>(
             })
         }
         TypeVariant::Struct => {
+            for member in &info.members_info {
+                if let Some(default_attr) = member.attributes.find_attr(db, DEFAULT_ATTR) {
+                    diagnostics.push(PluginDiagnostic::error(
+                        default_attr.stable_ptr(db),
+                        "`#[default]` is only supported for enum variants.".into(),
+                    ));
+                }
+            }
             let header = info.impl_header(DEFAULT_TRAIT, &[DEFAULT_TRAIT, DESTRUCT_TRAIT]);
             Some(formatdoc! {"
                 {header} {{
