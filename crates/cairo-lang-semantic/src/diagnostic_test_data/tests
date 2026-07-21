@@ -1695,7 +1695,6 @@ mod inner {
     pub fn unstable() {}
 }
 use inner::*;
-
 pub use unstable as renamed;
 
 //! > function_body
@@ -1707,7 +1706,7 @@ pub use unstable as renamed;
 
 //! > expected_diagnostics
 warning[E2065]: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
- --> lib.cairo:7:9
+ --> lib.cairo:6:9
 pub use unstable as renamed;
         ^^^^^^^^
 
@@ -1735,7 +1734,6 @@ mod c {
     pub use super::b::*;
 }
 use c::*;
-
 pub use unstable as renamed;
 
 //! > function_body
@@ -1747,6 +1745,6 @@ pub use unstable as renamed;
 
 //! > expected_diagnostics
 warning[E2065]: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
- --> lib.cairo:15:9
+ --> lib.cairo:14:9
 pub use unstable as renamed;
         ^^^^^^^^

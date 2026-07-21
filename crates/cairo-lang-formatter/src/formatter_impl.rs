@@ -4,7 +4,7 @@ use std::fmt;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
-use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_parser::macro_helpers::token_tree_as_wrapped_arg_list;
 use cairo_lang_parser::parser::Parser;
@@ -113,33 +113,20 @@ impl UseTree {
         }
     }
 
-    /// Formats `use` items, creates a virtual file, and parses it into a syntax node.
-    pub fn generate_syntax_node_from_use(
+    /// Writes the tree's merged `use` statements into `f`, one line per statement, each prefixed
+    /// by `decorations` (the shared attributes and visibility). The caller concatenates the
+    /// output of every decoration group into a single virtual file and reparses it.
+    fn format_merged_uses(
         mut self,
-        db: &dyn Database,
         allow_duplicate_uses: bool,
         decorations: String,
-    ) -> SyntaxNode<'_> {
-        let mut formatted_use_items = String::new();
+        f: &mut dyn FnMut(&dyn fmt::Display) -> fmt::Result,
+    ) -> fmt::Result {
         self.organize_self_imports();
-        for statement in self.create_merged_use_items(allow_duplicate_uses) {
-            formatted_use_items.push_str(&format!("{decorations}use {statement};\n"));
-        }
-
-        // Create a virtual file ID for the formatted statements.
-        let file_id = FileLongId::Virtual(VirtualFile {
-            parent: None,
-            name: SmolStrId::from(db, "parser_input"),
-            content: SmolStrId::from(db, formatted_use_items),
-            code_mappings: [].into(),
-            kind: FileKind::Module,
-            original_item_removed: false,
-        })
-        .intern(db);
-
-        let mut diagnostics = DiagnosticsBuilder::<ParserDiagnostic<'_>>::default();
-        let contents = db.file_content(file_id).unwrap();
-        Parser::parse_file(db, &mut diagnostics, file_id, contents).as_syntax_node()
+        f(&self
+            .create_merged_use_items(allow_duplicate_uses)
+            .into_iter()
+            .format_with("", |stmt, f| f(&format_args!("{decorations} use {stmt};\n"))))
     }
 }
 
@@ -1078,58 +1065,90 @@ impl<'a> FormatterImpl<'a> {
     /// them into a clean, structured format.
     fn merge_use_items(&mut self, children: &mut Vec<SyntaxNode<'a>>) {
         let mut new_children = Vec::new();
+        let db = self.db;
 
-        for (section_kind, section_nodes) in extract_sections(children, self.db) {
+        for (section_kind, section_nodes) in extract_sections(children, db) {
             if section_kind != SortKind::UseItem {
                 new_children.extend(section_nodes.iter().cloned());
                 continue;
             }
-
-            let mut decoration_to_use_tree: OrderedHashMap<String, UseTree> =
-                OrderedHashMap::default();
+            /// Accumulated state for merging a run of `use` items within a single section.
+            struct MergeInfo<'a> {
+                /// The leading trivia of the first mergeable `use` item.
+                leading_trivia: &'a str,
+                /// The merged paths, keyed by their shared decorations (attributes + visibility).
+                decoration_to_use_tree: OrderedHashMap<String, UseTree>,
+                /// Items that are not part of the merge to be emitted after the merged block.
+                trailing_nodes: Vec<SyntaxNode<'a>>,
+            }
+            let mut merge_info = None::<MergeInfo<'a>>;
 
             for node in section_nodes {
+                let mut push_non_merge_node = || match &mut merge_info {
+                    Some(info) => info.trailing_nodes.push(*node),
+                    None => new_children.push(*node),
+                };
                 if !self.has_only_whitespace_trivia(node)
-                    || node.should_ignore_node_format(self.db).is_some()
+                    || node.should_ignore_node_format(db).is_some()
                 {
-                    new_children.push(*node);
+                    push_non_merge_node();
                     continue;
                 }
 
-                let use_item = ast::ItemUse::from_syntax_node(self.db, *node);
-
-                if !matches!(use_item.dollar(self.db), ast::OptionTerminalDollar::Empty(_)) {
-                    new_children.push(*node);
+                let use_item = ast::ItemUse::from_syntax_node(db, *node);
+                if !matches!(use_item.dollar(db), ast::OptionTerminalDollar::Empty(_)) {
+                    push_non_merge_node();
                     continue;
                 }
-
+                let merge_info = merge_info.get_or_insert_with(|| {
+                    let span = TextSpan::new(node.offset(db), node.span_start_without_trivia(db));
+                    MergeInfo {
+                        leading_trivia: node.get_text_of_span(db, span),
+                        decoration_to_use_tree: Default::default(),
+                        trailing_nodes: Default::default(),
+                    }
+                });
                 let decorations = chain!(
-                    use_item.attributes(self.db).elements(self.db).map(|attr| attr
-                        .as_syntax_node()
-                        .get_text_without_trivia(self.db)
-                        .long(self.db)
-                        .as_str()),
-                    [use_item.visibility(self.db).as_syntax_node().get_text(self.db)],
+                    use_item.attributes(db).elements(db).map(|e| e.as_syntax_node()),
+                    [use_item.visibility(db).as_syntax_node()]
                 )
+                .map(|n| n.get_text_without_trivia(db).long(db).as_str())
                 .join("\n");
 
-                let tree = decoration_to_use_tree.entry(decorations).or_default();
-                tree.insert_path(self.db, use_item.use_path(self.db));
+                let tree = merge_info.decoration_to_use_tree.entry(decorations).or_default();
+                tree.insert_path(db, use_item.use_path(db));
             }
 
-            // Generate merged syntax nodes from the `decoration_to_use_tree`.
-            for (decorations, tree) in decoration_to_use_tree {
-                let merged_node = tree.generate_syntax_node_from_use(
-                    self.db,
-                    self.config.allow_duplicate_uses,
-                    decorations,
-                );
+            let Some(merge_info) = merge_info else {
+                continue;
+            };
+            let merged_uses = merge_info.decoration_to_use_tree.into_iter().format_with(
+                "",
+                |(decorations, tree), f| {
+                    tree.format_merged_uses(self.config.allow_duplicate_uses, decorations, f)
+                },
+            );
 
-                // Add merged children to the new_children list.
-                if let Some(child) = merged_node.get_children(self.db).iter().next() {
-                    new_children.extend(child.get_children(self.db).iter().copied());
-                }
-            }
+            // Create a virtual file ID for the formatted statements.
+            let file_id = FileLongId::Virtual(VirtualFile {
+                parent: None,
+                name: SmolStrId::from(db, "parser_input"),
+                content: SmolStrId::from(db, format!("{}{merged_uses}", merge_info.leading_trivia)),
+                code_mappings: [].into(),
+                kind: FileKind::Module,
+                original_item_removed: false,
+            })
+            .intern(db);
+
+            let mut ignored_diags = DiagnosticsBuilder::<ParserDiagnostic<'_>>::default();
+            let contents = db.file_content(file_id).unwrap();
+
+            // Add merged children to the new_children list.
+            let items = Parser::parse_file(db, &mut ignored_diags, file_id, contents).items(db);
+            new_children.extend(chain!(
+                items.as_syntax_node().get_children(db).iter().copied(),
+                merge_info.trailing_nodes
+            ));
         }
 
         *children = new_children;

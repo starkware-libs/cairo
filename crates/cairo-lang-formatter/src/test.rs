@@ -163,6 +163,18 @@ use crate::{FormatterConfig, get_formatted_file};
     true,
     false
 )]
+// Merge enabled: the leading trivia of the first mergeable `use` (the blank line after `mod x;`)
+// is preserved, and a `use` item carrying its own comment is emitted as-is after the merged block
+// rather than folded into it.
+#[test_case(
+    "test_data/cairo_files/use_merge_leading_trivia.cairo",
+    "test_data/expected_results/use_merge_leading_trivia.cairo",
+    false,
+    false,
+    false,
+    true,
+    false
+)]
 fn format_and_compare_file(
     unformatted_filename: &str,
     expected_filename: &str,
