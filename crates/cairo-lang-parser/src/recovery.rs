@@ -102,7 +102,13 @@ pub(crate) use module_item_kw;
 
 macro_rules! block {
     () => {
-        SyntaxKind::TerminalLet | SyntaxKind::TerminalMatch | SyntaxKind::TerminalReturn
+        SyntaxKind::TerminalLet
+            | SyntaxKind::TerminalMatch
+            | SyntaxKind::TerminalReturn
+            | SyntaxKind::TerminalIf
+            | SyntaxKind::TerminalWhile
+            | SyntaxKind::TerminalLoop
+            | SyntaxKind::TerminalFor
     };
 }
 pub(crate) use block;
