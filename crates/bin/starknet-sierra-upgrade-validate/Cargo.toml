@@ -10,18 +10,10 @@ publish = false
 [dependencies]
 anyhow.workspace = true
 async-channel = "2.5.0"
-<<<<<<< HEAD
 cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "=2.20.0-rc.1" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.20.0-rc.1", features = [
   "serde",
 ] }
-||||||| b585bc3ab
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "=2.19.2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.19.2", features = ["serde"] }
-=======
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "=2.19.4" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.19.4", features = ["serde"] }
->>>>>>> origin/main
 clap.workspace = true
 indicatif = "0.18.0"
 num-bigint.workspace = true

@@ -11,19 +11,9 @@ anyhow.workspace = true
 clap.workspace = true
 mimalloc = { workspace = true, optional = true }
 
-<<<<<<< HEAD
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "=2.20.0-rc.1" }
 cairo-lang-runner = { path = "../../cairo-lang-runner", version = "=2.20.0-rc.1" }
 cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "=2.20.0-rc.1" }
-||||||| b585bc3ab
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "=2.19.2" }
-cairo-lang-runner = { path = "../../cairo-lang-runner", version = "=2.19.2" }
-cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "=2.19.2" }
-=======
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "=2.19.4" }
-cairo-lang-runner = { path = "../../cairo-lang-runner", version = "=2.19.4" }
-cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "=2.19.4" }
->>>>>>> origin/main
 
 [features]
 mimalloc = ["dep:mimalloc"]

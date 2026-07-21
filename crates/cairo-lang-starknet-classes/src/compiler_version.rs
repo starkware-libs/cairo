@@ -39,11 +39,5 @@ pub fn current_compiler_version_id() -> VersionId {
 /// Minor version should be updated in any backwards compatible change of the Sierra compiler.
 /// For more information see docs/CONTRIBUTING.md.
 pub fn current_sierra_version_id() -> VersionId {
-<<<<<<< HEAD
     VersionId { major: 1, minor: 9, patch: 2 }
-||||||| b585bc3ab
-    VersionId { major: 1, minor: 9, patch: 1 }
-=======
-    VersionId { major: 1, minor: 9, patch: 3 }
->>>>>>> origin/main
 }
