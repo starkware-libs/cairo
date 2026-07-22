@@ -25,7 +25,7 @@ use crate::resolve::{
 use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct ImplAliasData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -187,7 +187,7 @@ pub fn impl_alias_generic_params_data_helper<'db>(
 }
 
 /// Implementation of [ImplAliasSemantic::impl_alias_impl_def].
-#[salsa::tracked(cycle_result=impl_alias_impl_def_cycle)]
+#[salsa::tracked(returns(copy), cycle_result=impl_alias_impl_def_cycle)]
 fn impl_alias_impl_def<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,

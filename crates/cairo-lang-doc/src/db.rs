@@ -57,7 +57,7 @@ pub trait DocGroup: Database {
 
 impl<T: Database + ?Sized> DocGroup for T {}
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn get_item_documentation<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -79,7 +79,7 @@ fn get_item_documentation<'db>(
     Some(buff)
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn get_item_documentation_as_tokens<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -248,8 +248,8 @@ fn is_comment_line(line: &str) -> bool {
     line.trim_start().starts_with("//")
 }
 
-#[salsa::tracked]
 /// Extracts embedded Markdown links from a documentation comment syntax node.
+#[salsa::tracked(returns(clone))]
 fn get_embedded_markdown_links<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,

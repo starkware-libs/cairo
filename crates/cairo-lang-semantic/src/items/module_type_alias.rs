@@ -15,7 +15,7 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve::ResolverData;
 use crate::{GenericParam, SemanticDiagnostic, TypeId};
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct ModuleTypeAliasData<'db> {
     type_alias_data: TypeAliasData<'db>,

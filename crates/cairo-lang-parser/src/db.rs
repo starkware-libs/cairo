@@ -49,7 +49,9 @@ impl<T: Database + ?Sized> ParserGroup for T {}
 
 #[salsa::tracked]
 struct SyntaxData<'db> {
+    #[returns(clone)]
     diagnostics: Diagnostics<'db, ParserDiagnostic<'db>>,
+    #[returns(copy)]
     syntax: Maybe<SyntaxNode<'db>>,
 }
 
@@ -76,7 +78,7 @@ fn file_syntax_data<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> SyntaxD
 }
 
 /// Parses a file and returns its SyntaxNode.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn file_syntax<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<SyntaxNode<'db>> {
     file_syntax_data(db, file_id).syntax(db)
 }

@@ -24,7 +24,7 @@ use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::{Arenas, ExprId, PatternId, SemanticDiagnostic, TypeId, semantic};
 
 /// Query implementation of [FunctionWithBodySemantic::function_with_body_generic_params].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn function_with_body_generic_params<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -49,7 +49,7 @@ fn function_with_body_generic_params<'db>(
     })
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct FunctionBodyData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -59,46 +59,11 @@ pub struct FunctionBodyData<'db> {
     pub body: FunctionBody<'db>,
 }
 
-unsafe impl<'db> salsa::Update for FunctionBodyData<'db> {
-    // Using existing salsa::Update implementations for the fields.
-    // For lookups we assume they are built from the arena,
-    // so a change will be detected and they will be copied.
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = unsafe { &mut *old_pointer };
-        let res = unsafe {
-            Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
-                | Arc::maybe_update(&mut old_value.resolver_data, new_value.resolver_data)
-                | FunctionBody::maybe_update(&mut old_value.body, new_value.body)
-        };
-        if res {
-            old_value.expr_lookup = new_value.expr_lookup;
-            old_value.pattern_lookup = new_value.pattern_lookup;
-            return true;
-        }
-        false
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct FunctionBody<'db> {
     pub arenas: Arenas<'db>,
     pub body_expr: semantic::ExprId,
-}
-
-unsafe impl<'db> salsa::Update for FunctionBody<'db> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        // The function body contains both the arena and the expr id, so a change will be detected.
-        // The comparison should still be safe to do as we won't follow expired references.
-        let old_value = unsafe { &mut *old_pointer };
-
-        if old_value != &new_value {
-            *old_value = new_value;
-            return true;
-        }
-
-        false
-    }
 }
 
 pub trait SemanticExprLookup<'db>: Database {

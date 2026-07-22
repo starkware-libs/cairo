@@ -7,7 +7,7 @@ use crate::db::files_group_input;
 use crate::ids::{FlagId, FlagLongId};
 
 /// A compilation flag.
-#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize, Hash, salsa::Update)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize, Hash, salsa::SalsaValue)]
 pub enum Flag {
     /// Whether to automatically add `withdraw_gas` calls in code cycles.
     /// Default is true - automatically add.
@@ -105,7 +105,7 @@ pub trait FlagsGroup: Database {
     }
     /// Query to get a compilation flag by its ID.
     fn get_flag<'db>(&'db self, id: FlagId<'db>) -> Option<Flag> {
-        get_flag(self.as_dyn_database(), id)
+        *get_flag(self.as_dyn_database(), id)
     }
 
     /// Sets the given flag value. None value removes the flag.
@@ -120,23 +120,23 @@ pub trait FlagsGroup: Database {
     }
     /// Returns the value of the `add_withdraw_gas` flag.
     fn flag_add_withdraw_gas(&self) -> bool {
-        flag_add_withdraw_gas(self.as_dyn_database())
+        *flag_add_withdraw_gas(self.as_dyn_database())
     }
     /// Returns the value of the `numeric_match_optimization_min_arms_threshold` flag.
     fn flag_numeric_match_optimization_min_arms_threshold(&self) -> Option<usize> {
-        flag_numeric_match_optimization_min_arms_threshold(self.as_dyn_database())
+        *flag_numeric_match_optimization_min_arms_threshold(self.as_dyn_database())
     }
     /// Returns the value of the `panic_backtrace` flag.
     fn flag_panic_backtrace(&self) -> bool {
-        flag_panic_backtrace(self.as_dyn_database())
+        *flag_panic_backtrace(self.as_dyn_database())
     }
     /// Returns the value of the `unsafe_panic` flag.
     fn flag_unsafe_panic(&self) -> bool {
-        flag_unsafe_panic(self.as_dyn_database())
+        *flag_unsafe_panic(self.as_dyn_database())
     }
     /// Returns the value of the `future_sierra` flag.
     fn flag_future_sierra(&self) -> bool {
-        flag_future_sierra(self.as_dyn_database())
+        *flag_future_sierra(self.as_dyn_database())
     }
 }
 impl<T: Database + ?Sized> FlagsGroup for T {}

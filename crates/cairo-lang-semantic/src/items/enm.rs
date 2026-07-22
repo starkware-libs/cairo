@@ -30,7 +30,7 @@ use crate::{ConcreteEnumId, GenericParam, SemanticDiagnostic, semantic};
 mod test;
 
 // Declaration
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct EnumDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -99,7 +99,7 @@ fn enum_generic_params_data<'db>(
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct EnumDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -108,7 +108,7 @@ struct EnumDefinitionData<'db> {
     resolver_data: Arc<ResolverData<'db>>,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Variant<'db> {
     pub enum_id: EnumId<'db>,
@@ -118,7 +118,7 @@ pub struct Variant<'db> {
     pub idx: usize,
 }
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct ConcreteVariant<'db> {
     pub concrete_enum_id: ConcreteEnumId<'db>,
     pub id: VariantId<'db>,
@@ -216,7 +216,7 @@ fn enum_definition_data<'db>(
 }
 
 /// Query implementation of [EnumSemantic::enum_definition_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn enum_definition_diagnostics<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,

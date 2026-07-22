@@ -35,7 +35,7 @@ use crate::ids::{FunctionId, LocationId, Signature};
 
 /// The Location struct represents the source location of a lowered object. It is used to store the
 /// most relevant source location for a lowering object.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, HeapSize, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, HeapSize, salsa::SalsaValue)]
 pub struct Location<'db> {
     /// The stable location of the object.
     pub stable_location: StableLocation<'db>,
@@ -140,13 +140,16 @@ pub struct VarUsage<'db> {
 }
 
 /// A lowered function code using flat blocks.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct Lowered<'db> {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<'db, LoweringDiagnostic<'db>>,
     /// Function signature.
     pub signature: Signature<'db>,
     /// Arena of allocated lowered variables.
+    /// SAFETY: `id_arena::Arena` is a foreign type, so this cannot be derived; the arena holds
+    /// owned `Variable` values that are safe to retain across revisions.
+    #[salsa_value(unsafe(prove_safe_to_retain_manually))]
     pub variables: VariableArena<'db>,
     /// Arena of allocated lowered blocks.
     pub blocks: Blocks<'db>,
@@ -159,22 +162,6 @@ impl<'db> Index<StatementLocation> for Lowered<'db> {
 
     fn index(&self, location: StatementLocation) -> &Self::Output {
         &self.blocks[location]
-    }
-}
-
-unsafe impl<'db> salsa::Update for Lowered<'db> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = unsafe { &mut *old_pointer };
-        let res = unsafe {
-            Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
-                | Signature::maybe_update(&mut old_value.signature, new_value.signature)
-        } | (old_value.blocks != new_value.blocks);
-        if res {
-            old_value.variables = new_value.variables;
-            old_value.parameters = new_value.parameters;
-            old_value.blocks = new_value.blocks;
-        }
-        res
     }
 }
 

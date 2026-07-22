@@ -16,7 +16,7 @@ use crate::{ConcreteTraitId, ConcreteVariant, FunctionId, TypeId, TypeLongId, Va
 // ResolvedConcreteItem - returned by resolve_concrete_path(). Paths with generic arguments.
 // ResolvedGenericItem - returned by resolve_generic_path(). Paths without generic arguments.
 
-#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb, salsa::Update)]
+#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub enum ResolvedGenericItem<'db> {
     GenericConstant(ConstantId<'db>),
@@ -83,7 +83,7 @@ impl<'db> ResolvedGenericItem<'db> {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb, salsa::Update)]
+#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub enum ResolvedConcreteItem<'db> {
     Constant(ConstValueId<'db>),

@@ -40,7 +40,7 @@ pub(crate) const MISSING: &str = "<missing>";
 
 /// Gets the signature of an item and a list of [`LocationLink`]s to enable mapping
 /// signature slices on documentable items.
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn get_item_signature_with_links<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,

@@ -22,7 +22,7 @@ use crate::{ap_change, function_generator, pre_sierra, replace_ids};
 
 /// Helper type for Sierra long IDs, which can be either a type long ID or a cycle breaker.
 /// This is required for cases where the type long id is self referential.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub enum SierraGeneratorTypeLongId<'db> {
     /// A normal type long id.
     Regular(Arc<cairo_lang_sierra::program::ConcreteTypeLongId>),
@@ -68,7 +68,7 @@ fn lookup_concrete_lib_func(
     id: ConcreteLibfuncHandle,
 ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
     let interned = ConcreteLibfuncIdLongWrapper::from_id(Id::from_bits(id.0));
-    interned.id(db)
+    interned.id(db).clone()
 }
 
 fn intern_concrete_type<'db>(
@@ -84,7 +84,7 @@ fn lookup_concrete_type<'db>(
     id: ConcreteTypeHandle,
 ) -> SierraGeneratorTypeLongId<'db> {
     let interned = SierraGeneratorTypeLongIdWrapper::from_id(Id::from_bits(id.0));
-    interned.id(db)
+    interned.id(db).clone()
 }
 
 fn intern_sierra_function<'db>(

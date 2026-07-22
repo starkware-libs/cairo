@@ -26,7 +26,7 @@ use crate::utils::{
     revoke_ap_tracking_libfunc_id, simple_basic_statement,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct SierraFunctionWithBodyData<'db> {
     pub function: Maybe<pre_sierra::Function<'db>>,
     pub ap_change: SierraApChange,

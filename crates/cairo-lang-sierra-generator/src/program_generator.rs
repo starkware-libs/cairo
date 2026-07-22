@@ -202,22 +202,12 @@ pub fn priv_libfunc_dependencies(
     all_types
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, salsa::SalsaValue)]
 pub struct SierraProgramWithDebug<'db> {
     pub program: cairo_lang_sierra::program::Program,
     pub debug_info: SierraProgramDebugInfo<'db>,
 }
 
-unsafe impl<'db> salsa::Update for SierraProgramWithDebug<'db> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = unsafe { &mut *old_pointer };
-        if old_value == &new_value {
-            return false;
-        }
-        *old_value = new_value;
-        true
-    }
-}
 /// Implementation for a debug print of a Sierra program with all locations.
 /// The print is a valid textual Sierra program.
 impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {

@@ -16,7 +16,7 @@ impl<'a> GreenId<'a> {
     }
 }
 
-#[derive(Copy, Debug, Clone, PartialEq, Eq, Hash, salsa::Update, HeapSize)]
+#[derive(Copy, Debug, Clone, PartialEq, Eq, Hash, salsa::SalsaValue, HeapSize)]
 pub struct SyntaxStablePtrId<'a>(pub SyntaxNode<'a>);
 
 impl<'a> SyntaxStablePtrId<'a> {

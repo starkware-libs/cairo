@@ -141,7 +141,7 @@ quote = "1.0.40"
 rand = "0.10.0"
 rayon = "1.10.0"
 rstest = "0.26.1"
-salsa = "0.27.2"
+salsa = "0.28.1"
 schemars = "1.0.4"
 semver = { version = "1.0.26", features = ["serde"] }
 serde = { version = "1.0.219", default-features = false, features = ["derive", "rc"] }

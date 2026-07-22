@@ -21,7 +21,7 @@ pub fn function_with_body_feedback_set<'db>(
 }
 
 /// Query implementation of [crate::db::LoweringGroup::needs_withdraw_gas].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn needs_withdraw_gas<'db>(
     db: &'db dyn Database,
     function: ConcreteFunctionWithBodyId<'db>,
@@ -34,7 +34,7 @@ pub fn needs_withdraw_gas<'db>(
 
 /// Returns the feedback-vertex-set of the given concrete-function SCC-representative. A
 /// feedback-vertex-set is the set of vertices whose removal leaves a graph without cycles.
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn function_with_body_feedback_set_of_representative<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
