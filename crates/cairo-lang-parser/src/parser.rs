@@ -865,7 +865,6 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             }
                             OptionParamKindEmpty::new_green(self.db).into()
                         };
-                        self.macro_parsing_context = MacroParsingContext::None;
                         Ok(MacroParam::new_green(self.db, dollar, ident, param_kind).into())
                     }
                 }
