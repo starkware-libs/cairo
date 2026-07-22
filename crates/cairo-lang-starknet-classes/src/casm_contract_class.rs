@@ -18,8 +18,8 @@ use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::snapshot::SnapshotType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::structure::StructType;
-use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
-use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
+use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
+use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, StatementIdx, TypeDeclaration};
 use cairo_lang_sierra_to_casm::compiler::{
     CairoProgramDebugInfo, CompilationError, SierraToCasmConfig,
 };
@@ -30,9 +30,8 @@ use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
 use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
-use itertools::{Itertools, chain};
+use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::Signed;
@@ -93,6 +92,21 @@ pub enum StarknetSierraCompilationError {
     )]
     UnsupportedSierraVersion { version_in_contract: VersionId, version_of_compiler: VersionId },
 }
+
+/// The canonical order entry-point builtins must appear in, as expected by the Starknet OS,
+/// excluding the trailing gas and system builtins (checked separately in
+/// [`CasmContractClass::from_contract_class`]).
+pub static ENTRY_POINT_BUILTIN_ORDER: [GenericTypeId; 9] = [
+    PedersenType::ID,
+    RangeCheckType::ID,
+    BitwiseType::ID,
+    EcOpType::ID,
+    PoseidonType::ID,
+    SegmentArenaType::ID,
+    RangeCheck96Type::ID,
+    AddModType::ID,
+    MulModType::ID,
+];
 
 fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
     opt_field.is_none()
@@ -428,6 +442,87 @@ impl CasmContractClass {
                 });
             }
         }
+        let program_info = ProgramRegistryInfo::new(&program).map_err(|err| {
+            StarknetSierraCompilationError::CompilationError(Box::new(
+                CompilationError::ProgramRegistryError(err),
+            ))
+        })?;
+        let type_resolver = TypeResolver { type_decl: &program.type_declarations };
+
+        // Validates the entry point's signature, returning its entry statement, function id and
+        // builtin names.
+        let validate_entry_point = |contract_entry_point: &ContractEntryPoint| {
+            let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
+                return Err(StarknetSierraCompilationError::EntryPointError);
+            };
+
+            // The expected return types are [builtins.., gas_builtin, system, PanicResult].
+            let (panic_result, output_builtins) = function
+                .signature
+                .ret_types
+                .split_last()
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+            let (builtins, [gas_ty, system_ty]) = output_builtins
+                .split_last_chunk()
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+            let (input_span, input_builtins) = function
+                .signature
+                .param_types
+                .split_last()
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs)?;
+            require(input_builtins == output_builtins)
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+
+            require(type_resolver.is_felt252_span(input_span))
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+
+            require(type_resolver.is_valid_entry_point_return_type(panic_result))
+                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
+
+            for type_id in builtins {
+                if !ENTRY_POINT_BUILTIN_ORDER.contains(type_resolver.get_generic_id(type_id)) {
+                    return Err(StarknetSierraCompilationError::InvalidBuiltinType(
+                        type_id.clone(),
+                    ));
+                }
+            }
+
+            // Check that the last builtins are gas and system.
+            if *type_resolver.get_generic_id(system_ty) != SystemType::id()
+                || *type_resolver.get_generic_id(gas_ty) != GasBuiltinType::id()
+            {
+                return Err(
+                    StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
+                );
+            }
+
+            let mut order_iter = ENTRY_POINT_BUILTIN_ORDER.iter();
+            require(builtins.iter().all(|type_id| {
+                order_iter.any(|generic_id| generic_id == type_resolver.get_generic_id(type_id))
+            }))
+            .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder)?;
+
+            let builtins = builtins
+                .iter()
+                .map(|type_id| match type_resolver.get_generic_id(type_id).0.as_str() {
+                    "RangeCheck96" => "range_check96".to_string(),
+                    name => name.to_case(Case::Snake),
+                })
+                .collect_vec();
+            Ok((function.entry_point, &function.id, builtins))
+        };
+
+        // Validate all entry-point signatures before the (much heavier) compilation, keeping the
+        // validated info for building the CASM entry points afterwards.
+        let validate_entry_points = |entry_points: &[ContractEntryPoint]| {
+            entry_points.iter().map(validate_entry_point).collect::<Result<Vec<_>, _>>()
+        };
+        let external_infos = validate_entry_points(&contract_class.entry_points_by_type.external)?;
+        let l1_handler_infos =
+            validate_entry_points(&contract_class.entry_points_by_type.l1_handler)?;
+        let constructor_infos =
+            validate_entry_points(&contract_class.entry_points_by_type.constructor)?;
+
         let entrypoint_ids = entrypoint_function_indices.map(|idx| program.funcs[idx].id.clone());
         // TODO(lior): Remove this assert and condition once the equation solver is removed in major
         //   version 2.
@@ -443,11 +538,6 @@ impl CasmContractClass {
             skip_non_linear_solver_comparisons: false,
             compute_runtime_costs: false,
         };
-        let program_info = ProgramRegistryInfo::new(&program).map_err(|err| {
-            StarknetSierraCompilationError::CompilationError(Box::new(
-                CompilationError::ProgramRegistryError(err),
-            ))
-        })?;
         let metadata = calc_metadata(&program, &program_info, metadata_computation_config)?;
         let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
             &program,
@@ -475,100 +565,30 @@ impl CasmContractClass {
             None
         };
 
-        let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
-            RangeCheckType::id(),
-            BitwiseType::id(),
-            PedersenType::id(),
-            EcOpType::id(),
-            PoseidonType::id(),
-            SegmentArenaType::id(),
-            GasBuiltinType::id(),
-            SystemType::id(),
-            RangeCheck96Type::id(),
-            AddModType::id(),
-            MulModType::id(),
-        ]);
-
-        let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
-            let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
-                return Err(StarknetSierraCompilationError::EntryPointError);
+        let as_casm_entry_points =
+            |contract_entry_points: Vec<ContractEntryPoint>,
+             infos: Vec<(StatementIdx, &FunctionId, Vec<String>)>| {
+                zip_eq(contract_entry_points, infos)
+                    .map(|(contract_entry_point, (statement_id, function_id, builtins))| {
+                        let code_offset = cairo_program.debug_info.sierra_statement_info
+                            [statement_id.0]
+                            .start_offset;
+                        assert_eq!(
+                            metadata.gas_info.function_costs[function_id],
+                            CostTokenMap::from_iter([(
+                                CostTokenType::Const,
+                                ENTRY_POINT_COST as i64
+                            )]),
+                            "Unexpected entry point cost."
+                        );
+                        CasmContractEntryPoint {
+                            selector: contract_entry_point.selector,
+                            offset: code_offset,
+                            builtins,
+                        }
+                    })
+                    .collect_vec()
             };
-            let statement_id = function.entry_point;
-
-            // The expected return types are [builtins.., gas_builtin, system, PanicResult].
-            let (panic_result, output_builtins) = function
-                .signature
-                .ret_types
-                .split_last()
-                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
-            let (builtins, [gas_ty, system_ty]) = output_builtins
-                .split_last_chunk()
-                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
-            let (input_span, input_builtins) = function
-                .signature
-                .param_types
-                .split_last()
-                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs)?;
-            require(input_builtins == output_builtins)
-                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
-
-            let type_resolver = TypeResolver { type_decl: &program.type_declarations };
-            require(type_resolver.is_felt252_span(input_span))
-                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
-
-            require(type_resolver.is_valid_entry_point_return_type(panic_result))
-                .ok_or(StarknetSierraCompilationError::InvalidEntryPointSignature)?;
-
-            for type_id in input_builtins {
-                if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
-                    return Err(StarknetSierraCompilationError::InvalidBuiltinType(
-                        type_id.clone(),
-                    ));
-                }
-            }
-
-            // Check that the last builtins are gas and system.
-            if *type_resolver.get_generic_id(system_ty) != SystemType::id()
-                || *type_resolver.get_generic_id(gas_ty) != GasBuiltinType::id()
-            {
-                return Err(
-                    StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
-                );
-            }
-
-            let builtins = builtins
-                .iter()
-                .map(|type_id| match type_resolver.get_generic_id(type_id).0.as_str() {
-                    "RangeCheck96" => "range_check96".to_string(),
-                    name => name.to_case(Case::Snake),
-                })
-                .collect_vec();
-
-            let code_offset = cairo_program
-                .debug_info
-                .sierra_statement_info
-                .get(statement_id.0)
-                .ok_or(StarknetSierraCompilationError::EntryPointError)?
-                .start_offset;
-            assert_eq!(
-                metadata.gas_info.function_costs[&function.id],
-                CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]),
-                "Unexpected entry point cost."
-            );
-            Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
-                selector: contract_entry_point.selector,
-                offset: code_offset,
-                builtins,
-            })
-        };
-
-        let as_casm_entry_points = |contract_entry_points: Vec<ContractEntryPoint>| {
-            let mut entry_points = vec![];
-            for contract_entry_point in contract_entry_points {
-                entry_points.push(as_casm_entry_point(contract_entry_point)?);
-            }
-            Ok::<Vec<CasmContractEntryPoint>, StarknetSierraCompilationError>(entry_points)
-        };
 
         let pythonic_hints = if add_pythonic_hints {
             Some(
@@ -592,9 +612,18 @@ impl CasmContractClass {
             hints,
             pythonic_hints,
             entry_points_by_type: CasmContractEntryPoints {
-                external: as_casm_entry_points(contract_class.entry_points_by_type.external)?,
-                l1_handler: as_casm_entry_points(contract_class.entry_points_by_type.l1_handler)?,
-                constructor: as_casm_entry_points(contract_class.entry_points_by_type.constructor)?,
+                external: as_casm_entry_points(
+                    contract_class.entry_points_by_type.external,
+                    external_infos,
+                ),
+                l1_handler: as_casm_entry_points(
+                    contract_class.entry_points_by_type.l1_handler,
+                    l1_handler_infos,
+                ),
+                constructor: as_casm_entry_points(
+                    contract_class.entry_points_by_type.constructor,
+                    constructor_infos,
+                ),
             },
         };
 

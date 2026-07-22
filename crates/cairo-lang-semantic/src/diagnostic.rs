@@ -707,9 +707,14 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 "`super` used in macro call top level.".into()
             }
             SemanticDiagnosticKind::ItemNotVisible(item_id, containing_modules) => {
+                // Several distinct items may share the name when reached through global uses; in
+                // that case no single item can be pointed at, so it is reported without a name.
+                let item = match item_id {
+                    Some(item_id) => format!("Item `{}`", item_id.full_path(db)),
+                    None => "Item".to_string(),
+                };
                 format!(
-                    "Item `{}` is not visible in this context{}.",
-                    item_id.full_path(db),
+                    "{item} is not visible in this context{}.",
                     if containing_modules.is_empty() {
                         "".to_string()
                     } else if let [module_id] = &containing_modules[..] {
@@ -1737,7 +1742,7 @@ pub enum SemanticDiagnosticKind<'db> {
     ImplItemForbiddenInTheImpl,
     SuperUsedInRootModule,
     SuperUsedInMacroCallTopLevel,
-    ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
+    ItemNotVisible(Option<ModuleItemId<'db>>, Vec<ModuleId<'db>>),
     UnusedImport(UseId<'db>),
     RedundantModifier {
         current_modifier: SmolStrId<'db>,

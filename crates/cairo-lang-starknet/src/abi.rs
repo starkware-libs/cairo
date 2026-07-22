@@ -458,8 +458,9 @@ impl<'db> AbiBuilder<'db> {
 
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(signature, storage_type)?;
+        require(state_mutability == StateMutability::External)
+            .ok_or(ABIError::ConstructorNotExternal(source))?;
         self.ctor = Some(EntryPointInfo { source, inputs: inputs.clone() });
-        require(state_mutability == StateMutability::External).ok_or(ABIError::UnexpectedType)?;
 
         let constructor_item = Item::Constructor(Constructor { name, inputs });
         self.add_abi_item(constructor_item, true, source)?;
@@ -891,6 +892,8 @@ pub enum ABIError<'db> {
     ExpectedOneGenericParam(Source<'db>),
     #[error("Contracts must have only one constructor.")]
     MultipleConstructors(Source<'db>),
+    #[error("A contract constructor must take `ref self`, not `@self`.")]
+    ConstructorNotExternal(Source<'db>),
     #[error("Contracts must have a Storage struct.")]
     NoStorage,
     #[error("Contracts must have only one Storage struct.")]
@@ -943,6 +946,7 @@ impl<'db> ABIError<'db> {
             | ABIError::EventWithGenericParams(source)
             | ABIError::ExpectedOneGenericParam(source)
             | ABIError::MultipleConstructors(source)
+            | ABIError::ConstructorNotExternal(source)
             | ABIError::MultipleStorages(source)
             | ABIError::EmbeddedImplMustBeInterface(source)
             | ABIError::EmbeddedImplNotEmbeddable(source)

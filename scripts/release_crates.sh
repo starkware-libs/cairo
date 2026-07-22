@@ -11,16 +11,27 @@ fi
 
 source "$(dirname "$0")/crates_list.sh"
 
+RETRY_COUNT=2
+RATELIMIT_SLEEP=60
+
 # Publish the crates.
 for CRATE in "${CRATES[@]:$SKIP_FIRST}"; do
-    output=$(cargo publish --package "$CRATE" 2>&1)
-    exit_code=$?
-    if [ $exit_code -ne 0 ]; then
+    for ((attempt = 0; attempt <= RETRY_COUNT; attempt++)); do
+        output=$(cargo publish --package "$CRATE" 2>&1)
+        if [ $? -eq 0 ]; then
+            echo "Published $CRATE successfully."
+            break
+        fi
         if echo "$output" | grep -qi "already exists\|already uploaded"; then
             echo "Skipping $CRATE (already published)."
-        else
-            echo "$output" >&2
-            exit 1
+            break
         fi
-    fi
+        echo "$output" >&2
+        if echo "$output" | grep -qi "Please try again after" && [ $attempt -lt $RETRY_COUNT ]; then
+            echo "Rate limited; retrying $CRATE in ${RATELIMIT_SLEEP}s (attempt $attempt)..." >&2
+            sleep $RATELIMIT_SLEEP
+            continue
+        fi
+        exit 1
+    done
 done

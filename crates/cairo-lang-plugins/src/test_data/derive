@@ -751,6 +751,13 @@ enum TooManyDefaultValues {
     Second,
 }
 
+#[derive(Default, Drop)]
+struct DefaultOnStructMember {
+    #[default]
+    a: felt252,
+    b: felt252,
+}
+
 //! > expanded_cairo_code
 #[derive()]
 struct EmptyArgs {}
@@ -784,11 +791,29 @@ enum TooManyDefaultValues {
     #[default]
     Second,
 }
+
+#[derive(Default, Drop)]
+struct DefaultOnStructMember {
+    #[default]
+    a: felt252,
+    b: felt252,
+}
 impl TooManyDefaultValuesDefault<> of core::traits::Default::<TooManyDefaultValues> {
     fn default() -> TooManyDefaultValues {
         TooManyDefaultValues::First(core::traits::Default::<()>::default())
     }
 }
+impl DefaultOnStructMemberDefault<> of core::traits::Default::<DefaultOnStructMember> {
+    fn default() -> DefaultOnStructMember {
+        let a = core::internal::InferDestruct::<felt252> { value: core::traits::Default::<felt252>::default() };
+        let b = core::internal::InferDestruct::<felt252> { value: core::traits::Default::<felt252>::default() };
+        DefaultOnStructMember {
+            a: a.value,
+            b: b.value,
+        }
+    }
+}
+impl DefaultOnStructMemberDrop<> of core::traits::Drop::<DefaultOnStructMember>;
 
 //! > expected_diagnostics
 error: Expected args.
@@ -835,5 +860,11 @@ error: derive `Default` for enum only supported with a default variant.
 
 error: Multiple variants annotated with `#[default]`
  --> test_src/lib.cairo:30:5
+    #[default]
+    ^^^^^^^^^^
+
+
+error: `#[default]` is not supported on struct members.
+ --> test_src/lib.cairo:36:5
     #[default]
     ^^^^^^^^^^
