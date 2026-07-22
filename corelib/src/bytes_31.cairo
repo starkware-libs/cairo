@@ -4,13 +4,11 @@
 //!
 //! # Examples
 //!
-//! Creating a `bytes31` from a `felt252`:
 //! ```
+//! // Creating a `bytes31` from a `felt252`:
 //! let value: bytes31 = 0xaabb.try_into().unwrap();
-//! ```
 //!
-//! Accessing a byte by index:
-//! ```
+//! // Accessing a byte by index:
 //! assert!(value[0] == 0xbb);
 //! ```
 
