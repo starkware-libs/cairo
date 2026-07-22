@@ -1225,13 +1225,8 @@ fn lower_expr_desnap<'db>(
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a desnap: {:?}", expr.debug(&ctx.expr_formatter));
+    let input = lower_expr(ctx, builder, expr.inner)?.as_var_usage(ctx, builder)?;
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let expr = lower_expr(ctx, builder, expr.inner)?;
-    if let LoweredExpr::Snapshot { expr, .. } = expr {
-        return Ok(*expr);
-    }
-    let input = expr.as_var_usage(ctx, builder)?;
-
     Ok(LoweredExpr::AtVariable(
         generators::Desnap { input, location }.add(ctx, &mut builder.statements),
     ))
