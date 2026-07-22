@@ -30,7 +30,7 @@ pub fn get_concrete_type_id<'db>(
             let inner = db.get_concrete_type_id(*inner_ty)?;
             if matches!(
                 db.lookup_concrete_type(inner),
-                SierraGeneratorTypeLongId::CycleBreaker(ty) if cycle_breaker_info(db, ty)?.duplicatable
+                SierraGeneratorTypeLongId::CycleBreaker(ty) if cycle_breaker_info(db, *ty)?.duplicatable
             ) {
                 return Ok(inner.clone());
             }
@@ -177,7 +177,7 @@ pub fn get_concrete_long_type_id<'db>(
 }
 
 /// See [SierraGenGroup::is_self_referential] for documentation.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn is_self_referential<'db>(
     db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
@@ -227,7 +227,7 @@ pub fn type_dependencies<'db>(
 }
 
 /// See [SierraGenGroup::has_in_deps] for documentation.
-#[salsa::tracked(cycle_result=has_in_deps_cycle)]
+#[salsa::tracked(returns(copy), cycle_result=has_in_deps_cycle)]
 pub fn has_in_deps<'db>(
     db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,

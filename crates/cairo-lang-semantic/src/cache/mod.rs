@@ -226,7 +226,7 @@ impl<'db> SemanticCacheLoadingContext<'db> {
 }
 
 /// Data for loading cache into the database.
-#[derive(PartialEq, Eq, salsa::Update)]
+#[derive(PartialEq, Eq, salsa::SalsaValue)]
 pub struct SemanticCacheLoadingData<'db> {
     pub defs_loading_data: Arc<DefCacheLoadingData<'db>>,
 
@@ -312,7 +312,7 @@ impl<'db> DerefMut for SemanticCacheSavingData<'db> {
 }
 
 /// Saved interned items for the cache.
-#[derive(Serialize, Deserialize, Default, PartialEq, Eq, salsa::Update)]
+#[derive(Serialize, Deserialize, Default, PartialEq, Eq, salsa::SalsaValue)]
 pub struct SemanticCacheLookups {
     function_ids_lookup: Vec<SemanticFunctionCached>,
     type_ids_lookup: Vec<TypeCached>,
@@ -787,7 +787,7 @@ impl ConstValueCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ConstValueIdCached(usize);
 
 impl ConstValueIdCached {
@@ -886,7 +886,7 @@ impl SemanticFunctionCached {
         }
     }
 }
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct SemanticFunctionIdCached(usize);
 impl SemanticFunctionIdCached {
     pub fn new<'db>(
@@ -1225,7 +1225,7 @@ impl TypeCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct TypeIdCached(usize);
 
 impl TypeIdCached {
@@ -1414,7 +1414,7 @@ impl ImplCached {
         }
     }
 }
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ImplIdCached(usize);
 
 impl ImplIdCached {
@@ -1606,7 +1606,7 @@ impl NegativeImplCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 struct NegativeImplIdCached(usize);
 
 impl NegativeImplIdCached {

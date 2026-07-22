@@ -326,7 +326,7 @@ impl Lexer {
 }
 
 /// Output terminal emitted by the lexer.
-#[derive(Clone, PartialEq, Eq, Debug, salsa::Update)]
+#[derive(Clone, PartialEq, Eq, Debug, salsa::SalsaValue)]
 pub struct LexerTerminal<'a> {
     pub text: SmolStrId<'a>,
     /// The kind of the inner token of this terminal.

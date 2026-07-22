@@ -11,7 +11,7 @@ use salsa::Database;
 use crate::db::SierraGenGroup;
 
 /// Query implementation of [SierraGenGroup::get_ap_change].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn get_ap_change(
     db: &dyn Database,
     function_id: ConcreteFunctionWithBodyId<'_>,

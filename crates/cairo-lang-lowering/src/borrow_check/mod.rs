@@ -281,7 +281,7 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
 pub type PotentialDestructCalls<'db> = UnorderedHashMap<BlockId, Vec<FunctionId<'db>>>;
 
 /// The borrow checker result.
-#[derive(Eq, PartialEq, Debug, Default, salsa::Update)]
+#[derive(Eq, PartialEq, Debug, Default, salsa::SalsaValue)]
 pub struct BorrowCheckResult<'db> {
     /// The possible destruct calls per block.
     pub block_extra_calls: PotentialDestructCalls<'db>,

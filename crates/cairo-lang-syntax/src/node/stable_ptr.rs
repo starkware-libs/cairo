@@ -12,7 +12,7 @@ use crate::node::SyntaxNode;
 /// Stable means that when the AST is changed, pointers of unchanged items tend to stay the same.
 /// For example, if a function is changed, the pointer of an unrelated function in the AST should
 /// remain the same, as much as possible.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub struct SyntaxStablePtr<'a>(SyntaxNode<'a>);
 
 impl<'a> SyntaxStablePtr<'a> {

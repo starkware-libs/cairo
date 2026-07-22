@@ -26,7 +26,7 @@ mod test;
     Hash,
     Serialize,
     Deserialize,
-    salsa::Update,
+    salsa::SalsaValue,
     HeapSize,
 )]
 pub struct TextWidth(u32);
@@ -95,7 +95,7 @@ impl Sum for TextWidth {
     Hash,
     Serialize,
     Deserialize,
-    salsa::Update,
+    salsa::SalsaValue,
     HeapSize,
 )]
 pub struct TextOffset(TextWidth);

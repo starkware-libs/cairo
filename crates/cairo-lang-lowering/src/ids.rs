@@ -28,7 +28,7 @@ use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
 use crate::specialization::SpecializationArg;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum FunctionWithBodyLongId<'db> {
     Semantic(defs::ids::FunctionWithBodyId<'db>),
     Generated { parent: defs::ids::FunctionWithBodyId<'db>, key: GeneratedFunctionKey<'db> },
@@ -82,7 +82,7 @@ impl<'db> SemanticFunctionWithBodyIdEx<'db> for cairo_lang_defs::ids::FunctionWi
 }
 
 /// Concrete function with body.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum ConcreteFunctionWithBodyLongId<'db> {
     Semantic(semantic::ConcreteFunctionWithBodyId<'db>),
     Generated(GeneratedFunction<'db>),
@@ -240,7 +240,7 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
 }
 
 /// Function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum FunctionLongId<'db> {
     /// An original function from the user code.
     Semantic(semantic::FunctionId<'db>),
@@ -378,7 +378,7 @@ impl<'a> DebugWithDb<'a> for FunctionLongId<'a> {
 }
 
 /// A key for generated functions.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, HeapSize, salsa::SalsaValue)]
 pub enum GeneratedFunctionKey<'db> {
     /// Generated loop functions are identified by the loop's AST pointer (ExprPtr).
     Loop(ExprPtr<'db>),
@@ -386,7 +386,7 @@ pub enum GeneratedFunctionKey<'db> {
 }
 
 /// Generated function.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub struct GeneratedFunction<'db> {
     pub parent: semantic::ConcreteFunctionWithBodyId<'db>,
     pub key: GeneratedFunctionKey<'db>,
@@ -444,7 +444,7 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
 /// than the original one.
 ///
 /// Specialized functions are identified by the base function and the arguments.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub struct SpecializedFunction<'db> {
     /// The base function.
     pub base: crate::ids::ConcreteFunctionWithBodyId<'db>,
@@ -534,7 +534,7 @@ impl<'a> DebugWithDb<'a> for SpecializedFunction<'a> {
 }
 
 /// Signature for lowering a function.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct EnrichedSemanticSignature<'db> {
     /// Input params.
@@ -591,7 +591,7 @@ impl<'db> EnrichedSemanticSignature<'db> {
 }
 semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, EnrichedSemanticSignature<'a>);
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 /// Represents a parameter of a lowered function.
 pub struct LoweredParam<'db> {
@@ -602,7 +602,7 @@ pub struct LoweredParam<'db> {
 semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, LoweredParam<'a>);
 
 /// Lowered signature of a function.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Signature<'db> {
     /// Input params.

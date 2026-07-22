@@ -94,7 +94,7 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         id: &cairo_lang_sierra::ids::ConcreteLibfuncId,
     ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-        let mut long_id = self.db.lookup_concrete_lib_func(id);
+        let mut long_id = self.db.lookup_concrete_lib_func(id).clone();
         self.replace_generic_args(&mut long_id.generic_args);
         cairo_lang_sierra::ids::ConcreteLibfuncId {
             id: id.id,

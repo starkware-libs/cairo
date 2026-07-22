@@ -43,7 +43,7 @@ pub fn core_module(db: &dyn Database) -> ModuleId<'_> {
 }
 
 /// Query implementation of [CorelibSemantic::core_module].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn core_module_tracked(db: &dyn Database) -> ModuleId<'_> {
     core_module(db)
 }
@@ -75,7 +75,7 @@ pub fn core_crate(db: &dyn Database) -> CrateId<'_> {
 }
 
 /// Query implementation of [CorelibSemantic::core_crate].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn core_crate_tracked(db: &dyn Database) -> CrateId<'_> {
     core_crate(db)
 }
@@ -805,7 +805,7 @@ pub fn numeric_upcastable_to_felt252(db: &dyn Database, ty: TypeId<'_>) -> bool 
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum LiteralError<'db> {
     InvalidTypeForLiteral(TypeId<'db>),
     OutOfRange(TypeId<'db>),
@@ -1003,7 +1003,7 @@ pub fn try_extract_bounded_int_type<'db>(
 }
 
 /// Information about various core types and traits.
-#[derive(Debug, Eq, PartialEq, Hash, salsa::Update)]
+#[derive(Debug, Eq, PartialEq, Hash, salsa::SalsaValue)]
 pub struct CoreInfo<'db> {
     // Types.
     pub felt252: TypeId<'db>,
@@ -1269,7 +1269,7 @@ pub fn core_info(db: &dyn Database) -> Arc<CoreInfo<'_>> {
 }
 
 /// Query implementation of [CorelibSemantic::core_info].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn core_info_tracked(db: &dyn Database) -> Arc<CoreInfo<'_>> {
     core_info(db)
 }

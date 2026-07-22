@@ -22,6 +22,10 @@ pub struct SierraProgramDebugInfo<'db> {
     pub functions_info: AllFunctionsDebugInfo<'db>,
 }
 
+// SAFETY: Composed of foreign `'static` Sierra ids and owned data keyed by them, along with
+// interned ids, all safe to retain across revisions; the foreign key types prevent deriving this.
+unsafe impl<'db> salsa::SalsaValue for SierraProgramDebugInfo<'db> {}
+
 /// A full path to a Cairo source file.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SourceFileFullPath(pub String);

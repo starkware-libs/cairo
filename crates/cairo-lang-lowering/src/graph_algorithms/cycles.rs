@@ -48,7 +48,7 @@ pub fn function_with_body_direct_function_with_body_callees<'db>(
 }
 
 /// Query implementation of [LoweringGroup::final_contains_call_cycle].
-#[salsa::tracked(cycle_result=final_contains_call_cycle_handle_cycle)]
+#[salsa::tracked(returns(copy), cycle_result=final_contains_call_cycle_handle_cycle)]
 pub fn final_contains_call_cycle<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
@@ -77,7 +77,7 @@ pub fn final_contains_call_cycle_handle_cycle<'db>(
 }
 
 /// Query implementation of [LoweringGroup::in_cycle].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn in_cycle<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
@@ -93,7 +93,7 @@ pub fn in_cycle<'db>(
 }
 
 /// Query implementation of [LoweringGroup::concrete_in_cycle].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn concrete_in_cycle<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,

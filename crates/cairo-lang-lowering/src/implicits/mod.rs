@@ -244,7 +244,7 @@ fn lower_function_blocks_implicits<'db>(
 // =========== Query implementations ===========
 
 /// Query implementation of [crate::db::LoweringGroup::function_implicits].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn function_implicits<'db>(
     db: &'db dyn Database,
     function: FunctionId<'db>,
@@ -289,7 +289,7 @@ fn scc_implicits<'db>(
 }
 
 /// Tracked implementation of [scc_implicits].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn scc_implicits_tracked<'db>(
     db: &'db dyn Database,
     rep: ConcreteFunctionWithBodyId<'db>,

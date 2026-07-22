@@ -45,7 +45,7 @@ use crate::{ConcreteTraitId, ConcreteTraitLongId, SemanticDiagnostic, TypeId, Ty
 /// Generic argument.
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub enum GenericArgumentId<'db> {
     Type(TypeId<'db>),
     Constant(ConstValueId<'db>),
@@ -149,7 +149,7 @@ impl<'db> DebugWithDb<'db> for GenericArgumentId<'db> {
 /// A non-param non-variable generic argument has a head, which represents the kind of the root node
 /// in its tree. This is used for caching queries for fast lookups when the generic argument is not
 /// completely inferred yet.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub enum GenericArgumentHead<'db> {
     Type(TypeHead<'db>),
     Impl(ImplHead<'db>),
@@ -158,7 +158,7 @@ pub enum GenericArgumentHead<'db> {
 }
 
 /// Generic parameter.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub enum GenericParam<'db> {
     Type(GenericParamType<'db>),
     // TODO(spapini): Add expression.
@@ -221,14 +221,32 @@ pub fn generic_params_to_args<'db>(
 }
 
 #[derive(
-    Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    PartialEq,
+    Eq,
+    DebugWithDb,
+    SemanticObject,
+    HeapSize,
+    salsa::SalsaValue,
 )]
 #[debug_db(dyn Database)]
 pub struct GenericParamType<'db> {
     pub id: GenericParamId<'db>,
 }
 #[derive(
-    Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    PartialEq,
+    Eq,
+    DebugWithDb,
+    SemanticObject,
+    HeapSize,
+    salsa::SalsaValue,
 )]
 #[debug_db(dyn Database)]
 pub struct GenericParamConst<'db> {
@@ -236,7 +254,7 @@ pub struct GenericParamConst<'db> {
     pub ty: TypeId<'db>,
 }
 #[derive(
-    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::SalsaValue,
 )]
 #[debug_db(dyn Database)]
 pub struct GenericParamImpl<'db> {
@@ -246,7 +264,7 @@ pub struct GenericParamImpl<'db> {
 }
 
 /// The result of the computation of the semantic model of a generic parameter.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct GenericParamData<'db> {
     pub generic_param: Maybe<GenericParam<'db>>,
@@ -255,7 +273,7 @@ pub struct GenericParamData<'db> {
 }
 
 /// The result of the computation of the semantic model of a generic parameters list.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct GenericParamsData<'db> {
     pub generic_params: Vec<GenericParam<'db>>,
@@ -264,7 +282,7 @@ pub struct GenericParamsData<'db> {
 }
 
 /// Query implementation of [GenericsSemantic::generic_impl_param_trait].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn generic_impl_param_trait<'db>(
     db: &'db dyn Database,
     generic_param_id: GenericParamId<'db>,

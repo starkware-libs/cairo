@@ -22,7 +22,7 @@ use crate::{ap_change, function_generator, pre_sierra, replace_ids};
 
 /// Helper type for Sierra long IDs, which can be either a type long ID or a cycle breaker.
 /// This is required for cases where the type long id is self referential.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub enum SierraGeneratorTypeLongId<'db> {
     /// A normal type long id.
     Regular(Arc<cairo_lang_sierra::program::ConcreteTypeLongId>),
@@ -66,7 +66,7 @@ fn intern_concrete_lib_func(
 fn lookup_concrete_lib_func(
     db: &dyn Database,
     id: ConcreteLibfuncHandle,
-) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
+) -> &cairo_lang_sierra::program::ConcreteLibfuncLongId {
     let interned = ConcreteLibfuncIdLongWrapper::from_id(Id::from_bits(id.0));
     interned.id(db)
 }
@@ -82,7 +82,7 @@ fn intern_concrete_type<'db>(
 fn lookup_concrete_type<'db>(
     db: &'db dyn Database,
     id: ConcreteTypeHandle,
-) -> SierraGeneratorTypeLongId<'db> {
+) -> &'db SierraGeneratorTypeLongId<'db> {
     let interned = SierraGeneratorTypeLongIdWrapper::from_id(Id::from_bits(id.0));
     interned.id(db)
 }
@@ -105,10 +105,10 @@ pub trait SierraGenGroup: Database {
         intern_concrete_lib_func(self.as_dyn_database(), id)
     }
 
-    fn lookup_concrete_lib_func(
-        &self,
+    fn lookup_concrete_lib_func<'db>(
+        &'db self,
         id: &cairo_lang_sierra::ids::ConcreteLibfuncId,
-    ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    ) -> &'db cairo_lang_sierra::program::ConcreteLibfuncLongId {
         lookup_concrete_lib_func(self.as_dyn_database(), ConcreteLibfuncHandle(id.id))
     }
 
@@ -122,7 +122,7 @@ pub trait SierraGenGroup: Database {
     fn lookup_concrete_type<'db>(
         &'db self,
         id: &cairo_lang_sierra::ids::ConcreteTypeId,
-    ) -> SierraGeneratorTypeLongId<'db> {
+    ) -> &'db SierraGeneratorTypeLongId<'db> {
         lookup_concrete_type(self.as_dyn_database(), ConcreteTypeHandle(id.id))
     }
 
@@ -337,11 +337,11 @@ fn get_type_info(
     id: ConcreteTypeHandle,
 ) -> Maybe<cairo_lang_sierra::extensions::types::TypeInfo> {
     let long_id = match lookup_concrete_type(db, id) {
-        SierraGeneratorTypeLongId::Regular(long_id) => long_id,
+        SierraGeneratorTypeLongId::Regular(long_id) => long_id.clone(),
         SierraGeneratorTypeLongId::CycleBreaker(ty) => {
-            let info = cycle_breaker_info(db, ty)?;
+            let info = cycle_breaker_info(db, *ty)?;
             return Ok(cairo_lang_sierra::extensions::types::TypeInfo {
-                long_id: db.get_concrete_long_type_id(ty)?.as_ref().clone(),
+                long_id: db.get_concrete_long_type_id(*ty)?.as_ref().clone(),
                 storable: true,
                 droppable: info.droppable,
                 duplicatable: info.duplicatable,
@@ -349,7 +349,7 @@ fn get_type_info(
             });
         }
         SierraGeneratorTypeLongId::Phantom(ty) => {
-            let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
+            let long_id = db.get_concrete_long_type_id(*ty)?.as_ref().clone();
             return Ok(cairo_lang_sierra::extensions::types::TypeInfo {
                 long_id,
                 storable: false,
@@ -378,10 +378,10 @@ pub fn sierra_concrete_long_id(
     concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
     match db.lookup_concrete_type(&concrete_type_id) {
-        SierraGeneratorTypeLongId::Regular(long_id) => Ok(long_id),
+        SierraGeneratorTypeLongId::Regular(long_id) => Ok(long_id.clone()),
         SierraGeneratorTypeLongId::Phantom(type_id)
         | SierraGeneratorTypeLongId::CycleBreaker(type_id) => {
-            db.get_concrete_long_type_id(type_id).cloned()
+            db.get_concrete_long_type_id(*type_id).cloned()
         }
     }
 }

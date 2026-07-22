@@ -449,7 +449,7 @@ impl<'db> PanicBlockLoweringContext<'db> {
 // ============= Query implementations =============
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn function_may_panic<'db>(db: &'db dyn Database, function: FunctionId<'db>) -> Maybe<bool> {
     if let Some(body) = function.body(db)? {
         return db.function_with_body_may_panic(body);
@@ -481,7 +481,7 @@ fn scc_may_panic<'db>(db: &'db dyn Database, scc: ConcreteSCCRepresentative<'db>
 }
 
 /// Tracked implementation of [scc_may_panic].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn scc_may_panic_tracked<'db>(
     db: &'db dyn Database,
     rep: ConcreteFunctionWithBodyId<'db>,
@@ -520,7 +520,7 @@ fn scc_may_panic_tracked<'db>(
 }
 
 /// Query implementation of [crate::db::LoweringGroup::has_direct_panic].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn has_direct_panic<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,

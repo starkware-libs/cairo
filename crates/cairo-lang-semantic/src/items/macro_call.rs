@@ -23,7 +23,7 @@ use crate::items::module::ModuleSemantic;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
 
 /// The data associated with a macro call in item context.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, salsa::SalsaValue)]
 pub struct MacroCallData<'db> {
     /// The module to which the macro call was expanded to.
     pub macro_call_module: Maybe<ModuleId<'db>>,
@@ -174,7 +174,7 @@ fn priv_macro_call_data<'db>(
 }
 
 /// Query implementation of [MacroCallSemantic::priv_macro_call_data].
-#[salsa::tracked(cycle_fn=priv_macro_call_data_cycle, cycle_initial=priv_macro_call_data_initial)]
+#[salsa::tracked(returns(clone), cycle_fn=priv_macro_call_data_cycle, cycle_initial=priv_macro_call_data_initial)]
 fn priv_macro_call_data_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
@@ -257,7 +257,7 @@ fn macro_call_diagnostics<'db>(
 }
 
 /// Query implementation of [MacroCallSemantic::macro_call_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn macro_call_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
@@ -274,7 +274,7 @@ fn macro_call_module_id<'db>(
 }
 
 /// Query implementation of [MacroCallSemantic::macro_call_module_id].
-#[salsa::tracked(cycle_fn=macro_call_module_id_cycle, cycle_initial=macro_call_module_id_initial)]
+#[salsa::tracked(returns(copy), cycle_fn=macro_call_module_id_cycle, cycle_initial=macro_call_module_id_initial)]
 fn macro_call_module_id_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,

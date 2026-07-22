@@ -300,7 +300,7 @@ impl DerefMut for DefCacheLoadingContext<'_> {
 }
 
 /// Data for loading cache into the database.
-#[derive(PartialEq, Eq, salsa::Update)]
+#[derive(PartialEq, Eq, salsa::SalsaValue)]
 pub struct DefCacheLoadingData<'db> {
     green_ids: OrderedHashMap<GreenIdCached, GreenId<'db>>,
     reverse_green_ids: OrderedHashMap<GreenId<'db>, GreenIdCached>,
@@ -730,7 +730,7 @@ impl<'db> ModuleDataCached<'db> {
 }
 
 /// Saved interned items for the cache.
-#[derive(Serialize, Deserialize, Default, PartialEq, Eq, salsa::Update)]
+#[derive(Serialize, Deserialize, Default, PartialEq, Eq, salsa::SalsaValue)]
 pub struct DefCacheLookups {
     green_ids_lookup: Vec<GreenNodeCached>,
     crate_ids_lookup: Vec<CrateCached>,
@@ -877,7 +877,7 @@ impl CrateCached {
         }
     }
 }
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub enum CrateIdCached {
     SelfCrate,
     Other(usize),
@@ -1055,7 +1055,7 @@ impl ConstantCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ConstantIdCached(usize);
 
 impl ConstantIdCached {
@@ -1098,7 +1098,7 @@ impl SubmoduleCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct SubmoduleIdCached(usize);
 
 impl SubmoduleIdCached {
@@ -1141,7 +1141,7 @@ impl UseCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct UseIdCached(usize);
 
 impl UseIdCached {
@@ -1187,7 +1187,7 @@ impl FreeFunctionCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct FreeFunctionIdCached(usize);
 
 impl FreeFunctionIdCached {
@@ -1230,7 +1230,7 @@ impl StructCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct StructIdCached(usize);
 
 impl StructIdCached {
@@ -1273,7 +1273,7 @@ impl EnumCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct EnumIdCached(usize);
 
 impl EnumIdCached {
@@ -1319,7 +1319,7 @@ impl ModuleTypeAliasCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ModuleTypeAliasIdCached(usize);
 
 impl ModuleTypeAliasIdCached {
@@ -1362,7 +1362,7 @@ impl ImplAliasCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ImplAliasIdCached(usize);
 
 impl ImplAliasIdCached {
@@ -1405,7 +1405,7 @@ impl TraitCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct TraitIdCached(usize);
 
 impl TraitIdCached {
@@ -1448,7 +1448,7 @@ impl ImplDefCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ImplDefIdCached(usize);
 
 impl ImplDefIdCached {
@@ -1493,7 +1493,7 @@ impl ExternTypeCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ExternTypeIdCached(usize);
 
 impl ExternTypeIdCached {
@@ -1539,7 +1539,7 @@ impl ExternFunctionCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ExternFunctionIdCached(usize);
 
 impl ExternFunctionIdCached {
@@ -1585,7 +1585,7 @@ impl MacroDeclarationCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct MacroDeclarationIdCached(usize);
 
 impl MacroDeclarationIdCached {
@@ -1631,7 +1631,7 @@ impl MacroCallCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct MacroCallIdCached(usize);
 impl MacroCallIdCached {
     fn new<'db>(id: MacroCallId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1673,7 +1673,7 @@ impl GlobalUseCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct GlobalUseIdCached(usize);
 
 impl GlobalUseIdCached {
@@ -1701,7 +1701,7 @@ impl GlobalUseIdCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq, salsa::Update, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq, salsa::SalsaValue, Debug)]
 struct SyntaxNodeCached(usize);
 
 #[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq, Debug)]
@@ -1906,7 +1906,7 @@ impl GreenNodeCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::SalsaValue, Debug)]
 struct GreenIdCached(usize);
 
 impl GreenIdCached {
@@ -2043,7 +2043,7 @@ impl ExternalFileContentCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::SalsaValue, Debug)]
 pub struct FileIdCached(usize);
 impl FileIdCached {
     fn new<'db>(id: FileId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -2125,7 +2125,7 @@ impl VirtualFileCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct SyntaxStablePtrIdCached(SyntaxNodeCached);
 
 impl SyntaxStablePtrIdCached {

@@ -31,37 +31,15 @@ use crate::{
 };
 
 /// A generic solution set for an inference constraint system.
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, salsa::SalsaValue)]
 pub enum SolutionSet<'db, T> {
     None,
     Unique(T),
     Ambiguous(Ambiguity<'db>),
 }
 
-// Somewhat taken from the salsa::Update derive macro.
-unsafe impl<'db, T: salsa::Update> salsa::Update for SolutionSet<'db, T> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_pointer = unsafe { &mut *old_pointer };
-        match (old_pointer, new_value) {
-            (SolutionSet::None, SolutionSet::None) => false,
-            (SolutionSet::Unique(u1), SolutionSet::Unique(u2)) => unsafe {
-                salsa::plumbing::UpdateDispatch::<T>::maybe_update(u1, u2)
-            },
-            (SolutionSet::Ambiguous(ambiguity), SolutionSet::Ambiguous(ambiguity2)) => unsafe {
-                salsa::plumbing::UpdateDispatch::<Ambiguity<'db>>::maybe_update(
-                    ambiguity, ambiguity2,
-                )
-            },
-            (old_pointer, new_value) => {
-                *old_pointer = new_value;
-                true
-            }
-        }
-    }
-}
-
 /// Describes the kinds of inference ambiguities.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::SalsaValue)]
 pub enum Ambiguity<'db> {
     MultipleImplsFound {
         concrete_trait_id: ConcreteTraitId<'db>,
@@ -143,7 +121,7 @@ pub fn canonic_trait_solutions<'db>(
 
 /// Query implementation of [SemanticSolver::canonic_trait_solutions].
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
-#[salsa::tracked(cycle_result=canonic_trait_solutions_cycle)]
+#[salsa::tracked(returns(clone), cycle_result=canonic_trait_solutions_cycle)]
 pub fn canonic_trait_solutions_tracked<'db>(
     db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,

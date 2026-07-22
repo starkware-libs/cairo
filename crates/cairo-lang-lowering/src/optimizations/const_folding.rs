@@ -1579,7 +1579,7 @@ fn priv_const_folding_info<'db>(
 }
 
 /// Holds static information about libfuncs required for the optimization.
-#[derive(Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ConstFoldingLibfuncInfo<'db> {
     /// The `felt252_sub` libfunc.
     felt_sub: ExternFunctionId<'db>,
@@ -1797,7 +1797,7 @@ impl<'a> std::ops::Deref for ConstFoldingLibfuncInfo<'a> {
 }
 
 /// The information of a type required for const foldings.
-#[derive(Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, salsa::SalsaValue)]
 struct TypeInfo<'db> {
     /// The function to check if the value is zero for the type.
     is_zero: FunctionId<'db>,
