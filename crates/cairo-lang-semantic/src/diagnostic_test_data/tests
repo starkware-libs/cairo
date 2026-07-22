@@ -1559,6 +1559,9 @@ mod m2;
 #[path(3)]
 mod m3;
 
+#[path("first.cairo")]
+#[path("second.cairo")]
+mod multiple_paths;
 #[path("non_existent_path.cairo")]
 mod non_existing;
 
@@ -1590,6 +1593,11 @@ error[E2200]: Plugin diagnostic: `#[path(..)]` expects exactly one string litera
 #[path(3)]
       ^^^
 
+error[E2200]: Plugin diagnostic: Multiple `#[path(..)]` attributes are not allowed on a single module.
+ --> lib.cairo:17:1
+#[path("second.cairo")]
+^^^^^^^^^^^^^^^^^^^^^^^
+
 error[E0005]: Module file not found. Expected path: m1.cairo
  --> lib.cairo:7:1-8:7
   #[path]
@@ -1611,8 +1619,16 @@ error[E0005]: Module file not found. Expected path: m3.cairo
 | mod m3;
 |_______^
 
+error[E0005]: Module file not found. Expected path: first.cairo
+ --> lib.cairo:16:1-18:19
+  #[path("first.cairo")]
+ _^
+| #[path("second.cairo")]
+| mod multiple_paths;
+|___________________^
+
 error[E0005]: Module file not found. Expected path: non_existent_path.cairo
- --> lib.cairo:16:1-17:17
+ --> lib.cairo:19:1-20:17
   #[path("non_existent_path.cairo")]
  _^
 | mod non_existing;

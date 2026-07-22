@@ -1346,9 +1346,8 @@ pub fn validate_attributes_flat<'db, Item: QueryAttrs<'db> + TypedSyntaxNode<'db
     }
 
     // Additional semantic validation for `#[path("...")]` attribute.
-    for attr in item.query_attr(db, PATH_ATTR) {
-        let node = item.as_syntax_node();
-        let Some(item_module) = ast::ItemModule::cast(db, node) else {
+    for (idx, attr) in item.query_attr(db, PATH_ATTR).enumerate() {
+        let Some(item_module) = ast::ItemModule::cast(db, item.as_syntax_node()) else {
             plugin_diagnostics.push(PluginDiagnostic::error(
                 attr.stable_ptr(db),
                 "`#[path(..)]` is only allowed on module declarations.".to_string(),
@@ -1370,6 +1369,12 @@ pub fn validate_attributes_flat<'db, Item: QueryAttrs<'db> + TypedSyntaxNode<'db
             plugin_diagnostics.push(PluginDiagnostic::error(
                 args.stable_ptr(db),
                 "`#[path(..)]` expects exactly one string literal argument.".to_string(),
+            ));
+        }
+        if idx > 0 {
+            plugin_diagnostics.push(PluginDiagnostic::error(
+                attr.stable_ptr(db),
+                "Multiple `#[path(..)]` attributes are not allowed on a single module.".to_string(),
             ));
         }
     }
