@@ -805,3 +805,258 @@ Statements:
   (v14: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v13)
 End:
   Return(v9, v14)
+
+//! > ==========================================================================
+
+//! > Test closure desnapping a snapshot-only captured variable.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function_code
+fn foo(a: felt252) -> felt252 {
+    let f = || *(@a);
+    f()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:13: 2:15}) <- struct_construct(v0)
+  (v2: {closure@lib.cairo:2:13: 2:15}, v3: @{closure@lib.cairo:2:13: 2:15}) <- snapshot(v1)
+  (v4: ()) <- struct_construct()
+  (v5: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:2:13: 2:15}(v3, v4)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let f = || *(@a);
+            ^^
+
+Parameters: v0: {closure@lib.cairo:2:13: 2:15}
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- struct_destructure(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:2:13: 2:15}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let f = || *(@a);
+            ^^
+
+Parameters: v0: @{closure@lib.cairo:2:13: 2:15}, v2: ()
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:13: 2:15}) <- desnap(v0)
+  (v3: core::felt252) <- struct_destructure(v1)
+  () <- struct_destructure(v2)
+End:
+  Return(v3)
+
+
+Final lowering:
+Parameters: v0: @{closure@lib.cairo:2:13: 2:15}, v1: ()
+blk0 (root):
+Statements:
+  (v2: {closure@lib.cairo:2:13: 2:15}) <- desnap(v0)
+  (v3: core::felt252) <- struct_destructure(v2)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Test closure desnapping a snapshot-only captured non-Copy variable (captured by value).
+
+//! > test_runner_name
+test_generated_function
+
+//! > function_code
+fn foo(a: Array<felt252>) -> Array<felt252> {
+    let f = || *(@a);
+    f()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:13: 2:15}) <- struct_construct(v0)
+  (v2: ()) <- struct_construct()
+  (v3: core::array::Array::<core::felt252>) <- Generated `core::ops::function::FnOnce::call` for {closure@lib.cairo:2:13: 2:15}(v1, v2)
+End:
+  Return(v3)
+
+
+Final lowering:
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let f = || *(@a);
+            ^^
+
+Parameters: v0: {closure@lib.cairo:2:13: 2:15}
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:2:13: 2:15}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::FnOnce::call lowering for source location:
+    let f = || *(@a);
+            ^^
+
+Parameters: v0: {closure@lib.cairo:2:13: 2:15}, v1: ()
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+  () <- struct_destructure(v1)
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:2:13: 2:15}, v1: ()
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test closure that both snapshots and desnaps the same non-Copy captured variable.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function_code
+fn use_snap(a: @Array<felt252>) {}
+fn foo(a: Array<felt252>) -> Array<felt252> {
+    let f = || {
+        use_snap(@a);
+        *(@a)
+    };
+    f()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:3:13: 3:15}) <- struct_construct(v0)
+  (v2: ()) <- struct_construct()
+  (v3: core::array::Array::<core::felt252>) <- Generated `core::ops::function::FnOnce::call` for {closure@lib.cairo:3:13: 3:15}(v1, v2)
+End:
+  Return(v3)
+
+
+Final lowering:
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let f = || {
+            ^^
+
+Parameters: v0: {closure@lib.cairo:3:13: 3:15}
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:3:13: 3:15}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::FnOnce::call lowering for source location:
+    let f = || {
+            ^^
+
+Parameters: v0: {closure@lib.cairo:3:13: 3:15}, v1: ()
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+  () <- struct_destructure(v1)
+  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v2)
+  (v5: ()) <- test::use_snap(v4)
+End:
+  Return(v3)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:3:13: 3:15}, v1: ()
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Return(v2)

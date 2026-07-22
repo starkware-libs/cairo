@@ -188,6 +188,58 @@ impl<'db> Usages<'db> {
         usage
     }
 
+    /// Handles a chain of snapshot/desnap operators (`@` / `*`) and records how the leaf
+    /// variable/member is used.
+    ///
+    /// The operators are peeled while counting `@` as `+1` and `*` as `-1`. A net-positive count
+    /// means the leaf is read as a snapshot (`snap_usage`); a net-zero count means the operators
+    /// cancel and the leaf is read by value (`usage`). This is what makes `*(@x)` (and `**(@@x)`,
+    /// …) a by-value read — matching top-level lowering — so a closure/loop capturing `x` only
+    /// through such an expression captures it by value rather than as a snapshot it cannot desnap
+    /// for non-`Copy` types.
+    fn handle_snapshot_or_desnap(
+        &mut self,
+        arenas: &Arenas<'db>,
+        curr_expr_id: ExprId,
+        current: &mut Usage<'db>,
+    ) {
+        let mut net_snapshots: isize = 0;
+        let mut leaf = curr_expr_id;
+        loop {
+            match &arenas.exprs[leaf] {
+                Expr::Snapshot(expr) => {
+                    net_snapshots += 1;
+                    leaf = expr.inner;
+                }
+                Expr::Desnap(expr) => {
+                    net_snapshots -= 1;
+                    leaf = expr.inner;
+                }
+                _ => break,
+            }
+        }
+        // `net_snapshots > 0` means the leaf is read through a surviving snapshot (`snap_usage`);
+        // otherwise the operators cancel (or over-cancel, as in `*s` on a snapshot-typed `s`) and
+        // the leaf is read by value (`usage`).
+        let as_snapshot = net_snapshots > 0;
+        match &arenas.exprs[leaf] {
+            Expr::Var(expr_var) => {
+                let map = if as_snapshot { &mut current.snap_usage } else { &mut current.usage };
+                map.insert(MemberPath::Var(expr_var.var), ExprVarMemberPath::Var(expr_var.clone()));
+            }
+            Expr::MemberAccess(expr) => {
+                if let Some(member_path) = &expr.member_path {
+                    let map =
+                        if as_snapshot { &mut current.snap_usage } else { &mut current.usage };
+                    map.insert(member_path.into(), member_path.clone());
+                } else {
+                    self.handle_expr(arenas, expr.expr, current);
+                }
+            }
+            _ => self.handle_expr(arenas, leaf, current),
+        }
+    }
+
     fn handle_expr(
         &mut self,
         arenas: &Arenas<'db>,
@@ -210,27 +262,9 @@ impl<'db> Usages<'db> {
                     self.handle_expr(arenas, *value, current);
                 }
             },
-            Expr::Snapshot(expr) => {
-                let expr_id = expr.inner;
-
-                match &arenas.exprs[expr_id] {
-                    Expr::Var(expr_var) => {
-                        current.snap_usage.insert(
-                            MemberPath::Var(expr_var.var),
-                            ExprVarMemberPath::Var(expr_var.clone()),
-                        );
-                    }
-                    Expr::MemberAccess(expr) => {
-                        if let Some(member_path) = &expr.member_path {
-                            current.snap_usage.insert(member_path.into(), member_path.clone());
-                        } else {
-                            self.handle_expr(arenas, expr.expr, current);
-                        }
-                    }
-                    _ => self.handle_expr(arenas, expr_id, current),
-                }
+            Expr::Snapshot(_) | Expr::Desnap(_) => {
+                self.handle_snapshot_or_desnap(arenas, curr_expr_id, current)
             }
-            Expr::Desnap(expr) => self.handle_expr(arenas, expr.inner, current),
             Expr::Assignment(expr) => {
                 self.handle_expr(arenas, expr.rhs, current);
                 current.usage.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
