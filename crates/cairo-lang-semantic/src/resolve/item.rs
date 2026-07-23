@@ -67,7 +67,7 @@ impl<'db> ResolvedGenericItem<'db> {
 
     pub fn full_path(&self, db: &dyn Database) -> String {
         match self {
-            ResolvedGenericItem::GenericConstant(_) => "".into(),
+            ResolvedGenericItem::GenericConstant(id) => id.full_path(db),
             ResolvedGenericItem::Module(id) => id.full_path(db),
             ResolvedGenericItem::GenericFunction(id) => id.format(db),
             ResolvedGenericItem::GenericType(id) => id.full_path(db),
