@@ -1,0 +1,441 @@
+//! > Test that an unused param is trimmed from the signature and the call site.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(a: felt252, b: u32) {
+    callee(0, a, b);
+}
+
+fn callee(_assure_specialized: felt252, unused: felt252, used: u32) {
+    ext(used);
+}
+
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{0, NotSpecialized, NotSpecialized, }(v1)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a param only threaded unchanged through the recursive call is trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(a: u8, n: felt252) {
+    callee(0, a, n);
+}
+
+// `threaded` is only passed to the recursive call at its own position, so the entire chain is
+// dead.
+fn callee(_assure_specialized: felt252, threaded: u8, n: felt252) {
+    if n == 0 {
+        return;
+    }
+    callee(0, threaded, n - 1);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u8, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<((),)>) <- test::callee{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::integer::u8, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<((),)>) <- test::callee{0, NotSpecialized, NotSpecialized, }(v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test that a used param is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(a: felt252, b: u32) {
+    callee(0, a, b);
+}
+
+fn callee(_assure_specialized: felt252, used_a: felt252, used_b: u32) {
+    ext_felt252(used_a);
+    ext_u32(used_b);
+}
+
+#[allow(extern_outside_corelib)]
+extern fn ext_felt252(v: felt252) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn ext_u32(v: u32) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a conditionally used param is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(a: u32) {
+    callee(0, a);
+}
+
+fn callee(_assure_specialized: felt252, conditionally_used: u32) {
+    if cond() {
+        ext(conditionally_used);
+    }
+}
+
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn cond() -> bool nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{0, NotSpecialized, }(v0)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{0, NotSpecialized, }(v0)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a param requiring destruction is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(b: u32) {
+    callee(0, Default::default(), b);
+}
+
+fn callee(_assure_specialized: felt252, destructed: Felt252Dict<felt252>, used: u32) {
+    ext(used);
+}
+
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::dict::Felt252Dict::<core::felt252>) <- core::dict::felt252_dict_new::<core::felt252>()
+  () <- test::callee{0, NotSpecialized, NotSpecialized, }(v1, v0)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::dict::Felt252Dict::<core::felt252>) <- core::dict::felt252_dict_new::<core::felt252>()
+  () <- test::callee{0, NotSpecialized, NotSpecialized, }(v1, v0)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a param returned on an early exit is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(a: felt252, b: u32) -> felt252 {
+    callee(0, a, b)
+}
+
+fn callee(_assure_specialized: felt252, returned: felt252, used: u32) -> felt252 {
+    if cond() {
+        return returned;
+    }
+    ext(used);
+    0
+}
+
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn cond() -> bool nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- test::callee{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- test::callee{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test that a param whose only use is a destructure with dead bindings is trimmed (droppable).
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(s: S, b: u32) {
+    callee(0, s, b);
+}
+
+fn callee(_assure_specialized: felt252, destructured: S, used: u32) {
+    let S { a: _x } = destructured;
+    ext(used);
+}
+
+#[derive(Copy, Drop)]
+struct S {
+    a: felt252,
+}
+
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: test::S, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return()
+
+//! > after
+Parameters: v0: test::S, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{0, NotSpecialized, NotSpecialized, }(v1)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a param threaded between sibling specializations is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(x: u8, n: felt252) {
+    callee(5, x, n);
+}
+
+// `threaded` is only passed onwards, but to a *different* specialization of the function, so
+// neither sibling may trim it.
+fn callee(tag: felt252, threaded: u8, n: felt252) {
+    if n == 0 {
+        return;
+    }
+    if tag == 5 {
+        callee(6, threaded, n - 1);
+    } else {
+        callee(5, threaded, n - 1);
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u8, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<((),)>) <- test::callee{5, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::integer::u8, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<((),)>) <- test::callee{5, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test specialization turning partially specialized struct fields unused.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(x: felt252, y: u32) {
+    callee(false, S6 { a: 1, b: x, c: 3, d: y, e: x, f: 6 })
+}
+
+// Specializing on `keep == false` makes the struct params dead, so all of them are trimmed.
+fn callee(keep: bool, s: S6) {
+    if keep {
+        ext(s);
+    }
+}
+
+#[derive(Drop)]
+struct S6 {
+    a: felt252,
+    b: felt252,
+    c: felt252,
+    d: u32,
+    e: felt252,
+    f: felt252,
+}
+
+#[allow(extern_outside_corelib)]
+extern fn ext(s: S6) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{bool::False({}), { 1, NotSpecialized, 3, NotSpecialized, NotSpecialized, 6 }, }(v0, v1, v0)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee{bool::False({}), { 1, NotSpecialized, 3, NotSpecialized, NotSpecialized, 6 }, }()
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a user-visible function is not trimmed, even when a param is unused.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[target_function]
+fn foo(a: felt252, b: u32) {
+    callee(a, b);
+}
+
+// Without a const argument the call is not specialized, and the user-visible `callee` must keep
+// its externally callable signature.
+fn callee(unused: felt252, used: u32) {
+    ext(used);
+}
+
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee(v0, v1)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::callee(v0, v1)
+End:
+  Return()
