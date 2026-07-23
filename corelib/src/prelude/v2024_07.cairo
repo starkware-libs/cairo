@@ -20,6 +20,5 @@ pub use crate::traits::{
     Add, Copy, Default, Destruct, Div, DivRem, Drop, Felt252DictValue, Into, Mul, Neg, Not,
     PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
 };
-
 pub use crate::zeroable::NonZero;
 pub use crate::{assert, bool, felt252, usize};
