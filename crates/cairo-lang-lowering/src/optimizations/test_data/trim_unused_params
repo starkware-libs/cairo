@@ -1,0 +1,424 @@
+//! > Test that an unused param is trimmed from the signature and the call site.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+// `a` is never used by the body, so it is trimmed.
+// The leading const argument specializes the calls, making the callees trimmable - unlike
+// user-visible functions, whose signatures may be externally called.
+fn unused_a(_spec: felt252, a: felt252, b: u32) {
+    ext(b);
+}
+#[target_function]
+fn foo(a: felt252, b: u32) {
+    unused_a(0, a, b);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::unused_a{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::unused_a{0, NotSpecialized, NotSpecialized, }(v1)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a param only threaded unchanged through the recursive call is trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+// `a` is only passed to the recursive call at its own position, so the entire chain is dead.
+fn thread_a(_spec: felt252, a: u8, n: felt252) {
+    if n == 0 {
+        return;
+    }
+    thread_a(0, a, n - 1);
+}
+#[target_function]
+fn foo(a: u8, n: felt252) {
+    thread_a(0, a, n);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u8, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<((),)>) <- test::thread_a{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::integer::u8, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<((),)>) <- test::thread_a{0, NotSpecialized, NotSpecialized, }(v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test that a used param is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn ext_felt252(v: felt252) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn ext_u32(v: u32) nopanic;
+fn used_both(_spec: felt252, a: felt252, b: u32) {
+    ext_felt252(a);
+    ext_u32(b);
+}
+#[target_function]
+fn foo(a: felt252, b: u32) {
+    used_both(0, a, b);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::used_both{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::used_both{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a conditionally used param is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn cond() -> bool nopanic;
+fn used_conditionally(_spec: felt252, a: u32) {
+    if cond() {
+        ext(a);
+    }
+}
+#[target_function]
+fn foo(a: u32) {
+    used_conditionally(0, a);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::used_conditionally{0, NotSpecialized, }(v0)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::used_conditionally{0, NotSpecialized, }(v0)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a param requiring destruction is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+// `d` is never read, but its destruction is a use.
+fn used_by_destruction(_spec: felt252, d: Felt252Dict<felt252>, b: u32) {
+    ext(b);
+}
+#[target_function]
+fn foo(b: u32) {
+    used_by_destruction(0, Default::default(), b);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::dict::Felt252Dict::<core::felt252>) <- core::dict::felt252_dict_new::<core::felt252>()
+  () <- test::used_by_destruction{0, NotSpecialized, NotSpecialized, }(v1, v0)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::dict::Felt252Dict::<core::felt252>) <- core::dict::felt252_dict_new::<core::felt252>()
+  () <- test::used_by_destruction{0, NotSpecialized, NotSpecialized, }(v1, v0)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a param returned on an early exit is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn cond() -> bool nopanic;
+fn used_by_return(_spec: felt252, a: felt252, b: u32) -> felt252 {
+    if cond() {
+        return a;
+    }
+    ext(b);
+    0
+}
+#[target_function]
+fn foo(a: felt252, b: u32) -> felt252 {
+    used_by_return(0, a, b)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- test::used_by_return{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- test::used_by_return{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test that a param whose only use is a destructure with dead bindings is trimmed (droppable).
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+#[derive(Copy, Drop)]
+struct S {
+    a: felt252,
+}
+fn unused_s(_spec: felt252, s: S, b: u32) {
+    let S { a: _x } = s;
+    ext(b);
+}
+#[target_function]
+fn foo(s: S, b: u32) {
+    unused_s(0, s, b);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: test::S, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::unused_s{0, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return()
+
+//! > after
+Parameters: v0: test::S, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::unused_s{0, NotSpecialized, NotSpecialized, }(v1)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a param threaded between sibling specializations is not trimmed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+// `x` is only passed onwards, but to a *different* specialization of the function, so neither
+// sibling may trim it.
+fn thread_sibling(tag: felt252, x: u8, n: felt252) {
+    if n == 0 {
+        return;
+    }
+    if tag == 5 {
+        thread_sibling(6, x, n - 1);
+    } else {
+        thread_sibling(5, x, n - 1);
+    }
+}
+#[target_function]
+fn foo(x: u8, n: felt252) {
+    thread_sibling(5, x, n);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u8, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<((),)>) <- test::thread_sibling{5, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::integer::u8, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::panics::PanicResult::<((),)>) <- test::thread_sibling{5, NotSpecialized, NotSpecialized, }(v0, v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test specialization turning partially specialized struct fields unused.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar_ext(s: S6) nopanic;
+#[derive(Drop)]
+struct S6 {
+    a: felt252,
+    b: felt252,
+    c: felt252,
+    d: u32,
+    e: felt252,
+    f: felt252,
+}
+// Specializing on `keep == false` makes the struct params dead, so all of them are trimmed.
+fn unused_s6(keep: bool, s: S6) {
+    if keep {
+        bar_ext(s);
+    }
+}
+#[target_function]
+fn foo(x: felt252, y: u32) {
+    unused_s6(false, S6 { a: 1, b: x, c: 3, d: y, e: x, f: 6 })
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::unused_s6{bool::False({}), { 1, NotSpecialized, 3, NotSpecialized, NotSpecialized, 6 }, }(v0, v1, v0)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::unused_s6{bool::False({}), { 1, NotSpecialized, 3, NotSpecialized, NotSpecialized, 6 }, }()
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test that a user-visible function is not trimmed, even when a param is unused.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn ext(v: u32) nopanic;
+// Without a const argument the call is not specialized, and the user-visible `unused_a` must
+// keep its externally callable signature.
+fn unused_a(a: felt252, b: u32) {
+    ext(b);
+}
+#[target_function]
+fn foo(a: felt252, b: u32) {
+    unused_a(a, b);
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::unused_a(v0, v1)
+End:
+  Return()
+
+//! > after
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- test::unused_a(v0, v1)
+End:
+  Return()
