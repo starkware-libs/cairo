@@ -24,6 +24,7 @@ use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
 use crate::optimizations::split_structs::split_structs;
+use crate::optimizations::trim_unused_params::trim_unused_params;
 use crate::optimizations::variable_forwarding::variable_forwarding;
 use crate::reorganize_blocks::reorganize_blocks;
 
@@ -46,6 +47,10 @@ pub enum OptimizationPhase<'db> {
     ReturnOptimization,
     SplitStructs,
     TrimUnreachable,
+    /// Removes parameters that are never used by the function's body, from both the function's
+    /// signature and from every call site.
+    /// Must be applied exactly once, directly on the `PreOptimizations` stage lowering.
+    TrimUnusedParams,
     VariableForwarding,
     GasRedeposit,
     /// The following is not really an optimization but we want to apply optimizations before and
@@ -102,6 +107,7 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
+            OptimizationPhase::TrimUnusedParams => trim_unused_params(db, function, lowered)?,
             OptimizationPhase::VariableForwarding => variable_forwarding(db, lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
@@ -182,6 +188,10 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
     match db.optimizations() {
         Optimizations::Enabled(_) => {
             OptimizationStrategy(vec![
+                // Must be applied first, before any callee lowerings are inlined, as both a
+                // callee's parameter trimming and the caller's call-site argument trimming are
+                // applied at this point.
+                OptimizationPhase::TrimUnusedParams,
                 // Must be right before inlining.
                 OptimizationPhase::ReorganizeBlocks,
                 OptimizationPhase::ApplyInlining { enable_const_folding: true },

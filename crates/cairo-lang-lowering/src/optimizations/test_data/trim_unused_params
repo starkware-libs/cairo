@@ -1,0 +1,1325 @@
+//! > Test unused param removed from a loop that always overwrites the variable.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > function_code
+fn foo() -> felt252 {
+    let mut c = 0;
+    loop {
+        c = 1;
+        break;
+    }
+    c
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v2: core::felt252) <- test::foo[41-88](v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Generated loop:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1
+  (v2: ()) <- struct_construct()
+  () <- struct_destructure(v2)
+End:
+  Return(v1)
+
+//! > after
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v2: core::felt252) <- test::foo[41-88]()
+  (v1: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Generated loop:
+Parameters:
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1
+  (v2: ()) <- struct_construct()
+  () <- struct_destructure(v2)
+End:
+  Return(v1)
+
+//! > ==========================================================================
+
+//! > Test unused param removed from a recursive loop, including the recursive call.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > function_code
+fn foo() -> felt252 {
+    let mut c = 0;
+    let mut i = 0_u32;
+    loop {
+        c = 1;
+        if i == 5 {
+            break;
+        }
+        i += 1;
+    }
+    c + i.into()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::integer::u32) <- 0
+  (v7: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[64-161](v0, v1)
+End:
+  Match(match_enum(v7) {
+    PanicResult::Ok(v8) => blk2,
+    PanicResult::Err(v12) => blk3,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- core::integer::U32IntoFelt252::into(v4)
+  (v6: core::felt252) <- core::Felt252Add::add(v3, v5)
+  (v13: (core::felt252,)) <- struct_construct(v6)
+  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v13)
+End:
+  Return(v14)
+
+blk2:
+Statements:
+  (v9: core::felt252, v10: core::integer::u32, v11: ()) <- struct_destructure(v8)
+End:
+  Goto(blk1, {v9 -> v3, v10 -> v4, v11 -> v2})
+
+blk3:
+Statements:
+  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v12)
+End:
+  Return(v15)
+
+
+Generated loop:
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk4,
+    Option::None => blk5,
+  })
+
+blk1:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v19: (core::felt252, core::integer::u32, ())) <- struct_construct(v2, v3, v11)
+  (v20: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v19)
+End:
+  Return(v20)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v12: core::integer::u32) <- 1
+  (v21: core::panics::PanicResult::<(core::integer::u32, ())>) <- core::ops::arith::DeprecatedAddAssign::<core::integer::u32, core::integer::op_eq_by_op::AddEqImpl::<core::integer::u32, core::integer::U32Add>>::add_assign(v3, v12)
+End:
+  Match(match_enum(v21) {
+    PanicResult::Ok(v22) => blk7,
+    PanicResult::Err(v25) => blk8,
+  })
+
+blk4:
+Statements:
+  (v2: core::felt252) <- 1
+  (v3: core::integer::u32, v4: @core::integer::u32) <- snapshot(v1)
+  (v5: core::integer::u32) <- 5
+  (v6: core::integer::u32, v7: @core::integer::u32) <- snapshot(v5)
+  (v8: core::bool) <- core::integer::U32PartialEq::eq(v4, v7)
+End:
+  Match(match_enum(v8) {
+    bool::False(v10) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk5:
+Statements:
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v26)
+End:
+  Return(v27)
+
+blk6:
+Statements:
+  (v28: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[64-161](v2, v14)
+End:
+  Match(match_enum(v28) {
+    PanicResult::Ok(v29) => blk10,
+    PanicResult::Err(v33) => blk11,
+  })
+
+blk7:
+Statements:
+  (v23: core::integer::u32, v24: ()) <- struct_destructure(v22)
+End:
+  Goto(blk6, {v23 -> v14, v24 -> v13})
+
+blk8:
+Statements:
+  (v34: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v25)
+End:
+  Return(v34)
+
+blk9:
+Statements:
+  (v35: (core::felt252, core::integer::u32, ())) <- struct_construct(v16, v17, v15)
+  (v36: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v35)
+End:
+  Return(v36)
+
+blk10:
+Statements:
+  (v30: core::felt252, v31: core::integer::u32, v32: ()) <- struct_destructure(v29)
+End:
+  Goto(blk9, {v30 -> v16, v31 -> v17, v32 -> v15})
+
+blk11:
+Statements:
+  (v37: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v33)
+End:
+  Return(v37)
+
+//! > after
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::integer::u32) <- 0
+  (v7: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[64-161](v1)
+End:
+  Match(match_enum(v7) {
+    PanicResult::Ok(v8) => blk2,
+    PanicResult::Err(v12) => blk3,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- core::integer::U32IntoFelt252::into(v4)
+  (v6: core::felt252) <- core::Felt252Add::add(v3, v5)
+  (v13: (core::felt252,)) <- struct_construct(v6)
+  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v13)
+End:
+  Return(v14)
+
+blk2:
+Statements:
+  (v9: core::felt252, v10: core::integer::u32, v11: ()) <- struct_destructure(v8)
+End:
+  Goto(blk1, {v9 -> v3, v10 -> v4, v11 -> v2})
+
+blk3:
+Statements:
+  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v12)
+End:
+  Return(v15)
+
+
+Generated loop:
+Parameters: v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk4,
+    Option::None => blk5,
+  })
+
+blk1:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v19: (core::felt252, core::integer::u32, ())) <- struct_construct(v2, v3, v11)
+  (v20: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v19)
+End:
+  Return(v20)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v12: core::integer::u32) <- 1
+  (v21: core::panics::PanicResult::<(core::integer::u32, ())>) <- core::ops::arith::DeprecatedAddAssign::<core::integer::u32, core::integer::op_eq_by_op::AddEqImpl::<core::integer::u32, core::integer::U32Add>>::add_assign(v3, v12)
+End:
+  Match(match_enum(v21) {
+    PanicResult::Ok(v22) => blk7,
+    PanicResult::Err(v25) => blk8,
+  })
+
+blk4:
+Statements:
+  (v2: core::felt252) <- 1
+  (v3: core::integer::u32, v4: @core::integer::u32) <- snapshot(v1)
+  (v5: core::integer::u32) <- 5
+  (v6: core::integer::u32, v7: @core::integer::u32) <- snapshot(v5)
+  (v8: core::bool) <- core::integer::U32PartialEq::eq(v4, v7)
+End:
+  Match(match_enum(v8) {
+    bool::False(v10) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk5:
+Statements:
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v26)
+End:
+  Return(v27)
+
+blk6:
+Statements:
+  (v28: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[64-161](v14)
+End:
+  Match(match_enum(v28) {
+    PanicResult::Ok(v29) => blk10,
+    PanicResult::Err(v33) => blk11,
+  })
+
+blk7:
+Statements:
+  (v23: core::integer::u32, v24: ()) <- struct_destructure(v22)
+End:
+  Goto(blk6, {v23 -> v14, v24 -> v13})
+
+blk8:
+Statements:
+  (v34: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v25)
+End:
+  Return(v34)
+
+blk9:
+Statements:
+  (v35: (core::felt252, core::integer::u32, ())) <- struct_construct(v16, v17, v15)
+  (v36: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v35)
+End:
+  Return(v36)
+
+blk10:
+Statements:
+  (v30: core::felt252, v31: core::integer::u32, v32: ()) <- struct_destructure(v29)
+End:
+  Goto(blk9, {v30 -> v16, v31 -> v17, v32 -> v15})
+
+blk11:
+Statements:
+  (v37: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v33)
+End:
+  Return(v37)
+
+//! > ==========================================================================
+
+//! > Test that a param that is read by the loop is not removed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > function_code
+fn foo() -> felt252 {
+    let mut c = 0;
+    loop {
+        c = c + 1;
+        break;
+    }
+    c
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v2: core::felt252) <- test::foo[41-92](v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Generated loop:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v3: ()) <- struct_construct()
+  () <- struct_destructure(v3)
+End:
+  Return(v2)
+
+//! > after
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v2: core::felt252) <- test::foo[41-92](v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Generated loop:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v3: ()) <- struct_construct()
+  () <- struct_destructure(v3)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test that a param that is only conditionally overwritten is not removed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > function_code
+fn foo(x: felt252) -> felt252 {
+    let mut c = 0;
+    let mut i = 0_u32;
+    loop {
+        if x == 0 {
+            c = 1;
+        }
+        if i == 5 {
+            break;
+        }
+        i += 1;
+    }
+    c
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Main:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+  (v2: core::integer::u32) <- 0
+  (v3: core::felt252, v4: @core::felt252) <- snapshot(v0)
+  (v8: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[74-205](v1, v2, v4)
+End:
+  Match(match_enum(v8) {
+    PanicResult::Ok(v9) => blk2,
+    PanicResult::Err(v13) => blk3,
+  })
+
+blk1:
+Statements:
+  (v14: (core::felt252,)) <- struct_construct(v6)
+  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v14)
+End:
+  Return(v15)
+
+blk2:
+Statements:
+  (v10: core::felt252, v11: core::integer::u32, v12: ()) <- struct_destructure(v9)
+End:
+  Goto(blk1, {v10 -> v6, v11 -> v7, v12 -> v5})
+
+blk3:
+Statements:
+  (v16: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v13)
+End:
+  Return(v16)
+
+
+Generated loop:
+Parameters: v0: core::felt252, v1: core::integer::u32, v2: @core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk7,
+    Option::None => blk8,
+  })
+
+blk1:
+Statements:
+  (v9: core::felt252) <- 1
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v0 -> v10})
+
+blk3:
+Statements:
+  (v11: core::integer::u32, v12: @core::integer::u32) <- snapshot(v1)
+  (v13: core::integer::u32) <- 5
+  (v14: core::integer::u32, v15: @core::integer::u32) <- snapshot(v13)
+  (v16: core::bool) <- core::integer::U32PartialEq::eq(v12, v15)
+End:
+  Match(match_enum(v16) {
+    bool::False(v18) => blk5,
+    bool::True(v17) => blk4,
+  })
+
+blk4:
+Statements:
+  (v19: ()) <- struct_construct()
+  (v27: (core::felt252, core::integer::u32, ())) <- struct_construct(v10, v11, v19)
+  (v28: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v27)
+End:
+  Return(v28)
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+  (v20: core::integer::u32) <- 1
+  (v29: core::panics::PanicResult::<(core::integer::u32, ())>) <- core::ops::arith::DeprecatedAddAssign::<core::integer::u32, core::integer::op_eq_by_op::AddEqImpl::<core::integer::u32, core::integer::U32Add>>::add_assign(v11, v20)
+End:
+  Match(match_enum(v29) {
+    PanicResult::Ok(v30) => blk10,
+    PanicResult::Err(v33) => blk11,
+  })
+
+blk7:
+Statements:
+  (v3: core::felt252) <- 0
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
+  (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
+End:
+  Match(match_enum(v6) {
+    bool::False(v8) => blk2,
+    bool::True(v7) => blk1,
+  })
+
+blk8:
+Statements:
+  (v34: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v35: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v34)
+End:
+  Return(v35)
+
+blk9:
+Statements:
+  (v36: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[74-205](v10, v22, v2)
+End:
+  Match(match_enum(v36) {
+    PanicResult::Ok(v37) => blk13,
+    PanicResult::Err(v41) => blk14,
+  })
+
+blk10:
+Statements:
+  (v31: core::integer::u32, v32: ()) <- struct_destructure(v30)
+End:
+  Goto(blk9, {v31 -> v22, v32 -> v21})
+
+blk11:
+Statements:
+  (v42: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v33)
+End:
+  Return(v42)
+
+blk12:
+Statements:
+  (v43: (core::felt252, core::integer::u32, ())) <- struct_construct(v24, v25, v23)
+  (v44: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v43)
+End:
+  Return(v44)
+
+blk13:
+Statements:
+  (v38: core::felt252, v39: core::integer::u32, v40: ()) <- struct_destructure(v37)
+End:
+  Goto(blk12, {v38 -> v24, v39 -> v25, v40 -> v23})
+
+blk14:
+Statements:
+  (v45: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v41)
+End:
+  Return(v45)
+
+//! > after
+Main:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+  (v2: core::integer::u32) <- 0
+  (v3: core::felt252, v4: @core::felt252) <- snapshot(v0)
+  (v8: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[74-205](v1, v2, v4)
+End:
+  Match(match_enum(v8) {
+    PanicResult::Ok(v9) => blk2,
+    PanicResult::Err(v13) => blk3,
+  })
+
+blk1:
+Statements:
+  (v14: (core::felt252,)) <- struct_construct(v6)
+  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v14)
+End:
+  Return(v15)
+
+blk2:
+Statements:
+  (v10: core::felt252, v11: core::integer::u32, v12: ()) <- struct_destructure(v9)
+End:
+  Goto(blk1, {v10 -> v6, v11 -> v7, v12 -> v5})
+
+blk3:
+Statements:
+  (v16: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v13)
+End:
+  Return(v16)
+
+
+Generated loop:
+Parameters: v0: core::felt252, v1: core::integer::u32, v2: @core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk7,
+    Option::None => blk8,
+  })
+
+blk1:
+Statements:
+  (v9: core::felt252) <- 1
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v0 -> v10})
+
+blk3:
+Statements:
+  (v11: core::integer::u32, v12: @core::integer::u32) <- snapshot(v1)
+  (v13: core::integer::u32) <- 5
+  (v14: core::integer::u32, v15: @core::integer::u32) <- snapshot(v13)
+  (v16: core::bool) <- core::integer::U32PartialEq::eq(v12, v15)
+End:
+  Match(match_enum(v16) {
+    bool::False(v18) => blk5,
+    bool::True(v17) => blk4,
+  })
+
+blk4:
+Statements:
+  (v19: ()) <- struct_construct()
+  (v27: (core::felt252, core::integer::u32, ())) <- struct_construct(v10, v11, v19)
+  (v28: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v27)
+End:
+  Return(v28)
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+  (v20: core::integer::u32) <- 1
+  (v29: core::panics::PanicResult::<(core::integer::u32, ())>) <- core::ops::arith::DeprecatedAddAssign::<core::integer::u32, core::integer::op_eq_by_op::AddEqImpl::<core::integer::u32, core::integer::U32Add>>::add_assign(v11, v20)
+End:
+  Match(match_enum(v29) {
+    PanicResult::Ok(v30) => blk10,
+    PanicResult::Err(v33) => blk11,
+  })
+
+blk7:
+Statements:
+  (v3: core::felt252) <- 0
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
+  (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
+End:
+  Match(match_enum(v6) {
+    bool::False(v8) => blk2,
+    bool::True(v7) => blk1,
+  })
+
+blk8:
+Statements:
+  (v34: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v35: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v34)
+End:
+  Return(v35)
+
+blk9:
+Statements:
+  (v36: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[74-205](v10, v22, v2)
+End:
+  Match(match_enum(v36) {
+    PanicResult::Ok(v37) => blk13,
+    PanicResult::Err(v41) => blk14,
+  })
+
+blk10:
+Statements:
+  (v31: core::integer::u32, v32: ()) <- struct_destructure(v30)
+End:
+  Goto(blk9, {v31 -> v22, v32 -> v21})
+
+blk11:
+Statements:
+  (v42: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v33)
+End:
+  Return(v42)
+
+blk12:
+Statements:
+  (v43: (core::felt252, core::integer::u32, ())) <- struct_construct(v24, v25, v23)
+  (v44: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v43)
+End:
+  Return(v44)
+
+blk13:
+Statements:
+  (v38: core::felt252, v39: core::integer::u32, v40: ()) <- struct_destructure(v37)
+End:
+  Goto(blk12, {v38 -> v24, v39 -> v25, v40 -> v23})
+
+blk14:
+Statements:
+  (v45: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v41)
+End:
+  Return(v45)
+
+//! > ==========================================================================
+
+//! > Test that an overwritten param requiring destruction is not removed.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > function_code
+fn foo() {
+    let mut d: Felt252Dict<felt252> = Default::default();
+    let mut i = 0_u32;
+    loop {
+        d = Default::default();
+        if i == 3 {
+            break;
+        }
+        i += 1;
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::dict::Felt252Dict::<core::felt252>) <- core::dict::Felt252DictDefault::<core::felt252, core::Felt252Felt252DictValue>::default()
+  (v1: core::integer::u32) <- 0
+  (v6: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- test::foo[92-205](v0, v1)
+End:
+  Match(match_enum(v6) {
+    PanicResult::Ok(v7) => blk2,
+    PanicResult::Err(v11) => blk3,
+  })
+
+blk1:
+Statements:
+  (v5: ()) <- struct_construct()
+  (v12: ((),)) <- struct_construct(v5)
+  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v12)
+End:
+  Return(v13)
+
+blk2:
+Statements:
+  (v8: core::dict::Felt252Dict::<core::felt252>, v9: core::integer::u32, v10: ()) <- struct_destructure(v7)
+  () <- core::dict::Felt252DictDestruct::<core::felt252, core::felt252Drop, core::Felt252Felt252DictValue>::destruct(v8)
+  (v16: ()) <- struct_construct()
+End:
+  Goto(blk1, {v8 -> v3, v9 -> v4, v10 -> v2})
+
+blk3:
+Statements:
+  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v11)
+End:
+  Return(v14)
+
+
+Generated loop:
+Parameters: v0: core::dict::Felt252Dict::<core::felt252>, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- core::dict::Felt252DictDestruct::<core::felt252, core::felt252Drop, core::Felt252Felt252DictValue>::destruct(v0)
+  (v41: ()) <- struct_construct()
+End:
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk4,
+    Option::None => blk5,
+  })
+
+blk1:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v19: (core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())) <- struct_construct(v2, v3, v11)
+  (v20: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Ok(v19)
+End:
+  Return(v20)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v12: core::integer::u32) <- 1
+  (v21: core::panics::PanicResult::<(core::integer::u32, ())>) <- core::ops::arith::DeprecatedAddAssign::<core::integer::u32, core::integer::op_eq_by_op::AddEqImpl::<core::integer::u32, core::integer::U32Add>>::add_assign(v3, v12)
+End:
+  Match(match_enum(v21) {
+    PanicResult::Ok(v22) => blk7,
+    PanicResult::Err(v25) => blk8,
+  })
+
+blk4:
+Statements:
+  (v2: core::dict::Felt252Dict::<core::felt252>) <- core::dict::Felt252DictDefault::<core::felt252, core::Felt252Felt252DictValue>::default()
+  (v3: core::integer::u32, v4: @core::integer::u32) <- snapshot(v1)
+  (v5: core::integer::u32) <- 3
+  (v6: core::integer::u32, v7: @core::integer::u32) <- snapshot(v5)
+  (v8: core::bool) <- core::integer::U32PartialEq::eq(v4, v7)
+End:
+  Match(match_enum(v8) {
+    bool::False(v10) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk5:
+Statements:
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Err(v26)
+End:
+  Return(v27)
+
+blk6:
+Statements:
+  (v28: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- test::foo[92-205](v2, v14)
+End:
+  Match(match_enum(v28) {
+    PanicResult::Ok(v29) => blk10,
+    PanicResult::Err(v33) => blk11,
+  })
+
+blk7:
+Statements:
+  (v23: core::integer::u32, v24: ()) <- struct_destructure(v22)
+End:
+  Goto(blk6, {v23 -> v14, v24 -> v13})
+
+blk8:
+Statements:
+  () <- core::dict::Felt252DictDestruct::<core::felt252, core::felt252Drop, core::Felt252Felt252DictValue>::destruct(v2)
+  (v39: ()) <- struct_construct()
+  (v34: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Err(v25)
+End:
+  Return(v34)
+
+blk9:
+Statements:
+  (v35: (core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())) <- struct_construct(v16, v17, v15)
+  (v36: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Ok(v35)
+End:
+  Return(v36)
+
+blk10:
+Statements:
+  (v30: core::dict::Felt252Dict::<core::felt252>, v31: core::integer::u32, v32: ()) <- struct_destructure(v29)
+End:
+  Goto(blk9, {v30 -> v16, v31 -> v17, v32 -> v15})
+
+blk11:
+Statements:
+  (v37: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Err(v33)
+End:
+  Return(v37)
+
+//! > after
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::dict::Felt252Dict::<core::felt252>) <- core::dict::Felt252DictDefault::<core::felt252, core::Felt252Felt252DictValue>::default()
+  (v1: core::integer::u32) <- 0
+  (v6: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- test::foo[92-205](v0, v1)
+End:
+  Match(match_enum(v6) {
+    PanicResult::Ok(v7) => blk2,
+    PanicResult::Err(v11) => blk3,
+  })
+
+blk1:
+Statements:
+  (v5: ()) <- struct_construct()
+  (v12: ((),)) <- struct_construct(v5)
+  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v12)
+End:
+  Return(v13)
+
+blk2:
+Statements:
+  (v8: core::dict::Felt252Dict::<core::felt252>, v9: core::integer::u32, v10: ()) <- struct_destructure(v7)
+  () <- core::dict::Felt252DictDestruct::<core::felt252, core::felt252Drop, core::Felt252Felt252DictValue>::destruct(v8)
+  (v16: ()) <- struct_construct()
+End:
+  Goto(blk1, {v8 -> v3, v9 -> v4, v10 -> v2})
+
+blk3:
+Statements:
+  (v14: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v11)
+End:
+  Return(v14)
+
+
+Generated loop:
+Parameters: v0: core::dict::Felt252Dict::<core::felt252>, v1: core::integer::u32
+blk0 (root):
+Statements:
+  () <- core::dict::Felt252DictDestruct::<core::felt252, core::felt252Drop, core::Felt252Felt252DictValue>::destruct(v0)
+  (v41: ()) <- struct_construct()
+End:
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk4,
+    Option::None => blk5,
+  })
+
+blk1:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v19: (core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())) <- struct_construct(v2, v3, v11)
+  (v20: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Ok(v19)
+End:
+  Return(v20)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v12: core::integer::u32) <- 1
+  (v21: core::panics::PanicResult::<(core::integer::u32, ())>) <- core::ops::arith::DeprecatedAddAssign::<core::integer::u32, core::integer::op_eq_by_op::AddEqImpl::<core::integer::u32, core::integer::U32Add>>::add_assign(v3, v12)
+End:
+  Match(match_enum(v21) {
+    PanicResult::Ok(v22) => blk7,
+    PanicResult::Err(v25) => blk8,
+  })
+
+blk4:
+Statements:
+  (v2: core::dict::Felt252Dict::<core::felt252>) <- core::dict::Felt252DictDefault::<core::felt252, core::Felt252Felt252DictValue>::default()
+  (v3: core::integer::u32, v4: @core::integer::u32) <- snapshot(v1)
+  (v5: core::integer::u32) <- 3
+  (v6: core::integer::u32, v7: @core::integer::u32) <- snapshot(v5)
+  (v8: core::bool) <- core::integer::U32PartialEq::eq(v4, v7)
+End:
+  Match(match_enum(v8) {
+    bool::False(v10) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk5:
+Statements:
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Err(v26)
+End:
+  Return(v27)
+
+blk6:
+Statements:
+  (v28: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- test::foo[92-205](v2, v14)
+End:
+  Match(match_enum(v28) {
+    PanicResult::Ok(v29) => blk10,
+    PanicResult::Err(v33) => blk11,
+  })
+
+blk7:
+Statements:
+  (v23: core::integer::u32, v24: ()) <- struct_destructure(v22)
+End:
+  Goto(blk6, {v23 -> v14, v24 -> v13})
+
+blk8:
+Statements:
+  () <- core::dict::Felt252DictDestruct::<core::felt252, core::felt252Drop, core::Felt252Felt252DictValue>::destruct(v2)
+  (v39: ()) <- struct_construct()
+  (v34: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Err(v25)
+End:
+  Return(v34)
+
+blk9:
+Statements:
+  (v35: (core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())) <- struct_construct(v16, v17, v15)
+  (v36: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Ok(v35)
+End:
+  Return(v36)
+
+blk10:
+Statements:
+  (v30: core::dict::Felt252Dict::<core::felt252>, v31: core::integer::u32, v32: ()) <- struct_destructure(v29)
+End:
+  Goto(blk9, {v30 -> v16, v31 -> v17, v32 -> v15})
+
+blk11:
+Statements:
+  (v37: core::panics::PanicResult::<(core::dict::Felt252Dict::<core::felt252>, core::integer::u32, ())>) <- PanicResult::Err(v33)
+End:
+  Return(v37)
+
+//! > ==========================================================================
+
+//! > Test that a while loop param is kept, as the early exit returns it.
+
+//! > test_runner_name
+test_trim_unused_params
+
+//! > function_code
+fn foo() -> felt252 {
+    let mut c = 0;
+    let mut i = 0_u32;
+    while i != 5 {
+        c = 1;
+        i += 1;
+    }
+    c
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::integer::u32) <- 0
+  (v5: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[64-120](v0, v1)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk2,
+    PanicResult::Err(v10) => blk3,
+  })
+
+blk1:
+Statements:
+  (v11: (core::felt252,)) <- struct_construct(v3)
+  (v12: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v11)
+End:
+  Return(v12)
+
+blk2:
+Statements:
+  (v7: core::felt252, v8: core::integer::u32, v9: ()) <- struct_destructure(v6)
+End:
+  Goto(blk1, {v7 -> v3, v8 -> v4, v9 -> v2})
+
+blk3:
+Statements:
+  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v10)
+End:
+  Return(v13)
+
+
+Generated loop:
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk3,
+    Option::None => blk4,
+  })
+
+blk1:
+Statements:
+  (v9: core::felt252) <- 1
+  (v10: core::integer::u32) <- 1
+  (v19: core::panics::PanicResult::<(core::integer::u32, ())>) <- core::ops::arith::DeprecatedAddAssign::<core::integer::u32, core::integer::op_eq_by_op::AddEqImpl::<core::integer::u32, core::integer::U32Add>>::add_assign(v2, v10)
+End:
+  Match(match_enum(v19) {
+    PanicResult::Ok(v20) => blk6,
+    PanicResult::Err(v23) => blk7,
+  })
+
+blk2:
+Statements:
+  (v17: ()) <- struct_construct()
+  (v24: (core::felt252, core::integer::u32, ())) <- struct_construct(v0, v2, v17)
+  (v25: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v24)
+End:
+  Return(v25)
+
+blk3:
+Statements:
+  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
+  (v4: core::integer::u32) <- 5
+  (v5: core::integer::u32, v6: @core::integer::u32) <- snapshot(v4)
+  (v7: core::bool) <- core::integer::U32PartialEq::ne(v3, v6)
+End:
+  Match(match_enum(v7) {
+    bool::False(v16) => blk2,
+    bool::True(v8) => blk1,
+  })
+
+blk4:
+Statements:
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v26)
+End:
+  Return(v27)
+
+blk5:
+Statements:
+  (v28: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[64-120](v9, v12)
+End:
+  Match(match_enum(v28) {
+    PanicResult::Ok(v29) => blk9,
+    PanicResult::Err(v33) => blk10,
+  })
+
+blk6:
+Statements:
+  (v21: core::integer::u32, v22: ()) <- struct_destructure(v20)
+End:
+  Goto(blk5, {v21 -> v12, v22 -> v11})
+
+blk7:
+Statements:
+  (v34: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v23)
+End:
+  Return(v34)
+
+blk8:
+Statements:
+  (v35: (core::felt252, core::integer::u32, ())) <- struct_construct(v14, v15, v13)
+  (v36: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v35)
+End:
+  Return(v36)
+
+blk9:
+Statements:
+  (v30: core::felt252, v31: core::integer::u32, v32: ()) <- struct_destructure(v29)
+End:
+  Goto(blk8, {v30 -> v14, v31 -> v15, v32 -> v13})
+
+blk10:
+Statements:
+  (v37: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v33)
+End:
+  Return(v37)
+
+//! > after
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::integer::u32) <- 0
+  (v5: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[64-120](v0, v1)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk2,
+    PanicResult::Err(v10) => blk3,
+  })
+
+blk1:
+Statements:
+  (v11: (core::felt252,)) <- struct_construct(v3)
+  (v12: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v11)
+End:
+  Return(v12)
+
+blk2:
+Statements:
+  (v7: core::felt252, v8: core::integer::u32, v9: ()) <- struct_destructure(v6)
+End:
+  Goto(blk1, {v7 -> v3, v8 -> v4, v9 -> v2})
+
+blk3:
+Statements:
+  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v10)
+End:
+  Return(v13)
+
+
+Generated loop:
+Parameters: v0: core::felt252, v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk3,
+    Option::None => blk4,
+  })
+
+blk1:
+Statements:
+  (v9: core::felt252) <- 1
+  (v10: core::integer::u32) <- 1
+  (v19: core::panics::PanicResult::<(core::integer::u32, ())>) <- core::ops::arith::DeprecatedAddAssign::<core::integer::u32, core::integer::op_eq_by_op::AddEqImpl::<core::integer::u32, core::integer::U32Add>>::add_assign(v2, v10)
+End:
+  Match(match_enum(v19) {
+    PanicResult::Ok(v20) => blk6,
+    PanicResult::Err(v23) => blk7,
+  })
+
+blk2:
+Statements:
+  (v17: ()) <- struct_construct()
+  (v24: (core::felt252, core::integer::u32, ())) <- struct_construct(v0, v2, v17)
+  (v25: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v24)
+End:
+  Return(v25)
+
+blk3:
+Statements:
+  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
+  (v4: core::integer::u32) <- 5
+  (v5: core::integer::u32, v6: @core::integer::u32) <- snapshot(v4)
+  (v7: core::bool) <- core::integer::U32PartialEq::ne(v3, v6)
+End:
+  Match(match_enum(v7) {
+    bool::False(v16) => blk2,
+    bool::True(v8) => blk1,
+  })
+
+blk4:
+Statements:
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v26)
+End:
+  Return(v27)
+
+blk5:
+Statements:
+  (v28: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- test::foo[64-120](v9, v12)
+End:
+  Match(match_enum(v28) {
+    PanicResult::Ok(v29) => blk9,
+    PanicResult::Err(v33) => blk10,
+  })
+
+blk6:
+Statements:
+  (v21: core::integer::u32, v22: ()) <- struct_destructure(v20)
+End:
+  Goto(blk5, {v21 -> v12, v22 -> v11})
+
+blk7:
+Statements:
+  (v34: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v23)
+End:
+  Return(v34)
+
+blk8:
+Statements:
+  (v35: (core::felt252, core::integer::u32, ())) <- struct_construct(v14, v15, v13)
+  (v36: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Ok(v35)
+End:
+  Return(v36)
+
+blk9:
+Statements:
+  (v30: core::felt252, v31: core::integer::u32, v32: ()) <- struct_destructure(v29)
+End:
+  Goto(blk8, {v30 -> v14, v31 -> v15, v32 -> v13})
+
+blk10:
+Statements:
+  (v37: core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>) <- PanicResult::Err(v33)
+End:
+  Return(v37)
