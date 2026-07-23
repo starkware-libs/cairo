@@ -60,7 +60,7 @@ impl CrateInput {
 }
 
 /// A crate is a standalone file tree representing a single compilation unit.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum CrateLongId<'db> {
     /// A crate that appears in crate_roots(), and on the filesystem.
     Real { name: SmolStrId<'db>, discriminator: Option<String> },
@@ -153,7 +153,7 @@ impl FileInput {
 
 /// We use a higher level FileId struct, because not all files are on disk. Some might be online.
 /// Some might be virtual/computed on demand.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum FileLongId<'db> {
     OnDisk(PathBuf),
     Virtual(VirtualFile<'db>),
@@ -248,7 +248,7 @@ impl VirtualFileInput {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub struct VirtualFile<'db> {
     pub parent: Option<SpanInFile<'db>>,
     pub name: SmolStrId<'db>,
@@ -368,7 +368,7 @@ impl DirectoryInput {
     }
 }
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ArcStr(Arc<str>);
 
 impl ArcStr {
@@ -394,24 +394,6 @@ impl std::fmt::Display for ArcStr {
 impl std::fmt::Debug for ArcStr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
-    }
-}
-
-unsafe impl salsa::Update for ArcStr {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_str: &mut Self = unsafe { &mut *old_pointer };
-
-        // Fast path: same allocation => unchanged.
-        if Arc::ptr_eq(&old_str.0, &new_value.0) {
-            return false;
-        }
-        // Content-equal => unchanged.
-        if old_str.0 == new_value.0 {
-            return false;
-        }
-        // Otherwise, replace the Arc.
-        *old_str = new_value;
-        true
     }
 }
 
@@ -441,7 +423,7 @@ impl<'db> SmolStrId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub enum Directory<'db> {
     /// A directory on the file system.
     Real(PathBuf),
@@ -520,7 +502,7 @@ impl<'db> BlobId<'db> {
 }
 
 /// A location within a file.
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue, HeapSize)]
 pub struct SpanInFile<'db> {
     pub file_id: FileId<'db>,
     pub span: TextSpan,

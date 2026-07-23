@@ -19,7 +19,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 
 /// The kind of a feature for an item.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub enum FeatureKind<'db> {
     /// The feature of the item is stable.
     Stable,
@@ -78,7 +78,7 @@ pub trait HasFeatureKind<'db> {
 }
 
 /// Diagnostics for feature markers.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum FeatureMarkerDiagnostic {
     /// Multiple markers on the same item.
     MultipleMarkers,
@@ -128,7 +128,7 @@ fn add_diag<'db>(
 
 /// The feature configuration on an item.
 /// May be accumulated, or overridden by inner items.
-#[derive(Clone, Debug, Default, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, salsa::SalsaValue)]
 pub struct FeatureConfig<'db> {
     /// The current set of allowed features.
     pub allowed_features: OrderedHashSet<SmolStrId<'db>>,

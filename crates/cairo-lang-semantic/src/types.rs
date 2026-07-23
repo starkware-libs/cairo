@@ -42,7 +42,7 @@ use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericIte
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub enum TypeLongId<'db> {
     Concrete(ConcreteTypeId<'db>),
     /// Some expressions might have invalid types during processing, either due to errors or
@@ -120,7 +120,7 @@ impl<'db> TypeId<'db> {
     /// by a plugin), or if any of its struct members, enum variants, tuple or fixed-size-array
     /// elements, or its snapshotted type is (transitively) phantom.
     pub fn is_phantom(&self, db: &dyn Database) -> bool {
-        #[salsa::tracked(cycle_result=is_phantom_cycle)]
+        #[salsa::tracked(returns(copy), cycle_result=is_phantom_cycle)]
         fn is_phantom_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
             ty.long(db).is_phantom(db)
         }
@@ -354,7 +354,7 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
 /// A type that is not one of {generic param, type variable, impl type} has a head, which represents
 /// the kind of the root node in its type tree. This is used for caching queries for fast lookups
 /// when the type is not completely inferred yet.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub enum TypeHead<'db> {
     Concrete(GenericTypeId<'db>),
     Snapshot(Box<TypeHead<'db>>),
@@ -364,7 +364,7 @@ pub enum TypeHead<'db> {
     FixedSizeArray,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub enum ConcreteTypeId<'db> {
     Struct(ConcreteStructId<'db>),
     Enum(ConcreteEnumId<'db>),
@@ -437,7 +437,7 @@ impl<'db> DebugWithDb<'db> for ConcreteTypeId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ConcreteStructLongId<'db> {
     pub struct_id: StructId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -457,7 +457,7 @@ impl<'db> DebugWithDb<'db> for ConcreteStructLongId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ConcreteEnumLongId<'db> {
     pub enum_id: EnumId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -478,7 +478,7 @@ impl<'db> ConcreteEnumId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ConcreteExternTypeLongId<'db> {
     pub extern_type_id: ExternTypeId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -492,7 +492,7 @@ impl<'db> ConcreteExternTypeId<'db> {
 }
 
 /// A type id of a closure function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ClosureTypeLongId<'db> {
     pub param_tys: Vec<TypeId<'db>>,
     pub ret_ty: TypeId<'db>,
@@ -516,7 +516,7 @@ impl<'db> DebugWithDb<'db> for ClosureTypeLongId<'db> {
 }
 
 /// An impl item of kind type.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct ImplTypeId<'db> {
     /// The impl the item type is in.
     impl_id: ImplId<'db>,
@@ -553,7 +553,7 @@ impl<'db> DebugWithDb<'db> for ImplTypeId<'db> {
 }
 
 /// A wrapper around ImplTypeById that implements Ord for saving in an ordered collection.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ImplTypeById<'db>(ImplTypeId<'db>);
 
 impl<'db> From<ImplTypeId<'db>> for ImplTypeById<'db> {
@@ -699,7 +699,7 @@ fn maybe_resolve_type<'db>(
 }
 
 /// A generic argument which is not fully inferred. Used to avoid cycles in the inference.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub enum ShallowGenericArg<'db> {
     /// The generic argument is a generic parameter.
     GenericParameter(GenericParamId<'db>),
@@ -849,7 +849,7 @@ pub fn verify_fixed_size_array_size<'db>(
     Ok(())
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct TypeInfo<'db> {
     pub droppable: Result<ImplId<'db>, InferenceError<'db>>,
     pub copyable: Result<ImplId<'db>, InferenceError<'db>>,
@@ -932,7 +932,7 @@ fn single_value_type(db: &dyn Database, ty: TypeId<'_>) -> Maybe<bool> {
 }
 
 /// Query implementation of [TypesSemantic::single_value_type].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn single_value_type_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<bool> {
     single_value_type(db, ty)
 }
@@ -976,7 +976,7 @@ pub fn add_type_based_diagnostics<'db>(
 
 /// A reason a type cannot be used as a value: it (transitively) contains an array whose element
 /// type cannot be instantiated.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 enum ArrayElementViolation<'db> {
     /// An array of a phantom element.
     Phantom,
@@ -1001,7 +1001,7 @@ impl<'db> ArrayElementViolation<'db> {
 /// the `NonPhantomTypeContainingPhantomType` check for a definition), so it is not descended into.
 /// Only concrete types are searched; a generic parameter is assumed instantiable, so a generic
 /// `Array<T>` is only diagnosed once `T` is concretely disallowed.
-#[salsa::tracked(cycle_result=array_element_violation_cycle)]
+#[salsa::tracked(returns(clone), cycle_result=array_element_violation_cycle)]
 fn array_element_violation<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
@@ -1151,7 +1151,7 @@ fn type_size_info(db: &dyn Database, ty: TypeId<'_>) -> Maybe<TypeSizeInformatio
 }
 
 /// Query implementation of [TypesSemantic::type_size_info].
-#[salsa::tracked(cycle_result=type_size_info_cycle)]
+#[salsa::tracked(returns(clone), cycle_result=type_size_info_cycle)]
 fn type_size_info_tracked<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
@@ -1201,7 +1201,7 @@ fn type_info<'db>(
 }
 
 /// Query implementation of [TypesSemantic::type_info].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn type_info_tracked<'db>(
     db: &'db dyn Database,
     lookup_context: ImplLookupContextId<'db>,
@@ -1244,7 +1244,7 @@ fn copyable<'db>(
 }
 
 /// Query implementation of [TypesSemantic::copyable].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn copyable_tracked<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
@@ -1265,7 +1265,7 @@ fn droppable<'db>(
 }
 
 /// Query implementation of [TypesSemantic::droppable].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn droppable_tracked<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
@@ -1297,7 +1297,7 @@ fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
 }
 
 /// Query implementation of [PrivTypesSemantic::priv_type_is_fully_concrete].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn priv_type_is_fully_concrete_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     priv_type_is_fully_concrete(db, ty)
 }
@@ -1325,7 +1325,7 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> boo
 }
 
 /// Query implementation of [PrivTypesSemantic::priv_type_is_var_free].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn priv_type_is_var_free_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     priv_type_is_var_free(db, ty)
 }
@@ -1371,7 +1371,7 @@ pub fn priv_type_short_name(db: &dyn Database, ty: TypeId<'_>) -> String {
     }
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn priv_type_short_name_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> String {
     priv_type_short_name(db, ty)
 }

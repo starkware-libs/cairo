@@ -42,7 +42,7 @@ fn get_libfunc_signature(
             vec![GenericArgumentId::Type(db.core_info().felt252)],
         ))
         .expect("Can't find core::Array<core::felt252>.");
-    let name = libfunc_long_id.generic_id.0;
+    let name = &libfunc_long_id.generic_id.0;
     match name.as_str() {
         "felt252_add" => {
             let vars = vec![OutputVarInfo {

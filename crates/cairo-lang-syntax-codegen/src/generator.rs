@@ -81,7 +81,7 @@ fn generate_kinds_code() -> rust::Tokens {
     });
 
     tokens.extend(quote! {
-        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::Update, cairo_lang_proc_macros::HeapSize)]
+        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::SalsaValue, cairo_lang_proc_macros::HeapSize)]
         pub enum SyntaxKind {
             $(for t in kinds => $t,)
         }
@@ -254,7 +254,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
     let element_green_name = format!("{element_type}Green");
     let common_code = gen_common_list_code(&name, &green_name, &ptr_name);
     quote! {
-        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
         pub struct $(&name)<'db>(ElementList<'db, $(&element_type)<'db>, 1>);
         impl<'db> Deref for $(&name)<'db>{
             type Target = ElementList<'db, $(&element_type)<'db>, 1>;
@@ -277,7 +277,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
                 }.intern(db))
             }
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> TypedStablePtr<'db> for $(&ptr_name)<'db> {
             type SyntaxNode = $(&name)<'db>;
@@ -310,7 +310,7 @@ fn gen_separated_list_code(
     let separator_green_name = format!("{separator_type}Green");
     let common_code = gen_common_list_code(&name, &green_name, &ptr_name);
     quote! {
-        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
         pub struct $(&name)<'db>(ElementList<'db, $(&element_type)<'db>, 2>);
         impl<'db> Deref for $(&name)<'db>{
             type Target = ElementList<'db, $(&element_type)<'db>, 2>;
@@ -333,7 +333,7 @@ fn gen_separated_list_code(
                 }.intern(db))
             }
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> TypedStablePtr<'db> for $(&ptr_name)<'db> {
             type SyntaxNode = $(&name)<'db>;
@@ -349,7 +349,7 @@ fn gen_separated_list_code(
                 ptr.untyped()
             }
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
         pub enum $(&element_or_separator_green_name)<'db> {
             Separator($(&separator_green_name)<'db>),
             Element($(&element_green_name)<'db>),
@@ -378,7 +378,7 @@ fn gen_separated_list_code(
 
 fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::Tokens {
     quote! {
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
         pub struct $green_name<'db>(pub GreenId<'db>);
         impl<'db> TypedSyntaxNode<'db> for $name<'db> {
             const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$name);
@@ -461,11 +461,11 @@ fn gen_enum_code(name: String, variants: Vec<Variant>, missing_variant: bool) ->
         }
     };
     quote! {
-        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
         pub enum $(&name)<'db>{
             $enum_body
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> TypedStablePtr<'db> for $(&ptr_name)<'db> {
             type SyntaxNode = $(&name)<'db>;
@@ -483,7 +483,7 @@ fn gen_enum_code(name: String, variants: Vec<Variant>, missing_variant: bool) ->
         }
         $ptr_conversions
         $green_conversions
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
         pub struct $(&green_name)<'db>(pub GreenId<'db>);
         impl<'db> TypedSyntaxNode<'db> for $(&name)<'db>{
             const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -532,7 +532,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
     let ptr_name = format!("{name}Ptr");
 
     quote! {
-        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
         pub struct $(&name)<'db> {
             node: SyntaxNode<'db>,
         }
@@ -548,7 +548,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                     GreenNodeDetails::Token)
             }
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> TypedStablePtr<'db> for $(&ptr_name)<'db> {
             type SyntaxNode = $(&name)<'db>;
@@ -564,7 +564,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 ptr.untyped()
             }
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
         pub struct $(&green_name)<'db>(pub GreenId<'db>);
         impl<'db> $(&green_name)<'db> {
             pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -688,7 +688,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         }
     };
     quote! {
-        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+        #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
         pub struct $(&name)<'db> {
             node: SyntaxNode<'db>,
         }
@@ -696,7 +696,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         impl<'db> $(&name)<'db> {
             $body
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> $(&ptr_name)<'db> {
             $ptr_getters
@@ -715,7 +715,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 ptr.untyped()
             }
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
         pub struct $(&green_name)<'db>(pub GreenId<'db>);
         impl<'db> TypedSyntaxNode<'db> for $(&name)<'db> {
             const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));

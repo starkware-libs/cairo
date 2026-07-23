@@ -7,7 +7,7 @@ use salsa::Database;
 use crate::node::{Terminal, TypedSyntaxNode, ast};
 
 /// Easier to digest representation of an [ast::Attribute].
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct Attribute<'a> {
     pub stable_ptr: ast::AttributePtr<'a>,
     pub id: SmolStrId<'a>,
@@ -31,7 +31,7 @@ impl<'a> Attribute<'a> {
 }
 
 /// Easier to digest representation of a single attribute value.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct AttributeArg<'a> {
     pub variant: AttributeArgVariant<'a>,
     pub arg: ast::Arg<'a>,
@@ -39,7 +39,7 @@ pub struct AttributeArg<'a> {
 }
 
 /// Variant of [`AttributeArg`].
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub enum AttributeArgVariant<'a> {
     /// Just `value`.
     Unnamed(ast::Expr<'a>),
@@ -49,7 +49,7 @@ pub enum AttributeArgVariant<'a> {
     FieldInitShorthand(NameInfo<'a>),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 /// The data for the name part of an argument.
 pub struct NameInfo<'a> {
     /// The name of the argument.
@@ -64,7 +64,7 @@ impl<'a> NameInfo<'a> {
 }
 
 /// Easier to digest representation of a [`ast::Modifier`] attached to [`AttributeArg`].
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct Modifier<'a> {
     pub text: SmolStrId<'a>,
     pub stable_ptr: ast::ModifierPtr<'a>,

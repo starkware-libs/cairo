@@ -163,3 +163,42 @@ fn test_entrypoint_failed() {
 fn test_get_block_hash() {
     get_block_hash_syscall(0).unwrap_syscall();
 }
+
+#[starknet::interface]
+trait ISelector<T> {
+    fn selector1(self: @T) -> felt252;
+    fn selector2(self: @T) -> felt252;
+}
+
+#[starknet::contract]
+mod selectors {
+    #[storage]
+    struct Storage {}
+
+    #[constructor]
+    fn constructor(ref self: ContractState) -> felt252 {
+        starknet::get_execution_info().unbox().entry_point_selector
+    }
+
+    #[external(v0)]
+    fn selector1(self: @ContractState) -> felt252 {
+        starknet::get_execution_info().unbox().entry_point_selector
+    }
+
+    #[external(v0)]
+    fn selector2(self: @ContractState) -> felt252 {
+        starknet::get_execution_info().unbox().entry_point_selector
+    }
+}
+
+#[test]
+fn test_entry_point_selector_is_set() {
+    let (address, data) = deploy_syscall(selectors::TEST_CLASS_HASH, 0, [].span(), false).unwrap();
+    assert_eq!(data, [selector!("constructor")].span());
+    let contract = ISelectorDispatcher { contract_address: address };
+    assert_eq!(contract.selector1(), selector!("selector1"));
+    assert_eq!(contract.selector2(), selector!("selector2"));
+    let library = ISelectorLibraryDispatcher { class_hash: selectors::TEST_CLASS_HASH };
+    assert_eq!(library.selector1(), selector!("selector1"));
+    assert_eq!(library.selector2(), selector!("selector2"));
+}

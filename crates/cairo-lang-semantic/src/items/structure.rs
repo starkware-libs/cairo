@@ -29,7 +29,7 @@ use crate::{GenericParam, SemanticDiagnostic, semantic};
 #[path = "structure_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct StructDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -104,7 +104,7 @@ fn struct_generic_params_data<'db>(
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct StructDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -112,7 +112,7 @@ struct StructDefinitionData<'db> {
     resolver_data: Arc<ResolverData<'db>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Member<'db> {
     pub id: MemberId<'db>,
@@ -185,7 +185,7 @@ fn struct_definition_data<'db>(
 }
 
 /// Query implementation of [StructSemantic::struct_definition_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn struct_definition_diagnostics<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,

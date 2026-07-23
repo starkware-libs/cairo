@@ -165,13 +165,13 @@ pub fn init_semantic_group(db: &mut dyn Database) {
     semantic_group_input(db).set_analyzer_plugin_overrides(db).to(Some(OrderedHashMap::default()));
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn default_analyzer_plugins(db: &dyn Database) -> Arc<Vec<AnalyzerPluginId<'_>>> {
     let inp = db.default_analyzer_plugins_input();
     Arc::new(inp.iter().map(|plugin| plugin.clone().intern(db)).collect_vec())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn analyzer_plugin_overrides(
     db: &dyn Database,
 ) -> Arc<OrderedHashMap<CrateId<'_>, Arc<Vec<AnalyzerPluginId<'_>>>>> {
@@ -188,7 +188,7 @@ fn analyzer_plugin_overrides(
     )
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn module_semantic_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -349,7 +349,7 @@ fn crate_analyzer_plugins<'db>(
         .unwrap_or_else(|| db.default_analyzer_plugins())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn declared_allows(db: &dyn Database, crate_id: CrateId<'_>) -> Arc<OrderedHashSet<String>> {
     let base_lints = [DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES, EXTERN_OUTSIDE_CORELIB];
 
@@ -415,7 +415,7 @@ fn add_unused_import_diagnostics<'db>(
         })();
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn file_semantic_diagnostics<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
@@ -429,7 +429,7 @@ fn file_semantic_diagnostics<'db>(
     Ok(diagnostics.build())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn lookup_resolved_generic_item_by_ptr<'db>(
     db: &'db dyn Database,
     id: LookupItemId<'db>,
@@ -440,7 +440,7 @@ pub fn lookup_resolved_generic_item_by_ptr<'db>(
         .find_map(|resolver_data| resolver_data.resolved_items.generic.get(&ptr).cloned())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn lookup_resolved_concrete_item_by_ptr<'db>(
     db: &'db dyn Database,
     id: LookupItemId<'db>,
@@ -647,7 +647,7 @@ pub fn module_fully_accessible_modules<'db>(
 }
 
 /// Cache for the semantic data of a crate.
-#[derive(PartialEq, Eq, Clone, salsa::Update)]
+#[derive(PartialEq, Eq, Clone, salsa::SalsaValue)]
 pub struct ModuleSemanticDataCacheAndLoadingData<'db> {
     /// Semantic data of the modules in the crate.
     pub modules_semantic_data: Arc<OrderedHashMap<ModuleId<'db>, ModuleSemanticData<'db>>>,
@@ -657,7 +657,7 @@ pub struct ModuleSemanticDataCacheAndLoadingData<'db> {
     pub loading_data: Arc<SemanticCacheLoadingData<'db>>,
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn cached_crate_semantic_data<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,

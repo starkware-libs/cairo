@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use salsa::Database;
 
 /// A stable location of a real, concrete syntax.
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, HeapSize, salsa::SalsaValue)]
 pub struct StableLocation<'db> {
     stable_ptr: SyntaxStablePtrId<'db>,
     /// An optional inner span of the stable location. Useful for diagnostics caused by inline

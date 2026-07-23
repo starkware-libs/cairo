@@ -22,7 +22,7 @@ use crate::{
 };
 
 // A const argument for a specialized function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum SpecializationArg<'db> {
     Const {
         value: ConstValueId<'db>,
@@ -318,7 +318,7 @@ pub fn specialized_function_lowered<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_should_specialize].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn priv_should_specialize<'db>(
     db: &'db dyn Database,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,

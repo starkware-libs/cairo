@@ -15,7 +15,7 @@ use crate::{ConcreteStructId, FunctionId, TypeId, semantic};
 /// Defines an arena id type and its behavior for usage in an arena.
 macro_rules! define_arena_id {
     ($id:ident, $behaviour:ident) => {
-        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash, salsa::SalsaValue)]
         pub struct $id(u32, usize);
 
         impl core::fmt::Debug for $id {
@@ -335,7 +335,7 @@ pub struct ExprFor<'db> {
 }
 
 /// A sequence of member accesses of a variable. For example: a, a.b, a.b.c, ...
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue)]
 pub enum ExprVarMemberPath<'db> {
     Var(ExprVar<'db>),
     Member {
@@ -489,7 +489,7 @@ pub struct ExprLogicalOperator<'db> {
     pub stable_ptr: ast::ExprPtr<'db>,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue)]
 pub struct ExprVar<'db> {
     pub var: VarId<'db>,
     pub ty: semantic::TypeId<'db>,
@@ -504,7 +504,7 @@ impl<'db> DebugWithDb<'db> for ExprVar<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(ExprFormatter<'db>)]
 pub struct ExprNumericLiteral<'db> {
     #[dont_rewrite]
@@ -515,7 +515,7 @@ pub struct ExprNumericLiteral<'db> {
     pub stable_ptr: ast::ExprPtr<'db>,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(ExprFormatter<'db>)]
 pub struct ExprStringLiteral<'db> {
     #[dont_rewrite]
@@ -528,7 +528,7 @@ pub struct ExprStringLiteral<'db> {
 
 /// Identifies the accessed member of an aggregate, either a named struct member or a positional
 /// element of a tuple (e.g. `t.0`).
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub enum MemberAccessKind<'db> {
     /// A named member of a struct.
@@ -636,18 +636,7 @@ pub struct Arenas<'db> {
     pub statements: StatementArena<'db>,
 }
 
-unsafe impl<'db> salsa::Update for Arenas<'db> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_arenas: &mut Arenas<'db> = unsafe { &mut *old_pointer };
-
-        // Next id includes both arena length and arena id.
-        if old_arenas.exprs.next_id() != new_value.exprs.next_id()
-            || old_arenas.patterns.next_id() != new_value.patterns.next_id()
-            || old_arenas.statements.next_id() != new_value.statements.next_id()
-        {
-            *old_arenas = new_value;
-            return true;
-        }
-        false
-    }
-}
+// SAFETY: The arenas hold owned semantic objects composed of interned ids and owned data, all of
+// which are safe to retain across revisions; `id_arena::Arena` is a foreign type, so this cannot
+// be derived.
+unsafe impl<'db> salsa::SalsaValue for Arenas<'db> {}

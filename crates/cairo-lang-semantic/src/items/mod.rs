@@ -80,7 +80,7 @@ fn report_extern_item_outside_corelib<'db>(
 
 /// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
 /// "Self::" paths.
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub enum TraitOrImplContext<'db> {
     /// No trait/impl context.
     None,

@@ -232,7 +232,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if a diagnostics group contains any diagnostics and reports them to the provided
     /// callback as strings. Returns `true` if diagnostics were found.
-    fn check_diag_group<'db, TEntry: DiagnosticEntry<'db> + salsa::Update>(
+    fn check_diag_group<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue>(
         &mut self,
         db: &'db dyn Database,
         group: Diagnostics<'db, TEntry>,

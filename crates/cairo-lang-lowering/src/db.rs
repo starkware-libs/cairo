@@ -404,7 +404,7 @@ pub fn init_lowering_group(
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct GenericSCCRepresentative<'db>(pub ids::FunctionWithBodyId<'db>);
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash, salsa::Update)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, salsa::SalsaValue)]
 pub struct ConcreteSCCRepresentative<'db>(pub ids::ConcreteFunctionWithBodyId<'db>);
 
 // *** Main lowering phases in order.
@@ -649,7 +649,7 @@ fn lowered_direct_callees_with_body<'db>(
     )
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn function_with_body_lowering_diagnostics<'db>(
     db: &'db dyn Database,
     function_id: ids::FunctionWithBodyId<'db>,
@@ -683,7 +683,7 @@ fn function_with_body_lowering_diagnostics<'db>(
     diagnostics.build()
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn semantic_function_with_body_lowering_diagnostics<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -705,7 +705,7 @@ fn semantic_function_with_body_lowering_diagnostics<'db>(
     Ok(diagnostics.build())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn module_lowering_diagnostics<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -758,7 +758,7 @@ fn module_lowering_diagnostics<'db>(
     Ok(diagnostics.build())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn file_lowering_diagnostics<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
@@ -772,7 +772,7 @@ fn file_lowering_diagnostics<'db>(
     Ok(diagnostics.build())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn type_size<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> usize {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {

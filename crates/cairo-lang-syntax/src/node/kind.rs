@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
     Eq,
     Serialize,
     Deserialize,
-    salsa::Update,
+    salsa::SalsaValue,
     cairo_lang_proc_macros::HeapSize,
 )]
 pub enum SyntaxKind {

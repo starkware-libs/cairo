@@ -25,7 +25,7 @@ use crate::{GenericParam, SemanticDiagnostic};
 mod test;
 
 // Declaration.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct ExternTypeDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -67,7 +67,7 @@ fn extern_type_declaration_generic_params_data<'db>(
 }
 
 /// Query implementation of [ExternTypeSemantic::extern_type_declaration_generic_params_data].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn extern_type_declaration_generic_params_data_tracked<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,

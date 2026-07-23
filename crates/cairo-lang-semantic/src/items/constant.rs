@@ -56,27 +56,13 @@ use crate::{
     SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Constant<'db> {
     /// The actual id of the const expression value.
     pub value: ExprId,
     /// The arena of all the expressions for the const calculation.
     pub arenas: Arc<Arenas<'db>>,
-}
-
-// TODO: Review this well.
-unsafe impl<'db> salsa::Update for Constant<'db> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_constant: &mut Constant<'db> = unsafe { &mut *old_pointer };
-
-        if old_constant.value != new_value.value {
-            *old_constant = new_value;
-            return true;
-        }
-
-        false
-    }
 }
 
 impl<'db> Constant<'db> {
@@ -88,7 +74,7 @@ impl<'db> Constant<'db> {
 /// Information about a constant definition.
 ///
 /// Helper struct for the data returned by [ConstantSemantic::constant_semantic_data].
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct ConstantData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -197,7 +183,7 @@ pub fn canonical_felt252(value: &BigInt) -> BigInt {
 }
 
 /// A constant value.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub enum ConstValue<'db> {
     Int(#[dont_rewrite] BigInt, TypeId<'db>),
     Struct(Vec<ConstValueId<'db>>, TypeId<'db>),
@@ -270,7 +256,7 @@ impl<'db> ConstValue<'db> {
 }
 
 /// An impl item of kind const.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct ImplConstantId<'db> {
     /// The impl the item const is in.
     impl_id: ImplId<'db>,
@@ -1341,13 +1327,13 @@ fn const_calc_info<'db>(db: &'db dyn Database) -> Arc<ConstCalcInfo<'db>> {
 }
 
 /// Implementation of [ConstantSemantic::const_calc_info].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn const_calc_info_tracked<'db>(db: &'db dyn Database) -> Arc<ConstCalcInfo<'db>> {
     const_calc_info(db)
 }
 
 /// Holds static information about extern functions required for const calculations.
-#[derive(Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ConstCalcInfo<'db> {
     /// Traits that are allowed for consts if their impls is in the corelib.
     const_traits: UnorderedHashSet<TraitId<'db>>,
@@ -1520,7 +1506,7 @@ pub trait ConstantSemantic<'db>: Database {
 impl<'db, T: Database + ?Sized> ConstantSemantic<'db> for T {}
 
 /// A range of values of a numeric type.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct TypeRange {
     /// The minimum value of the range.
     pub min: BigInt,

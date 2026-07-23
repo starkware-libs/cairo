@@ -27,7 +27,7 @@ pub use crate::types::{
 };
 
 /// Semantic model of a variable.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct LocalVariable<'db> {
     pub id: LocalVarId<'db>,
@@ -44,7 +44,7 @@ impl<'db> LocalVariable<'db> {
 }
 
 /// Semantic model of a local item.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct LocalItem<'db> {
     pub id: StatementItemId<'db>,
@@ -52,13 +52,13 @@ pub struct LocalItem<'db> {
 }
 
 /// Semantic model of statement item kind.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub enum StatementItemKind<'db> {
     Constant(ConstValueId<'db>, TypeId<'db>),
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Parameter<'db> {
     pub id: ParamId<'db>,
@@ -78,7 +78,7 @@ impl<'db> Parameter<'db> {
 }
 
 /// The mutability attribute of a variable.
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Copy, salsa::Update)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Copy, salsa::SalsaValue)]
 pub enum Mutability {
     /// The variable can't be changed.
     Immutable,
@@ -89,7 +89,7 @@ pub enum Mutability {
     Reference,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub enum Binding<'db> {
     LocalVar(LocalVariable<'db>),

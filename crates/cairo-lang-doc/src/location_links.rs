@@ -12,7 +12,7 @@ use salsa::Database;
 use crate::documentable_item::DocumentableItemId;
 
 /// A helper struct to map parts of item signature to the respective documentable items.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct LocationLink<'db> {
     /// Link's start offset in documentable item's signature.
     pub start: usize,
