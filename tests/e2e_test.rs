@@ -64,6 +64,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     "e2e_test_data",
     {
         cmp: "cmp",
+        trim_unused_params: "trim_unused_params",
     },
     SmallE2ETestRunner
 );
