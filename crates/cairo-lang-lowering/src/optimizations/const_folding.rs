@@ -739,6 +739,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
 
+        // Cannot specialize functions with trimmed parameters, as specialization args are
+        // positional over the untrimmed parameters.
+        if !self.db.unused_parameters(called_base).is_empty() {
+            return None;
+        }
+
         // Do not specialize the call that should be inlined.
         if call_stmt.is_specialization_base_call {
             return None;

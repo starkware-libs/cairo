@@ -295,10 +295,20 @@ fn get_function_signature(
         .map(|ty| db.get_concrete_type_id(*ty).cloned())
         .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
 
+    // Parameters removed from the function by the `TrimUnusedParams` optimization phase, which
+    // must be skipped to match the function's post-optimizations parameters.
+    let unused_parameters = match lowered_function_id.body(db)? {
+        Some(body) => db.unused_parameters(body),
+        None => &[],
+    };
+
     // TODO(spapini): Handle ret_types in lowering.
     let mut all_params = implicits.clone();
     let mut extra_rets = vec![];
-    for param in &signature.params {
+    for (idx, param) in signature.params.iter().enumerate() {
+        if unused_parameters.contains(&idx) {
+            continue;
+        }
         let concrete_type_id = db.get_concrete_type_id(param.ty)?;
         all_params.push(concrete_type_id.clone());
     }

@@ -103,6 +103,22 @@ pub trait LoweringGroup: Database {
         lowered_body(self.as_dyn_database(), function_id, stage).maybe_as_ref()
     }
 
+    /// Returns the sorted positions of the parameters of the function that are never used by its
+    /// body, based on the [LoweringStage::PreOptimizations] lowering.
+    ///
+    /// Non-empty only for compiler-generated loop functions, whose signature is not user-visible.
+    /// These parameters are removed by the `TrimUnusedParams` optimization phase, and should be
+    /// skipped when computing the function's external signature.
+    fn unused_parameters<'db>(
+        &'db self,
+        function_id: ids::ConcreteFunctionWithBodyId<'db>,
+    ) -> &'db [usize] {
+        crate::optimizations::trim_unused_params::unused_parameters(
+            self.as_dyn_database(),
+            function_id,
+        )
+    }
+
     /// Returns the set of direct callees which are functions with body of a concrete function with
     /// a body (i.e. excluding libfunc callees), at the given stage.
     fn lowered_direct_callees<'db>(
