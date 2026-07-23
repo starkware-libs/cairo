@@ -62,7 +62,7 @@ pub struct MatcherContext<'db> {
 }
 
 /// The semantic data for a macro declaration.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, salsa::SalsaValue)]
 pub struct MacroDeclarationData<'db> {
     rules: Vec<MacroRuleData<'db>>,
     attributes: Vec<Attribute<'db>>,
@@ -71,7 +71,7 @@ pub struct MacroDeclarationData<'db> {
 }
 
 /// The semantic data for a single macro rule in a macro declaration.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, salsa::SalsaValue)]
 pub struct MacroRuleData<'db> {
     pub pattern: ast::WrappedMacro<'db>,
     pub expansion: ast::MacroElements<'db>,
@@ -167,7 +167,7 @@ fn priv_macro_declaration_data<'db>(
 }
 
 /// Query implementation of [MacroDeclarationSemantic::priv_macro_declaration_data].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn priv_macro_declaration_data_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -703,7 +703,7 @@ fn macro_declaration_diagnostics<'db>(
 }
 
 /// Query implementation of [MacroDeclarationSemantic::macro_declaration_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn macro_declaration_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -720,7 +720,7 @@ fn macro_declaration_attributes<'db>(
 }
 
 /// Query implementation of [MacroDeclarationSemantic::macro_declaration_attributes].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn macro_declaration_attributes_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -737,7 +737,7 @@ fn macro_declaration_resolver_data<'db>(
 }
 
 /// Query implementation of [MacroDeclarationSemantic::macro_declaration_resolver_data].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn macro_declaration_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -754,7 +754,7 @@ fn macro_declaration_rules<'db>(
 }
 
 /// Query implementation of [MacroDeclarationSemantic::macro_declaration_rules].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn macro_declaration_rules_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,

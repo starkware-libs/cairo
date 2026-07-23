@@ -25,7 +25,7 @@ use crate::items::module::ModuleSemantic;
 use crate::resolve::{ResolvedGenericItem, Resolver};
 
 /// Data about how an item can be accessed from a specific context.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ItemAccessInfo<'db> {
     /// The shortest path segments to access the item from the context, in reverse order.
     pub path_segments: Vec<ImportableId<'db>>,
@@ -71,7 +71,7 @@ impl<'db> ItemAccessInfo<'db> {
 }
 
 /// How an item is accessed from a context.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub enum ItemAccessKind<'db> {
     /// The item is directly defined in the current module.
     DirectInModule,
@@ -267,7 +267,7 @@ fn get_importable_parent<'db>(
 }
 
 /// Query implementation of [PathSemantic::contextualized_path].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn contextualized_path_query<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,

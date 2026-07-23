@@ -71,7 +71,7 @@ pub mod solver;
 
 /// A type variable, created when a generic type argument is not passed, and thus is not known
 /// yet and needs to be inferred.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, HeapSize, salsa::SalsaValue)]
 pub struct TypeVar<'db> {
     pub inference_id: InferenceId<'db>,
     pub id: LocalTypeVarId,
@@ -79,7 +79,7 @@ pub struct TypeVar<'db> {
 
 /// A const variable, created when a generic const argument is not passed, and thus is not known
 /// yet and needs to be inferred.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, HeapSize, salsa::SalsaValue)]
 pub struct ConstVar<'db> {
     pub inference_id: InferenceId<'db>,
     pub id: LocalConstVarId,
@@ -87,7 +87,16 @@ pub struct ConstVar<'db> {
 
 /// An id for an inference context. Each inference variable is associated with an inference id.
 #[derive(
-    Copy, Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    DebugWithDb,
+    SemanticObject,
+    HeapSize,
+    salsa::SalsaValue,
 )]
 #[debug_db(dyn Database)]
 pub enum InferenceId<'db> {
@@ -108,7 +117,7 @@ pub enum InferenceId<'db> {
 /// An impl variable, created when a generic type argument is not passed, and thus is not known
 /// yet and needs to be inferred.
 #[derive(
-    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::SalsaValue,
 )]
 #[debug_db(dyn Database)]
 pub struct ImplVar<'db> {
@@ -127,7 +136,7 @@ impl<'db> ImplVar<'db> {
 
 /// A negative impl variable.
 #[derive(
-    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::SalsaValue,
 )]
 #[debug_db(dyn Database)]
 pub struct NegativeImplVar<'db> {
@@ -139,15 +148,15 @@ pub struct NegativeImplVar<'db> {
     pub lookup_context: ImplLookupContextId<'db>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct LocalTypeVarId(pub usize);
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct LocalImplVarId(pub usize);
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct LocalNegativeImplVarId(pub usize);
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct LocalConstVarId(pub usize);
 
 define_short_id!(ImplVarId, ImplVar<'db>);
@@ -178,7 +187,7 @@ impl<'db> NegativeImplVarId<'db> {
 }
 semantic_object_for_id!(NegativeImplVarId, NegativeImplVar<'a>);
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::SalsaValue)]
 pub enum InferenceVar {
     Type(LocalTypeVarId),
     Const(LocalConstVarId),
@@ -187,7 +196,7 @@ pub enum InferenceVar {
 }
 
 // TODO(spapini): Add to diagnostics.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub enum InferenceError<'db> {
     /// An inference error wrapping a previously reported error.
@@ -336,7 +345,7 @@ pub struct ErrorSet;
 
 pub type InferenceResult<T> = Result<T, ErrorSet>;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 enum InferenceErrorStatus<'db> {
     /// There is a pending error.
     Pending(PendingInferenceError<'db>),
@@ -345,7 +354,7 @@ enum InferenceErrorStatus<'db> {
 }
 
 /// A pending inference error.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 struct PendingInferenceError<'db> {
     /// The actual error.
     err: InferenceError<'db>,
@@ -354,7 +363,7 @@ struct PendingInferenceError<'db> {
 }
 
 /// A mapping of an impl var's trait items to concrete items.
-#[derive(Debug, Default, PartialEq, Eq, Hash, Clone, SemanticObject, salsa::Update)]
+#[derive(Debug, Default, PartialEq, Eq, Hash, Clone, SemanticObject, salsa::SalsaValue)]
 pub struct ImplVarTraitItemMappings<'db> {
     /// The trait types of the impl var.
     types: OrderedHashMap<TraitTypeId<'db>, TypeId<'db>>,
@@ -372,7 +381,7 @@ impl ImplVarTraitItemMappings<'_> {
 }
 
 /// State of inference.
-#[derive(Debug, DebugWithDb, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, DebugWithDb, PartialEq, Eq, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct InferenceData<'db> {
     pub inference_id: InferenceId<'db>,

@@ -22,7 +22,7 @@ pub struct MarkdownLink {
 }
 
 /// Token representing a link to another item inside the documentation.
-#[derive(Debug, PartialEq, Clone, Eq, salsa::Update)]
+#[derive(Debug, PartialEq, Clone, Eq, salsa::SalsaValue)]
 pub struct CommentLinkToken {
     /// A link part that's inside "[]" brackets.
     pub label: String,
@@ -34,7 +34,7 @@ pub struct CommentLinkToken {
 
 /// Generic type for a comment token. It's either plain content or a link.
 /// Notice that the Content token type can store much more than just one word.
-#[derive(Debug, PartialEq, Clone, Eq, salsa::Update)]
+#[derive(Debug, PartialEq, Clone, Eq, salsa::SalsaValue)]
 pub enum DocumentationCommentToken {
     /// Token with plain documentation content.
     Content(String),

@@ -35,7 +35,7 @@ use crate::types::TypeHead;
 use crate::{Variant, corelib};
 
 /// A filter for types.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub enum TypeFilter<'db> {
     /// No filter is applied.
     NoFilter,
@@ -80,7 +80,7 @@ pub fn methods_in_module<'db>(
 }
 
 /// Query implementation of [LspHelpers::methods_in_module].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn methods_in_module_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
@@ -118,7 +118,7 @@ pub fn methods_in_crate<'db>(
 }
 
 /// Query implementation of [LspHelpers::methods_in_crate].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn methods_in_crate_tracked<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
@@ -146,7 +146,7 @@ pub fn visible_importables_in_module<'db>(
 }
 
 /// Query implementation of [LspHelpers::visible_importables_in_module].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn visible_importables_in_module_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
@@ -361,7 +361,7 @@ pub fn visible_importables_in_crate<'db>(
 }
 
 /// Query implementation of [LspHelpers::visible_importables_in_crate].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn visible_importables_in_crate_tracked<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
@@ -438,7 +438,7 @@ pub fn visible_importables_from_module_tracked<'db>(
     visible_importables_from_module_helper(db, (), module_id)
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn visible_importables_from_module_helper<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -477,7 +477,7 @@ fn visible_traits_from_module_tracked<'db>(
     visible_traits_from_module_helper(db, (), module_id)
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn visible_traits_from_module_helper<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -552,7 +552,7 @@ fn inline_macro_expansion_files_tracked<'db>(
     files
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn find_module_containing_node<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,

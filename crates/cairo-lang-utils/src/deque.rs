@@ -4,8 +4,8 @@ use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
 
-/// A deque that implements `salsa::Update` if `T` implements `salsa::Update`.
-/// This is needed to implement `salsa::Update` for `Deque<T>` results of queries.
+/// A deque that implements `salsa::SalsaValue` if `T` implements `salsa::SalsaValue`.
+/// This is needed to implement `salsa::SalsaValue` for `Deque<T>` results of queries.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Deque<T>(VecDeque<T>);
 
@@ -24,25 +24,7 @@ impl<T> DerefMut for Deque<T> {
 }
 
 #[cfg(feature = "salsa")]
-unsafe impl<T: salsa::Update> salsa::Update for Deque<T> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_deque: Self) -> bool {
-        let old_deque: &mut Self = unsafe { &mut *old_pointer };
-
-        // If the lengths are different, just replace the old deque with the new one
-        if old_deque.len() != new_deque.len() {
-            old_deque.clear();
-            old_deque.extend(new_deque);
-            return true;
-        }
-
-        // Otherwise, recursively update each element
-        let mut changed = false;
-        for (old_item, new_item) in old_deque.iter_mut().zip(new_deque) {
-            changed |= unsafe { T::maybe_update(old_item, new_item) };
-        }
-        changed
-    }
-}
+unsafe impl<T: salsa::SalsaValue> salsa::SalsaValue for Deque<T> {}
 
 impl<T> Default for Deque<T> {
     fn default() -> Self {

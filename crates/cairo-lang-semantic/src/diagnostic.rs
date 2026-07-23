@@ -138,7 +138,7 @@ impl<'db> SemanticDiagnosticsBuilder<'db> for SemanticDiagnostics<'db> {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct SemanticDiagnostic<'db> {
     pub stable_location: StableLocation<'db>,
     pub kind: SemanticDiagnosticKind<'db>,
@@ -1512,7 +1512,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum SemanticDiagnosticKind<'db> {
     ModuleFileNotFound(String),
     Unsupported,
@@ -1909,7 +1909,7 @@ pub enum SemanticDiagnosticKind<'db> {
 }
 
 /// The kind of an expression with multiple possible return types.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MultiArmExprKind {
     If,
     Match,
@@ -1917,7 +1917,7 @@ pub enum MultiArmExprKind {
 }
 
 // TODO(Gil): It seems to have the same functionality as ElementKind, maybe we can merge them.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum NotFoundItemType {
     Identifier,
     Function,
@@ -1927,13 +1927,13 @@ pub enum NotFoundItemType {
     Macro,
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum UnsupportedOutsideOfFunctionFeatureName {
     ReturnStatement,
     ErrorPropagate,
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum ElementKind {
     Constant,
     Variable,
@@ -2000,7 +2000,7 @@ impl Display for ElementKind {
 }
 
 /// A list of trait functions and the inference errors that occurred while trying to infer them.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TraitInferenceErrors<'db> {
     pub traits_and_errors: Vec<(TraitFunctionId<'db>, InferenceError<'db>)>,
 }

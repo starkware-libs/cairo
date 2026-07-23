@@ -30,14 +30,14 @@ use crate::items::us::{ImportInfo, UseSemantic};
 use crate::resolve::ResolvedGenericItem;
 
 /// Information per item in a module.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ModuleItemInfo<'db> {
     pub item_id: ModuleItemId<'db>,
     pub visibility: Visibility,
     pub feature_kind: FeatureKind<'db>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ModuleSemanticData<'db> {
     /// The items in the module without duplicates.
     pub items: OrderedHashMap<SmolStrId<'db>, ModuleItemInfo<'db>>,
@@ -160,7 +160,7 @@ fn module_item_by_name_tracked<'db>(
     module_item_by_name_helper(db, (), module_id, name)
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn module_item_by_name_helper<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -188,7 +188,7 @@ fn module_item_info_by_name_tracked<'db>(
     module_item_info_by_name_helper(db, (), module_id, name)
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn module_item_info_by_name_helper<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,

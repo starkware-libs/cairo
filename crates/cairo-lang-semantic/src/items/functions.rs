@@ -41,7 +41,7 @@ use crate::{
 };
 
 /// A generic function of an impl.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct ImplGenericFunctionId<'db> {
     // TODO(spapini): Consider making these private and enforcing invariants in the ctor.
     /// The impl the function is in.
@@ -76,7 +76,7 @@ impl<'db> DebugWithDb<'db> for ImplGenericFunctionId<'db> {
 }
 
 /// The ID of a generic function that can be concretized.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub enum GenericFunctionId<'db> {
     /// A generic free function.
     Free(FreeFunctionId<'db>),
@@ -264,7 +264,7 @@ impl<'db> DebugWithDb<'db> for GenericFunctionId<'db> {
 /// Function instance.
 /// For example: `ImplA::foo<A, B>`, or `bar<A>`.
 // TODO(spapini): Make it an enum and add a function pointer variant.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct FunctionLongId<'db> {
     pub function: ConcreteFunction<'db>,
 }
@@ -335,14 +335,14 @@ impl<'db> FunctionLongId<'db> {
 }
 
 /// A generic function of a concrete impl.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ImplGenericFunctionWithBodyId<'db> {
     pub concrete_impl_id: ConcreteImplId<'db>,
     pub function_body: ImplFunctionBodyId<'db>,
 }
 
 /// The body of an impl function implementation.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub enum ImplFunctionBodyId<'db> {
     /// A function that was implemented in the impl.
     Impl(ImplFunctionId<'db>),
@@ -372,7 +372,7 @@ impl<'db> ImplFunctionBodyId<'db> {
 }
 
 /// The ID of a generic function with body that can be concretized.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub enum GenericFunctionWithBodyId<'db> {
     Free(FreeFunctionId<'db>),
     Impl(ImplGenericFunctionWithBodyId<'db>),
@@ -454,7 +454,7 @@ impl<'db> GenericFunctionWithBodyId<'db> {
 }
 
 /// A long Id of a concrete function with body.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ConcreteFunctionWithBody<'db> {
     pub generic_function: GenericFunctionWithBodyId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -682,7 +682,7 @@ impl<'db> UnstableSalsaId for ConcreteFunctionWithBodyId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ConcreteFunction<'db> {
     pub generic_function: GenericFunctionId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -715,7 +715,7 @@ impl<'db> DebugWithDb<'db> for ConcreteFunction<'db> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Signature<'db> {
     pub params: Vec<semantic::Parameter<'db>>,
@@ -869,7 +869,7 @@ fn concrete_function_closure_params<'db>(
 }
 
 /// Query implementation of [FunctionsSemantic::concrete_function_closure_params].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn concrete_function_closure_params_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionId<'db>,
@@ -929,7 +929,7 @@ fn ast_param_to_semantic<'db>(
 
 // === Function Declaration ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct FunctionDeclarationData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -945,7 +945,7 @@ pub struct FunctionDeclarationData<'db> {
     pub implicit_precedence: ImplicitPrecedence<'db>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, Clone, salsa::SalsaValue)]
 pub enum InlineConfiguration<'db> {
     /// The user did not specify any inlining preferences.
     None,
@@ -990,7 +990,7 @@ pub fn forbid_inline_always_with_impl_generic_param<'db>(
 /// users to write it manually.
 ///
 /// Use [ImplicitPrecedence::UNSPECIFIED] to represent lack of information.
-#[derive(Clone, Debug, Default, Eq, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, salsa::SalsaValue)]
 pub struct ImplicitPrecedence<'db>(Vec<TypeId<'db>>);
 
 impl<'db> ImplicitPrecedence<'db> {
@@ -1054,7 +1054,7 @@ fn get_closure_params_tracked<'db>(
     get_closure_params_helper(db, (), generic_function_id)
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn get_closure_params_helper<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,

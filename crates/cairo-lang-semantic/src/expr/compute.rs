@@ -107,7 +107,7 @@ use crate::{
 };
 
 /// The information of a macro expansion.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, salsa::SalsaValue)]
 struct MacroExpansionInfo<'db> {
     /// The code mappings for this expansion.
     mappings: Arc<[CodeMapping]>,
@@ -651,7 +651,7 @@ pub type EnvVariables<'db> = OrderedHashMap<SmolStrId<'db>, Binding<'db>>;
 type EnvItems<'db> = OrderedHashMap<SmolStrId<'db>, StatementGenericItemData<'db>>;
 
 /// Struct that holds the resolved generic type of a statement item.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct StatementGenericItemData<'db> {
     resolved_generic_item: ResolvedGenericItem<'db>,
@@ -660,7 +660,7 @@ struct StatementGenericItemData<'db> {
 
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct Environment<'db> {
     parent: Option<Box<Environment<'db>>>,
     variables: EnvVariables<'db>,

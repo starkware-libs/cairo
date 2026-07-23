@@ -54,7 +54,7 @@ pub enum RewriteResult {
 
 /// A substitution of generic arguments in generic parameters as well as the `Self` of traits. Used
 /// for concretization.
-#[derive(Clone, Debug, Default, PartialEq, Eq, salsa::Update, Hash)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, salsa::SalsaValue, Hash)]
 pub struct GenericSubstitution<'db> {
     pub param_to_arg: OrderedHashMap<GenericParamId<'db>, GenericArgumentId<'db>>,
     pub self_impl: Option<ImplId<'db>>,

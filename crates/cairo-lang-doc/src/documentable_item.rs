@@ -6,7 +6,7 @@ use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use salsa::Database;
 
 /// Item whose documentation can be fetched from source code.
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, salsa::SalsaValue)]
 pub enum DocumentableItemId<'db> {
     Crate(CrateId<'db>),
     LookupItem(LookupItemId<'db>),

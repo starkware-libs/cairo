@@ -43,7 +43,7 @@ use crate::{
 };
 
 /// A canonical representation of a concrete trait that needs to be solved.
-#[derive(Clone, PartialEq, Hash, Eq, Debug, SemanticObject, salsa::Update)]
+#[derive(Clone, PartialEq, Hash, Eq, Debug, SemanticObject, salsa::SalsaValue)]
 pub struct CanonicalTrait<'db> {
     pub id: ConcreteTraitId<'db>,
     pub mappings: ImplVarTraitItemMappings<'db>,
@@ -73,7 +73,7 @@ impl<'db> CanonicalTrait<'db> {
 }
 
 /// A solution for a [CanonicalTrait].
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct CanonicalImpl<'db>(pub ImplId<'db>);
 impl<'db> CanonicalImpl<'db> {
     /// Canonicalizes a concrete impl that is part of an [Inference].

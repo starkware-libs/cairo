@@ -28,7 +28,7 @@ use crate::optimizations::variable_forwarding::variable_forwarding;
 use crate::reorganize_blocks::reorganize_blocks;
 
 /// Enum of the optimization phases that can be used in a strategy.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue, HeapSize)]
 pub enum OptimizationPhase<'db> {
     ApplyInlining {
         enable_const_folding: bool,
@@ -130,7 +130,7 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
 define_short_id!(OptimizationStrategyId, OptimizationStrategy<'db>);
 
 /// A strategy is a sequence of optimization phases.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue, HeapSize)]
 pub struct OptimizationStrategy<'db>(pub Vec<OptimizationPhase<'db>>);
 
 impl<'db> ApplyOptimization<'db> for [OptimizationPhase<'db>] {
@@ -177,7 +177,7 @@ impl<'db> ApplyOptimization<'db> for OptimizationStrategyId<'db> {
 }
 
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationStrategyId<'db> {
     match db.optimizations() {
         Optimizations::Enabled(_) => {
@@ -227,7 +227,7 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
 }
 
 /// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn final_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationStrategyId<'db> {
     match db.optimizations() {
         Optimizations::Enabled(_) => {

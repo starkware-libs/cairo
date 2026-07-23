@@ -90,7 +90,7 @@ mod generated_test;
 mod specialized_test;
 
 /// Lowering of a function together with extra generated functions.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct MultiLowering<'db> {
     pub main_lowering: Lowered<'db>,
     pub generated_lowerings: OrderedHashMap<GeneratedFunctionKey<'db>, Lowered<'db>>,

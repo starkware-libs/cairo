@@ -4,7 +4,7 @@ use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use salsa::Database;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ParserDiagnostic<'a> {
     pub file_id: FileId<'a>,
     pub span: TextSpan,

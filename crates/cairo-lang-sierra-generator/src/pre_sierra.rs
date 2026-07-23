@@ -13,7 +13,7 @@ use salsa::Database;
 /// Represents the long ID of a pre-Sierra label.
 /// The long id consists of the parent function and a unique identifier inside the function.
 // TODO(lior): Make sure this struct can only be constructed by expr_generator_context.
-#[derive(Clone, Debug, Eq, PartialEq, Hash, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, salsa::SalsaValue, HeapSize)]
 pub struct LabelLongId<'db> {
     pub parent: ConcreteFunctionWithBodyId<'db>,
     // A unique identifier inside the function
@@ -41,7 +41,7 @@ impl<'db> LabelId<'db> {
 }
 
 /// Represents a compiled function before the label-resolution phase (pre-Sierra).
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, salsa::SalsaValue)]
 pub struct Function<'db> {
     /// The source function which was compiled.
     pub id: sierra::ids::FunctionId,
@@ -52,20 +52,12 @@ pub struct Function<'db> {
     /// The parameters for the function.
     pub parameters: Vec<program::Param>,
     /// The location per variable in the function.
+    /// SAFETY: `sierra::ids::VarId` is a foreign `'static` type, so the pair cannot be checked
+    /// structurally; both elements are safe to retain across revisions.
+    #[salsa_value(unsafe(prove_safe_to_retain_manually))]
     pub variable_locations: Vec<(sierra::ids::VarId, LocationId<'db>)>,
     /// Location of the function signature.
     pub signature_location: LocationId<'db>,
-}
-
-unsafe impl<'db> salsa::Update for Function<'db> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = unsafe { &mut *old_pointer };
-        if old_value == &new_value {
-            return false;
-        }
-        *old_value = new_value;
-        true
-    }
 }
 
 /// Represents a pre-Sierra statement - a statement before label-resolution.
@@ -92,8 +84,11 @@ impl<'db> Statement<'db> {
 }
 
 /// Represents a pre-Sierra statement, with its location in the source code.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, salsa::SalsaValue)]
 pub struct StatementWithLocation<'db> {
+    /// SAFETY: composed of interned ids and owned data, all safe to retain across revisions;
+    /// `GenStatement` is a foreign type, so this cannot be derived.
+    #[salsa_value(unsafe(prove_safe_to_retain_manually))]
     pub statement: Statement<'db>,
     pub location: Option<LocationId<'db>>,
 }
@@ -135,7 +130,7 @@ impl<'db> std::fmt::Display for StatementWithDb<'db> {
 
 /// Represents a single element that should be pushed onto the stack as part of
 /// [Statement::PushValues].
-#[derive(Clone, Debug, Eq, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, PartialEq, salsa::SalsaValue)]
 pub struct PushValue {
     /// The variable id to push.
     pub var: sierra::ids::VarId,
@@ -149,7 +144,7 @@ pub struct PushValue {
 }
 
 /// Represents a pre-Sierra label.
-#[derive(Clone, Debug, Eq, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, PartialEq, salsa::SalsaValue)]
 pub struct Label<'db> {
     pub id: LabelId<'db>,
 }

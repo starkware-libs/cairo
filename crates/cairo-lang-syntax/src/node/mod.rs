@@ -33,7 +33,7 @@ mod ast_test;
 mod test_utils;
 
 /// Private enum for syntax node id. This holds data used to identify the node.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, DebugWithDb, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub enum SyntaxNodeId<'db> {
     Root(FileId<'db>),
@@ -62,6 +62,7 @@ struct SyntaxNodeData<'a> {
     /// it parent-relative makes `get_children` a pure function of the green tree, independent of
     /// the node's absolute position. Recover the absolute offset via [`SyntaxNode::offset`].
     #[tracked]
+    #[returns(copy)]
     offset_in_parent: TextOffset,
     /// Unique identifier for this node.
     #[returns(ref)]
@@ -82,7 +83,7 @@ impl<'db> SyntaxNodeData<'db> {
 /// plus the (recursively memoized) absolute offset of the parent. A tracked query rather than a
 /// cache inside the node data, as a cache would go stale when a shifted-but-unchanged subtree is
 /// backdated.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn absolute_offset<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> TextOffset {
     match data.parent(db) {
         Some(parent) => absolute_offset(db, parent.data)
@@ -108,7 +109,7 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
 /// tracked functions to ensure uniqueness of SyntaxNodes.
 /// The canonical tree of a file comes from `db.file_syntax(file_id)` (created via
 /// [`SyntaxNode::new_canonical_root`]); standalone trees use [`SyntaxNode::new_detached_root`].
-#[derive(Clone, Copy, PartialEq, Eq, Hash, salsa::Update, HeapSize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, salsa::SalsaValue, HeapSize)]
 pub struct SyntaxNode<'a> {
     data: SyntaxNodeData<'a>,
     /// Cached parent data to avoid database lookups. None for root nodes.
@@ -243,7 +244,7 @@ pub fn new_syntax_node<'db>(
 /// root's tracked struct. Because the key includes `green`, a detached root's id changes whenever
 /// the content does — fine for transient trees, but never use it for the canonical file tree
 /// (see [`SyntaxNode::new_canonical_root`]).
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn new_detached_root_node<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,

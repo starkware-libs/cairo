@@ -90,7 +90,7 @@ const STARKNET_CRATE_NAME: &str = "starknet";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
-#[derive(Clone, Default, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct ResolvedItems<'db> {
     pub concrete: UnorderedHashMap<ast::TerminalIdentifierPtr<'db>, ResolvedConcreteItem<'db>>,
@@ -129,7 +129,7 @@ impl<'db> ResolvedItems<'db> {
 
 /// The enriched members of a type, including direct members of structs, as well as members of
 /// targets of `Deref` and `DerefMut` of the type.
-#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct EnrichedMembers<'db> {
     /// A map from member names to the member and the number of deref operations needed to access
@@ -157,7 +157,7 @@ impl<'db> EnrichedMembers<'db> {
 }
 
 /// A member accessible on a type: a named struct member or a positional tuple element.
-#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct EnrichedMember<'db> {
     /// How the member is accessed: a struct member id or a tuple index.
@@ -189,7 +189,7 @@ enum MacroContextModifier {
     None,
 }
 
-#[derive(Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct ResolverData<'db> {
     /// Current module in which to resolve the path.
@@ -249,7 +249,7 @@ impl<'db> ResolverData<'db> {
 }
 
 /// Resolving data needed for resolving macro expanded code in the correct context.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ResolverMacroData<'db> {
     /// The module file id of the macro definition site. It is used if the path begins with
     /// `$defsite`.

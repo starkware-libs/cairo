@@ -7,7 +7,7 @@ use crate::node::{SyntaxNode, TypedSyntaxNode};
 // A typed view of an element list node.
 // STEP=1 means a sequence of elements (e.g. sequence of trivia elements).
 // STEP=2 means a separated sequence (e.g. argument list separated by `,`).
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ElementList<'db, T: TypedSyntaxNode<'db>, const STEP: usize> {
     pub node: SyntaxNode<'db>,
     phantom: PhantomData<T>,

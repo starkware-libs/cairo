@@ -66,7 +66,7 @@ impl CrateConfigurationInput {
 }
 
 /// A configuration per crate.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct CrateConfiguration<'db> {
     /// The root directory of the crate.
     pub root: Directory<'db>,
@@ -134,7 +134,7 @@ pub fn default_crate_settings(_db: &dyn Database) -> CrateSettings {
 /// editions. Editions may be added to provide features that are not backwards compatible, while
 /// allowing user to opt-in to them, and be ready for later compiler updates.
 #[derive(
-    Clone, Copy, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::Update,
+    Clone, Copy, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::SalsaValue,
 )]
 pub enum Edition {
     /// The base edition, dated for the first release of the compiler.
@@ -245,7 +245,7 @@ pub struct FilesGroupInput {
     pub ext_as_virtual_obj: Option<ExtAsVirtual>,
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn files_group_input(db: &dyn Database) -> FilesGroupInput {
     FilesGroupInput::new(db, None, None, None, None, None)
 }
