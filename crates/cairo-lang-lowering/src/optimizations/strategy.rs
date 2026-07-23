@@ -24,6 +24,7 @@ use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
 use crate::optimizations::split_structs::split_structs;
+use crate::optimizations::trim_unused_params::trim_unused_params;
 use crate::optimizations::variable_forwarding::variable_forwarding;
 use crate::reorganize_blocks::reorganize_blocks;
 
@@ -46,6 +47,10 @@ pub enum OptimizationPhase<'db> {
     ReturnOptimization,
     SplitStructs,
     TrimUnreachable,
+    /// Removes parameters that are never used by the function's body, from both the function's
+    /// signature and from every call site.
+    /// Must be applied exactly once, directly on the `PostBaseline` stage lowering.
+    TrimUnusedParams,
     VariableForwarding,
     GasRedeposit,
     /// The following is not really an optimization but we want to apply optimizations before and
@@ -102,6 +107,7 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
+            OptimizationPhase::TrimUnusedParams => trim_unused_params(db, function, lowered)?,
             OptimizationPhase::VariableForwarding => variable_forwarding(db, lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
@@ -232,6 +238,13 @@ pub fn final_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationSt
     match db.optimizations() {
         Optimizations::Enabled(_) => {
             OptimizationStrategy(vec![
+                // Must be applied first: the unused-parameters analysis runs on the `PostBaseline`
+                // lowering (which is why it cannot be part of the baseline strategy), and the
+                // trimmed positions refer to its layout, before `LowerImplicits` prepends the
+                // implicit parameters.
+                OptimizationPhase::TrimUnusedParams,
+                // Cleans up the statements producing the trimmed call arguments.
+                OptimizationPhase::ReorderStatements,
                 OptimizationPhase::GasRedeposit,
                 OptimizationPhase::EarlyUnsafePanic,
                 // Apply `TrimUnreachable` here to remove unreachable `redeposit_gas` and

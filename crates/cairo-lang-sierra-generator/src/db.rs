@@ -5,6 +5,7 @@ use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::{CrateId, Tracked};
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_semantic as semantic;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
@@ -295,10 +296,24 @@ fn get_function_signature(
         .map(|ty| db.get_concrete_type_id(*ty).cloned())
         .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
 
+    // Parameters removed from the function by the `TrimUnusedParams` optimization phase, which
+    // must be skipped to match the function's post-optimizations parameters. The phase is only
+    // part of the enabled optimization strategy, so when optimizations are disabled no parameter
+    // is trimmed.
+    let unused_parameters = match lowered_function_id.body(db)? {
+        Some(body) if !matches!(db.optimizations(), Optimizations::Disabled) => {
+            db.unused_parameters(body)
+        }
+        _ => &[],
+    };
+
     // TODO(spapini): Handle ret_types in lowering.
     let mut all_params = implicits.clone();
     let mut extra_rets = vec![];
-    for param in &signature.params {
+    for (idx, param) in signature.params.iter().enumerate() {
+        if unused_parameters.contains(&idx) {
+            continue;
+        }
         let concrete_type_id = db.get_concrete_type_id(param.ty)?;
         all_params.push(concrete_type_id.clone());
     }

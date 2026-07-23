@@ -30,6 +30,7 @@ pub mod scrub_units;
 pub mod split_structs;
 pub mod strategy;
 pub mod trim_unreachable;
+pub mod trim_unused_params;
 pub mod validate;
 pub mod var_renamer;
 pub mod variable_forwarding;
