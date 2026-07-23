@@ -9,8 +9,8 @@ jobs:
     name: Publish crates to crates.io
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
       - name: Publish crates
         run: ./scripts/release_crates.sh
         env:
@@ -32,7 +32,7 @@ jobs:
             asset_name: release-aarch64-apple-darwin.tar
             target: aarch64-apple-darwin
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Install musl
         run: |
           if [ "${{ matrix.target }}" == "x86_64-unknown-linux-musl" ]
@@ -42,7 +42,7 @@ jobs:
       - name: Build in ${{ matrix.target }}
         run: ./scripts/release_tar.sh ${{ matrix.target }}
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de # v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.artifact_name }}
