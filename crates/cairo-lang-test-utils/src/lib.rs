@@ -116,9 +116,16 @@ fn expect_diagnostics_input(input: &str) -> ExpectDiagnostics {
 
 /// Translates a string test input to bool ("false" -> false, "true" -> true). Panics if invalid.
 /// Ignores case.
-pub fn bool_input(input: &str) -> bool {
-    let input = input.to_lowercase();
-    bool::from_str(&input).unwrap_or_else(|_| panic!("Expected 'true' or 'false', actual: {input}"))
+pub fn bool_input(input: str) -> bool {
+    match () {
+        if input.eq_ignore_ascii_case("true") => true,
+        if input.eq_ignore_ascii_case("true") {
+        true
+        } else if input.eq_ignore_ascii_case("false") {
+        false
+        } else {
+        panic!("Expected 'true' or 'false', actual: {input}")
+        }
 }
 
 /// Parses a test input that may be a file input. If the input starts with ">>> file: " it reads the
