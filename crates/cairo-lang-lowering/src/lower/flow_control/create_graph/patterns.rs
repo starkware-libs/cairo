@@ -934,7 +934,7 @@ fn optimized_value_match_size<'db>(
 
 /// Returns the threshold for the number of arms for optimizing numeric match expressions, by using
 /// a jump table instead of an if-else construct.
-/// `is_small_type` means the matched type has < 2**128 possible values.
+/// `is_small_type` means the matched type has <= 2**128 possible values.
 pub fn numeric_match_optimization_threshold<'db>(
     ctx: &LoweringContext<'db, '_>,
     is_small_type: bool,
