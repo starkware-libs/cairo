@@ -7,6 +7,7 @@ license-file.workspace = true
 description = "Cairo syntax representation."
 
 [dependencies]
+assert_matches.workspace = true
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "=2.20.0" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "=2.20.0" }
 cairo-lang-primitive-token.workspace = true

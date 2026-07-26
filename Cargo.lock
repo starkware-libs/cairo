@@ -1115,6 +1115,7 @@ dependencies = [
 name = "cairo-lang-syntax"
 version = "2.20.0"
 dependencies = [
+ "assert_matches",
  "cairo-lang-debug",
  "cairo-lang-filesystem",
  "cairo-lang-primitive-token",
