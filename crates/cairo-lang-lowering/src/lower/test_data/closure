@@ -805,3 +805,91 @@ Statements:
   (v14: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v13)
 End:
   Return(v9, v14)
+
+//! > ==========================================================================
+
+//! > Test closure desnapping a snapshot-only captured variable.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function_code
+fn foo(a: felt252) -> felt252 {
+    let f = || *(@a);
+    f()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: {closure@lib.cairo:2:13: 2:15}) <- struct_construct(v2)
+  (v4: {closure@lib.cairo:2:13: 2:15}, v5: @{closure@lib.cairo:2:13: 2:15}) <- snapshot(v3)
+  (v6: ()) <- struct_construct()
+  (v7: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:2:13: 2:15}(v5, v6)
+End:
+  Return(v7)
+
+
+Final lowering:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let f = || *(@a);
+            ^^
+
+Parameters: v0: {closure@lib.cairo:2:13: 2:15}
+blk0 (root):
+Statements:
+  (v1: @core::felt252) <- struct_destructure(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:2:13: 2:15}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let f = || *(@a);
+            ^^
+
+Parameters: v0: @{closure@lib.cairo:2:13: 2:15}, v2: ()
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:13: 2:15}) <- desnap(v0)
+  (v3: @core::felt252) <- struct_destructure(v1)
+  () <- struct_destructure(v2)
+  (v4: core::felt252) <- desnap(v3)
+End:
+  Return(v4)
+
+
+Final lowering:
+Parameters: v0: @{closure@lib.cairo:2:13: 2:15}, v1: ()
+blk0 (root):
+Statements:
+  (v2: {closure@lib.cairo:2:13: 2:15}) <- desnap(v0)
+  (v3: @core::felt252) <- struct_destructure(v2)
+  (v4: core::felt252) <- desnap(v3)
+End:
+  Return(v4)

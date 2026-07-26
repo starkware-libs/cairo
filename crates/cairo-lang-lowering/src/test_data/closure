@@ -57,3 +57,63 @@ Statements:
   (v0: core::felt252) <- 48
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > Test closure desnapping a snapshot-only captured non-Copy variable (captured by value).
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function_code
+fn foo(a: Array<felt252>) -> Array<felt252> {
+    let f = || *(@a);
+    f()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3003]: Cannot desnap a non copyable type.
+ --> lib.cairo:2:16
+    let f = || *(@a);
+               ^^^^^
+note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+
+//! > ==========================================================================
+
+//! > Test closure that both snapshots and desnaps the same non-Copy captured variable.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function_code
+fn use_snap(a: @Array<felt252>) {}
+fn foo(a: Array<felt252>) -> Array<felt252> {
+    let f = || {
+        use_snap(@a);
+        *(@a)
+    };
+    f()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3003]: Cannot desnap a non copyable type.
+ --> lib.cairo:5:9
+        *(@a)
+        ^^^^^
+note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
