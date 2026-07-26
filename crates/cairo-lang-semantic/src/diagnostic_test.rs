@@ -1,14 +1,16 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, defs_group_input};
-use cairo_lang_defs::ids::{GenericTypeId, MacroPluginLongId, ModuleId, TopLevelLanguageElementId};
+use cairo_lang_defs::ids::{
+    GenericTypeId, MacroPluginLongId, ModuleId, NamedLanguageElementId, TopLevelLanguageElementId,
+};
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{TypedStablePtr, ast};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use salsa::{Database, Setter};
@@ -247,6 +249,15 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
                     use_id.stable_ptr(db).untyped(),
                     "Use items for u128 disallowed.".to_string(),
                 ));
+                // Adding inner span diag only once per module.
+                if diagnostics.len() < 2 {
+                    diagnostics.push(PluginDiagnostic::error_with_inner_span(
+                        db,
+                        use_id.stable_ptr(db).untyped(),
+                        use_id.name_identifier(db).as_syntax_node(),
+                        "Pointing to name through span.".to_string(),
+                    ));
+                }
             }
         }
         diagnostics
@@ -292,6 +303,11 @@ fn test_analyzer_diagnostics() {
         use core::integer::u128 as long_u128_rename;
                            ^^^^^^^^^^^^^^^^^^^^^^^^
 
+        error[E2200]: Plugin diagnostic: Pointing to name through span.
+         --> lib.cairo:7:28
+        use core::integer::u128 as long_u128_rename;
+                                   ^^^^^^^^^^^^^^^^
+
         error[E2200]: Plugin diagnostic: Use items for u128 disallowed.
          --> lib.cairo:8:5
         use u128 as short_u128_rename;
@@ -306,6 +322,11 @@ fn test_analyzer_diagnostics() {
          --> lib.cairo:2:24
             use core::integer::u128 as long_u128_rename;
                                ^^^^^^^^^^^^^^^^^^^^^^^^
+
+        error[E2200]: Plugin diagnostic: Pointing to name through span.
+         --> lib.cairo:2:32
+            use core::integer::u128 as long_u128_rename;
+                                       ^^^^^^^^^^^^^^^^
 
         error[E2200]: Plugin diagnostic: Use items for u128 disallowed.
          --> lib.cairo:3:9
