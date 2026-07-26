@@ -5,6 +5,7 @@
 #![allow(unused_variables)]
 use std::ops::Deref;
 
+use assert_matches::assert_matches;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_proc_macros::HeapSize;
@@ -24690,6 +24691,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenIdentifier | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -24698,6 +24700,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenIdentifier | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -24872,6 +24877,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLiteralNumber | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -24881,6 +24887,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLiteralNumber | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25055,6 +25064,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenShortString | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25063,6 +25073,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenShortString | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25234,6 +25247,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenString | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25242,6 +25256,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenString | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25413,6 +25430,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenAs | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25421,6 +25439,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenAs | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25588,6 +25609,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenConst | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25596,6 +25618,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenConst | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25767,6 +25792,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenElse | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25775,6 +25801,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenElse | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25942,6 +25971,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEnum | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25950,6 +25980,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEnum | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26117,6 +26150,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenExtern | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26125,6 +26159,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenExtern | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26296,6 +26333,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenFalse | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26304,6 +26342,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenFalse | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26475,6 +26516,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenFunction | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26483,6 +26525,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenFunction | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26654,6 +26699,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenIf | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26662,6 +26708,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenIf | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26829,6 +26878,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenWhile | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26837,6 +26887,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenWhile | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27008,6 +27061,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenFor | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27016,6 +27070,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenFor | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27183,6 +27240,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLoop | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27191,6 +27249,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLoop | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27358,6 +27419,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenImpl | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27366,6 +27428,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenImpl | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27533,6 +27598,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenImplicits | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27541,6 +27607,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenImplicits | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27712,6 +27781,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLet | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27720,6 +27790,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLet | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27887,6 +27960,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMacro | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27895,6 +27969,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMacro | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28066,6 +28143,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMatch | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28074,6 +28152,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMatch | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28245,6 +28326,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenModule | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28253,6 +28335,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenModule | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28424,6 +28509,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMut | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28432,6 +28518,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMut | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28599,6 +28688,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenNoPanic | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28607,6 +28697,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenNoPanic | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28778,6 +28871,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenOf | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28786,6 +28880,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenOf | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28953,6 +29050,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenRef | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28961,6 +29059,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenRef | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29128,6 +29229,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenContinue | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29136,6 +29238,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenContinue | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29307,6 +29412,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenReturn | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29315,6 +29421,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenReturn | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29486,6 +29595,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenBreak | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29494,6 +29604,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenBreak | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29665,6 +29778,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenStruct | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29673,6 +29787,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenStruct | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29844,6 +29961,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenTrait | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29852,6 +29970,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenTrait | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30023,6 +30144,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenTrue | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30031,6 +30153,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenTrue | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30198,6 +30323,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenType | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30206,6 +30332,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenType | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30373,6 +30502,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenUse | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30381,6 +30511,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenUse | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30548,6 +30681,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenPub | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30556,6 +30690,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenPub | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30723,6 +30860,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenAnd | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30731,6 +30869,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenAnd | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30898,6 +31039,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenAndAnd | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30906,6 +31048,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenAndAnd | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31077,6 +31222,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenArrow | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31085,6 +31231,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenArrow | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31256,6 +31405,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenAt | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31264,6 +31414,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenAt | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31434,6 +31587,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenBadCharacters | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -31443,6 +31597,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenBadCharacters | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31614,6 +31771,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenColon | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31622,6 +31780,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenColon | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31793,6 +31954,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenColonColon | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31801,6 +31963,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenColonColon | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31972,6 +32137,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenComma | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31980,6 +32146,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenComma | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32151,6 +32320,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDiv | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32159,6 +32329,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDiv | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32326,6 +32499,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDivEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32334,6 +32508,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDivEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32505,6 +32682,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDollar | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32513,6 +32691,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDollar | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32684,6 +32865,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDot | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32692,6 +32874,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDot | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32859,6 +33044,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDotDot | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32867,6 +33053,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDotDot | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33038,6 +33227,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDotDotEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33046,6 +33236,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDotDotEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33217,6 +33410,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEndOfFile | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33225,6 +33419,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEndOfFile | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33396,6 +33593,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33404,6 +33602,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33571,6 +33772,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEqEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33579,6 +33781,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEqEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33746,6 +33951,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenGE | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33754,6 +33960,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenGE | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33921,6 +34130,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenGT | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33929,6 +34139,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenGT | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34096,6 +34309,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenHash | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34104,6 +34318,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenHash | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34271,6 +34488,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLBrace | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34279,6 +34497,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLBrace | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34450,6 +34671,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLBrack | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34458,6 +34680,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLBrack | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34629,6 +34854,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLE | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34637,6 +34863,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLE | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34804,6 +35033,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLParen | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34812,6 +35042,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLParen | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34983,6 +35216,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLT | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34991,6 +35225,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLT | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35158,6 +35395,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMatchArrow | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35166,6 +35404,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMatchArrow | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35337,6 +35578,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMinus | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35345,6 +35587,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMinus | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35516,6 +35761,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMinusEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35524,6 +35770,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMinusEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35695,6 +35944,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMod | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35703,6 +35953,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMod | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35870,6 +36123,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenModEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35878,6 +36132,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenModEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36049,6 +36306,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMul | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36057,6 +36315,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMul | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36224,6 +36485,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMulEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36232,6 +36494,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMulEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36403,6 +36668,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenNeq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36411,6 +36677,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenNeq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36578,6 +36847,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenNot | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36586,6 +36856,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenNot | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36753,6 +37026,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenBitNot | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36761,6 +37035,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenBitNot | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36932,6 +37209,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenOr | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36940,6 +37218,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenOr | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37107,6 +37388,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenOrOr | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37115,6 +37397,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenOrOr | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37282,6 +37567,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenPlus | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37290,6 +37576,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenPlus | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37457,6 +37746,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenPlusEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37465,6 +37755,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenPlusEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37639,6 +37932,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenQuestionMark | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37647,6 +37941,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenQuestionMark | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37818,6 +38115,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenRBrace | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37826,6 +38124,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenRBrace | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37997,6 +38298,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenRBrack | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38005,6 +38307,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenRBrack | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38176,6 +38481,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenRParen | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38184,6 +38490,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenRParen | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38355,6 +38664,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenSemicolon | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38363,6 +38673,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenSemicolon | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38534,6 +38847,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenUnderscore | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38542,6 +38856,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenUnderscore | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38713,6 +39030,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenXor | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38721,6 +39039,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenXor | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38977,6 +39298,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEmpty | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38985,6 +39307,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEmpty | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39159,6 +39484,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenMissing
+        );
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -39168,6 +39497,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39235,6 +39567,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineInnerComment | SyntaxKind::TokenMissing
+        );
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -39244,6 +39580,12 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineInnerComment | SyntaxKind::TokenMissing
+        ) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39311,6 +39653,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenMissing
+        );
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -39320,6 +39666,12 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenMissing
+        ) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39384,6 +39736,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenWhitespace | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -39392,6 +39745,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenWhitespace | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39456,6 +39812,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenNewline | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -39464,6 +39821,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenNewline | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39528,6 +39888,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -39536,6 +39897,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39600,6 +39964,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenSkipped | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -39608,6 +39973,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenSkipped | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,

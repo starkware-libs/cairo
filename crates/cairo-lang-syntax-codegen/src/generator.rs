@@ -203,6 +203,7 @@ fn generate_ast_code() -> rust::Tokens {
         #![allow(unused_variables)]
         use std::ops::Deref;
 
+        use assert_matches::assert_matches;
         use cairo_lang_filesystem::span::TextWidth;
         use cairo_lang_filesystem::ids::SmolStrId;
         use cairo_lang_utils::{extract_matches, Intern};
@@ -530,6 +531,14 @@ fn gen_enum_code(name: String, variants: Vec<Variant>, missing_variant: bool) ->
 fn gen_token_code(name: String) -> rust::Tokens {
     let green_name = format!("{name}Green");
     let ptr_name = format!("{name}Ptr");
+    // A missing token has kind `TokenMissing` (see `missing` below), so every token type also
+    // accepts it as a placeholder. For the `TokenMissing` type itself the extra clause would be a
+    // redundant `X || X` / `X && X` (rejected by clippy), so drop it there.
+    let matching_kinds = if name == "TokenMissing" {
+        format!("SyntaxKind::{name}")
+    } else {
+        format!("SyntaxKind::{name} | SyntaxKind::TokenMissing")
+    };
 
     quote! {
         #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
@@ -582,6 +591,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }.intern(db))
             }
             fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+                assert_matches!(node.kind(db), $(&matching_kinds));
                 match node.green_node(db).details {
                     GreenNodeDetails::Token(_) => Self { node },
                     GreenNodeDetails::Node { .. } => panic!(
@@ -591,6 +601,9 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }
             }
             fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+                if !matches!(node.kind(db), $(&matching_kinds)) {
+                    return None;
+                }
                 match node.green_node(db).details {
                     GreenNodeDetails::Token(_) => Some(Self { node }),
                     GreenNodeDetails::Node { .. } => None,
