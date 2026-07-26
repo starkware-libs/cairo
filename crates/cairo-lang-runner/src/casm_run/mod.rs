@@ -149,31 +149,6 @@ pub struct StarknetState {
     /// A mock history, mapping block number to the block hash.
     block_hash: UnorderedHashMap<u64, Felt252>,
 }
-impl StarknetState {
-    /// Replaces the addresses in the context.
-    pub fn open_caller_context(
-        &mut self,
-        [new_contract_address, new_caller_address, new_selector]: [Felt252; 3],
-    ) -> [Felt252; 3] {
-        let old_contract_address =
-            std::mem::replace(&mut self.exec_info.contract_address, new_contract_address);
-        let old_caller_address =
-            std::mem::replace(&mut self.exec_info.caller_address, new_caller_address);
-        let old_selector =
-            std::mem::replace(&mut self.exec_info.entry_point_selector, new_selector);
-        [old_contract_address, old_caller_address, old_selector]
-    }
-
-    /// Restores the addresses in the context.
-    pub fn close_caller_context(
-        &mut self,
-        [old_contract_address, old_caller_address, old_selector]: [Felt252; 3],
-    ) {
-        self.exec_info.contract_address = old_contract_address;
-        self.exec_info.caller_address = old_caller_address;
-        self.exec_info.entry_point_selector = old_selector;
-    }
-}
 
 /// Object storing logs for a contract.
 #[derive(Clone, Default)]
@@ -189,6 +164,12 @@ struct ContractLogs {
 struct ExecutionInfo {
     block_info: BlockInfo,
     tx_info: TxInfo,
+    call_info: CallInfo,
+}
+
+/// Originally flat in `ExecutionInfo`, separated here for convenience.
+#[derive(Clone, Default)]
+struct CallInfo {
     caller_address: Felt252,
     contract_address: Felt252,
     entry_point_selector: Felt252,
@@ -885,7 +866,7 @@ impl CairoHintProcessor<'_> {
             // Only address_domain 0 is currently supported.
             fail_syscall!(b"Unsupported address domain");
         }
-        let contract = self.starknet_state.exec_info.contract_address;
+        let contract = self.starknet_state.exec_info.call_info.contract_address;
         self.starknet_state.storage.entry(contract).or_default().insert(addr, value);
         Ok(SyscallResult::Success(vec![]))
     }
@@ -905,7 +886,7 @@ impl CairoHintProcessor<'_> {
         let value = self
             .starknet_state
             .storage
-            .get(&self.starknet_state.exec_info.contract_address)
+            .get(&self.starknet_state.exec_info.call_info.contract_address)
             .and_then(|contract_storage| contract_storage.get(&addr))
             .cloned()
             .unwrap_or_else(|| Felt252::from(0));
@@ -983,9 +964,9 @@ impl CairoHintProcessor<'_> {
         let exec_info_ptr = res_segment.ptr;
         res_segment.write(block_info_ptr)?;
         res_segment.write(tx_info_ptr)?;
-        res_segment.write(exec_info.caller_address)?;
-        res_segment.write(exec_info.contract_address)?;
-        res_segment.write(exec_info.entry_point_selector)?;
+        res_segment.write(exec_info.call_info.caller_address)?;
+        res_segment.write(exec_info.call_info.contract_address)?;
+        res_segment.write(exec_info.call_info.entry_point_selector)?;
         Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
     }
 
@@ -997,7 +978,7 @@ impl CairoHintProcessor<'_> {
         data: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, EMIT_EVENT);
-        let contract = self.starknet_state.exec_info.contract_address;
+        let contract = self.starknet_state.exec_info.call_info.contract_address;
         self.starknet_state.logs.entry(contract).or_default().events.push_back((keys, data));
         Ok(SyscallResult::Success(vec![]))
     }
@@ -1010,7 +991,7 @@ impl CairoHintProcessor<'_> {
         payload: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
-        let contract = self.starknet_state.exec_info.contract_address;
+        let contract = self.starknet_state.exec_info.call_info.contract_address;
         self.starknet_state
             .logs
             .entry(contract)
@@ -1025,24 +1006,20 @@ impl CairoHintProcessor<'_> {
         &mut self,
         gas_counter: &mut usize,
         class_hash: Felt252,
-        _contract_address_salt: Felt252,
+        contract_address_salt: Felt252,
         calldata: Vec<Felt252>,
         deploy_from_zero: bool,
         vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, DEPLOY);
 
+        let caller_address = self.starknet_state.exec_info.call_info.contract_address;
         // Assign the Starknet address of the contract.
-        let deployer_address = if deploy_from_zero {
-            Felt252::zero()
-        } else {
-            self.starknet_state.exec_info.contract_address
-        };
-        let deployed_contract_address = calculate_contract_address(
-            &_contract_address_salt,
+        let deployed_address = calculate_contract_address(
+            &contract_address_salt,
             &class_hash,
             &calldata,
-            &deployer_address,
+            &if deploy_from_zero { Felt252::zero() } else { caller_address },
         );
 
         // Prepare runner for running the constructor.
@@ -1053,30 +1030,26 @@ impl CairoHintProcessor<'_> {
 
         // Set the class hash of the deployed contract before executing the constructor,
         // as the constructor could make an external call to this address.
-        if self
-            .starknet_state
-            .deployed_contracts
-            .insert(deployed_contract_address, class_hash)
-            .is_some()
-        {
+        if self.starknet_state.deployed_contracts.insert(deployed_address, class_hash).is_some() {
             fail_syscall!(b"CONTRACT_ALREADY_DEPLOYED");
         }
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
-            let old_addrs = self.starknet_state.open_caller_context([
-                deployed_contract_address,
-                deployer_address,
-                Felt252::from_hex_unchecked(
+            let call_info = CallInfo {
+                contract_address: deployed_address,
+                caller_address,
+                // starknet_keccak of 'constructor'.
+                entry_point_selector: Felt252::from_hex_unchecked(
                     "0x28ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
                 ),
-            ]);
-            let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
-            self.starknet_state.close_caller_context(old_addrs);
+            };
+            let res =
+                self.call_entry_point(gas_counter, runner, constructor, calldata, vm, call_info);
             match res {
                 Ok(value) => value,
                 Err(mut revert_reason) => {
-                    self.starknet_state.deployed_contracts.remove(&deployed_contract_address);
+                    self.starknet_state.deployed_contracts.remove(&deployed_address);
                     fail_syscall!(revert_reason, b"CONSTRUCTOR_FAILED");
                 }
             }
@@ -1085,12 +1058,12 @@ impl CairoHintProcessor<'_> {
         } else {
             // Remove the contract from the deployed contracts,
             // since it failed to deploy.
-            self.starknet_state.deployed_contracts.remove(&deployed_contract_address);
+            self.starknet_state.deployed_contracts.remove(&deployed_address);
             fail_syscall!(b"INVALID_CALLDATA_LEN");
         };
 
         Ok(SyscallResult::Success(vec![
-            deployed_contract_address.into(),
+            deployed_address.into(),
             res_data_start.into(),
             res_data_end.into(),
         ]))
@@ -1124,11 +1097,12 @@ impl CairoHintProcessor<'_> {
             fail_syscall!([b"ENTRYPOINT_NOT_FOUND", b"ENTRYPOINT_FAILED"]);
         };
 
-        let new_caller = self.starknet_state.exec_info.contract_address;
-        let old_addrs =
-            self.starknet_state.open_caller_context([contract_address, new_caller, selector]);
-        let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm);
-        self.starknet_state.close_caller_context(old_addrs);
+        let call_info = CallInfo {
+            contract_address,
+            caller_address: self.starknet_state.exec_info.call_info.contract_address,
+            entry_point_selector: selector,
+        };
+        let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm, call_info);
 
         match res {
             Ok((res_data_start, res_data_end)) => {
@@ -1161,12 +1135,11 @@ impl CairoHintProcessor<'_> {
             fail_syscall!([b"ENTRYPOINT_NOT_FOUND", b"ENTRYPOINT_FAILED"]);
         };
         // A library call runs in the caller's context; only the entry point selector changes.
-        let contract_address = self.starknet_state.exec_info.contract_address;
-        let caller_address = self.starknet_state.exec_info.caller_address;
-        let old_addrs =
-            self.starknet_state.open_caller_context([contract_address, caller_address, selector]);
-        let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm);
-        self.starknet_state.close_caller_context(old_addrs);
+        let call_info = CallInfo {
+            entry_point_selector: selector,
+            ..self.starknet_state.exec_info.call_info.clone()
+        };
+        let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm, call_info);
         match res {
             Ok((res_data_start, res_data_end)) => {
                 Ok(SyscallResult::Success(vec![res_data_start.into(), res_data_end.into()]))
@@ -1193,7 +1166,7 @@ impl CairoHintProcessor<'_> {
         {
             fail_syscall!(b"CLASS_HASH_NOT_FOUND");
         };
-        let address = self.starknet_state.exec_info.contract_address;
+        let address = self.starknet_state.exec_info.call_info.contract_address;
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
     }
@@ -1223,12 +1196,15 @@ impl CairoHintProcessor<'_> {
         entry_point: &FunctionId,
         calldata: Vec<Felt252>,
         vm: &mut dyn VMWrapper,
+        call_info: CallInfo,
     ) -> Result<(Relocatable, Relocatable), Vec<Felt252>> {
         let function = runner
             .builder
             .registry()
             .get_function(entry_point)
             .expect("Entrypoint exists, but not found.");
+        let mut starknet_state = self.starknet_state.clone();
+        let old_call_info = std::mem::replace(&mut starknet_state.exec_info.call_info, call_info);
         let res = runner
             .run_function_with_starknet_context(
                 function,
@@ -1236,7 +1212,7 @@ impl CairoHintProcessor<'_> {
                 // The costs of the relevant syscall include `ENTRY_POINT_INITIAL_BUDGET` so we
                 // need to refund it here before running the entry point to avoid double charging.
                 Some(*gas_counter + gas_costs::ENTRY_POINT_INITIAL_BUDGET),
-                self.starknet_state.clone(),
+                starknet_state,
             )
             .expect("Internal runner error.");
         self.syscalls_used_resources += res.used_resources;
@@ -1244,6 +1220,7 @@ impl CairoHintProcessor<'_> {
         match res.value {
             RunResultValue::Success(value) => {
                 self.starknet_state = res.starknet_state;
+                self.starknet_state.exec_info.call_info = old_call_info;
                 Ok(segment_with_data(vm, read_array_result_as_vec(&res.memory, &value).into_iter())
                     .expect("failed to allocate segment"))
             }
@@ -1296,10 +1273,10 @@ impl CairoHintProcessor<'_> {
                 self.starknet_state.exec_info.block_info.block_timestamp = as_single_input(inputs)?;
             }
             "set_caller_address" => {
-                self.starknet_state.exec_info.caller_address = as_single_input(inputs)?;
+                self.starknet_state.exec_info.call_info.caller_address = as_single_input(inputs)?;
             }
             "set_contract_address" => {
-                self.starknet_state.exec_info.contract_address = as_single_input(inputs)?;
+                self.starknet_state.exec_info.call_info.contract_address = as_single_input(inputs)?;
             }
             "set_version" => {
                 self.starknet_state.exec_info.tx_info.version = as_single_input(inputs)?;
