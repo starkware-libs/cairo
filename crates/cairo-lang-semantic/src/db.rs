@@ -305,7 +305,15 @@ fn module_semantic_diagnostics<'db>(
         let analyzer_plugin = analyzer_plugin_id.long(db);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
-            diagnostics.report(diag.stable_ptr, SemanticDiagnosticKind::PluginDiagnostic(diag));
+            match diag.inner_span {
+                None => diagnostics
+                    .report(diag.stable_ptr, SemanticDiagnosticKind::PluginDiagnostic(diag)),
+                Some(inner_span) => diagnostics.report_with_inner_span(
+                    diag.stable_ptr,
+                    inner_span,
+                    SemanticDiagnosticKind::PluginDiagnostic(diag),
+                ),
+            };
         }
     }
 
