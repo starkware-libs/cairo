@@ -112,9 +112,9 @@ fn f() { for
             ^
 
 error[E1000]: Skipped tokens. Expected: 'in'.
- --> dummy_file.cairo:1:10
+ --> dummy_file.cairo:1:13
 fn f() { for
-         ^
+            ^
 
 error[E1002]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:1:13

@@ -3587,7 +3587,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// current trivia as skipped, and continuing the compilation as if it wasn't there.
     fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
         if self.peek().kind == SyntaxKind::TerminalEndOfFile {
-            self.add_diagnostic(diagnostic_kind, TextSpan::cursor(self.offset));
+            let next_offset = self.offset.add_width(self.current_width - self.last_trivia_length);
+            self.add_diagnostic(diagnostic_kind, TextSpan::cursor(next_offset));
             return;
         }
         let terminal = self.take_raw();
