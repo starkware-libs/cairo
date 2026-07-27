@@ -1137,15 +1137,15 @@ fn deref_impl_diagnostics<'db>(
     }
 
     loop {
-        let Ok(impl_id) = get_impl_based_on_single_impl_type(db, impl_def_id, |ty| {
+        let Some(impl_id) = get_impl_based_on_single_impl_type(db, impl_def_id, |ty| {
             ConcreteTraitLongId {
                 trait_id: deref_trait_id,
                 generic_args: vec![GenericArgumentId::Type(ty)],
             }
             .intern(db)
         }) else {
-            // Inference errors are handled when the impl is in actual use. In here we only check
-            // for cycles.
+            // Invalid impls and inference errors are reported by the impl validation queries. In
+            // here we only check for cycles.
             return;
         };
 
@@ -1170,31 +1170,24 @@ fn deref_impl_diagnostics<'db>(
     }
 }
 
-/// Assuming that an impl has a single impl type, extracts the type, and then infers another impl
-/// based on it. If the inference fails, returns the inference error and the impl type definition
-/// for diagnostics.
+/// Extracts the single impl type of the given impl, and then infers another impl based on it.
+/// Returns `None` if the impl does not have exactly one impl type, or if the inference fails - such
+/// impls are reported on by the impl validation queries.
 fn get_impl_based_on_single_impl_type<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
     concrete_trait_id: impl FnOnce(TypeId<'db>) -> ConcreteTraitId<'db>,
-) -> Result<ImplId<'db>, (InferenceError<'db>, ImplTypeDefId<'db>)> {
-    let data = impl_definition_data(db, impl_def_id).clone().unwrap();
-    let mut types_iter = data.item_type_asts.iter();
-    let (impl_item_type_id, _) = types_iter.next().unwrap();
-    if types_iter.next().is_some() {
-        panic!(
-            "get_impl_based_on_single_impl_type called with an impl that has more than one type"
-        );
-    }
-    let ty = db.impl_type_def_resolved_type(*impl_item_type_id).unwrap();
+) -> Option<ImplId<'db>> {
+    let data = impl_definition_data(db, impl_def_id).maybe_as_ref().ok()?;
+    let (impl_item_type_id, _) = data.item_type_asts.iter().exactly_one().ok()?;
+    let ty = db.impl_type_def_resolved_type(*impl_item_type_id).ok()?;
 
     let module_id = impl_def_id.parent_module(db);
-    let generic_params = db.impl_def_generic_params(impl_def_id).unwrap();
+    let generic_params = db.impl_def_generic_params(impl_def_id).ok()?;
     let generic_params_ids =
         generic_params.iter().map(|generic_param| generic_param.id()).collect();
     let lookup_context = ImplLookupContext::new(module_id, generic_params_ids, db);
-    get_impl_at_context(db, lookup_context.intern(db), concrete_trait_id(ty), None)
-        .map_err(|err| (err, *impl_item_type_id))
+    get_impl_at_context(db, lookup_context.intern(db), concrete_trait_id(ty), None).ok()
 }
 
 /// Query implementation of [ImplSemantic::impl_functions].
