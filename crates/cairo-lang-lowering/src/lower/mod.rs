@@ -1056,8 +1056,7 @@ fn add_chunks_to_data_array<'db, 'r>(
 ) -> &'r [u8] {
     let expr_stable_ptr = expr.stable_ptr.untyped();
 
-    let chunks = expr.value.as_bytes().chunks_exact(31);
-    let remainder = chunks.remainder();
+    let (chunks, remainder) = expr.value.as_bytes().as_chunks::<31>();
     for chunk in chunks {
         let chunk_usage = generators::Const {
             value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk), bytes31_ty)
