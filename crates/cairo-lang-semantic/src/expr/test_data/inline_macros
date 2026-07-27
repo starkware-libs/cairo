@@ -210,6 +210,33 @@ const mod_negative: felt252 = consteval_int!(-7 % 3);
 
 //! > ==========================================================================
 
+//! > Test consteval_int! remapped diagnostic span skips leading trivia
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() -> u8 {
+    // A comment before the macro.
+    consteval_int!(120 + 160)
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:3:5
+    consteval_int!(120 + 160)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2008]: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:3:5
+    consteval_int!(120 + 160)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test bad array! macros
 
 //! > test_runner_name

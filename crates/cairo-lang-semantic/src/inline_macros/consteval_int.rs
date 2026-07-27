@@ -60,7 +60,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
                     content,
                     code_mappings: vec![CodeMapping {
                         span,
-                        origin: CodeOrigin::Span(syntax.as_syntax_node().span(db)),
+                        origin: CodeOrigin::Span(syntax.as_syntax_node().span_without_trivia(db)),
                     }],
                     aux_data: None,
                     diagnostics_note: Default::default(),
