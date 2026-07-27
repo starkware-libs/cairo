@@ -163,6 +163,24 @@ use crate::{FormatterConfig, get_formatted_file};
     true,
     false
 )]
+#[test_case(
+    "test_data/cairo_files/use_merge_leading_trivia.cairo",
+    "test_data/expected_results/use_merge_leading_trivia.cairo",
+    false,
+    false,
+    false,
+    true,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/use_merge_leading_trivia.cairo",
+    "test_data/expected_results/use_merge_leading_trivia_use_sorting.cairo",
+    true,
+    false,
+    false,
+    true,
+    false
+)]
 fn format_and_compare_file(
     unformatted_filename: &str,
     expected_filename: &str,

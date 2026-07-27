@@ -6,11 +6,11 @@
 //! ```
 //! use core::cmp::{min, max, minmax};
 //!
-//! assert!(min(10, 20) == 10);
-//! assert!(max(10, 20) == 20);
+//! assert!(min(10, 20) == 10_u8);
+//! assert!(max(10, 20) == 20_u8);
 //!
-//! assert!(minmax(20, 10) == (10, 20));
-//! assert!(minmax(10, 20) == (10, 20));
+//! assert!(minmax(20, 10) == (10, 20_u8));
+//! assert!(minmax(10, 20) == (10, 20_u8));
 //! ```
 
 /// Takes two comparable values `a` and `b` and returns
@@ -21,7 +21,7 @@
 /// ```
 /// use core::cmp::min;
 ///
-/// assert!(min(0, 1) == 0);
+/// assert!(min(0, 1) == 0_u8);
 /// ```
 #[must_use]
 pub fn min<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
@@ -40,7 +40,7 @@ pub fn min<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
 /// ```
 /// use core::cmp::max;
 ///
-/// assert!(max(0, 1) == 1);
+/// assert!(max(0, 1) == 1_u8);
 /// ```
 #[must_use]
 pub fn max<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
@@ -59,8 +59,8 @@ pub fn max<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
 /// ```
 /// use core::cmp::minmax;
 ///
-/// assert!(minmax(0, 1) == (0, 1));
-/// assert!(minmax(1, 0) == (0, 1));
+/// assert!(minmax(0, 1) == (0, 1_u8));
+/// assert!(minmax(1, 0) == (0, 1_u8));
 /// ```
 #[must_use]
 pub fn minmax<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> (T, T) {

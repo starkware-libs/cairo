@@ -401,7 +401,7 @@ pub trait Iterator<T> {
     /// ```
     /// assert!(array![1, 2, 3].into_iter().any(|x| x == 2));
     ///
-    /// assert!(!array![1, 2, 3].into_iter().any(|x| x > 5));
+    /// assert!(!array![1, 2, 3].into_iter().any(|x| x > 5_u8));
     /// ```
     fn any<
         P,
@@ -434,9 +434,9 @@ pub trait Iterator<T> {
     /// Basic usage:
     ///
     /// ```
-    /// assert!(array![1, 2, 3].into_iter().all(|x| x > 0));
+    /// assert!(array![1, 2, 3].into_iter().all(|x| x > 0_u8));
     ///
-    /// assert!(!array![1, 2, 3].into_iter().all(|x| x > 2));
+    /// assert!(!array![1, 2, 3].into_iter().all(|x| x > 2_u8));
     /// ```
     fn all<
         P,

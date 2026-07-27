@@ -11,7 +11,7 @@ use super::ast::{
     TerminalPlus, TokenIdentifier, TokenPlus, TokenWhitespace, Trivia,
 };
 use super::kind::SyntaxKind;
-use super::{SyntaxNode, Terminal, Token};
+use super::{SyntaxNode, Terminal, Token, TypedSyntaxNode};
 use crate::node::ast::{
     ExprPathInner, OptionTerminalDollarEmpty, TerminalLiteralNumber, TokenLiteralNumber,
 };
@@ -184,4 +184,29 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode<'_> {
     let root = SyntaxFileGreen(expr.0);
     let file_id = FileLongId::OnDisk(PathBuf::default()).intern(db);
     SyntaxNode::new_detached_root(db, file_id, root.0)
+}
+
+#[test]
+fn test_casts() {
+    let db_val = DatabaseForTesting::default();
+    let db = &db_val;
+
+    let no_trivia = Trivia::new_green(db, &[]);
+    let green_plus_token = TokenPlus::new_green(db, SmolStrId::from(db, "+"));
+    let green_terminal_plus = TerminalPlus::new_green(db, no_trivia, green_plus_token, no_trivia);
+    let file_id = FileLongId::OnDisk(PathBuf::default()).intern(db);
+    let terminal = SyntaxNode::new_detached_root(db, file_id, green_terminal_plus.0);
+
+    assert_eq!(terminal.kind(db), SyntaxKind::TerminalPlus);
+    assert!(TerminalIdentifier::cast(db, terminal).is_none());
+    assert!(TokenIdentifier::cast(db, terminal).is_none());
+    assert!(TokenPlus::cast(db, terminal).is_none());
+    let Some(terminal) = TerminalPlus::cast(db, terminal) else {
+        panic!("Expected `TerminalPlus::cast` to return a valid terminal.");
+    };
+    let token = terminal.token(db).as_syntax_node();
+    assert!(TerminalIdentifier::cast(db, token).is_none());
+    assert!(TokenIdentifier::cast(db, token).is_none());
+    assert!(TerminalPlus::cast(db, token).is_none());
+    assert!(TokenPlus::cast(db, token).is_some());
 }
