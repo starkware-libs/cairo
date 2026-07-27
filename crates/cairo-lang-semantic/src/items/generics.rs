@@ -679,14 +679,21 @@ fn semantic_from_generic_param_ast<'db>(
 
             let neg_impl =
                 impl_generic_param_semantic(db, resolver, diagnostics, &path_syntax, None, id);
-            for param in db.trait_generic_params(neg_impl.concrete_trait?.trait_id(db))? {
-                if matches!(param, GenericParam::Type(_) | GenericParam::Const(_)) {
-                    continue;
+            // Note: the trait params are only inspected if the trait was resolved successfully.
+            // On failure the param is still returned (as in the positive impl param arms), so that
+            // the resolution diagnostic is not lost.
+            if let Ok(concrete_trait) = neg_impl.concrete_trait
+                && let Ok(trait_params) = db.trait_generic_params(concrete_trait.trait_id(db))
+            {
+                for param in trait_params {
+                    if matches!(param, GenericParam::Type(_) | GenericParam::Const(_)) {
+                        continue;
+                    }
+                    diagnostics.report(
+                        param.stable_ptr(db),
+                        SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl,
+                    );
                 }
-                diagnostics.report(
-                    param.stable_ptr(db),
-                    SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl,
-                );
             }
 
             GenericParam::NegImpl(neg_impl)
