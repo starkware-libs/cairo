@@ -145,10 +145,10 @@ impl InlineMacroExprPlugin for AssertMacro {
             ```cairo
             assert!(2 + 2 == 4); // Passes, does nothing.
             assert!(2 + 2 == 5); // Panics with "assertion failed: `2 + 2 == 5`."
-            let age = 18;
+            let age: i32 = 18;
             assert!(age >= 21, "Age must be at least 21, found {}", age);
             // Panics with "Age must be at least 21, found 18."
-            let x = -1;
+            let x: i32 = -1;
             assert!(x >= 0, "Invalid value: x = {}", x);
             assert!(x >= 0, "Invalid value: x = {x}");
             // Panics with "Invalid value: x = -1."
