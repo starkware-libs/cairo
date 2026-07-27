@@ -193,3 +193,39 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:9:9
     let E = A::E(());
         ^
+
+//! > ==========================================================================
+
+//! > Test no ICE when a malformed module-level macro call re-enters the enum definition. The unresolved variant type's error must survive the cycle recovery.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: P,
+}
+MyEnum::A(());
+
+//! > expected_diagnostics
+error[E1012]: Expected a '!' after the identifier 'A' to start an inline macro.
+Did you mean to write `A!(...)'?
+ --> lib.cairo:4:9
+MyEnum::A(());
+        ^
+
+error[E0006]: Type not found.
+ --> lib.cairo:2:8
+    A: P,
+       ^
+
+error[E2156]: Inline macro `MyEnum::A` not found.
+ --> lib.cairo:4:1
+MyEnum::A(());
+^^^^^^^^^^^^^^
