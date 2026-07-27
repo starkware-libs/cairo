@@ -328,14 +328,15 @@ match result {
 
 == Mutability in Patterns
 
-Patterns in `let mut` statements bind mutable variables:
+The `mut` keyword applies to an individual binding, not to the pattern as a whole.
+To bind several mutable variables, mark each binding with `mut`:
 
 [source,cairo]
 ----
 let mut x = 5;
 x = 10;  // OK: x is mutable
 
-let mut (a, b) = (1, 2);
+let (mut a, mut b) = (1, 2);
 a = 10;  // OK: a is mutable
 b = 20;  // OK: b is mutable
 ----
