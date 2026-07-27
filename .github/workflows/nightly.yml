@@ -88,10 +88,15 @@ jobs:
           fail-on-alert: true
           alert-threshold: '150%'
 
+      # The remaining suites and the final push run even if an earlier store step failed on a
+      # degradation alert (fail-on-alert), so a single regression doesn't drop the results of the
+      # other benchmarks.
       - name: Run heap benchmarks
+        if: ${{ !cancelled() }}
         run: cargo bench --bench dhat_compile --features dhat
 
       - name: Store heap benchmark results
+        if: ${{ !cancelled() }}
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba
         with:
           name: Cairo Heap Benchmarks
@@ -108,9 +113,11 @@ jobs:
           skip-fetch-gh-pages: true
 
       - name: Run LS-flow heap benchmark
+        if: ${{ !cancelled() }}
         run: cargo bench --bench dhat_ls_flow --features dhat
 
       - name: Store LS-flow heap benchmark results
+        if: ${{ !cancelled() }}
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba
         with:
           name: Cairo LS-Flow Memory Benchmarks
@@ -126,9 +133,11 @@ jobs:
           skip-fetch-gh-pages: true
 
       - name: Run language-server re-execution benchmark
+        if: ${{ !cancelled() }}
         run: cargo bench --bench ls_reexec
 
       - name: Store language-server re-execution benchmark results
+        if: ${{ !cancelled() }}
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba
         with:
           name: Cairo Language Server Re-execution Benchmarks
@@ -144,6 +153,7 @@ jobs:
           skip-fetch-gh-pages: true
 
       - name: Push results to gh-pages
+        if: ${{ !cancelled() }}
         run: git push origin gh-pages
 
   starknet_sierra_validate:
