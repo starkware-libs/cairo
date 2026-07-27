@@ -4,6 +4,7 @@ use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use itertools::Itertools;
 use salsa::Database;
 
 use crate::formatter_impl::{
@@ -570,10 +571,11 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     }
                 }
                 SyntaxKind::ParamList => {
+                    let is_optional = !param_list_contains_single_line_comment(db, self);
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        is_optional,
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -850,12 +852,20 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             | SyntaxKind::PatternStructParamList
             | SyntaxKind::StructArgList
             | SyntaxKind::GenericArgList
-            | SyntaxKind::GenericParamList
-            | SyntaxKind::ParamList => BreakLinePointsPositions::List {
+            | SyntaxKind::GenericParamList => BreakLinePointsPositions::List {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
                     true,
+                    true,
+                ),
+                breaking_frequency: 2,
+            },
+            SyntaxKind::ParamList => BreakLinePointsPositions::List {
+                properties: BreakLinePointProperties::new(
+                    5,
+                    BreakLinePointIndentation::NotIndented,
+                    !param_list_contains_single_line_comment(db, self),
                     true,
                 ),
                 breaking_frequency: 2,
@@ -1084,12 +1094,34 @@ fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'
         node.grandparent_kind(db),
         Some(SyntaxKind::MatchArm | SyntaxKind::GenericArgNamed | SyntaxKind::GenericArgUnnamed)
     ) && node.get_children(db).len() == 1
-        && !node.descendants(db).any(|d| {
-            matches!(
-                d.kind(db),
-                SyntaxKind::TokenSingleLineComment
-                    | SyntaxKind::TokenSingleLineDocComment
-                    | SyntaxKind::TokenSingleLineInnerComment
-            )
+        && !contains_single_line_comment(db, node)
+}
+
+/// Returns whether a parameter list contains a line comment, including one attached to the
+/// following closing parenthesis as leading trivia.
+fn param_list_contains_single_line_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    contains_single_line_comment(db, node)
+        || node.parent(db).is_some_and(|parent| {
+            parent.get_children(db).iter().tuple_windows().any(|(current, next)| {
+                if current == node
+                    && let Some(rparen) = ast::TerminalRParen::cast(db, *next)
+                {
+                    contains_single_line_comment(db, &rparen.leading_trivia(db).as_syntax_node())
+                } else {
+                    false
+                }
+            })
         })
+}
+
+/// Returns whether a node contains a single-line comment.
+fn contains_single_line_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    node.descendants(db).any(|descendant| {
+        matches!(
+            descendant.kind(db),
+            SyntaxKind::TokenSingleLineComment
+                | SyntaxKind::TokenSingleLineDocComment
+                | SyntaxKind::TokenSingleLineInnerComment
+        )
+    })
 }
