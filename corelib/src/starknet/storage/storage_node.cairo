@@ -67,6 +67,7 @@
 //!     my_struct: MyStruct,
 //!     a: felt252,
 //! }
+//! ```
 //!
 //! We can access the members of the storage node as follows:
 //!
