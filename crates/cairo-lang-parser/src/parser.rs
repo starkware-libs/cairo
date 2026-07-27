@@ -1736,8 +1736,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         }
     }
 
-    /// Returns a GreenId of a node with an ExprPath|ExprParenthesized|ExprTuple kind, or
-    /// TryParseFailure if such an expression can't be parsed.
+    /// Returns a GreenId of a node with an
+    /// ExprUnderscore|ExprUnary|ExprPath|ExprTuple|ExprFixedSizeArray kind, or TryParseFailure if
+    /// such an expression can't be parsed.
+    /// Note that unlike in value position, `(<type_expr>)` is not a grouping construct - it is
+    /// parsed as a tuple, with a diagnostic.
     fn try_parse_type_expr(&mut self) -> TryParseResult<ExprGreen<'a>> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
@@ -1765,8 +1768,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         }
     }
 
-    /// Returns a GreenId of a node with an ExprPath|ExprParenthesized|ExprTuple kind, or
-    /// ExprMissing if such an expression can't be parsed.
+    /// Returns a GreenId of a node with an
+    /// ExprUnderscore|ExprUnary|ExprPath|ExprTuple|ExprFixedSizeArray kind, or ExprMissing if such
+    /// an expression can't be parsed.
     fn parse_type_expr(&mut self) -> ExprGreen<'a> {
         match self.try_parse_type_expr() {
             Ok(expr) => expr,
