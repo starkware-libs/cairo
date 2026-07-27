@@ -292,3 +292,91 @@ Candidate `core::dict::Felt252DictTrait::get` inference failed with: Type mismat
  --> lib.cairo:15:7
     b.get();
       ^^^
+
+//! > ==========================================================================
+
+//! > Deref chain where a downstream impl is missing its associated type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct A {}
+
+#[derive(Drop)]
+struct B {}
+
+#[derive(Drop)]
+struct C {}
+
+impl ADeref of core::ops::Deref<A> {
+    type Target = B;
+    fn deref(self: A) -> B {
+        B {}
+    }
+}
+
+// `type Target` is missing on the second hop of the deref chain.
+impl BDeref of core::ops::Deref<B> {
+    fn deref(self: B) -> C {
+        C {}
+    }
+}
+
+//! > expected_diagnostics
+error[E0004]: Not all trait items are implemented. Missing: 'Target'.
+ --> lib.cairo:18:6
+impl BDeref of core::ops::Deref<B> {
+     ^^^^^^
+
+//! > ==========================================================================
+
+//! > Deref chain where a downstream impl has more than one associated type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct A {}
+
+#[derive(Drop)]
+struct B {}
+
+#[derive(Drop)]
+struct C {}
+
+impl ADeref of core::ops::Deref<A> {
+    type Target = B;
+    fn deref(self: A) -> B {
+        B {}
+    }
+}
+
+// An extra associated type on the second hop of the deref chain.
+impl BDeref of core::ops::Deref<B> {
+    type Target = C;
+    type Extra = C;
+    fn deref(self: B) -> C {
+        C {}
+    }
+}
+
+//! > expected_diagnostics
+error[E2014]: Impl item type `BDeref::Extra` is not a member of trait `Deref`.
+ --> lib.cairo:20:5
+    type Extra = C;
+    ^^^^^^^^^^^^^^^
