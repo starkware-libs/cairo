@@ -2486,17 +2486,15 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     fn expect_for_expr(&mut self) -> ExprForGreen<'a> {
         let for_kw = self.take::<TerminalFor<'a>>();
         let pattern = self.parse_pattern();
-        let ident = self.take_raw();
-        let in_identifier: TerminalIdentifierGreen<'_> = match ident.text.long(self.db).as_str() {
-            "in" => self.add_trivia_to_terminal::<TerminalIdentifier<'_>>(ident),
-            _ => {
-                self.append_skipped_token_to_pending_trivia(
-                    ident,
+        let peeked = self.peek();
+        let in_identifier =
+            if peeked.kind == SyntaxKind::TerminalIdentifier && peeked.text.long(self.db) == "in" {
+                self.take::<TerminalIdentifier<'_>>()
+            } else {
+                self.skip_token_and_return_missing::<TerminalIdentifier<'_>>(
                     ParserDiagnosticKind::SkippedElement { element_name: "'in'".into() },
-                );
-                TerminalIdentifier::missing(self.db)
-            }
-        };
+                )
+            };
         let expression =
             self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid, AndLetBehavior::Simple);
         let body = self.parse_block();
