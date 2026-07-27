@@ -27,9 +27,7 @@ fn const_with_snap() {
     let mut x = 1;
     match @outer {
         Outer::V1 => { x += 1; },
-        Outer::V2((
-            inner, y,
-        )) => {
+        Outer::V2((inner, y)) => {
             x += 2;
             match inner {
                 Inner::V1 => { x += 3; },
