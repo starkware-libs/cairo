@@ -89,3 +89,55 @@ error[E1000]: Skipped tokens. Expected: 'in'.
         │       ├── expr (kind: TokenLiteralNumber): '1'
         │       └── semicolon (kind: TokenSemicolon): ';'
         └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test for loop truncated at end of file
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn f() { for
+
+//! > top_level_kind
+ExprFor
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error[E1001]: Missing token '_'.
+ --> dummy_file.cairo:1:13
+fn f() { for
+            ^
+
+error[E1001]: Missing token TerminalIdentifier.
+ --> dummy_file.cairo:1:13
+fn f() { for
+            ^
+
+error[E1002]: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:1:13
+fn f() { for
+            ^
+
+error[E1001]: Missing token '{'.
+ --> dummy_file.cairo:1:13
+fn f() { for
+            ^
+
+error[E1001]: Missing token '}'.
+ --> dummy_file.cairo:1:13
+fn f() { for
+            ^
+
+//! > expected_tree
+└── Top level kind: ExprFor
+    ├── for_kw (kind: TokenFor): 'for'
+    ├── pattern: Missing
+    ├── identifier: Missing
+    ├── expr: Missing []
+    └── body (kind: ExprBlock)
+        ├── lbrace: Missing
+        ├── statements (kind: StatementList) []
+        └── rbrace: Missing
