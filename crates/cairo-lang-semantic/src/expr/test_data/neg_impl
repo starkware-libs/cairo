@@ -392,3 +392,77 @@ error[E2313]: Negative impl has an unsupported generic argument GenericParamCons
  --> lib.cairo:10:5
     bar::<[u32; N]>();
     ^^^
+
+//! > ==========================================================================
+
+//! > Negative impl with an unresolved trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() -> felt252 {
+    MyTrait::<felt252>::f()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn f() -> felt252;
+}
+
+impl BlanketNonCopy<T, -MissomgTrait<T>> of MyTrait<T> {
+    fn f() -> felt252 {
+        7
+    }
+}
+
+//! > expected_diagnostics
+error[E0006]: Trait not found.
+ --> lib.cairo:5:25
+impl BlanketNonCopy<T, -MissomgTrait<T>> of MyTrait<T> {
+                        ^^^^^^^^^^^^
+
+error[E2311]: Trait has no implementation in context: test::MyTrait::<core::felt252>.
+ --> lib.cairo:11:25
+    MyTrait::<felt252>::f()
+                        ^
+
+//! > ==========================================================================
+
+//! > Positive impl parameter with an unresolved trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() -> felt252 {
+    MyTrait::<felt252>::f()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn f() -> felt252;
+}
+
+impl BlanketNonCopy<T, +MissingTrait<T>> of MyTrait<T> {
+    fn f() -> felt252 {
+        7
+    }
+}
+
+//! > expected_diagnostics
+error[E0006]: Trait not found.
+ --> lib.cairo:5:25
+impl BlanketNonCopy<T, +MissingTrait<T>> of MyTrait<T> {
+                        ^^^^^^^^^^^^
+
+error[E2311]: Trait has no implementation in context: test::MyTrait::<core::felt252>.
+ --> lib.cairo:11:25
+    MyTrait::<felt252>::f()
+                        ^
