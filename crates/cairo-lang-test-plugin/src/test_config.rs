@@ -220,11 +220,10 @@ fn extract_string_panic_bytes(
     db: &dyn Database,
 ) -> Vec<Felt252> {
     let panic_string = panic_string.string_value(db).unwrap();
-    let chunks = panic_string.as_bytes().chunks_exact(BYTES_IN_WORD);
+    let (chunks, remainder) = panic_string.as_bytes().as_chunks::<BYTES_IN_WORD>();
     let num_full_words = chunks.len().into();
-    let remainder = chunks.remainder();
     let pending_word_len = remainder.len().into();
-    let full_words = chunks.map(|chunk| BigInt::from_bytes_be(Sign::Plus, chunk).into());
+    let full_words = chunks.iter().map(|chunk| BigInt::from_bytes_be(Sign::Plus, chunk).into());
     let pending_word = BigInt::from_bytes_be(Sign::Plus, remainder).into();
 
     chain!(
