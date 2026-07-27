@@ -8,3 +8,8 @@ updates:
       github-actions:
         patterns:
           - "*"
+    ignore:
+      # dtolnay/rust-toolchain encodes the toolchain in the branch each pinned SHA
+      # belongs to (master/stable/nightly), so Dependabot collapsing the pins into a
+      # single SHA silently switches the toolchain. Update these pins manually.
+      - dependency-name: "dtolnay/rust-toolchain"
