@@ -223,7 +223,7 @@ impl<'a, 'db> ForwardingCtx<'a, 'db> {
         }
         txn.renames.extend(deps);
 
-        // Free inputs and resolve non-copy obligations.
+        // Free inputs and resolve non-copy/non-drop obligations.
         let DefLocation::Statement(stmt_loc) = def else { return true };
         // Free one use per input slot, matching `UseSites`' per-slot multiplicity
         // counts: a statement consuming the same variable in two slots frees two of its
@@ -232,13 +232,15 @@ impl<'a, 'db> ForwardingCtx<'a, 'db> {
             let var_id = var_usage.var_id;
             *txn.freed_delta.entry(var_id).or_default() += 1;
 
-            if self.variables[var_id].info.copyable.is_err()
+            let info = &self.variables[var_id].info;
+            if (info.copyable.is_err() || info.droppable.is_err())
                 && self.effective_use_count(var_id, committed, txn) == 0
             {
-                // Non-copy variable with no remaining consumers — try to remove
-                // the producer so that renames targeting `v` don't create duplicate
-                // consuming uses. If the cascade fails, propagate failure so the
-                // whole transaction is discarded; partial cascade state is left in
+                // A variable with no remaining consumers must not be orphaned: if
+                // non-copy, renames targeting it would create duplicate consuming
+                // uses; if non-drop, leaving it unconsumed is illegal. Either way try
+                // to remove the producer. If the cascade fails, propagate failure so
+                // the whole transaction is discarded; partial cascade state is left in
                 // `txn` and will be dropped together with the rest by the worklist
                 // when this top-level `try_remove` returns false.
                 let Some(producer) = self.definition(var_id) else {

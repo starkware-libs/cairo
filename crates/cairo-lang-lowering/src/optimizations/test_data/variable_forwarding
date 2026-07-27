@@ -1368,3 +1368,50 @@ blk3:
 Statements:
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > Test destructure of a Copy + non-Drop struct is not removed.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+#[allow(extern_outside_corelib)]
+extern fn make_copy_only() -> CopyOnly nopanic;
+
+fn foo() {
+    let CopyOnly { x } = make_copy_only();
+    let _ = x;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy)]
+struct CopyOnly {
+    x: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::CopyOnly) <- test::make_copy_only()
+  (v1: core::felt252) <- struct_destructure(v0)
+End:
+  Return()
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::CopyOnly) <- test::make_copy_only()
+  (v1: core::felt252) <- struct_destructure(v0)
+End:
+  Return()
+
+//! > lowering_diagnostics
