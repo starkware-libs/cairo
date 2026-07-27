@@ -71,6 +71,9 @@ fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenEnum
         | SyntaxKind::TokenStruct
         | SyntaxKind::TokenTrait
+        | SyntaxKind::TokenMacro
+        | SyntaxKind::TokenConst
+        | SyntaxKind::TokenPub
         | SyntaxKind::TokenImpl => text.bright_blue(),
         SyntaxKind::TokenOf
         | SyntaxKind::TokenLet
@@ -78,7 +81,13 @@ fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenMatch
         | SyntaxKind::TokenIf
         | SyntaxKind::TokenElse
+        | SyntaxKind::TokenWhile
+        | SyntaxKind::TokenFor
+        | SyntaxKind::TokenLoop
+        | SyntaxKind::TokenContinue
+        | SyntaxKind::TokenBreak
         | SyntaxKind::TokenUse
+        | SyntaxKind::TokenAs
         | SyntaxKind::TokenImplicits
         | SyntaxKind::TokenRef
         | SyntaxKind::TokenMut
@@ -98,6 +107,9 @@ fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenNot
         | SyntaxKind::TokenQuestionMark
         | SyntaxKind::TokenUnderscore
+        | SyntaxKind::TokenAt
+        | SyntaxKind::TokenBitNot
+        | SyntaxKind::TokenDollar
         | SyntaxKind::TokenHash => text.truecolor(255, 180, 255), // Pink
         SyntaxKind::TokenEq
         | SyntaxKind::TokenEqEq
@@ -105,6 +117,11 @@ fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenGT
         | SyntaxKind::TokenLE
         | SyntaxKind::TokenLT
+        | SyntaxKind::TokenPlusEq
+        | SyntaxKind::TokenMinusEq
+        | SyntaxKind::TokenMulEq
+        | SyntaxKind::TokenDivEq
+        | SyntaxKind::TokenModEq
         | SyntaxKind::TokenNeq => {
             text.truecolor(255, 165, 0) // Orange
         }
@@ -120,11 +137,13 @@ fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
         SyntaxKind::TokenMissing => text.clear(),
         SyntaxKind::TokenSkipped => text.on_red(), // red background
         SyntaxKind::TokenSingleLineComment
+        | SyntaxKind::TokenSingleLineDocComment
+        | SyntaxKind::TokenSingleLineInnerComment
         | SyntaxKind::TokenWhitespace
         | SyntaxKind::TokenNewline
         | SyntaxKind::TokenEmpty => text.clear(),
-        // TODO(yuval): Can this be made exhaustive?
-        _ => panic!("Unexpected syntax kind: {kind:?}"),
+        // TODO(orizi): Make exhaustive.
+        _ => text.clear(),
     }
 }
 
