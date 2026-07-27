@@ -185,6 +185,8 @@ impl<'db> Usages<'db> {
         usage.introductions.extend(param_ids.iter().map(|param| VarId::Param(param.id)));
         self.handle_expr(arenas, body, &mut usage);
         usage.finalize_as_scope();
+        // Closure is a different function - no early return is relevant for outer scope.
+        usage.has_early_return = false;
         usage
     }
 
