@@ -808,6 +808,247 @@ End:
 
 //! > ==========================================================================
 
+//! > Test closure with `return` inside a loop does not add loop early-return machinery.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function_code
+fn foo(n: felt252) -> felt252 {
+    let mut i = n;
+    loop {
+        let f = || -> felt252 {
+            return 7;
+        };
+        i = i + f();
+        if i == 100 {
+            break i;
+        };
+    }
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252, v1: core::felt252) <- test::foo[51-208](v0)
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
+blk0 (root):
+Statements:
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[51-208](v0, v1, v2)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk1,
+    PanicResult::Err(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v9: core::felt252, v10: core::felt252) <- struct_destructure(v6)
+  (v11: (core::felt252,)) <- struct_construct(v10)
+  (v12: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v11)
+End:
+  Return(v3, v8, v12)
+
+blk2:
+Statements:
+  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+End:
+  Return(v3, v4, v13)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+        let f = || -> felt252 {
+                ^^
+
+Parameters: v0: {closure@lib.cairo:4:17: 4:19}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:4:17: 4:19}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+        let f = || -> felt252 {
+                ^^
+
+Parameters: v0: @{closure@lib.cairo:4:17: 4:19}, v2: ()
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:4:17: 4:19}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  () <- struct_destructure(v2)
+  (v3: core::felt252) <- 7
+End:
+  Return(v3)
+
+
+Final lowering:
+Parameters: v0: @{closure@lib.cairo:4:17: 4:19}, v1: ()
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 7
+End:
+  Return(v2)
+
+
+Generated loop lowering for source location:
+      loop {
+ _____^
+| ...
+|     }
+|_____^
+
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:4:17: 4:19}) <- struct_construct()
+  (v2: {closure@lib.cairo:4:17: 4:19}, v3: @{closure@lib.cairo:4:17: 4:19}) <- snapshot(v1)
+  (v4: ()) <- struct_construct()
+  (v5: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:4:17: 4:19}(v3, v4)
+  (v6: core::felt252) <- core::Felt252Add::add(v0, v5)
+  (v7: core::felt252, v8: @core::felt252) <- snapshot(v6)
+  (v9: core::felt252) <- 100
+  (v10: core::felt252, v11: @core::felt252) <- snapshot(v9)
+  (v12: core::bool) <- core::Felt252PartialEq::eq(v8, v11)
+End:
+  Match(match_enum(v12) {
+    bool::False(v14) => blk2,
+    bool::True(v13) => blk1,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v7, v7)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v16: core::felt252, v15: core::felt252) <- test::foo[51-208](v7)
+End:
+  Return(v16, v15)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v3, v4) => blk1,
+    Option::None(v5, v6) => blk4,
+  })
+
+blk1:
+Statements:
+  (v7: core::felt252) <- 7
+  (v8: core::felt252) <- core::felt252_add(v2, v7)
+  (v9: core::felt252) <- 100
+  (v10: core::felt252) <- core::felt252_sub(v8, v9)
+End:
+  Match(match core::felt252_is_zero(v10) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v13: (core::felt252, core::felt252)) <- struct_construct(v8, v8)
+  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v13)
+End:
+  Return(v3, v12, v14)
+
+blk3:
+Statements:
+  (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[51-208](v3, v15, v8)
+End:
+  Return(v16, v17, v18)
+
+blk4:
+Statements:
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v20: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v19)
+End:
+  Return(v5, v6, v20)
+
+
+Final lowering of specialized call "test::foo[51-208]":
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v3, v4) => blk1,
+    Option::None(v5, v6) => blk4,
+  })
+
+blk1:
+Statements:
+  (v7: core::felt252) <- 7
+  (v8: core::felt252) <- core::felt252_add(v2, v7)
+  (v9: core::felt252) <- 100
+  (v10: core::felt252) <- core::felt252_sub(v8, v9)
+End:
+  Match(match core::felt252_is_zero(v10) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v13: (core::felt252, core::felt252)) <- struct_construct(v8, v8)
+  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v13)
+End:
+  Return(v3, v12, v14)
+
+blk3:
+Statements:
+  (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[51-208](v3, v15, v8)
+End:
+  Return(v16, v17, v18)
+
+blk4:
+Statements:
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v20: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v19)
+End:
+  Return(v5, v6, v20)
+
+//! > ==========================================================================
+
 //! > Test closure desnapping a snapshot-only captured variable.
 
 //! > test_runner_name
