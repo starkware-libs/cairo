@@ -29,9 +29,7 @@ impl ChainIterator<
     fn next(ref self: Chain<A, B>) -> Option<Self::Item> {
         let mut b = match self {
             Chain::Second(b) => b,
-            Chain::Both((
-                mut a, b,
-            )) => {
+            Chain::Both((mut a, b)) => {
                 if let Some(value) = a.next() {
                     self = Chain::Both((a, b));
                     return Option::Some(value);

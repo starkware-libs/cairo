@@ -431,6 +431,11 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 SyntaxKind::ParenthesizedMacro => Some(2),
                 _ => Some(1),
             },
+            // If the match arm's expression is a block, the pattern should be broken only after the
+            // block was broken.
+            // This does not hold for an arm whose expression is not a block, where we prefer
+            // breaking the pattern first.
+            Some(SyntaxKind::PatternListOr) if is_pattern_of_block_match_arm(db, self) => Some(10),
             _ => match self.kind(db) {
                 SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprList
@@ -1083,6 +1088,19 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             });
         }
         None
+    }
+}
+
+/// Given a `PatternListOr` node, returns whether its corresponding match arm's expression is a
+/// block.
+fn is_pattern_of_block_match_arm(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    if let Some(match_arm) = node.grandparent(db)
+        && let Some(match_arm) = ast::MatchArm::cast(db, match_arm)
+        && match_arm.expression(db).as_syntax_node().kind(db) == SyntaxKind::ExprBlock
+    {
+        true
+    } else {
+        false
     }
 }
 
