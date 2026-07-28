@@ -33,6 +33,7 @@ trait Shape<T> {
     type ShapePair;
 
     fn area(self: T) -> u32;
+    fn pair(self: T) -> Self::ShapePair;
 }
 
 struct Circle {
@@ -45,6 +46,7 @@ impl CircleShape of Shape<Circle> {
     fn area(self: Circle) -> u32 {
         3 * self.radius * self.radius
     }
+    fn pair(self: Circle) -> Self::ShapePair {}
 }
 
 
@@ -111,6 +113,45 @@ macro square_brackets_redundant_whitespace {
 trait CTrait {}
 
 struct StructLeadingImplParam<+CTrait, T> {
+    value: T,
+}
+
+trait AssocTrait<T> {
+    const ASSOC_CONST: Self::Item;
+    const SIZE: usize;
+    type Item;
+    type Other;
+
+    fn assoc_in_param_and_return(self: T, other: Self::Other) -> Self::Other;
+    fn assoc_nested_in_generic(self: T) -> Option<Self::Item>;
+    fn assoc_in_tuple(self: T) -> (Self::Item, Self::Other);
+    fn assoc_in_snapshot(self: T) -> @Self::Item;
+    fn assoc_const_array_size(self: T) -> [bool; Self::SIZE];
+}
+
+trait OuterAssoc<T> {
+    impl Nested: AssocTrait<T>;
+
+    fn impl_impl_assoc(x: Self::Nested::Item) -> Self::Nested::Item;
+}
+
+fn impl_impl_of_impl_param<T, impl O: OuterAssoc<T>>(x: O::Nested::Item) -> O::Nested::Item {}
+
+fn assoc_of_impl_params<T, impl S: AssocTrait<T>, impl U: AssocTrait<T>>(
+    first: S::Item, second: U::Item,
+) -> (S::Item, U::Item) {}
+
+fn snapshot_param(a: @Circle) -> @Circle {}
+
+fn concrete_impl_bound<impl TShape: Shape<Circle>>(circle: Circle) -> u32 {}
+
+fn anon_assoc_qualified<T, +AssocTrait<T>>(x: T) -> AssocTrait::<T>::Item {}
+
+fn one_tuple(a: felt252) -> (felt252,) {}
+
+fn nested_one_tuple(a: felt252) -> Option<(felt252,)> {}
+
+struct AssocBoundStruct<T, impl S: AssocTrait<T>, impl V: Shape<S::Item>> {
     value: T,
 }
 
@@ -214,109 +255,123 @@ fn area(self: T) -> u32
 //! > Item documentation tokens #13
 
 //! > Item signature #14
-struct Circle {
-    radius: u32,
-}
+fn pair(self: T) -> Self::ShapePair
 
 //! > Item documentation #14
 
 //! > Item documentation tokens #14
 
 //! > Item signature #15
-radius: u32
+struct Circle {
+    radius: u32,
+}
 
 //! > Item documentation #15
 
 //! > Item documentation tokens #15
 
 //! > Item signature #16
-impl CircleShape of Shape<Circle>;
+radius: u32
 
 //! > Item documentation #16
 
 //! > Item documentation tokens #16
 
 //! > Item signature #17
-type ShapePair = (Circle, Circle);
+impl CircleShape of Shape<Circle>;
 
 //! > Item documentation #17
 
 //! > Item documentation tokens #17
 
 //! > Item signature #18
-const SHAPE_CONST: felt252 = 'xyz';
+type ShapePair = (Circle, Circle);
 
 //! > Item documentation #18
 
 //! > Item documentation tokens #18
 
 //! > Item signature #19
-fn area(self: Circle) -> u32
+const SHAPE_CONST: felt252 = 'xyz';
 
 //! > Item documentation #19
 
 //! > Item documentation tokens #19
 
 //! > Item signature #20
-trait ATrait
+fn area(self: Circle) -> u32
 
 //! > Item documentation #20
 
 //! > Item documentation tokens #20
 
 //! > Item signature #21
-struct B<T, G, +ATrait> {
-    t: T,
-    g: G,
-}
+fn pair(self: Circle) -> (Circle, Circle)
 
 //! > Item documentation #21
 
 //! > Item documentation tokens #21
 
 //! > Item signature #22
-t: T
+trait ATrait
 
 //! > Item documentation #22
 
 //! > Item documentation tokens #22
 
 //! > Item signature #23
-g: G
+struct B<T, G, +ATrait> {
+    t: T,
+    g: G,
+}
 
 //! > Item documentation #23
 
 //! > Item documentation tokens #23
 
 //! > Item signature #24
-impl BCopy<T, G, +ATrait, +Copy<T>, +Copy<G>> of Copy<B<T, G, + ATrait>>;
+t: T
 
 //! > Item documentation #24
 
 //! > Item documentation tokens #24
 
 //! > Item signature #25
-pub extern type bytes31;
+g: G
 
 //! > Item documentation #25
 
 //! > Item documentation tokens #25
 
 //! > Item signature #26
-pub extern type Pedersen;
+impl BCopy<T, G, +ATrait, +Copy<T>, +Copy<G>> of Copy<B<T, G, + ATrait>>;
 
 //! > Item documentation #26
 
 //! > Item documentation tokens #26
 
 //! > Item signature #27
-pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
+pub extern type bytes31;
 
 //! > Item documentation #27
 
 //! > Item documentation tokens #27
 
 //! > Item signature #28
+pub extern type Pedersen;
+
+//! > Item documentation #28
+
+//! > Item documentation tokens #28
+
+//! > Item signature #29
+pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
+
+//! > Item documentation #29
+
+//! > Item documentation tokens #29
+
+//! > Item signature #30
 fn this_function_has_a_very_long_signature(
     and_contains_a_linked_parameter: Circle,
     lorem: felt252,
@@ -328,39 +383,39 @@ fn this_function_has_a_very_long_signature(
     yet_another_linked_parameter_at_the_end: Circle,
 ) -> Circle
 
-//! > Item documentation #28
-
-//! > Item documentation tokens #28
-
-//! > Item signature #29
-fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8]
-
-//! > Item documentation #29
-
-//! > Item documentation tokens #29
-
-//! > Item signature #30
-trait TestTrait<T>
-
 //! > Item documentation #30
 
 //! > Item documentation tokens #30
 
 //! > Item signature #31
-trait TestTraitWithoutGenerics
+fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8]
 
 //! > Item documentation #31
 
 //! > Item documentation tokens #31
 
 //! > Item signature #32
-impl TestTraitImpl<T, impl metadata: TestTraitWithoutGenerics> of TestTrait<T>;
+trait TestTrait<T>
 
 //! > Item documentation #32
 
 //! > Item documentation tokens #32
 
 //! > Item signature #33
+trait TestTraitWithoutGenerics
+
+//! > Item documentation #33
+
+//! > Item documentation tokens #33
+
+//! > Item signature #34
+impl TestTraitImpl<T, impl metadata: TestTraitWithoutGenerics> of TestTrait<T>;
+
+//! > Item documentation #34
+
+//! > Item documentation tokens #34
+
+//! > Item signature #35
 macro count_idents {
     ($x:ident) => { ... };
     ($x:ident, $y:ident) => { ... };
@@ -370,38 +425,22 @@ macro count_idents {
     (abc {$x:ident, (abc $y:ident) }) => { ... };
 }
 
-//! > Item documentation #33
-
-//! > Item documentation tokens #33
-
-//! > Item signature #34
-macro matcher_star {
-    ($($x:expr), *) => { ... };
-}
-
-//! > Item documentation #34
-
-//! > Item documentation tokens #34
-
-//! > Item signature #35
-macro square_brackets_redundant_whitespace {
-    [$x:ident] => { ... };
-}
-
 //! > Item documentation #35
 
 //! > Item documentation tokens #35
 
 //! > Item signature #36
-trait CTrait
+macro matcher_star {
+    ($($x:expr), *) => { ... };
+}
 
 //! > Item documentation #36
 
 //! > Item documentation tokens #36
 
 //! > Item signature #37
-struct StructLeadingImplParam<+CTrait, T> {
-    value: T,
+macro square_brackets_redundant_whitespace {
+    [$x:ident] => { ... };
 }
 
 //! > Item documentation #37
@@ -409,8 +448,175 @@ struct StructLeadingImplParam<+CTrait, T> {
 //! > Item documentation tokens #37
 
 //! > Item signature #38
-value: T
+trait CTrait
 
 //! > Item documentation #38
 
 //! > Item documentation tokens #38
+
+//! > Item signature #39
+struct StructLeadingImplParam<+CTrait, T> {
+    value: T,
+}
+
+//! > Item documentation #39
+
+//! > Item documentation tokens #39
+
+//! > Item signature #40
+value: T
+
+//! > Item documentation #40
+
+//! > Item documentation tokens #40
+
+//! > Item signature #41
+trait AssocTrait<T>
+
+//! > Item documentation #41
+
+//! > Item documentation tokens #41
+
+//! > Item signature #42
+const ASSOC_CONST: Self::Item;
+
+//! > Item documentation #42
+
+//! > Item documentation tokens #42
+
+//! > Item signature #43
+const SIZE: u32;
+
+//! > Item documentation #43
+
+//! > Item documentation tokens #43
+
+//! > Item signature #44
+type Item;
+
+//! > Item documentation #44
+
+//! > Item documentation tokens #44
+
+//! > Item signature #45
+type Other;
+
+//! > Item documentation #45
+
+//! > Item documentation tokens #45
+
+//! > Item signature #46
+fn assoc_in_param_and_return(self: T, other: Self::Other) -> Self::Other
+
+//! > Item documentation #46
+
+//! > Item documentation tokens #46
+
+//! > Item signature #47
+fn assoc_nested_in_generic(self: T) -> Option<Self::Item>
+
+//! > Item documentation #47
+
+//! > Item documentation tokens #47
+
+//! > Item signature #48
+fn assoc_in_tuple(self: T) -> (Self::Item, Self::Other)
+
+//! > Item documentation #48
+
+//! > Item documentation tokens #48
+
+//! > Item signature #49
+fn assoc_in_snapshot(self: T) -> @Self::Item
+
+//! > Item documentation #49
+
+//! > Item documentation tokens #49
+
+//! > Item signature #50
+fn assoc_const_array_size(self: T) -> [bool; Self::SIZE]
+
+//! > Item documentation #50
+
+//! > Item documentation tokens #50
+
+//! > Item signature #51
+trait OuterAssoc<T>
+
+//! > Item documentation #51
+
+//! > Item documentation tokens #51
+
+//! > Item signature #52
+fn impl_impl_assoc(x: Self::Nested::Item) -> Self::Nested::Item
+
+//! > Item documentation #52
+
+//! > Item documentation tokens #52
+
+//! > Item signature #53
+fn impl_impl_of_impl_param<T, impl O: OuterAssoc<T>>(x: O::Nested::Item) -> O::Nested::Item
+
+//! > Item documentation #53
+
+//! > Item documentation tokens #53
+
+//! > Item signature #54
+fn assoc_of_impl_params<T, impl S: AssocTrait<T>, impl U: AssocTrait<T>>(
+    first: S::Item, second: U::Item,
+) -> (S::Item, U::Item)
+
+//! > Item documentation #54
+
+//! > Item documentation tokens #54
+
+//! > Item signature #55
+fn snapshot_param(a: @Circle) -> @Circle
+
+//! > Item documentation #55
+
+//! > Item documentation tokens #55
+
+//! > Item signature #56
+fn concrete_impl_bound<impl TShape: Shape<Circle>>(circle: Circle) -> u32
+
+//! > Item documentation #56
+
+//! > Item documentation tokens #56
+
+//! > Item signature #57
+fn anon_assoc_qualified<T, +AssocTrait<T>>(x: T) -> AssocTrait::<T>::Item
+
+//! > Item documentation #57
+
+//! > Item documentation tokens #57
+
+//! > Item signature #58
+fn one_tuple(a: felt252) -> (felt252,)
+
+//! > Item documentation #58
+
+//! > Item documentation tokens #58
+
+//! > Item signature #59
+fn nested_one_tuple(a: felt252) -> Option<(felt252,)>
+
+//! > Item documentation #59
+
+//! > Item documentation tokens #59
+
+//! > Item signature #60
+struct AssocBoundStruct<T, impl S: AssocTrait<T>, impl V: Shape<S::Item>> {
+    value: T,
+}
+
+//! > Item documentation #60
+
+//! > Item documentation tokens #60
+
+//! > Item signature #61
+value: T
+
+//! > Item documentation #61
+
+//! > Item documentation tokens #61
