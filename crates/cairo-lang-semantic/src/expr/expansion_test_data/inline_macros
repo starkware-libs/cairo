@@ -289,3 +289,303 @@ error[E1001]: Missing token ']'.
  --> lib.cairo:2:12
 array![1, 2
            ^
+
+//! > ==========================================================================
+
+//! > Test a repetition block is driven by its repeated placeholder, not by the first one textually.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sum_with_base {
+    ($x:expr, $($y:expr),*) => { $($x + $y +)* 0 };
+}
+
+//! > expr_code
+sum_with_base!(100, 1, 2, 3)
+
+//! > expanded_code
+100+ 1+100+ 2+100+ 3+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test the driving placeholder is found regardless of its position inside the block.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sum_with_base {
+    ($x:expr, $($y:expr),*) => { $($y + $x +)* 0 };
+}
+
+//! > expr_code
+sum_with_base!(100, 1, 2, 3)
+
+//! > expanded_code
+1+ 100+2+ 100+3+ 100+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test `$defsite` at the start of a repetition block does not suppress the repetition.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+fn triple(v: felt252) -> felt252 {
+    v * 3
+}
+macro sum_tripled {
+    ($($y:expr),*) => { $($defsite::triple($y) +)* 0 };
+}
+
+//! > expr_code
+sum_tripled!(3, 4, 5)
+
+//! > expanded_code
+$defsite::triple(3) +$defsite::triple(4) +$defsite::triple(5) +0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repetition matching zero times expands to nothing.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+fn triple(v: felt252) -> felt252 {
+    v * 3
+}
+macro sum_tripled {
+    ($($y:expr),*) => { $($defsite::triple($y) +)* 0 };
+}
+
+//! > expr_code
+sum_tripled!()
+
+//! > expanded_code
+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repetition whose separator is inside the block is driven by its placeholder.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sum_with_base {
+    ($x:expr $(, $y:expr)*) => { $($x + $y +)* 0 };
+}
+
+//! > expr_code
+sum_with_base!(100, 1, 2, 3)
+
+//! > expanded_code
+100+ 1+100+ 2+100+ 3+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repetition whose separator is inside the block, matching zero times.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sum_with_base {
+    ($x:expr $(, $y:expr)*) => { $($x + $y +)* 0 };
+}
+
+//! > expr_code
+sum_with_base!(100)
+
+//! > expanded_code
+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a nested repetition matching zero times expands to nothing.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sum_groups {
+    ($([$($x:expr),*]),*) => { $($($x +)*)* 0 };
+}
+
+//! > expr_code
+sum_groups!()
+
+//! > expanded_code
+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test nested repetitions with different drivers, neither of them first in its block.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro nested_drivers {
+    ($n:expr; $($a:expr => [$($b:expr),*]),*) => { $($n + $($n + $b +)* $a +)* 0 };
+}
+
+//! > expr_code
+nested_drivers!(100; 10 => [1, 2])
+
+//! > expanded_code
+100+ 100+ 1+100+ 2+10 +0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repetition block driven by a placeholder written before a nested block.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro nested_drivers {
+    ($n:expr; $($a:expr => [$($b:expr),*]),*) => { $($a + $($n + $b +)*)* 0 };
+}
+
+//! > expr_code
+nested_drivers!(100; 10 => [1, 2])
+
+//! > expanded_code
+10 + 100+ 1+100+ 2+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repetition block driven at all levels.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro nested_drivers {
+    ($n:expr; $($a:expr => [$($b:expr),*]),*) => { $n $( + $n + $a $( + $n + $a + $b)*)* };
+}
+
+//! > expr_code
+nested_drivers!(100; 10 => [1, 2])
+
+//! > expanded_code
+100+ 100+ 10 + 100+ 10 + 1+ 100+ 10 + 2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test three nested repetition levels, each driven by its own placeholder.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro three_levels {
+    ($($a:expr => [$($b:expr => ($($c:expr),*)),*]),*) => { $($a + $($b + $($c +)*)*)* 0 };
+}
+
+//! > expr_code
+three_levels!(1 => [2 => (3, 4)])
+
+//! > expanded_code
+1 + 2 + 3+4+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test two sibling repetition blocks driven by the same placeholder.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sibling_blocks {
+    ($($a:expr),*) => { $($a +)* $($a +)* 0 };
+}
+
+//! > expr_code
+sibling_blocks!(1, 2)
+
+//! > expanded_code
+1+2+1+2+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an outer block whose only driver sits inside its nested block.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro outer_driver_nested {
+    ($($a:expr => [$($b:expr),*]),*) => { $(100 + $($b + $a +)*)* 0 };
+}
+
+//! > expr_code
+outer_driver_nested!(1 => [7, 8])
+
+//! > expanded_code
+100 + 7+ 1 +8+ 1 +0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a block whose only placeholder is bound to a deeper repetition.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro deeper_only {
+    ($([$($x:expr),*]),*) => { $($($x +)*)* 0 };
+}
+
+//! > expr_code
+deeper_only!([1])
+
+//! > expanded_code
+1+0
+
+//! > diagnostics

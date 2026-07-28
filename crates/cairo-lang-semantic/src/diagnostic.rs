@@ -1202,6 +1202,11 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     name.long(db)
                 )
             }
+            SemanticDiagnosticKind::MacroRepetitionWithoutDriver => {
+                "Macro expansion repetition block has no placeholder to repeat over. Only a \
+                 placeholder declared inside a `$()` repetition in the pattern can drive one."
+                    .into()
+            }
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
                 "User defined inline macros are disabled in the current crate.".into()
             }
@@ -1476,6 +1481,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(_) => error_code!(E2193),
             SemanticDiagnosticKind::MacroPlaceholderRepDepthMismatch { .. } => error_code!(E2198),
             SemanticDiagnosticKind::MacroPlaceholderRepDriverMismatch(_) => error_code!(E2199),
+            SemanticDiagnosticKind::MacroRepetitionWithoutDriver => error_code!(E2202),
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => error_code!(E2194),
             SemanticDiagnosticKind::NonNeverLetElseType => error_code!(E2195),
             SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => error_code!(E2196),
@@ -1902,6 +1908,7 @@ pub enum SemanticDiagnosticKind<'db> {
         actual: usize,
     },
     MacroPlaceholderRepDriverMismatch(SmolStrId<'db>),
+    MacroRepetitionWithoutDriver,
     UserDefinedInlineMacrosDisabled,
     NonNeverLetElseType,
     OnlyTypeOrConstParamsInNegImpl,
