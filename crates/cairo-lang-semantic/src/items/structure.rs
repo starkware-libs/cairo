@@ -14,7 +14,10 @@ use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use salsa::Database;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::{GenericParamsData, semantic_generic_params};
+use super::generics::{
+    GenericParamsData, generic_params_data_cycle, generic_params_data_initial,
+    semantic_generic_params,
+};
 use super::visibility::Visibility;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -72,7 +75,7 @@ fn struct_declaration_data<'db>(
 }
 
 /// Query implementation of [StructSemantic::struct_generic_params_data].
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn struct_generic_params_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,

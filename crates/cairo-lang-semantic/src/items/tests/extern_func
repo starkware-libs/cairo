@@ -27,3 +27,40 @@ error[E2116]: An extern function must be marked as nopanic.
  _^
 | extern fn bar() -> bad_type;
 |____________________________^
+
+//! > ==========================================================================
+
+//! > Test no ICE when an item-level macro call names an enum variant whose type comes from a generic extern function with a trait bound.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[allow(extern_outside_corelib)]
+extern fn g<T, +Drop<T>>(x: T) nopanic;
+enum E {
+    A: g::<felt252>::Coupon,
+}
+E::A!(());
+
+//! > expected_diagnostics
+error[E2028]: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:2:16
+extern fn g<T, +Drop<T>>(x: T) nopanic;
+               ^^^^^^^^
+
+error[E2165]: Coupon cannot be used with extern functions.
+ --> lib.cairo:4:22
+    A: g::<felt252>::Coupon,
+                     ^^^^^^
+
+error[E2156]: Inline macro `E::A` not found.
+ --> lib.cairo:6:1
+E::A!(());
+^^^^^^^^^^

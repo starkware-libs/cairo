@@ -1397,3 +1397,41 @@ error[E2031]: Parameter type of impl function `I::foo` is incompatible with `Tr:
  --> lib.cairo:6:15
     fn foo<T, const C: i32>() {}
               ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test no ICE when an item-level macro call names an enum variant whose type comes from a generic trait function with a trait bound.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr {
+    fn g<S, +Drop<S>>(x: S);
+}
+enum E {
+    A: Tr::g::<felt252>::Coupon,
+}
+E::A!(());
+
+//! > expected_diagnostics
+error[E2028]: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:2:13
+    fn g<S, +Drop<S>>(x: S);
+            ^^^^^^^^
+
+error[E2301]: Inference cycle detected
+ --> lib.cairo:5:12
+    A: Tr::g::<felt252>::Coupon,
+           ^
+
+error[E2156]: Inline macro `E::A` not found.
+ --> lib.cairo:7:1
+E::A!(());
+^^^^^^^^^^

@@ -1,0 +1,43 @@
+//! > Test no ICE when an item-level macro call names an enum variant whose type comes from a generic impl with a trait bound.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr<T> {
+    type Ty;
+}
+impl W<T, +Drop<T>> of Tr<T> {
+    type Ty = T;
+}
+enum E {
+    A: Tr::<felt252>::Ty,
+}
+E::A!(());
+
+//! > expected_diagnostics
+error[E2028]: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:4:24
+impl W<T, +Drop<T>> of Tr<T> {
+                       ^^^^^
+
+error[E2028]: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:4:11
+impl W<T, +Drop<T>> of Tr<T> {
+          ^^^^^^^^
+
+error[E2301]: Inference cycle detected
+ --> lib.cairo:8:23
+    A: Tr::<felt252>::Ty,
+                      ^^
+
+error[E2156]: Inline macro `E::A` not found.
+ --> lib.cairo:10:1
+E::A!(());
+^^^^^^^^^^

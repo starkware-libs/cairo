@@ -16,7 +16,10 @@ use super::functions::{
     FunctionDeclarationData, GenericFunctionId, InlineConfiguration,
     forbid_inline_always_with_impl_generic_param,
 };
-use super::generics::{GenericParamsData, semantic_generic_params};
+use super::generics::{
+    GenericParamsData, generic_params_data_cycle, generic_params_data_initial,
+    semantic_generic_params,
+};
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
 use crate::expr::inference::InferenceId;
@@ -32,7 +35,7 @@ use crate::{FunctionLongId, GenericParam, SemanticDiagnostic, semantic};
 mod test;
 
 /// Returns the generic params data of a free function.
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn free_function_generic_params_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
