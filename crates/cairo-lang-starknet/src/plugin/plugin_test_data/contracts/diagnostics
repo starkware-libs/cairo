@@ -9867,18 +9867,18 @@ impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
     #[external(v0)]
     fn foo1(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        MyImpl::foo1(component)
+        let __component__ = HasComponent::get_component(self);
+        MyImpl::foo1(__component__)
     }
     #[l1_handler]
     fn foo2(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        MyImpl::foo2(component)
+        let __component__ = HasComponent::get_component(self);
+        MyImpl::foo2(__component__)
     }
     #[constructor]
     fn foo3(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        MyImpl::foo3(component)
+        let __component__ = HasComponent::get_component(self);
+        MyImpl::foo3(__component__)
     }
 }
 
@@ -11831,13 +11831,13 @@ pub impl Comp3<
 > of super::Comp3Trait<TContractState> {
     
     fn foo3(ref self: TContractState) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        Comp3Impl::foo3(ref component)
+        let mut __component__ = HasComponent::get_component_mut(ref self);
+        Comp3Impl::foo3(ref __component__)
     }
     
     fn foo4(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        Comp3Impl::foo4(component)
+        let __component__ = HasComponent::get_component(self);
+        Comp3Impl::foo4(__component__)
     }
 }
 
@@ -13250,8 +13250,8 @@ pub impl Comp3<
 > of super::Comp3Trait<TContractState> {
     
     fn foo3(ref self: TContractState) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        Comp3Impl::foo3(ref component)
+        let mut __component__ = HasComponent::get_component_mut(ref self);
+        Comp3Impl::foo3(ref __component__)
     }
 }
 
@@ -17450,8 +17450,8 @@ impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
     
     fn func(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        MyImpl::func(component)
+        let __component__ = HasComponent::get_component(self);
+        MyImpl::func(__component__)
     }
 }
 

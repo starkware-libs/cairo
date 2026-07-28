@@ -1587,8 +1587,8 @@ impl TContractStateDrop: Drop<TContractState>
 > of super::Interface1<TContractState> {
     
     fn foo(ref self: TContractState) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        Interface1_Implementation1::foo(ref component)
+        let mut __component__ = HasComponent::get_component_mut(ref self);
+        Interface1_Implementation1::foo(ref __component__)
     }
 }#[starknet::embeddable]
 pub impl I1I2<
@@ -1597,8 +1597,8 @@ impl TContractStateDrop: Drop<TContractState>
 > of super::Interface1<TContractState> {
     
     fn foo(ref self: TContractState) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        Interface1_Implementation2::foo(ref component)
+        let mut __component__ = HasComponent::get_component_mut(ref self);
+        Interface1_Implementation2::foo(ref __component__)
     }
 }#[starknet::embeddable]
 pub impl I2I<
@@ -1607,8 +1607,8 @@ impl TContractStateDrop: Drop<TContractState>
 > of super::Interface2<TContractState> {
     
     fn foo(ref self: TContractState) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        Interface2_Implementation::foo(ref component)
+        let mut __component__ = HasComponent::get_component_mut(ref self);
+        Interface2_Implementation::foo(ref __component__)
     }
 }
 
