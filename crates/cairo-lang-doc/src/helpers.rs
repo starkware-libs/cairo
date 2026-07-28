@@ -3,13 +3,17 @@ use std::fmt;
 use cairo_lang_defs::ids::TraitItemId::Function;
 use cairo_lang_defs::ids::{
     GenericImplItemId, GenericItemId, GenericKind, GenericModuleItemId, GenericParamId,
-    GenericTraitItemId, ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId,
+    GenericTraitItemId, ImplItemId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    TraitItemId,
 };
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::items::generics::GenericParamSemantic;
+use cairo_lang_semantic::items::generics::{GenericArgumentId, GenericParamSemantic};
+use cairo_lang_semantic::items::imp::ImplLongId;
+use cairo_lang_semantic::items::trt::ConcreteTraitId;
 use cairo_lang_semantic::items::us::UseSemantic;
 use cairo_lang_semantic::items::visibility::Visibility;
+use cairo_lang_semantic::types::ImplTypeId;
 use cairo_lang_semantic::{ConcreteTypeId, GenericParam, TypeId, TypeLongId};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -43,7 +47,7 @@ pub fn get_generic_params<'db>(
                     buff.push_str(&extract_and_format(param_const.id.format(db).long(db)));
                 }
                 GenericParam::Impl(param_impl) => {
-                    let name = extract_and_format(param_impl.id.format(db).long(db));
+                    let name = format_impl_param_name(param_impl.id.format(db).long(db));
                     match param_impl.concrete_trait {
                         Ok(concrete_trait) => {
                             let documentable_id =
@@ -65,7 +69,7 @@ pub fn get_generic_params<'db>(
                                 let concrete_trait_generic_args = concrete_trait
                                     .generic_args(db)
                                     .iter()
-                                    .map(|arg| extract_and_format(&arg.format(db)))
+                                    .map(|arg| format_generic_arg(db, *arg))
                                     .join(", ");
 
                                 location_links.push(LocationLink::new(
@@ -136,7 +140,7 @@ pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
 
 /// Formats the full paths of complex types. For example, input "Result<Error::NotFound,
 /// System::Error>" results in output "Result<NotFound, Error>".
-pub(crate) fn extract_and_format(input: &str) -> String {
+fn extract_and_format(input: &str) -> String {
     let delimiters = [',', '<', '>', '(', ')', '[', ']', '@'];
     let mut output = String::new();
     let mut slice_start = 0;
@@ -160,6 +164,123 @@ pub(crate) fn extract_and_format(input: &str) -> String {
         output.push_str(&format_final_part(slice));
     }
     output
+}
+
+/// Formats an impl generic param's name for signature documentation.
+///
+/// An anonymous impl param is spelled `+Trait<..>`, with the trait as a full path. The `+` is
+/// stripped before shortening, as it would otherwise be taken for part of the leading path segment
+/// and dropped along with it.
+fn format_impl_param_name(name: &str) -> String {
+    match name.strip_prefix("+") {
+        Some(trait_path) => format!("+{}", extract_and_format(trait_path)),
+        None => extract_and_format(name),
+    }
+}
+
+/// Formats a [`TypeId`] for signature documentation.
+///
+/// Full paths are shortened to the item's name (for example `core::felt252` results in `felt252`),
+/// except for associated types, which keep the impl qualifier they are accessed through (for
+/// example `Self::Item`), as an associated type name on its own does not identify a type.
+pub(crate) fn format_type<'db>(db: &'db dyn Database, type_id: TypeId<'db>) -> String {
+    match type_id.long(db) {
+        TypeLongId::ImplType(impl_type_id) => format_impl_type(db, impl_type_id),
+        TypeLongId::Snapshot(inner_type_id) => format!("@{}", format_type(db, *inner_type_id)),
+        TypeLongId::Tuple(inner_type_ids) => {
+            let inner = inner_type_ids.iter().map(|ty| format_type(db, *ty)).join(", ");
+            // A single element tuple requires a trailing comma, to tell it apart from a
+            // parenthesized type.
+            if inner_type_ids.len() == 1 { format!("({inner},)") } else { format!("({inner})") }
+        }
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            // The size is a const expression, so it may be a path - a const generic param, or a
+            // named constant such as `core::num::MAX`.
+            format!("[{}; {}]", format_type(db, *type_id), extract_and_format(&size.format(db)))
+        }
+        TypeLongId::Concrete(concrete_type_id) => {
+            let name = concrete_type_id.generic_type(db).name(db).long(db);
+            let generic_args = concrete_type_id.generic_args(db);
+            if generic_args.is_empty() {
+                name.to_string()
+            } else {
+                let generic_args =
+                    generic_args.iter().map(|arg| format_generic_arg(db, *arg)).join(", ");
+                format!("{name}<{generic_args}>")
+            }
+        }
+        // None of these can contain a nested type, so shortening the flattened text is enough.
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
+        | TypeLongId::Coupon(_)
+        | TypeLongId::Closure(_)
+        | TypeLongId::Missing(_) => extract_and_format(&type_id.format(db)),
+    }
+}
+
+/// Formats a [`GenericArgumentId`] for signature documentation.
+pub(crate) fn format_generic_arg<'db>(
+    db: &'db dyn Database,
+    generic_arg: GenericArgumentId<'db>,
+) -> String {
+    match generic_arg {
+        GenericArgumentId::Type(type_id) => format_type(db, type_id),
+        _ => extract_and_format(&generic_arg.format(db)),
+    }
+}
+
+/// Formats a [`ConcreteTraitId`] for signature documentation, as its name followed by its generic
+/// arguments - for example `AssocTrait<T>`.
+///
+/// [`get_generic_params`] deliberately does not use this: it records a location link spanning the
+/// trait name alone, so it needs the name and the arguments separately.
+fn format_concrete_trait<'db>(
+    db: &'db dyn Database,
+    concrete_trait: ConcreteTraitId<'db>,
+) -> String {
+    let name = concrete_trait.name(db).long(db);
+    let generic_args = concrete_trait.generic_args(db);
+    if generic_args.is_empty() {
+        return name.to_string();
+    }
+    let generic_args = generic_args.iter().map(|arg| format_generic_arg(db, *arg)).format(", ");
+    format!("{name}<{generic_args}>")
+}
+
+/// Formats an associated type, qualified by the impl it is accessed through. For example, input
+/// `core::iter::traits::iterator::Iterator::<T>::Item` results in output `Self::Item`.
+///
+/// Only the qualifier is shortened - shortening the whole `<impl>::<assoc>` string would take the
+/// `::` for a path separator and drop the qualifier, which is the very bug this avoids.
+fn format_impl_type<'db>(db: &'db dyn Database, impl_type_id: &ImplTypeId<'db>) -> String {
+    let impl_id = impl_type_id.impl_id();
+    let qualifier = match impl_id.long(db) {
+        // The associated type is accessed through the trait's own impl, which is spelled `Self`.
+        ImplLongId::SelfImpl(_) => "Self".to_string(),
+        // An anonymous impl param (`+Trait<..>`) has no name to qualify with - [`ImplLongId::name`]
+        // yields `_`. Its associated types are still reachable through the trait, as in
+        // `AssocTrait::<T>::Item`, so the trait is used as the qualifier instead.
+        ImplLongId::GenericParameter(param) if param.name(db).is_none() => {
+            match db.generic_param_semantic(*param) {
+                Ok(GenericParam::Impl(param_impl)) => param_impl
+                    .concrete_trait
+                    .map(|concrete_trait| format_concrete_trait(db, concrete_trait))
+                    .unwrap_or_else(|_| "_".to_string()),
+                _ => "_".to_string(),
+            }
+        }
+        // For these, [`ImplLongId::name`] is already the bare item name.
+        ImplLongId::Concrete(_) | ImplLongId::GenericParameter(_) => impl_id.long(db).name(db),
+        // These spell the impl with a full path or with a debug representation, neither of which
+        // belongs in a signature. They are not reachable from declared source - they only arise
+        // from inference or from generated impls - so the full path is merely shortened rather
+        // than given a spelling of its own.
+        ImplLongId::ImplVar(_) | ImplLongId::ImplImpl(_) | ImplLongId::GeneratedImpl(_) => {
+            extract_and_format(&impl_id.long(db).name(db))
+        }
+    };
+    format!("{qualifier}::{}", impl_type_id.ty().name(db).long(db))
 }
 
 /// Formats a single type path. For example, input "core::felt252" results in output "felt252".
@@ -192,29 +313,17 @@ pub fn format_resolver_generic_params<'db>(
                     if matches!(param.kind(db), GenericKind::Impl) {
                         let param_formatted = param.format(db);
                         if param_formatted.long(db).starts_with("+") {
-                            param_formatted.long(db).to_string()
+                            format_impl_param_name(param_formatted.long(db))
                         } else {
                             match db.generic_param_semantic(*param) {
                                 Ok(generic_param) => match generic_param {
                                     GenericParam::Impl(generic_param_impl) => {
                                         match generic_param_impl.concrete_trait {
                                             Ok(concrete_trait) => {
-                                                let generic_args = concrete_trait.generic_args(db);
                                                 format!(
-                                                    "impl {}: {}{}",
+                                                    "impl {}: {}",
                                                     param_formatted.long(db),
-                                                    concrete_trait.name(db).long(db),
-                                                    if generic_args.is_empty() {
-                                                        "".to_string()
-                                                    } else {
-                                                        format!(
-                                                            "<{}>",
-                                                            generic_args
-                                                                .iter()
-                                                                .map(|arg| arg.format(db))
-                                                                .join(", "),
-                                                        )
-                                                    }
+                                                    format_concrete_trait(db, concrete_trait),
                                                 )
                                             }
                                             Err(_) => param_formatted.long(db).to_string(),
