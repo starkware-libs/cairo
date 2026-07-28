@@ -145,7 +145,7 @@ pub enum MatchArmSelector<'db> {
 }
 
 /// Returns the definition data of an enum.
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=enum_definition_data_cycle, cycle_initial=enum_definition_data_initial)]
 fn enum_definition_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
@@ -213,6 +213,26 @@ fn enum_definition_data<'db>(
         variant_semantic,
         resolver_data,
     })
+}
+
+/// Cycle handling for [enum_definition_data].
+fn enum_definition_data_cycle<'db>(
+    _db: &'db dyn Database,
+    _cycle: &salsa::Cycle<'_>,
+    _last_provisional_value: &Maybe<EnumDefinitionData<'db>>,
+    value: Maybe<EnumDefinitionData<'db>>,
+    _enum_id: EnumId<'db>,
+) -> Maybe<EnumDefinitionData<'db>> {
+    value
+}
+
+/// Cycle handling for [enum_definition_data].
+fn enum_definition_data_initial<'db>(
+    _db: &'db dyn Database,
+    _id: salsa::Id,
+    _enum_id: EnumId<'db>,
+) -> Maybe<EnumDefinitionData<'db>> {
+    Err(skip_diagnostic())
 }
 
 /// Query implementation of [EnumSemantic::enum_definition_diagnostics].
