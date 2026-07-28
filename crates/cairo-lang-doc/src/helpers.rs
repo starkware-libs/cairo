@@ -3,13 +3,16 @@ use std::fmt;
 use cairo_lang_defs::ids::TraitItemId::Function;
 use cairo_lang_defs::ids::{
     GenericImplItemId, GenericItemId, GenericKind, GenericModuleItemId, GenericParamId,
-    GenericTraitItemId, ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId,
+    GenericTraitItemId, ImplItemId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    TraitItemId,
 };
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::items::generics::GenericParamSemantic;
+use cairo_lang_semantic::items::generics::{GenericArgumentId, GenericParamSemantic};
+use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::items::us::UseSemantic;
 use cairo_lang_semantic::items::visibility::Visibility;
+use cairo_lang_semantic::types::ImplTypeId;
 use cairo_lang_semantic::{ConcreteTypeId, GenericParam, TypeId, TypeLongId};
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -136,7 +139,7 @@ pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
 
 /// Formats the full paths of complex types. For example, input "Result<Error::NotFound,
 /// System::Error>" results in output "Result<NotFound, Error>".
-pub(crate) fn extract_and_format(input: &str) -> String {
+fn extract_and_format(input: &str) -> String {
     let delimiters = [',', '<', '>', '(', ')', '[', ']', '@'];
     let mut output = String::new();
     let mut slice_start = 0;
@@ -160,6 +163,62 @@ pub(crate) fn extract_and_format(input: &str) -> String {
         output.push_str(&format_final_part(slice));
     }
     output
+}
+
+/// Formats a [`TypeId`] for signature documentation.
+///
+/// Full paths are shortened to the item's name (for example `core::felt252` results in `felt252`),
+/// except for associated types, which keep the impl qualifier they are accessed through (for
+/// example `Self::Item`), as an associated type name on its own does not identify a type.
+pub(crate) fn format_type<'db>(db: &'db dyn Database, type_id: TypeId<'db>) -> String {
+    match type_id.long(db) {
+        TypeLongId::ImplType(impl_type_id) => format_impl_type(db, impl_type_id),
+        TypeLongId::Snapshot(inner_type_id) => format!("@{}", format_type(db, *inner_type_id)),
+        TypeLongId::Tuple(inner_type_ids) => {
+            let inner = inner_type_ids.iter().map(|ty| format_type(db, *ty)).join(", ");
+            // A single element tuple requires a trailing comma, to tell it apart from a
+            // parenthesized type.
+            if inner_type_ids.len() == 1 { format!("({inner},)") } else { format!("({inner})") }
+        }
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            format!("[{}; {}]", format_type(db, *type_id), extract_and_format(&size.format(db)))
+        }
+        TypeLongId::Concrete(concrete_type_id) => {
+            let name = concrete_type_id.generic_type(db).name(db).long(db);
+            let generic_args = concrete_type_id.generic_args(db);
+            if generic_args.is_empty() {
+                name.to_string()
+            } else {
+                let generic_args =
+                    generic_args.iter().map(|arg| format_generic_arg(db, *arg)).join(", ");
+                format!("{name}<{generic_args}>")
+            }
+        }
+        _ => extract_and_format(&type_id.format(db)),
+    }
+}
+
+/// Formats a [`GenericArgumentId`] for signature documentation.
+pub fn format_generic_arg<'db>(
+    db: &'db dyn Database,
+    generic_arg: GenericArgumentId<'db>,
+) -> String {
+    match generic_arg {
+        GenericArgumentId::Type(type_id) => format_type(db, type_id),
+        _ => extract_and_format(&generic_arg.format(db)),
+    }
+}
+
+/// Formats an associated type, qualified by the impl it is accessed through. For example, input
+/// `core::iter::traits::iterator::Iterator::<T>::Item` results in output `Self::Item`.
+fn format_impl_type<'db>(db: &'db dyn Database, impl_type_id: &ImplTypeId<'db>) -> String {
+    match impl_type_id.impl_id().long(db) {
+        // The associated type is accessed through the trait's own impl, which is spelled `Self`.
+        ImplLongId::SelfImpl(_) => format!("Self::{}", impl_type_id.ty().name(db).long(db)),
+        // [`ImplTypeId::format`] qualifies the associated type with the impl's name rather than
+        // with its full path, which is the brevity level used throughout signatures.
+        _ => impl_type_id.format(db),
+    }
 }
 
 /// Formats a single type path. For example, input "core::felt252" results in output "felt252".

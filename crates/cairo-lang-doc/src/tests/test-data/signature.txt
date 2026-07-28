@@ -114,6 +114,36 @@ struct StructLeadingImplParam<+CTrait, T> {
     value: T,
 }
 
+trait AssocTrait<T> {
+    const ASSOC_CONST: Self::Item;
+    type Item;
+    type Other;
+
+    fn returns_assoc(self: T) -> Self::Item;
+    fn assoc_in_param_and_return(self: T, other: Self::Other) -> Self::Other;
+    fn assoc_nested_in_generic(self: T) -> Option<Self::Item>;
+    fn assoc_in_tuple(self: T) -> (Self::Item, Self::Other);
+    fn assoc_in_snapshot(self: T) -> @Self::Item;
+}
+
+trait PairTrait {
+    type Pair;
+
+    fn make_pair(self: felt252) -> Self::Pair;
+}
+
+impl FeltPair of PairTrait {
+    type Pair = (felt252, felt252);
+
+    fn make_pair(self: felt252) -> Self::Pair {}
+}
+
+fn assoc_of_impl_params<T, impl S: AssocTrait<T>, impl U: AssocTrait<T>>(
+    first: S::Item, second: U::Item,
+) -> (S::Item, U::Item) {}
+
+fn snapshot_param(a: @Circle) -> @Circle {}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -414,3 +444,124 @@ value: T
 //! > Item documentation #38
 
 //! > Item documentation tokens #38
+
+//! > Item signature #39
+trait AssocTrait<T>
+
+//! > Item documentation #39
+
+//! > Item documentation tokens #39
+
+//! > Item signature #40
+const ASSOC_CONST: Self::Item;
+
+//! > Item documentation #40
+
+//! > Item documentation tokens #40
+
+//! > Item signature #41
+type Item;
+
+//! > Item documentation #41
+
+//! > Item documentation tokens #41
+
+//! > Item signature #42
+type Other;
+
+//! > Item documentation #42
+
+//! > Item documentation tokens #42
+
+//! > Item signature #43
+fn returns_assoc(self: T) -> Self::Item
+
+//! > Item documentation #43
+
+//! > Item documentation tokens #43
+
+//! > Item signature #44
+fn assoc_in_param_and_return(self: T, other: Self::Other) -> Self::Other
+
+//! > Item documentation #44
+
+//! > Item documentation tokens #44
+
+//! > Item signature #45
+fn assoc_nested_in_generic(self: T) -> Option<Self::Item>
+
+//! > Item documentation #45
+
+//! > Item documentation tokens #45
+
+//! > Item signature #46
+fn assoc_in_tuple(self: T) -> (Self::Item, Self::Other)
+
+//! > Item documentation #46
+
+//! > Item documentation tokens #46
+
+//! > Item signature #47
+fn assoc_in_snapshot(self: T) -> @Self::Item
+
+//! > Item documentation #47
+
+//! > Item documentation tokens #47
+
+//! > Item signature #48
+trait PairTrait
+
+//! > Item documentation #48
+
+//! > Item documentation tokens #48
+
+//! > Item signature #49
+type Pair;
+
+//! > Item documentation #49
+
+//! > Item documentation tokens #49
+
+//! > Item signature #50
+fn make_pair(self: felt252) -> Self::Pair
+
+//! > Item documentation #50
+
+//! > Item documentation tokens #50
+
+//! > Item signature #51
+impl FeltPair of PairTrait;
+
+//! > Item documentation #51
+
+//! > Item documentation tokens #51
+
+//! > Item signature #52
+type Pair = (felt252, felt252);
+
+//! > Item documentation #52
+
+//! > Item documentation tokens #52
+
+//! > Item signature #53
+fn make_pair(self: felt252) -> (felt252, felt252)
+
+//! > Item documentation #53
+
+//! > Item documentation tokens #53
+
+//! > Item signature #54
+fn assoc_of_impl_params<T, impl S: AssocTrait<T>, impl U: AssocTrait<T>>(
+    first: S::Item, second: U::Item,
+) -> (S::Item, U::Item)
+
+//! > Item documentation #54
+
+//! > Item documentation tokens #54
+
+//! > Item signature #55
+fn snapshot_param(a: @Circle) -> @Circle
+
+//! > Item documentation #55
+
+//! > Item documentation tokens #55
