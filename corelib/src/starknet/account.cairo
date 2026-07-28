@@ -31,6 +31,17 @@ pub struct Call {
 /// This is the network standard following SNIP6.
 /// It is not enforced by Starknet, but deviating from the standard interface may lead to
 /// incompatibility with standard tooling.
+#[deprecated(
+    feature: "deprecated-starknet-account-trait",
+    note: "This trait is deprecated in favor of the standardized Starknet Account Abstraction (AA)
+           interface, formalized in SNIP-6. Users should migrate to defining a contract interface
+           trait (e.g., #[starknet::interface] trait IAccount) that includes the mandatory SNIP-6
+           entry points: `__validate__`, `__execute__`, `__validate_declare__`, and
+           `__validate_deploy__`. The community-standard trait implementing this interface is
+           typically named `ISRC6`. For canonical examples, consult the OpenZeppelin Contracts for
+           Cairo repository.",
+    since: "2.15.0",
+)]
 #[starknet::interface]
 pub trait AccountContract<TContractState> {
     /// An entry point that is called to check if the account is willing to pay for the declaration
