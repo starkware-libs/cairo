@@ -2,21 +2,24 @@
 #[path = "block_generator_test.rs"]
 mod test;
 
+use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::LocationId;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
 use lowering::analysis::StatementLocation;
 use lowering::{MatchArm, VarUsage};
+use num_bigint::BigInt;
 use sierra::extensions::lib_func::SierraApChange;
 use sierra::program;
 
 use crate::block_generator::sierra::ids::ConcreteLibfuncId;
-use crate::db::SierraGenGroup;
+use crate::db::{EXTERNALLY_PROVIDED_CONST, SierraGenGroup};
 use crate::expr_generator_context::{ExprGenerationResult, ExprGeneratorContext};
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
 use crate::local_variables::MIN_SIZE_FOR_LOCAL_INTO_BOX;
@@ -26,10 +29,10 @@ use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, disable_ap_tracking_libfunc_id,
     drop_libfunc_id, dup_libfunc_id, enable_ap_tracking_libfunc_id,
     enum_from_bounded_int_libfunc_id, enum_init_libfunc_id, get_concrete_libfunc_id,
-    get_libfunc_signature, into_box_libfunc_id, jump_libfunc_id, jump_statement,
-    local_into_box_libfunc_id, match_enum_libfunc_id, rename_libfunc_id, return_statement,
-    simple_basic_statement, snapshot_take_libfunc_id, struct_construct_libfunc_id,
-    struct_deconstruct_libfunc_id, unbox_libfunc_id,
+    get_libfunc_signature, into_box_libfunc_id, is_externally_provided_const, jump_libfunc_id,
+    jump_statement, local_into_box_libfunc_id, match_enum_libfunc_id, rename_libfunc_id,
+    return_statement, simple_basic_statement, snapshot_take_libfunc_id,
+    struct_construct_libfunc_id, struct_deconstruct_libfunc_id, unbox_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::Block].
@@ -331,15 +334,22 @@ fn generate_statement_call_code<'db>(
     statement: &lowering::StatementCall<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
+    let db = context.get_db();
+
+    // Handle the reserved `__externally_provided_const__` extern function: replace the call with a
+    // `const_as_immediate` of the value supplied by the installed `ExternalConstPlugin`s.
+    if is_externally_provided_const(db, statement.function) {
+        return generate_externally_provided_const_code(context, statement);
+    }
+
     // Check if this is a user defined function or a libfunc.
-    let (body, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), statement.function, statement.with_coupon);
+    let (body, libfunc_id) = get_concrete_libfunc_id(db, statement.function, statement.with_coupon);
     // Checks if the call invalidates ap tracking.
-    let libfunc_signature = get_libfunc_signature(context.get_db(), &libfunc_id);
+    let libfunc_signature = get_libfunc_signature(db, &libfunc_id);
     let [branch_signature] = &libfunc_signature.branch_signatures[..] else {
         panic!(
             "Unexpected branches in '{}'.",
-            DebugReplacer { db: context.get_db() }.replace_libfunc_id(&libfunc_id)
+            DebugReplacer { db }.replace_libfunc_id(&libfunc_id)
         );
     };
     if matches!(branch_signature.ap_change, SierraApChange::Unknown) {
@@ -390,6 +400,57 @@ fn generate_statement_call_code<'db>(
         );
         context.push_statement(stmt);
     }
+    Ok(())
+}
+
+/// Generates Sierra code for a call to the reserved `__externally_provided_const__` extern
+/// function, replacing it with a `const_as_immediate`.
+///
+/// The installed [`crate::db::ExternalConstPlugin`]s are queried in order for the value, keyed by
+/// the full path of the extern function, so distinct declarations resolve independently. The value
+/// is validated against the declared return type; a plugin returning an error fails Sierra
+/// generation. When no plugin supplies a value (e.g. generic compilation, profiling or size
+/// estimation, which don't use the value), it defaults to a zero constant of the declared type -
+/// build flows that need the real value install a plugin.
+fn generate_externally_provided_const_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementCall<'db>,
+) -> Maybe<()> {
+    let db = context.get_db();
+    let [output] = statement.outputs[..] else {
+        panic!("`{EXTERNALLY_PROVIDED_CONST}` must have exactly one output.");
+    };
+    // The declared return type, which the provided value must match.
+    let return_type = context.get_lowered_variable(output).ty;
+    let (extern_id, _) = statement.function.get_extern(db).unwrap();
+    let full_path = extern_id.full_path(db);
+
+    let value = match db
+        .external_const_plugins()
+        .iter()
+        .find_map(|plugin| plugin.provide(db, &full_path, return_type))
+    {
+        Some(value) => {
+            let value = value?;
+            // The plugins return a value of an arbitrary type; ensure it matches the declared one,
+            // as a mismatch would produce a type-incorrect Sierra program.
+            if value.ty(db)? != return_type {
+                panic!(
+                    "`{EXTERNALLY_PROVIDED_CONST}` plugin returned a value whose type does not \
+                     match the declared return type."
+                );
+            }
+            value
+        }
+        None => ConstValueId::from_int(db, return_type, &BigInt::ZERO),
+    };
+
+    let output_var = context.get_sierra_variable(output);
+    context.push_statement(simple_basic_statement(
+        const_libfunc_id_by_type(db, value, false),
+        &[],
+        &[output_var],
+    ));
     Ok(())
 }
 

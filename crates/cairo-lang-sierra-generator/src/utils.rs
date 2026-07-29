@@ -24,7 +24,7 @@ use semantic::items::constant::ConstValue;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
 
-use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
+use crate::db::{EXTERNALLY_PROVIDED_CONST, SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -408,6 +408,17 @@ pub fn generic_libfunc_id(
         generic_id: GenericLibfuncId::from_string(extern_id.name(db).long(db).clone()),
         generic_args,
     })
+}
+
+/// Returns whether the given function is the reserved `__externally_provided_const__` extern
+/// function, whose calls are replaced by an externally provided constant.
+pub fn is_externally_provided_const<'db>(
+    db: &'db dyn Database,
+    function: lowering::ids::FunctionId<'db>,
+) -> bool {
+    function
+        .get_extern(db)
+        .is_some_and(|(extern_id, _)| extern_id.name(db).long(db) == EXTERNALLY_PROVIDED_CONST)
 }
 
 /// Returns the [ConcreteLibfuncId] used for calling a function (either user-defined or libfunc).
