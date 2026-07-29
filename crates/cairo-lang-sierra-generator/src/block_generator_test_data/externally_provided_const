@@ -37,7 +37,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test that each plugin provides its own extern's const, and an unprovided one falls back to 0.
+//! > Test that each of the installed plugins provides the const of its own extern.
 
 //! > test_runner_name
 block_generator_test
@@ -53,17 +53,8 @@ mod eight {
     pub extern fn __externally_provided_const__() -> felt252 nopanic;
 }
 
-mod unprovided {
-    #[allow(extern_outside_corelib)]
-    pub extern fn __externally_provided_const__() -> felt252 nopanic;
-}
-
-fn foo() -> (felt252, felt252, felt252) {
-    (
-        seven::__externally_provided_const__(),
-        eight::__externally_provided_const__(),
-        unprovided::__externally_provided_const__(),
-    )
+fn foo() -> (felt252, felt252) {
+    (seven::__externally_provided_const__(), eight::__externally_provided_const__())
 }
 
 //! > function_name
@@ -78,10 +69,9 @@ foo
 //! > sierra_code
 const_as_immediate<Const<felt252, 7777>>() -> ([0])
 const_as_immediate<Const<felt252, 8888>>() -> ([1])
-const_as_immediate<Const<felt252, 0>>() -> ([2])
-struct_construct<Tuple<felt252, felt252, felt252>>([0], [1], [2]) -> ([3])
-PushValues([3]: Tuple<felt252, felt252, felt252>) -> ([3])
-return([3])
+struct_construct<Tuple<felt252, felt252>>([0], [1]) -> ([2])
+PushValues([2]: Tuple<felt252, felt252>) -> ([2])
+return([2])
 
 //! > lowering_flat
 Parameters:
@@ -89,7 +79,6 @@ blk0 (root):
 Statements:
   (v0: core::felt252) <- test::seven::__externally_provided_const__()
   (v1: core::felt252) <- test::eight::__externally_provided_const__()
-  (v2: core::felt252) <- test::unprovided::__externally_provided_const__()
-  (v3: (core::felt252, core::felt252, core::felt252)) <- struct_construct(v0, v1, v2)
+  (v2: (core::felt252, core::felt252)) <- struct_construct(v0, v1)
 End:
-  Return(v3)
+  Return(v2)

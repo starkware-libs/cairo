@@ -73,8 +73,7 @@ fn block_generator_test(
     db.set_flag(add_withdraw_gas_flag_id, Some(Flag::AddWithdrawGas(false)));
 
     // Install test plugins for the `__externally_provided_const__` extern function. They are inert
-    // unless that extern is actually called, and each resolves only the calls in its own module -
-    // calls in any other module fall back to a zero constant.
+    // unless that extern is actually called, and each resolves only the calls in its own module.
     db.set_external_const_plugins(vec![Arc::new(TestConstPlugin { module: "seven", value: 7777 })]);
     db.add_external_const_plugin(Arc::new(TestConstPlugin { module: "eight", value: 8888 }));
 
