@@ -43,8 +43,8 @@ fn test_trait() {
     let signature = db.trait_function_signature(*trait_function_id).unwrap();
     assert_eq!(
         format!("{:?}", signature.debug(db)),
-        "Signature { params: [Parameter { id: ParamId(test::a), name: \"a\", ty: core::felt252, \
-         mutability: Immutable }], return_type: (), implicits: [], panicable: true, is_const: \
-         false }"
+        "Signature { params: [Parameter { id: ParamId(test::MyContract::foo::a), name: \"a\", ty: \
+         core::felt252, mutability: Immutable }], return_type: (), implicits: [], panicable: \
+         true, is_const: false }"
     );
 }
