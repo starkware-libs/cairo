@@ -8,6 +8,7 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::LocationId;
+use cairo_lang_semantic::corelib::validate_literal;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -410,8 +411,9 @@ fn generate_statement_call_code<'db>(
 /// the full path of the extern function, so distinct declarations resolve independently. The value
 /// is validated against the declared return type; a plugin returning an error fails Sierra
 /// generation. When no plugin supplies a value (e.g. generic compilation, profiling or size
-/// estimation, which don't use the value), it defaults to a zero constant of the declared type -
-/// build flows that need the real value install a plugin.
+/// estimation, which don't use the value), it defaults to a zero constant of the declared type,
+/// which therefore must be a type accepting a numeric literal - build flows that need the real
+/// value install a plugin.
 fn generate_externally_provided_const_code<'db>(
     context: &mut ExprGeneratorContext<'db, '_>,
     statement: &lowering::StatementCall<'db>,
@@ -442,7 +444,18 @@ fn generate_externally_provided_const_code<'db>(
             }
             value
         }
-        None => ConstValueId::from_int(db, return_type, &BigInt::ZERO),
+        None => {
+            // Only a type accepting a numeric literal has a zero constant - for any other declared
+            // type the value must come from a plugin.
+            if let Err(err) = validate_literal(db, return_type, &BigInt::ZERO) {
+                panic!(
+                    "No `{EXTERNALLY_PROVIDED_CONST}` plugin provided a value for `{full_path}`: \
+                     {}",
+                    err.format(db)
+                );
+            }
+            ConstValueId::from_int(db, return_type, &BigInt::ZERO)
+        }
     };
 
     let output_var = context.get_sierra_variable(output);
