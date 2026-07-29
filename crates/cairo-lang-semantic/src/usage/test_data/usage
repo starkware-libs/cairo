@@ -34,8 +34,8 @@ struct B {
 
 //! > usage
 Loop 8:4:
-  Usage: LocalVarId(test::c), ParamId(test::b), ParamId(test::a)::b,
-  Changes: ParamId(test::a)::b::c, ParamId(test::b),
+  Usage: LocalVarId(test::c), ParamId(test::foo::b), ParamId(test::foo::a)::b,
+  Changes: ParamId(test::foo::a)::b::c, ParamId(test::foo::b),
   Snapshot_Usage:
 
 //! > ==========================================================================
@@ -69,8 +69,8 @@ struct B {
 
 //! > usage
 While 9:4:
-  Usage: LocalVarId(test::c), ParamId(test::a)::b::c,
-  Changes: ParamId(test::a)::b::c,
+  Usage: LocalVarId(test::c), ParamId(test::foo::a)::b::c,
+  Changes: ParamId(test::foo::a)::b::c,
   Snapshot_Usage: LocalVarId(test::only_used_in_condition),
 
 //! > ==========================================================================
@@ -111,9 +111,9 @@ fn borrow_B(b: @B) {}
 
 //! > usage
 While 11:4:
-  Usage: LocalVarId(test::c), ParamId(test::b),
+  Usage: LocalVarId(test::c), ParamId(test::foo::b),
   Changes:
-  Snapshot_Usage: LocalVarId(test::only_used_in_condition), ParamId(test::a)::b,
+  Snapshot_Usage: LocalVarId(test::only_used_in_condition), ParamId(test::foo::a)::b,
 
 //! > ==========================================================================
 
@@ -136,11 +136,11 @@ foo
 
 //! > usage
 Closure 2:8:
-  Usage: ParamId(test::a), ParamId(test::b),
+  Usage: ParamId(test::foo::a), ParamId(test::foo::{closure@17}::b),
   Changes:
   Snapshot_Usage:
 Closure 1:4:
-  Usage: ParamId(test::a),
+  Usage: ParamId(test::foo::a),
   Changes:
   Snapshot_Usage:
 
@@ -166,7 +166,7 @@ foo
 
 //! > usage
 For 2:4:
-  Usage: LocalVarId(test::in), ParamId(test::a),
+  Usage: LocalVarId(test::in), ParamId(test::foo::a),
   Changes: LocalVarId(test::in),
   Snapshot_Usage:
 

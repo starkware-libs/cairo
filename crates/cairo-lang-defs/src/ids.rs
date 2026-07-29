@@ -35,7 +35,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use salsa::Database;
 
 use crate::db::ModuleData;
@@ -1038,8 +1038,30 @@ define_language_element_id_as_enum! {
     }
 }
 
-// TODO(spapini): Override full_path to include parents, for better debug.
-define_top_level_language_element_id!(ParamId, ParamLongId, ast::Param<'db>);
+define_named_language_element_id!(ParamId, ParamLongId, ast::Param<'db>);
+impl<'db> TopLevelLanguageElementId<'db> for ParamId<'db> {
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let long = self.long(db);
+        let mut closure_segment = None;
+        let node = long.1.lookup(db).as_syntax_node();
+        if let Some(closure) = node.ancestor_of_type::<ast::ExprClosure<'_>>(db) {
+            closure_segment = Some(SmolStrId::from(
+                db,
+                format!("{{closure@{}}}", closure.as_syntax_node().offset(db).as_u32()),
+            ));
+        }
+        let mut segments = if let Some(decl) =
+            node.ancestor_of_type::<ast::FunctionDeclaration<'_>>(db).or_else(|| {
+                Some(node.ancestor_of_type::<ast::FunctionWithBody<'_>>(db)?.declaration(db))
+            }) {
+            GenericItemId::from_ptr(db, long.0, decl.stable_ptr(db).untyped()).path_segments(db)
+        } else {
+            self.parent_module(db).path_segments(db)
+        };
+        segments.extend(chain!(closure_segment, [self.name(db)]));
+        segments
+    }
+}
 define_language_element_id_basic!(GenericParamId, GenericParamLongId, ast::GenericParam<'db>);
 impl<'db> GenericParamLongId<'db> {
     pub fn name(&self, db: &'db dyn Database) -> Option<SmolStrId<'db>> {
