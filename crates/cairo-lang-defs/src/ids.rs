@@ -1038,8 +1038,21 @@ define_language_element_id_as_enum! {
     }
 }
 
-// TODO(spapini): Override full_path to include parents, for better debug.
-define_top_level_language_element_id!(ParamId, ParamLongId, ast::Param<'db>);
+define_named_language_element_id!(ParamId, ParamLongId, ast::Param<'db>);
+impl<'db> TopLevelLanguageElementId<'db> for ParamId<'db> {
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let long = self.long(db);
+        let mut segments = if let Some(decl) =
+            long.1.lookup(db).as_syntax_node().ancestor_of_type::<ast::FunctionDeclaration<'_>>(db)
+        {
+            GenericItemId::from_ptr(db, long.0, decl.stable_ptr(db).untyped()).path_segments(db)
+        } else {
+            self.parent_module(db).path_segments(db)
+        };
+        segments.push(self.name(db));
+        segments
+    }
+}
 define_language_element_id_basic!(GenericParamId, GenericParamLongId, ast::GenericParam<'db>);
 impl<'db> GenericParamLongId<'db> {
     pub fn name(&self, db: &'db dyn Database) -> Option<SmolStrId<'db>> {
