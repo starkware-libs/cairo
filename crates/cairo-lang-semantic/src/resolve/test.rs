@@ -48,9 +48,9 @@ fn test_resolve_path() {
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
          FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt252, Q)>, args: \
-         [Value(Var(ParamId(test::value)))], coupon_arg: None, ty: test::S::<()> }) }), \
-         Let(StatementLet { pattern: Variable(_c), expr: Var(ParamId(test::b)), else_clause: None \
-         })], tail: None, ty: () }))"
+         [Value(Var(ParamId(test::foo::value)))], coupon_arg: None, ty: test::S::<()> }) }), \
+         Let(StatementLet { pattern: Variable(_c), expr: Var(ParamId(test::foo::b)), else_clause: \
+         None })], tail: None, ty: () }))"
     );
 }
 
