@@ -7,12 +7,13 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use salsa::plumbing::FromId;
-use salsa::{Database, Id};
+use salsa::{Database, Id, Setter};
 
 use crate::program_generator::{self, SierraProgramWithDebug};
 use crate::replace_ids::SierraIdReplacer;
@@ -31,6 +32,45 @@ pub enum SierraGeneratorTypeLongId<'db> {
     /// This is a long id of a phantom type.
     /// Phantom types have a one to one mapping from the semantic type to the Sierra type.
     Phantom(semantic::TypeId<'db>),
+}
+
+/// The reserved name of the extern function whose calls are replaced, at the Sierra generation
+/// stage, by a constant value supplied by one of the installed [`ExternalConstPlugin`]s. It may be
+/// declared anywhere; it is recognized solely by this name and never reaches Sierra.
+pub const EXTERNALLY_PROVIDED_CONST: &str = "__externally_provided_const__";
+
+/// A plugin supplying constant values for calls to the reserved `__externally_provided_const__`
+/// extern function.
+///
+/// Any number of plugins may be installed on the database (see
+/// [`SierraGenGroup::set_external_const_plugins`]), allowing independent flows - e.g. class hash
+/// injection and build configuration values - to each supply their own constants.
+pub trait ExternalConstPlugin: std::fmt::Debug + Send + Sync {
+    /// Returns the [`ConstValueId`] the call should be replaced with, or `None` if this plugin does
+    /// not supply a value for it, in which case the following plugins are queried.
+    ///
+    /// Given the full path of the (concrete) extern function being called, so that distinct
+    /// declarations resolve independently, and its declared return type, which the returned value
+    /// is validated against by the caller. Returning an error fails Sierra generation.
+    fn provide<'db>(
+        &self,
+        db: &'db dyn Database,
+        full_path: &str,
+        ty: semantic::TypeId<'db>,
+    ) -> Option<Maybe<ConstValueId<'db>>>;
+}
+
+#[salsa::input]
+pub struct SierraGenGroupInput {
+    #[returns(ref)]
+    pub external_const_plugins: Option<Vec<Arc<dyn ExternalConstPlugin>>>,
+}
+
+/// Returns a reference to the inputs of [`SierraGenGroup`].
+/// The reference is also used to set the inputs to new values.
+#[salsa::tracked]
+pub fn sierra_gen_group_input(db: &dyn Database) -> SierraGenGroupInput {
+    SierraGenGroupInput::new(db, None)
 }
 
 /// Wrapper for the concrete libfunc long id, providing a unique id for each libfunc.
@@ -271,6 +311,31 @@ pub trait SierraGenGroup: Database {
     ) -> Maybe<&'db SierraProgramWithDebug<'db>> {
         program_generator::get_sierra_program(self.as_dyn_database(), (), requested_crate_ids)
             .maybe_as_ref()
+    }
+
+    /// Returns the installed [`ExternalConstPlugin`]s, in the order they are queried in.
+    fn external_const_plugins(&self) -> &[Arc<dyn ExternalConstPlugin>] {
+        sierra_gen_group_input(self.as_dyn_database())
+            .external_const_plugins(self)
+            .as_deref()
+            .unwrap_or_default()
+    }
+
+    /// Sets the [`ExternalConstPlugin`]s used to resolve calls to the reserved
+    /// `__externally_provided_const__` extern function, replacing the previously installed ones.
+    ///
+    /// The plugins are queried in order, and the first one supplying a value for a call resolves
+    /// it.
+    fn set_external_const_plugins(&mut self, plugins: Vec<Arc<dyn ExternalConstPlugin>>) {
+        let input = sierra_gen_group_input(self.as_dyn_database());
+        input.set_external_const_plugins(self).to(Some(plugins));
+    }
+
+    /// Adds an [`ExternalConstPlugin`], to be queried after the already installed ones.
+    fn add_external_const_plugin(&mut self, plugin: Arc<dyn ExternalConstPlugin>) {
+        let mut plugins = self.external_const_plugins().to_vec();
+        plugins.push(plugin);
+        self.set_external_const_plugins(plugins);
     }
 }
 impl<T: Database + ?Sized> SierraGenGroup for T {}

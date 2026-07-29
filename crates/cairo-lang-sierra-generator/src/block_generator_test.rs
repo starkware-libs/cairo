@@ -1,8 +1,13 @@
+use std::sync::Arc;
+
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::{self as lowering, LoweringStage, ids};
+use cairo_lang_semantic::TypeId;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
@@ -10,8 +15,11 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use lowering::fmt::LoweredFormatter;
 use lowering::ids::ConcreteFunctionWithBodyId;
+use num_bigint::BigInt;
+use salsa::Database;
 
 use super::generate_function_result;
+use crate::db::{ExternalConstPlugin, SierraGenGroup};
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::find_variable_lifetime;
 use crate::replace_ids::replace_sierra_ids;
@@ -28,9 +36,30 @@ cairo_lang_test_utils::test_file_test!(
         serialization: "serialization",
         early_return: "early_return",
         panic: "panic",
+        externally_provided_const: "externally_provided_const",
     },
     block_generator_test
 );
+
+/// A test [`ExternalConstPlugin`], supplying `value` for the externs whose full path contains
+/// `module`.
+#[derive(Debug)]
+struct TestConstPlugin {
+    module: &'static str,
+    value: i64,
+}
+impl ExternalConstPlugin for TestConstPlugin {
+    fn provide<'db>(
+        &self,
+        db: &'db dyn Database,
+        full_path: &str,
+        ty: TypeId<'db>,
+    ) -> Option<Maybe<ConstValueId<'db>>> {
+        full_path
+            .contains(self.module)
+            .then(|| Ok(ConstValueId::from_int(db, ty, &BigInt::from(self.value))))
+    }
+}
 
 fn block_generator_test(
     inputs: &OrderedHashMap<String, String>,
@@ -42,6 +71,12 @@ fn block_generator_test(
     // unnecessary complication to them.
     let add_withdraw_gas_flag_id = FlagLongId(Flag::ADD_WITHDRAW_GAS.into());
     db.set_flag(add_withdraw_gas_flag_id, Some(Flag::AddWithdrawGas(false)));
+
+    // Install test plugins for the `__externally_provided_const__` extern function. They are inert
+    // unless that extern is actually called, and each resolves only the calls in its own module -
+    // calls in any other module fall back to a zero constant.
+    db.set_external_const_plugins(vec![Arc::new(TestConstPlugin { module: "seven", value: 7777 })]);
+    db.add_external_const_plugin(Arc::new(TestConstPlugin { module: "eight", value: 8888 }));
 
     // Parse code and create semantic model.
     let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
