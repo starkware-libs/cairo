@@ -8,14 +8,11 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::LocationId;
-use cairo_lang_semantic::corelib::validate_literal;
-use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
 use lowering::analysis::StatementLocation;
 use lowering::{MatchArm, VarUsage};
-use num_bigint::BigInt;
 use sierra::extensions::lib_func::SierraApChange;
 use sierra::program;
 
@@ -410,10 +407,7 @@ fn generate_statement_call_code<'db>(
 /// The installed [`crate::db::ExternalConstPlugin`]s are queried in order for the value, keyed by
 /// the full path of the extern function, so distinct declarations resolve independently. The value
 /// is validated against the declared return type; a plugin returning an error fails Sierra
-/// generation. When no plugin supplies a value (e.g. generic compilation, profiling or size
-/// estimation, which don't use the value), it defaults to a zero constant of the declared type,
-/// which therefore must be a type accepting a numeric literal - build flows that need the real
-/// value install a plugin.
+/// generation, as does a call no plugin supplies a value for - there is no default value.
 fn generate_externally_provided_const_code<'db>(
     context: &mut ExprGeneratorContext<'db, '_>,
     statement: &lowering::StatementCall<'db>,
@@ -427,36 +421,22 @@ fn generate_externally_provided_const_code<'db>(
     let (extern_id, _) = statement.function.get_extern(db).unwrap();
     let full_path = extern_id.full_path(db);
 
-    let value = match db
+    let Some(value) = db
         .external_const_plugins()
         .iter()
         .find_map(|plugin| plugin.provide(db, &full_path, return_type))
-    {
-        Some(value) => {
-            let value = value?;
-            // The plugins return a value of an arbitrary type; ensure it matches the declared one,
-            // as a mismatch would produce a type-incorrect Sierra program.
-            if value.ty(db)? != return_type {
-                panic!(
-                    "`{EXTERNALLY_PROVIDED_CONST}` plugin returned a value whose type does not \
-                     match the declared return type."
-                );
-            }
-            value
-        }
-        None => {
-            // Only a type accepting a numeric literal has a zero constant - for any other declared
-            // type the value must come from a plugin.
-            if let Err(err) = validate_literal(db, return_type, &BigInt::ZERO) {
-                panic!(
-                    "No `{EXTERNALLY_PROVIDED_CONST}` plugin provided a value for `{full_path}`: \
-                     {}",
-                    err.format(db)
-                );
-            }
-            ConstValueId::from_int(db, return_type, &BigInt::ZERO)
-        }
+    else {
+        panic!("No `{EXTERNALLY_PROVIDED_CONST}` plugin provided a value for `{full_path}`.");
     };
+    let value = value?;
+    // The plugins return a value of an arbitrary type; ensure it matches the declared one, as a
+    // mismatch would produce a type-incorrect Sierra program.
+    if value.ty(db)? != return_type {
+        panic!(
+            "`{EXTERNALLY_PROVIDED_CONST}` plugin returned a value whose type does not match the \
+             declared return type of `{full_path}`."
+        );
+    }
 
     let output_var = context.get_sierra_variable(output);
     context.push_statement(simple_basic_statement(

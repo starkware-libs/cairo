@@ -51,7 +51,8 @@ pub trait ExternalConstPlugin: std::fmt::Debug + Send + Sync {
     ///
     /// Given the full path of the (concrete) extern function being called, so that distinct
     /// declarations resolve independently, and its declared return type, which the returned value
-    /// is validated against by the caller. Returning an error fails Sierra generation.
+    /// is validated against by the caller. Returning an error fails Sierra generation, as does a
+    /// call none of the installed plugins supplies a value for.
     fn provide<'db>(
         &self,
         db: &'db dyn Database,
