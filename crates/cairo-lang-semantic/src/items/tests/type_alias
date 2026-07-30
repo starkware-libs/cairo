@@ -234,3 +234,29 @@ error[E0006]: Type not found.
  --> lib.cairo:1:14
 type Alias = bad_type;
              ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test no ICE when an item-level macro call names an enum variant whose type is a generic type alias with a trait bound.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+type W<T, +Drop<T>> = T;
+enum E {
+    A: W<felt252>,
+}
+E::A!(());
+
+//! > expected_diagnostics
+error[E2156]: Inline macro `E::A` not found.
+ --> lib.cairo:5:1
+E::A!(());
+^^^^^^^^^^

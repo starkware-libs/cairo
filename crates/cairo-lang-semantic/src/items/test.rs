@@ -8,6 +8,7 @@ cairo_lang_test_utils::test_file_test!(
         extern_func: "extern_func",
         free_function: "free_function",
         impl_alias: "impl_alias",
+        impl_def: "impl_def",
         panicable: "panicable",
         struct_: "struct",
         trait_: "trait",
