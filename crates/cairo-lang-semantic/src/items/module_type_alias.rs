@@ -28,7 +28,6 @@ struct ModuleTypeAliasData<'db> {
 fn module_type_alias_semantic_data<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
-    in_cycle: bool,
 ) -> Maybe<ModuleTypeAliasData<'db>> {
     let module_id = module_type_alias_id.parent_module(db);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
@@ -42,23 +41,13 @@ fn module_type_alias_semantic_data<'db>(
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 
     let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let type_alias_data = if in_cycle {
-        type_alias_semantic_data_cycle_helper(
-            db,
-            &mut diagnostics,
-            module_type_alias_ast,
-            lookup_item_id,
-            generic_params_data,
-        )?
-    } else {
-        type_alias_semantic_data_helper(
-            db,
-            &mut diagnostics,
-            module_type_alias_ast,
-            lookup_item_id,
-            generic_params_data,
-        )?
-    };
+    let type_alias_data = type_alias_semantic_data_helper(
+        db,
+        &mut diagnostics,
+        module_type_alias_ast,
+        lookup_item_id,
+        generic_params_data,
+    )?;
     Ok(ModuleTypeAliasData { type_alias_data, diagnostics: diagnostics.build() })
 }
 
@@ -67,9 +56,23 @@ fn module_type_alias_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     _id: salsa::Id,
     module_type_alias_id: ModuleTypeAliasId<'db>,
-    _in_cycle: bool,
 ) -> Maybe<ModuleTypeAliasData<'db>> {
-    module_type_alias_semantic_data(db, module_type_alias_id, true).clone()
+    let module_id = module_type_alias_id.parent_module(db);
+    let module_type_aliases = module_id.module_data(db)?.type_aliases(db);
+    let module_type_alias_ast = module_type_aliases.get(&module_type_alias_id).to_maybe()?;
+    let generic_params_data =
+        module_type_alias_generic_params_data(db, module_type_alias_id).maybe_as_ref()?.clone();
+    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
+
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
+    let type_alias_data = type_alias_semantic_data_cycle_helper(
+        db,
+        &mut diagnostics,
+        module_type_alias_ast,
+        lookup_item_id,
+        generic_params_data,
+    )?;
+    Ok(ModuleTypeAliasData { type_alias_data, diagnostics: diagnostics.build() })
 }
 
 /// Returns the generic parameters data of a type alias.
@@ -92,7 +95,7 @@ pub trait ModuleTypeAliasSemantic<'db>: Database {
         &'db self,
         id: ModuleTypeAliasId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        module_type_alias_semantic_data(self.as_dyn_database(), id, false)
+        module_type_alias_semantic_data(self.as_dyn_database(), id)
             .as_ref()
             .map(|data| data.diagnostics.clone())
             .unwrap_or_default()
@@ -102,7 +105,7 @@ pub trait ModuleTypeAliasSemantic<'db>: Database {
         &'db self,
         id: ModuleTypeAliasId<'db>,
     ) -> Maybe<TypeId<'db>> {
-        module_type_alias_semantic_data(self.as_dyn_database(), id, false)
+        module_type_alias_semantic_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
             .type_alias_data
             .resolved_type
@@ -122,7 +125,7 @@ pub trait ModuleTypeAliasSemantic<'db>: Database {
         &'db self,
         id: ModuleTypeAliasId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        Ok(module_type_alias_semantic_data(self.as_dyn_database(), id, false)
+        Ok(module_type_alias_semantic_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
             .type_alias_data
             .resolver_data

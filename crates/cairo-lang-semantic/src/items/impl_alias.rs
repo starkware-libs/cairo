@@ -39,7 +39,6 @@ pub struct ImplAliasData<'db> {
 fn impl_alias_semantic_data<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
-    in_cycle: bool,
 ) -> Maybe<ImplAliasData<'db>> {
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
@@ -47,16 +46,7 @@ fn impl_alias_semantic_data<'db>(
     let generic_params_data =
         impl_alias_generic_params_data(db, impl_alias_id).maybe_as_ref()?.clone();
 
-    if in_cycle {
-        impl_alias_semantic_data_cycle_helper(
-            db,
-            &impl_alias_ast,
-            lookup_item_id,
-            generic_params_data,
-        )
-    } else {
-        impl_alias_semantic_data_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
-    }
+    impl_alias_semantic_data_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
 }
 
 /// A helper function to compute the semantic data of an impl-alias item.
@@ -104,9 +94,14 @@ fn impl_alias_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     _id: salsa::Id,
     impl_alias_id: ImplAliasId<'db>,
-    _in_cycle: bool,
 ) -> Maybe<ImplAliasData<'db>> {
-    impl_alias_semantic_data(db, impl_alias_id, true).clone()
+    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
+    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
+
+    let generic_params_data =
+        impl_alias_generic_params_data(db, impl_alias_id).maybe_as_ref()?.clone();
+
+    impl_alias_semantic_data_cycle_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
 }
 
 /// A helper function to compute the semantic data of an impl-alias item when a cycle is detected.
@@ -239,7 +234,7 @@ pub trait ImplAliasSemantic<'db>: Database {
         &'db self,
         id: ImplAliasId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        impl_alias_semantic_data(self.as_dyn_database(), id, false)
+        impl_alias_semantic_data(self.as_dyn_database(), id)
             .as_ref()
             .map(|data| data.diagnostics.clone())
             .unwrap_or_default()
@@ -257,7 +252,7 @@ pub trait ImplAliasSemantic<'db>: Database {
                 );
             }
         };
-        impl_alias_semantic_data(self.as_dyn_database(), id, false).maybe_as_ref()?.resolved_impl
+        impl_alias_semantic_data(self.as_dyn_database(), id).maybe_as_ref()?.resolved_impl
     }
     /// Returns the generic parameters of an impl alias.
     fn impl_alias_generic_params(&'db self, id: ImplAliasId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
@@ -268,14 +263,14 @@ pub trait ImplAliasSemantic<'db>: Database {
     }
     /// Returns the resolver data of an impl alias.
     fn impl_alias_resolver_data(&'db self, id: ImplAliasId<'db>) -> Maybe<Arc<ResolverData<'db>>> {
-        Ok(impl_alias_semantic_data(self.as_dyn_database(), id, false)
+        Ok(impl_alias_semantic_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
             .resolver_data
             .clone())
     }
     /// Returns the attributes attached to the impl alias.
     fn impl_alias_attributes(&'db self, id: ImplAliasId<'db>) -> Maybe<&'db [Attribute<'db>]> {
-        Ok(&impl_alias_semantic_data(self.as_dyn_database(), id, false).maybe_as_ref()?.attributes)
+        Ok(&impl_alias_semantic_data(self.as_dyn_database(), id).maybe_as_ref()?.attributes)
     }
 }
 impl<'db, T: Database + ?Sized> ImplAliasSemantic<'db> for T {}
