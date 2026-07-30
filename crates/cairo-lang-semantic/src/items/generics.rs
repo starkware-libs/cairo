@@ -427,23 +427,8 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
 fn generic_param_data<'db>(
     db: &'db dyn Database,
     generic_param_id: GenericParamId<'db>,
-    in_cycle: bool,
 ) -> Maybe<GenericParamData<'db>> {
     let module_id = generic_param_id.parent_module(db);
-    if in_cycle {
-        let mut diagnostics = SemanticDiagnostics::new(module_id);
-        return Ok(GenericParamData {
-            generic_param: Err(diagnostics.report(
-                generic_param_id.stable_ptr(db).untyped(),
-                SemanticDiagnosticKind::ImplRequirementCycle,
-            )),
-            diagnostics: diagnostics.build(),
-            resolver_data: Arc::new(ResolverData::new(
-                generic_param_id.parent_module(db),
-                InferenceId::GenericParam(generic_param_id),
-            )),
-        });
-    }
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     let parent_item_id = generic_param_id.generic_item(db);
     let lookup_item: LookupItemId<'_> = parent_item_id.into();
@@ -498,9 +483,20 @@ fn generic_param_data_cycle<'db>(
     db: &'db dyn Database,
     _id: salsa::Id,
     generic_param_id: GenericParamId<'db>,
-    _in_cycle: bool,
 ) -> Maybe<GenericParamData<'db>> {
-    generic_param_data(db, generic_param_id, true).clone()
+    let module_id = generic_param_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
+    Ok(GenericParamData {
+        generic_param: Err(diagnostics.report(
+            generic_param_id.stable_ptr(db).untyped(),
+            SemanticDiagnosticKind::ImplRequirementCycle,
+        )),
+        diagnostics: diagnostics.build(),
+        resolver_data: Arc::new(ResolverData::new(
+            module_id,
+            InferenceId::GenericParam(generic_param_id),
+        )),
+    })
 }
 
 /// Query implementation of [GenericsSemantic::generic_params_type_constraints].
@@ -564,17 +560,6 @@ pub fn semantic_generic_params<'db>(
     module_id: ModuleId<'db>,
     generic_params: &ast::OptionWrappedGenericParamList<'db>,
 ) -> Vec<GenericParam<'db>> {
-    semantic_generic_params_ex(db, diagnostics, resolver, module_id, generic_params, false)
-}
-
-pub fn semantic_generic_params_ex<'db>(
-    db: &'db dyn Database,
-    diagnostics: &mut SemanticDiagnostics<'db>,
-    resolver: &mut Resolver<'db>,
-    module_id: ModuleId<'db>,
-    generic_params: &ast::OptionWrappedGenericParamList<'db>,
-    in_cycle: bool,
-) -> Vec<GenericParam<'db>> {
     match generic_params {
         syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
@@ -583,7 +568,7 @@ pub fn semantic_generic_params_ex<'db>(
             .filter_map(|param_syntax| {
                 let generic_param_id =
                     GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db);
-                let data = generic_param_data(db, generic_param_id, in_cycle).as_ref().ok()?;
+                let data = generic_param_data(db, generic_param_id).as_ref().ok()?;
                 let generic_param = data.generic_param.clone();
                 diagnostics.extend(data.diagnostics.clone());
                 resolver.add_generic_param(generic_param_id);
@@ -841,7 +826,7 @@ pub trait GenericParamSemantic<'db>: Database {
         &'db self,
         generic_param: GenericParamId<'db>,
     ) -> Maybe<GenericParam<'db>> {
-        generic_param_data(self.as_dyn_database(), generic_param, false)
+        generic_param_data(self.as_dyn_database(), generic_param)
             .maybe_as_ref()?
             .generic_param
             .clone()
@@ -851,7 +836,7 @@ pub trait GenericParamSemantic<'db>: Database {
         &'db self,
         generic_param: GenericParamId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        generic_param_data(self.as_dyn_database(), generic_param, false)
+        generic_param_data(self.as_dyn_database(), generic_param)
             .as_ref()
             .map(|data| data.diagnostics.clone())
             .unwrap_or_default()
@@ -861,7 +846,7 @@ pub trait GenericParamSemantic<'db>: Database {
         &'db self,
         generic_param: GenericParamId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        Ok(generic_param_data(self.as_dyn_database(), generic_param, false)
+        Ok(generic_param_data(self.as_dyn_database(), generic_param)
             .maybe_as_ref()?
             .resolver_data
             .clone())
