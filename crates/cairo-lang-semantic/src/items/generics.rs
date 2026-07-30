@@ -281,6 +281,45 @@ pub struct GenericParamsData<'db> {
     pub resolver_data: Arc<ResolverData<'db>>,
 }
 
+/// Cycle handling for the `*_generic_params_data` queries.
+///
+/// Example cycle, given `struct W<T, +Drop<T>>` and an item-level macro call `E::A!(());` where
+/// variant `E::A`'s type is `W<felt252>`:
+/// `W`'s generic params -> resolving `+Drop<T>` -> the module's items -> expanding `E::A!`
+/// (`priv_macro_call_data`) -> resolving the path `E::A` -> `E`'s variants -> the variant's type
+/// `W<felt252>` -> `W`'s generic params.
+///
+/// Returning the freshly computed `value` lets salsa fixpoint-iterate, so the memoized result is
+/// the real computation and the item's own diagnostics survive. Returning the last provisional
+/// value instead would freeze the query at [generic_params_data_initial] and silently drop them.
+///
+/// The computed value depends only on whether the re-entrant read saw the initial `Err` or a real
+/// value, so the fixpoint is reached within 3 iterations (verified on the goldens via
+/// `Cycle::iteration()`, against salsa's `MAX_ITERATIONS` of 200):
+/// initial `Err` -> value computed against that `Err` -> value computed against a real value ->
+/// unchanged.
+pub fn generic_params_data_cycle<'db, TKey>(
+    _db: &'db dyn Database,
+    _cycle: &salsa::Cycle<'_>,
+    _last_provisional_value: &Maybe<GenericParamsData<'db>>,
+    value: Maybe<GenericParamsData<'db>>,
+    _key: TKey,
+) -> Maybe<GenericParamsData<'db>> {
+    value
+}
+
+/// The provisional value seen by the query that re-enters a `*_generic_params_data` query.
+///
+/// See [generic_params_data_cycle]. `skip_diagnostic` avoids reporting the cycle itself - what
+/// actually went wrong is reported by the queries participating in it.
+pub fn generic_params_data_initial<'db, TKey>(
+    _db: &'db dyn Database,
+    _id: salsa::Id,
+    _key: TKey,
+) -> Maybe<GenericParamsData<'db>> {
+    Err(skip_diagnostic())
+}
+
 /// Query implementation of [GenericsSemantic::generic_impl_param_trait].
 #[salsa::tracked(returns(copy))]
 fn generic_impl_param_trait<'db>(

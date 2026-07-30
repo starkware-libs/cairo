@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, ModuleItemId, ModuleTypeAliasId};
-use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, ToMaybe, skip_diagnostic};
 use cairo_lang_proc_macros::DebugWithDb;
 use salsa::Database;
 
-use super::generics::GenericParamsData;
+use super::generics::{GenericParamsData, generic_params_data_cycle, generic_params_data_initial};
 use super::type_aliases::{
     TypeAliasData, type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper,
@@ -67,13 +67,20 @@ fn module_type_alias_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     _id: salsa::Id,
     module_type_alias_id: ModuleTypeAliasId<'db>,
-    _in_cycle: bool,
+    in_cycle: bool,
 ) -> Maybe<ModuleTypeAliasData<'db>> {
+    if in_cycle {
+        // The `in_cycle` variant reads `module_type_alias_generic_params_data` before it branches
+        // on `in_cycle`, so it can itself be the query the cycle is detected on. Recovering by
+        // calling it again would re-enter this handler forever, so stop here - what went wrong is
+        // reported by the queries participating in the cycle.
+        return Err(skip_diagnostic());
+    }
     module_type_alias_semantic_data(db, module_type_alias_id, true).clone()
 }
 
 /// Returns the generic parameters data of a type alias.
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn module_type_alias_generic_params_data<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
@@ -92,10 +99,17 @@ pub trait ModuleTypeAliasSemantic<'db>: Database {
         &'db self,
         id: ModuleTypeAliasId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        module_type_alias_semantic_data(self.as_dyn_database(), id, false)
-            .as_ref()
-            .map(|data| data.diagnostics.clone())
-            .unwrap_or_default()
+        let db = self.as_dyn_database();
+        match module_type_alias_semantic_data(db, id, false) {
+            Ok(data) => data.diagnostics.clone(),
+            // The data computation fails without reporting the generic params diagnostics - e.g.
+            // when recovering from a cycle through the alias's generic params - so fall back to
+            // them, as no other query surfaces them.
+            Err(_) => module_type_alias_generic_params_data(db, id)
+                .as_ref()
+                .map(|data| data.diagnostics.clone())
+                .unwrap_or_default(),
+        }
     }
     /// Returns the resolved type of a type alias.
     fn module_type_alias_resolved_type(

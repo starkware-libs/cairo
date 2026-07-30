@@ -229,3 +229,36 @@ error[E2156]: Inline macro `MyEnum::A` not found.
  --> lib.cairo:4:1
 MyEnum::A(());
 ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test no ICE when an item-level macro call names an enum variant whose type is a generic enum with a trait bound.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+enum W<T, +Drop<T>> {
+    X: T,
+}
+enum E {
+    A: W<felt252>,
+}
+E::A!(());
+
+//! > expected_diagnostics
+error[E2028]: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:1:11
+enum W<T, +Drop<T>> {
+          ^^^^^^^^
+
+error[E2156]: Inline macro `E::A` not found.
+ --> lib.cairo:7:1
+E::A!(());
+^^^^^^^^^^
