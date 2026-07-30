@@ -283,18 +283,21 @@ pub struct GenericParamsData<'db> {
 
 /// Cycle handling for the `*_generic_params_data` queries.
 ///
-/// An item-level macro call whose path names an enum variant (e.g. `E::A!(());`) is resolved
-/// through `macro_call_module_id` / `priv_macro_call_data`, which resolves the path, which reads
-/// the enum's variants, which resolves the variant's type - and that re-enters the
-/// `*_generic_params_data` of whichever generic item the variant type mentions, while that query
-/// is still on the stack. Returning the freshly computed `value` lets salsa fixpoint-iterate, so
-/// the memoized result is the real computation and the item's own diagnostics survive; returning
-/// the last provisional value instead would freeze the query at [generic_params_data_initial] and
-/// silently drop them.
+/// Example cycle, given `struct W<T, +Drop<T>>` and an item-level macro call `E::A!(());` where
+/// variant `E::A`'s type is `W<felt252>`:
+/// `W`'s generic params -> resolving `+Drop<T>` -> the module's items -> expanding `E::A!`
+/// (`priv_macro_call_data`) -> resolving the path `E::A` -> `E`'s variants -> the variant's type
+/// `W<felt252>` -> `W`'s generic params.
 ///
-/// Convergence is bounded and observed: the fixpoint settles within three iterations on the
-/// cycle-triggering inputs covered by the goldens, against salsa's `MAX_ITERATIONS` ceiling of
-/// 200.
+/// Returning the freshly computed `value` lets salsa fixpoint-iterate, so the memoized result is
+/// the real computation and the item's own diagnostics survive. Returning the last provisional
+/// value instead would freeze the query at [generic_params_data_initial] and silently drop them.
+///
+/// The computed value depends only on whether the re-entrant read saw the initial `Err` or a real
+/// value, so the fixpoint is reached within 3 iterations (verified on the goldens via
+/// `Cycle::iteration()`, against salsa's `MAX_ITERATIONS` of 200):
+/// initial `Err` -> value computed against that `Err` -> value computed against a real value ->
+/// unchanged.
 pub fn generic_params_data_cycle<'db, TKey>(
     _db: &'db dyn Database,
     _cycle: &salsa::Cycle<'_>,
