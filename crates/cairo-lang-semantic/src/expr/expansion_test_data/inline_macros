@@ -520,10 +520,54 @@ macro three_levels {
 }
 
 //! > expr_code
-three_levels!(1 => [2 => (3, 4)])
+three_levels!(1 => [2 => (3, 4), 5 => (6, 7)], 8 => [9 => (10, 11)])
 
 //! > expanded_code
-1 + 2 + 3+4+0
+1 + 2 + 3+4+5 + 6+7+8 + 9 + 10+11+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a pattern whose placeholders are not ordered by their repetition depth.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro unsorted_lhs {
+    ($([$($b:expr),*] => $a:expr),*) => { $($a + $($b +)*)* 0 };
+}
+
+//! > expr_code
+unsorted_lhs!([1, 2] => 3, [4] => 5)
+
+//! > expanded_code
+3+ 1+2+5+ 4+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test several placeholders bound at each of two repetition depths.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro multi_vars {
+    ($($a1:expr, $a2:expr => [$($b1:expr; $b2:expr),*]),*) => {
+        $($a1 + $a2 + $($b1 + $b2 +)*)* 0
+    };
+}
+
+//! > expr_code
+multi_vars!(1, 2 => [3; 4, 5; 6], 7, 8 => [9; 10])
+
+//! > expanded_code
+1+ 2 + 3+ 4+5+ 6+7+ 8 + 9+ 10+0
 
 //! > diagnostics
 
@@ -587,5 +631,47 @@ deeper_only!([1])
 
 //! > expanded_code
 1+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a nested repetition matching a different number of times per outer iteration.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro groups {
+    ($($a:expr => [$($b:expr),*]),*) => { $($a + $($b +)*)* 0 };
+}
+
+//! > expr_code
+groups!(1 => [7, 8], 2 => [9])
+
+//! > expanded_code
+1 + 7+8+2 + 9+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test three repetition levels, each with several groups.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro deep_groups {
+    ($($a:expr => [$($b:expr => ($($c:expr),*)),*]),*) => { $($a + $($b + $($c +)*)*)* 0 };
+}
+
+//! > expr_code
+deep_groups!(1 => [2 => (3, 4), 5 => (6)])
+
+//! > expanded_code
+1 + 2 + 3+4+5 + 6+0
 
 //! > diagnostics

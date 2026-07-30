@@ -79,7 +79,7 @@ use crate::items::imp::{
     DerefInfo, ImplLookupContextId, ImplSemantic, filter_candidate_traits, infer_impl_by_self,
 };
 use crate::items::macro_declaration::{
-    MacroDeclarationSemantic, MatcherContext, expand_macro_rule, is_macro_rule_match,
+    MacroDeclarationSemantic, expand_macro_rule, is_macro_rule_match,
 };
 use crate::items::modifiers::compute_mutability;
 use crate::items::module::ModuleSemantic;
@@ -822,11 +822,9 @@ fn expand_inline_macro<'db>(
     );
     if let Ok(ResolvedGenericItem::Macro(macro_declaration_id)) = user_defined_macro {
         let macro_rules = ctx.db.macro_declaration_rules(macro_declaration_id)?;
-        let Some((rule, (captures, placeholder_to_rep_id, rep_depths))) =
-            macro_rules.iter().find_map(|rule| {
-                is_macro_rule_match(ctx.db, rule, &syntax.arguments(db)).map(|res| (rule, res))
-            })
-        else {
+        let Some((rule, mut matcher_ctx)) = macro_rules.iter().find_map(|rule| {
+            is_macro_rule_match(ctx.db, rule, &syntax.arguments(db)).map(|res| (rule, res))
+        }) else {
             return Err(ctx.diagnostics.report(
                 syntax.stable_ptr(ctx.db),
                 InlineMacroNoMatchingRule(macro_path.identifier(db)),
@@ -835,8 +833,6 @@ fn expand_inline_macro<'db>(
         // If the rule has declaration-time errors, skip expansion to avoid panics on malformed
         // rules.
         rule.err?;
-        let mut matcher_ctx =
-            MatcherContext { captures, placeholder_to_rep_id, rep_depths, ..Default::default() };
         let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)?;
 
         let macro_defsite_resolver_data =

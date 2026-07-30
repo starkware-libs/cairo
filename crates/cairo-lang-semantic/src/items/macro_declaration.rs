@@ -32,14 +32,6 @@ pub struct RepetitionId(usize);
 /// Each macro parameter name maps to a flat list of matched strings.
 type Captures<'db> = OrderedHashMap<SmolStrId<'db>, Vec<CapturedValue<'db>>>;
 
-/// What a successful macro rule match hands to the expansion: the captured values, the repetition
-/// each placeholder is bound to, and the pattern nesting depth of each repetition.
-type MacroMatch<'db> = (
-    Captures<'db>,
-    OrderedHashMap<SmolStrId<'db>, RepetitionId>,
-    OrderedHashMap<RepetitionId, usize>,
-);
-
 /// Context used during macro pattern matching and expansion.
 /// Tracks captured values, active repetition scopes, and repetition ownership per placeholder.
 #[derive(Default, Clone, Debug)]
@@ -56,12 +48,24 @@ pub struct MatcherContext<'db> {
     /// to their correct `RepetitionId` while recursing into nested repetitions.
     pub current_repetition_stack: Vec<RepetitionId>,
 
-    /// Counter for generating unique `RepetitionId`s.
-    pub next_repetition_id: usize,
+    /// The `RepetitionId` of each `$()` in the pattern, keyed by its syntax node. A repetition is
+    /// re-walked once per iteration of its enclosing repetition, so the id has to come from the
+    /// pattern site rather than from the traversal, or a nested repetition would get a fresh id -
+    /// and no stable identity - on every outer iteration.
+    pub rep_ids: OrderedHashMap<SyntaxStablePtrId<'db>, RepetitionId>,
 
     /// The nesting depth of each repetition within the pattern, starting at 1. Used to pick the
     /// driver of an expansion block: the outermost repetition still available drives it.
     pub rep_depths: OrderedHashMap<RepetitionId, usize>,
+
+    /// The repetition each repetition is nested in, absent for a top-level one.
+    pub rep_parents: OrderedHashMap<RepetitionId, RepetitionId>,
+
+    /// How many times each repetition matched, once per entry into it. A top-level repetition is
+    /// entered once, a nested one once per iteration of its parent - so this is indexed by the
+    /// parent's iteration, and its running sum gives the offset of that group in
+    /// [`Self::captures`].
+    pub rep_group_lens: OrderedHashMap<RepetitionId, Vec<usize>>,
 
     /// Tracks the current index for each active repetition during expansion.
     pub repetition_indices: OrderedHashMap<RepetitionId, usize>,
@@ -347,7 +351,7 @@ pub fn is_macro_rule_match<'db>(
     db: &'db dyn Database,
     rule: &MacroRuleData<'db>,
     input: &ast::TokenTreeNode<'db>,
-) -> Option<MacroMatch<'db>> {
+) -> Option<MatcherContext<'db>> {
     let mut ctx = MatcherContext::default();
 
     let matcher_elements = get_macro_elements(db, rule.pattern.clone());
@@ -363,7 +367,7 @@ pub fn is_macro_rule_match<'db>(
     if !validate_repetition_operator_constraints(&ctx) {
         return None;
     }
-    Some((ctx.captures, ctx.placeholder_to_rep_id, ctx.rep_depths))
+    Some(ctx)
 }
 
 /// Helper function for [expand_macro_rule].
@@ -495,8 +499,12 @@ fn is_macro_rule_match_ex<'db>(
                 }
             }
             ast::MacroElement::Repetition(repetition) => {
-                let rep_id = RepetitionId(ctx.next_repetition_id);
-                ctx.next_repetition_id += 1;
+                let next_id = RepetitionId(ctx.rep_ids.len());
+                let rep_id =
+                    *ctx.rep_ids.entry(repetition.stable_ptr(db).untyped()).or_insert(next_id);
+                if let Some(parent) = ctx.current_repetition_stack.last() {
+                    ctx.rep_parents.insert(rep_id, *parent);
+                }
                 ctx.current_repetition_stack.push(rep_id);
                 ctx.rep_depths.insert(rep_id, ctx.current_repetition_stack.len());
                 let elements = repetition.elements(db);
@@ -544,9 +552,7 @@ fn is_macro_rule_match_ex<'db>(
                 }
                 ctx.repetition_match_counts.insert(rep_id, match_count);
                 ctx.repetition_operators.insert(rep_id, operator.clone());
-                for i in 0..match_count {
-                    ctx.repetition_indices.insert(rep_id, i);
-                }
+                ctx.rep_group_lens.entry(rep_id).or_default().push(match_count);
                 ctx.current_repetition_stack.pop();
                 continue;
             }
@@ -637,13 +643,12 @@ fn expand_macro_rule_ex(
             let repetition = ast::MacroRepetition::from_syntax_node(db, node);
             let elements = repetition.elements(db);
             // A block with no driver is rejected at declaration time.
-            let (placeholder_name, rep_id) =
+            let (_placeholder_name, rep_id) =
                 find_repetition_driver(db, elements.elements(db), matcher_ctx)
                     .ok_or_else(skip_diagnostic)?;
-            let repetition_len =
-                matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
+            let (group_offset, repetition_len) = repetition_group(matcher_ctx, rep_id);
             for i in 0..repetition_len {
-                matcher_ctx.repetition_indices.insert(rep_id, i);
+                matcher_ctx.repetition_indices.insert(rep_id, group_offset + i);
                 for element in elements.elements(db) {
                     expand_macro_rule_ex(
                         db,
@@ -714,6 +719,27 @@ fn register_repetition_placeholders<'db>(
         };
         register_repetition_placeholders(db, inner_elements.elements(db), rep_id, ctx);
     }
+}
+
+/// Returns where the group of `rep_id` now being expanded starts in the flat capture lists, and how
+/// many iterations it has.
+///
+/// A repetition is entered once per iteration of its parent, so the parent's current index selects
+/// the group, and the lengths of the groups before it give the offset.
+fn repetition_group(matcher_ctx: &MatcherContext<'_>, rep_id: RepetitionId) -> (usize, usize) {
+    let group_lens = matcher_ctx
+        .rep_group_lens
+        .get(&rep_id)
+        .expect("Every repetition records its group lengths while matching.");
+    // A block driven by a repetition whose parent is not being iterated is the degenerate shape
+    // where the pattern binds nothing at this level - every such block then uses the first group.
+    let group = matcher_ctx
+        .rep_parents
+        .get(&rep_id)
+        .and_then(|parent| matcher_ctx.repetition_indices.get(parent))
+        .copied()
+        .unwrap_or(0);
+    (group_lens[..group].iter().sum(), group_lens.get(group).copied().unwrap_or(0))
 }
 
 /// Returns the placeholder driving the given expansion repetition block, and the repetition it is
