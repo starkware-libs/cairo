@@ -413,6 +413,12 @@ fn generate_externally_provided_const_code<'db>(
     let [output] = statement.outputs[..] else {
         panic!("`{EXTERNALLY_PROVIDED_CONST}` must have exactly one output.");
     };
+    // Nothing is consumed here, so an argument would be neither used nor dropped in the generated
+    // code.
+    assert!(
+        statement.inputs.is_empty() && !statement.with_coupon,
+        "`{EXTERNALLY_PROVIDED_CONST}` must be called with no arguments."
+    );
     let (extern_id, _) = statement.function.get_extern(db).unwrap();
     // The lowered variable's type is the extern's declared return type.
     let value = db.externally_provided_const(extern_id, context.get_lowered_variable(output).ty)?;
