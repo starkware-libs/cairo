@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::ids::{ExternFunctionId, TopLevelLanguageElementId};
 use cairo_lang_diagnostics::{Maybe, MaybeAsRef};
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::{CrateId, Tracked};
@@ -53,12 +54,54 @@ pub trait ExternalConstPlugin: std::fmt::Debug + Send + Sync {
     /// declarations resolve independently, and its declared return type, which the returned value
     /// is validated against by the caller. Returning an error fails Sierra generation, as does a
     /// call none of the installed plugins supplies a value for.
+    ///
+    /// Called from within [`externally_provided_const`], so the answer must be stable per
+    /// declaration and type - a plugin changing its answers must be reinstalled through
+    /// [`SierraGenGroup::set_external_const_plugins`].
     fn provide<'db>(
         &self,
         db: &'db dyn Database,
         full_path: &str,
         ty: semantic::TypeId<'db>,
     ) -> Option<Maybe<ConstValueId<'db>>>;
+}
+
+/// See [`SierraGenGroup::externally_provided_const`] for documentation.
+#[salsa::tracked(returns(copy), cycle_result = externally_provided_const_cycle)]
+pub fn externally_provided_const<'db>(
+    db: &'db dyn Database,
+    extern_id: ExternFunctionId<'db>,
+    ty: semantic::TypeId<'db>,
+) -> Maybe<ConstValueId<'db>> {
+    let full_path = extern_id.full_path(db);
+    let Some(value) =
+        db.external_const_plugins().iter().find_map(|plugin| plugin.provide(db, &full_path, ty))
+    else {
+        panic!("No `{EXTERNALLY_PROVIDED_CONST}` plugin provided a value for `{full_path}`.");
+    };
+    let value = value?;
+    // The plugins return a value of an arbitrary type; ensure it matches the declared one, as a
+    // mismatch would produce a type-incorrect Sierra program.
+    if value.ty(db)? != ty {
+        panic!(
+            "`{EXTERNALLY_PROVIDED_CONST}` plugin returned a value whose type does not match the \
+             declared return type of `{full_path}`."
+        );
+    }
+    Ok(value)
+}
+
+/// A plugin supplied a value depending on the value itself, which has no fixed point.
+fn externally_provided_const_cycle<'db>(
+    db: &'db dyn Database,
+    _id: salsa::Id,
+    extern_id: ExternFunctionId<'db>,
+    _ty: semantic::TypeId<'db>,
+) -> Maybe<ConstValueId<'db>> {
+    panic!(
+        "`{EXTERNALLY_PROVIDED_CONST}` value of `{}` depends on itself.",
+        extern_id.full_path(db)
+    );
 }
 
 #[salsa::input]
@@ -312,6 +355,26 @@ pub trait SierraGenGroup: Database {
     ) -> Maybe<&'db SierraProgramWithDebug<'db>> {
         program_generator::get_sierra_program(self.as_dyn_database(), (), requested_crate_ids)
             .maybe_as_ref()
+    }
+
+    /// Returns the constant value supplied for the reserved `__externally_provided_const__` extern
+    /// function declared by `extern_id` and returning `ty`.
+    ///
+    /// The installed [`ExternalConstPlugin`]s are queried in order, keyed by the full path of the
+    /// declaration, and the first supplied value wins, after being validated against `ty`. There is
+    /// no default value - a declaration none of the plugins supplies a value for fails Sierra
+    /// generation.
+    ///
+    /// Resolution is a query, so a plugin computing its value through the database - e.g. by
+    /// compiling another crate - has that work memoized per declaration instead of repeated per
+    /// call site, and a value transitively depending on itself is reported as a cycle rather than
+    /// recursing endlessly.
+    fn externally_provided_const<'db>(
+        &'db self,
+        extern_id: ExternFunctionId<'db>,
+        ty: semantic::TypeId<'db>,
+    ) -> Maybe<ConstValueId<'db>> {
+        externally_provided_const(self.as_dyn_database(), extern_id, ty)
     }
 
     /// Returns the installed [`ExternalConstPlugin`]s, in the order they are queried in.
