@@ -21,7 +21,7 @@ ExprClosure(
                             args: [
                                 Value(
                                     Var(
-                                        ParamId(test::a),
+                                        ParamId(test::test_func::{closure@20}::a),
                                     ),
                                 ),
                                 Value(
@@ -43,7 +43,7 @@ ExprClosure(
         ),
         params: [
             Parameter {
-                id: ParamId(test::a),
+                id: ParamId(test::test_func::{closure@20}::a),
                 name: "a",
                 ty: core::felt252,
                 mutability: Immutable,
@@ -96,7 +96,7 @@ Block(
                                                     d,
                                                 ),
                                                 expr: Var(
-                                                    ParamId(test::a),
+                                                    ParamId(test::test_func::{closure@162}::a),
                                                 ),
                                                 else_clause: None,
                                             },
@@ -123,7 +123,7 @@ Block(
                             ),
                             params: [
                                 Parameter {
-                                    id: ParamId(test::a),
+                                    id: ParamId(test::test_func::{closure@162}::a),
                                     name: "a",
                                     ty: core::integer::u8,
                                     mutability: Immutable,
