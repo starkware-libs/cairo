@@ -20,6 +20,11 @@ use crate::plugin::consts::{
 use crate::plugin::storage::handle_storage_struct;
 use crate::plugin::utils::{AstPathExtract, GenericParamExtract, ParamEx};
 
+/// The name of the local variable holding the component state in a generated `#[embeddable_as]`
+/// wrapper function. Uses the reserved-looking `__name__` convention, so that it doesn't collide
+/// with the wrapped function's parameter names.
+const COMPONENT_VAR: &str = "__component__";
+
 /// Accumulated data specific for component generation.
 #[derive(Default)]
 pub struct ComponentSpecificGenerationData<'db> {
@@ -368,7 +373,7 @@ fn handle_component_embeddable_as_impl_item<'db>(
     );
     let args_node = RewriteNode::interspersed(
         chain!(
-            [RewriteNode::Text(format!("{callsite_modifier}component"))],
+            [RewriteNode::Text(format!("{callsite_modifier}{COMPONENT_VAR}"))],
             rest_params.iter().map(|p| RewriteNode::Copied(p.name(db).as_syntax_node()))
         ),
         RewriteNode::text(", "),
@@ -426,7 +431,9 @@ fn handle_first_param_for_embeddable_as<'db>(
         {
             Some((
                 format!("ref self: {GENERIC_CONTRACT_STATE_NAME}"),
-                format!("let mut component = {HAS_COMPONENT_TRAIT}::get_component_mut(ref self);"),
+                format!(
+                    "let mut {COMPONENT_VAR} = {HAS_COMPONENT_TRAIT}::get_component_mut(ref self);"
+                ),
                 "ref ".to_string(),
             ))
         } else {
@@ -440,7 +447,7 @@ fn handle_first_param_for_embeddable_as<'db>(
     ) {
         Some((
             format!("self: @{GENERIC_CONTRACT_STATE_NAME}"),
-            format!("let component = {HAS_COMPONENT_TRAIT}::get_component(self);"),
+            format!("let {COMPONENT_VAR} = {HAS_COMPONENT_TRAIT}::get_component(self);"),
             "".to_string(),
         ))
     } else {
