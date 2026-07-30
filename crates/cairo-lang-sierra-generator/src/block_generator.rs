@@ -2,7 +2,6 @@
 #[path = "block_generator_test.rs"]
 mod test;
 
-use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::BlockId;
@@ -404,10 +403,8 @@ fn generate_statement_call_code<'db>(
 /// Generates Sierra code for a call to the reserved `__externally_provided_const__` extern
 /// function, replacing it with a `const_as_immediate`.
 ///
-/// The installed [`crate::db::ExternalConstPlugin`]s are queried in order for the value, keyed by
-/// the full path of the extern function, so distinct declarations resolve independently. The value
-/// is validated against the declared return type; a plugin returning an error fails Sierra
-/// generation, as does a call no plugin supplies a value for - there is no default value.
+/// The value is supplied by the installed [`crate::db::ExternalConstPlugin`]s - see
+/// [`SierraGenGroup::externally_provided_const`].
 fn generate_externally_provided_const_code<'db>(
     context: &mut ExprGeneratorContext<'db, '_>,
     statement: &lowering::StatementCall<'db>,
@@ -416,27 +413,9 @@ fn generate_externally_provided_const_code<'db>(
     let [output] = statement.outputs[..] else {
         panic!("`{EXTERNALLY_PROVIDED_CONST}` must have exactly one output.");
     };
-    // The declared return type, which the provided value must match.
-    let return_type = context.get_lowered_variable(output).ty;
     let (extern_id, _) = statement.function.get_extern(db).unwrap();
-    let full_path = extern_id.full_path(db);
-
-    let Some(value) = db
-        .external_const_plugins()
-        .iter()
-        .find_map(|plugin| plugin.provide(db, &full_path, return_type))
-    else {
-        panic!("No `{EXTERNALLY_PROVIDED_CONST}` plugin provided a value for `{full_path}`.");
-    };
-    let value = value?;
-    // The plugins return a value of an arbitrary type; ensure it matches the declared one, as a
-    // mismatch would produce a type-incorrect Sierra program.
-    if value.ty(db)? != return_type {
-        panic!(
-            "`{EXTERNALLY_PROVIDED_CONST}` plugin returned a value whose type does not match the \
-             declared return type of `{full_path}`."
-        );
-    }
+    // The lowered variable's type is the extern's declared return type.
+    let value = db.externally_provided_const(extern_id, context.get_lowered_variable(output).ty)?;
 
     let output_var = context.get_sierra_variable(output);
     context.push_statement(simple_basic_statement(
