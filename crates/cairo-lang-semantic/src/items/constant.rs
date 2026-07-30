@@ -303,6 +303,25 @@ impl<'db> DebugWithDb<'db> for ImplConstantId<'db> {
 fn constant_semantic_data<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
+) -> Maybe<ConstantData<'db>> {
+    constant_semantic_data_inner(db, const_id, false)
+}
+
+/// Cycle handling for [ConstantSemantic::constant_semantic_data].
+fn constant_semantic_data_cycle<'db>(
+    db: &'db dyn Database,
+    _id: salsa::Id,
+    const_id: ConstantId<'db>,
+) -> Maybe<ConstantData<'db>> {
+    constant_semantic_data_inner(db, const_id, true)
+}
+
+/// Shared code for the query and cycle handling of
+/// [ConstantSemantic::constant_semantic_data].
+/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+fn constant_semantic_data_inner<'db>(
+    db: &'db dyn Database,
+    const_id: ConstantId<'db>,
     in_cycle: bool,
 ) -> Maybe<ConstantData<'db>> {
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
@@ -323,23 +342,6 @@ fn constant_semantic_data<'db>(
             &const_id,
         )
     }
-}
-
-/// Cycle handling for [ConstantSemantic::constant_semantic_data].
-fn constant_semantic_data_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    const_id: ConstantId<'db>,
-    _in_cycle: bool,
-) -> Maybe<ConstantData<'db>> {
-    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
-    constant_semantic_data_cycle_helper(
-        db,
-        &db.module_constant_by_id(const_id)?,
-        lookup_item_id,
-        None,
-        &const_id,
-    )
 }
 
 /// Returns constant semantic data for the given ItemConstant.
@@ -1478,7 +1480,7 @@ pub trait ConstantSemantic<'db>: Database {
         const_id: ConstantId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
         let db = self.as_dyn_database();
-        constant_semantic_data(db, const_id, false)
+        constant_semantic_data(db, const_id)
             .as_ref()
             .map(|data| data.diagnostics.clone())
             .unwrap_or_default()
@@ -1486,17 +1488,17 @@ pub trait ConstantSemantic<'db>: Database {
     /// Returns the semantic data of a constant definition.
     fn constant_semantic_data(&'db self, use_id: ConstantId<'db>) -> Maybe<Constant<'db>> {
         let db = self.as_dyn_database();
-        constant_semantic_data(db, use_id, false).maybe_as_ref()?.constant.clone()
+        constant_semantic_data(db, use_id).maybe_as_ref()?.constant.clone()
     }
     /// Returns the resolver data of a constant definition.
     fn constant_resolver_data(&'db self, use_id: ConstantId<'db>) -> Maybe<Arc<ResolverData<'db>>> {
         let db = self.as_dyn_database();
-        Ok(constant_semantic_data(db, use_id, false).maybe_as_ref()?.resolver_data.clone())
+        Ok(constant_semantic_data(db, use_id).maybe_as_ref()?.resolver_data.clone())
     }
     /// Returns the const value of a constant definition.
     fn constant_const_value(&'db self, const_id: ConstantId<'db>) -> Maybe<ConstValueId<'db>> {
         let db = self.as_dyn_database();
-        Ok(constant_semantic_data(db, const_id, false).maybe_as_ref()?.const_value)
+        Ok(constant_semantic_data(db, const_id).maybe_as_ref()?.const_value)
     }
     /// Returns information required for const calculations.
     fn const_calc_info(&'db self) -> Arc<ConstCalcInfo<'db>> {

@@ -293,7 +293,9 @@ struct TraitDeclarationData<'db> {
     resolver_data: Arc<ResolverData<'db>>,
 }
 
-/// Implementation of [PrivTraitSemantic::trait_generic_params_data].
+/// Shared code for the query and cycle handling of
+/// [PrivTraitSemantic::trait_generic_params_data].
+/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
 fn trait_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
@@ -325,14 +327,13 @@ fn trait_generic_params_data<'db>(
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
-/// Query implementation of [TraitSemantic::trait_generic_params_data].
+/// Query implementation of [PrivTraitSemantic::trait_generic_params_data].
 #[salsa::tracked(cycle_result=trait_generic_params_data_cycle, returns(ref))]
 fn trait_generic_params_data_tracked<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
-    in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {
-    trait_generic_params_data(db, trait_id, in_cycle)
+    trait_generic_params_data(db, trait_id, false)
 }
 
 /// Cycle handling for [PrivTraitSemantic::trait_generic_params_data].
@@ -340,9 +341,7 @@ fn trait_generic_params_data_cycle<'db>(
     db: &'db dyn Database,
     _id: salsa::Id,
     trait_id: TraitId<'db>,
-    _in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {
-    // Forwarding cycle handling to `priv_generic_param_data` handler.
     trait_generic_params_data(db, trait_id, true)
 }
 
@@ -383,7 +382,7 @@ fn priv_trait_declaration_data<'db>(
     let trait_ast = db.module_trait_by_id(trait_id)?;
 
     // Generic params.
-    let generic_params_data = db.trait_generic_params_data(trait_id, false)?;
+    let generic_params_data = db.trait_generic_params_data(trait_id)?;
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
     let mut resolver = Resolver::with_data(
@@ -1185,7 +1184,7 @@ pub trait TraitSemantic<'db>: Database {
     }
     /// Returns the generic parameters of a trait.
     fn trait_generic_params(&'db self, trait_id: TraitId<'db>) -> Maybe<&'db [GenericParam<'db>]> {
-        Ok(&self.trait_generic_params_data(trait_id, false)?.generic_params)
+        Ok(&self.trait_generic_params_data(trait_id)?.generic_params)
     }
     /// Returns the ids of the generic parameters of a trait.
     fn trait_generic_params_ids(
@@ -1493,9 +1492,8 @@ trait PrivTraitSemantic<'db>: Database {
     fn trait_generic_params_data(
         &'db self,
         trait_id: TraitId<'db>,
-        in_cycle: bool,
     ) -> Maybe<&'db GenericParamsData<'db>> {
-        trait_generic_params_data_tracked(self.as_dyn_database(), trait_id, in_cycle).maybe_as_ref()
+        trait_generic_params_data_tracked(self.as_dyn_database(), trait_id).maybe_as_ref()
     }
     /// Private query to compute declaration data about a trait.
     fn priv_trait_declaration_data(
