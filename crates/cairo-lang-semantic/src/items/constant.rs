@@ -304,14 +304,7 @@ fn constant_semantic_data<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<ConstantData<'db>> {
-    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
-    constant_semantic_data_helper(
-        db,
-        &db.module_constant_by_id(const_id)?,
-        lookup_item_id,
-        None,
-        &const_id,
-    )
+    constant_semantic_data_inner(db, const_id, false)
 }
 
 /// Cycle handling for [ConstantSemantic::constant_semantic_data].
@@ -320,14 +313,35 @@ fn constant_semantic_data_cycle<'db>(
     _id: salsa::Id,
     const_id: ConstantId<'db>,
 ) -> Maybe<ConstantData<'db>> {
+    constant_semantic_data_inner(db, const_id, true)
+}
+
+/// Shared code for the query and cycle handling of
+/// [ConstantSemantic::constant_semantic_data].
+/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+fn constant_semantic_data_inner<'db>(
+    db: &'db dyn Database,
+    const_id: ConstantId<'db>,
+    in_cycle: bool,
+) -> Maybe<ConstantData<'db>> {
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
-    constant_semantic_data_cycle_helper(
-        db,
-        &db.module_constant_by_id(const_id)?,
-        lookup_item_id,
-        None,
-        &const_id,
-    )
+    if in_cycle {
+        constant_semantic_data_cycle_helper(
+            db,
+            &db.module_constant_by_id(const_id)?,
+            lookup_item_id,
+            None,
+            &const_id,
+        )
+    } else {
+        constant_semantic_data_helper(
+            db,
+            &db.module_constant_by_id(const_id)?,
+            lookup_item_id,
+            None,
+            &const_id,
+        )
+    }
 }
 
 /// Returns constant semantic data for the given ItemConstant.

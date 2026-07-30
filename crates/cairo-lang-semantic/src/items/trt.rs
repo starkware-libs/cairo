@@ -30,6 +30,7 @@ use super::functions::{
 };
 use super::generics::{
     GenericParamsData, displayable_concrete, generic_params_to_args, semantic_generic_params,
+    semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, ImplLongId, TraitFilter};
 use crate::db::get_resolver_data_options;
@@ -292,11 +293,13 @@ struct TraitDeclarationData<'db> {
     resolver_data: Arc<ResolverData<'db>>,
 }
 
-/// Query implementation of [PrivTraitSemantic::trait_generic_params_data].
-#[salsa::tracked(cycle_result=trait_generic_params_data_cycle, returns(ref))]
-fn trait_generic_params_data_tracked<'db>(
+/// Shared code for the query and cycle handling of
+/// [PrivTraitSemantic::trait_generic_params_data].
+/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+fn trait_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
+    in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = trait_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::new(module_id);
@@ -307,12 +310,13 @@ fn trait_generic_params_data_tracked<'db>(
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
     let mut resolver = Resolver::new(db, module_id, inference_id);
     resolver.set_feature_config(&trait_id, &trait_ast, &mut diagnostics);
-    let generic_params = semantic_generic_params(
+    let generic_params = semantic_generic_params_ex(
         db,
         &mut diagnostics,
         &mut resolver,
         module_id,
         &trait_ast.generic_params(db),
+        in_cycle,
     );
 
     let inference = &mut resolver.inference();
@@ -323,28 +327,22 @@ fn trait_generic_params_data_tracked<'db>(
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
+/// Query implementation of [PrivTraitSemantic::trait_generic_params_data].
+#[salsa::tracked(cycle_result=trait_generic_params_data_cycle, returns(ref))]
+fn trait_generic_params_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    trait_generic_params_data(db, trait_id, false)
+}
+
 /// Cycle handling for [PrivTraitSemantic::trait_generic_params_data].
 fn trait_generic_params_data_cycle<'db>(
     db: &'db dyn Database,
     _id: salsa::Id,
     trait_id: TraitId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = trait_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let trait_ast = db.module_trait_by_id(trait_id)?;
-    let inference_id =
-        InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
-    let mut resolver = Resolver::new(db, module_id, inference_id);
-    resolver.set_feature_config(&trait_id, &trait_ast, &mut diagnostics);
-    for generic_param_id in db.trait_generic_params_ids(trait_id)? {
-        resolver.add_generic_param(*generic_param_id);
-        diagnostics.report(generic_param_id.stable_ptr(db).untyped(), ImplRequirementCycle);
-    }
-    Ok(GenericParamsData {
-        diagnostics: diagnostics.build(),
-        generic_params: vec![],
-        resolver_data: Arc::new(resolver.data),
-    })
+    trait_generic_params_data(db, trait_id, true)
 }
 
 /// Query implementation of [TraitSemantic::trait_generic_params_ids].

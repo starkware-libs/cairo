@@ -484,6 +484,14 @@ fn generic_param_data_cycle<'db>(
     _id: salsa::Id,
     generic_param_id: GenericParamId<'db>,
 ) -> Maybe<GenericParamData<'db>> {
+    generic_param_data_cycle_helper(db, generic_param_id)
+}
+
+/// Computes the data of a generic param when it is in a cycle.
+fn generic_param_data_cycle_helper<'db>(
+    db: &'db dyn Database,
+    generic_param_id: GenericParamId<'db>,
+) -> Maybe<GenericParamData<'db>> {
     let module_id = generic_param_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     Ok(GenericParamData {
@@ -560,6 +568,17 @@ pub fn semantic_generic_params<'db>(
     module_id: ModuleId<'db>,
     generic_params: &ast::OptionWrappedGenericParamList<'db>,
 ) -> Vec<GenericParam<'db>> {
+    semantic_generic_params_ex(db, diagnostics, resolver, module_id, generic_params, false)
+}
+
+pub fn semantic_generic_params_ex<'db>(
+    db: &'db dyn Database,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    resolver: &mut Resolver<'db>,
+    module_id: ModuleId<'db>,
+    generic_params: &ast::OptionWrappedGenericParamList<'db>,
+    in_cycle: bool,
+) -> Vec<GenericParam<'db>> {
     match generic_params {
         syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
@@ -568,7 +587,15 @@ pub fn semantic_generic_params<'db>(
             .filter_map(|param_syntax| {
                 let generic_param_id =
                     GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db);
-                let data = generic_param_data(db, generic_param_id).as_ref().ok()?;
+                let cycle_data;
+                let data = if in_cycle {
+                    cycle_data = generic_param_data_cycle_helper(db, generic_param_id);
+                    &cycle_data
+                } else {
+                    generic_param_data(db, generic_param_id)
+                }
+                .as_ref()
+                .ok()?;
                 let generic_param = data.generic_param.clone();
                 diagnostics.extend(data.diagnostics.clone());
                 resolver.add_generic_param(generic_param_id);

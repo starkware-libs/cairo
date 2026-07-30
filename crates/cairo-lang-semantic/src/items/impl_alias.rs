@@ -40,13 +40,32 @@ fn impl_alias_semantic_data<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ImplAliasData<'db>> {
+    impl_alias_semantic_data_inner(db, impl_alias_id, false)
+}
+
+/// Shared code for the query and cycle handling of [impl_alias_semantic_data].
+/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+fn impl_alias_semantic_data_inner<'db>(
+    db: &'db dyn Database,
+    impl_alias_id: ImplAliasId<'db>,
+    in_cycle: bool,
+) -> Maybe<ImplAliasData<'db>> {
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
 
     let generic_params_data =
         impl_alias_generic_params_data(db, impl_alias_id).maybe_as_ref()?.clone();
 
-    impl_alias_semantic_data_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
+    if in_cycle {
+        impl_alias_semantic_data_cycle_helper(
+            db,
+            &impl_alias_ast,
+            lookup_item_id,
+            generic_params_data,
+        )
+    } else {
+        impl_alias_semantic_data_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
+    }
 }
 
 /// A helper function to compute the semantic data of an impl-alias item.
@@ -95,13 +114,7 @@ fn impl_alias_semantic_data_cycle<'db>(
     _id: salsa::Id,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ImplAliasData<'db>> {
-    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
-    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
-
-    let generic_params_data =
-        impl_alias_generic_params_data(db, impl_alias_id).maybe_as_ref()?.clone();
-
-    impl_alias_semantic_data_cycle_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
+    impl_alias_semantic_data_inner(db, impl_alias_id, true)
 }
 
 /// A helper function to compute the semantic data of an impl-alias item when a cycle is detected.
