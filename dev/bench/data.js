@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785460406752,
+  "lastUpdate": 1785461040847,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -18111,6 +18111,68 @@ window.BENCHMARK_DATA = {
           {
             "name": "max_bytes/ls-new-item-edit",
             "value": 702036479,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "eef8857c3a279f7f0208efa258d74a7ed2bf6357",
+          "message": "Made param not skip the defining fn in its path. (#10269)",
+          "timestamp": "2026-07-30T14:55:45Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/eef8857c3a279f7f0208efa258d74a7ed2bf6357"
+        },
+        "date": 1785461040664,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit",
+            "value": 340,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit",
+            "value": 700936853,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-body-edit",
+            "value": 9206,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-body-edit",
+            "value": 701371045,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit-plain",
+            "value": 340,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit-plain",
+            "value": 700912437,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-new-item-edit",
+            "value": 25327,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-new-item-edit",
+            "value": 702002795,
             "unit": "bytes"
           }
         ]
