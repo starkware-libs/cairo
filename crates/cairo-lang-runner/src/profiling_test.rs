@@ -1,6 +1,10 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_semantic::test_utils::{setup_test_module, with_target_function_plugin};
+use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_semantic::test_utils::{
+    TARGET_FUNCTION_ATTR, resolve_target_functions, setup_test_module, with_target_function_plugin,
+};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -23,6 +27,31 @@ cairo_lang_test_utils::test_file_test!(
     },
     test_profiling
 );
+
+/// Returns the index within the Sierra program's functions of the single
+/// `#[target_function]`-marked function in the module.
+///
+/// The marked function is followed by id from the semantic model through lowering into the Sierra
+/// program, so its name never participates in the lookup.
+fn target_function_index(
+    db: &RootDatabase,
+    module_id: ModuleId<'_>,
+    sierra_program: &cairo_lang_sierra::program::Program,
+) -> usize {
+    let [free_function_id] = resolve_target_functions(db, module_id)[..] else {
+        panic!("Expected exactly one function marked with `#[{TARGET_FUNCTION_ATTR}]`.");
+    };
+    let function_id = ConcreteFunctionWithBodyId::from_no_generics_free(db, free_function_id)
+        .expect("Target function must not have generic parameters.")
+        .function_id(db)
+        .unwrap();
+    let sierra_function_id = db.intern_sierra_function(function_id);
+    sierra_program
+        .funcs
+        .iter()
+        .position(|f| f.id == sierra_function_id)
+        .expect("Target function not found in the Sierra program.")
+}
 
 pub fn test_profiling(
     inputs: &OrderedHashMap<String, String>,
@@ -53,6 +82,8 @@ pub fn test_profiling(
     let SierraProgramWithDebug { program: sierra_program, debug_info } = db
         .get_sierra_program(vec![test_module.crate_id])
         .expect("`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics");
+    // Resolved against the pre-`replace_ids` program, whose function ids are the interned ids.
+    let target_index = target_function_index(&db, test_module.module_id, sierra_program);
     let sierra_program = replace_sierra_ids_in_program(&db, sierra_program);
     let statements_functions =
         debug_info.statements_locations.get_statements_functions_map_for_tests(&db);
@@ -63,7 +94,7 @@ pub fn test_profiling(
         Some(profiling_info_collection_config),
     )
     .unwrap();
-    let func = runner.find_function(&inputs["function_name"]).unwrap();
+    let func = &sierra_program.funcs[target_index];
     let result = runner
         .run_function_with_starknet_context(
             func,

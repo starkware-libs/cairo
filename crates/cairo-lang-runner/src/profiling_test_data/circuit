@@ -10,6 +10,7 @@ use core::circuit::{
     circuit_inverse, circuit_mul, circuit_sub, u384, u96,
 };
 
+#[target_function]
 pub fn eval_circuit() -> u384 {
     let in1 = CircuitElement::<CircuitInput<0>> {};
     let in2 = CircuitElement::<CircuitInput<1>> {};
@@ -29,9 +30,6 @@ pub fn eval_circuit() -> u384 {
 
     outputs.get_output(mul)
 }
-
-//! > function_name
-eval_circuit
 
 //! > expected_profiling_info
 Weight by sierra statement:
