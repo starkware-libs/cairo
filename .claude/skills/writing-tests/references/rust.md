@@ -90,7 +90,8 @@ justify every changed hunk in the PR.
 ## Shared fixtures — use, don't rebuild
 
 - `cairo_lang_semantic::test_utils`: `SemanticDatabaseForTesting`,
-  `setup_test_module`, `setup_test_function` (+ `_ex` variants).
+  `setup_test_module`, `setup_test_function` (resolves the `#[target_function]`-marked
+  function in the `cairo_code` input; see golden-framework.md).
 - `cairo_lang_lowering::test_utils`: `LoweringDatabaseForTesting`
   (`::new()`, `.snapshot()`, `.with_no_gas()`, ...).
 - `cairo_lang_parser::test_utils`: `get_diagnostics`, `create_virtual_file`.

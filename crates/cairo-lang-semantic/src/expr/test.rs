@@ -14,7 +14,7 @@ use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::items::module::ModuleSemantic;
 use crate::semantic;
 use crate::test_utils::{
-    SemanticDatabaseForTesting, TestFunction, setup_test_expr, setup_test_function_ex,
+    SemanticDatabaseForTesting, TestFunction, setup_test_expr, setup_test_function_from_content,
     test_function_diagnostics,
 };
 
@@ -163,7 +163,7 @@ fn test_expr_semantics(
 #[test]
 fn test_function_with_param() {
     let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_db_for_foo(&db_val, "fn foo(a: felt252) {}");
+    let test_function = setup_db_for_function(&db_val, "fn foo(a: felt252) {}");
     let _db = &db_val;
     let signature = test_function.signature;
 
@@ -176,7 +176,8 @@ fn test_function_with_param() {
 #[test]
 fn test_tuple_type() {
     let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_db_for_foo(&db_val, "fn foo(mut a: (felt252, (), (felt252,))) {}");
+    let test_function =
+        setup_db_for_function(&db_val, "fn foo(mut a: (felt252, (), (felt252,))) {}");
     let db = &db_val;
     let signature = test_function.signature;
 
@@ -192,7 +193,7 @@ fn test_tuple_type() {
 #[test]
 fn test_function_with_return_type() {
     let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_db_for_foo(&db_val, "fn foo() -> felt252 { 5 }");
+    let test_function = setup_db_for_function(&db_val, "fn foo() -> felt252 { 5 }");
     let _db = &db_val;
     let signature = test_function.signature;
 
@@ -203,7 +204,7 @@ fn test_function_with_return_type() {
 #[test]
 fn test_expr_var() {
     let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_db_for_foo(
+    let test_function = setup_db_for_function(
         &db_val,
         indoc! {"
             fn foo(a: felt252) -> felt252 {
@@ -261,7 +262,7 @@ fn test_expr_call_failures() {
 #[test]
 fn test_function_body() {
     let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_db_for_foo(
+    let test_function = setup_db_for_function(
         &db_val,
         indoc! {"
             fn foo(a: felt252) {
@@ -300,7 +301,8 @@ fn test_function_body() {
     assert_eq!(param.name(db).long(db), "a");
 }
 
-/// Returns the semantic model of the given function code, assuming the function is named "foo".
-fn setup_db_for_foo<'db>(db: &'db dyn Database, foo_code: &str) -> TestFunction<'db> {
-    setup_test_function_ex(db, foo_code, "foo", "", None, None).unwrap()
+/// Returns the semantic model of the given single-function code.
+fn setup_db_for_function<'db>(db: &'db dyn Database, foo_code: &str) -> TestFunction<'db> {
+    setup_test_function_from_content(db, &format!("#[target_function]\n{foo_code}"), None, None)
+        .unwrap()
 }
