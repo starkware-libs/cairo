@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 #[allow(extern_outside_corelib)]
 extern type A<S>;
 #[allow(extern_outside_corelib)]
@@ -14,9 +14,6 @@ fn foo(a: A<felt252>) -> A<A<felt252>> {
     let _bad: A<A<bool>> = res;
     res
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
@@ -31,13 +28,7 @@ error[E2041]: Unexpected argument type. Expected: "test::A::<test::A::<core::boo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    5.foo(true);
-    MyTrait::foo(6, false);
-}
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn foo<S>(self: T, y: S) -> (T, S);
 }
@@ -46,9 +37,10 @@ impl MyImpl of MyTrait<felt252> {
         (self, y)
     }
 }
-
-//! > function_name
-foo
+fn foo() {
+    5.foo(true);
+    MyTrait::foo(6, false);
+}
 
 //! > expected_diagnostics
 
@@ -59,22 +51,17 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let mut x = 5;
-    x.foo();
-}
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn foo(ref self: T);
 }
 impl MyImpl of MyTrait<felt252> {
     fn foo(ref self: felt252) {}
 }
-
-//! > function_name
-foo
+fn foo() {
+    let mut x = 5;
+    x.foo();
+}
 
 //! > expected_diagnostics
 
@@ -85,7 +72,15 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar<A, const B: usize, impl C: MyTrait<felt252>>() {}
+
+#[generate_trait]
+impl MyImpl of Generics {
+    fn method_no_generics(self: felt252) {}
+    fn method_one_generic<T>(self: felt252) {}
+    fn method_two_generics<T, S>(self: felt252) {}
+}
 fn foo() {
     bar::<1, 1, 1, 1>();
     bar::<felt252, felt252>();
@@ -95,19 +90,6 @@ fn foo() {
     1_felt252.method_one_generic::<felt252, felt252>();
     1_felt252.method_two_generics::<felt252, felt252, felt252>();
 }
-
-//! > module_code
-fn bar<A, const B: usize, impl C: MyTrait<felt252>>() {}
-
-#[generate_trait]
-impl MyImpl of Generics {
-    fn method_no_generics(self: felt252) {}
-    fn method_one_generic<T>(self: felt252) {}
-    fn method_two_generics<T, S>(self: felt252) {}
-}
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E0006]: Trait not found.
@@ -157,13 +139,7 @@ error[E2163]: Expected 2 generic arguments, found 3.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    bar::<MyImpl>();
-    bar::<AnotherImpl>();
-}
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {}
 impl MyImpl of MyTrait<felt252> {}
 fn bar<impl C: MyTrait<felt252>>() {}
@@ -179,9 +155,10 @@ extern fn ioo<T, impl C: MyTrait<felt252>, S>() nopanic;
 
 trait AnotherTrait<T> {}
 impl AnotherImpl of AnotherTrait<felt252> {}
-
-//! > function_name
-foo
+fn foo() {
+    bar::<MyImpl>();
+    bar::<AnotherImpl>();
+}
 
 //! > expected_diagnostics
 error[E2132]: Extern types with impl generics are not supported.
@@ -201,10 +178,7 @@ error[E2134]: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn f() {}
-
-//! > module_code
+//! > cairo_code
 fn foo<T, impl GenericImpl: MyTrait<T>>(x: T) {
     GenericImpl::foo(x);
     MyImpl::foo(4);
@@ -229,9 +203,6 @@ impl AnotherImpl of AnotherTrait<felt252> {
     fn foo(self: felt252) {}
 }
 
-//! > function_name
-f
-
 //! > expected_diagnostics
 error[E2134]: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::MyTrait::<T>`.
  --> lib.cairo:7:14
@@ -245,12 +216,7 @@ error[E2134]: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn f() {
-    MyImpl::<MyImpl2>::foo();
-}
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn foo();
 }
@@ -265,9 +231,9 @@ impl MyImpl<impl Imp: MyTrait2> of MyTrait {
 impl MyImpl2 of MyTrait2 {
     fn foo2() {}
 }
-
-//! > function_name
-f
+fn f() {
+    MyImpl::<MyImpl2>::foo();
+}
 
 //! > expected_diagnostics
 
@@ -278,22 +244,17 @@ f
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+struct MyStruct<S, T> {}
+
+#[allow(extern_outside_corelib)]
+extern fn bar<S, T>() -> MyStruct<S, T> nopanic;
 fn foo() {
     let mut x = bar();
     x = bar::<felt252, _>();
     x = bar::<_, u8>();
     x = bar::<u16, u32>();
 }
-
-//! > module_code
-struct MyStruct<S, T> {}
-
-#[allow(extern_outside_corelib)]
-extern fn bar<S, T>() -> MyStruct<S, T> nopanic;
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
@@ -308,13 +269,7 @@ error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<core::felt25
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait ATrait<T> {}
 trait ATrait2<T, impl Timpl: ATrait<T>> {}
 
@@ -331,13 +286,7 @@ struct B<impl Timpl1: ATrait<T>, T, impl Timpl2: ATrait2<T>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait ATrait<T> {}
 trait ATrait2<T, impl Timpl: ATrait<T>> {}
 
@@ -354,7 +303,13 @@ struct B<T, impl Timpl2: ATrait2<T>, impl Timpl1: ATrait<T>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+trait ATrait<T> {}
+impl AFelt of ATrait<felt252> {}
+trait BTrait<T> {}
+impl BUint of BTrait<u32> {}
+
+fn bar<T, S, impl X: ATrait<T>, impl Y: BTrait<S>>() {}
 fn foo() {
     // Failures.
     bar::<felt252, G: felt252>();
@@ -370,17 +325,6 @@ fn foo() {
     bar::<S: _, X: AFelt, Y: BUint>();
     bar::<felt252, u32, X: AFelt, Y: BUint>();
 }
-
-//! > function_name
-foo
-
-//! > module_code
-trait ATrait<T> {}
-impl AFelt of ATrait<felt252> {}
-trait BTrait<T> {}
-impl BUint of BTrait<u32> {}
-
-fn bar<T, S, impl X: ATrait<T>, impl Y: BTrait<S>>() {}
 
 //! > expected_diagnostics
 error[E2160]: Unknown generic parameter `G`.
@@ -420,13 +364,7 @@ error[E2164]: Generic argument `T` is out of order.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<+unknown>() {}
 
 //! > expected_diagnostics
@@ -442,13 +380,7 @@ fn bar<+unknown>() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<impl X: unknown>() {}
 
 //! > expected_diagnostics
@@ -464,7 +396,7 @@ fn bar<impl X: unknown>() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 trait Introspect<T> {}
 
 #[derive(Drop)]
@@ -480,9 +412,6 @@ impl GenericStructIntrospect<
     T, impl IntrospectTImp: Introspect<Generic<T>>,
 > of Introspect<Generic<T>> {}
 impl Felt252Introspect of Introspect<felt252> {}
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2301]: Inference cycle detected
@@ -502,16 +431,8 @@ error[E2028]: Cycle detected while resolving generic param. Try specifying the g
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<+Drop<T>, T> {}
-
-//! > function_body
 
 //! > expected_diagnostics
 
@@ -522,16 +443,8 @@ trait MyTrait<+Drop<T>, T> {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<+Drop<T>, +Copy<T>> {}
-
-//! > function_body
 
 //! > expected_diagnostics
 error[E0006]: Type not found.
@@ -551,18 +464,10 @@ trait MyTrait<+Drop<T>, +Copy<T>> {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T, +Drop<T>> {}
 
 impl MyImpl<T> of MyTrait<T, T> {}
-
-//! > function_body
 
 //! > expected_diagnostics
 error[E2004]: Unknown impl.
@@ -577,19 +482,12 @@ impl MyImpl<T> of MyTrait<T, T> {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar<const M: felt252>() nopanic;
 fn foo() {
     bar::<{ 1 + 2 }>();
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn bar<const M: felt252>() nopanic;
-
-//! > function_body
 
 //! > expected_diagnostics
 
@@ -600,15 +498,7 @@ extern fn bar<const M: felt252>() nopanic;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let _s: S<{ 1 - 2 }> = bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[allow(extern_outside_corelib)]
 extern type S<const N: felt252>;
 #[allow(extern_outside_corelib)]
@@ -619,8 +509,9 @@ mod A {
         let _x: super::S<{ super::K + 9 }> = super::bar();
     }
 }
-
-//! > function_body
+fn foo() {
+    let _s: S<{ 1 - 2 }> = bar();
+}
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "test::S::<-1>", found: "test::S::<11>".
@@ -640,20 +531,13 @@ error[E2041]: Unexpected argument type. Expected: "test::S::<107>", found: "test
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    bar::<1>()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<const N: felt252>() -> felt252 {
     N + 5
 }
-
-//! > function_body
+fn foo() -> felt252 {
+    bar::<1>()
+}
 
 //! > expected_diagnostics
 
@@ -664,23 +548,16 @@ fn bar<const N: felt252>() -> felt252 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> S<1> {
-    bar::<1>()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<const N: felt252>() -> S<{ 3 - 2 }> {
     S::<N> { field: 1 }
 }
 struct S<const N: felt252> {
     field: felt252,
 }
-
-//! > function_body
+fn foo() -> S<1> {
+    bar::<1>()
+}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "test::S::<1>", found: "test::S::<N>".
@@ -695,18 +572,7 @@ error[E2042]: Unexpected return type. Expected: "test::S::<1>", found: "test::S:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> MyStruct<1> {
-    let s = new();
-    bar1(s);
-    bar2(s);
-    s
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct<const N: felt252> {}
 fn new<const N: felt252>() -> MyStruct<N> {
     MyStruct::<N> {}
@@ -714,8 +580,12 @@ fn new<const N: felt252>() -> MyStruct<N> {
 
 fn bar1(s: MyStruct<1>) {}
 fn bar2(s: MyStruct<2>) {}
-
-//! > function_body
+fn foo() -> MyStruct<1> {
+    let s = new();
+    bar1(s);
+    bar2(s);
+    s
+}
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<2>", found: "test::MyStruct::<1>".
@@ -730,13 +600,7 @@ error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<2>", found: 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Foo {
     fn bar<T>(self: T);
 }
@@ -762,13 +626,7 @@ error[E2038]: Generic parameter kind of impl function `FooImpl::bar` is incompat
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     type Real;
 }

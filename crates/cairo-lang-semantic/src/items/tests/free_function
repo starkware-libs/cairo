@@ -3,11 +3,8 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: bool, a: felt252) {}
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2054]: Redefinition of parameter name "a" in function "foo".
@@ -22,11 +19,8 @@ fn foo(a: bool, a: felt252) {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: bool) implicits(felt252, bool) {}
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -37,16 +31,11 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar<const n: u16>(a: bool) {}
 fn foo(a: bool) {
     bar(a)
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar<const n: u16>(a: bool) {}
 
 //! > expected_diagnostics
 error[E2310]: Failed to infer constant.
@@ -61,13 +50,7 @@ error[E2310]: Failed to infer constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn g<T, +Drop<T>>(x: T) {}
 enum E {
     A: g::<felt252>::Coupon,

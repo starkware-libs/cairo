@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     while true {
         1;
@@ -11,9 +11,6 @@ fn foo() {
         break;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2147]: Can only break with a value inside a `loop`.
@@ -28,7 +25,7 @@ error[E2147]: Can only break with a value inside a `loop`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     while let Some(x) = Some(5) && 4 == 7 {
         1;
@@ -36,9 +33,6 @@ fn foo() {
         break;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2000]: Unsupported feature.
@@ -53,16 +47,13 @@ error[E2000]: Unsupported feature.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     while let Some = Some(5) {
         1;
         break;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 warning[E2192]: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
@@ -77,21 +68,16 @@ warning[E2192]: Pattern missing subpattern for the payload of variant. Consider 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    B: (),
+}
 fn foo() {
     let a = A::B(());
     while let A::B = a {
         1;
         break;
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    B: (),
 }
 
 //! > expected_diagnostics

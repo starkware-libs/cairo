@@ -3,13 +3,10 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut ref mut ref ref _a = 3;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2101]: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
@@ -39,13 +36,10 @@ error[E2101]: `ref` modifier was specified after another modifier (`mut`). Only 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let ref mut _a = 3;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2101]: `mut` modifier was specified after another modifier (`ref`). Only a single modifier is allowed.
@@ -65,13 +59,10 @@ error[E2102]: `ref` is only allowed for function parameters, not for local varia
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let ref _a = 3;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2102]: `ref` is only allowed for function parameters, not for local variables.
@@ -86,14 +77,11 @@ error[E2102]: `ref` is only allowed for function parameters, not for local varia
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x = not_found;
     let _x = foo;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.
@@ -113,13 +101,10 @@ error[E2005]: Expected variable or constant, found function.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _a: () = 3_felt252;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "()", found: "core::felt252".
@@ -134,7 +119,7 @@ error[E2041]: Unexpected argument type. Expected: "()", found: "core::felt252".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let (a, b, c) = undefined();
     let [d, e, f] = (a, b, c);
@@ -143,9 +128,6 @@ fn foo() {
     let [n, o, p] = [j, k, l, m];
     let _ignore = n + o + p;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E0006]: Function not found.

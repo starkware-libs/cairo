@@ -3,20 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let s1 = S1 { a: 1, b: 2 };
-    let s2 = S2 { inner: s1, c: 5 };
-    let s3 = S3 { inner: s2 };
-
-    (@s3).a;
-    s3.c;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct S1 {
     a: usize,
@@ -55,6 +42,14 @@ impl S3SnapDeref of core::ops::Deref<@S3> {
         *self.inner.inner
     }
 }
+fn foo() {
+    let s1 = S1 { a: 1, b: 2 };
+    let s2 = S2 { inner: s1, c: 5 };
+    let s3 = S3 { inner: s2 };
+
+    (@s3).a;
+    s3.c;
+}
 
 //! > expected_diagnostics
 
@@ -65,18 +60,7 @@ impl S3SnapDeref of core::ops::Deref<@S3> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let s1 = S1 { a: 1, b: 2 };
-    let s2 = S2 { inner: s1, c: 5 };
-
-    s2.foo();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct S1 {
     a: usize,
@@ -100,6 +84,12 @@ impl S2Deref of core::ops::Deref<S2> {
 impl MyImpl of MyTrait {
     fn foo(self: @S1) {}
 }
+fn foo() {
+    let s1 = S1 { a: 1, b: 2 };
+    let s2 = S2 { inner: s1, c: 5 };
+
+    s2.foo();
+}
 
 //! > expected_diagnostics
 
@@ -110,14 +100,11 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let a = BoxTrait::new(@array![1_u32]);
     let _ = a.len();
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -128,14 +115,11 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut a = BoxTrait::new(@array![1_u32]);
     let _ = (*a);
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -146,16 +130,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let mut a = S1 { inner: 1 };
-    let _ = (*a);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S1 {
     inner: usize,
 }
@@ -165,6 +140,10 @@ impl S1DerefMut of core::ops::DerefMut<S1> {
     fn deref_mut(ref self: S1) -> Self::Target {
         self.inner
     }
+}
+fn foo() {
+    let mut a = S1 { inner: 1 };
+    let _ = (*a);
 }
 
 //! > expected_diagnostics
@@ -176,16 +155,7 @@ impl S1DerefMut of core::ops::DerefMut<S1> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let a = S1 { inner: 1 };
-    let _ = (*a);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S1 {
     inner: usize,
 }
@@ -195,6 +165,10 @@ impl S1DerefMut of core::ops::DerefMut<S1> {
     fn deref_mut(ref self: S1) -> Self::Target {
         self.inner
     }
+}
+fn foo() {
+    let a = S1 { inner: 1 };
+    let _ = (*a);
 }
 
 //! > expected_diagnostics
@@ -210,18 +184,13 @@ error[E2135]: Type `test::S1` cannot be dereferenced
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: Box<@A>) -> @usize {
-    a.b
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     a: usize,
     b: usize,
+}
+fn foo(a: Box<@A>) -> @usize {
+    a.b
 }
 
 //! > expected_diagnostics
@@ -233,18 +202,13 @@ struct A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: Box<@@@A>) -> @@@usize {
-    a.b
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     a: usize,
     b: usize,
+}
+fn foo(a: Box<@@@A>) -> @@@usize {
+    a.b
 }
 
 //! > expected_diagnostics
@@ -256,16 +220,7 @@ struct A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let b = MyBox {};
-    b.get();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct Inner {}
 
@@ -277,6 +232,10 @@ impl MyDeref of core::ops::Deref<MyBox> {
     fn deref(self: MyBox) -> Inner {
         Inner {}
     }
+}
+fn foo() {
+    let b = MyBox {};
+    b.get();
 }
 
 //! > expected_diagnostics
@@ -300,13 +259,7 @@ Candidate `core::dict::Felt252DictTrait::get` inference failed with: Type mismat
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct A {}
 
@@ -343,13 +296,7 @@ impl BDeref of core::ops::Deref<B> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct A {}
 

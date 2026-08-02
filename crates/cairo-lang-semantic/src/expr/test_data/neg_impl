@@ -3,16 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: u8) -> Option<u8> {
-    let b: Option<u8> = a.try_into();
-    b
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 use core::traits::TryInto;
 pub trait DowncastableInt<Type>;
 
@@ -29,6 +20,10 @@ impl DowncastableTryInto<
         core::integer::downcast(self)
     }
 }
+fn foo(a: u8) -> Option<u8> {
+    let b: Option<u8> = a.try_into();
+    b
+}
 
 //! > expected_diagnostics
 
@@ -39,15 +34,7 @@ impl DowncastableTryInto<
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(a: u8) -> u8 {
-    bar(a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn f(t: T) -> T;
 }
@@ -59,6 +46,9 @@ impl MyImpl<T, -Drop<T>> of MyTrait<T> {
 
 fn bar<T>(t: T) -> T {
     MyTrait::f(t)
+}
+fn foo(a: u8) -> u8 {
+    bar(a)
 }
 
 //! > expected_diagnostics
@@ -74,15 +64,7 @@ error[E2311]: Trait has no implementation in context: test::MyTrait::<T>.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> u32 {
-    MyTrait2::foo(5_u32)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 pub trait MyTrait<T> {}
 
 impl I of MyTrait<u32> {}
@@ -95,6 +77,9 @@ impl I2<T, -MyTrait<T>> of MyTrait2<T> {
     fn foo(self: T) -> T {
         self
     }
+}
+fn foo() -> u32 {
+    MyTrait2::foo(5_u32)
 }
 
 //! > expected_diagnostics
@@ -110,15 +95,7 @@ error[E2311]: Trait has no implementation in context: test::MyTrait2::<core::int
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> u32 {
-    I2::foo(5_u32)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 pub trait MyTrait<T> {}
 
 impl I of MyTrait<u32> {}
@@ -131,6 +108,9 @@ impl I2<T, -MyTrait<T>> of MyTrait2<T> {
     fn foo(self: T) -> T {
         self
     }
+}
+fn foo() -> u32 {
+    I2::foo(5_u32)
 }
 
 //! > expected_diagnostics
@@ -146,13 +126,7 @@ error[E2312]: Trait has implementation in context: test::MyTrait::<core::integer
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 pub trait Consumer<T> {
     fn consume(self: T, input: u32);
     fn bar(x: T);
@@ -191,15 +165,7 @@ impl TConsumerImpl<T, +core::fmt::Debug<T>, +Drop<T>, -Producer<T>> of Consumer<
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    Trait3::bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Trait<T> {}
 
 impl I of Trait<u32> {}
@@ -222,6 +188,9 @@ impl I3<-Trait<u32>> of Trait3 {
         Trait2::foo();
     }
 }
+fn foo() {
+    Trait3::bar();
+}
 
 //! > expected_diagnostics
 error[E2311]: Trait has no implementation in context: test::Trait3.
@@ -236,15 +205,7 @@ error[E2311]: Trait has no implementation in context: test::Trait3.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar::<felt252>();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 use core::metaprogramming::TypeEqual;
 trait MyTrait {
     fn f();
@@ -258,6 +219,9 @@ impl MyImpl<T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>> of MyTrait {
 fn bar<T>() {
     MyImpl::<T, 1>::f();
 }
+fn foo() {
+    bar::<felt252>();
+}
 
 //! > expected_diagnostics
 
@@ -268,15 +232,7 @@ fn bar<T>() {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    Bad::<u128>::bad();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 pub trait NegImpl<+Drop<u32>> {}
 
 pub trait Bad<T> {
@@ -287,6 +243,9 @@ pub impl ImplBad<T, -NegImpl<_>> of Bad<T> {
     fn bad() -> T {
         panic!("Bad::bad() called")
     }
+}
+fn foo() {
+    Bad::<u128>::bad();
 }
 
 //! > expected_diagnostics
@@ -302,15 +261,7 @@ pub trait NegImpl<+Drop<u32>> {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    bar::<5>();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 use core::metaprogramming::TypeEqual;
 pub trait NegImpl<T> {}
 
@@ -329,6 +280,9 @@ pub impl ImplBad<const C: u32, -TypeEqual<A<C>, A<0>>> of Bad {
         C
     }
 }
+fn foo() {
+    bar::<5>();
+}
 
 //! > expected_diagnostics
 error[E2313]: Cannot infer trait core::metaprogramming::TypeEqual::<test::A::<?0>, test::A::<0>>. First generic argument must be known.
@@ -343,7 +297,7 @@ error[E2313]: Cannot infer trait core::metaprogramming::TypeEqual::<test::A::<?0
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: u32) -> (u32, u32) {
     let s0 = array![a].span();
     let s1 = array![a + 1].span();
@@ -354,11 +308,6 @@ fn foo(a: u32) -> (u32, u32) {
     (*c0.pop_front().unwrap(), *c1.pop_front().unwrap())
 }
 
-//! > function_name
-foo
-
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -368,13 +317,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait IsSpecificSize<T>;
 impl IsSpecificSizeImpl of IsSpecificSize<[u32; 3]>;
 
@@ -400,15 +343,7 @@ error[E2313]: Negative impl has an unsupported generic argument GenericParamCons
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> felt252 {
-    MyTrait::<felt252>::f()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn f() -> felt252;
 }
@@ -417,6 +352,9 @@ impl BlanketNonCopy<T, -MissomgTrait<T>> of MyTrait<T> {
     fn f() -> felt252 {
         7
     }
+}
+fn foo() -> felt252 {
+    MyTrait::<felt252>::f()
 }
 
 //! > expected_diagnostics
@@ -437,15 +375,7 @@ error[E2311]: Trait has no implementation in context: test::MyTrait::<core::felt
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> felt252 {
-    MyTrait::<felt252>::f()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn f() -> felt252;
 }
@@ -454,6 +384,9 @@ impl BlanketNonCopy<T, +MissingTrait<T>> of MyTrait<T> {
     fn f() -> felt252 {
         7
     }
+}
+fn foo() -> felt252 {
+    MyTrait::<felt252>::f()
 }
 
 //! > expected_diagnostics

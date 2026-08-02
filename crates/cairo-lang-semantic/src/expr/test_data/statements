@@ -3,14 +3,11 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut x = 3
     x = 2;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E1001]: Missing token ';'.
@@ -25,13 +22,10 @@ error[E1001]: Missing token ';'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut _x = 3
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E1001]: Missing token ';'.
@@ -46,16 +40,13 @@ error[E1001]: Missing token ';'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> felt252 {
     if true {
         return 1
     }
     2
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E1001]: Missing token ';'.
@@ -70,13 +61,10 @@ error[E1001]: Missing token ';'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> felt252 {
     return 1
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E1001]: Missing token ';'.
@@ -91,17 +79,12 @@ error[E1001]: Missing token ';'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar() {}
 fn foo() {
     bar()
     bar();
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar() {}
 
 //! > expected_diagnostics
 error[E2133]: Missing semicolon
@@ -116,13 +99,10 @@ error[E2133]: Missing semicolon
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> felt252 {
     2
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -133,7 +113,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     // `if` without ';' in the end
     if true {}
@@ -149,9 +129,6 @@ fn foo() {
     let _x = 3;
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -161,16 +138,13 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     #[unknown_attr1]
     #[unknown_attr2]
     #[cairofmt::skip]
     let _x = 3;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2155]: Unknown statement attribute.
@@ -190,7 +164,11 @@ error[E2155]: Unknown statement attribute.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[unstable(feature: "testing", note: "Some reason", since: "1.0.0")]
+fn unstable_function_with_note() -> felt252 {
+    0
+}
 fn foo() {
     let _x = {
         #[feature("testing")]
@@ -204,17 +182,6 @@ fn foo() {
     unstable_function_with_note(); // Attr on non-expression tail works.
 }
 
-//! > function_name
-foo
-
-//! > module_code
-#[unstable(feature: "testing", note: "Some reason", since: "1.0.0")]
-fn unstable_function_with_note() -> felt252 {
-    0
-}
-
-//! > function_body
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -224,15 +191,10 @@ fn unstable_function_with_note() -> felt252 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     type MyAlias = felt252;
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E2197]: Item not supported as a statement.
@@ -247,17 +209,12 @@ error[E2197]: Item not supported as a statement.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    m!(1);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro m {
     ($x) => { 0 };
+}
+fn foo() {
+    m!(1);
 }
 
 //! > expected_diagnostics
@@ -278,15 +235,10 @@ error[E2158]: No matching rule found in inline macro `m`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     use core::array::*;
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E2075]: Unsupported use item in statement.

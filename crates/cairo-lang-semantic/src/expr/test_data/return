@@ -3,13 +3,10 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> felt252 {
     return 1 + 2;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -20,14 +17,11 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> felt252 {
     return 1 + 2;
     35
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -38,7 +32,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo(x: felt252) -> felt252 {
     match x {
         0 => { return 5; },
@@ -46,9 +40,6 @@ fn foo(x: felt252) -> felt252 {
         2 => { return 9; },
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -59,11 +50,8 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> felt252 {}
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::felt252", found: "()".

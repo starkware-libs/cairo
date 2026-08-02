@@ -3,22 +3,17 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    MyStruct {};
-    MyEnum::a(3);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 struct MyStruct {}
 
 #[phantom]
 enum MyEnum {
     a: felt252,
+}
+fn foo() {
+    MyStruct {};
+    MyEnum::a(3);
 }
 
 //! > expected_diagnostics
@@ -39,13 +34,7 @@ error[E2019]: Phantom types cannot be instantiated.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[cfg(ref x)]
 fn f() {}
 
@@ -58,19 +47,14 @@ fn f() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(x: Option<Ph>) -> Option<Ph> {
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum Ph {
     A: felt252,
     B: (felt252, felt252),
+}
+fn foo(x: Option<Ph>) -> Option<Ph> {
+    x
 }
 
 //! > expected_diagnostics
@@ -91,19 +75,14 @@ fn foo(x: Option<Ph>) -> Option<Ph> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(x: Option<Ph>) -> Option<Ph> {
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 struct Ph {
     a: felt252,
     b: felt252,
+}
+fn foo(x: Option<Ph>) -> Option<Ph> {
+    x
 }
 
 //! > expected_diagnostics
@@ -124,15 +103,7 @@ fn foo(x: Option<Ph>) -> Option<Ph> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(x: Wrapper<Ph>) -> Wrapper<Ph> {
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 struct Ph {
     a: felt252,
@@ -140,6 +111,9 @@ struct Ph {
 
 struct Wrapper<T> {
     value: T,
+}
+fn foo(x: Wrapper<Ph>) -> Wrapper<Ph> {
+    x
 }
 
 //! > expected_diagnostics
@@ -160,15 +134,10 @@ fn foo(x: Wrapper<Ph>) -> Wrapper<Ph> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(x: @Ph) {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum Ph {}
+fn foo(x: @Ph) {}
 
 //! > expected_diagnostics
 error[E2019]: Phantom types cannot be instantiated.
@@ -183,15 +152,10 @@ fn foo(x: @Ph) {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() implicits(Ph) {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum Ph {}
+fn foo() implicits(Ph) {}
 
 //! > expected_diagnostics
 error[E2019]: Phantom types cannot be instantiated.
@@ -206,17 +170,12 @@ fn foo() implicits(Ph) {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[phantom]
+enum Ph {}
 fn foo() {
     let _f = |_x: Option<Ph>| {};
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[phantom]
-enum Ph {}
 
 //! > expected_diagnostics
 error[E2019]: Phantom types cannot be instantiated.
@@ -231,18 +190,13 @@ error[E2019]: Phantom types cannot be instantiated.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(x: Array<Ph>) -> Array<Ph> {
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum Ph {
     A: felt252,
+}
+fn foo(x: Array<Ph>) -> Array<Ph> {
+    x
 }
 
 //! > expected_diagnostics
@@ -263,17 +217,12 @@ fn foo(x: Array<Ph>) -> Array<Ph> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[phantom]
+struct Ph {}
 fn foo(x: Array<Ph>) -> Array<Ph> {
     x
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[phantom]
-struct Ph {}
 
 //! > expected_diagnostics
 error[E2019]: Phantom types cannot be instantiated.
@@ -293,13 +242,7 @@ fn foo(x: Array<Ph>) -> Array<Ph> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum Ph {
     A: felt252,
@@ -322,18 +265,13 @@ error[E2019]: Phantom types cannot be instantiated.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(x: Span<Ph>) -> Span<Ph> {
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum Ph {
     A: felt252,
+}
+fn foo(x: Span<Ph>) -> Span<Ph> {
+    x
 }
 
 //! > expected_diagnostics
@@ -354,15 +292,10 @@ fn foo(x: Span<Ph>) -> Span<Ph> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(x: Span<()>) -> Span<()> {
     x
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E2053]: Cannot have array of type "()" that is zero sized.
@@ -382,13 +315,7 @@ fn foo(x: Span<()>) -> Span<()> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(x: B, y: A) {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum Ph {
     A: felt252,
@@ -402,6 +329,7 @@ struct B {
     a: Array<A>,
     bad: Array<Ph>,
 }
+fn foo(x: B, y: A) {}
 
 //! > expected_diagnostics
 error[E2019]: Phantom types cannot be instantiated.
@@ -436,15 +364,10 @@ fn foo(x: B, y: A) {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(x: A) {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     a: Array<A>,
 }
+fn foo(x: A) {}
 
 //! > expected_diagnostics

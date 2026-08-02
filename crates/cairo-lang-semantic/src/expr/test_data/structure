@@ -3,7 +3,11 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+struct A {
+    a: felt252,
+    b: (),
+}
 #[cairofmt::skip]
 fn foo(a: A) -> A {
     A {
@@ -14,15 +18,6 @@ fn foo(a: A) -> A {
         ..d,
         f: 4,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-struct A {
-    a: felt252,
-    b: (),
 }
 
 //! > expected_diagnostics
@@ -58,22 +53,17 @@ error[E2018]: Unknown member.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+struct A {
+    a: (felt252,),
+    b: felt252,
+    c: felt252,
+}
 fn foo(a: A) {
     a.f;
     a.a::b;
     a.4.4;
     5_felt252.a;
-}
-
-//! > function_name
-foo
-
-//! > module_code
-struct A {
-    a: (felt252,),
-    b: felt252,
-    c: felt252,
 }
 
 //! > expected_diagnostics
@@ -104,17 +94,12 @@ error[E0007]: Type "core::felt252" has no member "a"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(a: A) -> A {
-    A { a: 4, ..a }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     a: felt252,
+}
+fn foo(a: A) -> A {
+    A { a: 4, ..a }
 }
 
 //! > expected_diagnostics
@@ -130,13 +115,7 @@ error[E2023]: Base struct has no effect, all the fields in the struct have alrea
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S {
     val: felt252,
 }

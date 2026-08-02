@@ -3,13 +3,10 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: u128, b: u128, c: u128) -> bool {
     a && b || c
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2039]: Expected type "core::bool", found: "core::integer::u128".
@@ -34,17 +31,12 @@ error[E2039]: Expected type "core::bool", found: "core::integer::u128".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(a: bool, b: bool, c: bool) -> bool {
-    bar(a, b, c)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<S, T>(a: S, b: bool, c: T) -> bool {
     a && Default::default() || c
+}
+fn foo(a: bool, b: bool, c: bool) -> bool {
+    bar(a, b, c)
 }
 
 //! > expected_diagnostics

@@ -3,13 +3,10 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> Option<felt252> {
     Some(5)
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -20,14 +17,11 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut arr = array::array_new();
     array::array_append(ref arr, 1);
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -41,21 +35,16 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > comments
 // TODO(spapini): Make better diagnostics.
 
-//! > function_code
-fn foo() {
-    MyTrait::foo();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn foo();
 }
 
 impl MyImpl<+MyTrait> of MyTrait {
     fn foo() {}
+}
+fn foo() {
+    MyTrait::foo();
 }
 
 //! > expected_diagnostics
@@ -71,13 +60,10 @@ error[E2301]: Inference cycle detected
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut _arr = array::array_new();
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2314]: Type annotations needed. Failed to infer ?0.
@@ -92,13 +78,10 @@ error[E2314]: Type annotations needed. Failed to infer ?0.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut _arr: felt252 = array::array_new::<felt252>();
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
@@ -113,13 +96,10 @@ error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "core:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> felt252 {
     panic(array::array_new())
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -130,13 +110,10 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> never {
     5_felt252
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::never", found: "core::felt252".
@@ -151,17 +128,7 @@ error[E2042]: Unexpected return type. Expected: "core::never", found: "core::fel
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyTrait::foo(5);
-    MyTrait::foo(true);
-    MyTrait::foo(None);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn foo(x: T);
 }
@@ -174,6 +141,11 @@ impl MyImpl2 of MyTrait<bool> {
 impl MyImpl3 of MyTrait<Option<felt252>> {
     fn foo(x: Option<felt252>) {}
 }
+fn foo() {
+    MyTrait::foo(5);
+    MyTrait::foo(true);
+    MyTrait::foo(None);
+}
 
 //! > expected_diagnostics
 
@@ -184,15 +156,7 @@ impl MyImpl3 of MyTrait<Option<felt252>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    MyTrait::foo(true);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn foo(x: T);
 }
@@ -207,6 +171,9 @@ impl MyImpl3 of MyTrait<Option<felt252>> {
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option<bool>) {}
+}
+fn foo() {
+    MyTrait::foo(true);
 }
 
 //! > expected_diagnostics
@@ -222,16 +189,7 @@ error[E2311]: Trait has no implementation in context: test::MyTrait::<core::bool
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    MyTrait::foo(5);
-    MyTrait::foo(Option::<felt252>::None);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn foo(x: T);
 }
@@ -246,6 +204,10 @@ impl MyImpl3 of MyTrait<Option<felt252>> {
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option<bool>) {}
+}
+fn foo() {
+    MyTrait::foo(5);
+    MyTrait::foo(Option::<felt252>::None);
 }
 
 //! > expected_diagnostics
@@ -261,15 +223,7 @@ error[E2313]: Trait `test::MyTrait::<core::felt252>` has multiple implementation
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    Marker::<-1>::tag()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Marker<const K: felt252> {
     fn tag() -> felt252;
 }
@@ -285,6 +239,9 @@ impl MarkerPrimeMinus1 of Marker<
         200
     }
 }
+fn foo() -> felt252 {
+    Marker::<-1>::tag()
+}
 
 //! > expected_diagnostics
 
@@ -295,15 +252,7 @@ impl MarkerPrimeMinus1 of Marker<
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    MyTrait::foo(None);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn foo(x: T);
 }
@@ -318,6 +267,9 @@ impl MyImpl3 of MyTrait<Option<felt252>> {
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option<bool>) {}
+}
+fn foo() {
+    MyTrait::foo(None);
 }
 
 //! > expected_diagnostics
@@ -333,17 +285,12 @@ error[E2313]: Trait `test::MyTrait::<core::option::Option::<?0>>` has multiple i
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(my_box: Box<MyStruct>) -> felt252 {
-    box::unbox(my_box).a
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: felt252,
+}
+fn foo(my_box: Box<MyStruct>) -> felt252 {
+    box::unbox(my_box).a
 }
 
 //! > expected_diagnostics
@@ -355,15 +302,7 @@ struct MyStruct {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar(true);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<impl Tr: MyTrait<bool>>(x: bool) {}
 
 trait MyTrait<T> {
@@ -371,6 +310,9 @@ trait MyTrait<T> {
 }
 impl MyImpl1 of MyTrait<bool> {
     fn foo(x: bool) {}
+}
+fn foo() {
+    bar(true);
 }
 
 //! > expected_diagnostics
@@ -382,15 +324,7 @@ impl MyImpl1 of MyTrait<bool> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar(Some(5));
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<S, impl Tr: MyTrait<S>>(x: S) {}
 
 trait MyTrait<T> {
@@ -407,6 +341,9 @@ impl MyImpl3 of MyTrait<Option<felt252>> {
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option<bool>) {}
+}
+fn foo() {
+    bar(Some(5));
 }
 
 //! > expected_diagnostics
@@ -418,15 +355,7 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    bar(true);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<S, impl Tr: MyTrait<S>>(x: S) {}
 
 trait MyTrait<T> {
@@ -443,6 +372,9 @@ impl MyImpl3 of MyTrait<Option<felt252>> {
 }
 impl MyImpl4 of MyTrait<Option<bool>> {
     fn foo(x: Option<bool>) {}
+}
+fn foo() {
+    bar(true);
 }
 
 //! > expected_diagnostics
@@ -458,15 +390,7 @@ error[E2311]: Trait has no implementation in context: test::MyTrait::<core::bool
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    A::<felt252> {}.foo();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A<T> {}
 trait MyTrait<T> {
     fn foo<impl TDrop: Drop<T>>(self: A<T>);
@@ -478,6 +402,9 @@ impl MyImpl<T> of MyTrait<T> {
     }
     fn bar<impl TDrop: Drop<T>>(self: A<T>) {}
 }
+fn foo() {
+    A::<felt252> {}.foo();
+}
 
 //! > expected_diagnostics
 
@@ -488,14 +415,11 @@ impl MyImpl<T> of MyTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _ = (@5).clone();
     let _ = 5.clone();
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -506,17 +430,12 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    clone_loop(5)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn clone_loop<T, impl TClone: Clone<T>>(x: T) {
     clone_loop::<T>(x)
+}
+fn foo() {
+    clone_loop(5)
 }
 
 //! > expected_diagnostics
@@ -528,13 +447,7 @@ fn clone_loop<T, impl TClone: Clone<T>>(x: T) {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {}
 struct B {
     a: A,
@@ -550,18 +463,13 @@ impl I<impl TI: Drop<A>> of Drop<B>;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    assert_eq(1, 2 + 3, '4');
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline]
 fn assert_eq<T, impl TPartialEq: PartialEq<T>>(a: T, b: T, err_code: felt252) {
     assert(a == b, err_code);
+}
+fn foo() {
+    assert_eq(1, 2 + 3, '4');
 }
 
 //! > expected_diagnostics
@@ -573,13 +481,10 @@ fn assert_eq<T, impl TPartialEq: PartialEq<T>>(a: T, b: T, err_code: felt252) {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let u256 { low: _, high: _ } = 123;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -590,13 +495,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Bash<S> {
     fn foo(state: S);
 }
@@ -618,13 +517,10 @@ impl BashEx<S, +Bash<S>> of BashExTrait<S> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x = "hello";
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2314]: Type annotations needed. Failed to infer ?0.
@@ -639,17 +535,12 @@ error[E2314]: Type annotations needed. Failed to infer ?0.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+impl MyImpl of NonExistingTrait {}
 fn foo() {
     // A NumericLiteral<felt252> should be inferred here.
     let _x = 123;
 }
-
-//! > function_name
-foo
-
-//! > module_code
-impl MyImpl of NonExistingTrait {}
 
 //! > expected_diagnostics
 error[E0006]: Trait not found.
@@ -664,14 +555,11 @@ impl MyImpl of NonExistingTrait {}
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut data_hash = 0;
     data_hash = unknown_return_unknown();
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E0006]: Function not found.
@@ -686,15 +574,7 @@ error[E0006]: Function not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    bar(0_u8);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {}
 
 impl MyIpls<T, +Drop<T>> of MyTrait<T> {}
@@ -712,6 +592,9 @@ fn bar<T, +Drop<T>, +MyTrait<T>>(a: T) -> T {
 fn baz<T, +Drop<T>, +MyTrait<T>>(a: T) -> T {
     a
 }
+fn foo() {
+    bar(0_u8);
+}
 
 //! > expected_diagnostics
 error[E2313]: Trait `test::MyTrait::<T>` has multiple implementations, in: `+MyTrait<T>`, `test::MyIpls::<T, +Drop<T>>`
@@ -726,18 +609,13 @@ error[E2313]: Trait `test::MyTrait::<T>` has multiple implementations, in: `+MyT
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn takes_snapshots<T>(x: @T, y: @T) {}
 fn foo() {
     let x = 5;
     let y: u32 = 5;
     takes_snapshots(x, y);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn takes_snapshots<T>(x: @T, y: @T) {}
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "@?2", found: "core::integer::u32".
@@ -754,13 +632,10 @@ Consider adding or removing snapshots.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> Option {
     Some(5_u32)
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2314]: Type annotations needed. Failed to infer ?0.
@@ -775,15 +650,7 @@ fn foo() -> Option {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    MyTrait::f();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn f() -> Self::ty;
@@ -792,6 +659,9 @@ impl MyImpl of MyTrait {
     fn f() -> u32 {
         5_u32
     }
+}
+fn foo() {
+    MyTrait::f();
 }
 
 //! > expected_diagnostics
