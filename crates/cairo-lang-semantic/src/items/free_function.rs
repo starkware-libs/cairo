@@ -148,7 +148,7 @@ fn priv_free_function_body_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(ref), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
-    fn priv_free_function_body_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         free_function_id: FreeFunctionId<'db>,
     ) -> Maybe<FunctionBodyData<'db>> {
@@ -200,7 +200,7 @@ fn priv_free_function_body_data<'db>(
             body: FunctionBody { arenas, body_expr },
         })
     }
-    priv_free_function_body_data(db, free_function_id)
+    query(db, free_function_id)
 }
 
 /// Trait for free function-related semantic queries.

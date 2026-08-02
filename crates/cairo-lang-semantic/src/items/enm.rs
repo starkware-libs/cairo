@@ -169,10 +169,7 @@ fn enum_definition_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(ref), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
-    fn enum_definition_data<'db>(
-        db: &'db dyn Database,
-        enum_id: EnumId<'db>,
-    ) -> Maybe<EnumDefinitionData<'db>> {
+    fn query<'db>(db: &'db dyn Database, enum_id: EnumId<'db>) -> Maybe<EnumDefinitionData<'db>> {
         let module_id = enum_id.parent_module(db);
         let crate_id = module_id.owning_crate(db);
         let mut diagnostics = SemanticDiagnostics::new(module_id);
@@ -238,7 +235,7 @@ fn enum_definition_data<'db>(
             resolver_data,
         })
     }
-    enum_definition_data(db, enum_id)
+    query(db, enum_id)
 }
 
 /// Query implementation of [EnumSemantic::enum_definition_diagnostics].

@@ -73,10 +73,7 @@ fn priv_use_semantic_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(clone), cycle_result=cycle)]
-    fn priv_use_semantic_data<'db>(
-        db: &'db dyn Database,
-        use_id: UseId<'db>,
-    ) -> Maybe<Arc<UseData<'db>>> {
+    fn query<'db>(db: &'db dyn Database, use_id: UseId<'db>) -> Maybe<Arc<UseData<'db>>> {
         let module_id = use_id.parent_module(db);
         let mut diagnostics = SemanticDiagnostics::new(module_id);
         let module_item_id = ModuleItemId::Use(use_id);
@@ -98,7 +95,7 @@ fn priv_use_semantic_data<'db>(
 
         Ok(Arc::new(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data }))
     }
-    priv_use_semantic_data(db, use_id)
+    query(db, use_id)
 }
 
 /// Returns the segments that are the parts of the use path.
@@ -230,13 +227,10 @@ fn use_resolver_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(clone), cycle_result=cycle)]
-    fn use_resolver_data<'db>(
-        db: &'db dyn Database,
-        use_id: UseId<'db>,
-    ) -> Maybe<Arc<ResolverData<'db>>> {
+    fn query<'db>(db: &'db dyn Database, use_id: UseId<'db>) -> Maybe<Arc<ResolverData<'db>>> {
         calc(db, use_id)
     }
-    use_resolver_data(db, use_id)
+    query(db, use_id)
 }
 
 pub trait SemanticUseEx<'a>: Database {
@@ -297,7 +291,7 @@ fn priv_global_use_semantic_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(clone), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
-    fn priv_global_use_semantic_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         global_use_id: GlobalUseId<'db>,
     ) -> Maybe<UseGlobalData<'db>> {
@@ -340,7 +334,7 @@ fn priv_global_use_semantic_data<'db>(
         }
         Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module })
     }
-    priv_global_use_semantic_data(db, global_use_id)
+    query(db, global_use_id)
 }
 
 /// Implementation of [UseSemantic::priv_global_use_imported_module].
@@ -416,7 +410,7 @@ fn module_imported_modules<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(ref), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
-    fn module_imported_modules<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         _tracked: Tracked,
         module_id: ModuleId<'db>,
@@ -473,7 +467,7 @@ fn module_imported_modules<'db>(
         }
         modules
     }
-    module_imported_modules(db, tracked, module_id)
+    query(db, tracked, module_id)
 }
 
 /// Trait for use-related semantic queries.

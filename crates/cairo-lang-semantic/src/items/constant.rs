@@ -339,13 +339,10 @@ fn constant_semantic_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(ref), cycle_result=cycle)]
-    fn constant_semantic_data<'db>(
-        db: &'db dyn Database,
-        const_id: ConstantId<'db>,
-    ) -> Maybe<ConstantData<'db>> {
+    fn query<'db>(db: &'db dyn Database, const_id: ConstantId<'db>) -> Maybe<ConstantData<'db>> {
         calc(db, const_id, false)
     }
-    constant_semantic_data(db, const_id)
+    query(db, const_id)
 }
 
 /// Returns constant semantic data for the given ItemConstant.

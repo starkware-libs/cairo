@@ -437,7 +437,7 @@ fn generic_param_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn generic_param_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         generic_param_id: GenericParamId<'db>,
     ) -> Maybe<GenericParamData<'db>> {
@@ -492,7 +492,7 @@ fn generic_param_data<'db>(
             resolver_data,
         })
     }
-    generic_param_data(db, generic_param_id)
+    query(db, generic_param_id)
 }
 
 /// Computes the data of a generic param when it is in a cycle.

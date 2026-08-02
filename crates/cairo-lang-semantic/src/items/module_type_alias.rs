@@ -77,13 +77,13 @@ fn module_type_alias_semantic_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn module_type_alias_semantic_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         module_type_alias_id: ModuleTypeAliasId<'db>,
     ) -> Maybe<ModuleTypeAliasData<'db>> {
         calc(db, module_type_alias_id, false)
     }
-    module_type_alias_semantic_data(db, module_type_alias_id)
+    query(db, module_type_alias_id)
 }
 
 /// Returns the generic parameters data of a type alias.

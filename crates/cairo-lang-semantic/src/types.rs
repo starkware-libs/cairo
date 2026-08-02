@@ -130,10 +130,10 @@ impl<'db> TypeId<'db> {
         }
         /// Query implementation.
         #[salsa::tracked(returns(copy), cycle_result=cycle)]
-        fn is_phantom<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
+        fn query<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
             ty.long(db).is_phantom(db)
         }
-        is_phantom(db, *self)
+        query(db, *self)
     }
 
     /// Short name of the type argument.
@@ -1037,16 +1037,13 @@ fn array_element_violation<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(clone), cycle_result=cycle)]
-    fn array_element_violation<'db>(
-        db: &'db dyn Database,
-        ty: TypeId<'db>,
-    ) -> Option<ArrayElementViolation<'db>> {
+    fn query<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Option<ArrayElementViolation<'db>> {
         if ty.is_phantom(db) {
             return None;
         }
-        array_element_deps_or_issue(db, ty, |dep| array_element_violation(db, dep))
+        array_element_deps_or_issue(db, ty, |dep| query(db, dep))
     }
-    array_element_violation(db, ty)
+    query(db, ty)
 }
 
 /// Searches `ty` for a bad array element. An array's element is checked directly (phantom or
@@ -1119,7 +1116,7 @@ fn type_size_info<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<TypeSize
     }
     /// Query implementation.
     #[salsa::tracked(returns(clone), cycle_result=cycle)]
-    fn type_size_info<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<TypeSizeInformation> {
+    fn query<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<TypeSizeInformation> {
         match ty.long(db) {
             TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
                 ConcreteTypeId::Struct(id) => {
@@ -1169,7 +1166,7 @@ fn type_size_info<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<TypeSize
         }
         Ok(TypeSizeInformation::Other)
     }
-    type_size_info(db, ty)
+    query(db, ty)
 }
 
 /// Checks if all types in the iterator are zero sized.

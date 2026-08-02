@@ -62,7 +62,7 @@ pub fn final_contains_call_cycle<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_result=cycle)]
-    fn final_contains_call_cycle<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         function_id: ConcreteFunctionWithBodyId<'db>,
     ) -> Maybe<bool> {
@@ -79,7 +79,7 @@ pub fn final_contains_call_cycle<'db>(
 
         Ok(false)
     }
-    final_contains_call_cycle(db, function_id)
+    query(db, function_id)
 }
 
 /// Query implementation of [LoweringGroup::in_cycle].

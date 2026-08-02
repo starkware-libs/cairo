@@ -106,7 +106,7 @@ pub fn canonic_trait_solutions<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(clone), cycle_result=cycle)]
-    fn canonic_trait_solutions<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         canonical_trait: CanonicalTrait<'db>,
         lookup_context: ImplLookupContextId<'db>,
@@ -141,7 +141,7 @@ pub fn canonic_trait_solutions<'db>(
             impl_type_bounds,
         ))
     }
-    canonic_trait_solutions(db, canonical_trait, lookup_context, impl_type_bounds)
+    query(db, canonical_trait, lookup_context, impl_type_bounds)
 }
 
 /// Adds the defining module of the trait and the generic arguments to the lookup context.

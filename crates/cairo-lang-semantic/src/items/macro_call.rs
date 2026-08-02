@@ -80,7 +80,7 @@ fn priv_macro_call_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(clone), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
-    fn priv_macro_call_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         macro_call_id: MacroCallId<'db>,
     ) -> Maybe<MacroCallData<'db>> {
@@ -221,7 +221,7 @@ fn priv_macro_call_data<'db>(
             parent_macro_call_data,
         })
     }
-    priv_macro_call_data(db, macro_call_id)
+    query(db, macro_call_id)
 }
 
 /// The name of the `expose!` macro.
@@ -292,13 +292,10 @@ fn macro_call_module_id<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
-    fn macro_call_module_id<'db>(
-        db: &'db dyn Database,
-        macro_call_id: MacroCallId<'db>,
-    ) -> Maybe<ModuleId<'db>> {
+    fn query<'db>(db: &'db dyn Database, macro_call_id: MacroCallId<'db>) -> Maybe<ModuleId<'db>> {
         db.priv_macro_call_data(macro_call_id)?.macro_call_module
     }
-    macro_call_module_id(db, macro_call_id)
+    query(db, macro_call_id)
 }
 
 /// Returns the modules that are considered a part of this module.

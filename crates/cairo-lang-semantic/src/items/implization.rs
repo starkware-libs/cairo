@@ -33,14 +33,14 @@ fn trait_type_implized_by_context<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_result=cycle)]
-    fn trait_type_implized_by_context<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         trait_type_id: TraitTypeId<'db>,
         impl_def_id: ImplDefId<'db>,
     ) -> Maybe<TypeId<'db>> {
         calc(db, trait_type_id, impl_def_id)
     }
-    trait_type_implized_by_context(db, trait_type_id, impl_def_id)
+    query(db, trait_type_id, impl_def_id)
 }
 
 /// Trait for implization-related semantic queries.

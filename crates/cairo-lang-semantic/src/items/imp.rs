@@ -883,13 +883,13 @@ fn impl_declaration_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn impl_declaration_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         impl_def_id: ImplDefId<'db>,
     ) -> Maybe<ImplDeclarationData<'db>> {
         calc(db, impl_def_id, true)
     }
-    impl_declaration_data(db, impl_def_id)
+    query(db, impl_def_id)
 }
 
 // === Impl Definition ===
@@ -1034,7 +1034,7 @@ fn deref_chain<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn deref_chain<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         ty: TypeId<'db>,
         crate_id: CrateId<'db>,
@@ -1067,7 +1067,7 @@ fn deref_chain<'db>(
             ),
         })
     }
-    deref_chain(db, ty, crate_id, try_deref_mut)
+    query(db, ty, crate_id, try_deref_mut)
 }
 
 /// Tries to find the deref function and the target type for a given type and deref trait.
@@ -2514,13 +2514,13 @@ fn impl_type_semantic_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn impl_type_semantic_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         impl_type_def_id: ImplTypeDefId<'db>,
     ) -> Maybe<ImplItemTypeData<'db>> {
         calc(db, impl_type_def_id, false)
     }
-    impl_type_semantic_data(db, impl_type_def_id)
+    query(db, impl_type_def_id)
 }
 
 /// Returns the generic parameters data of an impl type definition.
@@ -2622,14 +2622,14 @@ fn impl_type_concrete_implized<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_result=cycle)]
-    fn impl_type_concrete_implized<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         _tracked: Tracked,
         impl_type_id: ImplTypeId<'db>,
     ) -> Maybe<TypeId<'db>> {
         calc(db, impl_type_id)
     }
-    impl_type_concrete_implized(db, (), impl_type_id)
+    query(db, (), impl_type_id)
 }
 
 // === Impl Item Constant definition ===
@@ -2709,13 +2709,13 @@ fn impl_constant_semantic_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn impl_constant_semantic_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         impl_constant_def_id: ImplConstantDefId<'db>,
     ) -> Maybe<ImplItemConstantData<'db>> {
         calc(db, impl_constant_def_id, false)
     }
-    impl_constant_semantic_data(db, impl_constant_def_id)
+    query(db, impl_constant_def_id)
 }
 
 /// Validates the impl item constant, and returns the matching trait constant id.
@@ -2798,14 +2798,14 @@ fn impl_constant_implized_by_context<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_result=cycle)]
-    fn impl_constant_implized_by_context<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         impl_constant_id: ImplConstantId<'db>,
         impl_def_id: ImplDefId<'db>,
     ) -> Maybe<ConstValueId<'db>> {
         calc(db, impl_constant_id, impl_def_id)
     }
-    impl_constant_implized_by_context(db, impl_constant_id, impl_def_id)
+    query(db, impl_constant_id, impl_def_id)
 }
 
 /// Query implementation of [ImplSemantic::impl_constant_concrete_implized_value].
@@ -2842,14 +2842,14 @@ fn impl_constant_concrete_implized_value<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_result=cycle)]
-    fn impl_constant_concrete_implized_value<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         _tracked: Tracked,
         impl_constant_id: ImplConstantId<'db>,
     ) -> Maybe<ConstValueId<'db>> {
         calc(db, impl_constant_id)
     }
-    impl_constant_concrete_implized_value(db, (), impl_constant_id)
+    query(db, (), impl_constant_id)
 }
 
 /// Query implementation of [ImplSemantic::impl_constant_concrete_implized_type].
@@ -2899,14 +2899,14 @@ fn impl_constant_concrete_implized_type<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_result=cycle)]
-    fn impl_constant_concrete_implized_type<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         _tracked: Tracked,
         impl_constant_id: ImplConstantId<'db>,
     ) -> Maybe<TypeId<'db>> {
         calc(db, impl_constant_id)
     }
-    impl_constant_concrete_implized_type(db, (), impl_constant_id)
+    query(db, (), impl_constant_id)
 }
 
 // === Impl Item Impl definition ===
@@ -2984,13 +2984,13 @@ fn impl_impl_semantic_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn impl_impl_semantic_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         impl_impl_def_id: ImplImplDefId<'db>,
     ) -> Maybe<ImplItemImplData<'db>> {
         calc(db, impl_impl_def_id, false)
     }
-    impl_impl_semantic_data(db, impl_impl_def_id)
+    query(db, impl_impl_def_id)
 }
 
 /// Returns the generic parameters data of an impl impl definition.
@@ -3105,7 +3105,7 @@ fn implicit_impl_impl_semantic_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn implicit_impl_impl_semantic_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         impl_def_id: ImplDefId<'db>,
         trait_impl_id: TraitImplId<'db>,
@@ -3154,7 +3154,7 @@ fn implicit_impl_impl_semantic_data<'db>(
 
         Ok(ImplicitImplImplData { resolved_impl, trait_impl_id, diagnostics: diagnostics.build() })
     }
-    implicit_impl_impl_semantic_data(db, impl_def_id, trait_impl_id)
+    query(db, impl_def_id, trait_impl_id)
 }
 
 // === Impl Impl ===
@@ -3178,7 +3178,7 @@ fn impl_impl_implized_by_context<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_result=cycle)]
-    fn impl_impl_implized_by_context<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         impl_impl_id: ImplImplId<'db>,
         impl_def_id: ImplDefId<'db>,
@@ -3192,7 +3192,7 @@ fn impl_impl_implized_by_context<'db>(
 
         db.impl_impl_def_impl(impl_impl_def_id)
     }
-    impl_impl_implized_by_context(db, impl_impl_id, impl_def_id)
+    query(db, impl_impl_id, impl_def_id)
 }
 
 /// Query implementation of [ImplSemantic::impl_impl_concrete_implized].
@@ -3234,14 +3234,14 @@ fn impl_impl_concrete_implized<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_result=cycle)]
-    fn impl_impl_concrete_implized<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         _tracked: Tracked,
         impl_impl_id: ImplImplId<'db>,
     ) -> Maybe<ImplId<'db>> {
         calc(db, impl_impl_id, false)
     }
-    impl_impl_concrete_implized(db, (), impl_impl_id)
+    query(db, (), impl_impl_id)
 }
 
 /// Implementation of [PrivImplSemantic::impl_impl_concrete_trait].

@@ -341,13 +341,10 @@ fn trait_generic_params_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn trait_generic_params_data<'db>(
-        db: &'db dyn Database,
-        trait_id: TraitId<'db>,
-    ) -> Maybe<GenericParamsData<'db>> {
+    fn query<'db>(db: &'db dyn Database, trait_id: TraitId<'db>) -> Maybe<GenericParamsData<'db>> {
         calc(db, trait_id, false)
     }
-    trait_generic_params_data(db, trait_id)
+    query(db, trait_id)
 }
 
 /// Query implementation of [TraitSemantic::trait_generic_params_ids].

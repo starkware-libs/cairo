@@ -78,13 +78,13 @@ fn impl_alias_semantic_data<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(cycle_result=cycle, returns(ref))]
-    fn impl_alias_semantic_data<'db>(
+    fn query<'db>(
         db: &'db dyn Database,
         impl_alias_id: ImplAliasId<'db>,
     ) -> Maybe<ImplAliasData<'db>> {
         calc(db, impl_alias_id, false)
     }
-    impl_alias_semantic_data(db, impl_alias_id)
+    query(db, impl_alias_id)
 }
 
 /// A helper function to compute the semantic data of an impl-alias item.
@@ -222,10 +222,7 @@ fn impl_alias_impl_def<'db>(
     }
     /// Query implementation.
     #[salsa::tracked(returns(copy), cycle_result=cycle)]
-    fn impl_alias_impl_def<'db>(
-        db: &'db dyn Database,
-        impl_alias_id: ImplAliasId<'db>,
-    ) -> Maybe<ImplDefId<'db>> {
+    fn query<'db>(db: &'db dyn Database, impl_alias_id: ImplAliasId<'db>) -> Maybe<ImplDefId<'db>> {
         let module_id = impl_alias_id.parent_module(db);
         let mut diagnostics = SemanticDiagnostics::new(module_id);
         let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
@@ -251,7 +248,7 @@ fn impl_alias_impl_def<'db>(
             _ => Err(skip_diagnostic()),
         }
     }
-    impl_alias_impl_def(db, impl_alias_id)
+    query(db, impl_alias_id)
 }
 
 /// Trait for impl-alias-related semantic queries.
