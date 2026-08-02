@@ -3,7 +3,8 @@
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252, b: felt252) -> felt252 {
     let c = a + b;
     let d = ((c,),);
@@ -11,9 +12,6 @@ fn foo(a: felt252, b: felt252) -> felt252 {
     let (f,) = e;
     f + c
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -48,7 +46,8 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     let b = if a == 0 {
         a
@@ -57,9 +56,6 @@ fn foo(a: felt252) -> felt252 {
     };
     b + a
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -174,15 +170,13 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252, b: felt252) -> felt252 {
     let t = (a, b);
     let (c, d) = t;
     c + d
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -213,15 +207,13 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Array<felt252>, b: Array<felt252>) -> Array<felt252> {
     let t = (a, b);
     let (c, _d) = t;
     c
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -252,7 +244,8 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Array<felt252>, b: Array<felt252>) -> (Array<felt252>, Array<felt252>) {
     let t = (a, b);
     let snap = @t;
@@ -260,9 +253,6 @@ fn foo(a: Array<felt252>, b: Array<felt252>) -> (Array<felt252>, Array<felt252>)
     let (c, d) = t;
     (c, d)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -294,15 +284,13 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Array<felt252>) -> Array<felt252> {
     let boxed = BoxTrait::new(a);
     let unboxed = boxed.unbox();
     unboxed
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -331,19 +319,17 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
 #[inline(never)]
 fn use_snapshot(s: @Array<felt252>) {
     let _ = s;
 }
 
+#[target_function]
 fn foo(a: Array<felt252>) -> Array<felt252> {
     use_snapshot(@a);
     a
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -380,7 +366,8 @@ test_variable_forwarding
 
 //! > can fold to per-predecessor known variants.
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(c: bool, x: felt252) -> felt252 {
     let t: (Option<felt252>,) = if c {
         (Option::Some(x),)
@@ -393,11 +380,6 @@ fn foo(c: bool, x: felt252) -> felt252 {
         Option::None => 0,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -516,16 +498,12 @@ test_variable_forwarding
 
 //! > of B.
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Box<u256>) -> Box<u128> {
     let val: u256 = a.unbox();
     BoxTrait::new(val.high)
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -562,10 +540,11 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
 #[allow(extern_outside_corelib)]
 extern fn keep_snap(s: @Option<Array<felt252>>) -> bool nopanic;
 
+#[target_function]
 fn foo(arr: Array<felt252>) -> Array<felt252> {
     let opt: Option<Array<felt252>> = Option::Some(arr);
     let _ = keep_snap(@opt);
@@ -574,11 +553,6 @@ fn foo(arr: Array<felt252>) -> Array<felt252> {
         Option::None => array![],
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -689,25 +663,7 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
-#[allow(extern_outside_corelib)]
-extern fn drop_nondrop<T>(c: T) nopanic;
-#[allow(extern_outside_corelib)]
-extern fn make_mixed() -> Mixed nopanic;
-
-fn foo() -> Array<felt252> {
-    let m = make_mixed();
-    let Mixed { a, b } = m;
-    let wa = (a,);
-    drop_nondrop(b);
-    let (a2,) = wa;
-    a2
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct NonDrop {
     x: u64,
 }
@@ -715,6 +671,20 @@ struct NonDrop {
 struct Mixed {
     a: Array<felt252>,
     b: NonDrop,
+}
+#[allow(extern_outside_corelib)]
+extern fn drop_nondrop<T>(c: T) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn make_mixed() -> Mixed nopanic;
+
+#[target_function]
+fn foo() -> Array<felt252> {
+    let m = make_mixed();
+    let Mixed { a, b } = m;
+    let wa = (a,);
+    drop_nondrop(b);
+    let (a2,) = wa;
+    a2
 }
 
 //! > semantic_diagnostics
@@ -758,7 +728,16 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy)]
+struct CopyOnly {
+    x: felt252,
+}
+
+struct Mixed {
+    a: Array<felt252>,
+    u: CopyOnly,
+}
 #[allow(extern_outside_corelib)]
 extern fn make_arr() -> Array<felt252> nopanic;
 #[allow(extern_outside_corelib)]
@@ -766,6 +745,7 @@ extern fn make_copy_only() -> CopyOnly nopanic;
 #[allow(extern_outside_corelib)]
 extern fn consume_copy_only(c: CopyOnly) nopanic;
 
+#[target_function]
 fn foo() -> Array<felt252> {
     let a_val = make_arr();
     let u_val = make_copy_only();
@@ -775,20 +755,6 @@ fn foo() -> Array<felt252> {
     consume_copy_only(u);
     let (a2,) = wa;
     a2
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy)]
-struct CopyOnly {
-    x: felt252,
-}
-
-struct Mixed {
-    a: Array<felt252>,
-    u: CopyOnly,
 }
 
 //! > semantic_diagnostics
@@ -832,7 +798,10 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn consume(arg: (felt252, Array<felt252>)) nopanic;
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     let arr = array![10, 11, 12];
 
@@ -845,13 +814,6 @@ fn foo(a: felt252) -> felt252 {
         return 1;
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn consume(arg: (felt252, Array<felt252>)) nopanic;
 
 //! > semantic_diagnostics
 
@@ -971,15 +933,11 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: u32) -> u32 {
     a + a
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1082,7 +1040,8 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: (u32,), b: felt252) -> u32 {
     let d = @if b == 0 {
         let (c,) = a;
@@ -1094,11 +1053,6 @@ fn foo(a: (u32,), b: felt252) -> u32 {
 
     *d
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1213,10 +1167,11 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
 #[allow(extern_outside_corelib)]
 extern fn sink(a: Array<felt252>) -> felt252 nopanic;
 
+#[target_function]
 fn foo(flag: bool, a: Array<felt252>) -> felt252 {
     let t = (a,);
     let (b,) = t;
@@ -1225,9 +1180,6 @@ fn foo(flag: bool, a: Array<felt252>) -> felt252 {
         false => sink(b),
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1298,7 +1250,8 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Array<felt252>, flag: bool) -> Array<felt252> {
     let t = (a,);
     let _z = if flag {
@@ -1309,9 +1262,6 @@ fn foo(a: Array<felt252>, flag: bool) -> Array<felt252> {
     let (b,) = t;
     b
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1376,22 +1326,18 @@ End:
 //! > test_runner_name
 test_variable_forwarding
 
-//! > function_code
-#[allow(extern_outside_corelib)]
-extern fn make_copy_only() -> CopyOnly nopanic;
-
-fn foo() {
-    let CopyOnly { x } = make_copy_only();
-    let _ = x;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy)]
 struct CopyOnly {
     x: felt252,
+}
+#[allow(extern_outside_corelib)]
+extern fn make_copy_only() -> CopyOnly nopanic;
+
+#[target_function]
+fn foo() {
+    let CopyOnly { x } = make_copy_only();
+    let _ = x;
 }
 
 //! > semantic_diagnostics

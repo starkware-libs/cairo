@@ -3,7 +3,15 @@
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+    Black,
+    White,
+}
+#[target_function]
 fn foo(color: Color) -> felt252 {
     match color {
         Color::Red | Color::Green(_) => 1,
@@ -11,15 +19,6 @@ fn foo(color: Color) -> felt252 {
         Color::Blue | Color::Green => 3,
         _ => 4,
     }
-}
-
-//! > module_code
-enum Color {
-    Red,
-    Green,
-    Blue,
-    Black,
-    White,
 }
 
 //! > graph
@@ -35,7 +34,7 @@ Root: 5
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:12:39
+ --> lib.cairo:13:39
         Color::Blue | Color::Green => 3,
                                       ^
 
@@ -102,21 +101,20 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum Color {
+    Red: felt252,
+    Green: felt252,
+    Blue: felt252,
+    Black,
+}
+#[target_function]
 fn foo(color: Color) -> felt252 {
     match color {
         Color::Red(x) | Color::Green(x) => 2 * x,
         Color::Blue(x) => x,
         _ => 0,
     }
-}
-
-//! > module_code
-enum Color {
-    Red: felt252,
-    Green: felt252,
-    Blue: felt252,
-    Black,
 }
 
 //! > graph
@@ -186,20 +184,19 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+#[target_function]
 fn foo(color: (Color, Color)) -> felt252 {
     match color {
         (Color::Red, _) => 1,
         (_, Color::Red) => 2,
         _ => 3,
     }
-}
-
-//! > module_code
-enum Color {
-    Red,
-    Green,
-    Blue,
 }
 
 //! > graph
@@ -287,19 +284,18 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum Color {
+    Red,
+    Green,
+}
+#[target_function]
 fn foo(color: Option<(Color, Color)>) -> felt252 {
     match color {
         Some((Color::Red, _)) | None => 1,
         Some((_, Color::Red)) => 2,
         _ => 3,
     }
-}
-
-//! > module_code
-enum Color {
-    Red,
-    Green,
 }
 
 //! > graph
@@ -384,20 +380,19 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false, skip_lowering: true)
 
-//! > function_code
+//! > cairo_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+#[target_function]
 fn foo(color: (Option<Color>, Color)) -> felt252 {
     match color {
         (Some(Color::Red), Color::Red) | (Some(Color::Green), Color::Red) | (None, Color::Red) => 1,
         (_, Color::Green) => 2,
         _ => 3,
     }
-}
-
-//! > module_code
-enum Color {
-    Red,
-    Green,
-    Blue,
 }
 
 //! > graph
@@ -427,22 +422,21 @@ Root: 10
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false, skip_lowering: true)
 
-//! > function_code
-// Tests that the same-node optimization is not applied when the inner value is used (for
-// future match or pattern binding).
-fn foo(x: Enum1) -> felt252 {
-    match x {
-        Enum1::A(Enum2::B(x)) => x,
-    }
-}
-
-//! > module_code
+//! > cairo_code
 enum Enum1 {
     A: Enum2,
 }
 
 enum Enum2 {
     B: felt252,
+}
+// Tests that the same-node optimization is not applied when the inner value is used (for
+// future match or pattern binding).
+#[target_function]
+fn foo(x: Enum1) -> felt252 {
+    match x {
+        Enum1::A(Enum2::B(x)) => x,
+    }
 }
 
 //! > graph
@@ -466,7 +460,8 @@ Root: 4
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     match x {
         2 | 4 => x,
@@ -558,7 +553,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u16) -> u16 {
     match x {
         2 | 4 => x,
@@ -635,7 +631,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false, skip_lowering: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u16) -> u16 {
     match x {
         0 | 2 | 4 | 5 | 6 | 7 => x,
@@ -750,7 +747,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u128) -> u128 {
     match x {
         0 | 2 | 4 | 5 | 6 | 7 | 100000000000000000000 => x,
@@ -915,7 +913,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) -> felt252 {
     match (x, y) {
         (1, 3) => 0,
@@ -1138,7 +1137,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: Option<felt252>) -> felt252 {
     match x {
         _ => 0,
@@ -1169,20 +1169,19 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum Color {
+    Red: felt252,
+    Green,
+    Blue,
+}
+#[target_function]
 fn foo(color: @(Color, Color)) -> felt252 {
     match color {
         // x can be bound to different tuple items.
         (Color::Red(x), _) | (_, Color::Red(x)) => *x,
         _ => 0,
     }
-}
-
-//! > module_code
-enum Color {
-    Red: felt252,
-    Green,
-    Blue,
 }
 
 //! > graph
@@ -1275,20 +1274,19 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+#[target_function]
 fn foo(color: (Color, Color)) -> Color {
     match color {
         // x can be bound to different tuple items.
         (Color::Red, x) | (x, Color::Red) => x,
         _ => Color::Green,
     }
-}
-
-//! > module_code
-enum Color {
-    Red,
-    Green,
-    Blue,
 }
 
 //! > graph
@@ -1381,18 +1379,17 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+struct MyStruct {
+    a: Option<Option<felt252>>,
+    b: (Option<felt252>, felt252, felt252),
+}
+#[target_function]
 fn foo(x: MyStruct) -> felt252 {
     match x {
         MyStruct { a: Some(Some(_)), .. } => 1,
         MyStruct { b: (None, _, _), .. } => 1,
     }
-}
-
-//! > module_code
-struct MyStruct {
-    a: Option<Option<felt252>>,
-    b: (Option<felt252>, felt252, felt252),
 }
 
 //! > graph
@@ -1412,7 +1409,7 @@ Root: 9
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `MyStruct{a: Some(None(_)), b: (Some(_), _, _)}` not covered.
- --> lib.cairo:6:5-9:5
+ --> lib.cairo:7:5-10:5
       match x {
  _____^
 | ...
@@ -1429,7 +1426,8 @@ Parameters: v0: test::MyStruct
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: (Option<(felt252, felt252)>, felt252)) -> felt252 {
     match x {
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
@@ -1449,33 +1447,33 @@ Root: 7
 
 //! > semantic_diagnostics
 error[E2103]: Mismatched types: pattern cannot match against type "core::felt252".
- --> lib.cairo:3:13
+ --> lib.cairo:4:13
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
             ^^
 
 error[E2103]: Mismatched types: pattern cannot match against type "core::option::Option::<(core::felt252, core::felt252)>".
- --> lib.cairo:3:20
+ --> lib.cairo:4:20
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                    ^^
 
 error[E2103]: Mismatched types: pattern cannot match against type "(core::felt252, core::felt252)".
- --> lib.cairo:3:35
+ --> lib.cairo:4:35
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                                   ^^^^
 
 //! > lowering_diagnostics
 error[E3007]: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
- --> lib.cairo:3:20
+ --> lib.cairo:4:20
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                    ^^
 
 error[E3007]: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
- --> lib.cairo:3:35
+ --> lib.cairo:4:35
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                                   ^^^^
 
 error[E3007]: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
- --> lib.cairo:3:13
+ --> lib.cairo:4:13
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
             ^^
 
@@ -1489,7 +1487,8 @@ Parameters: v0: (core::option::Option::<(core::felt252, core::felt252)>, core::f
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true, skip_lowering: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: u8) -> bool {
     match a {
         255 | 256 | 257 => false,
@@ -1509,12 +1508,12 @@ Root: 6
 
 //! > semantic_diagnostics
 error[E2008]: The value does not fit within the range of type core::integer::u8.
- --> lib.cairo:3:15
+ --> lib.cairo:4:15
         255 | 256 | 257 => false,
               ^^^
 
 error[E2008]: The value does not fit within the range of type core::integer::u8.
- --> lib.cairo:3:21
+ --> lib.cairo:4:21
         255 | 256 | 257 => false,
                     ^^^
 
@@ -1529,7 +1528,8 @@ error[E2008]: The value does not fit within the range of type core::integer::u8.
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: Option<felt252>) -> felt252 {
     match x {}
 }
@@ -1543,7 +1543,7 @@ Root: 1
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `_` not covered.
- --> lib.cairo:2:5
+ --> lib.cairo:3:5
     match x {}
     ^^^^^^^^^^
 
@@ -1557,7 +1557,8 @@ Parameters: v0: core::option::Option::<core::felt252>
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: never) -> felt252 {
     match x {}
 }
@@ -1586,14 +1587,13 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
-fn foo(x: NeverEnum) -> felt252 {
-    match x {}
-}
-
-//! > module_code
+//! > cairo_code
 enum NeverEnum {
     Never: never,
+}
+#[target_function]
+fn foo(x: NeverEnum) -> felt252 {
+    match x {}
 }
 
 //! > graph
@@ -1605,7 +1605,7 @@ Root: 1
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `_` not covered.
- --> lib.cairo:5:5
+ --> lib.cairo:6:5
     match x {}
     ^^^^^^^^^^
 
@@ -1619,19 +1619,18 @@ Parameters: v0: test::NeverEnum
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+struct MyStruct {
+    a: Option<felt252>,
+    b: (Option<felt252>, felt252),
+    c: Option<felt252>,
+}
+#[target_function]
 fn foo(x: MyStruct) -> felt252 {
     match x {
         MyStruct { b: (None, 0), a: Some(x), .. } => x,
         _ => 0,
     }
-}
-
-//! > module_code
-struct MyStruct {
-    a: Option<felt252>,
-    b: (Option<felt252>, felt252),
-    c: Option<felt252>,
 }
 
 //! > graph
@@ -1716,22 +1715,7 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
-fn foo(mut x: felt252) -> felt252 {
-    match bar(ref x) {
-        MyEnum::Pair1(a) => {
-            let (b, _c) = a;
-            b.into() + x
-        },
-        MyEnum::Pair2((_, c)) => { c.into() + x },
-        MyEnum::Struct(MyStruct { c, .. }) => { c.into() + x },
-        MyEnum::Single(a) => { a.into() + x },
-        MyEnum::Opt(Some(a)) => { a.into() + x },
-        _ => x + 1,
-    }
-}
-
-//! > module_code
+//! > cairo_code
 enum MyEnum {
     Single: u8,
     Pair1: (u8, u8),
@@ -1748,6 +1732,20 @@ struct MyStruct {
 
 #[allow(extern_outside_corelib)]
 extern fn bar(ref x: felt252) -> MyEnum nopanic;
+#[target_function]
+fn foo(mut x: felt252) -> felt252 {
+    match bar(ref x) {
+        MyEnum::Pair1(a) => {
+            let (b, _c) = a;
+            b.into() + x
+        },
+        MyEnum::Pair2((_, c)) => { c.into() + x },
+        MyEnum::Struct(MyStruct { c, .. }) => { c.into() + x },
+        MyEnum::Single(a) => { a.into() + x },
+        MyEnum::Opt(Some(a)) => { a.into() + x },
+        _ => x + 1,
+    }
+}
 
 //! > graph
 Root: 15
@@ -1864,17 +1862,16 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar() -> Option<felt252> nopanic;
+#[target_function]
 fn foo() -> felt252 {
     match bar() {
         Some(a) => a,
         _x => 0,
     }
 }
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn bar() -> Option<felt252> nopanic;
 
 //! > graph
 Root: 5
@@ -1943,16 +1940,15 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar() -> Option<felt252> nopanic;
+#[target_function]
 fn foo() -> felt252 {
     match bar() {
         _ => 0,
     }
 }
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn bar() -> Option<felt252> nopanic;
 
 //! > graph
 Root: 1
@@ -1999,7 +1995,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true, skip_lowering: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u256) -> felt252 {
     match x {
         0 => 1,
@@ -2038,7 +2035,7 @@ Root: 19
 
 //! > semantic_diagnostics
 error[E2008]: The value does not fit within the range of type core::integer::u256.
- --> lib.cairo:10:9
+ --> lib.cairo:11:9
         0x10000000000000000000000000000000000000000000000000000000000000000 => 7,
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -2053,7 +2050,8 @@ error[E2008]: The value does not fit within the range of type core::integer::u25
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true, skip_lowering: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u256) -> felt252 {
     match x {
         // Value out of range: must report E3009 only, no spurious E3004 non-exhaustive.
@@ -2075,7 +2073,7 @@ Root: 7
 
 //! > semantic_diagnostics
 error[E2008]: The value does not fit within the range of type core::integer::u256.
- --> lib.cairo:4:9
+ --> lib.cairo:5:9
         0x10000000000000000000000000000000000000000000000000000000000000000 => 1,
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -2090,7 +2088,8 @@ error[E2008]: The value does not fit within the range of type core::integer::u25
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true, skip_lowering: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u256) -> felt252 {
     match x {
         // Out of range: the arm can never match, so the match is non-exhaustive (E3009 + E3004).
@@ -2111,13 +2110,13 @@ Root: 7
 
 //! > semantic_diagnostics
 error[E2008]: The value does not fit within the range of type core::integer::u256.
- --> lib.cairo:4:9
+ --> lib.cairo:5:9
         0x10000000000000000000000000000000000000000000000000000000000000000 => 1,
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `u256{low: _, high: _}` not covered.
- --> lib.cairo:2:5-5:5
+ --> lib.cairo:3:5-6:5
       match x {
  _____^
 | ...
@@ -2133,8 +2132,9 @@ error[E3004]: Match is non-exhaustive: `u256{low: _, high: _}` not covered.
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false, skip_lowering: true)
 
-//! > function_code
+//! > cairo_code
 // TODO(lior): Consider optimizing to avoid the multiple `EqualsLiteral` nodes.
+#[target_function]
 fn foo(x: u256) -> u256 {
     match x {
         0 | 2 | 4 | 5 | 6 | 7 => x,
@@ -2182,7 +2182,8 @@ Root: 22
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false, skip_lowering: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u256) -> u256 {
     match x {
         0x000000000000000000000000000000004 | 0x200000000000000000000000000000004 |
@@ -2218,15 +2219,7 @@ Root: 8
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
-fn foo(x: (@@Box<@@@Outer>, @@@Inner)) -> (@@Box<@@@Leaf>,) {
-    match x {
-        (Outer::Wrap(Inner::Next(leaf)), Inner::Next(_)) => (leaf,),
-        _ => (@@BoxTrait::new(@@@Leaf::A(5)),),
-    }
-}
-
-//! > module_code
+//! > cairo_code
 enum Outer {
     Wrap: Inner,
     Other: felt252,
@@ -2238,6 +2231,13 @@ enum Inner {
 
 enum Leaf {
     A: felt252,
+}
+#[target_function]
+fn foo(x: (@@Box<@@@Outer>, @@@Inner)) -> (@@Box<@@@Leaf>,) {
+    match x {
+        (Outer::Wrap(Inner::Next(leaf)), Inner::Next(_)) => (leaf,),
+        _ => (@@BoxTrait::new(@@@Leaf::A(5)),),
+    }
 }
 
 //! > graph
@@ -2304,13 +2304,12 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum Never {}
+#[target_function]
 fn foo(x: Box<Never>) -> felt252 {
     match x {}
 }
-
-//! > module_code
-enum Never {}
 
 //! > graph
 Root: 1
@@ -2336,19 +2335,18 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    Variant1: felt252,
+    Variant2: felt252,
+}
+#[target_function]
 fn foo(x: Box<(MyEnum, MyEnum)>) -> Box<felt252> {
     match x {
         (MyEnum::Variant1(x), MyEnum::Variant1(_)) => x,
         (MyEnum::Variant2(x), MyEnum::Variant2(_)) => x,
         _ => BoxTrait::new(2),
     }
-}
-
-//! > module_code
-enum MyEnum {
-    Variant1: felt252,
-    Variant2: felt252,
 }
 
 //! > graph
@@ -2434,7 +2432,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [a, b] => *a + *b,
@@ -2528,7 +2527,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [a] => *a,
@@ -2611,7 +2611,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [a, b] => *a + *b,
@@ -2635,7 +2636,7 @@ Root: 7
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:5:22
+ --> lib.cairo:6:22
         [a, b, c] => *a + *b + *c,
                      ^^^^^^^^^^^^
 
@@ -2681,7 +2682,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [a, b] => *a + *b,
@@ -2705,7 +2707,7 @@ Root: 7
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:4:19
+ --> lib.cairo:5:19
         [a, b] => *a + *b,
                   ^^^^^^^
 
@@ -2751,7 +2753,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [a, b] | [a, b, _] => *a + *b,
@@ -2841,7 +2844,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<bool>) -> felt252 {
     match s {
         [true, true] => 1,
@@ -2937,7 +2941,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [a] => *a,
@@ -2962,7 +2967,7 @@ Root: 9
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `_` not covered.
- --> lib.cairo:2:5-5:5
+ --> lib.cairo:3:5-6:5
       match s {
  _____^
 | ...
@@ -2979,7 +2984,8 @@ Parameters: v0: core::array::Span::<core::integer::u32>
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [a] => *a,
@@ -3002,7 +3008,7 @@ Root: 6
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:5:19
+ --> lib.cairo:6:19
         [a, b] => *a + *b,
                   ^^^^^^^
 
@@ -3046,7 +3052,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [a] => *a,
@@ -3072,12 +3079,12 @@ Root: 8
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:6:37
+ --> lib.cairo:7:37
         Span { snapshot: inner } => 2 * inner.len(),
                                     ^^^^^^^^^^^^^^^
 
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:5:19
+ --> lib.cairo:6:19
         [a, b] => *a + *b,
                   ^^^^^^^
 
@@ -3121,7 +3128,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: *)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>, val: u32) -> u32 {
     match (s, val) {
         ([a], v) => *a + v,
@@ -3313,7 +3321,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: *)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         Span { snapshot: x } => x.len(),
@@ -3333,7 +3342,7 @@ Root: 4
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:4:33
+ --> lib.cairo:5:33
         Span { snapshot: y } => y.len() + 1,
                                 ^^^^^^^^^^^
 
@@ -3353,7 +3362,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: *)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>, v: u32) -> u32 {
     match (s, v) {
         ([a], _) => *a,
@@ -3463,7 +3473,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: *)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<bool>, v: u32) -> u32 {
     match (s, v) {
         ([true], _) => 1,
@@ -3585,7 +3596,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Option<Span<u32>>) -> u32 {
     match s {
         Some([a]) => *a,
@@ -3691,7 +3703,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Option<Span<u32>>) -> u32 {
     match s {
         Some([a]) => *a,
@@ -3720,7 +3733,7 @@ Root: 11
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `Some(_)` not covered.
- --> lib.cairo:2:5-7:5
+ --> lib.cairo:3:5-8:5
       match s {
  _____^
 | ...
@@ -3737,7 +3750,8 @@ Parameters: v0: core::option::Option::<core::array::Span::<core::integer::u32>>
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [_, _] | _ => 0,

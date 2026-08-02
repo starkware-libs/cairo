@@ -3,14 +3,12 @@
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     let b = a - 0;
     b - 0
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -45,16 +43,12 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+const PRIME_MINUS_1: felt252 = -1;
+#[target_function]
 fn foo() -> felt252 {
     PRIME_MINUS_1 + 2
 }
-
-//! > function_name
-foo
-
-//! > module_code
-const PRIME_MINUS_1: felt252 = -1;
 
 //! > semantic_diagnostics
 
@@ -87,13 +81,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     0 - 1
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -126,16 +118,12 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+const PRIME_MINUS_1: felt252 = -1;
+#[target_function]
 fn foo() -> felt252 {
     PRIME_MINUS_1 * 2
 }
-
-//! > function_name
-foo
-
-//! > module_code
-const PRIME_MINUS_1: felt252 = -1;
 
 //! > semantic_diagnostics
 
@@ -168,16 +156,12 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+const PRIME_MINUS_1: felt252 = -1;
+#[target_function]
 fn foo() -> felt252 {
     (PRIME_MINUS_1 + 2) * 2
 }
-
-//! > function_name
-foo
-
-//! > module_code
-const PRIME_MINUS_1: felt252 = -1;
 
 //! > semantic_diagnostics
 
@@ -214,13 +198,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> Box<felt252> {
     BoxTrait::new(0)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -251,17 +233,15 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
 struct A {
     a: felt252,
 }
 
+#[target_function]
 fn foo() -> Box<A> {
     BoxTrait::new(A { a: 1 })
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -294,13 +274,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> Box<Option<felt252>> {
     BoxTrait::new(Some(2))
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -333,19 +311,15 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > module_code
+//! > cairo_code
 #[allow(extern_outside_corelib)]
 extern fn use_box<T>(b: @Box<T>) nopanic;
-
-//! > function_code
+#[target_function]
 fn foo() -> felt252 {
     let box = BoxTrait::new(2);
     use_box(@box);
     box.unbox()
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -380,13 +354,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u8 {
     8 / 4
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -492,13 +464,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u8) -> u8 {
     x / 0
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -600,13 +570,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u256) -> u256 {
     x / 4
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -711,13 +679,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u256) -> u256 {
     x / 0
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -821,13 +787,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u128) -> u128 {
     x / 1_u64.into()
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -932,13 +896,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u64) -> u64 {
     x / 1_u128.try_into().unwrap()
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1153,13 +1115,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u8) -> u8 {
     x / 300_u16.try_into().unwrap()
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1375,13 +1335,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> starknet::StorageBaseAddress {
     starknet::storage_access::storage_base_address_from_felt252(10)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1412,7 +1370,10 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+use starknet::StorageBaseAddress;
+use starknet::storage_access::storage_base_address_from_felt252;
+#[target_function]
 fn foo() -> [StorageBaseAddress; 6] {
     [
         storage_base_address_from_felt252(1), storage_base_address_from_felt252(2),
@@ -1425,13 +1386,6 @@ fn foo() -> [StorageBaseAddress; 6] {
         storage_base_address_from_felt252(-1), storage_base_address_from_felt252(-2),
     ]
 }
-
-//! > module_code
-use starknet::StorageBaseAddress;
-use starknet::storage_access::storage_base_address_from_felt252;
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1484,16 +1438,12 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+use starknet::storage::StoragePathTrait;
+#[target_function]
 fn foo() -> starknet::storage::StorageBaseAddress {
     starknet::storage::StorageBase::<felt252> { __base_address__: 1337 }.deref().finalize()
 }
-
-//! > function_name
-foo
-
-//! > module_code
-use starknet::storage::StoragePathTrait;
 
 //! > semantic_diagnostics
 
@@ -1532,13 +1482,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u8 {
     1 + 3
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1641,13 +1589,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u8 {
     250 + 50
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1750,13 +1696,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u8 {
     7 - 5
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1859,13 +1803,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u8 {
     1 - 3
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1968,13 +1910,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u8 {
     5 * 3
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2079,13 +2019,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> i8 {
     -50 + 100
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2203,13 +2141,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> i8 {
     100 + 100
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2327,13 +2263,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> i8 {
     -100 + -100
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2451,13 +2385,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> i8 {
     50 - 100
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2575,13 +2507,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> i8 {
     100 - -100
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2699,13 +2629,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> i8 {
     -100 - 100
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2823,13 +2751,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> bool {
     100_i8 < 90_i8
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2902,13 +2828,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> bool {
     90_i8 < 100_i8
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2981,15 +2905,13 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> bool {
     let x: (felt252, Felt252Dict<felt252>) = (0, Default::<Felt252Dict>::default());
     let (l, _) = @x;
     *l == 0
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -3075,13 +2997,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: i8) -> i8 {
     x / 0
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -3349,13 +3269,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> i8 {
     8 / 4
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -3623,13 +3541,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> (u8, bool) {
     core::integer::AbsAndSign::<i8, u8>::abs_and_sign(6_i8)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -3712,13 +3628,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> (u8, bool) {
     core::integer::AbsAndSign::<i8, u8>::abs_and_sign(-6_i8)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -3801,13 +3715,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u8 {
     ~5
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -3842,21 +3754,17 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
 #[feature("bounded-int-utils")]
+use core::internal::bounded_int::BoundedInt;
+#[feature("bounded-int-utils")]
+#[target_function]
 fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0, 0x7f>>>> {
     match core::internal::bounded_int::constrain::<NonZero<i8>, 0>(-5) {
         Ok(v) => Ok(BoxTrait::new(v)),
         Err(v) => Err(BoxTrait::new(v)),
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[feature("bounded-int-utils")]
-use core::internal::bounded_int::BoundedInt;
 
 //! > semantic_diagnostics
 
@@ -3927,21 +3835,17 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
 #[feature("bounded-int-utils")]
+use core::internal::bounded_int::BoundedInt;
+#[feature("bounded-int-utils")]
+#[target_function]
 fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0, 0x7f>>>> {
     match core::internal::bounded_int::constrain::<NonZero<i8>, 0>(5) {
         Ok(v) => Ok(BoxTrait::new(v)),
         Err(v) => Err(BoxTrait::new(v)),
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[feature("bounded-int-utils")]
-use core::internal::bounded_int::BoundedInt;
 
 //! > semantic_diagnostics
 
@@ -4012,13 +3916,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> bool {
     1_u8 == 1
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4090,13 +3992,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> bool {
     2_u8 == 1
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4168,13 +4068,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u8) -> u8 {
     x * 0
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4277,13 +4175,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u8) -> u8 {
     x + 0
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4383,13 +4279,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u8) -> u8 {
     0 + x
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4489,13 +4383,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u8) -> u8 {
     x - 0
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4595,13 +4487,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u8) -> u8 {
     x + 1
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4705,13 +4595,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u8) -> u8 {
     x - 1
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4815,13 +4703,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u8) -> bool {
     x == 0
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4894,13 +4780,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: @Array<u8>) -> Option<Box<@u8>> {
     x.get(0)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -4971,7 +4855,10 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::BoundedInt;
+#[target_function]
 fn foo(x: BoundedInt<0, 10>) -> u8 {
     match x {
         0 => 1,
@@ -4988,13 +4875,6 @@ fn foo(x: BoundedInt<0, 10>) -> u8 {
         _ => 12,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[feature("bounded-int-utils")]
-use core::internal::bounded_int::BoundedInt;
 
 //! > semantic_diagnostics
 
@@ -5213,7 +5093,8 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u8 {
     match 5 {
         0 => 1,
@@ -5230,9 +5111,6 @@ fn foo() -> u8 {
         _ => 12,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -5442,13 +5320,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> Option<Box<@u8>> {
     array![0, 1, 2].get(1)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -5535,13 +5411,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> Option<Box<@u8>> {
     array![0, 1, 2].get(5)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -5625,13 +5499,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(v: u8) -> Option<Box<@u8>> {
     array![v, v, v].get(1)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -5712,13 +5584,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(v: u8) -> Option<Box<@u8>> {
     array![v, v, v].get(5)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -5796,13 +5666,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> usize {
     array![x, x].len()
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -5839,14 +5707,12 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> Option<felt252> {
     let mut arr = array![];
     arr.pop_front()
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -5916,14 +5782,12 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut arr: Array<felt252>) -> Option<felt252> {
     arr.append(1);
     arr.pop_front()
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -5998,14 +5862,12 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> Option<@felt252> {
     let mut span = array![].span();
     span.pop_front()
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6077,14 +5939,12 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> Option<@felt252> {
     let mut span = array![].span();
     span.pop_back()
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6156,13 +6016,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {
     core::panics::panic_with_byte_array(@"hello world");
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6213,7 +6071,8 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let v = @Some(1);
     match v {
@@ -6221,9 +6080,6 @@ fn foo() -> felt252 {
         None => 0,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6295,7 +6151,8 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let v = Some(@1);
     match v {
@@ -6303,9 +6160,6 @@ fn foo() -> felt252 {
         None => 0,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6375,7 +6229,8 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     let v = Some(a);
     match v {
@@ -6383,9 +6238,6 @@ fn foo(a: felt252) -> felt252 {
         None => 0,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6449,7 +6301,8 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     let v = @Some(a);
     match v {
@@ -6457,9 +6310,6 @@ fn foo(a: felt252) -> felt252 {
         None => 0,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6528,7 +6378,8 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let v = @(@Some(1));
     match v {
@@ -6536,9 +6387,6 @@ fn foo() -> felt252 {
         None => 0,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6615,13 +6463,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     1 + 2
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6654,13 +6500,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     5 - 3
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6693,13 +6537,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     2 * 3
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6732,13 +6574,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     1 + 2 * 3 - 4
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6779,14 +6619,12 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let x = core::felt252_div(6, 30);
     x * 5
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6823,13 +6661,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     core::felt252_div(a, 1)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6860,13 +6696,11 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: NonZero<felt252>) -> felt252 {
     core::felt252_div(0, a)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -6897,20 +6731,16 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::{trim_min, upcast};
+#[target_function]
 fn foo() -> felt252 {
     match trim_min(0_i8) {
         core::internal::OptionRev::Some(x) => upcast(x),
         core::internal::OptionRev::None => 200,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[feature("bounded-int-utils")]
-use core::internal::bounded_int::{trim_min, upcast};
 
 //! > semantic_diagnostics
 
@@ -6977,20 +6807,16 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::{trim_min, upcast};
+#[target_function]
 fn foo() -> felt252 {
     match trim_min(-0x80_i8) {
         core::internal::OptionRev::Some(x) => upcast(x),
         core::internal::OptionRev::None => 200,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[feature("bounded-int-utils")]
-use core::internal::bounded_int::{trim_min, upcast};
 
 //! > semantic_diagnostics
 
@@ -7056,20 +6882,16 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::{trim_max, upcast};
+#[target_function]
 fn foo() -> felt252 {
     match trim_max(0_i8) {
         core::internal::OptionRev::Some(x) => upcast(x),
         core::internal::OptionRev::None => 200,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[feature("bounded-int-utils")]
-use core::internal::bounded_int::{trim_max, upcast};
 
 //! > semantic_diagnostics
 
@@ -7136,20 +6958,16 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::{trim_max, upcast};
+#[target_function]
 fn foo() -> felt252 {
     match trim_max(0x7f_i8) {
         core::internal::OptionRev::Some(x) => upcast(x),
         core::internal::OptionRev::None => 200,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[feature("bounded-int-utils")]
-use core::internal::bounded_int::{trim_max, upcast};
 
 //! > semantic_diagnostics
 

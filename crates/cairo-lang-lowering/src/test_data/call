@@ -3,7 +3,10 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[inline(never)]
+fn bar(ref a: felt252, b: bool) {}
+#[target_function]
 fn foo(ref a: felt252) -> felt252 {
     let b = true;
     if true {
@@ -14,13 +17,6 @@ fn foo(ref a: felt252) -> felt252 {
     } else {}
     5
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(never)]
-fn bar(ref a: felt252, b: bool) {}
 
 //! > semantic_diagnostics
 
@@ -44,15 +40,13 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> Option<felt252> {
     let x = None;
     let _ = x.is_some();
     x
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -74,16 +68,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> u32 {
-    // ref self method called on expression (not a variable) should work
-    make_counter().increment()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct Counter {
     value: u32,
@@ -104,6 +89,11 @@ impl CounterImpl of CounterTrait {
 #[inline(never)]
 fn make_counter() -> Counter {
     Counter { value: 0 }
+}
+#[target_function]
+fn foo() -> u32 {
+    // ref self method called on expression (not a variable) should work
+    make_counter().increment()
 }
 
 //! > semantic_diagnostics

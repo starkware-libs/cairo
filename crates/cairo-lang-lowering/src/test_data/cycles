@@ -3,22 +3,20 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) nopanic {
     foo(x);
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3008]: Call cycle of `nopanic` functions is not allowed.
- --> lib.cairo:1:1-3:1
-  fn foo(x: felt252) nopanic {
+ --> lib.cairo:1:1-4:1
+  #[target_function]
  _^
-|     foo(x);
+| ...
 | }
 |_^
 
@@ -32,16 +30,14 @@ error[E3008]: Call cycle of `nopanic` functions is not allowed.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) {
     match core::gas::withdraw_gas() {
         Some(_) => foo(x),
         None => {},
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -77,16 +73,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, costs: core::gas::BuiltinCosts) nopanic {
     match core::gas::withdraw_gas_all(costs) {
         Some(_) => foo(x, costs),
         None => {},
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -122,13 +116,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {}
 impl ADestruct of Destruct<A> {
     fn destruct(self: A) nopanic {
@@ -144,6 +132,8 @@ impl BDestruct of Destruct<B> {
         A {};
     }
 }
+#[target_function]
+fn foo() {}
 
 //! > semantic_diagnostics
 
@@ -178,18 +168,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false, no_gas: true)
 
-//! > function_code
-fn foo() {
-    let _ = D {};
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct D {}
 impl DDestruct of Destruct<D> {
     fn destruct(self: D) nopanic {}
+}
+#[target_function]
+fn foo() {
+    let _ = D {};
 }
 
 //! > semantic_diagnostics

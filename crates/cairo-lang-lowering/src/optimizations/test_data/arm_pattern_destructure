@@ -3,7 +3,20 @@
 //! > test_runner_name
 test_match_optimizer
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252,
+}
+#[allow(extern_outside_corelib)]
+extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
+#[target_function]
 fn foo(mut z: felt252) {
     let y = bar(ref z);
     match y {
@@ -17,23 +30,6 @@ fn foo(mut z: felt252) {
         MyEnum::h(_x) => {},
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    a: (felt252, (felt252, felt252)),
-    b: (felt252, (felt252, felt252)),
-    c: (felt252, (felt252, felt252)),
-    d: (felt252, felt252),
-    e: (felt252, felt252),
-    f: (felt252,),
-    g: (felt252,),
-    h: felt252,
-}
-#[allow(extern_outside_corelib)]
-extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
 

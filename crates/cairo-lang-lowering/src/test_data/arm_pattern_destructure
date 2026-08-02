@@ -3,7 +3,18 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252,
+}
+#[target_function]
 fn foo(e: MyEnum) {
     match e {
         MyEnum::a((_x, (_y, _z))) => {},
@@ -15,21 +26,6 @@ fn foo(e: MyEnum) {
         MyEnum::g(_x) => {},
         MyEnum::h(_x) => {},
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    a: (felt252, (felt252, felt252)),
-    b: (felt252, (felt252, felt252)),
-    c: (felt252, (felt252, felt252)),
-    d: (felt252, felt252),
-    e: (felt252, felt252),
-    f: (felt252,),
-    g: (felt252,),
-    h: felt252,
 }
 
 //! > semantic_diagnostics
@@ -99,24 +95,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(ref a: felt252) {
-    match bar(ref a) {
-        MyEnum::a((_x, (_y, _z))) => {},
-        MyEnum::b((_x, _y)) => {},
-        MyEnum::c(_x) => {},
-        MyEnum::d((_x, _y)) => {},
-        MyEnum::e(_x) => {},
-        MyEnum::f((_x,)) => {},
-        MyEnum::g(_x) => {},
-        MyEnum::h(_x) => {},
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum MyEnum {
     a: (felt252, (felt252, felt252)),
     b: (felt252, (felt252, felt252)),
@@ -129,6 +108,19 @@ enum MyEnum {
 }
 #[allow(extern_outside_corelib)]
 extern fn bar(ref a: felt252) -> MyEnum nopanic;
+#[target_function]
+fn foo(ref a: felt252) {
+    match bar(ref a) {
+        MyEnum::a((_x, (_y, _z))) => {},
+        MyEnum::b((_x, _y)) => {},
+        MyEnum::c(_x) => {},
+        MyEnum::d((_x, _y)) => {},
+        MyEnum::e(_x) => {},
+        MyEnum::f((_x,)) => {},
+        MyEnum::g(_x) => {},
+        MyEnum::h(_x) => {},
+    }
+}
 
 //! > semantic_diagnostics
 
@@ -197,7 +189,20 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252,
+}
+#[allow(extern_outside_corelib)]
+extern fn bar() -> MyEnum nopanic;
+#[target_function]
 fn foo() {
     let y = bar();
     match y {
@@ -211,23 +216,6 @@ fn foo() {
         MyEnum::h(_x) => {},
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    a: (felt252, (felt252, felt252)),
-    b: (felt252, (felt252, felt252)),
-    c: (felt252, (felt252, felt252)),
-    d: (felt252, felt252),
-    e: (felt252, felt252),
-    f: (felt252,),
-    g: (felt252,),
-    h: felt252,
-}
-#[allow(extern_outside_corelib)]
-extern fn bar() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -296,24 +284,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(mut z: felt252) {
-    match bar(ref z) {
-        MyEnum::a((_x, (_y, _z))) => {},
-        MyEnum::b((_x, _y)) => {},
-        MyEnum::c(_x) => {},
-        MyEnum::d((_x, _y)) => {},
-        MyEnum::e(_x) => {},
-        MyEnum::f((_x,)) => {},
-        MyEnum::g(_x) => {},
-        MyEnum::h(_x) => {},
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum MyEnum {
     a: (felt252, (felt252, felt252)),
     b: (felt252, (felt252, felt252)),
@@ -326,6 +297,19 @@ enum MyEnum {
 }
 #[allow(extern_outside_corelib)]
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
+#[target_function]
+fn foo(mut z: felt252) {
+    match bar(ref z) {
+        MyEnum::a((_x, (_y, _z))) => {},
+        MyEnum::b((_x, _y)) => {},
+        MyEnum::c(_x) => {},
+        MyEnum::d((_x, _y)) => {},
+        MyEnum::e(_x) => {},
+        MyEnum::f((_x,)) => {},
+        MyEnum::g(_x) => {},
+        MyEnum::h(_x) => {},
+    }
+}
 
 //! > semantic_diagnostics
 
@@ -394,7 +378,20 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    a: (felt252, (felt252, felt252)),
+    b: (felt252, (felt252, felt252)),
+    c: (felt252, (felt252, felt252)),
+    d: (felt252, felt252),
+    e: (felt252, felt252),
+    f: (felt252,),
+    g: (felt252,),
+    h: felt252,
+}
+#[allow(extern_outside_corelib)]
+extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
+#[target_function]
 fn foo(mut z: felt252) {
     let y = bar(ref z);
     match y {
@@ -408,23 +405,6 @@ fn foo(mut z: felt252) {
         MyEnum::h(_x) => {},
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    a: (felt252, (felt252, felt252)),
-    b: (felt252, (felt252, felt252)),
-    c: (felt252, (felt252, felt252)),
-    d: (felt252, felt252),
-    e: (felt252, felt252),
-    f: (felt252,),
-    g: (felt252,),
-    h: felt252,
-}
-#[allow(extern_outside_corelib)]
-extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
 

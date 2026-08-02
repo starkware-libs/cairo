@@ -162,14 +162,10 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for ReachabilityAnalyzer {
 #[test]
 fn test_block_level_analysis() {
     let db = LoweringDatabaseForTesting::default();
-    let inputs = OrderedHashMap::from([
-        (
-            "function_code".to_string(),
-            "fn foo(x: bool) -> felt252 { if x { 1 } else { 2 } }".to_string(),
-        ),
-        ("function_name".to_string(), "foo".to_string()),
-        ("module_code".to_string(), "".to_string()),
-    ]);
+    let inputs = OrderedHashMap::from([(
+        "cairo_code".to_string(),
+        "#[target_function]\nfn foo(x: bool) -> felt252 { if x { 1 } else { 2 } }".to_string(),
+    )]);
     let (test_function, _) = setup_test_function(&db, &inputs).split();
     let lowered = db
         .function_with_body_lowering(
@@ -192,11 +188,10 @@ fn test_block_level_analysis() {
 #[test]
 fn test_forward_single_block() {
     let db = LoweringDatabaseForTesting::default();
-    let inputs = OrderedHashMap::from([
-        ("function_code".to_string(), "fn foo() {}".to_string()),
-        ("function_name".to_string(), "foo".to_string()),
-        ("module_code".to_string(), "".to_string()),
-    ]);
+    let inputs = OrderedHashMap::from([(
+        "cairo_code".to_string(),
+        "#[target_function]\nfn foo() {}".to_string(),
+    )]);
     let (test_function, _) = setup_test_function(&db, &inputs).split();
     let lowered = db
         .function_with_body_lowering(
@@ -217,14 +212,10 @@ fn test_forward_single_block() {
 fn test_forward_with_branching() {
     let db = LoweringDatabaseForTesting::default();
     // A function with branching creates multiple blocks
-    let inputs = OrderedHashMap::from([
-        (
-            "function_code".to_string(),
-            "fn foo(x: bool) -> felt252 { if x { 1 } else { 2 } }".to_string(),
-        ),
-        ("function_name".to_string(), "foo".to_string()),
-        ("module_code".to_string(), "".to_string()),
-    ]);
+    let inputs = OrderedHashMap::from([(
+        "cairo_code".to_string(),
+        "#[target_function]\nfn foo(x: bool) -> felt252 { if x { 1 } else { 2 } }".to_string(),
+    )]);
     let (test_function, _) = setup_test_function(&db, &inputs).split();
     let lowered = db
         .function_with_body_lowering(

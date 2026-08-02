@@ -3,13 +3,11 @@
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(n: felt252) -> felt252 {
     -n
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -49,15 +47,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo(val: Option<felt252>) -> felt252 {
-    bar(val, 2)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 /// If `val` is `Some(x)`, returns `x`. Otherwise, panics.
 #[inline]
 fn bar<T, impl TDrop: Drop<T>>(val: Option<T>, val2: T) -> T {
@@ -65,6 +55,10 @@ fn bar<T, impl TDrop: Drop<T>>(val: Option<T>, val2: T) -> T {
         Some(x) => x,
         None => val2,
     }
+}
+#[target_function]
+fn foo(val: Option<felt252>) -> felt252 {
+    bar(val, 2)
 }
 
 //! > semantic_diagnostics
@@ -118,18 +112,14 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo(n: felt252) -> felt252 {
-    bar(n, n)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(a: felt252, b: felt252) -> felt252 {
     a + b
+}
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    bar(n, n)
 }
 
 //! > semantic_diagnostics
@@ -169,15 +159,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo(a: felt252, b: felt252) -> felt252 {
-    bar(a + b, b)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(a: felt252, b: felt252) -> felt252 implicits() {
     bar2(a, b) + bar2(b, a)
@@ -186,6 +168,10 @@ fn bar(a: felt252, b: felt252) -> felt252 implicits() {
 #[inline(always)]
 fn bar2(a: felt252, b: felt252) -> felt252 implicits() {
     a * b
+}
+#[target_function]
+fn foo(a: felt252, b: felt252) -> felt252 {
+    bar(a + b, b)
 }
 
 //! > semantic_diagnostics
@@ -239,15 +225,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo(a: felt252) -> felt252 {
-    first(a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn first(a: felt252) -> felt252 {
     second(a)
@@ -261,6 +239,10 @@ fn second(a: felt252) -> felt252 {
 #[inline(always)]
 fn third(a: felt252) -> felt252 {
     a * a
+}
+#[target_function]
+fn foo(a: felt252) -> felt252 {
+    first(a)
 }
 
 //! > semantic_diagnostics
@@ -300,14 +282,12 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {
     let mut arr = array![];
     arr.append(5)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -364,25 +344,21 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo(a: felt252) -> felt252 {
-    if a == 2 {
-        bar(a)
-    } else {
-        a
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
     if a == 0 {
         return 1;
     }
     0
+}
+#[target_function]
+fn foo(a: felt252) -> felt252 {
+    if a == 2 {
+        bar(a)
+    } else {
+        a
+    }
 }
 
 //! > before
@@ -509,21 +485,17 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo(a: felt252) -> felt252 {
-    bar(a) + bar2(a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(a: felt252) -> felt252 {
     bar2(a)
 }
 
 fn bar2(a: felt252) -> felt252 {
     1
+}
+#[target_function]
+fn foo(a: felt252) -> felt252 {
+    bar(a) + bar2(a)
 }
 
 //! > before
@@ -587,15 +559,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo(a: felt252) -> felt252 {
-    bar(a) + bar2(a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn bar(a: felt252) -> felt252 {
     bar2(a)
@@ -604,6 +568,10 @@ fn bar(a: felt252) -> felt252 {
 #[inline(never)]
 fn bar2(a: felt252) -> felt252 {
     1
+}
+#[target_function]
+fn foo(a: felt252) -> felt252 {
+    bar(a) + bar2(a)
 }
 
 //! > before
@@ -647,21 +615,17 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo() -> felt252 {
-    bar(0)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
     if a == 0 {
         return a;
     }
     1
+}
+#[target_function]
+fn foo() -> felt252 {
+    bar(0)
 }
 
 //! > semantic_diagnostics
@@ -716,18 +680,14 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo(n: felt252) -> felt252 {
-    identity(n)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn identity(n: felt252) -> felt252 {
     n
+}
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    identity(n)
 }
 
 //! > semantic_diagnostics
@@ -772,15 +732,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
-fn foo(a: u128, b: u128) -> u128 {
-    bar1(a, b)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar1(a: u128, b: u128) -> u128 {
     if a == 1_u128 {
@@ -792,6 +744,10 @@ fn bar1(a: u128, b: u128) -> u128 {
 #[inline(always)]
 fn bar2(a: u128, b: u128) -> u128 {
     a + b
+}
+#[target_function]
+fn foo(a: u128, b: u128) -> u128 {
+    bar1(a, b)
 }
 
 //! > semantic_diagnostics
@@ -907,15 +863,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(n: felt252) -> felt252 {
-    bar(n)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(n: felt252) -> felt252 {
     if n == 0 {
@@ -923,6 +871,10 @@ fn bar(n: felt252) -> felt252 {
     } else {
         return 1;
     }
+}
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    bar(n)
 }
 
 //! > semantic_diagnostics
@@ -984,16 +936,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
-#[inline]
-fn foo(n: felt252) -> felt252 {
-    bar(n)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
     if n == 0 {
@@ -1001,6 +944,11 @@ fn bar(n: felt252) -> felt252 {
     } else {
         return 1;
     }
+}
+#[inline]
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    bar(n)
 }
 
 //! > semantic_diagnostics
@@ -1104,11 +1052,9 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
 #[inline]
+#[target_function]
 fn foo(n: felt252) -> felt252 {
     foo(n)
 }
@@ -1214,16 +1160,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
-#[inline]
-fn foo(n: felt252) -> felt252 {
-    bar(n)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
     if n == 0 {
@@ -1231,6 +1168,11 @@ fn bar(n: felt252) -> felt252 {
     } else {
         return 1;
     }
+}
+#[inline]
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    bar(n)
 }
 
 //! > semantic_diagnostics
@@ -1304,16 +1246,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
-#[inline]
-fn foo(n: felt252) -> felt252 {
-    bar(n)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
     baz(n)
@@ -1326,6 +1259,11 @@ fn baz(n: felt252) -> felt252 {
     } else {
         return 1;
     }
+}
+#[inline]
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    bar(n)
 }
 
 //! > semantic_diagnostics
@@ -1409,16 +1347,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
-#[inline]
-fn foo(n: felt252) -> felt252 {
-    bar(n)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
     baz(n)
@@ -1431,6 +1360,11 @@ fn baz(n: felt252) -> felt252 {
     } else {
         return 1;
     }
+}
+#[inline]
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    bar(n)
 }
 
 //! > semantic_diagnostics
@@ -1504,16 +1438,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
-#[inline]
-fn foo(n: felt252) -> felt252 {
-    bar(n)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
     baz(n)
@@ -1526,6 +1451,11 @@ fn baz(n: felt252) -> felt252 {
     } else {
         return 1;
     }
+}
+#[inline]
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    bar(n)
 }
 
 //! > semantic_diagnostics
@@ -1629,18 +1559,14 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(n: felt252) -> felt252 {
-    bar(n) + bar(n)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline]
 fn bar(n: felt252) -> felt252 {
     n
+}
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    bar(n) + bar(n)
 }
 
 //! > semantic_diagnostics
@@ -1702,18 +1628,14 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(n: felt252) {
-    bar(n);
-}
-
-//! > module_code
+//! > cairo_code
 #[inline]
 fn bar<T, +PanicDestruct<T>>(n: T) {
     panic_with_felt252('panic')
+}
+#[target_function]
+fn foo(n: felt252) {
+    bar(n);
 }
 
 //! > semantic_diagnostics

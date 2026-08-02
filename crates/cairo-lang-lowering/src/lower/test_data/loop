@@ -3,7 +3,8 @@
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> bool {
     let mut x = 5;
     loop {
@@ -14,9 +15,6 @@ fn foo() -> bool {
         };
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -31,7 +29,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5
-  (v2: core::felt252, v1: core::bool) <- test::foo[38-149](v0)
+  (v2: core::felt252, v1: core::bool) <- test::foo[57-168](v0)
 End:
   Return(v1)
 
@@ -40,7 +38,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-149]{5, }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[57-168]{5, }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -99,7 +97,7 @@ End:
 
 blk3:
 Statements:
-  (v14: core::felt252, v13: core::bool) <- test::foo[38-149](v2)
+  (v14: core::felt252, v13: core::bool) <- test::foo[57-168](v2)
 End:
   Return(v14, v13)
 
@@ -139,7 +137,7 @@ End:
 blk3:
 Statements:
   (v17: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-149](v3, v17, v8)
+  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[57-168](v3, v17, v8)
 End:
   Return(v18, v19, v20)
 
@@ -151,7 +149,7 @@ End:
   Return(v5, v6, v22)
 
 
-Final lowering of specialized call "test::foo[38-149]{5, }":
+Final lowering of specialized call "test::foo[57-168]{5, }":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
@@ -165,7 +163,7 @@ blk1:
 Statements:
   (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
   (v7: core::felt252) <- 6
-  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-149](v2, v6, v7)
+  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[57-168](v2, v6, v7)
 End:
   Return(v8, v9, v10)
 
@@ -183,7 +181,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> bool {
     let mut x = 5;
     loop {
@@ -193,9 +192,6 @@ fn foo() -> bool {
         };
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -210,7 +206,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5
-  (v2: core::felt252, v1: core::bool) <- test::foo[38-130](v0)
+  (v2: core::felt252, v1: core::bool) <- test::foo[57-149](v0)
 End:
   Return(v1)
 
@@ -219,7 +215,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-130]{5, }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[57-149]{5, }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -278,7 +274,7 @@ End:
 
 blk3:
 Statements:
-  (v14: core::felt252, v13: core::bool) <- test::foo[38-130](v3)
+  (v14: core::felt252, v13: core::bool) <- test::foo[57-149](v3)
 End:
   Return(v14, v13)
 
@@ -318,7 +314,7 @@ End:
 blk3:
 Statements:
   (v17: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-130](v3, v17, v8)
+  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[57-149](v3, v17, v8)
 End:
   Return(v18, v19, v20)
 
@@ -330,7 +326,7 @@ End:
   Return(v5, v6, v22)
 
 
-Final lowering of specialized call "test::foo[38-130]{5, }":
+Final lowering of specialized call "test::foo[57-149]{5, }":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
@@ -344,7 +340,7 @@ blk1:
 Statements:
   (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
   (v7: core::felt252) <- 6
-  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-130](v2, v6, v7)
+  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[57-149](v2, v6, v7)
 End:
   Return(v8, v9, v10)
 
@@ -362,7 +358,18 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop)]
+struct A {
+    b: B,
+    x: felt252,
+}
+#[derive(Copy, Drop)]
+struct B {
+    c: usize,
+    y: u128,
+}
+#[target_function]
 fn foo(mut a: A, ref b: A) {
     let c = 5_usize;
     loop {
@@ -376,21 +383,6 @@ fn foo(mut a: A, ref b: A) {
             break b;
         };
     };
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy, Drop)]
-struct A {
-    b: B,
-    x: felt252,
-}
-#[derive(Copy, Drop)]
-struct B {
-    c: usize,
-    y: u128,
 }
 
 //! > semantic_diagnostics
@@ -407,7 +399,7 @@ blk0 (root):
 Statements:
   (v2: core::integer::u32) <- 5
   (v3: test::B, v4: core::felt252) <- struct_destructure(v0)
-  (v6: core::integer::u32, v7: test::A, v5: test::A) <- test::foo[50-256](v2, v1, v3)
+  (v6: core::integer::u32, v7: test::A, v5: test::A) <- test::foo[69-275](v2, v1, v3)
   (v8: core::integer::u32, v9: core::integer::u128) <- struct_destructure(v3)
   (v10: ()) <- struct_construct()
 End:
@@ -420,7 +412,7 @@ blk0 (root):
 Statements:
   (v4: core::integer::u32) <- 5
   (v5: test::B, v6: core::felt252) <- struct_destructure(v2)
-  (v7: core::RangeCheck, v8: core::gas::GasBuiltin, v9: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- test::foo[50-256](v0, v1, v4, v3, v5)
+  (v7: core::RangeCheck, v8: core::gas::GasBuiltin, v9: core::panics::PanicResult::<(core::integer::u32, test::A, test::A)>) <- test::foo[69-275](v0, v1, v4, v3, v5)
 End:
   Match(match_enum(v9) {
     PanicResult::Ok(v10) => blk1,
@@ -483,7 +475,7 @@ End:
 blk3:
 Statements:
   (v17: test::B) <- struct_construct(v0, v5)
-  (v19: core::integer::u32, v20: test::A, v18: test::A) <- test::foo[50-256](v0, v1, v17)
+  (v19: core::integer::u32, v20: test::A, v18: test::A) <- test::foo[69-275](v0, v1, v17)
   (v21: core::integer::u32, v22: core::integer::u128) <- struct_destructure(v17)
 End:
   Return(v19, v20, v18)
@@ -519,7 +511,7 @@ End:
   Return(v7, v8, v18)
 
 
-Final lowering of specialized call "test::foo[50-256]":
+Final lowering of specialized call "test::foo[69-275]":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::integer::u32, v3: test::A, v4: test::B
 blk0 (root):
 Statements:
@@ -555,7 +547,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> bool {
     let mut x = 5;
     loop {
@@ -570,9 +563,6 @@ fn foo() -> bool {
     }
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -586,7 +576,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5
-  (v2: core::felt252, v1: core::bool) <- test::foo[38-201](v0)
+  (v2: core::felt252, v1: core::bool) <- test::foo[57-220](v0)
 End:
   Return(v1)
 
@@ -595,7 +585,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-201]{5, }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[57-220]{5, }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -642,7 +632,7 @@ End:
 
 blk1:
 Statements:
-  (v12: core::felt252, v11: core::bool) <- test::foo[38-201](v2)
+  (v12: core::felt252, v11: core::bool) <- test::foo[57-220](v2)
 End:
   Return(v12, v11)
 
@@ -677,7 +667,7 @@ End:
 
 blk6:
 Statements:
-  (v24: core::felt252, v23: core::bool) <- test::foo[38-201](v2)
+  (v24: core::felt252, v23: core::bool) <- test::foo[57-220](v2)
 End:
   Return(v24, v23)
 
@@ -738,7 +728,7 @@ End:
 
 blk6:
 Statements:
-  (v23: core::RangeCheck, v24: core::gas::GasBuiltin, v25: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-201](v3, v13, v8)
+  (v23: core::RangeCheck, v24: core::gas::GasBuiltin, v25: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[57-220](v3, v13, v8)
 End:
   Return(v23, v24, v25)
 
@@ -750,7 +740,7 @@ End:
   Return(v5, v6, v27)
 
 
-Final lowering of specialized call "test::foo[38-201]{5, }":
+Final lowering of specialized call "test::foo[57-220]{5, }":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
@@ -764,7 +754,7 @@ blk1:
 Statements:
   (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
   (v7: core::felt252) <- 6
-  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[38-201](v2, v6, v7)
+  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[57-220](v2, v6, v7)
 End:
   Return(v8, v9, v10)
 
@@ -782,15 +772,13 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {
     loop {
         break;
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -804,7 +792,7 @@ Main:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- test::foo[11-43]()
+  (v0: ()) <- test::foo[30-62]()
 End:
   Return(v0)
 
@@ -846,7 +834,13 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop, Debug)]
+struct A {
+    a: u8,
+    b: u8,
+}
+#[target_function]
 fn foo() {
     let mut x = A { a: 3, b: 4 };
     loop {
@@ -860,16 +854,6 @@ fn foo() {
             break;
         };
     };
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy, Drop, Debug)]
-struct A {
-    a: u8,
-    b: u8,
 }
 
 //! > semantic_diagnostics
@@ -888,7 +872,7 @@ Statements:
   (v1: core::integer::u8) <- 4
   (v2: test::A) <- struct_construct(v0, v1)
   (v3: core::integer::u8, v4: core::integer::u8) <- struct_destructure(v2)
-  (v6: core::integer::u8, v5: ()) <- test::foo[45-203](v3)
+  (v6: core::integer::u8, v5: ()) <- test::foo[64-222](v3)
   (v7: ()) <- struct_construct()
 End:
   Return(v7)
@@ -899,7 +883,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::integer::u8) <- 3
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[45-203](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::integer::u8, ())>) <- test::foo[64-222](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -977,7 +961,7 @@ End:
 
 blk6:
 Statements:
-  (v18: core::integer::u8, v17: ()) <- test::foo[45-203](v8)
+  (v18: core::integer::u8, v17: ()) <- test::foo[64-222](v8)
 End:
   Return(v18, v17)
 
@@ -1010,7 +994,7 @@ End:
   Return(v5, v6, v13)
 
 
-Final lowering of specialized call "test::foo[45-203]":
+Final lowering of specialized call "test::foo[64-222]":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::integer::u8
 blk0 (root):
 Statements:
@@ -1044,7 +1028,16 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+struct S {}
+trait T {
+    fn foo(self: @S);
+}
+impl I of T {
+    fn foo(self: @S) {}
+}
+#[target_function]
 fn foo() -> bool {
     let mut s = S {};
     loop {
@@ -1053,19 +1046,6 @@ fn foo() -> bool {
     }
     s.foo();
     false
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-struct S {}
-trait T {
-    fn foo(self: @S);
-}
-impl I of T {
-    fn foo(self: @S) {}
 }
 
 //! > semantic_diagnostics
@@ -1082,7 +1062,7 @@ blk0 (root):
 Statements:
   (v0: test::S) <- struct_construct()
   (v1: test::S, v2: @test::S) <- snapshot(v0)
-  (v3: ()) <- test::foo[41-90](v2)
+  (v3: ()) <- test::foo[60-109](v2)
   (v4: test::S, v5: @test::S) <- snapshot(v1)
   (v6: ()) <- test::I::foo(v5)
   (v7: ()) <- struct_construct()
@@ -1131,20 +1111,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
-fn foo() {
-    let t = T { s: S {} };
-    loop {
-        TT::f1oo(@t.s);
-        break;
-    }
-    TT::f1oo(@t.s);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct S {}
 #[derive(Drop)]
@@ -1156,6 +1123,15 @@ trait TT {
 }
 impl STT of TT {
     fn f1oo(self: @S) {}
+}
+#[target_function]
+fn foo() {
+    let t = T { s: S {} };
+    loop {
+        TT::f1oo(@t.s);
+        break;
+    }
+    TT::f1oo(@t.s);
 }
 
 //! > semantic_diagnostics
@@ -1174,7 +1150,7 @@ Statements:
   (v1: test::T) <- struct_construct(v0)
   (v2: test::S) <- struct_destructure(v1)
   (v3: test::S, v4: @test::S) <- snapshot(v2)
-  (v5: ()) <- test::foo[38-94](v4)
+  (v5: ()) <- test::foo[57-113](v4)
   (v6: test::S, v7: @test::S) <- snapshot(v3)
   (v8: ()) <- test::STT::f1oo(v7)
   (v9: ()) <- struct_construct()
@@ -1220,7 +1196,20 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn ex(a: u32) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn ex1(a: @B) nopanic;
+#[derive(Drop)]
+struct B {
+    c: u32,
+}
+#[derive(Drop)]
+struct A {
+    b: B,
+}
+#[target_function]
 fn foo() {
     let a = A { b: B { c: 3 } };
     loop {
@@ -1233,23 +1222,6 @@ fn foo() {
         }
         break;
     };
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn ex(a: u32) nopanic;
-#[allow(extern_outside_corelib)]
-extern fn ex1(a: @B) nopanic;
-#[derive(Drop)]
-struct B {
-    c: u32,
-}
-#[derive(Drop)]
-struct A {
-    b: B,
 }
 
 //! > semantic_diagnostics
@@ -1271,7 +1243,7 @@ Statements:
   (v4: core::integer::u32) <- struct_destructure(v3)
   (v5: test::B) <- struct_construct(v4)
   (v6: test::B, v7: @test::B) <- snapshot(v5)
-  (v8: ()) <- test::foo[44-207](v4, v7)
+  (v8: ()) <- test::foo[63-226](v4, v7)
   (v9: ()) <- struct_construct()
 End:
   Return(v9)
@@ -1326,7 +1298,7 @@ Parameters: v0: core::integer::u32, v1: @test::B
 blk0 (root):
 Statements:
   () <- test::ex1(v1)
-  (v2: ()) <- test::foo[95-187](v0)
+  (v2: ()) <- test::foo[114-206](v0)
   (v3: ()) <- struct_construct()
 End:
   Return(v3)
@@ -1348,7 +1320,20 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn ex(a: @u32) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn ex1(a: B) nopanic;
+#[derive(Drop, Copy)]
+struct B {
+    c: u32,
+}
+#[derive(Drop)]
+struct A {
+    b: B,
+}
+#[target_function]
 fn foo() {
     let a = A { b: B { c: 3 } };
     loop {
@@ -1361,23 +1346,6 @@ fn foo() {
         }
         break;
     };
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn ex(a: @u32) nopanic;
-#[allow(extern_outside_corelib)]
-extern fn ex1(a: B) nopanic;
-#[derive(Drop, Copy)]
-struct B {
-    c: u32,
-}
-#[derive(Drop)]
-struct A {
-    b: B,
 }
 
 //! > semantic_diagnostics
@@ -1396,7 +1364,7 @@ Statements:
   (v1: test::B) <- struct_construct(v0)
   (v2: test::A) <- struct_construct(v1)
   (v3: test::B) <- struct_destructure(v2)
-  (v4: ()) <- test::foo[44-207](v3)
+  (v4: ()) <- test::foo[63-226](v3)
   (v5: ()) <- struct_construct()
 End:
   Return(v5)
@@ -1453,7 +1421,7 @@ Statements:
   () <- test::ex1(v0)
   (v1: core::integer::u32) <- struct_destructure(v0)
   (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
-  (v4: ()) <- test::foo[94-187](v3)
+  (v4: ()) <- test::foo[113-206](v3)
   (v5: ()) <- struct_construct()
 End:
   Return(v5)
@@ -1477,7 +1445,14 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+struct A {
+    x: felt252,
+}
+#[allow(extern_outside_corelib)]
+extern fn use_a(a: @A) nopanic;
+#[target_function]
 fn foo() {
     let mut a = A { x: 0 };
     let mut i = 1;
@@ -1487,17 +1462,6 @@ fn foo() {
         i += 1;
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-struct A {
-    x: felt252,
-}
-#[allow(extern_outside_corelib)]
-extern fn use_a(a: @A) nopanic;
 
 //! > semantic_diagnostics
 
@@ -1514,7 +1478,7 @@ Statements:
   (v0: core::felt252) <- 0
   (v1: test::A) <- struct_construct(v0)
   (v2: core::felt252) <- 1
-  (v4: test::A, v5: core::felt252, v3: ()) <- test::foo[58-134](v2, v1)
+  (v4: test::A, v5: core::felt252, v3: ()) <- test::foo[77-153](v2, v1)
   (v6: ()) <- struct_construct()
 End:
   Return(v6)
@@ -1524,7 +1488,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[58-134]{1, { 0 }, }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[77-153]{1, { 0 }, }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -1575,7 +1539,7 @@ Statements:
   () <- test::use_a(v12)
   (v13: core::felt252) <- 1
   (v15: core::felt252, v14: ()) <- core::ops::arith::DeprecatedAddAssign::<core::felt252, core::Felt252AddEq>::add_assign(v2, v13)
-  (v17: test::A, v18: core::felt252, v16: ()) <- test::foo[58-134](v15, v11)
+  (v17: test::A, v18: core::felt252, v16: ()) <- test::foo[77-153](v15, v11)
 End:
   Return(v17, v18, v16)
 
@@ -1623,7 +1587,7 @@ Statements:
   () <- test::use_a(v18)
   (v19: core::felt252) <- 1
   (v20: core::felt252) <- core::felt252_add(v2, v19)
-  (v21: core::RangeCheck, v22: core::gas::GasBuiltin, v23: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[58-134](v4, v15, v20, v17)
+  (v21: core::RangeCheck, v22: core::gas::GasBuiltin, v23: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[77-153](v4, v15, v20, v17)
 End:
   Return(v21, v22, v23)
 
@@ -1635,7 +1599,7 @@ End:
   Return(v6, v7, v25)
 
 
-Final lowering of specialized call "test::foo[58-134]{1, { 0 }, }":
+Final lowering of specialized call "test::foo[77-153]{1, { 0 }, }":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
@@ -1653,7 +1617,7 @@ Statements:
   (v9: test::A, v10: @test::A) <- snapshot(v8)
   () <- test::use_a(v10)
   (v11: core::felt252) <- 2
-  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[58-134](v2, v6, v11, v9)
+  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(test::A, core::felt252, ())>) <- test::foo[77-153](v2, v6, v11, v9)
 End:
   Return(v12, v13, v14)
 
@@ -1671,15 +1635,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
-fn foo() {
-    MyTrait::impl_in_trait();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn impl_in_impl(x: u8) -> bool;
     fn impl_in_trait() -> u8 {
@@ -1698,6 +1654,10 @@ impl MyImpl of MyTrait {
     fn impl_in_impl(x: u8) -> bool {
         x == 30
     }
+}
+#[target_function]
+fn foo() {
+    MyTrait::impl_in_trait();
 }
 
 //! > expected_diagnostics
@@ -1750,7 +1710,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u32 {
     let mut x = 5;
     loop {
@@ -1771,9 +1732,6 @@ fn foo() -> u32 {
     1
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
 
 //! > semantic_diagnostics
@@ -1784,7 +1742,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5
-  (v2: core::felt252, v1: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[37-253](v0)
+  (v2: core::felt252, v1: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[56-272](v0)
 End:
   Match(match_enum(v1) {
     LoopResult::Normal(v3) => blk1,
@@ -1812,7 +1770,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, core::internal::LoopResult::<core::bool, core::integer::u32>)>) <- test::foo[37-253]{5, }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, core::internal::LoopResult::<core::bool, core::integer::u32>)>) <- test::foo[56-272]{5, }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -1925,7 +1883,7 @@ End:
 
 blk7:
 Statements:
-  (v33: core::felt252, v32: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[37-253](v2)
+  (v33: core::felt252, v32: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[56-272](v2)
 End:
   Return(v33, v32)
 
@@ -1936,7 +1894,7 @@ End:
 
 blk9:
 Statements:
-  (v35: core::felt252, v34: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[37-253](v2)
+  (v35: core::felt252, v34: core::internal::LoopResult::<core::bool, core::integer::u32>) <- test::foo[56-272](v2)
 End:
   Return(v35, v34)
 
@@ -2018,7 +1976,7 @@ End:
 
 blk8:
 Statements:
-  (v32: core::RangeCheck, v33: core::gas::GasBuiltin, v34: core::panics::PanicResult::<(core::felt252, core::internal::LoopResult::<core::bool, core::integer::u32>)>) <- test::foo[37-253](v3, v30, v8)
+  (v32: core::RangeCheck, v33: core::gas::GasBuiltin, v34: core::panics::PanicResult::<(core::felt252, core::internal::LoopResult::<core::bool, core::integer::u32>)>) <- test::foo[56-272](v3, v30, v8)
 End:
   Return(v32, v33, v34)
 
@@ -2030,7 +1988,7 @@ End:
   Return(v5, v6, v36)
 
 
-Final lowering of specialized call "test::foo[37-253]{5, }":
+Final lowering of specialized call "test::foo[56-272]{5, }":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
@@ -2044,7 +2002,7 @@ blk1:
 Statements:
   (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
   (v7: core::felt252) <- 6
-  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, core::internal::LoopResult::<core::bool, core::integer::u32>)>) <- test::foo[37-253](v2, v6, v7)
+  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, core::internal::LoopResult::<core::bool, core::integer::u32>)>) <- test::foo[56-272](v2, v6, v7)
 End:
   Return(v8, v9, v10)
 
@@ -2064,7 +2022,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: u32) -> u32 {
     loop {
         if a == 0 {
@@ -2074,9 +2033,6 @@ fn foo(a: u32) -> u32 {
     }
     1
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -2088,7 +2044,7 @@ Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
   (v1: core::integer::u32, v2: @core::integer::u32) <- snapshot(v0)
-  (v3: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[24-108](v2)
+  (v3: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[43-127](v2)
 End:
   Match(match_enum(v3) {
     LoopResult::Normal(v4) => blk1,
@@ -2208,7 +2164,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut a: Array<u32>) -> u32 {
     while let Some(v) = a.pop_front() {
         if v == 1 {
@@ -2228,9 +2185,6 @@ fn foo(mut a: Array<u32>) -> u32 {
     7
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
 
 //! > semantic_diagnostics
@@ -2240,7 +2194,7 @@ Main:
 Parameters: v0: core::array::Array::<core::integer::u32>
 blk0 (root):
 Statements:
-  (v2: core::array::Array::<core::integer::u32>, v1: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[35-262](v0)
+  (v2: core::array::Array::<core::integer::u32>, v1: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[54-281](v0)
 End:
   Match(match_enum(v1) {
     LoopResult::Normal(v3) => blk1,
@@ -2268,7 +2222,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::integer::u32>
 blk0 (root):
 Statements:
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[35-262](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[54-281](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -2409,7 +2363,7 @@ End:
 
 blk3:
 Statements:
-  (v14: core::array::Array::<core::integer::u32>, v13: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[35-262](v2)
+  (v14: core::array::Array::<core::integer::u32>, v13: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[54-281](v2)
 End:
   Return(v14, v13)
 
@@ -2421,7 +2375,7 @@ End:
 blk5:
 Statements:
   (v15: core::integer::u32, v16: @core::integer::u32) <- snapshot(v5)
-  (v17: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[127-237](v16)
+  (v17: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[146-256](v16)
 End:
   Match(match_enum(v17) {
     LoopResult::Normal(v18) => blk6,
@@ -2513,7 +2467,7 @@ End:
 blk6:
 Statements:
   (v23: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[35-262](v3, v23, v7)
+  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[54-281](v3, v23, v7)
 End:
   Return(v24, v25, v26)
 
@@ -2535,7 +2489,7 @@ End:
   Return(v5, v6, v33)
 
 
-Final lowering of specialized call "test::foo[35-262]":
+Final lowering of specialized call "test::foo[54-281]":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::integer::u32>
 blk0 (root):
 Statements:
@@ -2594,7 +2548,7 @@ End:
 blk6:
 Statements:
   (v23: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[35-262](v3, v23, v7)
+  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[54-281](v3, v23, v7)
 End:
   Return(v24, v25, v26)
 
@@ -2624,7 +2578,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut a: Array<u32>) -> u32 {
     while let Some(v) = a.pop_front() {
         if v == 1 {
@@ -2644,9 +2599,6 @@ fn foo(mut a: Array<u32>) -> u32 {
     7
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
 
 //! > semantic_diagnostics
@@ -2656,7 +2608,7 @@ Main:
 Parameters: v0: core::array::Array::<core::integer::u32>
 blk0 (root):
 Statements:
-  (v2: core::array::Array::<core::integer::u32>, v1: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[35-262](v0)
+  (v2: core::array::Array::<core::integer::u32>, v1: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[54-281](v0)
 End:
   Match(match_enum(v1) {
     LoopResult::Normal(v3) => blk1,
@@ -2684,7 +2636,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::integer::u32>
 blk0 (root):
 Statements:
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[35-262](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[54-281](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -2825,7 +2777,7 @@ End:
 
 blk3:
 Statements:
-  (v14: core::array::Array::<core::integer::u32>, v13: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[35-262](v2)
+  (v14: core::array::Array::<core::integer::u32>, v13: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[54-281](v2)
 End:
   Return(v14, v13)
 
@@ -2837,7 +2789,7 @@ End:
 blk5:
 Statements:
   (v15: core::integer::u32, v16: @core::integer::u32) <- snapshot(v5)
-  (v17: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[127-237](v16)
+  (v17: core::internal::LoopResult::<(), core::integer::u32>) <- test::foo[146-256](v16)
 End:
   Match(match_enum(v17) {
     LoopResult::Normal(v18) => blk6,
@@ -2929,7 +2881,7 @@ End:
 blk6:
 Statements:
   (v23: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[35-262](v3, v23, v7)
+  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[54-281](v3, v23, v7)
 End:
   Return(v24, v25, v26)
 
@@ -2951,7 +2903,7 @@ End:
   Return(v5, v6, v33)
 
 
-Final lowering of specialized call "test::foo[35-262]":
+Final lowering of specialized call "test::foo[54-281]":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::integer::u32>
 blk0 (root):
 Statements:
@@ -3010,7 +2962,7 @@ End:
 blk6:
 Statements:
   (v23: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[35-262](v3, v23, v7)
+  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v26: core::panics::PanicResult::<(core::array::Array::<core::integer::u32>, core::internal::LoopResult::<(), core::integer::u32>)>) <- test::foo[54-281](v3, v23, v7)
 End:
   Return(v24, v25, v26)
 
@@ -3040,20 +2992,16 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar() -> Result<(), u32> nopanic;
+#[target_function]
 fn foo() -> Result<(), u32> {
     for _ in 1..5_u32 {
         bar()?;
     }
     Ok(())
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn bar() -> Result<(), u32> nopanic;
 
 //! > expected_diagnostics
 
@@ -3068,7 +3016,7 @@ Statements:
   (v1: core::integer::u32) <- 5
   (v2: core::ops::range::Range::<core::integer::u32>) <- core::ops::range::RangeOpImpl::<core::integer::u32>::range(v0, v1)
   (v3: core::ops::range::internal::IntRange::<core::integer::u32>) <- core::ops::range::SierraRangeIntoIterator::<core::integer::u32, core::integer::u32Copy, core::integer::u32Drop, core::ops::range::SierraIntRangeSupportU32>::into_iter(v2)
-  (v5: core::ops::range::internal::IntRange::<core::integer::u32>, v4: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- test::foo[30-76](v3)
+  (v5: core::ops::range::internal::IntRange::<core::integer::u32>, v4: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- test::foo[49-95](v3)
 End:
   Match(match_enum(v4) {
     LoopResult::Normal(v6) => blk1,
@@ -3119,7 +3067,7 @@ End:
 
 blk3:
 Statements:
-  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[30-76](v9, v10, v11)
+  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[49-95](v9, v10, v11)
 End:
   Match(match_enum(v15) {
     PanicResult::Ok(v16) => blk4,
@@ -3200,7 +3148,7 @@ End:
 
 blk4:
 Statements:
-  (v10: core::ops::range::internal::IntRange::<core::integer::u32>, v9: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- test::foo[30-76](v2)
+  (v10: core::ops::range::internal::IntRange::<core::integer::u32>, v9: core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>) <- test::foo[49-95](v2)
 End:
   Return(v10, v9)
 
@@ -3251,7 +3199,7 @@ End:
 blk4:
 Statements:
   (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[30-76](v3, v15, v7)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[49-95](v3, v15, v7)
 End:
   Return(v16, v17, v18)
 
@@ -3273,7 +3221,7 @@ End:
   Return(v5, v6, v25)
 
 
-Final lowering of specialized call "test::foo[30-76]":
+Final lowering of specialized call "test::foo[49-95]":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::ops::range::internal::IntRange::<core::integer::u32>
 blk0 (root):
 Statements:
@@ -3312,7 +3260,7 @@ End:
 blk4:
 Statements:
   (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[30-76](v3, v15, v7)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u32>, core::internal::LoopResult::<(), core::result::Result::<(), core::integer::u32>>)>) <- test::foo[49-95](v3, v15, v7)
 End:
   Return(v16, v17, v18)
 
@@ -3342,20 +3290,16 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[inline(never)]
+fn bar() -> Result<(), u32> {
+    Ok(())
+}
+#[target_function]
 fn foo() -> Result<(), u32> {
     loop {
         bar()?;
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(never)]
-fn bar() -> Result<(), u32> {
-    Ok(())
 }
 
 //! > expected_diagnostics
@@ -3367,7 +3311,7 @@ Main:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::result::Result::<(), core::integer::u32>) <- test::foo[30-63]()
+  (v0: core::result::Result::<(), core::integer::u32>) <- test::foo[49-82]()
 End:
   Return(v0)
 
@@ -3376,7 +3320,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- test::foo[30-63](v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- test::foo[49-82](v0, v1)
 End:
   Return(v2, v3, v4)
 
@@ -3411,7 +3355,7 @@ End:
 
 blk3:
 Statements:
-  (v5: core::result::Result::<(), core::integer::u32>) <- test::foo[30-63]()
+  (v5: core::result::Result::<(), core::integer::u32>) <- test::foo[49-82]()
 End:
   Return(v5)
 
@@ -3438,7 +3382,7 @@ End:
 blk2:
 Statements:
   (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
-  (v10: core::RangeCheck, v11: core::gas::GasBuiltin, v12: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- test::foo[30-63](v2, v9)
+  (v10: core::RangeCheck, v11: core::gas::GasBuiltin, v12: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- test::foo[49-82](v2, v9)
 End:
   Return(v10, v11, v12)
 
@@ -3458,7 +3402,7 @@ End:
   Return(v4, v5, v17)
 
 
-Final lowering of specialized call "test::foo[30-63]":
+Final lowering of specialized call "test::foo[49-82]":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
@@ -3480,7 +3424,7 @@ End:
 blk2:
 Statements:
   (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
-  (v10: core::RangeCheck, v11: core::gas::GasBuiltin, v12: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- test::foo[30-63](v2, v9)
+  (v10: core::RangeCheck, v11: core::gas::GasBuiltin, v12: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- test::foo[49-82](v2, v9)
 End:
   Return(v10, v11, v12)
 
@@ -3508,7 +3452,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252, b: felt252, c: felt252) -> bool {
     let mut x = 5;
     let mut s = S { a: 1, b: 2, c: 3 };
@@ -3532,9 +3477,6 @@ struct S {
     c: felt252,
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -3552,7 +3494,7 @@ Statements:
   (v5: core::felt252) <- 2
   (v6: core::felt252) <- 3
   (v7: test::S) <- struct_construct(v4, v5, v6)
-  (v9: core::felt252, v8: core::bool) <- test::foo[112-254](v7, v0, v3)
+  (v9: core::felt252, v8: core::bool) <- test::foo[131-273](v7, v0, v3)
   (v10: core::felt252, v11: core::felt252, v12: core::felt252) <- struct_destructure(v7)
 End:
   Return(v8)
@@ -3562,7 +3504,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252, v3: core::felt252, v4: core::felt252
 blk0 (root):
 Statements:
-  (v5: core::RangeCheck, v6: core::gas::GasBuiltin, v7: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[112-254]{{ 1, 2, 3 }, NotSpecialized, 5, }(v0, v1, v2)
+  (v5: core::RangeCheck, v6: core::gas::GasBuiltin, v7: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[131-273]{{ 1, 2, 3 }, NotSpecialized, 5, }(v0, v1, v2)
 End:
   Match(match_enum(v7) {
     PanicResult::Ok(v8) => blk1,
@@ -3626,7 +3568,7 @@ End:
 blk3:
 Statements:
   (v20: test::S) <- struct_construct(v1, v4, v5)
-  (v22: core::felt252, v21: core::bool) <- test::foo[112-254](v20, v1, v2)
+  (v22: core::felt252, v21: core::bool) <- test::foo[131-273](v20, v1, v2)
   (v23: core::felt252, v24: core::felt252, v25: core::felt252) <- struct_destructure(v20)
 End:
   Return(v22, v21)
@@ -3672,7 +3614,7 @@ blk3:
 Statements:
   (v24: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
   (v25: test::S) <- struct_construct(v3, v10, v11)
-  (v26: core::RangeCheck, v27: core::gas::GasBuiltin, v28: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[112-254](v5, v24, v25, v3, v4)
+  (v26: core::RangeCheck, v27: core::gas::GasBuiltin, v28: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[131-273](v5, v24, v25, v3, v4)
 End:
   Return(v26, v27, v28)
 
@@ -3684,7 +3626,7 @@ End:
   Return(v7, v8, v30)
 
 
-Final lowering of specialized call "test::foo[112-254]{{ 1, 2, 3 }, NotSpecialized, 5, }":
+Final lowering of specialized call "test::foo[131-273]{{ 1, 2, 3 }, NotSpecialized, 5, }":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
@@ -3702,7 +3644,7 @@ Statements:
   (v10: core::felt252) <- 3
   (v11: test::S) <- struct_construct(v8, v9, v10)
   () <- test::bar(v11)
-  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[112-254]{{ NotSpecialized, 2, 3 }, NotSpecialized, 5, }(v3, v7, v2, v2)
+  (v12: core::RangeCheck, v13: core::gas::GasBuiltin, v14: core::panics::PanicResult::<(core::felt252, core::bool)>) <- test::foo[131-273]{{ NotSpecialized, 2, 3 }, NotSpecialized, 5, }(v3, v7, v2, v2)
 End:
   Return(v12, v13, v14)
 
@@ -3720,7 +3662,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(s: S) -> bool {
     let x = 5;
     let mut o = Outer { a: 1, s: s };
@@ -3746,9 +3689,6 @@ struct Outer {
     s: S,
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -3764,7 +3704,7 @@ Statements:
   (v1: core::felt252) <- 5
   (v2: core::felt252) <- 1
   (v3: test::Outer) <- struct_construct(v2, v0)
-  (v5: test::S, v4: core::bool) <- test::foo[76-191](v3, v1)
+  (v5: test::S, v4: core::bool) <- test::foo[95-210](v3, v1)
   (v6: core::felt252, v7: test::S) <- struct_destructure(v3)
 End:
   Return(v4)
@@ -3774,7 +3714,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::S
 blk0 (root):
 Statements:
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(test::S, core::bool)>) <- test::foo[76-191]{{ 1, NotSpecialized }, 5, }(v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(test::S, core::bool)>) <- test::foo[95-210]{{ 1, NotSpecialized }, 5, }(v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -3835,7 +3775,7 @@ End:
 blk3:
 Statements:
   (v15: test::Outer) <- struct_construct(v3, v2)
-  (v17: test::S, v16: core::bool) <- test::foo[76-191](v15, v5)
+  (v17: test::S, v16: core::bool) <- test::foo[95-210](v15, v5)
   (v18: core::felt252, v19: test::S) <- struct_destructure(v15)
 End:
   Return(v17, v16)
@@ -3878,7 +3818,7 @@ Statements:
   (v17: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
   (v18: core::felt252, v19: test::S) <- struct_destructure(v2)
   (v20: test::Outer) <- struct_construct(v18, v10)
-  (v21: core::RangeCheck, v22: core::gas::GasBuiltin, v23: core::panics::PanicResult::<(test::S, core::bool)>) <- test::foo[76-191](v4, v17, v20, v3)
+  (v21: core::RangeCheck, v22: core::gas::GasBuiltin, v23: core::panics::PanicResult::<(test::S, core::bool)>) <- test::foo[95-210](v4, v17, v20, v3)
 End:
   Return(v21, v22, v23)
 
@@ -3890,7 +3830,7 @@ End:
   Return(v6, v7, v25)
 
 
-Final lowering of specialized call "test::foo[76-191]{{ 1, NotSpecialized }, 5, }":
+Final lowering of specialized call "test::foo[95-210]{{ 1, NotSpecialized }, 5, }":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::S
 blk0 (root):
 Statements:
@@ -3909,7 +3849,7 @@ Statements:
   (v10: core::felt252) <- 5
   (v11: test::S) <- struct_construct(v10)
   (v12: test::Outer) <- struct_construct(v8, v11)
-  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(test::S, core::bool)>) <- test::foo[76-191]{NotSpecialized, 5, }(v3, v7, v12)
+  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(test::S, core::bool)>) <- test::foo[95-210]{NotSpecialized, 5, }(v3, v7, v12)
 End:
   Return(v13, v14, v15)
 

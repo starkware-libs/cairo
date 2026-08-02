@@ -3,20 +3,18 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(opt: Option<u32>) -> u32 {
     let Option::Some(x) = opt;
     x
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
- --> lib.cairo:2:9
+ --> lib.cairo:3:9
     let Option::Some(x) = opt;
         ^^^^^^^^^^^^^^^
 
@@ -30,19 +28,17 @@ error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are o
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u32) {
     let 5 = x;
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
- --> lib.cairo:2:9
+ --> lib.cairo:3:9
     let 5 = x;
         ^
 
@@ -56,26 +52,22 @@ error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are o
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
-fn foo(s: Wrapper) -> u32 {
-    let Wrapper { inner: Option::Some(x) } = s;
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct Wrapper {
     inner: Option<u32>,
+}
+#[target_function]
+fn foo(s: Wrapper) -> u32 {
+    let Wrapper { inner: Option::Some(x) } = s;
+    x
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
- --> lib.cairo:6:26
+ --> lib.cairo:7:26
     let Wrapper { inner: Option::Some(x) } = s;
                          ^^^^^^^^^^^^^^^
 
@@ -89,19 +81,17 @@ error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are o
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(opts: Array<Option<u32>>) {
     for Option::Some(_x) in opts {}
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
- --> lib.cairo:2:9
+ --> lib.cairo:3:9
     for Option::Some(_x) in opts {}
         ^^^^^^^^^^^^^^^^
 
@@ -115,21 +105,19 @@ error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are o
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {
     let arr: Array<u32> = array![100, 200, 300];
     let s: Span<u32> = arr.span();
     let [_a, _b, _c] = s;
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3010]: Refutable pattern in irrefutable binding. Refutable patterns are only supported in `match`, `if let`, `while let`, and `let ... else`.
- --> lib.cairo:4:9
+ --> lib.cairo:5:9
     let [_a, _b, _c] = s;
         ^^^^^^^^^^^^
 
