@@ -192,24 +192,27 @@ Convention in this codebase:
 
 ### Before/After Comparison (Optimizations)
 
+Do NOT hand-roll a before/after runner — delegate to the shared
+`cairo_lang_lowering::test_runner::run_lowering_phases_test`. It lowers the test function up to
+`stage`, applies the `before_phases` list to get `before`, applies `after_phases` on a clone to get
+`after`, and emits the standard tags (`semantic_diagnostics`, `before`, `after`,
+`lowering_diagnostics`):
+
 ```rust
 fn test_optimization(inputs: &OrderedHashMap<String, String>, _args: &...) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, _) = setup_test_function(db, inputs).split();
-
-    let lowered = db.lowered_body(...);
-    let before = formatted_lowered(db, Some(lowered));
-
-    let mut modified = (*lowered).clone();
-    run_optimization(&mut modified);
-    let after = formatted_lowered(db, Some(&modified));
-
-    TestRunnerResult::success(OrderedHashMap::from([
-        ("before".into(), before),
-        ("after".into(), after),
-    ]))
+    run_lowering_phases_test(
+        inputs,
+        LoweringStage::PreOptimizations,
+        &[OptimizationPhase::ApplyInlining { enable_const_folding: true }],
+        &[OptimizationPhase::MyNewOptimization],
+    )
 }
 ```
+
+Variants: `run_lowering_phases_test_with_db` (pre-configured database, e.g. setting a flag) and
+`run_lowering_phases_test_with_extra_outputs` (extra output tags derived from the two bodies).
+The optimization must have an `OptimizationPhase` variant; steps hardcoded in `lowered_body`
+(e.g. `scrub_units`) keep bespoke runners.
 
 ### With Diagnostics
 
