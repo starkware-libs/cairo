@@ -1,6 +1,9 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_semantic::test_utils::{setup_test_module, with_target_function_plugin};
+use cairo_lang_defs::ids::{ModuleId, NamedLanguageElementId};
+use cairo_lang_semantic::test_utils::{
+    TARGET_FUNCTION_ATTR, resolve_target_functions, setup_test_module, with_target_function_plugin,
+};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -24,6 +27,35 @@ cairo_lang_test_utils::test_file_test!(
     test_profiling
 );
 
+/// Resolves the plain function-name string that `SierraCasmRunner::find_function` should be
+/// given, either from the legacy `function_name` tag, or (when absent) from the single
+/// `#[target_function]`-marked function in the parsed `cairo_code` module.
+///
+/// This is a bridge, not a redesign: `find_function` itself only ever takes a name-suffix string
+/// (it works post-Sierra-compilation and has no notion of the semantic model), so the marker is
+/// resolved here, against the pre-compilation semantic module, and only its plain name crosses
+/// into the Sierra-level lookup.
+fn resolve_function_name(
+    db: &RootDatabase,
+    module_id: ModuleId<'_>,
+    inputs: &OrderedHashMap<String, String>,
+) -> String {
+    if let Some(function_name) = inputs.get("function_name") {
+        return function_name.clone();
+    }
+    match resolve_target_functions(db, module_id).as_slice() {
+        [free_function_id] => free_function_id.name(db).long(db).to_string(),
+        [] => panic!(
+            "No function marked with `#[{TARGET_FUNCTION_ATTR}]` was found. Mark the tested \
+             function, or add a `function_name` tag."
+        ),
+        target_functions => panic!(
+            "Expected a single function marked with `#[{TARGET_FUNCTION_ATTR}]`, found {}.",
+            target_functions.len()
+        ),
+    }
+}
+
 pub fn test_profiling(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
@@ -46,6 +78,7 @@ pub fn test_profiling(
         .unwrap();
     let (_path, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
     let test_module = setup_test_module(&db, &cairo_code).unwrap();
+    let function_name = resolve_function_name(&db, test_module.module_id, inputs);
     let crate_input = test_module.crate_id.long(&db).clone().into_crate_input(&db);
     DiagnosticsReporter::stderr().with_crates(&[crate_input]).allow_warnings().ensure(&db).unwrap();
 
@@ -63,7 +96,7 @@ pub fn test_profiling(
         Some(profiling_info_collection_config),
     )
     .unwrap();
-    let func = runner.find_function(&inputs["function_name"]).unwrap();
+    let func = runner.find_function(&function_name).unwrap();
     let result = runner
         .run_function_with_starknet_context(
             func,

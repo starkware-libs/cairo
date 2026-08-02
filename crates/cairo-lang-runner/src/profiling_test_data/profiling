@@ -119,6 +119,7 @@ Weight by Cairo stack trace:
 test_profiling
 
 //! > cairo_code
+#[target_function]
 fn main() {
     let mut n = 5;
     loop {
@@ -129,9 +130,6 @@ fn main() {
     }
 }
 
-//! > function_name
-main
-
 //! > expected_profiling_info
 Weight by sierra statement:
   statement 39: 15 (withdraw_gas([0], [1]) { fallthrough([3], [4]) 62([5], [6]) })
@@ -139,14 +137,14 @@ Weight by sierra statement:
   statement 57: 4 (store_temp<RangeCheck>([3]) -> ([3]))
   statement 58: 4 (store_temp<GasBuiltin>([13]) -> ([13]))
   statement 59: 4 (store_temp<felt252>([15]) -> ([15]))
-  statement 60: 4 (function_call<user@test::main[31-113]>([3], [13], [15]) -> ([16], [17], [18]))
+  statement 60: 4 (function_call<user@test::main[50-132]>([3], [13], [15]) -> ([16], [17], [18]))
   statement 61: 4 (return([16], [17], [18]))
   statement 13: 3 (store_temp<core::panics::PanicResult::<((),)>>([11]) -> ([11]))
   statement 22: 3 (withdraw_gas([0], [1]) { fallthrough([2], [3]) 31([4], [5]) })
   statement 50: 3 (store_temp<core::panics::PanicResult::<(core::felt252, ())>>([12]) -> ([12]))
   statement 1: 1 (store_temp<RangeCheck>([0]) -> ([0]))
   statement 2: 1 (store_temp<GasBuiltin>([1]) -> ([1]))
-  statement 3: 1 (function_call<user@test::main[31-113]{5, }>([0], [1]) -> ([2], [3], [4]))
+  statement 3: 1 (function_call<user@test::main[50-132]{5, }>([0], [1]) -> ([2], [3], [4]))
   statement 4: 1 (enum_match<core::panics::PanicResult::<(core::felt252, ())>>([4]) { fallthrough([5]) 15([6]) })
   statement 11: 1 (store_temp<RangeCheck>([2]) -> ([2]))
   statement 12: 1 (store_temp<GasBuiltin>([7]) -> ([7]))
@@ -154,7 +152,7 @@ Weight by sierra statement:
   statement 26: 1 (store_temp<RangeCheck>([2]) -> ([2]))
   statement 27: 1 (store_temp<GasBuiltin>([6]) -> ([6]))
   statement 28: 1 (store_temp<felt252>([7]) -> ([7]))
-  statement 29: 1 (function_call<user@test::main[31-113]>([2], [6], [7]) -> ([8], [9], [10]))
+  statement 29: 1 (function_call<user@test::main[50-132]>([2], [6], [7]) -> ([8], [9], [10]))
   statement 30: 1 (return([8], [9], [10]))
   statement 48: 1 (store_temp<RangeCheck>([3]) -> ([3]))
   statement 49: 1 (store_temp<GasBuiltin>([9]) -> ([9]))
@@ -164,12 +162,12 @@ Weight by concrete libfunc:
   libfunc store_temp<GasBuiltin>: 8
   libfunc store_temp<RangeCheck>: 8
   libfunc felt252_is_zero: 5
-  libfunc function_call<user@test::main[31-113]>: 5
+  libfunc function_call<user@test::main[50-132]>: 5
   libfunc store_temp<felt252>: 5
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
   libfunc store_temp<core::panics::PanicResult::<(core::felt252, ())>>: 3
   libfunc enum_match<core::panics::PanicResult::<(core::felt252, ())>>: 1
-  libfunc function_call<user@test::main[31-113]{5, }>: 1
+  libfunc function_call<user@test::main[50-132]{5, }>: 1
   return: 7
 Weight by generic libfunc:
   libfunc store_temp: 27
@@ -179,23 +177,23 @@ Weight by generic libfunc:
   libfunc enum_match: 1
   return: 7
 Weight by user function (inc. generated):
-  function test::main[31-113]: 46
+  function test::main[50-132]: 46
   function test::main: 10
-  function test::main[31-113]{5, }: 8
+  function test::main[50-132]{5, }: 8
 Weight by original user function (exc. generated):
   function test::main: 56
-  function test::main[31-113]{5, }: 8
+  function test::main[50-132]{5, }: 8
 Weight by Cairo function:
   function lib.cairo::main: 59
   function core::Felt252PartialEq::eq: 5
 Weight by Sierra stack trace:
   test::main: 64
-  test::main -> test::main[31-113]{5, }: 54
-  test::main -> test::main[31-113]{5, } -> test::main[31-113]: 46
-  test::main -> test::main[31-113]{5, } -> test::main[31-113] -> test::main[31-113]: 37
-  test::main -> test::main[31-113]{5, } -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 28
-  test::main -> test::main[31-113]{5, } -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 19
-  test::main -> test::main[31-113]{5, } -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 10
+  test::main -> test::main[50-132]{5, }: 54
+  test::main -> test::main[50-132]{5, } -> test::main[50-132]: 46
+  test::main -> test::main[50-132]{5, } -> test::main[50-132] -> test::main[50-132]: 37
+  test::main -> test::main[50-132]{5, } -> test::main[50-132] -> test::main[50-132] -> test::main[50-132]: 28
+  test::main -> test::main[50-132]{5, } -> test::main[50-132] -> test::main[50-132] -> test::main[50-132] -> test::main[50-132]: 19
+  test::main -> test::main[50-132]{5, } -> test::main[50-132] -> test::main[50-132] -> test::main[50-132] -> test::main[50-132] -> test::main[50-132]: 10
 Weight by Cairo stack trace:
   test::main: 64
 
@@ -207,6 +205,7 @@ Weight by Cairo stack trace:
 test_profiling
 
 //! > cairo_code
+#[target_function]
 fn main() {
     foo1();
 }
@@ -221,9 +220,6 @@ fn foo3() {}
 
 //! > max_stack_trace_depth
 2
-
-//! > function_name
-main
 
 //! > expected_profiling_info
 Weight by sierra statement:
@@ -251,6 +247,7 @@ Weight by Cairo stack trace:
 test_profiling
 
 //! > cairo_code
+#[target_function]
 fn main() {
     foo1();
 }
@@ -262,9 +259,6 @@ fn foo2() {
     foo3();
 }
 fn foo3() {}
-
-//! > function_name
-main
 
 //! > expected_profiling_info
 Weight by sierra statement:
@@ -292,6 +286,7 @@ Weight by Cairo stack trace:
 test_profiling
 
 //! > cairo_code
+#[target_function]
 fn main() {
     foo1();
 }
@@ -303,9 +298,6 @@ fn foo2() {
     foo3();
 }
 fn foo3() {}
-
-//! > function_name
-main
 
 //! > expected_profiling_info
 Weight by sierra statement:
@@ -342,13 +334,11 @@ fn add_with_coupon(a: u128, b: u128) -> u128 {
     a.wrapping_add(b)
 }
 
+#[target_function]
 fn main() -> u128 {
     let coupon: add_with_coupon::Coupon = coupon_buy();
     add_with_coupon(3, 4, __coupon__: coupon)
 }
-
-//! > function_name
-main
 
 //! > expected_profiling_info
 Weight by sierra statement:
