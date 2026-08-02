@@ -98,7 +98,6 @@ test_function_diagnostics
 enum E {
     aa: i32,
 }
-fn foo() {}
 fn bar<E>() -> i32 {
     let E::aa(b) = makeE();
     b
@@ -109,12 +108,12 @@ fn makeE() -> E {
 
 //! > expected_diagnostics
 error[E2086]: Invalid path.
- --> lib.cairo:6:12
+ --> lib.cairo:5:12
     let E::aa(b) = makeE();
            ^^
 
 error[E0006]: Identifier not found.
- --> lib.cairo:7:5
+ --> lib.cairo:6:5
     b
     ^
 
@@ -131,7 +130,6 @@ enum A {
     E: (),
 }
 use A::{E, T};
-fn foo() {}
 fn bar<T, E>() -> i32 {
     let T(a) = A::T(2);
     let E = A::E(());
@@ -141,17 +139,17 @@ fn bar<T, E>() -> i32 {
 
 //! > expected_diagnostics
 error[E2009]: Not a variant. Use the full name Enum::Variant.
- --> lib.cairo:8:9
+ --> lib.cairo:7:9
     let T(a) = A::T(2);
         ^
 
 error[E0006]: Identifier not found.
- --> lib.cairo:11:5
+ --> lib.cairo:10:5
     a
     ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:9:9
+ --> lib.cairo:8:9
     let E = A::E(());
         ^
 

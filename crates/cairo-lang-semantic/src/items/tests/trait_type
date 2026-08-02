@@ -1957,7 +1957,6 @@ fn bar<+MyTrait, +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>>(
 ) -> felt252 {
     _y + 3
 }
-fn foo() {}
 
 //! > expected_diagnostics
 
@@ -1980,7 +1979,6 @@ fn bar<
 >() -> I2::ty {
     3_u32
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::felt252", found: "core::integer::u32".
@@ -2008,7 +2006,6 @@ fn bar<
 ) -> MyTrait::ty {
     _y
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2302]: Type mismatch: `core::felt252` and `core::integer::u32`.
@@ -2051,7 +2048,6 @@ fn bar<
 ) -> MyTrait::ty {
     _y + TraitWithInferredParams::<MyTrait::ty>::foo()
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2311]: Trait has no implementation in context: test::OtherTrait::<+MyTrait::ty>.
@@ -2159,7 +2155,6 @@ fn bar<
 fn bar2<impl I1: MyTrait, impl I2: MyTrait>() -> I2::ty {
     bar::<I1, I2>()
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2311]: Trait has no implementation in context: core::metaprogramming::TypeEqual::<I1::ty, I2::ty>.
@@ -2258,7 +2253,6 @@ trait MyTrait {
 fn bar<+MyTrait[ty: felt252]>(y: MyTrait::ty) -> felt252 {
     y + 3
 }
-fn foo() {}
 
 //! > expected_diagnostics
 
@@ -2276,7 +2270,6 @@ trait MyTrait {
 fn bar<impl I1: MyTrait[ty: u32], impl I2: MyTrait[ty: I1::ty]>() -> I2::ty {
     3_u8
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u8".
@@ -2300,7 +2293,6 @@ fn bar<+MyTrait[ty: felt252], +core::metaprogramming::TypeEqual<MyTrait::ty, u32
 ) -> MyTrait::ty {
     _y
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2302]: Type mismatch: `core::felt252` and `core::integer::u32`.
@@ -2400,7 +2392,6 @@ fn bar<impl I1: MyTrait[ty: felt252]>() -> I1::ty {
 fn bar2<impl J1: MyTrait>() -> J1::ty {
     bar()
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "J1::ty", found: "core::felt252".
@@ -2427,7 +2418,6 @@ fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
 fn bar2<impl J1: MyTrait[ty: u32]>() -> J1::ty {
     bar()
 }
-fn foo() {}
 
 //! > expected_diagnostics
 
@@ -2449,7 +2439,6 @@ fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
 fn bar2<impl I1: MyTrait[ty: u8]>() -> I1::ty {
     bar()
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u32".
@@ -2512,7 +2501,6 @@ trait MyTrait {
 fn bar<impl I1: MyTrait[ty: u32]>() -> u32 {
     I1::foo()
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2189]: associated type `ty` not found for `MyTrait`
@@ -2535,7 +2523,6 @@ trait MyTrait {
 fn bar<impl I1: MyTrait[ty: u32, ty: felt252]>() -> u32 {
     I1::foo()
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2190]: the value of the associated type `ty` in trait `MyTrait` is already specified
@@ -2627,7 +2614,6 @@ trait OtherTrait<T> {
 fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>>() {
     OtherTrait::foo(5_u32);
 }
-fn foo() {}
 
 //! > expected_diagnostics
 
@@ -2649,7 +2635,6 @@ trait OtherTrait<T> {
 fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>, +OtherTrait<u32>>() {
     OtherTrait::foo(5_u32);
 }
-fn foo() {}
 
 //! > expected_diagnostics
 error[E2313]: Trait `test::OtherTrait::<core::integer::u32>` has multiple implementations, in: `+OtherTrait<I1::ty>`, `+OtherTrait<u32>`
