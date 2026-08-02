@@ -1,5 +1,6 @@
 #![cfg(feature = "testing")]
 
+pub mod migrate_target_function;
 pub mod parse_test_file;
 
 // Re-export the test macro from cairo-lang-proc-macros
