@@ -17,10 +17,10 @@ cairo_lang_test_utils::test_file_test!(
     {
         const_folding: "const_folding",
     },
-    test_match_optimizer
+    test_const_folding
 );
 
-fn test_match_optimizer(
+fn test_const_folding(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {

@@ -1,7 +1,7 @@
 //! > Test const folding simple scenario.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(a: felt252) -> felt252 {
@@ -43,7 +43,7 @@ End:
 //! > Felt252 add overflow const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -85,7 +85,7 @@ End:
 //! > Felt252 sub overflow const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -124,7 +124,7 @@ End:
 //! > Felt252 mul overflow const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -166,7 +166,7 @@ End:
 //! > Felt252 combined overflow const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -212,7 +212,7 @@ End:
 //! > Basic box const folding.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> Box<felt252> {
@@ -249,7 +249,7 @@ End:
 //! > Box struct const folding.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 struct A {
@@ -292,7 +292,7 @@ End:
 //! > Box enum const folding.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> Box<Option<felt252>> {
@@ -331,7 +331,7 @@ End:
 //! > Box const folding.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > module_code
 #[allow(extern_outside_corelib)]
@@ -378,7 +378,7 @@ End:
 //! > Division by const non-zero.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> u8 {
@@ -490,7 +490,7 @@ End:
 //! > Division by const zero.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u8) -> u8 {
@@ -598,7 +598,7 @@ End:
 //! > Division by const u256 non-zero.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u256) -> u256 {
@@ -709,7 +709,7 @@ End:
 //! > Division by const u256 zero.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u256) -> u256 {
@@ -819,7 +819,7 @@ End:
 //! > Upcast const.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u128) -> u128 {
@@ -930,7 +930,7 @@ End:
 //! > Downcast const success.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u64) -> u64 {
@@ -1151,7 +1151,7 @@ End:
 //! > Downcast const failure.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u8) -> u8 {
@@ -1373,7 +1373,7 @@ End:
 //! > StorageBaseAddress const.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> starknet::StorageBaseAddress {
@@ -1410,7 +1410,7 @@ End:
 //! > StorageBaseAddress const normalization.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> [StorageBaseAddress; 6] {
@@ -1482,7 +1482,7 @@ End:
 //! > complex StorageBaseAddress const.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> starknet::storage::StorageBaseAddress {
@@ -1530,7 +1530,7 @@ End:
 //! > Add success const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> u8 {
@@ -1639,7 +1639,7 @@ End:
 //! > Add overflow const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> u8 {
@@ -1748,7 +1748,7 @@ End:
 //! > Sub success const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> u8 {
@@ -1857,7 +1857,7 @@ End:
 //! > Sub overflow const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> u8 {
@@ -1966,7 +1966,7 @@ End:
 //! > Mul const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> u8 {
@@ -2077,7 +2077,7 @@ End:
 //! > Signed add const fold success.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> i8 {
@@ -2201,7 +2201,7 @@ End:
 //! > Signed add const fold overflow.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> i8 {
@@ -2325,7 +2325,7 @@ End:
 //! > Signed add const fold underflow.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> i8 {
@@ -2449,7 +2449,7 @@ End:
 //! > Signed sub const fold success.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> i8 {
@@ -2573,7 +2573,7 @@ End:
 //! > Signed sub const fold overflow.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> i8 {
@@ -2697,7 +2697,7 @@ End:
 //! > Signed sub const fold underflow.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> i8 {
@@ -2821,7 +2821,7 @@ End:
 //! > Signed diff const fold over.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> bool {
@@ -2900,7 +2900,7 @@ End:
 //! > Signed diff const fold under.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> bool {
@@ -2979,7 +2979,7 @@ End:
 //! > Construct with undroppable.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> bool {
@@ -3073,7 +3073,7 @@ End:
 //! > Division by const zero (bounded_int).
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: i8) -> i8 {
@@ -3347,7 +3347,7 @@ End:
 //! > Division by const non-zero (bounded_int).
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> i8 {
@@ -3621,7 +3621,7 @@ End:
 //! > `AbsAndSign` on positive const.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> (u8, bool) {
@@ -3710,7 +3710,7 @@ End:
 //! > `AbsAndSign` on negative const.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> (u8, bool) {
@@ -3799,7 +3799,7 @@ End:
 //! > Bitwise not const folding.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> u8 {
@@ -3840,7 +3840,7 @@ End:
 //! > bounded_int_constrain on NonZero below.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 #[feature("bounded-int-utils")]
@@ -3925,7 +3925,7 @@ End:
 //! > bounded_int_constrain on NonZero above.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 #[feature("bounded-int-utils")]
@@ -4010,7 +4010,7 @@ End:
 //! > Eq const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> bool {
@@ -4088,7 +4088,7 @@ End:
 //! > Non eq const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> bool {
@@ -4166,7 +4166,7 @@ End:
 //! > Mul 0 const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u8) -> u8 {
@@ -4275,7 +4275,7 @@ End:
 //! > Add with 0 const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u8) -> u8 {
@@ -4381,7 +4381,7 @@ End:
 //! > Add to 0 const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u8) -> u8 {
@@ -4487,7 +4487,7 @@ End:
 //! > Sub with 0 const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u8) -> u8 {
@@ -4593,7 +4593,7 @@ End:
 //! > Add const 1 fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u8) -> u8 {
@@ -4703,7 +4703,7 @@ End:
 //! > Sub const 1 fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u8) -> u8 {
@@ -4813,7 +4813,7 @@ End:
 //! > Eq with 0 const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: u8) -> bool {
@@ -4892,7 +4892,7 @@ End:
 //! > Array get at known index 0.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: @Array<u8>) -> Option<Box<@u8>> {
@@ -4969,7 +4969,7 @@ End:
 //! > Propagate over trivial downcasts.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: BoundedInt<0, 10>) -> u8 {
@@ -5211,7 +5211,7 @@ End:
 //! > Propagate over match value.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> u8 {
@@ -5440,7 +5440,7 @@ End:
 //! > Array get at known index of known array - in range.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> Option<Box<@u8>> {
@@ -5533,7 +5533,7 @@ End:
 //! > Array get at known index of known array - out of range.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> Option<Box<@u8>> {
@@ -5623,7 +5623,7 @@ End:
 //! > Array get at known index of known size array - in range.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(v: u8) -> Option<Box<@u8>> {
@@ -5710,7 +5710,7 @@ End:
 //! > Array get at known index of known size array - out of range.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(v: u8) -> Option<Box<@u8>> {
@@ -5794,7 +5794,7 @@ End:
 //! > Array len of known array.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(x: felt252) -> usize {
@@ -5837,7 +5837,7 @@ End:
 //! > Array pop_front known empty array.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> Option<felt252> {
@@ -5914,7 +5914,7 @@ End:
 //! > Array pop_front known non-empty array.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(mut arr: Array<felt252>) -> Option<felt252> {
@@ -5996,7 +5996,7 @@ End:
 //! > Span pop_front known empty.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> Option<@felt252> {
@@ -6075,7 +6075,7 @@ End:
 //! > Span pop_back known empty.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> Option<@felt252> {
@@ -6154,7 +6154,7 @@ End:
 //! > Panic with byte array value.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() {
@@ -6211,7 +6211,7 @@ End:
 //! > Match enum on snapshot of enum.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -6293,7 +6293,7 @@ End:
 //! > Match enum with known variant on snapshot of value.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -6373,7 +6373,7 @@ End:
 //! > Match enum on known variant enum.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(a: felt252) -> felt252 {
@@ -6447,7 +6447,7 @@ End:
 //! > Match enum on snapshot of known variant enum.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(a: felt252) -> felt252 {
@@ -6526,7 +6526,7 @@ End:
 //! > Match enum on double snapshot of const enum.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -6613,7 +6613,7 @@ End:
 //! > Felt252 add const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -6652,7 +6652,7 @@ End:
 //! > Felt252 sub const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -6691,7 +6691,7 @@ End:
 //! > Felt252 mul const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -6730,7 +6730,7 @@ End:
 //! > Felt252 combined operations const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -6777,7 +6777,7 @@ End:
 //! > Felt252 div const fold.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -6821,7 +6821,7 @@ End:
 //! > Felt252 div by one.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(a: felt252) -> felt252 {
@@ -6858,7 +6858,7 @@ End:
 //! > Felt252 zero div.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo(a: NonZero<felt252>) -> felt252 {
@@ -6895,7 +6895,7 @@ End:
 //! > Bounded int trim_min on non-min.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -6975,7 +6975,7 @@ End:
 //! > Bounded int trim_min on min.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -7054,7 +7054,7 @@ End:
 //! > Bounded int trim_max on non-max.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
@@ -7134,7 +7134,7 @@ End:
 //! > Bounded int trim_max on max.
 
 //! > test_runner_name
-test_match_optimizer
+test_const_folding
 
 //! > function_code
 fn foo() -> felt252 {
