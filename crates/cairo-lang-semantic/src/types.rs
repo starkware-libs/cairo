@@ -939,9 +939,13 @@ fn single_value_type_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> May
 
 /// Adds diagnostics for a type used as a value - in a parameter, return type, or expression.
 ///
-/// Like [add_type_based_diagnostics], but additionally rejects a phantom type: a phantom type has
-/// no runtime representation and so cannot be used as a value. Type definitions (e.g. struct
-/// members and enum variants) allow phantom types and so use [add_type_based_diagnostics] directly.
+/// Rejects a phantom type, which has no runtime representation, and an array whose element cannot
+/// be instantiated. Both are faults of this use rather than of the type.
+///
+/// An infinitely-sized type is deliberately not reported here: the cycle is closed by a struct
+/// member or an enum variant, and [add_type_based_diagnostics] already reports it there. Repeating
+/// it at every use names a location the author cannot act on, and one broken type would otherwise
+/// produce a diagnostic per parameter, return type and expression mentioning it.
 pub fn add_value_type_based_diagnostics<'db>(
     db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
@@ -950,16 +954,16 @@ pub fn add_value_type_based_diagnostics<'db>(
 ) {
     if ty.is_phantom(db) {
         diagnostics.report(stable_ptr, InstancesOfPhantomTypes);
-    } else {
-        add_type_based_diagnostics(db, diagnostics, ty, stable_ptr);
+    } else if let Some(violation) = array_element_violation(db, ty) {
+        diagnostics.report(stable_ptr, violation.to_kind());
     }
 }
 
-/// Adds diagnostics based on a type's structure: an infinitely-sized type, or a (possibly nested)
-/// array of zero-sized or phantom elements.
+/// Adds diagnostics for a type in a definition - a struct member or an enum variant.
 ///
-/// This does not reject the type itself being phantom; a value position should use
-/// [add_value_type_based_diagnostics] for that.
+/// This is where an infinitely-sized type is reported, as the member being checked is the one
+/// closing the cycle. A phantom type is allowed here, and so is not rejected; a value position
+/// should use [add_value_type_based_diagnostics] instead.
 pub fn add_type_based_diagnostics<'db>(
     db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,

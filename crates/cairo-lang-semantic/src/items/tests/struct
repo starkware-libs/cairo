@@ -68,6 +68,32 @@ error[E2052]: Recursive type "test::B" has infinite size.
 
 //! > ==========================================================================
 
+//! > Test a recursive struct used as a value is reported only where the cycle is closed.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(a: A) -> A {
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    member: A,
+}
+
+//! > expected_diagnostics
+error[E2052]: Recursive type "test::A" has infinite size.
+ --> lib.cairo:2:5
+    member: A,
+    ^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test phantom recursive struct.
 
 //! > test_runner_name
