@@ -13,7 +13,10 @@ use salsa::Database;
 
 use super::function_with_body::get_inline_config;
 use super::functions::{FunctionDeclarationData, GenericFunctionId, InlineConfiguration};
-use super::generics::{GenericParamsData, semantic_generic_params};
+use super::generics::{
+    GenericParamsData, generic_params_data_cycle, generic_params_data_initial,
+    semantic_generic_params,
+};
 use super::report_extern_item_outside_corelib;
 use crate::corelib::get_core_generic_function_id;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -33,7 +36,7 @@ mod test;
 
 /// Query implementation of
 /// [ExternFunctionSemantic::extern_function_declaration_generic_params_data].
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn extern_function_declaration_generic_params_data<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,

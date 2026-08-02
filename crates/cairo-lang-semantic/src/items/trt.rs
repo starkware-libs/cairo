@@ -29,7 +29,8 @@ use super::functions::{
     InlineConfiguration,
 };
 use super::generics::{
-    GenericParamsData, displayable_concrete, generic_params_to_args, semantic_generic_params,
+    GenericParamsData, displayable_concrete, generic_params_data_cycle,
+    generic_params_data_initial, generic_params_to_args, semantic_generic_params,
     semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, ImplLongId, TraitFilter};
@@ -939,7 +940,7 @@ fn concrete_trait_impl_concrete_trait_tracked<'db>(
 // === Trait function Declaration ===
 
 /// Query implementation of [TraitSemantic::priv_trait_function_generic_params_data].
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn priv_trait_function_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,

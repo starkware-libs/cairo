@@ -50,7 +50,8 @@ use super::functions::{
 };
 use super::generics::{
     GenericArgumentHead, GenericParamImpl, GenericParamsData, displayable_concrete,
-    generic_params_to_args, semantic_generic_params,
+    generic_params_data_cycle, generic_params_data_initial, generic_params_to_args,
+    semantic_generic_params,
 };
 use super::impl_alias::{
     ImplAliasData, impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
@@ -483,7 +484,7 @@ struct ImplDeclarationData<'db> {
 }
 
 /// Returns the generic parameters data of an impl definition.
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn impl_def_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
