@@ -1,10 +1,13 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_filesystem::db::{FilesGroup, files_group_input, set_crate_configs_input};
 use cairo_lang_filesystem::ids::{BlobLongId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_semantic::ConcreteFunctionWithBodyId as SemanticConcreteFunctionWithBodyId;
 use cairo_lang_semantic::corelib::CorelibSemantic;
-use cairo_lang_semantic::test_utils::setup_test_function_ex;
+use cairo_lang_semantic::test_utils::{
+    resolve_target_functions, setup_test_module_ex, test_module_code,
+};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::Intern;
@@ -29,24 +32,19 @@ fn test_cache_check(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let function = &inputs["function_code"];
-    let function_name = &inputs["function_name"];
-    let module_code = inputs.get("module_code").map_or("", String::as_str);
+    // The very same module content must be used for generating the cache and for loading it, so
+    // that the cached stable pointers match the module they are loaded into.
+    let content = test_module_code(inputs);
 
-    let (new_db, artifact) = generate_cached_db(function, function_name, module_code);
+    let (new_db, artifact) = generate_cached_db(&content);
     let cached_file = BlobLongId::Virtual(artifact).intern(&new_db);
-    let (test_function, semantic_diagnostics) = setup_test_function_ex(
-        &new_db,
-        function,
-        function_name,
-        module_code,
-        None,
-        Some(cached_file),
-    )
-    .split();
+    let (test_module, semantic_diagnostics) =
+        setup_test_module_ex(&new_db, &content, None, Some(cached_file)).split();
 
-    let function_id: ConcreteFunctionWithBodyId<'_> =
-        ConcreteFunctionWithBodyId::from_semantic(&new_db, test_function.concrete_function_id);
+    let function_id = ConcreteFunctionWithBodyId::from_semantic(
+        &new_db,
+        target_concrete_function(&new_db, test_module.module_id),
+    );
 
     let lowered = new_db.lowered_body(function_id, LoweringStage::Final);
     if let Ok(lowered) = &lowered {
@@ -55,8 +53,7 @@ fn test_cache_check(
             "There should not be any unset flat blocks"
         );
     }
-    let diagnostics =
-        new_db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
+    let diagnostics = new_db.module_lowering_diagnostics(test_module.module_id).unwrap_or_default();
     let formatted_lowering_diagnostics = diagnostics.format(&new_db);
     let combined_diagnostics = format!("{semantic_diagnostics}\n{formatted_lowering_diagnostics}");
     let error = verify_diagnostics_expectation(args, &combined_diagnostics);
@@ -70,20 +67,30 @@ fn test_cache_check(
     }
 }
 
-/// Compiles `function`/`module_code` to generate the crate cache (and the corelib cache), then
-/// returns a fresh db with the corelib cache loaded plus the crate-cache artifact. Callers wire the
-/// artifact in as the test crate's `cache_file` via
-/// `setup_test_function_ex(.., Some(BlobLongId::Virtual(artifact).intern(&db)))`.
-fn generate_cached_db(
-    function: &str,
-    function_name: &str,
-    module_code: &str,
-) -> (LoweringDatabaseForTesting, Vec<u8>) {
-    let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, _) =
-        setup_test_function_ex(db, function, function_name, module_code, None, None).split();
+/// Returns the single function marked with `#[target_function]` in the given module, as a semantic
+/// concrete function.
+///
+/// This mirrors what `setup_test_function` does, which can't be used here as it doesn't support
+/// loading a crate cache.
+fn target_concrete_function<'db>(
+    db: &'db LoweringDatabaseForTesting,
+    module_id: ModuleId<'db>,
+) -> SemanticConcreteFunctionWithBodyId<'db> {
+    let [free_function_id] = resolve_target_functions(db, module_id)[..] else {
+        panic!("Expected exactly one function marked with `#[target_function]`.");
+    };
+    SemanticConcreteFunctionWithBodyId::from_no_generics_free(db, free_function_id).unwrap()
+}
 
-    let artifact = generate_crate_cache(db, test_function.module_id.owning_crate(db)).unwrap();
+/// Compiles `content` to generate the crate cache (and the corelib cache), then returns a fresh db
+/// with the corelib cache loaded plus the crate-cache artifact. Callers wire the artifact in as the
+/// test crate's `cache_file` via
+/// `setup_test_module_ex(.., Some(BlobLongId::Virtual(artifact).intern(&db)))`.
+fn generate_cached_db(content: &str) -> (LoweringDatabaseForTesting, Vec<u8>) {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let (test_module, _) = setup_test_module_ex(db, content, None, None).split();
+
+    let artifact = generate_crate_cache(db, test_module.crate_id).unwrap();
     let core_artifact = generate_crate_cache(db, db.core_crate()).unwrap();
 
     let mut new_db = LoweringDatabaseForTesting::new();
@@ -99,21 +106,19 @@ fn generate_cached_db(
 /// stable ptr must therefore be the very node `db.file_syntax` mints — not a detached duplicate.
 #[test]
 fn cached_external_file_root_is_canonical() {
-    let function = "fn foo() {}";
-    let module_code = "\
+    let content = "\
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
 }";
-    let (db, artifact) = generate_cached_db(function, "foo", module_code);
+    let (db, artifact) = generate_cached_db(content);
     let cached_file = BlobLongId::Virtual(artifact).intern(&db);
-    let (cached_function, _) =
-        setup_test_function_ex(&db, function, "foo", module_code, None, Some(cached_file)).split();
+    let (cached_module, _) = setup_test_module_ex(&db, content, None, Some(cached_file)).split();
 
     // The `#[derive(Drop)]` impl lives in an external file; its cached stable ptr must resolve to
     // the canonical `file_syntax` root.
     let mut checked = 0;
-    for impl_id in db.module_impls_ids(cached_function.module_id).unwrap() {
+    for impl_id in db.module_impls_ids(cached_module.module_id).unwrap() {
         let stable_ptr = impl_id.untyped_stable_ptr(&db);
         let ext_file = stable_ptr.file_id(&db);
         if !matches!(ext_file.long(&db), FileLongId::External(_)) {

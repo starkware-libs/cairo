@@ -3,7 +3,10 @@
 //! > test_runner_name
 test_reorder_statements
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn get_option() -> Option<u16> nopanic;
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     let opt = get_option();
 
@@ -25,13 +28,6 @@ fn foo(x: felt252) -> felt252 {
         },
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn get_option() -> Option<u16> nopanic;
 
 //! > semantic_diagnostics
 
@@ -187,7 +183,10 @@ End:
 //! > test_runner_name
 test_reorder_statements
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn get_option() -> Option<u16> nopanic;
+#[target_function]
 fn foo() {
     let a = true;
 
@@ -199,13 +198,6 @@ fn foo() {
         None => false ^ b,
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn get_option() -> Option<u16> nopanic;
 
 //! > semantic_diagnostics
 
@@ -285,18 +277,14 @@ End:
 //! > test_runner_name
 test_reorder_statements
 
-//! > function_code
+//! > cairo_code
+struct NonDupStruct {
+    a: felt252,
+}
+#[target_function]
 fn foo(a: felt252) {
     let b = NonDupStruct { a };
     let NonDupStruct { a: _ } = b;
-}
-
-//! > function_name
-foo
-
-//! > module_code
-struct NonDupStruct {
-    a: felt252,
 }
 
 //! > semantic_diagnostics
@@ -330,7 +318,8 @@ End:
 //! > test_runner_name
 test_reorder_statements
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let a = true;
     let v = 5;
@@ -340,9 +329,6 @@ fn foo() -> felt252 {
         v + 3
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

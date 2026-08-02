@@ -3,16 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    immovable(5.foo(true));
-    immovable(MyTrait::foo(6, false));
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn foo<S>(self: T, y: S) -> (T, S);
 }
@@ -25,6 +16,11 @@ impl MyImpl of MyTrait<felt252> {
 
 #[allow(extern_outside_corelib)]
 extern fn immovable<T>(t: T) -> T nopanic;
+#[target_function]
+fn foo() {
+    immovable(5.foo(true));
+    immovable(MyTrait::foo(6, false));
+}
 
 //! > semantic_diagnostics
 
@@ -53,19 +49,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+struct Query<V> {
+    data: V,
+}
+#[target_function]
 fn foo() -> felt252 {
     let q = Query { data: 1 };
     let Query { data } = q;
     Query { data: 2 }.data + data
-}
-
-//! > function_name
-foo
-
-//! > module_code
-struct Query<V> {
-    data: V,
 }
 
 //! > semantic_diagnostics
@@ -87,15 +79,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar::<MyImpl>()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<impl Imp: MyTrait>() {
     Imp::foo()
 }
@@ -104,6 +88,10 @@ trait MyTrait {
 }
 impl MyImpl of MyTrait {
     fn foo() {}
+}
+#[target_function]
+fn foo() {
+    bar::<MyImpl>()
 }
 
 //! > semantic_diagnostics
@@ -124,21 +112,17 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyTrait::bar(5);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn bar(x: T);
 }
 impl MyImpl<T, impl TDrop: Drop<T>> of MyTrait<T> {
     #[inline(never)]
     fn bar(x: T) {}
+}
+#[target_function]
+fn foo() {
+    MyTrait::bar(5);
 }
 
 //! > semantic_diagnostics
@@ -161,16 +145,12 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+const one: felt252 = 1;
+#[target_function]
 fn foo() -> felt252 {
     felt252_const::<one>()
 }
-
-//! > function_name
-foo
-
-//! > module_code
-const one: felt252 = 1;
 
 //! > semantic_diagnostics
 
@@ -191,17 +171,13 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    bar::<{ 1 + 2 }>() + bar::<2>()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<const N: felt252>() -> felt252 {
     N + 5
+}
+#[target_function]
+fn foo() -> felt252 {
+    bar::<{ 1 + 2 }>() + bar::<2>()
 }
 
 //! > semantic_diagnostics
@@ -223,18 +199,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> MyStruct<9> {
-    let s1 = foo_helper();
-    s1.bar();
-    s1.bar();
-    s1
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct MyStruct<const N: felt252> {}
 trait MyTrait<T> {
@@ -250,6 +215,13 @@ impl MyStructMyTrait<const N: felt252> of MyTrait<MyStruct<N>> {
 #[inline(never)]
 fn foo_helper<const N: felt252>() -> MyStruct<N> {
     MyStruct::<N> {}
+}
+#[target_function]
+fn foo() -> MyStruct<9> {
+    let s1 = foo_helper();
+    s1.bar();
+    s1.bar();
+    s1
 }
 
 //! > semantic_diagnostics

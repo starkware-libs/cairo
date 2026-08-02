@@ -3,7 +3,8 @@
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: bool) -> felt252 {
     if x {
         3
@@ -57,15 +58,14 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+fn bar() {}
+#[target_function]
 fn foo(x: bool) {
     if x {
         bar();
     }
 }
-
-//! > module_code
-fn bar() {}
 
 //! > graph
 Root: 3
@@ -112,7 +112,10 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn modify(ref x: felt252) -> felt252 nopanic;
+#[target_function]
 fn foo(mut x: felt252, mut y: felt252) -> felt252 {
     if let Some(z) = Some(modify(ref x)) && let Some(_) = Some(modify(ref y)) {
         x + y + z
@@ -120,10 +123,6 @@ fn foo(mut x: felt252, mut y: felt252) -> felt252 {
         x + y
     }
 }
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn modify(ref x: felt252) -> felt252 nopanic;
 
 //! > graph
 Root: 6
@@ -196,7 +195,15 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+struct MyStruct {
+    a: felt252,
+    b: felt252,
+}
+
+#[allow(extern_outside_corelib)]
+extern fn modify(ref x: felt252) -> felt252 nopanic;
+#[target_function]
 fn foo(mut x: felt252, mut y: MyStruct) -> (MyStruct, bool) {
     if let Some(_) = Some(modify(ref x))
         && let Some(_) = Some(modify(ref y.a))
@@ -206,15 +213,6 @@ fn foo(mut x: felt252, mut y: MyStruct) -> (MyStruct, bool) {
         (y, false)
     }
 }
-
-//! > module_code
-struct MyStruct {
-    a: felt252,
-    b: felt252,
-}
-
-#[allow(extern_outside_corelib)]
-extern fn modify(ref x: felt252) -> felt252 nopanic;
 
 //! > graph
 Root: 7
@@ -310,7 +308,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     if panic!() {
         0
@@ -330,7 +329,7 @@ Root: 3
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable clause.
- --> lib.cairo:4:12-6:5
+ --> lib.cairo:5:12-7:5
       } else {
  ____________^
 |         1
@@ -338,7 +337,7 @@ warning[E3004]: Unreachable clause.
 |_____^
 
 warning[E3004]: Unreachable clause.
- --> lib.cairo:2:17-4:5
+ --> lib.cairo:3:17-5:5
       if panic!() {
  _________________^
 |         0
@@ -366,7 +365,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     if true {
         panic!()
@@ -428,7 +428,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     if true {
         return 0;
@@ -485,7 +486,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: Option<Option<felt252>>) -> felt252 {
     if let Some(Some(_)) = x {
         0
@@ -558,7 +560,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     if let Some(_) = Some(0) && panic!() {
         0
@@ -580,7 +583,7 @@ Root: 5
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable clause.
- --> lib.cairo:2:42-4:5
+ --> lib.cairo:3:42-5:5
       if let Some(_) = Some(0) && panic!() {
  __________________________________________^
 |         0
@@ -629,7 +632,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: Option<felt252>) -> felt252 {
     if let Some(_) | None = x {
         0
@@ -648,7 +652,7 @@ Root: 2
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable clause.
- --> lib.cairo:4:12-6:5
+ --> lib.cairo:5:12-7:5
       } else {
  ____________^
 |         1
@@ -670,7 +674,8 @@ End:
 //! > test_runner_name
 test_create_graph(expect_diagnostics: true, skip_lowering: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: [u16; 2]) -> felt252 {
     if let [_, _] = x {
         0
@@ -690,7 +695,7 @@ Root: 3
 
 //! > lowering_diagnostics
 error[E3004]: Unsupported type in if-let. Type: `[core::integer::u16; 2]`.
- --> lib.cairo:2:12
+ --> lib.cairo:3:12
     if let [_, _] = x {
            ^^^^^^
 

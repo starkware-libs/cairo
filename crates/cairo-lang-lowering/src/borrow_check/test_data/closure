@@ -3,7 +3,8 @@
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: u32, mut b: Array<u32>, mut c: Felt252Dict<felt252>) {
     |d: u32| {
         let _ = a + d;
@@ -16,17 +17,14 @@ fn foo(a: u32, mut b: Array<u32>, mut c: Felt252Dict<felt252>) {
     };
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 error[E2188]: Capture of mutable variables in a closure is not supported
- --> lib.cairo:6:17
+ --> lib.cairo:7:17
         let _ = b.append(d);
                 ^
 
 error[E2188]: Capture of mutable variables in a closure is not supported
- --> lib.cairo:9:17
+ --> lib.cairo:10:17
         let _ = c.insert(d, d);
                 ^
 
@@ -41,24 +39,20 @@ error[E2188]: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
-fn foo(a: PanicDestructable) {
-    || {
-        let PanicDestructable { } = a;
-    };
-    panic_with_felt252('Panic');
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct PanicDestructable {}
 
 impl MyPanicDestruct of PanicDestruct<PanicDestructable> {
     fn panic_destruct(self: PanicDestructable, ref panic: Panic) nopanic {
         let PanicDestructable { } = self;
     }
+}
+#[target_function]
+fn foo(a: PanicDestructable) {
+    || {
+        let PanicDestructable { } = a;
+    };
+    panic_with_felt252('Panic');
 }
 
 //! > semantic_diagnostics
@@ -69,7 +63,7 @@ impl MyPanicDestruct of PanicDestruct<PanicDestructable> {
 Parameters: v0: test::PanicDestructable
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:9:5: 9:7}) <- struct_construct(v0{`a`})
+  (v1: {closure@lib.cairo:10:5: 10:7}) <- struct_construct(v0{`a`})
   (v2: core::felt252) <- 345232009571
   (v3: core::never) <- core::panic_with_felt252(v2{`'Panic'`})
 End:
@@ -83,7 +77,8 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut a: Array<u32>) {
     |b: u32| {
         let _ = a.append(b);
@@ -91,12 +86,9 @@ fn foo(mut a: Array<u32>) {
     a.append(0);
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 error[E2188]: Capture of mutable variables in a closure is not supported
- --> lib.cairo:3:17
+ --> lib.cairo:4:17
         let _ = a.append(b);
                 ^
 
@@ -111,7 +103,15 @@ error[E2188]: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+struct S {
+    a: u32,
+}
+
+#[allow(extern_outside_corelib)]
+extern fn use_s(s: S) nopanic;
+#[target_function]
 fn foo(a: S) {
     || {
         use_s(a)
@@ -121,27 +121,15 @@ fn foo(a: S) {
     let _ = a.a;
 }
 
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-struct S {
-    a: u32,
-}
-
-#[allow(extern_outside_corelib)]
-extern fn use_s(s: S) nopanic;
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3001]: Variable was previously moved.
- --> lib.cairo:14:13
+ --> lib.cairo:15:13
     let _ = a.a;
             ^^^
 note: variable was previously used here:
-  --> lib.cairo:10:15
+  --> lib.cairo:11:15
         use_s(a)
               ^
 note: Trait has no implementation in context: core::traits::Copy::<test::S>.
@@ -150,7 +138,7 @@ note: Trait has no implementation in context: core::traits::Copy::<test::S>.
 Parameters: v0: test::S
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:9:5: 9:7}) <- struct_construct(v0{`a`})
+  (v1: {closure@lib.cairo:10:5: 10:7}) <- struct_construct(v0{`a`})
   (v3: ()) <- struct_construct()
 End:
   Return(v3)
@@ -162,7 +150,10 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn use_f<T>(f: T) nopanic;
+#[target_function]
 fn foo(mut a: Array<u32>) {
     let f = |b: u32| {
         let _ = a.append(b);
@@ -171,16 +162,9 @@ fn foo(mut a: Array<u32>) {
     use_f(f)
 }
 
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn use_f<T>(f: T) nopanic;
-
 //! > semantic_diagnostics
 error[E2188]: Capture of mutable variables in a closure is not supported
- --> lib.cairo:5:17
+ --> lib.cairo:6:17
         let _ = a.append(b);
                 ^
 
@@ -195,7 +179,10 @@ error[E2188]: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn use_value<T>(f: T) nopanic;
+#[target_function]
 fn foo(a: Array<u32>) {
     let f = |_b: u32| {
         let _ = a.len();
@@ -206,13 +193,6 @@ fn foo(a: Array<u32>) {
     use_value(f);
 }
 
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn use_value<T>(f: T) nopanic;
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -222,9 +202,9 @@ Parameters: v0: core::array::Array::<core::integer::u32>
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::integer::u32>, v2: @core::array::Array::<core::integer::u32>) <- snapshot(v0{`a`})
-  (v3: {closure@lib.cairo:4:13: 4:22}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
+  (v3: {closure@lib.cairo:5:13: 5:22}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
   () <- test::use_value::<core::array::Array::<core::integer::u32>>(v1{`a`})
-  () <- test::use_value::<{closure@lib.cairo:4:13: 4:22}>(v3{`f`})
+  () <- test::use_value::<{closure@lib.cairo:5:13: 5:22}>(v3{`f`})
   (v4: ()) <- struct_construct()
 End:
   Return(v4)
@@ -236,7 +216,10 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn use_f<T>(f: T) nopanic;
+#[target_function]
 fn foo(mut a: Array<u32>) {
     |_b: u32| {
         a = array![];
@@ -244,16 +227,9 @@ fn foo(mut a: Array<u32>) {
     a.append(0);
 }
 
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn use_f<T>(f: T) nopanic;
-
 //! > semantic_diagnostics
 error[E2188]: Capture of mutable variables in a closure is not supported
- --> lib.cairo:5:9
+ --> lib.cairo:6:9
         a = array![];
         ^
 
@@ -268,7 +244,8 @@ error[E2188]: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let x = 8;
     let c = |a| {
@@ -277,9 +254,6 @@ fn foo() -> felt252 {
     let y = c(2);
     y + x
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -290,11 +264,11 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 8
-  (v1: {closure@lib.cairo:3:13: 3:16}) <- struct_construct(v0{`x`})
-  (v2: {closure@lib.cairo:3:13: 3:16}, v3: @{closure@lib.cairo:3:13: 3:16}) <- snapshot(v1{`c`})
+  (v1: {closure@lib.cairo:4:13: 4:16}) <- struct_construct(v0{`x`})
+  (v2: {closure@lib.cairo:4:13: 4:16}, v3: @{closure@lib.cairo:4:13: 4:16}) <- snapshot(v1{`c`})
   (v4: core::felt252) <- 2
   (v5: (core::felt252,)) <- struct_construct(v4{`2`})
-  (v6: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:3:13: 3:16}(v3{`c`}, v5{`c(2)`})
+  (v6: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:4:13: 4:16}(v3{`c`}, v5{`c(2)`})
   (v7: core::felt252) <- core::Felt252Add::add(v6{`y`}, v0{`x`})
 End:
   Return(v7)
@@ -306,7 +280,8 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let x = array![99_felt252];
     let c = |a| {
@@ -315,9 +290,6 @@ fn foo() -> felt252 {
     let _ = c(2);
     *x[0]
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -331,11 +303,11 @@ Statements:
   (v1: core::felt252) <- 99
   (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0{`__array_builder_macro_result__`}, v1{`99_felt252`})
   (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v3{`x`})
-  (v6: {closure@lib.cairo:3:13: 3:16}) <- struct_construct(v5{`|a| { (@x).len() * (a + 3) }`})
-  (v7: {closure@lib.cairo:3:13: 3:16}, v8: @{closure@lib.cairo:3:13: 3:16}) <- snapshot(v6{`c`})
+  (v6: {closure@lib.cairo:4:13: 4:16}) <- struct_construct(v5{`|a| { (@x).len() * (a + 3) }`})
+  (v7: {closure@lib.cairo:4:13: 4:16}, v8: @{closure@lib.cairo:4:13: 4:16}) <- snapshot(v6{`c`})
   (v9: core::integer::u32) <- 2
   (v10: (core::integer::u32,)) <- struct_construct(v9{`2`})
-  (v11: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:3:13: 3:16}(v8{`c`}, v10{`c(2)`})
+  (v11: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:4:13: 4:16}(v8{`c`}, v10{`c(2)`})
   (v12: core::array::Array::<core::felt252>, v13: @core::array::Array::<core::felt252>) <- snapshot(v4{`x`})
   (v14: core::integer::u32) <- 0
   (v15: @core::felt252) <- core::ops::index::DeprecatedIndexViewImpl::<core::array::Array::<core::felt252>, core::integer::u32, @core::felt252, core::array::ArrayIndex::<core::felt252>>::index(v13{`x`}, v14{`0`})
@@ -350,7 +322,8 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let mut x = 8;
     let c = |a| {
@@ -361,12 +334,9 @@ fn foo() -> felt252 {
     y + x
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 error[E2188]: Capture of mutable variables in a closure is not supported
- --> lib.cairo:4:9
+ --> lib.cairo:5:9
         x * (a + 3)
         ^
 
@@ -381,10 +351,11 @@ error[E2188]: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
+//! > cairo_code
 fn identity<T>(x: T) -> T {
     x
 }
+#[target_function]
 fn foo() {
     let mut x = 8;
     let c = |a| {
@@ -395,17 +366,14 @@ fn foo() {
     let y = c2(2);
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 error[E2188]: Capture of mutable variables in a closure is not supported
- --> lib.cairo:7:9
+ --> lib.cairo:8:9
         x * (a + 3)
         ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:11:9
+ --> lib.cairo:12:9
     let y = c2(2);
         ^
 
@@ -420,25 +388,21 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_borrow_check
 
-//! > function_code
-fn foo(a: Destructable, b: Destructable) {
-    let c = || {
-        let Destructable { } = a;
-        let Destructable { } = b;
-    };
-    c.destruct();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct Destructable {}
 
 impl MyDestruct of Destruct<Destructable> {
     fn destruct(self: Destructable) nopanic {
         let Destructable { } = self;
     }
+}
+#[target_function]
+fn foo(a: Destructable, b: Destructable) {
+    let c = || {
+        let Destructable { } = a;
+        let Destructable { } = b;
+    };
+    c.destruct();
 }
 
 //! > semantic_diagnostics
@@ -449,8 +413,8 @@ impl MyDestruct of Destruct<Destructable> {
 Parameters: v0: test::Destructable, v1: test::Destructable
 blk0 (root):
 Statements:
-  (v2: {closure@lib.cairo:9:13: 9:15}) <- struct_construct(v0{`a`}, v1{`b`})
-  (v3: ()) <- Generated `core::traits::Destruct::destruct` for {closure@lib.cairo:9:13: 9:15}(v2{`c`})
+  (v2: {closure@lib.cairo:10:13: 10:15}) <- struct_construct(v0{`a`}, v1{`b`})
+  (v3: ()) <- Generated `core::traits::Destruct::destruct` for {closure@lib.cairo:10:13: 10:15}(v2{`c`})
   (v4: ()) <- struct_construct()
 End:
   Return(v4)

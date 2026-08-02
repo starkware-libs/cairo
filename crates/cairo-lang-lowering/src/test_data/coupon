@@ -3,16 +3,12 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+fn bar() nopanic {}
+#[target_function]
 fn foo(x: bar::Coupon) {
     bar(__coupon__: x);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar() nopanic {}
 
 //! > semantic_diagnostics
 
@@ -33,20 +29,16 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(x: MyImpl::bar::Coupon) {
-    5.bar(__coupon__: x);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn bar(self: T);
 }
 impl MyImpl of MyTrait<felt252> {
     fn bar(self: felt252) {}
+}
+#[target_function]
+fn foo(x: MyImpl::bar::Coupon) {
+    5.bar(__coupon__: x);
 }
 
 //! > semantic_diagnostics
@@ -69,20 +61,16 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(x: MyTrait::<felt252>::bar::Coupon) {
-    5.bar(__coupon__: x);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn bar(self: T);
 }
 impl MyImpl of MyTrait<felt252> {
     fn bar(self: felt252) {}
+}
+#[target_function]
+fn foo(x: MyTrait::<felt252>::bar::Coupon) {
+    5.bar(__coupon__: x);
 }
 
 //! > semantic_diagnostics
@@ -105,27 +93,23 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar() nopanic {}
+#[target_function]
 fn foo(x: bar::Coupon) -> bar::Coupon {
     bar(__coupon__: x);
     x // Variable was previously moved.
 }
 
-//! > function_name
-foo
-
-//! > module_code
-fn bar() nopanic {}
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3001]: Variable was previously moved.
- --> lib.cairo:4:5
+ --> lib.cairo:5:5
     x // Variable was previously moved.
     ^
 note: variable was previously used here:
-  --> lib.cairo:3:21
+  --> lib.cairo:4:21
     bar(__coupon__: x);
                     ^
 note: Trait has no implementation in context: core::traits::Copy::<test::bar::Coupon>.
@@ -140,17 +124,13 @@ note: Trait has no implementation in context: core::traits::Copy::<test::bar::Co
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(x: bar::Coupon) {
-    bar(__coupon__: x);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar() {
     panic(array![])
+}
+#[target_function]
+fn foo(x: bar::Coupon) {
+    bar(__coupon__: x);
 }
 
 //! > semantic_diagnostics
@@ -172,17 +152,13 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[inline(always)]
+fn bar() {}
+#[target_function]
 fn foo(x: bar::Coupon) {
     bar(__coupon__: x);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(always)]
-fn bar() {}
 
 //! > semantic_diagnostics
 

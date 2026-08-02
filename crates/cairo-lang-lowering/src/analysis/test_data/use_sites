@@ -3,15 +3,11 @@
 //! > test_runner_name
 test_analysis(analysis: use_sites)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) -> felt252 {
     x + y
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -37,15 +33,11 @@ End:
 //! > test_runner_name
 test_analysis(analysis: use_sites)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     x + x + x
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -72,7 +64,8 @@ End:
 //! > test_runner_name
 test_analysis(analysis: use_sites)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: bool) -> felt252 {
     let y = if x {
         1
@@ -81,11 +74,6 @@ fn foo(x: bool) -> felt252 {
     };
     y + 3
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -137,19 +125,15 @@ End:
 //! > test_runner_name
 test_analysis(analysis: use_sites)
 
-//! > function_code
-fn foo(x: felt252) -> felt252 {
-    let y = bar(x);
-    y + y
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn bar(x: felt252) -> felt252 {
     x
+}
+#[target_function]
+fn foo(x: felt252) -> felt252 {
+    let y = bar(x);
+    y + y
 }
 
 //! > semantic_diagnostics

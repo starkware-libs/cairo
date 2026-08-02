@@ -3,16 +3,14 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     let c = |a| {
         a + 3
     };
     c(2)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -33,7 +31,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let x = 8;
     let c = |a| {
@@ -42,9 +41,6 @@ fn foo() -> felt252 {
     let y = c(2);
     y + x
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -65,20 +61,18 @@ End:
 //! > test_runner_name
 test_function_lowering
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Array<felt252>) -> Array<felt252> {
     let f = || *(@a);
     f()
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3003]: Cannot desnap a non copyable type.
- --> lib.cairo:2:16
+ --> lib.cairo:3:16
     let f = || *(@a);
                ^^^^^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
@@ -93,8 +87,9 @@ note: Trait has no implementation in context: core::traits::Copy::<core::array::
 //! > test_runner_name
 test_function_lowering
 
-//! > function_code
+//! > cairo_code
 fn use_snap(a: @Array<felt252>) {}
+#[target_function]
 fn foo(a: Array<felt252>) -> Array<felt252> {
     let f = || {
         use_snap(@a);
@@ -103,14 +98,11 @@ fn foo(a: Array<felt252>) -> Array<felt252> {
     f()
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3003]: Cannot desnap a non copyable type.
- --> lib.cairo:5:9
+ --> lib.cairo:6:9
         *(@a)
         ^^^^^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.

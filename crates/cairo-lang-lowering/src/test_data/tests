@@ -3,11 +3,9 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {}
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -27,7 +25,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     return a + a * a;
     5;
@@ -35,14 +34,11 @@ fn foo(a: felt252) -> felt252 {
     7
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 warning[E3000]: Unreachable code
- --> lib.cairo:3:5-5:5
+ --> lib.cairo:4:5-6:5
       5;
  _____^
 |     6;
@@ -65,20 +61,18 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: warnings_only)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: never) -> felt252 {
     match a {}
     1 + 2
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 warning[E3000]: Unreachable code
- --> lib.cairo:3:5
+ --> lib.cairo:4:5
     1 + 2
     ^^^^^
 
@@ -97,20 +91,18 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: warnings_only)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     loop {}
     1
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 warning[E3000]: Unreachable code
- --> lib.cairo:3:5
+ --> lib.cairo:4:5
     1
     ^
 
@@ -118,7 +110,7 @@ warning[E3000]: Unreachable code
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252,)>) <- test::foo[22-34](v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252,)>) <- test::foo[41-53](v0, v1)
 End:
   Return(v2, v3, v4)
 
@@ -129,14 +121,12 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     let (_, _b) = (1, a);
     5
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -157,7 +147,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     let x = {
         7;
@@ -175,9 +166,6 @@ fn foo(a: felt252) -> felt252 {
         a + 0
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -256,7 +244,13 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: (),
+    B: felt252,
+    C: Box<((), felt252)>,
+}
+#[target_function]
 fn foo(x: MyEnum) -> felt252 {
     match x {
         MyEnum::A(_inner) => { return 5; },
@@ -267,16 +261,6 @@ fn foo(x: MyEnum) -> felt252 {
             7
         },
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: (),
-    B: felt252,
-    C: Box<((), felt252)>,
 }
 
 //! > semantic_diagnostics
@@ -318,16 +302,12 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+type Array<T, const N: usize> = (T, felt252);
+#[target_function]
 fn foo(a: Array<felt252, 5>) -> felt252 {
     felt252_const::<17>()
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type Array<T, const N: usize> = (T, felt252);
 
 //! > semantic_diagnostics
 
@@ -351,20 +331,16 @@ TODO(spapini): Make this a semantic diagnostic.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(mut a: felt252) -> felt252 {
-    bar(ref a, ref a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn bar(ref a: felt252, ref b: felt252) -> felt252 {
     a = 0;
     b = 1;
     a + b
+}
+#[target_function]
+fn foo(mut a: felt252) -> felt252 {
+    bar(ref a, ref a)
 }
 
 //! > semantic_diagnostics
@@ -386,17 +362,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut data: Span<felt252>) -> u128 {
     serde::Serde::<u128>::deserialize(ref data)
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
- --> lib.cairo:2:5
+ --> lib.cairo:3:5
     serde::Serde::<u128>::deserialize(ref data)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

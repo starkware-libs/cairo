@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::corelib::unit_ty;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
-use cairo_lang_semantic::test_utils::{TestFunction, setup_test_function_ex};
+use cairo_lang_semantic::test_utils::{TARGET_FUNCTION_ATTR, TestFunction, setup_test_function};
 use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{self as semantic, Expr, Statement, StatementId};
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -46,7 +46,10 @@ cairo_lang_test_utils::test_file_test!(
 ///
 ///   Note that `x` and `x.*` should not be specified together in one block.
 ///
-/// - `module_code`: Additional code for defining structs and helper functions.
+/// - `helper_code`: Additional code for defining structs and helper functions.
+///
+/// Unlike other test runners, the tested module's code is not given directly - it is synthesized
+/// from the above sections into the single `cairo_code` input [setup_test_function] expects.
 fn test_merge_block_builders(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
@@ -56,15 +59,14 @@ fn test_merge_block_builders(
     // as a dummy function body.
     // Note that the function body is not lowered at any point, and it is only used to parse the
     // semantic to lowering map.
-    let test_function = setup_test_function_ex(
-        &db,
-        &format!("fn foo ({}) {{ {} }}", inputs["variables"], inputs["block_definitions"]),
-        "foo",
-        inputs.get("module_code").map_or("", String::as_str),
-        None,
-        None,
-    )
-    .unwrap();
+    let cairo_code = format!(
+        "{}#[{TARGET_FUNCTION_ATTR}]\nfn foo ({}) {{ {} }}",
+        inputs.get("helper_code").map_or(String::new(), |code| format!("{code}\n")),
+        inputs["variables"],
+        inputs["block_definitions"]
+    );
+    let synthesized_inputs = OrderedHashMap::from([("cairo_code".to_string(), cairo_code)]);
+    let test_function = setup_test_function(&db, &synthesized_inputs).unwrap();
 
     let mut encapsulating_ctx =
         create_encapsulating_ctx(&db, test_function.function_id, &test_function.signature);

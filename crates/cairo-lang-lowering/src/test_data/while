@@ -3,16 +3,14 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(y: felt252) {
     let mut x = 5;
     while x != y {
         x = x - 1;
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -24,7 +22,7 @@ blk0 (root):
 Statements:
   (v3: core::felt252) <- 5
   (v4: core::felt252, v5: @core::felt252) <- snapshot(v2)
-  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[40-84](v0, v1, v3, v5)
+  (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[59-103](v0, v1, v3, v5)
 End:
   Match(match_enum(v8) {
     PanicResult::Ok(v9) => blk1,
@@ -53,24 +51,20 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop)]
+enum MyEnum {
+    A: felt252,
+    B,
+    C,
+}
+#[target_function]
 fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     while let MyEnum::A(x) = a {
         y = y + x;
     }
     y
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy, Drop)]
-enum MyEnum {
-    A: felt252,
-    B,
-    C,
 }
 
 //! > semantic_diagnostics
@@ -82,7 +76,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::MyEnum
 blk0 (root):
 Statements:
   (v3: core::felt252) <- 0
-  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[50-108](v0, v1, v2, v3)
+  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[69-127](v0, v1, v2, v3)
 End:
   Match(match_enum(v6) {
     PanicResult::Ok(v7) => blk1,
@@ -111,7 +105,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B,
+    C,
+}
+#[allow(extern_outside_corelib)]
+extern fn a() -> MyEnum nopanic;
+#[target_function]
 fn foo() -> felt252 {
     let mut y = 0;
     while let MyEnum::A(x) = a() {
@@ -121,18 +123,6 @@ fn foo() -> felt252 {
     return y;
 }
 
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: felt252,
-    B,
-    C,
-}
-#[allow(extern_outside_corelib)]
-extern fn a() -> MyEnum nopanic;
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -141,7 +131,7 @@ extern fn a() -> MyEnum nopanic;
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100]{0, }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[60-119]{0, }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -172,7 +162,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B,
+    C,
+}
+#[allow(extern_outside_corelib)]
+extern fn a() -> MyEnum nopanic;
+#[target_function]
 fn foo() -> felt252 {
     let mut y = 0;
     while let (MyEnum::A(x), true) = (a(), 5 == 6) {
@@ -181,18 +179,6 @@ fn foo() -> felt252 {
     y = y + 1;
     return y;
 }
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: felt252,
-    B,
-    C,
-}
-#[allow(extern_outside_corelib)]
-extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -203,7 +189,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-118](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[60-137](v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -234,7 +220,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B,
+    C,
+}
+#[allow(extern_outside_corelib)]
+extern fn a() -> MyEnum nopanic;
+#[target_function]
 fn foo() -> felt252 {
     let mut y = 0;
     while let (MyEnum::A(x), 3) = (a(), 3) {
@@ -244,18 +238,6 @@ fn foo() -> felt252 {
     return y;
 }
 
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: felt252,
-    B,
-    C,
-}
-#[allow(extern_outside_corelib)]
-extern fn a() -> MyEnum nopanic;
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -264,7 +246,7 @@ extern fn a() -> MyEnum nopanic;
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-110]{0, }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[60-129]{0, }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -295,7 +277,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let mut y = 0;
     while let x = y {
@@ -305,9 +288,6 @@ fn foo() -> felt252 {
     return y;
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -316,7 +296,7 @@ foo
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-87]{0, }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[60-106]{0, }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -347,7 +327,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop)]
+enum MyEnum {
+    A: felt252,
+    B,
+    C,
+}
+#[target_function]
 fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     while let _ = a {
@@ -355,17 +342,6 @@ fn foo(a: MyEnum) -> felt252 {
     }
     y = y + 1;
     return y;
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy, Drop)]
-enum MyEnum {
-    A: felt252,
-    B,
-    C,
 }
 
 //! > semantic_diagnostics
@@ -376,7 +352,7 @@ enum MyEnum {
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::MyEnum
 blk0 (root):
 Statements:
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[50-97]{NotSpecialized, 0, }(v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[69-116]{NotSpecialized, 0, }(v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,

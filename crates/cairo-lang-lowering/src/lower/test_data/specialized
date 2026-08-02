@@ -3,15 +3,7 @@
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo() {
-    bar(false, 1)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(keep: bool, x: felt252) {
     if keep {
         bar_ext(x);
@@ -20,6 +12,10 @@ fn bar(keep: bool, x: felt252) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(x: felt252) nopanic;
+#[target_function]
+fn foo() {
+    bar(false, 1)
+}
 
 //! > caller_lowering
 Parameters:
@@ -51,15 +47,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo() {
-    bar(false, BoxTrait::new(2))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(keep: bool, x: Box<felt252>) {
     if keep {
         bar_ext(x);
@@ -68,6 +56,10 @@ fn bar(keep: bool, x: Box<felt252>) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(x: Box<felt252>) nopanic;
+#[target_function]
+fn foo() {
+    bar(false, BoxTrait::new(2))
+}
 
 //! > caller_lowering
 Parameters:
@@ -99,15 +91,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo() {
-    bar(false, array![])
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(keep: bool, x: Array<felt252>) {
     if keep {
         bar_ext(x);
@@ -116,6 +100,10 @@ fn bar(keep: bool, x: Array<felt252>) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(x: Array<felt252>) nopanic;
+#[target_function]
+fn foo() {
+    bar(false, array![])
+}
 
 //! > caller_lowering
 Parameters:
@@ -148,19 +136,15 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo() {
-    bar(false, array![1, 2, 3])
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(keep: bool, x: Array<felt252>) {
     if keep {
         println!("Ensuring long code: {}{}{}", x[0], x[1], x[2]);
     }
+}
+#[target_function]
+fn foo() {
+    bar(false, array![1, 2, 3])
 }
 
 //! > caller_lowering
@@ -206,15 +190,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo() {
-    bar(false, array![])
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(keep: bool, x: Array<felt252>) {
     if keep {
         bar_ext(x);
@@ -223,6 +199,10 @@ fn bar(keep: bool, x: Array<felt252>) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(x: Array<felt252>) nopanic;
+#[target_function]
+fn foo() {
+    bar(false, array![])
+}
 
 //! > caller_lowering
 Parameters:
@@ -255,16 +235,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(x: felt252) {
-    let mut arr = array![];
-    bar(false, ref arr, arr.span(), x, 0, BoxTrait::new(1))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(
     keep: bool, ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252, z: Box<felt252>,
 ) {
@@ -277,6 +248,11 @@ fn bar(
 extern fn bar_ext(
     ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252, z: Box<felt252>,
 ) nopanic;
+#[target_function]
+fn foo(x: felt252) {
+    let mut arr = array![];
+    bar(false, ref arr, arr.span(), x, 0, BoxTrait::new(1))
+}
 
 //! > caller_lowering
 Parameters: v0: core::felt252
@@ -314,15 +290,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(b: felt252, e: felt252, d: felt252) {
-    bar(false, S6 { a: 1, b, c: 3, d, e, f: 6 })
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct S6 {
     a: felt252,
@@ -341,6 +309,10 @@ fn bar(keep: bool, s: S6) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(s: S6) nopanic;
+#[target_function]
+fn foo(b: felt252, e: felt252, d: felt252) {
+    bar(false, S6 { a: 1, b, c: 3, d, e, f: 6 })
+}
 
 //! > caller_lowering
 Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252
@@ -375,16 +347,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(b: felt252) {
-    // TODO(TomerStarkware): propagate array info in case of specialized function call.
-    bar(false, SA1 { a: array![1, 2, 3], b, c: array![] })
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct SA1 {
     a: Array<felt252>,
@@ -400,6 +363,11 @@ fn bar(keep: bool, s: SA1) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(s: SA1) nopanic;
+#[target_function]
+fn foo(b: felt252) {
+    // TODO(TomerStarkware): propagate array info in case of specialized function call.
+    bar(false, SA1 { a: array![1, 2, 3], b, c: array![] })
+}
 
 //! > caller_lowering
 Parameters: v0: core::felt252
@@ -439,16 +407,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(a: Array<felt252>) {
-    // TODO(TomerStarkware): propagate array info in case of specialized function call.
-    bar(false, SA1 { a, b: 7, c: array![5, 6] })
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct SA1 {
     a: Array<felt252>,
@@ -464,6 +423,11 @@ fn bar(keep: bool, s: SA1) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(s: SA1) nopanic;
+#[target_function]
+fn foo(a: Array<felt252>) {
+    // TODO(TomerStarkware): propagate array info in case of specialized function call.
+    bar(false, SA1 { a, b: 7, c: array![5, 6] })
+}
 
 //! > caller_lowering
 Parameters: v0: core::array::Array::<core::felt252>
@@ -501,18 +465,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(a: NoDrop) {
-    // TODO(TomerStarkware): Allow for specialzing with non-droppable fields.
-    let c = NoDrop { a: 7 };
-    not_consume(c);
-    bar(false, SB { a, b: 5, c })
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy)]
 struct SB {
     a: NoDrop,
@@ -541,6 +494,13 @@ fn bar(keep: bool, s: SB) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(s: SB) nopanic;
+#[target_function]
+fn foo(a: NoDrop) {
+    // TODO(TomerStarkware): Allow for specialzing with non-droppable fields.
+    let c = NoDrop { a: 7 };
+    not_consume(c);
+    bar(false, SB { a, b: 5, c })
+}
 
 //! > caller_lowering
 Parameters: v0: test::NoDrop
@@ -576,15 +536,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(a: felt252) {
-    bar(false, S { a, b: 5 })
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct S {
     a: felt252,
@@ -599,6 +551,10 @@ fn bar(keep: bool, s: S) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(s: S) nopanic;
+#[target_function]
+fn foo(a: felt252) {
+    bar(false, S { a, b: 5 })
+}
 
 //! > caller_lowering
 Parameters: v0: core::felt252
@@ -631,18 +587,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(x: felt252, y: felt252) {
-    let mut arr = array![];
-    arr.append(Outer { inner: Inner { a: 1, b: x }, c: 3 });
-    arr.append(Outer { inner: Inner { a: y, b: 5 }, c: y });
-    bar(false, arr);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy, Debug)]
 struct Inner {
     a: felt252,
@@ -662,6 +607,13 @@ fn bar(keep: bool, x: Array<Outer>) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(arr: Array<Outer>) nopanic;
+#[target_function]
+fn foo(x: felt252, y: felt252) {
+    let mut arr = array![];
+    arr.append(Outer { inner: Inner { a: 1, b: x }, c: 3 });
+    arr.append(Outer { inner: Inner { a: y, b: 5 }, c: y });
+    bar(false, arr);
+}
 
 //! > caller_lowering
 Parameters: v0: core::felt252, v1: core::felt252
@@ -712,15 +664,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(x: felt252) {
-    bar(false, E::A(x))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 enum E {
     A: felt252,
@@ -735,6 +679,10 @@ fn bar(keep: bool, e: E) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(e: E) nopanic;
+#[target_function]
+fn foo(x: felt252) {
+    bar(false, E::A(x))
+}
 
 //! > semantic_diagnostics
 
@@ -766,16 +714,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(b: felt252) {
-    let s = S { a: 1, b };
-    bar(false, E::A(s))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct S {
     a: felt252,
@@ -795,6 +734,11 @@ fn bar(keep: bool, e: E) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(e: E) nopanic;
+#[target_function]
+fn foo(b: felt252) {
+    let s = S { a: 1, b };
+    bar(false, E::A(s))
+}
 
 //! > semantic_diagnostics
 
@@ -828,15 +772,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(b: felt252) {
-    bar1(false, 100000);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar1(keep: bool, a: felt252) -> felt252 {
     if !keep || a == 0 {
         0
@@ -851,6 +787,10 @@ fn bar2(keep: bool, a: felt252) -> felt252 {
     } else {
         bar1(keep, a - 1)
     }
+}
+#[target_function]
+fn foo(b: felt252) {
+    bar1(false, 100000);
 }
 
 //! > semantic_diagnostics
@@ -901,15 +841,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo() {
-    bar(false, (1, 2, 3))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(keep: bool, t: (felt252, felt252, felt252)) {
     if keep {
         bar_ext(t);
@@ -918,6 +850,10 @@ fn bar(keep: bool, t: (felt252, felt252, felt252)) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(t: (felt252, felt252, felt252)) nopanic;
+#[target_function]
+fn foo() {
+    bar(false, (1, 2, 3))
+}
 
 //! > semantic_diagnostics
 
@@ -952,15 +888,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(b: felt252) {
-    bar(false, (1, b, 3))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(keep: bool, t: (felt252, felt252, felt252)) {
     if keep {
         bar_ext(t);
@@ -969,6 +897,10 @@ fn bar(keep: bool, t: (felt252, felt252, felt252)) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(t: (felt252, felt252, felt252)) nopanic;
+#[target_function]
+fn foo(b: felt252) {
+    bar(false, (1, b, 3))
+}
 
 //! > semantic_diagnostics
 
@@ -1002,15 +934,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo() {
-    bar(false, [1, 2, 3])
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(keep: bool, arr: [felt252; 3]) {
     if keep {
         bar_ext(arr);
@@ -1019,6 +943,10 @@ fn bar(keep: bool, arr: [felt252; 3]) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(arr: [felt252; 3]) nopanic;
+#[target_function]
+fn foo() {
+    bar(false, [1, 2, 3])
+}
 
 //! > semantic_diagnostics
 
@@ -1053,15 +981,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(b: felt252) {
-    bar(false, [1, b, 3])
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(keep: bool, arr: [felt252; 3]) {
     if keep {
         bar_ext(arr);
@@ -1070,6 +990,10 @@ fn bar(keep: bool, arr: [felt252; 3]) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(arr: [felt252; 3]) nopanic;
+#[target_function]
+fn foo(b: felt252) {
+    bar(false, [1, b, 3])
+}
 
 //! > semantic_diagnostics
 
@@ -1103,15 +1027,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(x: felt252) {
-    bar(false, S { t: (1, x), a: 3 })
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct S {
     t: (felt252, felt252),
@@ -1126,6 +1042,10 @@ fn bar(keep: bool, s: S) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(s: S) nopanic;
+#[target_function]
+fn foo(x: felt252) {
+    bar(false, S { t: (1, x), a: 3 })
+}
 
 //! > semantic_diagnostics
 
@@ -1160,15 +1080,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function_code
-fn foo(x: felt252) {
-    bar(false, S { arr: [1, x, 3], a: 4 })
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct S {
     arr: [felt252; 3],
@@ -1183,6 +1095,10 @@ fn bar(keep: bool, s: S) {
 
 #[allow(extern_outside_corelib)]
 extern fn bar_ext(s: S) nopanic;
+#[target_function]
+fn foo(x: felt252) {
+    bar(false, S { arr: [1, x, 3], a: 4 })
+}
 
 //! > semantic_diagnostics
 
