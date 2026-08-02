@@ -1,7 +1,7 @@
 //! > Test gas redeposit skip.
 
 //! > test_runner_name
-GetRedepositTestRunner
+test_gas_redeposit
 
 //! > function_code
 fn foo(x: felt252) -> felt252 {
@@ -97,7 +97,7 @@ End:
 //! > Test gas redeposit.
 
 //! > test_runner_name
-GetRedepositTestRunner
+test_gas_redeposit
 
 //! > function_code
 fn foo(x: felt252) -> felt252 {

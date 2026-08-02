@@ -1,12 +1,9 @@
-use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::cse;
 use crate::LoweringStage;
-use crate::db::LoweringGroup;
-use crate::ids::ConcreteFunctionWithBodyId;
-use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
+use crate::optimizations::strategy::OptimizationPhase;
+use crate::test_runner::run_lowering_phases_test;
 
 cairo_lang_test_utils::test_file_test!(
     cse,
@@ -21,28 +18,5 @@ fn test_cse(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
-
-    let function_id =
-        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-    let lowered = db.lowered_body(function_id, LoweringStage::Monomorphized);
-
-    if let Ok(lowered) = lowered {
-        let before_str = formatted_lowered(db, Some(lowered));
-
-        let mut lowered_clone = (*lowered).clone();
-        cse(&mut lowered_clone);
-        let after_str = formatted_lowered(db, Some(&lowered_clone));
-
-        TestRunnerResult::success(OrderedHashMap::from([
-            ("before".into(), before_str),
-            ("after".into(), after_str),
-        ]))
-    } else {
-        TestRunnerResult::success(OrderedHashMap::from([(
-            "semantic_diagnostics".into(),
-            semantic_diagnostics,
-        )]))
-    }
+    run_lowering_phases_test(inputs, LoweringStage::Monomorphized, &[], &[OptimizationPhase::Cse])
 }

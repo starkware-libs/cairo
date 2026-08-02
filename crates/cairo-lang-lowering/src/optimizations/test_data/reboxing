@@ -842,3 +842,7 @@ blk3:
 Statements:
 End:
   Return(v10)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
