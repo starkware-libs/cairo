@@ -29,4 +29,6 @@ mod test;
 pub use self::objects::*;
 
 #[cfg(test)]
+pub mod test_runner;
+#[cfg(test)]
 pub mod test_utils;
