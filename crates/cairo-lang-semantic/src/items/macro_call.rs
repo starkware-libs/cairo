@@ -17,7 +17,7 @@ use crate::diagnostic::{
 };
 use crate::expr::inference::InferenceId;
 use crate::items::macro_declaration::{
-    MacroDeclarationSemantic, MatcherContext, expand_macro_rule, is_macro_rule_match,
+    MacroDeclarationSemantic, expand_macro_rule, is_macro_rule_match,
 };
 use crate::items::module::ModuleSemantic;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
@@ -123,11 +123,9 @@ fn priv_macro_call_data<'db>(
             });
         }
     };
-    let Some((rule, (captures, placeholder_to_rep_id, rep_depths))) =
-        macro_rules.iter().find_map(|rule| {
-            is_macro_rule_match(db, rule, &macro_call_syntax.arguments(db)).map(|res| (rule, res))
-        })
-    else {
+    let Some((rule, mut matcher_ctx)) = macro_rules.iter().find_map(|rule| {
+        is_macro_rule_match(db, rule, &macro_call_syntax.arguments(db)).map(|res| (rule, res))
+    }) else {
         let diag_added = diagnostics.report(
             macro_call_syntax.stable_ptr(db),
             SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name),
@@ -152,8 +150,6 @@ fn priv_macro_call_data<'db>(
             parent_macro_call_data,
         });
     }
-    let mut matcher_ctx =
-        MatcherContext { captures, placeholder_to_rep_id, rep_depths, ..Default::default() };
     let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
     let generated_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
