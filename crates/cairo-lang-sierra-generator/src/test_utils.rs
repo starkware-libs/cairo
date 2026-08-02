@@ -12,7 +12,7 @@ use cairo_lang_lowering::db::{LoweringGroup, lowering_group_input};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
-use cairo_lang_semantic::test_utils::setup_test_crate;
+use cairo_lang_semantic::test_utils::{setup_test_crate, with_target_function_plugin};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_utils::{CloneableDatabase, Intern};
@@ -66,7 +66,7 @@ impl SierraGenDatabaseForTesting {
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
 
-        let plugin_suite = get_default_plugin_suite();
+        let plugin_suite = with_target_function_plugin(get_default_plugin_suite());
         res.set_default_plugins_from_suite(plugin_suite);
 
         lowering_group_input(&res)
