@@ -3,17 +3,12 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar() -> bad_type;
 fn foo() {
     bar()
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn bar() -> bad_type;
 
 //! > expected_diagnostics
 error[E0006]: Type not found.
@@ -35,13 +30,7 @@ error[E2116]: An extern function must be marked as nopanic.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[allow(extern_outside_corelib)]
 extern fn g<T, +Drop<T>>(x: T) nopanic;
 enum E {

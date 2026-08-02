@@ -3,13 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn foo(x: u8, y: T, z: u8) -> u8;
     fn bar() -> T;
@@ -55,16 +49,7 @@ error[E2031]: Parameter type of impl function `MyImpl::foo` is incompatible with
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> MyImpl::AsType {
-    let _c = MyImpl::AsConst;
-    MyImpl::AsImpl::method(0)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait<T> {
     fn method(x: T) -> T;
 }
@@ -85,6 +70,10 @@ impl MyImpl of MyTrait {
     const AsType: felt252 = 5;
     type AsConst = felt252;
     type AsImpl = felt252;
+}
+fn foo() -> MyImpl::AsType {
+    let _c = MyImpl::AsConst;
+    MyImpl::AsImpl::method(0)
 }
 
 //! > expected_diagnostics

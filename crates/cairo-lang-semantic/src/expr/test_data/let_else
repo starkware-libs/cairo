@@ -3,7 +3,16 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+enum MyEnum2 {
+    A: felt252,
+    B: felt252,
+}
 fn foo() {
     let MyEnum::A(x): felt252 = MyEnum::A(7) else {
         return;
@@ -14,20 +23,6 @@ fn foo() {
     let MyEnum2::A(x): MyEnum = MyEnum::A(7) else {
         return;
     };
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: felt252,
-    B: felt252,
-}
-
-enum MyEnum2 {
-    A: felt252,
-    B: felt252,
 }
 
 //! > expected_diagnostics
@@ -58,20 +53,15 @@ error[E2109]: Wrong enum in pattern. Expected: "MyEnum". Got: "MyEnum2".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
 fn foo() {
     let MyEnum::A(x) = MyEnum::A(7) else {
         return x;
     };
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: felt252,
-    B: felt252,
 }
 
 //! > expected_diagnostics

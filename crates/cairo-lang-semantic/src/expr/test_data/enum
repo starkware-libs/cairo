@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 enum A {
     a: (),
     b: felt252,
@@ -23,9 +23,6 @@ fn foo() {
     let _a: A = A::d;
     let _a: A = A;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2030]: Wrong number of arguments. Expected 1, found: 0

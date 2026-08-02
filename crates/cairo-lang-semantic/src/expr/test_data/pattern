@@ -3,11 +3,8 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo(x: (felt252, felt252)) {}
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -18,17 +15,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(s2: Struct2) {
-    let Struct2 { member1: _, member2: _, member3: _ } = s2;
-    let Struct2 { member1: _, member2: _, .. } = s2;
-    let Struct2 { member1: _, member2: _, member3: Struct1 { member1: _a, .. } } = s2;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct Struct1 {
     member1: felt252,
     member2: (),
@@ -37,6 +24,11 @@ struct Struct2 {
     member1: felt252,
     member2: (),
     member3: Struct1,
+}
+fn foo(s2: Struct2) {
+    let Struct2 { member1: _, member2: _, member3: _ } = s2;
+    let Struct2 { member1: _, member2: _, .. } = s2;
+    let Struct2 { member1: _, member2: _, member3: Struct1 { member1: _a, .. } } = s2;
 }
 
 //! > expected_diagnostics
@@ -48,18 +40,13 @@ struct Struct2 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(s: MyStruct) {
-    let MyStruct { a: _ } = s;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: usize,
     b: usize,
+}
+fn foo(s: MyStruct) {
+    let MyStruct { a: _ } = s;
 }
 
 //! > expected_diagnostics
@@ -75,16 +62,11 @@ error[E0003]: Missing member "b".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+struct MyStruct {}
 fn foo(s: MyStruct) {
     let MyStruct { a, b } = s;
 }
-
-//! > function_name
-foo
-
-//! > module_code
-struct MyStruct {}
 
 //! > expected_diagnostics
 error[E2058]: Struct "MyStruct" has no member "a"
@@ -104,18 +86,13 @@ error[E2058]: Struct "MyStruct" has no member "b"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(s: MyStruct) {
-    let MyStruct { a: _, b: _, a: _, b: _ } = s;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: usize,
     b: usize,
+}
+fn foo(s: MyStruct) {
+    let MyStruct { a: _, b: _, a: _, b: _ } = s;
 }
 
 //! > expected_diagnostics
@@ -136,18 +113,13 @@ error[E2050]: Redefinition of member "b" on struct "MyStruct".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(s: MyStruct) {
-    let MyStruct { a: _, c: _, a: _ } = s;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: usize,
     b: usize,
+}
+fn foo(s: MyStruct) {
+    let MyStruct { a: _, c: _, a: _ } = s;
 }
 
 //! > expected_diagnostics
@@ -173,13 +145,10 @@ error[E0003]: Missing member "b".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(s: [felt252; 3]) {
     let [_a, _b] = s;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2108]: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
@@ -194,13 +163,10 @@ error[E2108]: Wrong number of fixed size array elements in pattern. Expected: 3.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(s: (felt252, felt252, felt252)) {
     let [_a, _b, _c] = s;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2103]: Mismatched types: pattern cannot match against type "(core::felt252, core::felt252, core::felt252)".
@@ -215,13 +181,10 @@ error[E2103]: Mismatched types: pattern cannot match against type "(core::felt25
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(s: [felt252; 3]) {
     let (_a, _b, _c) = s;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2103]: Mismatched types: pattern cannot match against type "[core::felt252; 3]".
@@ -236,16 +199,13 @@ error[E2103]: Mismatched types: pattern cannot match against type "[core::felt25
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(s: [felt252; 3]) {
     let (unresolved,) = if true {} else {
         (array![(1, 2, 3)],)
     };
     for (_x, _y, _z) in unresolved.span() {}
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2056]: If blocks have incompatible types: "()" and "(core::array::Array::<({numeric}, {numeric}, {numeric})>,)"
@@ -268,13 +228,10 @@ error[E2107]: Wrong number of tuple elements in pattern. Expected: 0. Got: 1.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let (_a, _a) = (1, 2);
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2049]: Redefinition of variable name "_a" in pattern.
@@ -289,7 +246,7 @@ error[E2049]: Redefinition of variable name "_a" in pattern.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     match (1, 2) {
         (_a, _a) => (),
@@ -299,9 +256,6 @@ fn foo() {
         ((_b, _), _b) => (),
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2049]: Redefinition of variable name "_a" in pattern.
@@ -321,18 +275,13 @@ error[E2049]: Redefinition of variable name "_b" in pattern.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo(s: Span<u32>) -> u32 {
     let [a, b] = s else {
         return 0;
     };
     *a + *b
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -343,7 +292,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let a: Array<u8> = array![1, 2, 3];
     let c: u16 = 0;
@@ -352,11 +301,6 @@ fn foo() {
         _ => 0,
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E2311]: Trait has no implementation in context: core::array::ToSpanTrait::<core::array::Array::<core::integer::u8>, core::integer::u16>.
@@ -371,17 +315,12 @@ error[E2311]: Trait has no implementation in context: core::array::ToSpanTrait::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(s: MyStruct<u8>) {
-    let [_x, _y] = s;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct<T> {
     value: T,
+}
+fn foo(s: MyStruct<u8>) {
+    let [_x, _y] = s;
 }
 
 //! > expected_diagnostics
@@ -397,7 +336,7 @@ error[E2103]: Mismatched types: pattern cannot match against type "test::MyStruc
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let a: Array<u8> = array![1, 2, 3];
     match a {
@@ -405,11 +344,6 @@ fn foo() {
         _ => {},
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E2103]: Mismatched types: pattern cannot match against type "core::array::Array::<core::integer::u8>".
@@ -424,7 +358,7 @@ error[E2103]: Mismatched types: pattern cannot match against type "core::array::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let a: [u8; 3] = [1, 2, 3];
     match a {
@@ -432,11 +366,6 @@ fn foo() {
         _ => {},
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -447,7 +376,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(s: Span<u32>) -> u32 {
     match s {
         [a, b] => *a + *b,
@@ -456,11 +385,6 @@ fn foo(s: Span<u32>) -> u32 {
         Some(a) => *a,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E2315]: Mismatched types. The type `core::array::Span::<core::integer::u32>` cannot be created from a numeric literal.

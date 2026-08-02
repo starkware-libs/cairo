@@ -3,7 +3,11 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    a: (),
+    b: felt252,
+}
 fn foo(b: A) -> felt252 {
     match (b, 4) {
         (A::a(_x), _) => { 1 },
@@ -14,15 +18,6 @@ fn foo(b: A) -> felt252 {
     let x = (5, true);
     let (y, _) = x;
     y
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    a: (),
-    b: felt252,
 }
 
 //! > expected_diagnostics
@@ -53,21 +48,16 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    a: (),
+    b: felt252,
+}
 fn foo(a: bool) -> felt252 {
     match a + 1 {
         A::a(_) => 0,
         A::b(_) => 1,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    a: (),
-    b: felt252,
 }
 
 //! > expected_diagnostics
@@ -93,21 +83,16 @@ error[E2109]: Wrong enum in pattern. Expected: "bool". Got: "A".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    a: (),
+    b: felt252,
+}
 fn foo(a: felt252, b: bool) -> felt252 {
     match a {
         0 => 0_felt252,
         _ => b,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    a: (),
-    b: felt252,
 }
 
 //! > expected_diagnostics
@@ -123,21 +108,16 @@ error[E2056]: Match arms have incompatible types: "core::felt252" and "core::boo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    a: (),
+    b: felt252,
+}
 fn foo(a: A) -> felt252 {
     match a {
         true => 2,
         false => 3,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    a: (),
-    b: felt252,
 }
 
 //! > expected_diagnostics
@@ -158,16 +138,13 @@ error[E2109]: Wrong enum in pattern. Expected: "A". Got: "bool".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(x: Option<()>) {
     match x {
         Some(_) => true,
         None => 0,
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2056]: Match arms have incompatible types: "core::bool" and "{numeric}"
@@ -187,18 +164,7 @@ error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(a: MyEnum) -> felt252 {
-    match a {
-        MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct P {
     x: felt252,
     y: felt252,
@@ -210,6 +176,12 @@ enum MyEnum {
     B: (felt252, felt252),
     C: (felt252, felt252, felt252),
     D: P,
+}
+fn foo(a: MyEnum) -> felt252 {
+    match a {
+        MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
+    }
 }
 
 //! > expected_diagnostics
@@ -230,7 +202,12 @@ error[E2040]: variable is bound inconsistently across alternatives separated by 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum<T> {
+    A: T,
+    B: (felt252, felt252),
+}
+fn bar(a: MyEnum<u32>) {}
 fn foo() {
     let a = MyEnum::A(5);
     match a {
@@ -238,16 +215,6 @@ fn foo() {
     }
     bar(a);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum<T> {
-    A: T,
-    B: (felt252, felt252),
-}
-fn bar(a: MyEnum<u32>) {}
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
@@ -262,21 +229,16 @@ error[E2041]: Unexpected argument type. Expected: "test::MyEnum::<core::integer:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+}
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::One, _) => 2,
         (_, _) => 6,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy, Drop)]
-enum A {
-    One: felt252,
 }
 
 //! > expected_diagnostics
@@ -292,22 +254,17 @@ warning[E2192]: Pattern missing subpattern for the payload of variant. Consider 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (),
+}
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::One(_), _) => 2,
         (A::Two, _) => 6,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy, Drop)]
-enum A {
-    One: felt252,
-    Two: (),
 }
 
 //! > expected_diagnostics
@@ -319,22 +276,17 @@ enum A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (),
+}
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::One(_), _) => 2,
         (A::Two(_), _) => 6,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy, Drop)]
-enum A {
-    One: felt252,
-    Two: (),
 }
 
 //! > expected_diagnostics
@@ -346,7 +298,7 @@ enum A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo<T>(a: Option<T>) -> felt252 {
     match a {
         Some => 2,
@@ -357,9 +309,6 @@ fn bar() -> felt252 {
     let a = Some(());
     foo(a)
 }
-
-//! > function_name
-bar
 
 //! > expected_diagnostics
 warning[E2192]: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
@@ -374,24 +323,19 @@ warning[E2192]: Pattern missing subpattern for the payload of variant. Consider 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: A, b: A) -> felt252 {
-    match (a, b) {
-        (A::One(_), _) => 2,
-        (Two, _) => 6,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy, Drop)]
 enum A {
     One: felt252,
     Two: (),
 }
 use A::Two;
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::One(_), _) => 2,
+        (Two, _) => 6,
+    }
+}
 
 //! > expected_diagnostics
 
@@ -402,7 +346,7 @@ use A::Two;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn fb() -> Option<()> {
     let x = None;
     match x {
@@ -411,9 +355,6 @@ fn fb() -> Option<()> {
     }
     return x;
 }
-
-//! > function_name
-fb
 
 //! > expected_diagnostics
 warning[E2192]: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
@@ -428,7 +369,7 @@ warning[E2192]: Pattern missing subpattern for the payload of variant. Consider 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn fb() -> Option<()> {
     let x = None;
     match x {
@@ -437,9 +378,6 @@ fn fb() -> Option<()> {
     }
     return x;
 }
-
-//! > function_name
-fb
 
 //! > expected_diagnostics
 warning[E2192]: Pattern missing subpattern for the payload of variant. Consider using `Option::Some(_)`
@@ -454,7 +392,7 @@ warning[E2192]: Pattern missing subpattern for the payload of variant. Consider 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> u32 {
     let x = Some(3);
     match x {
@@ -462,9 +400,6 @@ fn foo() -> u32 {
         None::<u8> => 6,
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2302]: Type mismatch: `core::option::Option::<core::integer::u32>` and `core::option::Option::<core::integer::u8>`.
@@ -479,16 +414,13 @@ error[E2302]: Type mismatch: `core::option::Option::<core::integer::u32>` and `c
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(x: Result<Option<u8>, felt252>) {
     let _y = match x {
         Ok(Some(x)) | Err(x) => x,
         _ => 3,
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2039]: Expected type "core::integer::u8", found: "core::felt252".
@@ -503,16 +435,13 @@ error[E2039]: Expected type "core::integer::u8", found: "core::felt252".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(x: Result<Option<u8>, felt252>) {
     let _y = match x {
         Ok(Ok(x)) | Err(x) => x,
         _ => 3,
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2109]: Wrong enum in pattern. Expected: "Option". Got: "Result".
@@ -532,20 +461,15 @@ error[E2048]: Missing variable in pattern.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn bar(x: felt252) {
-    foo(Ok(Some(x)));
-}
-
-//! > function_name
-bar
-
-//! > module_code
+//! > cairo_code
 fn foo<T>(x: Result<Option<T>, felt252>) {
     let _y = match x {
         Ok(Some(x)) | Err(x) => x,
         _ => 3,
     };
+}
+fn bar(x: felt252) {
+    foo(Ok(Some(x)));
 }
 
 //! > expected_diagnostics

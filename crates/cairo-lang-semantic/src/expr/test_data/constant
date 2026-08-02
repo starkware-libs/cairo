@@ -3,16 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let _x = MY_CONST + my_module::CONST_IN_MODULE;
-    let (_y, _z) = FELT_TUPLE;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const MY_CONST: felt252 = 0x1234;
 
 const FELT_TUPLE: (felt252, felt252) = (1, 2);
@@ -128,6 +119,10 @@ const PARTIAL_STRUCT2: () = assert({
     let u256 { high, .. } = 1337;
     high
 } == 0, 'partial_struct');
+fn foo() {
+    let _x = MY_CONST + my_module::CONST_IN_MODULE;
+    let (_y, _z) = FELT_TUPLE;
+}
 
 //! > expected_diagnostics
 
@@ -138,13 +133,7 @@ const PARTIAL_STRUCT2: () = assert({
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const MY_CONST: MissingType = {
     return foo();
     Option::<felt252>::Some(0)?
@@ -262,6 +251,7 @@ const LET_ELSE_FAIL: u8 = {
     };
     0
 };
+fn foo() {}
 
 //! > expected_diagnostics
 error[E0006]: Type not found.
@@ -334,13 +324,7 @@ error[E2128]: Failed to calculate constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const DEFAULT_VAR: bool = 1;
 
 //! > expected_diagnostics
@@ -356,13 +340,7 @@ const DEFAULT_VAR: bool = 1;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const FULLY_UNKNOWN: _ = 1_u8;
 const FIXED_SIZED_TYPE_UNKNOWN: [_; 2] = [1_u8, 2_u8];
 
@@ -384,13 +362,7 @@ const FIXED_SIZED_TYPE_UNKNOWN: [_; 2] = [1_u8, 2_u8];
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const B: u8 = -1;
 
 //! > expected_diagnostics
@@ -406,13 +378,7 @@ const B: u8 = -1;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const A: i8 = A;
 const B: i8 = C;
 const C: i8 = B;
@@ -440,15 +406,7 @@ const C: i8 = B;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> (felt252, felt252, u256, i8) {
-    (FELT_WRAPAROUND_OVER, FELT_WRAPAROUND_UNDER, U256_CALCULATION, BASIC_CALCULATION)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const UNSIGNED_VAR: u8 = 256;
 const SIGNED_VAR: i8 = 128;
 const IN_RANGE_NEGATIVE1: i8 = -0x80;
@@ -483,6 +441,9 @@ const COMPLEX_STRUCT: ComplexStruct = ComplexStruct {
 };
 
 const CONST_MEMBER: u8 = COMPLEX_STRUCT.a;
+fn foo() -> (felt252, felt252, u256, i8) {
+    (FELT_WRAPAROUND_OVER, FELT_WRAPAROUND_UNDER, U256_CALCULATION, BASIC_CALCULATION)
+}
 
 //! > expected_diagnostics
 error[E2008]: The value does not fit within the range of type core::integer::u8.
@@ -532,16 +493,13 @@ error[E2008]: The value does not fit within the range of type core::zeroable::No
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> () {
     {
         const X: u8 = 2;
     }
     let y = X;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
@@ -566,7 +524,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> () {
     const A: u8 = 1;
     const A: u8 = 2;
@@ -583,9 +541,6 @@ fn foo() -> () {
         const F: u8 = 12;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2072]: Multiple definitions of constant "A".
@@ -655,16 +610,13 @@ warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(param: u8) -> () {
     const A: u8 = param;
     let local: u8 = 1;
     const B: u8 = local;
     const _C: u8 = A + B;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2127]: This expression is not supported as constant.
@@ -684,13 +636,7 @@ error[E2127]: This expression is not supported as constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const ADDRESS: starknet::ContractAddress = my_unwrap((-1).try_into());
 const CLASS_HASH: starknet::ClassHash = my_unwrap((-1).try_into());
 
@@ -728,13 +674,7 @@ note: In `test::my_unwrap::<core::starknet::class_hash::ClassHash>`:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 // `2 ** 251` is one past the valid range of `ClassHash`/`ContractAddress`.
 const ADDRESS: starknet::ContractAddress = my_unwrap(
     0x800000000000000000000000000000000000000000000000000000000000000.try_into(),
@@ -783,7 +723,7 @@ note: In `test::my_unwrap::<core::starknet::class_hash::ClassHash>`:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     const A: Option<Option<Option<felt252>>> = Some(Some(Some(1_felt252)));
     const _B: felt252 = if let Some(a) = A && let Some(b) = a && let Some(c) = b {
@@ -792,9 +732,6 @@ fn foo() {
         0
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -805,13 +742,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 /// Copy of `assert` to avoid getting paths from the corelib.
 const fn assert(cond: bool) {
     if !cond {
@@ -835,13 +766,7 @@ const V_AS_I128: () = assert(V.try_into() == Some(-1_i128));
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const fn assert(cond: bool) {
     if !cond {
         core::panic_with_felt252('failed assertion')
@@ -867,13 +792,7 @@ const OR_SHORT_CIRCUIT: () = assert(true || boom());
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Foo {
     const VALUE: felt252;
 }
@@ -897,13 +816,7 @@ error[E2127]: This expression is not supported as constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Foo {
     const VALUE: felt252;
 }
@@ -923,13 +836,7 @@ impl AnotherFoo<impl F: Foo> of Foo {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[allow(extern_outside_corelib)]
 extern const fn f() -> felt252 nopanic;
 const X: felt252 = f();
@@ -947,18 +854,13 @@ const X: felt252 = f();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    const X: S = S { a: 1 };
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S {
     a: felt252,
     b: felt252,
+}
+fn foo() {
+    const X: S = S { a: 1 };
 }
 
 //! > expected_diagnostics
@@ -979,13 +881,7 @@ warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Foo {
     const VALUE: felt252;
 }
@@ -1010,13 +906,7 @@ error[E2127]: This expression is not supported as constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Foo {
     const VALUE: felt252;
 }
@@ -1041,13 +931,7 @@ error[E2127]: This expression is not supported as constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait BoolConst {
     const VALUE: bool;
 }
@@ -1068,20 +952,15 @@ error[E2127]: This expression is not supported as constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > module_code
+//! > cairo_code
 const fn outer() -> felt252 {
     const fn inner() -> felt252 { 7 }
     inner()
 }
 const X: felt252 = outer();
-
-//! > function_code
 fn foo() -> felt252 {
     X
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E1004]: Unexpected token, expected ':' followed by a type.
@@ -1126,13 +1005,7 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait BoolConst {
     const VALUE: bool;
 }
@@ -1153,13 +1026,7 @@ error[E2127]: This expression is not supported as constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait BoolConst {
     const VALUE: bool;
 }

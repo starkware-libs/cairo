@@ -3,15 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::foo1(3_u32);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     impl MyImpl: TypeTrait;
     fn foo1(x: Self::MyImpl::MyType) -> Self::MyImpl::MyType;
@@ -32,6 +24,9 @@ mod myMod {
         type MyType = u32;
     }
 }
+fn foo() {
+    MyImpl::foo1(3_u32);
+}
 
 //! > expected_diagnostics
 
@@ -42,13 +37,7 @@ mod myMod {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     impl impl1: OtherTrait;
     impl impl2: OtherTrait;
@@ -69,17 +58,7 @@ trait OtherTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::<u32>::foo1(3_u32);
-    MyImpl::<u32>::foo2(3_u32);
-    MyImpl::<u32>::foo3(3_u32);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T, S> {
     impl impl1: OtherTrait;
     fn foo1(x: Self::impl1::InputType) -> Self::impl1::OutputType;
@@ -108,6 +87,11 @@ impl OtherImpl of OtherTrait {
     type InputType = u32;
     type OutputType = u32;
 }
+fn foo() {
+    MyImpl::<u32>::foo1(3_u32);
+    MyImpl::<u32>::foo2(3_u32);
+    MyImpl::<u32>::foo3(3_u32);
+}
 
 //! > expected_diagnostics
 
@@ -118,16 +102,7 @@ impl OtherImpl of OtherTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let x = MyStruct { value: 3_u32 };
-    let _: MyStruct<u32> = MyImpl::foo(x);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct<T> {
     value: T,
 }
@@ -149,6 +124,10 @@ impl MyImpl of MyTrait {
         MyStruct { value: x.value }
     }
 }
+fn foo() {
+    let x = MyStruct { value: 3_u32 };
+    let _: MyStruct<u32> = MyImpl::foo(x);
+}
 
 //! > expected_diagnostics
 
@@ -159,13 +138,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -200,13 +173,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -250,13 +217,7 @@ error[E2045]: Return type of impl function `MyImpl::bar2` is incompatible with `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -315,13 +276,7 @@ error[E2313]: Trait `test::AnotherTrait2` has multiple implementations, in: `tes
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -354,13 +309,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -407,13 +356,7 @@ error[E2031]: Parameter type of impl function `MyImpl::foo2` is incompatible wit
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -453,13 +396,7 @@ fn bar3() {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -488,13 +425,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -527,13 +458,7 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u16", found: "co
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
     impl Impl: Self;
@@ -590,13 +515,7 @@ fn complex(
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
     impl Impl: Self;
@@ -657,13 +576,7 @@ error[E2042]: Unexpected return type. Expected: "@(core::integer::u32, core::opt
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -692,13 +605,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type InputType;
 }
@@ -731,13 +638,7 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u32", found: "co
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {}
 trait MyTrait {
     impl MyImpl: OtherTrait;
@@ -759,13 +660,7 @@ error[E2027]: Cycle detected while resolving 'impls alias' items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {}
 trait MyTrait {
     impl Impl1: OtherTrait;
@@ -794,16 +689,7 @@ error[E2027]: Cycle detected while resolving 'impls alias' items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> u32 {
-    let x: MyImpl::<u32>::Impl::ty = 4;
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type ty;
 }
@@ -818,6 +704,10 @@ trait MyTrait {
 impl MyImpl<K> of MyTrait {
     impl Impl = OtherImpl<K>;
 }
+fn foo() -> u32 {
+    let x: MyImpl::<u32>::Impl::ty = 4;
+    x
+}
 
 //! > expected_diagnostics
 
@@ -828,18 +718,7 @@ impl MyImpl<K> of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    bar::<MyImpl<felt252>>(2)
-}
-pub fn bar<impl O: MyTrait>(x: O::Impl::ty) -> O::Impl::ty {
-    O::foo(x)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type ty;
 }
@@ -862,6 +741,12 @@ impl MyImpl<K> of MyTrait {
         x
     }
 }
+fn foo() -> felt252 {
+    bar::<MyImpl<felt252>>(2)
+}
+pub fn bar<impl O: MyTrait>(x: O::Impl::ty) -> O::Impl::ty {
+    O::foo(x)
+}
 
 //! > expected_diagnostics
 
@@ -872,18 +757,7 @@ impl MyImpl<K> of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    bar::<myMod::MyImpl<felt252>>(2)
-}
-pub fn bar<+MyTrait>(x: MyTrait::Impl::ty) -> MyTrait::Impl::ty {
-    MyTrait::foo(x)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type ty;
 }
@@ -905,6 +779,12 @@ trait MyTrait {
     impl Impl: OtherTrait;
     fn foo(x: Self::Impl::ty) -> Self::Impl::ty;
 }
+fn foo() -> felt252 {
+    bar::<myMod::MyImpl<felt252>>(2)
+}
+pub fn bar<+MyTrait>(x: MyTrait::Impl::ty) -> MyTrait::Impl::ty {
+    MyTrait::foo(x)
+}
 
 //! > expected_diagnostics
 
@@ -915,18 +795,7 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    bar::<_, DepAdd>(3_felt252, 4)
-}
-pub fn bar<T, impl O: OtherAdd<T, T>>(x: T, y: T) -> O::Impl::ty {
-    O::other_add(x, y)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type ty;
 }
@@ -950,6 +819,12 @@ impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
         lhs
     }
 }
+fn foo() -> felt252 {
+    bar::<_, DepAdd>(3_felt252, 4)
+}
+pub fn bar<T, impl O: OtherAdd<T, T>>(x: T, y: T) -> O::Impl::ty {
+    O::other_add(x, y)
+}
 
 //! > expected_diagnostics
 
@@ -960,18 +835,7 @@ impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    bar(3_felt252, 4)
-}
-pub fn bar<T, +OtherAdd<T, T>>(x: T, y: T) -> OtherAdd::<T, T>::Impl::ty {
-    OtherAdd::other_add(x, y)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     type ty;
 }
@@ -995,6 +859,12 @@ impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
         lhs
     }
 }
+fn foo() -> felt252 {
+    bar(3_felt252, 4)
+}
+pub fn bar<T, +OtherAdd<T, T>>(x: T, y: T) -> OtherAdd::<T, T>::Impl::ty {
+    OtherAdd::other_add(x, y)
+}
 
 //! > expected_diagnostics
 
@@ -1005,7 +875,16 @@ impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+trait Iterator<T> {
+    type Item;
+    fn next(ref self: T) -> Option<Self::Item>;
+}
+trait IntoIterator<T> {
+    type IntoIter;
+    impl Impl: Iterator<Self::IntoIter>;
+    fn into_iter(self: T) -> Self::IntoIter;
+}
 fn foo() -> felt252 {
     21
 }
@@ -1018,20 +897,6 @@ fn bar<T, impl I: IntoIterator<T>>(a: T) {
     y;
 }
 
-//! > function_name
-foo
-
-//! > module_code
-trait Iterator<T> {
-    type Item;
-    fn next(ref self: T) -> Option<Self::Item>;
-}
-trait IntoIterator<T> {
-    type IntoIter;
-    impl Impl: Iterator<Self::IntoIter>;
-    fn into_iter(self: T) -> Self::IntoIter;
-}
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -1041,7 +906,16 @@ trait IntoIterator<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+trait Iterator<T> {
+    type Item;
+    fn next(ref self: T) -> Option<Self::Item>;
+}
+trait IntoIterator<T> {
+    type IntoIter;
+    impl Impl: Iterator<Self::IntoIter>;
+    fn into_iter(self: T) -> Self::IntoIter;
+}
 fn foo() -> felt252 {
     21
 }
@@ -1054,20 +928,6 @@ fn bar<T, +IntoIterator<T>>(a: T) {
     y;
 }
 
-//! > function_name
-foo
-
-//! > module_code
-trait Iterator<T> {
-    type Item;
-    fn next(ref self: T) -> Option<Self::Item>;
-}
-trait IntoIterator<T> {
-    type IntoIter;
-    impl Impl: Iterator<Self::IntoIter>;
-    fn into_iter(self: T) -> Self::IntoIter;
-}
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -1077,13 +937,7 @@ trait IntoIterator<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait<T> {
     const X: u32;
 }
@@ -1109,15 +963,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    MyImpl::I::f()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     fn f();
 }
@@ -1125,6 +971,9 @@ trait MyTrait {
     impl I: OtherTrait;
 }
 impl MyImpl of MyTrait {}
+fn foo() {
+    MyImpl::I::f()
+}
 
 //! > expected_diagnostics
 error[E2015]: Cannot infer implicit impl `I`.
@@ -1153,15 +1002,7 @@ error[E2311]: Trait has no implementation in context: test::MyTrait.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: *)
 
-//! > function_code
-fn foo() {
-    MyImpl::I::f()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait {
     fn f();
 }
@@ -1173,6 +1014,9 @@ trait MyTrait {
 }
 
 impl MyImpl of MyTrait {}
+fn foo() {
+    MyImpl::I::f()
+}
 
 //! > expected_diagnostics
 
@@ -1183,15 +1027,7 @@ impl MyImpl of MyTrait {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::<u32>::I::f()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait<T> {
     fn f();
 }
@@ -1205,6 +1041,9 @@ trait MyTrait<T> {
 impl MyImpl<T> of MyTrait<T> {
     impl I = OtherImpl<T>;
 }
+fn foo() {
+    MyImpl::<u32>::I::f()
+}
 
 //! > expected_diagnostics
 
@@ -1215,13 +1054,7 @@ impl MyImpl<T> of MyTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherTrait<T> {
     fn f();
 }
@@ -1251,13 +1084,7 @@ fn bar2<impl M: MyTrait<u32>>() {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait InnerTrait<R> {
     type X;
     fn foo() -> Self::X;
@@ -1296,15 +1123,7 @@ mod my_mod {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    1_u64.foo(1_u32);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Outer<R> {
     impl InnerImpl: Inner<R>;
     type Item;
@@ -1333,6 +1152,9 @@ impl OuterU32 of Outer<u32> {
     fn into(self: u32) -> u64 {
         self.into()
     }
+}
+fn foo() {
+    1_u64.foo(1_u32);
 }
 
 //! > expected_diagnostics
@@ -1375,16 +1197,7 @@ error[E2311]: Trait has no implementation in context: core::metaprogramming::Typ
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    // TODO(orizi): Remove this diagnostic.
-    extra_into_inner(Outer::into_inner(1_u32));
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Outer<T> {
     type Inner;
     impl Impl: Inner<Self::Inner>;
@@ -1417,6 +1230,10 @@ impl OuterU64 of Outer<u64> {
 
 impl InnerImpl of Inner<u64> {
     type InnerMost = u128;
+}
+fn foo() {
+    // TODO(orizi): Remove this diagnostic.
+    extra_into_inner(Outer::into_inner(1_u32));
 }
 
 //! > expected_diagnostics

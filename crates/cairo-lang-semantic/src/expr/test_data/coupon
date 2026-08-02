@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 type A = foo::Coupon;
 type B = bar::Coupon; // Invalid: missing type annotation.
 type C = bar::<u8>::Coupon;
@@ -22,9 +22,6 @@ fn foo(x: foo::Coupon) {
 
 #[allow(extern_outside_corelib)]
 extern fn extern_func() nopanic;
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2314]: Type annotations needed. Failed to infer ?0.
@@ -54,7 +51,7 @@ error[E2057]: Type "test::foo::Coupon" has no members.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > module_code
+//! > cairo_code
 struct MyStruct<S> {
     a: S,
 }
@@ -65,8 +62,6 @@ fn bar2<S, T>() {}
 fn get_coupon<S, T>() -> bar::<S, T>::Coupon {}
 fn get_coupon2<S, T>() -> bar2::<S, T>::Coupon {}
 fn get_struct<S>() -> MyStruct<S> {}
-
-//! > function_code
 fn foo() {
     let mut x = get_coupon();
     x = get_coupon::<u8>();
@@ -84,9 +79,6 @@ fn foo() {
     let mut z = get_coupon();
     z = get_struct();
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "test::bar::<S, T>::Coupon", found: "()".
@@ -131,7 +123,7 @@ error[E2041]: Unexpected argument type. Expected: "test::bar::<?12, ?13>::Coupon
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > module_code
+//! > cairo_code
 mod m {
     fn bar() {}
     fn bar_no_drop() {}
@@ -145,8 +137,6 @@ mod m {
 }
 
 fn use_drop<A, +Drop<A>>(x: A) {}
-
-//! > function_code
 fn foo0(x: m::bar::Coupon) {
     use_drop(x);
 }
@@ -158,9 +148,6 @@ fn foo1(x: m::bar_no_drop::Coupon) {
 fn foo2(x: m::MyImpl::<u8>::trait_fn::Coupon) {
     use_drop(x);
 }
-
-//! > function_name
-foo0
 
 //! > expected_diagnostics
 error[E2311]: Trait has no implementation in context: core::traits::Drop::<test::m::bar_no_drop::Coupon>.
@@ -175,12 +162,10 @@ error[E2311]: Trait has no implementation in context: core::traits::Drop::<test:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > module_code
+//! > cairo_code
 fn bar<S, T>(x: T) {}
 
 fn bar2<S, T>(x: T) {}
-
-//! > function_code
 fn foo(x: bar::<u8, u16>::Coupon) {
     bar(1); // Cannot infer S.
     bar(1, __coupon__: x); // Valid call. S is inferred from the coupon.
@@ -189,9 +174,6 @@ fn foo(x: bar::<u8, u16>::Coupon) {
     bar(1, mut __coupon__: x); // Wrong mutability.
     bar(1, ref __coupon__: x); // Wrong mutability.
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "test::bar2::<?6, ?7>::Coupon", found: "test::bar::<core::integer::u8, core::integer::u16>::Coupon".
@@ -216,13 +198,10 @@ error[E2166]: The __coupon__ argument cannot have modifiers.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(x: foo::Coupon) {
     foo(x, __coupon__: x);
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2167]: Coupons are disabled in the current crate.

@@ -3,17 +3,12 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern type MyType;
 fn foo(a: MyType) {
     a + a * a;
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern type MyType;
 
 //! > expected_diagnostics
 error[E2311]: Trait has no implementation in context: core::traits::Add::<test::MyType>.
@@ -28,7 +23,7 @@ error[E2311]: Trait has no implementation in context: core::traits::Add::<test::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
@@ -37,9 +32,6 @@ fn foo(a: u128, b: bool) implicits(RangeCheck) {
     a > a > a;
     a - b
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E1028]: Consecutive comparison operators are not allowed: '>' followed by '>'
@@ -69,15 +61,12 @@ error[E2042]: Unexpected return type. Expected: "()", found: "core::integer::u12
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     -(1 == 2);
     -1_u8;
     !17;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2008]: The value does not fit within the range of type core::integer::u8.
@@ -97,18 +86,7 @@ error[E2311]: Trait has no implementation in context: core::traits::Neg::<core::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let x1 = Struct1 { x: 0 };
-    let _y1 = x1[0];
-    let x2 = Struct2 { x: 0 };
-    let _y2 = x2[0];
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct Struct1 {
     x: felt252,
 }
@@ -126,6 +104,12 @@ impl Struct2Index of Index<Struct2, usize, felt252> {
     fn index(ref self: Struct2, index: usize) -> felt252 {
         self.x
     }
+}
+fn foo() {
+    let x1 = Struct1 { x: 0 };
+    let _y1 = x1[0];
+    let x2 = Struct2 { x: 0 };
+    let _y2 = x2[0];
 }
 
 //! > expected_diagnostics

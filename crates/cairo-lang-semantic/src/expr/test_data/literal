@@ -3,13 +3,10 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _a = 'a'_Pedersen;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2008]: A numeric literal of type core::pedersen::Pedersen cannot be created.
@@ -24,13 +21,10 @@ error[E2008]: A numeric literal of type core::pedersen::Pedersen cannot be creat
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: u8 = 256;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2008]: The value does not fit within the range of type core::integer::u8.
@@ -45,13 +39,10 @@ error[E2008]: The value does not fit within the range of type core::integer::u8.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x = 1_boolean;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2011]: Not a type.
@@ -66,13 +57,10 @@ error[E2011]: Not a type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x = 1_u32_u8;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2006]: Unknown type.
@@ -87,13 +75,10 @@ error[E2006]: Unknown type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x = -1_u32_u8;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2006]: Unknown type.
@@ -108,14 +93,11 @@ error[E2006]: Unknown type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let x = 5;
     let _y: felt252 = x;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -126,14 +108,11 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let x: u32 = 5;
     let _y: u32 = x;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -144,13 +123,10 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _arr: Array<u32> = array![0, 1, 2_u32];
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -161,16 +137,13 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut total: u32 = 0;
     for (k, v) in array![0, 1, 2].into_iter().enumerate() {
         total = total + k + v;
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -181,13 +154,10 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: ByteArray = 252;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2315]: Mismatched types. The type `core::byte_array::ByteArray` cannot be created from a numeric literal.
@@ -202,13 +172,10 @@ error[E2315]: Mismatched types. The type `core::byte_array::ByteArray` cannot be
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: bool = 5;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2315]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
@@ -225,14 +192,11 @@ error[E2315]: Mismatched types. The type `core::bool` cannot be created from a n
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn incorrect_return_type() {
     let x = 5;
     x
 }
-
-//! > function_name
-incorrect_return_type
 
 //! > expected_diagnostics
 error[E2315]: Mismatched types. The type `()` cannot be created from a numeric literal.
@@ -247,16 +211,13 @@ error[E2315]: Mismatched types. The type `()` cannot be created from a numeric l
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _a = 42_Option;
     let _b = 42_Result;
     let _c = 42_PanicResult;
     let _d = 42_Span;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2008]: A numeric literal of type core::option::Option cannot be created.

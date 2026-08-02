@@ -3,19 +3,14 @@
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function_code
+//! > cairo_code
+enum A<T> {
+    Variant0: T,
+}
 fn foo(a: A<felt252>) -> felt252 {
     match a {
         A::Variant0(t) => { t },
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A<T> {
-    Variant0: T,
 }
 
 //! > expected_diagnostics
@@ -27,13 +22,7 @@ enum A<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     Variant: A,
 }
@@ -51,13 +40,7 @@ error[E2052]: Recursive type "test::A" has infinite size.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum A {
     Variant: A,
@@ -72,13 +55,7 @@ enum A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 struct A {}
 
@@ -99,13 +76,7 @@ error[E2020]: Non-phantom type containing phantom type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     Variant: Array<()>,
 }
@@ -123,7 +94,10 @@ error[E2053]: Cannot have array of type "()" that is zero sized.
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function_code
+//! > cairo_code
+enum E {
+    aa: i32,
+}
 fn foo() {}
 fn bar<E>() -> i32 {
     let E::aa(b) = makeE();
@@ -131,14 +105,6 @@ fn bar<E>() -> i32 {
 }
 fn makeE() -> E {
     E::aa(3)
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum E {
-    aa: i32,
 }
 
 //! > expected_diagnostics
@@ -159,7 +125,12 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function_code
+//! > cairo_code
+enum A {
+    T: i32,
+    E: (),
+}
+use A::{E, T};
 fn foo() {}
 fn bar<T, E>() -> i32 {
     let T(a) = A::T(2);
@@ -167,16 +138,6 @@ fn bar<T, E>() -> i32 {
 
     a
 }
-
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    T: i32,
-    E: (),
-}
-use A::{E, T};
 
 //! > expected_diagnostics
 error[E2009]: Not a variant. Use the full name Enum::Variant.
@@ -201,13 +162,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum MyEnum {
     A: P,
 }
@@ -237,13 +192,7 @@ MyEnum::A(());
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum W<T, +Drop<T>> {
     X: T,
 }

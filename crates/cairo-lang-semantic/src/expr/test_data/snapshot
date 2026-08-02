@@ -3,20 +3,15 @@
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function_code
-fn foo(a: @A) {
-    bar(a.a, a.b);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     a: Array<felt252>,
     b: felt252,
 }
 fn bar(a: @Array::<felt252>, b: @felt252) {}
+fn foo(a: @A) {
+    bar(a.a, a.b);
+}
 
 //! > expected_diagnostics
 
@@ -27,14 +22,11 @@ fn bar(a: @Array::<felt252>, b: @felt252) {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: @felt252 = 5;
     let _y: felt252 = @6;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2315]: Mismatched types. The type `@core::felt252` cannot be created from a numeric literal.
@@ -56,14 +48,11 @@ Consider adding or removing snapshots.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: @felt252 = 5_felt252;
     let _y: felt252 = @6_felt252;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "@core::felt252", found: "core::felt252".
@@ -86,7 +75,11 @@ test_function_diagnostics
 //! > crate_settings
 edition = "2025_12"
 
-//! > function_code
+//! > cairo_code
+struct A {
+    a: Array<felt252>,
+    b: felt252,
+}
 fn foo(a: @A) {
     let _: @Array<felt252> = @a.a;
     let _: @Array<felt252> = @(@a).a;
@@ -95,15 +88,6 @@ fn foo(a: @A) {
     let _: @felt252 = @a.b;
     let _: @felt252 = @(@a).b;
     let _: @@felt252 = @@(@a).b;
-}
-
-//! > function_name
-foo
-
-//! > module_code
-struct A {
-    a: Array<felt252>,
-    b: felt252,
 }
 
 //! > expected_diagnostics

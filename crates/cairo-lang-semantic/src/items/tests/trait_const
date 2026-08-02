@@ -3,15 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::foo() + MyImpl::X;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
     fn foo() -> u32;
@@ -21,6 +13,9 @@ impl MyImpl of MyTrait {
     fn foo() -> u32 {
         Self::X + 5
     }
+}
+fn foo() {
+    MyImpl::foo() + MyImpl::X;
 }
 
 //! > expected_diagnostics
@@ -32,13 +27,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
     fn foo() -> u32;
@@ -63,13 +52,7 @@ warning[E2096]: In an impl, paths of the same impl are not allowed. Did you mean
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
     fn foo() -> u32;
@@ -94,13 +77,7 @@ warning[E2096]: In an impl, paths of the same impl are not allowed. Did you mean
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     const X: u32;
     fn foo() -> u32;
@@ -121,13 +98,7 @@ impl MyImpl<T> of MyTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait SomeTrait {}
 trait MyTrait {
     const X: u32;
@@ -153,13 +124,7 @@ warning[E2093]: In an impl, paths of the same impl must be fully explicit. Eithe
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
 }
@@ -180,15 +145,7 @@ error[E2039]: Expected type "core::integer::u32", found: "core::integer::i32".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::foo();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: i32;
     fn foo() -> i32;
@@ -198,6 +155,9 @@ impl MyImpl of MyTrait {
     fn foo() -> i32 {
         -Self::X
     }
+}
+fn foo() {
+    MyImpl::foo();
 }
 
 //! > expected_diagnostics
@@ -209,15 +169,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    MyImpl::foo();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
     fn foo() -> u32;
@@ -227,6 +179,9 @@ impl MyImpl of MyTrait {
     fn foo() -> u32 {
         -Self::X
     }
+}
+fn foo() {
+    MyImpl::foo();
 }
 
 //! > expected_diagnostics
@@ -242,13 +197,7 @@ error[E2311]: Trait has no implementation in context: core::traits::Neg::<core::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: felt252;
     const Y: felt252;
@@ -275,13 +224,7 @@ error[E2311]: Trait has no implementation in context: core::traits::PartialOrd::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     const X: u32;
 }
@@ -306,13 +249,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     const X: u32;
 }
@@ -341,13 +278,7 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u16", found: "co
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 // A trait with 0 impls in the context.
 trait AnotherTrait0 {
     const X: u32;
@@ -393,13 +324,7 @@ error[E2311]: Trait has no implementation in context: test::AnotherTrait0.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S<const N: u32> {}
 trait AnotherTrait {
     const X: u32;
@@ -429,13 +354,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S<const N: u32> {}
 
 trait AnotherTrait {
@@ -475,13 +394,7 @@ error[E2031]: Parameter type of impl function `MyImpl::foo2` is incompatible wit
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S<const N: u32> {}
 
 trait MyTrait {
@@ -499,13 +412,7 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S<const N: u32> {}
 trait MyTrait {
     const X: u32;
@@ -529,13 +436,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S<const N: u32> {}
 
 trait MyTrait {
@@ -569,15 +470,7 @@ error[E2031]: Parameter type of impl function `MyImpl::foo2` is incompatible wit
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let _: u32 = MyImpl::my_function;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
     fn my_function() -> u16;
@@ -587,6 +480,9 @@ impl MyImpl of MyTrait {
     fn my_function() -> u16 {
         2_u16
     }
+}
+fn foo() {
+    let _: u32 = MyImpl::my_function;
 }
 
 //! > expected_diagnostics
@@ -602,13 +498,7 @@ error[E2005]: Expected variable or constant, found function.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
     const Y: u32;
@@ -627,13 +517,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u16;
     const Y: u32;
@@ -656,13 +540,7 @@ error[E2302]: Type mismatch: `core::integer::u32` and `core::integer::u16`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
 }
@@ -683,13 +561,7 @@ error[E2024]: Cycle detected while resolving 'const' items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
     const Y: u32;
@@ -717,19 +589,14 @@ error[E2024]: Cycle detected while resolving 'const' items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> i32 {
-    MyImpl::Y
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const Y: u32;
 }
 impl MyImpl of MyTrait {}
+fn foo() -> i32 {
+    MyImpl::Y
+}
 
 //! > expected_diagnostics
 error[E0004]: Not all trait items are implemented. Missing: 'Y'.
@@ -752,17 +619,12 @@ error[E2311]: Trait has no implementation in context: test::MyTrait.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+use core::num::traits::Bounded;
+pub const MAX_U64: u64 = Bounded::<u64>::MAX;
 fn foo() -> u64 {
     MAX_U64 - 5
 }
-
-//! > function_name
-foo
-
-//! > module_code
-use core::num::traits::Bounded;
-pub const MAX_U64: u64 = Bounded::<u64>::MAX;
 
 //! > expected_diagnostics
 
@@ -773,13 +635,7 @@ pub const MAX_U64: u64 = Bounded::<u64>::MAX;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AsBinary<T> {
     const SIZE: usize;
     fn as_binary(self: T) -> [bool; Self::SIZE];
@@ -800,13 +656,7 @@ impl AsBinaryU8 of AsBinary<u8> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Repeated<T> {
     const SIZE: usize;
     fn repeated(self: T) -> [T; Self::SIZE];
@@ -827,13 +677,7 @@ impl CopyRepeated<T, +Copy<T>> of Repeated<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait SomeTrait {
     const SIZE: usize;
     const IDS: [felt252; Self::SIZE];
@@ -854,13 +698,7 @@ impl SomeImpl of SomeTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const X: u32;
 }

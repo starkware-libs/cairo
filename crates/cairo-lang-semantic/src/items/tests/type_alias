@@ -3,20 +3,15 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: RenamedStruct) -> felt252 {
-    a.a
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: felt252,
 }
 
 type RenamedStruct = MyStruct;
+fn foo(a: RenamedStruct) -> felt252 {
+    a.a
+}
 
 //! > expected_diagnostics
 
@@ -27,22 +22,17 @@ type RenamedStruct = MyStruct;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: RenamedEnum) -> felt252 {
-    match a {
-        MyEnum::f(v) => v,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum MyEnum {
     f: felt252,
 }
 
 type RenamedEnum = MyEnum;
+fn foo(a: RenamedEnum) -> felt252 {
+    match a {
+        MyEnum::f(v) => v,
+    }
+}
 
 //! > expected_diagnostics
 
@@ -53,17 +43,12 @@ type RenamedEnum = MyEnum;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+type RenamedTuple = (felt252, u128);
 fn foo(a: RenamedTuple) -> felt252 {
     let (v, _) = a;
     v
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type RenamedTuple = (felt252, u128);
 
 //! > expected_diagnostics
 
@@ -74,19 +59,14 @@ type RenamedTuple = (felt252, u128);
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+type OptionFelt252 = Option::<felt252>;
 fn foo(a: OptionFelt252) -> felt252 {
     match a {
         Some(v) => v,
         None => 1,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type OptionFelt252 = Option::<felt252>;
 
 //! > expected_diagnostics
 
@@ -97,17 +77,12 @@ type OptionFelt252 = Option::<felt252>;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+type RenamedTuple<T> = (felt252, T);
 fn foo(a: RenamedTuple<u128>) -> u128 {
     let (_, v) = a;
     v
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type RenamedTuple<T> = (felt252, T);
 
 //! > expected_diagnostics
 
@@ -118,17 +93,12 @@ type RenamedTuple<T> = (felt252, T);
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+type A<P4> = B::<felt252, P4, u128>;
+type B<P1, P2, P3> = (P1, P3, P2);
 fn foo(a: A<bool>) -> (felt252, u128, bool) {
     a
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type A<P4> = B::<felt252, P4, u128>;
-type B<P1, P2, P3> = (P1, P3, P2);
 
 //! > expected_diagnostics
 
@@ -139,17 +109,12 @@ type B<P1, P2, P3> = (P1, P3, P2);
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+type A<T> = (felt252, T);
 fn foo(a: A<5>) -> felt252 {
     let (v, _) = a;
     v
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type A<T> = (felt252, T);
 
 //! > expected_diagnostics
 error[E2006]: Unknown type.
@@ -164,17 +129,12 @@ fn foo(a: A<5>) -> felt252 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+type A = B;
+type B = A;
 fn foo(a: A) -> B {
     a
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type A = B;
-type B = A;
 
 //! > expected_diagnostics
 error[E2026]: Cycle detected while resolving type-alias/impl-type items.
@@ -194,16 +154,11 @@ type B = A;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+type A = A;
 fn foo(a: A) -> A {
     a
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type A = A;
 
 //! > expected_diagnostics
 error[E2026]: Cycle detected while resolving type-alias/impl-type items.
@@ -218,16 +173,11 @@ type A = A;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+type Alias = bad_type;
 fn foo(a: Alias) -> felt252 {
     a.a
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type Alias = bad_type;
 
 //! > expected_diagnostics
 error[E0006]: Type not found.
@@ -242,13 +192,7 @@ type Alias = bad_type;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 type W<T, +Drop<T>> = T;
 enum E {
     A: W<felt252>,
