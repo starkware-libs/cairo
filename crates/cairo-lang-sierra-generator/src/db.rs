@@ -287,7 +287,13 @@ fn get_function_signature(
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
     let lowered_function_id = db.lookup_sierra_function(&function_id);
-    let signature = lowered_function_id.signature(db)?;
+    // For functions with a body, take the signature from the final lowering, as optimization
+    // phases may change the signature of compiler-generated functions (whose signatures are not
+    // user-visible).
+    let signature = match lowered_function_id.body(db)? {
+        Some(body) => db.lowered_body(body, lowering::LoweringStage::Final)?.signature.clone(),
+        None => lowered_function_id.signature(db)?,
+    };
 
     let implicits = db
         .function_implicits(lowered_function_id)?
