@@ -627,10 +627,136 @@ macro deeper_only {
 }
 
 //! > expr_code
-deeper_only!([1])
+deeper_only!([1, 2], [3, 4])
+
+//! > expanded_code
+1+2+3+4+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a block whose only placeholder is bound two repetition levels deeper.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro two_deeper_only {
+    ($([$(($($x:expr),*)),*]),*) => { $($($($x +)*)*)* 0 };
+}
+
+//! > expr_code
+two_deeper_only!([(1, 2), (3)], [(4, 5)])
+
+//! > expanded_code
+1+2+3+4+5+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a block driven by a deeper repetition, over an outer repetition matching zero times.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro deeper_only {
+    ($([$($x:expr),*]),*) => { $($($x +)*)* 0 };
+}
+
+//! > expr_code
+deeper_only!()
+
+//! > expanded_code
+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a block driven by a deeper repetition, over a group matching zero times.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro deeper_only {
+    ($([$($x:expr),*]),*) => { $($($x +)*)* 0 };
+}
+
+//! > expr_code
+deeper_only!([1, 2], [])
+
+//! > expanded_code
+1+2+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a block driven two levels deeper, where the innermost repetition is never entered.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro two_deeper_only {
+    ($([$(($($x:expr),*)),*]),*) => { $($($($x +)*)*)* 0 };
+}
+
+//! > expr_code
+two_deeper_only!([])
+
+//! > expanded_code
+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a block driven two levels deeper, over a middle repetition matching zero times.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro two_deeper_only {
+    ($([$(($($x:expr),*)),*]),*) => { $($($($x +)*)*)* 0 };
+}
+
+//! > expr_code
+two_deeper_only!([(1)], [])
 
 //! > expanded_code
 1+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test sibling nested blocks, each driven by a different deeper repetition.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sibling_deeper {
+    ($([$($x:expr),*] [$($y:expr),*]),*) => { $($($x +)* $($y +)*)* 0 };
+}
+
+//! > expr_code
+sibling_deeper!([1, 2] [3, 4], [5] [6, 7])
+
+//! > expanded_code
+1+2+3+4+5+6+7+0
 
 //! > diagnostics
 
