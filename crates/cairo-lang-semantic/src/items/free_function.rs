@@ -124,76 +124,83 @@ fn free_function_declaration_data<'db>(
 }
 
 /// Query implementation of [FreeFunctionSemantic::priv_free_function_body_data].
-#[salsa::tracked(returns(ref), cycle_fn=priv_free_function_body_data_cycle, cycle_initial=priv_free_function_body_data_initial)]
 fn priv_free_function_body_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
-) -> Maybe<FunctionBodyData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::new(free_function_id.parent_module(db));
-    let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
-    // Compute declaration semantic.
-    let declaration = free_function_declaration_data(db, free_function_id).maybe_as_ref()?;
+) -> &'db Maybe<FunctionBodyData<'db>> {
+    /// The initial value for the cycle handling of the query.
+    fn cycle_initial<'db>(
+        _db: &'db dyn Database,
+        _id: salsa::Id,
+        _free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<FunctionBodyData<'db>> {
+        Err(skip_diagnostic())
+    }
+    /// The update function for the cycle handling of the query.
+    fn cycle_update<'db>(
+        _db: &'db dyn Database,
+        _cycle: &salsa::Cycle<'_>,
+        last_provisional_value: &Maybe<FunctionBodyData<'db>>,
+        _value: Maybe<FunctionBodyData<'db>>,
+        _free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<FunctionBodyData<'db>> {
+        last_provisional_value.clone()
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(ref), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
+    fn priv_free_function_body_data<'db>(
+        db: &'db dyn Database,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<FunctionBodyData<'db>> {
+        let mut diagnostics = SemanticDiagnostics::new(free_function_id.parent_module(db));
+        let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
+        // Compute declaration semantic.
+        let declaration = free_function_declaration_data(db, free_function_id).maybe_as_ref()?;
 
-    // Generic params.
-    let parent_resolver_data = db.free_function_declaration_resolver_data(free_function_id)?;
-    let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
-        ModuleItemId::FreeFunction(free_function_id),
-    ));
-    let mut resolver =
-        Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
+        // Generic params.
+        let parent_resolver_data = db.free_function_declaration_resolver_data(free_function_id)?;
+        let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
+            ModuleItemId::FreeFunction(free_function_id),
+        ));
+        let mut resolver = Resolver::with_data(
+            db,
+            (*parent_resolver_data).clone_with_inference_id(db, inference_id),
+        );
 
-    let environment = declaration.environment.clone();
-    let function_id = (|| {
-        let generic_function = GenericFunctionId::Free(free_function_id);
+        let environment = declaration.environment.clone();
+        let function_id = (|| {
+            let generic_function = GenericFunctionId::Free(free_function_id);
 
-        Ok(FunctionLongId::from_generic(db, generic_function)?.intern(db))
-    })();
-    // Compute body semantic expr.
-    let mut ctx = ComputationContext::new(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        Some(&declaration.signature),
-        environment,
-        ContextFunction::Function(function_id),
-    );
-    let function_body = free_function_syntax.body(db);
-    let return_type = declaration.signature.return_type;
-    let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { arenas, .. } = ctx;
+            Ok(FunctionLongId::from_generic(db, generic_function)?.intern(db))
+        })();
+        // Compute body semantic expr.
+        let mut ctx = ComputationContext::new(
+            db,
+            &mut diagnostics,
+            &mut resolver,
+            Some(&declaration.signature),
+            environment,
+            ContextFunction::Function(function_id),
+        );
+        let function_body = free_function_syntax.body(db);
+        let return_type = declaration.signature.return_type;
+        let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
+        let ComputationContext { arenas, .. } = ctx;
 
-    let expr_lookup: UnorderedHashMap<_, _> =
-        arenas.exprs.iter().map(|(id, expr)| (expr.stable_ptr(), id)).collect();
-    let pattern_lookup: UnorderedHashMap<_, _> =
-        arenas.patterns.iter().map(|(id, pattern)| (pattern.stable_ptr(), id)).collect();
-    let resolver_data = Arc::new(resolver.data);
-    Ok(FunctionBodyData {
-        diagnostics: diagnostics.build(),
-        expr_lookup,
-        pattern_lookup,
-        resolver_data,
-        body: FunctionBody { arenas, body_expr },
-    })
-}
-
-/// Cycle handling for [FreeFunctionSemantic::priv_free_function_body_data].
-fn priv_free_function_body_data_cycle<'db>(
-    _db: &'db dyn Database,
-    _cycle: &salsa::Cycle<'_>,
-    last_provisional_value: &Maybe<FunctionBodyData<'db>>,
-    _value: Maybe<FunctionBodyData<'db>>,
-    _free_function_id: FreeFunctionId<'db>,
-) -> Maybe<FunctionBodyData<'db>> {
-    last_provisional_value.clone()
-}
-
-/// Cycle handling for [FreeFunctionSemantic::priv_free_function_body_data].
-fn priv_free_function_body_data_initial<'db>(
-    _db: &'db dyn Database,
-    _id: salsa::Id,
-    _free_function_id: FreeFunctionId<'db>,
-) -> Maybe<FunctionBodyData<'db>> {
-    Err(skip_diagnostic())
+        let expr_lookup: UnorderedHashMap<_, _> =
+            arenas.exprs.iter().map(|(id, expr)| (expr.stable_ptr(), id)).collect();
+        let pattern_lookup: UnorderedHashMap<_, _> =
+            arenas.patterns.iter().map(|(id, pattern)| (pattern.stable_ptr(), id)).collect();
+        let resolver_data = Arc::new(resolver.data);
+        Ok(FunctionBodyData {
+            diagnostics: diagnostics.build(),
+            expr_lookup,
+            pattern_lookup,
+            resolver_data,
+            body: FunctionBody { arenas, body_expr },
+        })
+    }
+    priv_free_function_body_data(db, free_function_id)
 }
 
 /// Trait for free function-related semantic queries.

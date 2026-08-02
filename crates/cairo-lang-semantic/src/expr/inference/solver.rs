@@ -86,7 +86,7 @@ impl<'db> Ambiguity<'db> {
     }
 }
 
-/// Implementation of [SemanticSolver::canonic_trait_solutions].
+/// Query implementation of [SemanticSolver::canonic_trait_solutions].
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
 pub fn canonic_trait_solutions<'db>(
     db: &'db dyn Database,
@@ -94,52 +94,54 @@ pub fn canonic_trait_solutions<'db>(
     lookup_context: ImplLookupContextId<'db>,
     impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
 ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
-    let mut concrete_trait_id = canonical_trait.id;
-    let impl_type_bounds = Arc::new(impl_type_bounds);
-    // If the trait is not fully concrete, we might be able to use the trait's items to find a
-    // more concrete trait.
-    if !concrete_trait_id.is_fully_concrete(db) && !canonical_trait.mappings.is_empty() {
-        match solve_canonical_trait(db, canonical_trait, lookup_context, impl_type_bounds.clone()) {
-            SolutionSet::None => {}
-            SolutionSet::Unique(imp) => {
-                concrete_trait_id =
-                    imp.0.concrete_trait(db).expect("A solved impl must have a concrete trait");
-            }
-            SolutionSet::Ambiguous(ambiguity) => {
-                return Ok(SolutionSet::Ambiguous(ambiguity));
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        _db: &dyn Database,
+        _id: salsa::Id,
+        _canonical_trait: CanonicalTrait<'db>,
+        _lookup_context: ImplLookupContextId<'db>,
+        _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+    ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
+        Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(clone), cycle_result=cycle)]
+    fn canonic_trait_solutions<'db>(
+        db: &'db dyn Database,
+        canonical_trait: CanonicalTrait<'db>,
+        lookup_context: ImplLookupContextId<'db>,
+        impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+    ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
+        let mut concrete_trait_id = canonical_trait.id;
+        let impl_type_bounds = Arc::new(impl_type_bounds);
+        // If the trait is not fully concrete, we might be able to use the trait's items to find a
+        // more concrete trait.
+        if !concrete_trait_id.is_fully_concrete(db) && !canonical_trait.mappings.is_empty() {
+            match solve_canonical_trait(
+                db,
+                canonical_trait,
+                lookup_context,
+                impl_type_bounds.clone(),
+            ) {
+                SolutionSet::None => {}
+                SolutionSet::Unique(imp) => {
+                    concrete_trait_id =
+                        imp.0.concrete_trait(db).expect("A solved impl must have a concrete trait");
+                }
+                SolutionSet::Ambiguous(ambiguity) => {
+                    return Ok(SolutionSet::Ambiguous(ambiguity));
+                }
             }
         }
+        // Solve the trait without the trait items, so we'd be able to find conflicting impls.
+        Ok(solve_canonical_trait(
+            db,
+            CanonicalTrait { id: concrete_trait_id, mappings: ImplVarTraitItemMappings::default() },
+            lookup_context,
+            impl_type_bounds,
+        ))
     }
-    // Solve the trait without the trait items, so we'd be able to find conflicting impls.
-    Ok(solve_canonical_trait(
-        db,
-        CanonicalTrait { id: concrete_trait_id, mappings: ImplVarTraitItemMappings::default() },
-        lookup_context,
-        impl_type_bounds,
-    ))
-}
-
-/// Query implementation of [SemanticSolver::canonic_trait_solutions].
-/// Assumes the lookup context is already enriched by [enrich_lookup_context].
-#[salsa::tracked(returns(clone), cycle_result=canonic_trait_solutions_cycle)]
-pub fn canonic_trait_solutions_tracked<'db>(
-    db: &'db dyn Database,
-    canonical_trait: CanonicalTrait<'db>,
-    lookup_context: ImplLookupContextId<'db>,
-    impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
-) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     canonic_trait_solutions(db, canonical_trait, lookup_context, impl_type_bounds)
-}
-
-/// Cycle handling for [canonic_trait_solutions].
-pub fn canonic_trait_solutions_cycle<'db>(
-    _db: &dyn Database,
-    _id: salsa::Id,
-    _canonical_trait: CanonicalTrait<'db>,
-    _lookup_context: ImplLookupContextId<'db>,
-    _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
-) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
-    Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
 }
 
 /// Adds the defining module of the trait and the generic arguments to the lookup context.
@@ -879,7 +881,7 @@ pub trait SemanticSolver<'db>: Database {
         lookup_context: ImplLookupContextId<'db>,
         impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
     ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
-        canonic_trait_solutions_tracked(
+        canonic_trait_solutions(
             self.as_dyn_database(),
             canonical_trait,
             lookup_context,

@@ -35,37 +35,56 @@ pub struct ImplAliasData<'db> {
 }
 
 /// Returns data about an impl alias.
-#[salsa::tracked(cycle_result=impl_alias_semantic_data_cycle, returns(ref))]
 fn impl_alias_semantic_data<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<ImplAliasData<'db>> {
-    impl_alias_semantic_data_inner(db, impl_alias_id, false)
-}
+) -> &'db Maybe<ImplAliasData<'db>> {
+    /// Shared code for the query and cycle handling.
+    /// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        impl_alias_id: ImplAliasId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ImplAliasData<'db>> {
+        let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
+        let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
 
-/// Shared code for the query and cycle handling of [impl_alias_semantic_data].
-/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
-fn impl_alias_semantic_data_inner<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-    in_cycle: bool,
-) -> Maybe<ImplAliasData<'db>> {
-    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
-    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
+        let generic_params_data =
+            impl_alias_generic_params_data(db, impl_alias_id).maybe_as_ref()?.clone();
 
-    let generic_params_data =
-        impl_alias_generic_params_data(db, impl_alias_id).maybe_as_ref()?.clone();
-
-    if in_cycle {
-        impl_alias_semantic_data_cycle_helper(
-            db,
-            &impl_alias_ast,
-            lookup_item_id,
-            generic_params_data,
-        )
-    } else {
-        impl_alias_semantic_data_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
+        if in_cycle {
+            impl_alias_semantic_data_cycle_helper(
+                db,
+                &impl_alias_ast,
+                lookup_item_id,
+                generic_params_data,
+            )
+        } else {
+            impl_alias_semantic_data_helper(
+                db,
+                &impl_alias_ast,
+                lookup_item_id,
+                generic_params_data,
+            )
+        }
     }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        impl_alias_id: ImplAliasId<'db>,
+    ) -> Maybe<ImplAliasData<'db>> {
+        calc(db, impl_alias_id, true)
+    }
+    /// Query implementation.
+    #[salsa::tracked(cycle_result=cycle, returns(ref))]
+    fn impl_alias_semantic_data<'db>(
+        db: &'db dyn Database,
+        impl_alias_id: ImplAliasId<'db>,
+    ) -> Maybe<ImplAliasData<'db>> {
+        calc(db, impl_alias_id, false)
+    }
+    impl_alias_semantic_data(db, impl_alias_id)
 }
 
 /// A helper function to compute the semantic data of an impl-alias item.
@@ -107,14 +126,6 @@ pub fn impl_alias_semantic_data_helper<'db>(
     let attributes = impl_alias_ast.attributes(db).structurize(db);
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplAliasData { diagnostics: diagnostics.build(), resolved_impl, attributes, resolver_data })
-}
-
-fn impl_alias_semantic_data_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<ImplAliasData<'db>> {
-    impl_alias_semantic_data_inner(db, impl_alias_id, true)
 }
 
 /// A helper function to compute the semantic data of an impl-alias item when a cycle is detected.
@@ -195,44 +206,52 @@ pub fn impl_alias_generic_params_data_helper<'db>(
 }
 
 /// Implementation of [ImplAliasSemantic::impl_alias_impl_def].
-#[salsa::tracked(returns(copy), cycle_result=impl_alias_impl_def_cycle)]
 fn impl_alias_impl_def<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ImplDefId<'db>> {
-    let module_id = impl_alias_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
-    let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
-
-    let mut resolver = Resolver::new(db, module_id, inference_id);
-    resolver.set_feature_config(&impl_alias_id, &impl_alias_ast, &mut diagnostics);
-
-    let impl_path_syntax = impl_alias_ast.impl_path(db);
-
-    match resolver.resolve_generic_path_with_args(
-        &mut diagnostics,
-        &impl_path_syntax,
-        NotFoundItemType::Impl,
-        ResolutionContext::Default,
-    ) {
-        Ok(ResolvedGenericItem::Impl(imp)) => Ok(imp),
-        Ok(ResolvedGenericItem::GenericImplAlias(impl_alias)) => db.impl_alias_impl_def(impl_alias),
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        _db: &dyn Database,
+        _id: salsa::Id,
+        _impl_alias_id: ImplAliasId<'db>,
+    ) -> Maybe<ImplDefId<'db>> {
         // Skipping diagnostics since we will get these through when resolving in the
         // `impl_alias_semantic_data` query.
-        _ => Err(skip_diagnostic()),
+        Err(skip_diagnostic())
     }
-}
+    /// Query implementation.
+    #[salsa::tracked(returns(copy), cycle_result=cycle)]
+    fn impl_alias_impl_def<'db>(
+        db: &'db dyn Database,
+        impl_alias_id: ImplAliasId<'db>,
+    ) -> Maybe<ImplDefId<'db>> {
+        let module_id = impl_alias_id.parent_module(db);
+        let mut diagnostics = SemanticDiagnostics::new(module_id);
+        let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
+        let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
 
-/// Cycle handling for [ImplAliasSemantic::impl_alias_impl_def].
-fn impl_alias_impl_def_cycle<'db>(
-    _db: &dyn Database,
-    _id: salsa::Id,
-    _impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<ImplDefId<'db>> {
-    // Skipping diagnostics since we will get these through when resolving in the
-    // `impl_alias_semantic_data` query.
-    Err(skip_diagnostic())
+        let mut resolver = Resolver::new(db, module_id, inference_id);
+        resolver.set_feature_config(&impl_alias_id, &impl_alias_ast, &mut diagnostics);
+
+        let impl_path_syntax = impl_alias_ast.impl_path(db);
+
+        match resolver.resolve_generic_path_with_args(
+            &mut diagnostics,
+            &impl_path_syntax,
+            NotFoundItemType::Impl,
+            ResolutionContext::Default,
+        ) {
+            Ok(ResolvedGenericItem::Impl(imp)) => Ok(imp),
+            Ok(ResolvedGenericItem::GenericImplAlias(impl_alias)) => {
+                db.impl_alias_impl_def(impl_alias)
+            }
+            // Skipping diagnostics since we will get these through when resolving in the
+            // `impl_alias_semantic_data` query.
+            _ => Err(skip_diagnostic()),
+        }
+    }
+    impl_alias_impl_def(db, impl_alias_id)
 }
 
 /// Trait for impl-alias-related semantic queries.

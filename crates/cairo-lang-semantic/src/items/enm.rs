@@ -145,94 +145,100 @@ pub enum MatchArmSelector<'db> {
 }
 
 /// Returns the definition data of an enum.
-#[salsa::tracked(returns(ref), cycle_fn=enum_definition_data_cycle, cycle_initial=enum_definition_data_initial)]
 fn enum_definition_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
-) -> Maybe<EnumDefinitionData<'db>> {
-    let module_id = enum_id.parent_module(db);
-    let crate_id = module_id.owning_crate(db);
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
-    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
-    // the item instead of all the module data.
-    let enum_ast = db.module_enum_by_id(enum_id)?;
+) -> &'db Maybe<EnumDefinitionData<'db>> {
+    /// The initial value for the cycle handling of the query.
+    fn cycle_initial<'db>(
+        _db: &'db dyn Database,
+        _id: salsa::Id,
+        _enum_id: EnumId<'db>,
+    ) -> Maybe<EnumDefinitionData<'db>> {
+        Err(skip_diagnostic())
+    }
+    /// The update function for the cycle handling of the query.
+    fn cycle_update<'db>(
+        _db: &'db dyn Database,
+        _cycle: &salsa::Cycle<'_>,
+        _last_provisional_value: &Maybe<EnumDefinitionData<'db>>,
+        value: Maybe<EnumDefinitionData<'db>>,
+        _enum_id: EnumId<'db>,
+    ) -> Maybe<EnumDefinitionData<'db>> {
+        value
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(ref), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
+    fn enum_definition_data<'db>(
+        db: &'db dyn Database,
+        enum_id: EnumId<'db>,
+    ) -> Maybe<EnumDefinitionData<'db>> {
+        let module_id = enum_id.parent_module(db);
+        let crate_id = module_id.owning_crate(db);
+        let mut diagnostics = SemanticDiagnostics::new(module_id);
+        // TODO(spapini): when code changes in a file, all the AST items change (as they contain a
+        // path to the green root that changes. Once ASTs are rooted on items, use a
+        // selector that picks only the item instead of all the module data.
+        let enum_ast = db.module_enum_by_id(enum_id)?;
 
-    // Generic params.
-    let generic_params_data = enum_generic_params_data(db, enum_id).maybe_as_ref()?;
-    let inference_id =
-        InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id)));
-    let mut resolver = Resolver::with_data(
-        db,
-        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
-    );
-    diagnostics.extend(generic_params_data.diagnostics.clone());
+        // Generic params.
+        let generic_params_data = enum_generic_params_data(db, enum_id).maybe_as_ref()?;
+        let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
+            ModuleItemId::Enum(enum_id),
+        ));
+        let mut resolver = Resolver::with_data(
+            db,
+            (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+        );
+        diagnostics.extend(generic_params_data.diagnostics.clone());
 
-    // Variants.
-    let mut variants = OrderedHashMap::default();
-    let mut variant_semantic = OrderedHashMap::default();
-    for variant in enum_ast.variants(db).elements(db) {
-        let feature_restore =
-            resolver.extend_feature_config_from_item(db, crate_id, &mut diagnostics, &variant);
-        let id = VariantLongId(module_id, variant.stable_ptr(db)).intern(db);
-        let ty = match variant.type_clause(db) {
-            ast::OptionTypeClause::Empty(_) => unit_ty(db),
-            ast::OptionTypeClause::TypeClause(type_clause) => {
-                resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db))
+        // Variants.
+        let mut variants = OrderedHashMap::default();
+        let mut variant_semantic = OrderedHashMap::default();
+        for variant in enum_ast.variants(db).elements(db) {
+            let feature_restore =
+                resolver.extend_feature_config_from_item(db, crate_id, &mut diagnostics, &variant);
+            let id = VariantLongId(module_id, variant.stable_ptr(db)).intern(db);
+            let ty = match variant.type_clause(db) {
+                ast::OptionTypeClause::Empty(_) => unit_ty(db),
+                ast::OptionTypeClause::TypeClause(type_clause) => {
+                    resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db))
+                }
+            };
+            let variant_name = variant.name(db).text(db);
+            match variants.entry(variant_name) {
+                Entry::Vacant(e) => {
+                    e.insert(id);
+                    let idx = variant_semantic.len();
+                    variant_semantic.insert(id, Variant { enum_id, id, ty, idx });
+                }
+                Entry::Occupied(_) => {
+                    diagnostics.report(
+                        variant.stable_ptr(db),
+                        EnumVariantRedefinition { enum_id, variant_name },
+                    );
+                }
             }
-        };
-        let variant_name = variant.name(db).text(db);
-        match variants.entry(variant_name) {
-            Entry::Vacant(e) => {
-                e.insert(id);
-                let idx = variant_semantic.len();
-                variant_semantic.insert(id, Variant { enum_id, id, ty, idx });
-            }
-            Entry::Occupied(_) => {
-                diagnostics.report(
-                    variant.stable_ptr(db),
-                    EnumVariantRedefinition { enum_id, variant_name },
-                );
-            }
+            resolver.restore_feature_config(feature_restore);
         }
-        resolver.restore_feature_config(feature_restore);
+
+        // Check fully resolved.
+        let inference = &mut resolver.inference();
+        inference.finalize(&mut diagnostics, enum_ast.stable_ptr(db).untyped());
+
+        for (_, variant) in variant_semantic.iter_mut() {
+            variant.ty = inference.rewrite(variant.ty).no_err();
+        }
+
+        let resolver_data = Arc::new(resolver.data);
+        Ok(EnumDefinitionData {
+            diagnostics: diagnostics.build(),
+            variants,
+            variant_semantic,
+            resolver_data,
+        })
     }
-
-    // Check fully resolved.
-    let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, enum_ast.stable_ptr(db).untyped());
-
-    for (_, variant) in variant_semantic.iter_mut() {
-        variant.ty = inference.rewrite(variant.ty).no_err();
-    }
-
-    let resolver_data = Arc::new(resolver.data);
-    Ok(EnumDefinitionData {
-        diagnostics: diagnostics.build(),
-        variants,
-        variant_semantic,
-        resolver_data,
-    })
-}
-
-/// Cycle handling for [enum_definition_data].
-fn enum_definition_data_cycle<'db>(
-    _db: &'db dyn Database,
-    _cycle: &salsa::Cycle<'_>,
-    _last_provisional_value: &Maybe<EnumDefinitionData<'db>>,
-    value: Maybe<EnumDefinitionData<'db>>,
-    _enum_id: EnumId<'db>,
-) -> Maybe<EnumDefinitionData<'db>> {
-    value
-}
-
-/// Cycle handling for [enum_definition_data].
-fn enum_definition_data_initial<'db>(
-    _db: &'db dyn Database,
-    _id: salsa::Id,
-    _enum_id: EnumId<'db>,
-) -> Maybe<EnumDefinitionData<'db>> {
-    Err(skip_diagnostic())
+    enum_definition_data(db, enum_id)
 }
 
 /// Query implementation of [EnumSemantic::enum_definition_diagnostics].

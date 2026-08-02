@@ -423,68 +423,76 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
 }
 
 /// Returns data about a generic param.
-#[salsa::tracked(cycle_result=generic_param_data_cycle, returns(ref))]
 fn generic_param_data<'db>(
     db: &'db dyn Database,
     generic_param_id: GenericParamId<'db>,
-) -> Maybe<GenericParamData<'db>> {
-    let module_id = generic_param_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let parent_item_id = generic_param_id.generic_item(db);
-    let lookup_item: LookupItemId<'_> = parent_item_id.into();
-    let context_resolver_data = lookup_item.resolver_context(db)?;
-    let inference_id = InferenceId::GenericParam(generic_param_id);
-    let mut resolver =
-        Resolver::with_data(db, (*context_resolver_data).clone_with_inference_id(db, inference_id));
-    resolver.set_feature_config(
-        &lookup_item,
-        &lookup_item.untyped_stable_ptr(db).lookup(db),
-        &mut diagnostics,
-    );
-    let generic_params_syntax = extract_matches!(
-        generic_param_generic_params_list(db, generic_param_id)?,
-        ast::OptionWrappedGenericParamList::WrappedGenericParamList
-    );
-
-    let mut opt_generic_param_syntax = None;
-    for param_syntax in generic_params_syntax.generic_params(db).elements(db) {
-        let cur_generic_param_id =
-            GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db);
-        resolver.add_generic_param(cur_generic_param_id);
-
-        if cur_generic_param_id == generic_param_id {
-            opt_generic_param_syntax = Some(param_syntax);
-        }
+) -> &'db Maybe<GenericParamData<'db>> {
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        generic_param_id: GenericParamId<'db>,
+    ) -> Maybe<GenericParamData<'db>> {
+        generic_param_data_cycle_helper(db, generic_param_id)
     }
-    let generic_param_syntax =
-        opt_generic_param_syntax.expect("Query called on a non existing generic param.");
-    let param_semantic = semantic_from_generic_param_ast(
-        db,
-        &mut resolver,
-        &mut diagnostics,
-        module_id,
-        &generic_param_syntax,
-        parent_item_id,
-    )?;
-    let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr(db).untyped());
+    /// Query implementation.
+    #[salsa::tracked(cycle_result=cycle, returns(ref))]
+    fn generic_param_data<'db>(
+        db: &'db dyn Database,
+        generic_param_id: GenericParamId<'db>,
+    ) -> Maybe<GenericParamData<'db>> {
+        let module_id = generic_param_id.parent_module(db);
+        let mut diagnostics = SemanticDiagnostics::new(module_id);
+        let parent_item_id = generic_param_id.generic_item(db);
+        let lookup_item: LookupItemId<'_> = parent_item_id.into();
+        let context_resolver_data = lookup_item.resolver_context(db)?;
+        let inference_id = InferenceId::GenericParam(generic_param_id);
+        let mut resolver = Resolver::with_data(
+            db,
+            (*context_resolver_data).clone_with_inference_id(db, inference_id),
+        );
+        resolver.set_feature_config(
+            &lookup_item,
+            &lookup_item.untyped_stable_ptr(db).lookup(db),
+            &mut diagnostics,
+        );
+        let generic_params_syntax = extract_matches!(
+            generic_param_generic_params_list(db, generic_param_id)?,
+            ast::OptionWrappedGenericParamList::WrappedGenericParamList
+        );
 
-    let param_semantic = inference.rewrite(param_semantic).no_err();
-    let resolver_data = Arc::new(resolver.data);
-    Ok(GenericParamData {
-        generic_param: Ok(param_semantic),
-        diagnostics: diagnostics.build(),
-        resolver_data,
-    })
-}
+        let mut opt_generic_param_syntax = None;
+        for param_syntax in generic_params_syntax.generic_params(db).elements(db) {
+            let cur_generic_param_id =
+                GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db);
+            resolver.add_generic_param(cur_generic_param_id);
 
-/// Cycle handling for [generic_param_data].
-fn generic_param_data_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    generic_param_id: GenericParamId<'db>,
-) -> Maybe<GenericParamData<'db>> {
-    generic_param_data_cycle_helper(db, generic_param_id)
+            if cur_generic_param_id == generic_param_id {
+                opt_generic_param_syntax = Some(param_syntax);
+            }
+        }
+        let generic_param_syntax =
+            opt_generic_param_syntax.expect("Query called on a non existing generic param.");
+        let param_semantic = semantic_from_generic_param_ast(
+            db,
+            &mut resolver,
+            &mut diagnostics,
+            module_id,
+            &generic_param_syntax,
+            parent_item_id,
+        )?;
+        let inference = &mut resolver.inference();
+        inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr(db).untyped());
+
+        let param_semantic = inference.rewrite(param_semantic).no_err();
+        let resolver_data = Arc::new(resolver.data);
+        Ok(GenericParamData {
+            generic_param: Ok(param_semantic),
+            diagnostics: diagnostics.build(),
+            resolver_data,
+        })
+    }
+    generic_param_data(db, generic_param_id)
 }
 
 /// Computes the data of a generic param when it is in a cycle.

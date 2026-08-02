@@ -785,100 +785,111 @@ fn impl_concrete_trait_tracked<'db>(
 
 // --- Computation ---
 
-/// Cycle handling for [impl_declaration_data].
-fn impl_declaration_data_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    impl_def_id: ImplDefId<'db>,
-) -> Maybe<ImplDeclarationData<'db>> {
-    impl_declaration_data_inner(db, impl_def_id, false)
-}
-
 /// Computes impl declaration data.
-#[salsa::tracked(cycle_result=impl_declaration_data_cycle, returns(ref))]
 fn impl_declaration_data<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
-) -> Maybe<ImplDeclarationData<'db>> {
-    impl_declaration_data_inner(db, impl_def_id, true)
-}
+) -> &'db Maybe<ImplDeclarationData<'db>> {
+    /// Shared code for the query and cycle handling.
+    /// The cycle handling logic needs to pass resolve_trait=false to prevent the cycle.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        impl_def_id: ImplDefId<'db>,
+        resolve_trait: bool,
+    ) -> Maybe<ImplDeclarationData<'db>> {
+        let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
 
-/// Shared code for the query and cycle handling.
-/// The cycle handling logic needs to pass resolve_trait=false to prevent the cycle.
-fn impl_declaration_data_inner<'db>(
-    db: &'db dyn Database,
-    impl_def_id: ImplDefId<'db>,
-    resolve_trait: bool,
-) -> Maybe<ImplDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
+        // TODO(spapini): when code changes in a file, all the AST items change (as they contain a
+        // path to the green root that changes. Once ASTs are rooted on items, use a selector
+        // that picks only the item instead of all the module data.
+        let impl_ast = db.module_impl_by_id(impl_def_id)?;
+        let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+            ModuleItemId::Impl(impl_def_id),
+        ));
 
-    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
-    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
-    // the item instead of all the module data.
-    let impl_ast = db.module_impl_by_id(impl_def_id)?;
-    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
-        ModuleItemId::Impl(impl_def_id),
-    ));
-
-    // Generic params.
-    let generic_params_data = impl_def_generic_params_data(db, impl_def_id).maybe_as_ref()?;
-    let mut resolver = Resolver::with_data(
-        db,
-        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
-    );
-    resolver.set_feature_config(&impl_def_id, &impl_ast, &mut diagnostics);
-    diagnostics.extend(generic_params_data.diagnostics.clone());
-    let trait_path_syntax = impl_ast.trait_path(db);
-
-    let concrete_trait = if resolve_trait {
-        resolver
-            .resolve_concrete_path(&mut diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
-            .and_then(|resolved_item| match resolved_item {
-                ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
-                _ => Err(diagnostics
-                    .report(trait_path_syntax.stable_ptr(db), SemanticDiagnosticKind::NotATrait)),
-            })
-    } else {
-        Err(diagnostics.report(trait_path_syntax.stable_ptr(db), ImplRequirementCycle))
-    };
-
-    let info = db.core_info();
-
-    // Check for reimplementation of compilers' Traits.
-    if let Ok(concrete_trait) = concrete_trait
-        && [
-            info.type_eq_trt,
-            info.fn_trt,
-            info.fn_once_trt,
-            info.felt252_dict_value_trt,
-            info.numeric_literal_trt,
-            info.string_literal_trt,
-        ]
-        .contains(&concrete_trait.trait_id(db))
-        && impl_def_id.parent_module(db).owning_crate(db) != core_crate(db)
-    {
-        diagnostics.report(
-            trait_path_syntax.stable_ptr(db),
-            CompilerTraitReImplementation { trait_id: concrete_trait.trait_id(db) },
+        // Generic params.
+        let generic_params_data = impl_def_generic_params_data(db, impl_def_id).maybe_as_ref()?;
+        let mut resolver = Resolver::with_data(
+            db,
+            (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
         );
+        resolver.set_feature_config(&impl_def_id, &impl_ast, &mut diagnostics);
+        diagnostics.extend(generic_params_data.diagnostics.clone());
+        let trait_path_syntax = impl_ast.trait_path(db);
+
+        let concrete_trait = if resolve_trait {
+            resolver
+                .resolve_concrete_path(
+                    &mut diagnostics,
+                    &trait_path_syntax,
+                    NotFoundItemType::Trait,
+                )
+                .and_then(|resolved_item| match resolved_item {
+                    ResolvedConcreteItem::Trait(id) | ResolvedConcreteItem::SelfTrait(id) => Ok(id),
+                    _ => Err(diagnostics.report(
+                        trait_path_syntax.stable_ptr(db),
+                        SemanticDiagnosticKind::NotATrait,
+                    )),
+                })
+        } else {
+            Err(diagnostics.report(trait_path_syntax.stable_ptr(db), ImplRequirementCycle))
+        };
+
+        let info = db.core_info();
+
+        // Check for reimplementation of compilers' Traits.
+        if let Ok(concrete_trait) = concrete_trait
+            && [
+                info.type_eq_trt,
+                info.fn_trt,
+                info.fn_once_trt,
+                info.felt252_dict_value_trt,
+                info.numeric_literal_trt,
+                info.string_literal_trt,
+            ]
+            .contains(&concrete_trait.trait_id(db))
+            && impl_def_id.parent_module(db).owning_crate(db) != core_crate(db)
+        {
+            diagnostics.report(
+                trait_path_syntax.stable_ptr(db),
+                CompilerTraitReImplementation { trait_id: concrete_trait.trait_id(db) },
+            );
+        }
+
+        // Check fully resolved.
+        let inference = &mut resolver.inference();
+        inference.finalize(&mut diagnostics, impl_ast.stable_ptr(db).untyped());
+
+        let concrete_trait: Result<ConcreteTraitId<'_>, DiagnosticAdded> =
+            inference.rewrite(concrete_trait).no_err();
+
+        let attributes = impl_ast.attributes(db).structurize(db);
+        let mut resolver_data = resolver.data;
+        resolver_data.trait_or_impl_ctx = TraitOrImplContext::Impl(impl_def_id);
+        Ok(ImplDeclarationData {
+            diagnostics: diagnostics.build(),
+            concrete_trait,
+            attributes,
+            resolver_data: Arc::new(resolver_data),
+        })
     }
-
-    // Check fully resolved.
-    let inference = &mut resolver.inference();
-    inference.finalize(&mut diagnostics, impl_ast.stable_ptr(db).untyped());
-
-    let concrete_trait: Result<ConcreteTraitId<'_>, DiagnosticAdded> =
-        inference.rewrite(concrete_trait).no_err();
-
-    let attributes = impl_ast.attributes(db).structurize(db);
-    let mut resolver_data = resolver.data;
-    resolver_data.trait_or_impl_ctx = TraitOrImplContext::Impl(impl_def_id);
-    Ok(ImplDeclarationData {
-        diagnostics: diagnostics.build(),
-        concrete_trait,
-        attributes,
-        resolver_data: Arc::new(resolver_data),
-    })
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<ImplDeclarationData<'db>> {
+        calc(db, impl_def_id, false)
+    }
+    /// Query implementation.
+    #[salsa::tracked(cycle_result=cycle, returns(ref))]
+    fn impl_declaration_data<'db>(
+        db: &'db dyn Database,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<ImplDeclarationData<'db>> {
+        calc(db, impl_def_id, true)
+    }
+    impl_declaration_data(db, impl_def_id)
 }
 
 // === Impl Definition ===
@@ -1003,52 +1014,60 @@ pub struct DerefInfo<'db> {
     pub target_ty: TypeId<'db>,
 }
 
-/// Cycle handling for [ImplSemantic::deref_chain].
-fn deref_chain_cycle<'db>(
-    _db: &dyn Database,
-    _id: salsa::Id,
-    _ty: TypeId<'db>,
-    _crate_id: CrateId<'db>,
-    _try_deref_mut: bool,
-) -> Maybe<DerefChain<'db>> {
-    // `SemanticDiagnosticKind::DerefCycle` will be reported by `deref_impl_diagnostics`.
-    Maybe::Err(skip_diagnostic())
-}
-
 /// Query implementation of [ImplSemantic::deref_chain].
-#[salsa::tracked(cycle_result=deref_chain_cycle, returns(ref))]
 fn deref_chain<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
     crate_id: CrateId<'db>,
     try_deref_mut: bool,
-) -> Maybe<DerefChain<'db>> {
-    let mut opt_deref = None;
-    if try_deref_mut {
-        opt_deref = try_get_deref_func_and_target(db, ty, crate_id, true)?;
+) -> &'db Maybe<DerefChain<'db>> {
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        _db: &dyn Database,
+        _id: salsa::Id,
+        _ty: TypeId<'db>,
+        _crate_id: CrateId<'db>,
+        _try_deref_mut: bool,
+    ) -> Maybe<DerefChain<'db>> {
+        // `SemanticDiagnosticKind::DerefCycle` will be reported by `deref_impl_diagnostics`.
+        Maybe::Err(skip_diagnostic())
     }
-    let self_mutability = if opt_deref.is_some() {
-        Mutability::Reference
-    } else {
-        opt_deref = try_get_deref_func_and_target(db, ty, crate_id, false)?;
-        Mutability::Immutable
-    };
+    /// Query implementation.
+    #[salsa::tracked(cycle_result=cycle, returns(ref))]
+    fn deref_chain<'db>(
+        db: &'db dyn Database,
+        ty: TypeId<'db>,
+        crate_id: CrateId<'db>,
+        try_deref_mut: bool,
+    ) -> Maybe<DerefChain<'db>> {
+        let mut opt_deref = None;
+        if try_deref_mut {
+            opt_deref = try_get_deref_func_and_target(db, ty, crate_id, true)?;
+        }
+        let self_mutability = if opt_deref.is_some() {
+            Mutability::Reference
+        } else {
+            opt_deref = try_get_deref_func_and_target(db, ty, crate_id, false)?;
+            Mutability::Immutable
+        };
 
-    let Some((function_id, target_ty)) = opt_deref else {
-        return Ok(DerefChain { derefs: Arc::new(vec![]) });
-    };
+        let Some((function_id, target_ty)) = opt_deref else {
+            return Ok(DerefChain { derefs: Arc::new(vec![]) });
+        };
 
-    let inner_chain = db.deref_chain(target_ty, crate_id, false)?;
+        let inner_chain = db.deref_chain(target_ty, crate_id, false)?;
 
-    Ok(DerefChain {
-        derefs: Arc::new(
-            chain!(
-                [DerefInfo { function_id, target_ty, self_mutability }],
-                inner_chain.derefs.iter().cloned()
-            )
-            .collect(),
-        ),
-    })
+        Ok(DerefChain {
+            derefs: Arc::new(
+                chain!(
+                    [DerefInfo { function_id, target_ty, self_mutability }],
+                    inner_chain.derefs.iter().cloned()
+                )
+                .collect(),
+            ),
+        })
+    }
+    deref_chain(db, ty, crate_id, try_deref_mut)
 }
 
 /// Tries to find the deref function and the target type for a given type and deref trait.
@@ -2436,66 +2455,72 @@ struct ImplItemTypeData<'db> {
 // --- Computation ---
 
 /// Returns data about an impl type definition.
-#[salsa::tracked(cycle_result=impl_type_semantic_data_cycle, returns(ref))]
 fn impl_type_semantic_data<'db>(
     db: &'db dyn Database,
     impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<ImplItemTypeData<'db>> {
-    impl_type_semantic_data_inner(db, impl_type_def_id, false)
-}
+) -> &'db Maybe<ImplItemTypeData<'db>> {
+    /// Shared code for the query and cycle handling.
+    /// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        impl_type_def_id: ImplTypeDefId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ImplItemTypeData<'db>> {
+        let mut diagnostics =
+            SemanticDiagnostics::new(impl_type_def_id.impl_def_id(db).parent_module(db));
+        let impl_type_def_ast = db.impl_type_by_id(impl_type_def_id)?;
+        let generic_params_data =
+            impl_type_def_generic_params_data(db, impl_type_def_id).maybe_as_ref()?.clone();
+        let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_def_id));
 
-fn impl_type_semantic_data_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<ImplItemTypeData<'db>> {
-    impl_type_semantic_data_inner(db, impl_type_def_id, true)
-}
+        let trait_type_id =
+            validate_impl_item_type(db, &mut diagnostics, impl_type_def_id, &impl_type_def_ast);
 
-/// Shared code for the query and cycle handling of [impl_type_semantic_data].
-/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
-fn impl_type_semantic_data_inner<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-    in_cycle: bool,
-) -> Maybe<ImplItemTypeData<'db>> {
-    let mut diagnostics =
-        SemanticDiagnostics::new(impl_type_def_id.impl_def_id(db).parent_module(db));
-    let impl_type_def_ast = db.impl_type_by_id(impl_type_def_id)?;
-    let generic_params_data =
-        impl_type_def_generic_params_data(db, impl_type_def_id).maybe_as_ref()?.clone();
-    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_def_id));
-
-    let trait_type_id =
-        validate_impl_item_type(db, &mut diagnostics, impl_type_def_id, &impl_type_def_ast);
-
-    if in_cycle {
-        Ok(ImplItemTypeData {
-            type_alias_data: type_alias_semantic_data_cycle_helper(
-                db,
-                &mut diagnostics,
-                &impl_type_def_ast,
-                lookup_item_id,
-                generic_params_data,
-            )?,
-            trait_type_id,
-            diagnostics: diagnostics.build(),
-        })
-    } else {
-        // TODO(yuval): resolve type aliases later, like in module type aliases, to avoid cycles in
-        // non-cyclic chains.
-        Ok(ImplItemTypeData {
-            type_alias_data: type_alias_semantic_data_helper(
-                db,
-                &mut diagnostics,
-                &impl_type_def_ast,
-                lookup_item_id,
-                generic_params_data,
-            )?,
-            trait_type_id,
-            diagnostics: diagnostics.build(),
-        })
+        if in_cycle {
+            Ok(ImplItemTypeData {
+                type_alias_data: type_alias_semantic_data_cycle_helper(
+                    db,
+                    &mut diagnostics,
+                    &impl_type_def_ast,
+                    lookup_item_id,
+                    generic_params_data,
+                )?,
+                trait_type_id,
+                diagnostics: diagnostics.build(),
+            })
+        } else {
+            // TODO(yuval): resolve type aliases later, like in module type aliases, to avoid
+            // cycles in non-cyclic chains.
+            Ok(ImplItemTypeData {
+                type_alias_data: type_alias_semantic_data_helper(
+                    db,
+                    &mut diagnostics,
+                    &impl_type_def_ast,
+                    lookup_item_id,
+                    generic_params_data,
+                )?,
+                trait_type_id,
+                diagnostics: diagnostics.build(),
+            })
+        }
     }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        impl_type_def_id: ImplTypeDefId<'db>,
+    ) -> Maybe<ImplItemTypeData<'db>> {
+        calc(db, impl_type_def_id, true)
+    }
+    /// Query implementation.
+    #[salsa::tracked(cycle_result=cycle, returns(ref))]
+    fn impl_type_semantic_data<'db>(
+        db: &'db dyn Database,
+        impl_type_def_id: ImplTypeDefId<'db>,
+    ) -> Maybe<ImplItemTypeData<'db>> {
+        calc(db, impl_type_def_id, false)
+    }
+    impl_type_semantic_data(db, impl_type_def_id)
 }
 
 /// Returns the generic parameters data of an impl type definition.
@@ -2556,60 +2581,55 @@ fn validate_impl_item_type<'db>(
 
 // === Impl Type ===
 
-/// Implementation of [ImplSemantic::impl_type_concrete_implized].
+/// Query implementation of [ImplSemantic::impl_type_concrete_implized].
 fn impl_type_concrete_implized<'db>(
     db: &'db dyn Database,
     impl_type_id: ImplTypeId<'db>,
 ) -> Maybe<TypeId<'db>> {
-    let concrete_impl = match impl_type_id.impl_id().long(db) {
-        ImplLongId::Concrete(concrete_impl) => concrete_impl,
-        ImplLongId::ImplImpl(imp_impl_id) => {
-            let ImplLongId::Concrete(concrete_impl) =
-                db.impl_impl_concrete_implized(*imp_impl_id)?.long(db)
-            else {
+    /// Shared code for the query and cycle handling.
+    fn calc<'db>(db: &'db dyn Database, impl_type_id: ImplTypeId<'db>) -> Maybe<TypeId<'db>> {
+        let concrete_impl = match impl_type_id.impl_id().long(db) {
+            ImplLongId::Concrete(concrete_impl) => concrete_impl,
+            ImplLongId::ImplImpl(imp_impl_id) => {
+                let ImplLongId::Concrete(concrete_impl) =
+                    db.impl_impl_concrete_implized(*imp_impl_id)?.long(db)
+                else {
+                    return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
+                };
+                concrete_impl
+            }
+            ImplLongId::GenericParameter(_) | ImplLongId::SelfImpl(_) | ImplLongId::ImplVar(_) => {
                 return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
-            };
-            concrete_impl
-        }
-        ImplLongId::GenericParameter(_) | ImplLongId::SelfImpl(_) | ImplLongId::ImplVar(_) => {
-            return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
-        }
-        ImplLongId::GeneratedImpl(generated) => {
-            return Ok(*generated.long(db).impl_items.0.get(&impl_type_id.ty()).unwrap());
-        }
-    };
+            }
+            ImplLongId::GeneratedImpl(generated) => {
+                return Ok(*generated.long(db).impl_items.0.get(&impl_type_id.ty()).unwrap());
+            }
+        };
 
-    let impl_def_id = concrete_impl.impl_def_id(db);
-    let ty = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)?;
-    concrete_impl.substitution(db)?.substitute(db, ty)
-}
-
-#[salsa::tracked(returns(copy), cycle_result=impl_type_concrete_implized_cycle)]
-fn impl_type_concrete_implized_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    impl_type_id: ImplTypeId<'db>,
-) -> Maybe<TypeId<'db>> {
-    impl_type_concrete_implized(db, impl_type_id)
-}
-
-/// Query implementation of [ImplSemantic::impl_type_concrete_implized].
-fn impl_type_concrete_implized_tracked<'db>(
-    db: &'db dyn Database,
-    impl_type_id: ImplTypeId<'db>,
-) -> Maybe<TypeId<'db>> {
-    impl_type_concrete_implized_helper(db, (), impl_type_id)
-}
-
-/// Cycle handling for [ImplSemantic::impl_type_concrete_implized].
-fn impl_type_concrete_implized_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    _tracked: Tracked,
-    impl_type_id: ImplTypeId<'db>,
-) -> Maybe<TypeId<'db>> {
-    // Forwarding cycle handling to `impl_type_semantic_data` handler.
-    impl_type_concrete_implized(db, impl_type_id)
+        let impl_def_id = concrete_impl.impl_def_id(db);
+        let ty = db.trait_type_implized_by_context(impl_type_id.ty(), impl_def_id)?;
+        concrete_impl.substitution(db)?.substitute(db, ty)
+    }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        _tracked: Tracked,
+        impl_type_id: ImplTypeId<'db>,
+    ) -> Maybe<TypeId<'db>> {
+        // Forwarding cycle handling to `impl_type_semantic_data` handler.
+        calc(db, impl_type_id)
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(copy), cycle_result=cycle)]
+    fn impl_type_concrete_implized<'db>(
+        db: &'db dyn Database,
+        _tracked: Tracked,
+        impl_type_id: ImplTypeId<'db>,
+    ) -> Maybe<TypeId<'db>> {
+        calc(db, impl_type_id)
+    }
+    impl_type_concrete_implized(db, (), impl_type_id)
 }
 
 // === Impl Item Constant definition ===
@@ -2624,68 +2644,78 @@ struct ImplItemConstantData<'db> {
 }
 
 /// Returns data about an impl constant definition.
-#[salsa::tracked(cycle_result=impl_constant_semantic_data_cycle, returns(ref))]
 fn impl_constant_semantic_data<'db>(
     db: &'db dyn Database,
     impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Maybe<ImplItemConstantData<'db>> {
-    impl_constant_semantic_data_inner(db, impl_constant_def_id, false)
-}
+) -> &'db Maybe<ImplItemConstantData<'db>> {
+    /// Shared code for the query and cycle handling.
+    /// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        impl_constant_def_id: ImplConstantDefId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ImplItemConstantData<'db>> {
+        let impl_def_id = impl_constant_def_id.impl_def_id(db);
+        let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
+        let impl_constant_defs = db.impl_constants(impl_def_id)?;
+        let impl_constant_def_ast = impl_constant_defs.get(&impl_constant_def_id).to_maybe()?;
+        let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Constant(impl_constant_def_id));
 
-fn impl_constant_semantic_data_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Maybe<ImplItemConstantData<'db>> {
-    impl_constant_semantic_data_inner(db, impl_constant_def_id, true)
-}
+        let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ImplItem(
+            ImplItemId::Constant(impl_constant_def_id),
+        ));
+        let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
+        let mut resolver =
+            Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
 
-/// Shared code for the query and cycle handling of [impl_constant_semantic_data].
-/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
-fn impl_constant_semantic_data_inner<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-    in_cycle: bool,
-) -> Maybe<ImplItemConstantData<'db>> {
-    let impl_def_id = impl_constant_def_id.impl_def_id(db);
-    let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
-    let impl_constant_defs = db.impl_constants(impl_def_id)?;
-    let impl_constant_def_ast = impl_constant_defs.get(&impl_constant_def_id).to_maybe()?;
-    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Constant(impl_constant_def_id));
-
-    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ImplItem(
-        ImplItemId::Constant(impl_constant_def_id),
-    ));
-    let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
-    let mut resolver =
-        Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
-
-    let trait_constant_id = validate_impl_item_constant(
-        db,
-        &mut diagnostics,
-        impl_constant_def_id,
-        impl_constant_def_ast,
-        &mut resolver,
-    );
-    let mut constant_data = if in_cycle {
-        constant_semantic_data_cycle_helper(
+        let trait_constant_id = validate_impl_item_constant(
             db,
+            &mut diagnostics,
+            impl_constant_def_id,
             impl_constant_def_ast,
-            lookup_item_id,
-            Some(Arc::new(resolver.data)),
-            &impl_def_id,
-        )?
-    } else {
-        constant_semantic_data_helper(
-            db,
-            impl_constant_def_ast,
-            lookup_item_id,
-            Some(Arc::new(resolver.data)),
-            &impl_def_id,
-        )?
-    };
-    diagnostics.extend(mem::take(&mut constant_data.diagnostics));
-    Ok(ImplItemConstantData { constant_data, trait_constant_id, diagnostics: diagnostics.build() })
+            &mut resolver,
+        );
+        let mut constant_data = if in_cycle {
+            constant_semantic_data_cycle_helper(
+                db,
+                impl_constant_def_ast,
+                lookup_item_id,
+                Some(Arc::new(resolver.data)),
+                &impl_def_id,
+            )?
+        } else {
+            constant_semantic_data_helper(
+                db,
+                impl_constant_def_ast,
+                lookup_item_id,
+                Some(Arc::new(resolver.data)),
+                &impl_def_id,
+            )?
+        };
+        diagnostics.extend(mem::take(&mut constant_data.diagnostics));
+        Ok(ImplItemConstantData {
+            constant_data,
+            trait_constant_id,
+            diagnostics: diagnostics.build(),
+        })
+    }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        impl_constant_def_id: ImplConstantDefId<'db>,
+    ) -> Maybe<ImplItemConstantData<'db>> {
+        calc(db, impl_constant_def_id, true)
+    }
+    /// Query implementation.
+    #[salsa::tracked(cycle_result=cycle, returns(ref))]
+    fn impl_constant_semantic_data<'db>(
+        db: &'db dyn Database,
+        impl_constant_def_id: ImplConstantDefId<'db>,
+    ) -> Maybe<ImplItemConstantData<'db>> {
+        calc(db, impl_constant_def_id, false)
+    }
+    impl_constant_semantic_data(db, impl_constant_def_id)
 }
 
 /// Validates the impl item constant, and returns the matching trait constant id.
@@ -2745,30 +2775,36 @@ fn impl_constant_implized_by_context<'db>(
     impl_constant_id: ImplConstantId<'db>,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
-    let impl_constant_def_id: ImplConstantDefId<'_> =
-        db.impl_constant_by_trait_constant(impl_def_id, impl_constant_id.trait_constant_id())?;
+    /// Shared code for the query and cycle handling.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        impl_constant_id: ImplConstantId<'db>,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<ConstValueId<'db>> {
+        let impl_constant_def_id: ImplConstantDefId<'_> =
+            db.impl_constant_by_trait_constant(impl_def_id, impl_constant_id.trait_constant_id())?;
 
-    db.impl_constant_def_value(impl_constant_def_id)
-}
-
-/// Query implementation of [ImplSemantic::impl_constant_implized_by_context].
-#[salsa::tracked(returns(copy), cycle_result=impl_constant_implized_by_context_cycle)]
-fn impl_constant_implized_by_context_tracked<'db>(
-    db: &'db dyn Database,
-    impl_constant_id: ImplConstantId<'db>,
-    impl_def_id: ImplDefId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    impl_constant_implized_by_context(db, impl_constant_id, impl_def_id)
-}
-
-/// Cycle handling for [PrivImplSemantic::impl_constant_implized_by_context].
-fn impl_constant_implized_by_context_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    impl_constant_id: ImplConstantId<'db>,
-    impl_def_id: ImplDefId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    // Forwarding cycle handling to `priv_impl_constant_semantic_data` handler.
+        db.impl_constant_def_value(impl_constant_def_id)
+    }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        impl_constant_id: ImplConstantId<'db>,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<ConstValueId<'db>> {
+        // Forwarding cycle handling to `impl_constant_semantic_data` handler.
+        calc(db, impl_constant_id, impl_def_id)
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(copy), cycle_result=cycle)]
+    fn impl_constant_implized_by_context<'db>(
+        db: &'db dyn Database,
+        impl_constant_id: ImplConstantId<'db>,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<ConstValueId<'db>> {
+        calc(db, impl_constant_id, impl_def_id)
+    }
     impl_constant_implized_by_context(db, impl_constant_id, impl_def_id)
 }
 
@@ -2777,47 +2813,43 @@ fn impl_constant_concrete_implized_value<'db>(
     db: &'db dyn Database,
     impl_constant_id: ImplConstantId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
-    if let ImplLongId::Concrete(concrete_impl) = impl_constant_id.impl_id().long(db) {
-        let impl_def_id = concrete_impl.impl_def_id(db);
-        let constant: ConstValueId<'db> =
-            db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?;
-        return concrete_impl.substitution(db)?.substitute(db, constant);
+    /// Shared code for the query and cycle handling.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        impl_constant_id: ImplConstantId<'db>,
+    ) -> Maybe<ConstValueId<'db>> {
+        if let ImplLongId::Concrete(concrete_impl) = impl_constant_id.impl_id().long(db) {
+            let impl_def_id = concrete_impl.impl_def_id(db);
+            let constant: ConstValueId<'db> =
+                db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?;
+            return concrete_impl.substitution(db)?.substitute(db, constant);
+        }
+        let substitution: GenericSubstitution<'db> =
+            GenericSubstitution::from_impl(impl_constant_id.impl_id());
+        let substitution_id = substitution.substitute(db, impl_constant_id)?;
+        let const_val: ConstValue<'db> = ConstValue::ImplConstant(substitution_id);
+        Ok(const_val.intern(db))
     }
-    let substitution: GenericSubstitution<'db> =
-        GenericSubstitution::from_impl(impl_constant_id.impl_id());
-    let substitution_id = substitution.substitute(db, impl_constant_id)?;
-    let const_val: ConstValue<'db> = ConstValue::ImplConstant(substitution_id);
-    Ok(const_val.intern(db))
-}
-
-/// Query implementation of [ImplSemantic::impl_constant_concrete_implized_value].
-fn impl_constant_concrete_implized_value_tracked<'db>(
-    db: &'db dyn Database,
-    impl_constant_id: ImplConstantId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    impl_constant_concrete_implized_value_helper(db, (), impl_constant_id)
-}
-
-/// Tracked implementation of [ImplSemantic::impl_constant_concrete_implized_value].
-/// Receives a dummy id to support salsa tracking.
-#[salsa::tracked(returns(copy), cycle_result=impl_constant_concrete_implized_value_cycle)]
-fn impl_constant_concrete_implized_value_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    impl_constant_id: ImplConstantId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    impl_constant_concrete_implized_value(db, impl_constant_id)
-}
-
-/// Cycle handling for [ImplSemantic::impl_constant_concrete_implized_value].
-fn impl_constant_concrete_implized_value_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    _tracked: Tracked,
-    impl_constant_id: ImplConstantId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
-    impl_constant_concrete_implized_value(db, impl_constant_id)
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        _tracked: Tracked,
+        impl_constant_id: ImplConstantId<'db>,
+    ) -> Maybe<ConstValueId<'db>> {
+        // Forwarding cycle handling to `impl_constant_semantic_data` handler.
+        calc(db, impl_constant_id)
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(copy), cycle_result=cycle)]
+    fn impl_constant_concrete_implized_value<'db>(
+        db: &'db dyn Database,
+        _tracked: Tracked,
+        impl_constant_id: ImplConstantId<'db>,
+    ) -> Maybe<ConstValueId<'db>> {
+        calc(db, impl_constant_id)
+    }
+    impl_constant_concrete_implized_value(db, (), impl_constant_id)
 }
 
 /// Query implementation of [ImplSemantic::impl_constant_concrete_implized_type].
@@ -2825,57 +2857,56 @@ fn impl_constant_concrete_implized_type<'db>(
     db: &'db dyn Database,
     impl_constant_id: ImplConstantId<'db>,
 ) -> Maybe<TypeId<'db>> {
-    let concrete_trait_id = match impl_constant_id.impl_id().long(db) {
-        ImplLongId::Concrete(concrete_impl) => {
-            let impl_def_id = concrete_impl.impl_def_id(db);
-            let ty = db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?.ty(db)?;
-            return concrete_impl.substitution(db)?.substitute(db, ty);
-        }
-        ImplLongId::GenericParameter(param) => {
-            let param_impl =
-                extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Impl);
-            param_impl.concrete_trait?
-        }
-        ImplLongId::ImplVar(var) => var.long(db).concrete_trait_id,
-        ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(*impl_impl)?,
-        ImplLongId::SelfImpl(concrete_trait_id) => *concrete_trait_id,
-        ImplLongId::GeneratedImpl(generated_impl) => generated_impl.concrete_trait(db),
-    };
+    /// Shared code for the query and cycle handling.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        impl_constant_id: ImplConstantId<'db>,
+    ) -> Maybe<TypeId<'db>> {
+        let concrete_trait_id = match impl_constant_id.impl_id().long(db) {
+            ImplLongId::Concrete(concrete_impl) => {
+                let impl_def_id = concrete_impl.impl_def_id(db);
+                let ty =
+                    db.impl_constant_implized_by_context(impl_constant_id, impl_def_id)?.ty(db)?;
+                return concrete_impl.substitution(db)?.substitute(db, ty);
+            }
+            ImplLongId::GenericParameter(param) => {
+                let param_impl =
+                    extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Impl);
+                param_impl.concrete_trait?
+            }
+            ImplLongId::ImplVar(var) => var.long(db).concrete_trait_id,
+            ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(*impl_impl)?,
+            ImplLongId::SelfImpl(concrete_trait_id) => *concrete_trait_id,
+            ImplLongId::GeneratedImpl(generated_impl) => generated_impl.concrete_trait(db),
+        };
 
-    let ty = db.concrete_trait_constant_type(ConcreteTraitConstantId::new_from_data(
-        db,
-        concrete_trait_id,
-        impl_constant_id.trait_constant_id(),
-    ))?;
-    GenericSubstitution::from_impl(impl_constant_id.impl_id()).substitute(db, ty)
-}
-
-/// Query implementation of [ImplSemantic::impl_constant_concrete_implized_type].
-fn impl_constant_concrete_implized_type_tracked<'db>(
-    db: &'db dyn Database,
-    impl_constant_id: ImplConstantId<'db>,
-) -> Maybe<TypeId<'db>> {
-    impl_constant_concrete_implized_type_helper(db, (), impl_constant_id)
-}
-
-#[salsa::tracked(returns(copy), cycle_result=impl_constant_concrete_implized_type_cycle)]
-fn impl_constant_concrete_implized_type_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    impl_constant_id: ImplConstantId<'db>,
-) -> Maybe<TypeId<'db>> {
-    impl_constant_concrete_implized_type(db, impl_constant_id)
-}
-
-/// Cycle handling for [ImplSemantic::impl_constant_concrete_implized_type].
-fn impl_constant_concrete_implized_type_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    _tracked: Tracked,
-    impl_constant_id: ImplConstantId<'db>,
-) -> Maybe<TypeId<'db>> {
-    // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
-    impl_constant_concrete_implized_type(db, impl_constant_id)
+        let ty = db.concrete_trait_constant_type(ConcreteTraitConstantId::new_from_data(
+            db,
+            concrete_trait_id,
+            impl_constant_id.trait_constant_id(),
+        ))?;
+        GenericSubstitution::from_impl(impl_constant_id.impl_id()).substitute(db, ty)
+    }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        _tracked: Tracked,
+        impl_constant_id: ImplConstantId<'db>,
+    ) -> Maybe<TypeId<'db>> {
+        // Forwarding cycle handling to `impl_constant_semantic_data` handler.
+        calc(db, impl_constant_id)
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(copy), cycle_result=cycle)]
+    fn impl_constant_concrete_implized_type<'db>(
+        db: &'db dyn Database,
+        _tracked: Tracked,
+        impl_constant_id: ImplConstantId<'db>,
+    ) -> Maybe<TypeId<'db>> {
+        calc(db, impl_constant_id)
+    }
+    impl_constant_concrete_implized_type(db, (), impl_constant_id)
 }
 
 // === Impl Item Impl definition ===
@@ -2890,65 +2921,76 @@ struct ImplItemImplData<'db> {
 }
 
 /// Returns data about an impl impl definition.
-#[salsa::tracked(cycle_result=impl_impl_semantic_data_cycle, returns(ref))]
 fn impl_impl_semantic_data<'db>(
     db: &'db dyn Database,
     impl_impl_def_id: ImplImplDefId<'db>,
-) -> Maybe<ImplItemImplData<'db>> {
-    impl_impl_semantic_data_inner(db, impl_impl_def_id, false)
-}
+) -> &'db Maybe<ImplItemImplData<'db>> {
+    /// Shared code for the query and cycle handling.
+    /// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        impl_impl_def_id: ImplImplDefId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ImplItemImplData<'db>> {
+        let impl_def_id = impl_impl_def_id.impl_def_id(db);
+        let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
+        let impl_impl_defs = db.impl_impls(impl_def_id)?;
+        let impl_impl_def_ast = impl_impl_defs.get(&impl_impl_def_id).to_maybe()?;
+        let generic_params_data =
+            impl_impl_def_generic_params_data(db, impl_impl_def_id).maybe_as_ref()?.clone();
+        let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Impl(impl_impl_def_id));
 
-fn impl_impl_semantic_data_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    impl_impl_def_id: ImplImplDefId<'db>,
-) -> Maybe<ImplItemImplData<'db>> {
-    impl_impl_semantic_data_inner(db, impl_impl_def_id, true)
-}
+        let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
+        let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
+        let mut resolver =
+            Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
 
-/// Shared code for the query and cycle handling of [impl_impl_semantic_data].
-/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
-fn impl_impl_semantic_data_inner<'db>(
-    db: &'db dyn Database,
-    impl_impl_def_id: ImplImplDefId<'db>,
-    in_cycle: bool,
-) -> Maybe<ImplItemImplData<'db>> {
-    let impl_def_id = impl_impl_def_id.impl_def_id(db);
-    let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
-    let impl_impl_defs = db.impl_impls(impl_def_id)?;
-    let impl_impl_def_ast = impl_impl_defs.get(&impl_impl_def_id).to_maybe()?;
-    let generic_params_data =
-        impl_impl_def_generic_params_data(db, impl_impl_def_id).maybe_as_ref()?.clone();
-    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Impl(impl_impl_def_id));
+        let mut impl_data = if in_cycle {
+            impl_alias_semantic_data_cycle_helper(
+                db,
+                impl_impl_def_ast,
+                lookup_item_id,
+                generic_params_data,
+            )?
+        } else {
+            impl_alias_semantic_data_helper(
+                db,
+                impl_impl_def_ast,
+                lookup_item_id,
+                generic_params_data,
+            )?
+        };
 
-    let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
-    let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
-    let mut resolver =
-        Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
+        diagnostics.extend(mem::take(&mut impl_data.diagnostics));
 
-    let mut impl_data = if in_cycle {
-        impl_alias_semantic_data_cycle_helper(
+        let trait_impl_id = validate_impl_item_impl(
             db,
+            &mut diagnostics,
+            impl_impl_def_id,
             impl_impl_def_ast,
-            lookup_item_id,
-            generic_params_data,
-        )?
-    } else {
-        impl_alias_semantic_data_helper(db, impl_impl_def_ast, lookup_item_id, generic_params_data)?
-    };
+            &impl_data,
+            &mut resolver,
+        );
 
-    diagnostics.extend(mem::take(&mut impl_data.diagnostics));
-
-    let trait_impl_id = validate_impl_item_impl(
-        db,
-        &mut diagnostics,
-        impl_impl_def_id,
-        impl_impl_def_ast,
-        &impl_data,
-        &mut resolver,
-    );
-
-    Ok(ImplItemImplData { impl_data, trait_impl_id, diagnostics: diagnostics.build() })
+        Ok(ImplItemImplData { impl_data, trait_impl_id, diagnostics: diagnostics.build() })
+    }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        impl_impl_def_id: ImplImplDefId<'db>,
+    ) -> Maybe<ImplItemImplData<'db>> {
+        calc(db, impl_impl_def_id, true)
+    }
+    /// Query implementation.
+    #[salsa::tracked(cycle_result=cycle, returns(ref))]
+    fn impl_impl_semantic_data<'db>(
+        db: &'db dyn Database,
+        impl_impl_def_id: ImplImplDefId<'db>,
+    ) -> Maybe<ImplItemImplData<'db>> {
+        calc(db, impl_impl_def_id, false)
+    }
+    impl_impl_semantic_data(db, impl_impl_def_id)
 }
 
 /// Returns the generic parameters data of an impl impl definition.
@@ -3041,156 +3083,165 @@ struct ImplicitImplImplData<'db> {
 }
 
 /// Computes implicit impl semantic data with cycle handling.
-#[salsa::tracked(cycle_result=implicit_impl_impl_semantic_data_cycle, returns(ref))]
-fn implicit_impl_impl_semantic_data_tracked<'db>(
+fn implicit_impl_impl_semantic_data<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
     trait_impl_id: TraitImplId<'db>,
-) -> Maybe<ImplicitImplImplData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
-    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id));
-
-    let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
-    let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
-
-    let mut resolver =
-        Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
-    // We cannot use `Self` as it will always find the implicit impl.
-    resolver.trait_or_impl_ctx = TraitOrImplContext::None;
-
-    let concrete_trait_impl_concrete_trait = db
-        .impl_def_concrete_trait(impl_def_id)
-        .and_then(|concrete_trait_id| {
-            db.concrete_trait_impl_concrete_trait(ConcreteTraitImplId::new_from_data(
-                db,
-                concrete_trait_id,
-                trait_impl_id,
-            ))
+) -> &'db Maybe<ImplicitImplImplData<'db>> {
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        impl_def_id: ImplDefId<'db>,
+        trait_impl_id: TraitImplId<'db>,
+    ) -> Maybe<ImplicitImplImplData<'db>> {
+        let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
+        let err = Err(diagnostics.report(impl_def_id.stable_ptr(db).untyped(), ImplAliasCycle));
+        Ok(ImplicitImplImplData {
+            resolved_impl: err,
+            trait_impl_id,
+            diagnostics: diagnostics.build(),
         })
-        .and_then(|concrete_trait_id| {
-            let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
-            impl_def_substitution.substitute(db, concrete_trait_id)
+    }
+    /// Query implementation.
+    #[salsa::tracked(cycle_result=cycle, returns(ref))]
+    fn implicit_impl_impl_semantic_data<'db>(
+        db: &'db dyn Database,
+        impl_def_id: ImplDefId<'db>,
+        trait_impl_id: TraitImplId<'db>,
+    ) -> Maybe<ImplicitImplImplData<'db>> {
+        let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
+        let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id));
+
+        let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
+        let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
+
+        let mut resolver =
+            Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
+        // We cannot use `Self` as it will always find the implicit impl.
+        resolver.trait_or_impl_ctx = TraitOrImplContext::None;
+
+        let concrete_trait_impl_concrete_trait = db
+            .impl_def_concrete_trait(impl_def_id)
+            .and_then(|concrete_trait_id| {
+                db.concrete_trait_impl_concrete_trait(ConcreteTraitImplId::new_from_data(
+                    db,
+                    concrete_trait_id,
+                    trait_impl_id,
+                ))
+            })
+            .and_then(|concrete_trait_id| {
+                let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
+                impl_def_substitution.substitute(db, concrete_trait_id)
+            });
+        let impl_lookup_context = resolver.impl_lookup_context();
+        let resolved_impl = concrete_trait_impl_concrete_trait.and_then(|concrete_trait_id| {
+            let imp =
+                resolver.inference().new_impl_var(concrete_trait_id, None, impl_lookup_context);
+            resolver.inference().finalize_without_reporting().map_err(|err_set| {
+                diagnostics.report(
+                    impl_def_id.stable_ptr(db).untyped(),
+                    ImplicitImplNotInferred { trait_impl_id, concrete_trait_id },
+                );
+                resolver.inference().report_on_pending_error(
+                    err_set,
+                    &mut diagnostics,
+                    impl_def_id.stable_ptr(db).untyped(),
+                )
+            })?;
+            resolver.inference().rewrite(imp).map_err(|_| skip_diagnostic())
         });
-    let impl_lookup_context = resolver.impl_lookup_context();
-    let resolved_impl = concrete_trait_impl_concrete_trait.and_then(|concrete_trait_id| {
-        let imp = resolver.inference().new_impl_var(concrete_trait_id, None, impl_lookup_context);
-        resolver.inference().finalize_without_reporting().map_err(|err_set| {
-            diagnostics.report(
-                impl_def_id.stable_ptr(db).untyped(),
-                ImplicitImplNotInferred { trait_impl_id, concrete_trait_id },
-            );
-            resolver.inference().report_on_pending_error(
-                err_set,
-                &mut diagnostics,
-                impl_def_id.stable_ptr(db).untyped(),
-            )
-        })?;
-        resolver.inference().rewrite(imp).map_err(|_| skip_diagnostic())
-    });
 
-    Ok(ImplicitImplImplData { resolved_impl, trait_impl_id, diagnostics: diagnostics.build() })
-}
-
-/// Cycle handling for implicit impl semantic data computation.
-fn implicit_impl_impl_semantic_data_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    impl_def_id: ImplDefId<'db>,
-    trait_impl_id: TraitImplId<'db>,
-) -> Maybe<ImplicitImplImplData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::new(impl_def_id.parent_module(db));
-    let err = Err(diagnostics.report(impl_def_id.stable_ptr(db).untyped(), ImplAliasCycle));
-    Ok(ImplicitImplImplData { resolved_impl: err, trait_impl_id, diagnostics: diagnostics.build() })
+        Ok(ImplicitImplImplData { resolved_impl, trait_impl_id, diagnostics: diagnostics.build() })
+    }
+    implicit_impl_impl_semantic_data(db, impl_def_id, trait_impl_id)
 }
 
 // === Impl Impl ===
 
 /// Query implementation of [PrivImplSemantic::impl_impl_implized_by_context].
-#[salsa::tracked(returns(copy), cycle_result=impl_impl_implized_by_context_cycle)]
-fn impl_impl_implized_by_context_tracked<'db>(
+fn impl_impl_implized_by_context<'db>(
     db: &'db dyn Database,
     impl_impl_id: ImplImplId<'db>,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ImplId<'db>> {
-    if db.is_implicit_impl_impl(impl_def_id, impl_impl_id.trait_impl_id())? {
-        return db.implicit_impl_impl_impl(impl_def_id, impl_impl_id.trait_impl_id());
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        _db: &dyn Database,
+        _id: salsa::Id,
+        _impl_impl_id: ImplImplId<'db>,
+        _impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<ImplId<'db>> {
+        // The relevant impl item is in a cycle, and the cycle diagnostic is reported by the cycle
+        // handlers of `impl_impl_semantic_data`/`implicit_impl_impl_semantic_data`.
+        Err(skip_diagnostic())
     }
+    /// Query implementation.
+    #[salsa::tracked(returns(copy), cycle_result=cycle)]
+    fn impl_impl_implized_by_context<'db>(
+        db: &'db dyn Database,
+        impl_impl_id: ImplImplId<'db>,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<ImplId<'db>> {
+        if db.is_implicit_impl_impl(impl_def_id, impl_impl_id.trait_impl_id())? {
+            return db.implicit_impl_impl_impl(impl_def_id, impl_impl_id.trait_impl_id());
+        }
 
-    let impl_impl_def_id = db.impl_impl_by_trait_impl(impl_def_id, impl_impl_id.trait_impl_id())?;
+        let impl_impl_def_id =
+            db.impl_impl_by_trait_impl(impl_def_id, impl_impl_id.trait_impl_id())?;
 
-    db.impl_impl_def_impl(impl_impl_def_id)
+        db.impl_impl_def_impl(impl_impl_def_id)
+    }
+    impl_impl_implized_by_context(db, impl_impl_id, impl_def_id)
 }
 
-/// Cycle handling for [PrivImplSemantic::impl_impl_implized_by_context].
-fn impl_impl_implized_by_context_cycle<'db>(
-    _db: &dyn Database,
-    _id: salsa::Id,
-    _impl_impl_id: ImplImplId<'db>,
-    _impl_def_id: ImplDefId<'db>,
-) -> Maybe<ImplId<'db>> {
-    // The relevant impl item is in a cycle, and the cycle diagnostic is reported by the cycle
-    // handlers of `impl_impl_semantic_data`/`implicit_impl_impl_semantic_data_tracked`.
-    Err(skip_diagnostic())
-}
-
-/// Implementation of [ImplSemantic::impl_impl_concrete_implized].
+/// Query implementation of [ImplSemantic::impl_impl_concrete_implized].
 fn impl_impl_concrete_implized<'db>(
     db: &'db dyn Database,
     impl_impl_id: ImplImplId<'db>,
 ) -> Maybe<ImplId<'db>> {
-    impl_impl_concrete_implized_ex(db, impl_impl_id, false)
-}
-
-/// Query implementation of [ImplSemantic::impl_impl_concrete_implized].
-fn impl_impl_concrete_implized_tracked<'db>(
-    db: &'db dyn Database,
-    impl_impl_id: ImplImplId<'db>,
-) -> Maybe<ImplId<'db>> {
-    impl_impl_concrete_implized_helper(db, (), impl_impl_id)
-}
-
-#[salsa::tracked(returns(copy), cycle_result=impl_impl_concrete_implized_cycle)]
-fn impl_impl_concrete_implized_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    impl_impl_id: ImplImplId<'db>,
-) -> Maybe<ImplId<'db>> {
-    impl_impl_concrete_implized(db, impl_impl_id)
-}
-
-/// Cycle handling for [ImplSemantic::impl_impl_concrete_implized].
-fn impl_impl_concrete_implized_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    _tracked: Tracked,
-    impl_impl_id: ImplImplId<'db>,
-) -> Maybe<ImplId<'db>> {
-    impl_impl_concrete_implized_ex(db, impl_impl_id, true)
-}
-
-/// Shared code for the query and cycle handling of
-/// [ImplSemantic::impl_impl_concrete_implized].
-/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
-fn impl_impl_concrete_implized_ex<'db>(
-    db: &'db dyn Database,
-    impl_impl_id: ImplImplId<'db>,
-    in_cycle: bool,
-) -> Maybe<ImplId<'db>> {
-    if let ImplLongId::Concrete(concrete_impl) = impl_impl_id.impl_id().long(db) {
-        if in_cycle {
-            // The relevant impl item is in a cycle, and the cycle diagnostic is reported by the
-            // cycle handlers of the underlying queries.
-            return Err(skip_diagnostic());
+    /// Shared code for the query and cycle handling.
+    /// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        impl_impl_id: ImplImplId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ImplId<'db>> {
+        if let ImplLongId::Concrete(concrete_impl) = impl_impl_id.impl_id().long(db) {
+            if in_cycle {
+                // The relevant impl item is in a cycle, and the cycle diagnostic is reported by
+                // the cycle handlers of the underlying queries.
+                return Err(skip_diagnostic());
+            }
+            let impl_def_id = concrete_impl.impl_def_id(db);
+            let imp = db.impl_impl_implized_by_context(impl_impl_id, impl_def_id)?;
+            return concrete_impl.substitution(db)?.substitute(db, imp);
         }
-        let impl_def_id = concrete_impl.impl_def_id(db);
-        let imp = db.impl_impl_implized_by_context(impl_impl_id, impl_def_id)?;
-        return concrete_impl.substitution(db)?.substitute(db, imp);
-    }
 
-    Ok(ImplLongId::ImplImpl(
-        GenericSubstitution::from_impl(impl_impl_id.impl_id()).substitute(db, impl_impl_id)?,
-    )
-    .intern(db))
+        Ok(ImplLongId::ImplImpl(
+            GenericSubstitution::from_impl(impl_impl_id.impl_id()).substitute(db, impl_impl_id)?,
+        )
+        .intern(db))
+    }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        _tracked: Tracked,
+        impl_impl_id: ImplImplId<'db>,
+    ) -> Maybe<ImplId<'db>> {
+        calc(db, impl_impl_id, true)
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(copy), cycle_result=cycle)]
+    fn impl_impl_concrete_implized<'db>(
+        db: &'db dyn Database,
+        _tracked: Tracked,
+        impl_impl_id: ImplImplId<'db>,
+    ) -> Maybe<ImplId<'db>> {
+        calc(db, impl_impl_id, false)
+    }
+    impl_impl_concrete_implized(db, (), impl_impl_id)
 }
 
 /// Implementation of [PrivImplSemantic::impl_impl_concrete_trait].
@@ -4214,7 +4265,7 @@ pub trait ImplSemantic<'db>: Database {
         &'db self,
         impl_type_def_id: ImplTypeId<'db>,
     ) -> Maybe<TypeId<'db>> {
-        impl_type_concrete_implized_tracked(self.as_dyn_database(), impl_type_def_id)
+        impl_type_concrete_implized(self.as_dyn_database(), impl_type_def_id)
     }
 
     // Impl constant def.
@@ -4246,7 +4297,7 @@ pub trait ImplSemantic<'db>: Database {
         &'db self,
         impl_constant_id: ImplConstantId<'db>,
     ) -> Maybe<ConstValueId<'db>> {
-        impl_constant_concrete_implized_value_tracked(self.as_dyn_database(), impl_constant_id)
+        impl_constant_concrete_implized_value(self.as_dyn_database(), impl_constant_id)
     }
     /// Returns the implized impl constant type if the impl is concrete.
     // TODO(Gil): Consider removing the cycle handling here if we will upgrade the salsa version.
@@ -4254,7 +4305,7 @@ pub trait ImplSemantic<'db>: Database {
         &'db self,
         impl_constant_id: ImplConstantId<'db>,
     ) -> Maybe<TypeId<'db>> {
-        impl_constant_concrete_implized_type_tracked(self.as_dyn_database(), impl_constant_id)
+        impl_constant_concrete_implized_type(self.as_dyn_database(), impl_constant_id)
     }
 
     // Impl impl def.
@@ -4275,7 +4326,7 @@ pub trait ImplSemantic<'db>: Database {
     // ================
     /// Returns the implized impl impl value if the impl is concrete.
     fn impl_impl_concrete_implized(&'db self, impl_impl_id: ImplImplId<'db>) -> Maybe<ImplId<'db>> {
-        impl_impl_concrete_implized_tracked(self.as_dyn_database(), impl_impl_id)
+        impl_impl_concrete_implized(self.as_dyn_database(), impl_impl_id)
     }
 
     // Impl function.
@@ -4523,11 +4574,7 @@ trait PrivImplSemantic<'db>: Database {
         impl_constant_id: ImplConstantId<'db>,
         impl_def_id: ImplDefId<'db>,
     ) -> Maybe<ConstValueId<'db>> {
-        impl_constant_implized_by_context_tracked(
-            self.as_dyn_database(),
-            impl_constant_id,
-            impl_def_id,
-        )
+        impl_constant_implized_by_context(self.as_dyn_database(), impl_constant_id, impl_def_id)
     }
     /// Returns the semantic diagnostics of an impl item impl.
     fn impl_impl_def_semantic_diagnostics(
@@ -4552,7 +4599,7 @@ trait PrivImplSemantic<'db>: Database {
         impl_def_id: ImplDefId<'db>,
         trait_impl_id: TraitImplId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        implicit_impl_impl_semantic_data_tracked(self.as_dyn_database(), impl_def_id, trait_impl_id)
+        implicit_impl_impl_semantic_data(self.as_dyn_database(), impl_def_id, trait_impl_id)
             .as_ref()
             .map(|data| data.diagnostics.clone())
             .unwrap_or_default()
@@ -4563,7 +4610,7 @@ trait PrivImplSemantic<'db>: Database {
         impl_def_id: ImplDefId<'db>,
         trait_impl_id: TraitImplId<'db>,
     ) -> Maybe<ImplId<'db>> {
-        implicit_impl_impl_semantic_data_tracked(self.as_dyn_database(), impl_def_id, trait_impl_id)
+        implicit_impl_impl_semantic_data(self.as_dyn_database(), impl_def_id, trait_impl_id)
             .maybe_as_ref()?
             .resolved_impl
     }
@@ -4573,7 +4620,7 @@ trait PrivImplSemantic<'db>: Database {
         impl_impl_id: ImplImplId<'db>,
         impl_def_id: ImplDefId<'db>,
     ) -> Maybe<ImplId<'db>> {
-        impl_impl_implized_by_context_tracked(self.as_dyn_database(), impl_impl_id, impl_def_id)
+        impl_impl_implized_by_context(self.as_dyn_database(), impl_impl_id, impl_def_id)
     }
     /// Returns the concrete trait of an impl impl.
     fn impl_impl_concrete_trait(

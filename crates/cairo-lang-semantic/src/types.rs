@@ -120,17 +120,20 @@ impl<'db> TypeId<'db> {
     /// by a plugin), or if any of its struct members, enum variants, tuple or fixed-size-array
     /// elements, or its snapshotted type is (transitively) phantom.
     pub fn is_phantom(&self, db: &dyn Database) -> bool {
-        #[salsa::tracked(returns(copy), cycle_result=is_phantom_cycle)]
-        fn is_phantom_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
-            ty.long(db).is_phantom(db)
-        }
+        /// Cycle handling for the query.
+        ///
         /// A type that (transitively) contains itself is not made phantom by the cycle - any
         /// phantom is found through the non-cyclic branches, so the cyclic edge contributes
         /// `false`.
-        fn is_phantom_cycle<'db>(_db: &'db dyn Database, _id: salsa::Id, _ty: TypeId<'db>) -> bool {
+        fn cycle<'db>(_db: &'db dyn Database, _id: salsa::Id, _ty: TypeId<'db>) -> bool {
             false
         }
-        is_phantom_tracked(db, *self)
+        /// Query implementation.
+        #[salsa::tracked(returns(copy), cycle_result=cycle)]
+        fn is_phantom<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
+            ty.long(db).is_phantom(db)
+        }
+        is_phantom(db, *self)
     }
 
     /// Short name of the type argument.
@@ -1001,43 +1004,49 @@ impl<'db> ArrayElementViolation<'db> {
 /// the `NonPhantomTypeContainingPhantomType` check for a definition), so it is not descended into.
 /// Only concrete types are searched; a generic parameter is assumed instantiable, so a generic
 /// `Array<T>` is only diagnosed once `T` is concretely disallowed.
-#[salsa::tracked(returns(clone), cycle_result=array_element_violation_cycle)]
 fn array_element_violation<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Option<ArrayElementViolation<'db>> {
-    if ty.is_phantom(db) {
-        return None;
-    }
-    array_element_deps_or_issue(db, ty, |dep| array_element_violation(db, dep))
-}
-
-/// Cycle handling for [array_element_violation], hit when a type is recursive through an array
-/// element (e.g. `Array<Self>`).
-///
-/// Implements the same logic as [array_element_violation], but iteratively over an explicit
-/// work-stack with a visited set so it never re-enters the query. Recursing back into the query
-/// mid-cycle would let salsa cache a false negative for whichever participant is computed first -
-/// its violation may be reachable only through the rest of the cycle.
-fn array_element_violation_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    ty: TypeId<'db>,
-) -> Option<ArrayElementViolation<'db>> {
-    let mut visited: OrderedHashSet<TypeId<'db>> = OrderedHashSet::default();
-    let mut stack = vec![ty];
-    while let Some(ty) = stack.pop() {
-        if ty.is_phantom(db) || !visited.insert(ty) {
-            continue;
+    /// Cycle handling for the query, hit when a type is recursive through an array element (e.g.
+    /// `Array<Self>`).
+    ///
+    /// Implements the same logic as the query, but iteratively over an explicit work-stack with a
+    /// visited set so it never re-enters the query. Recursing back into the query mid-cycle would
+    /// let salsa cache a false negative for whichever participant is computed first - its
+    /// violation may be reachable only through the rest of the cycle.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        ty: TypeId<'db>,
+    ) -> Option<ArrayElementViolation<'db>> {
+        let mut visited: OrderedHashSet<TypeId<'db>> = OrderedHashSet::default();
+        let mut stack = vec![ty];
+        while let Some(ty) = stack.pop() {
+            if ty.is_phantom(db) || !visited.insert(ty) {
+                continue;
+            }
+            if let Some(violation) = array_element_deps_or_issue(db, ty, |dep| {
+                stack.push(dep);
+                None
+            }) {
+                return Some(violation);
+            }
         }
-        if let Some(violation) = array_element_deps_or_issue(db, ty, |dep| {
-            stack.push(dep);
-            None
-        }) {
-            return Some(violation);
-        }
+        None
     }
-    None
+    /// Query implementation.
+    #[salsa::tracked(returns(clone), cycle_result=cycle)]
+    fn array_element_violation<'db>(
+        db: &'db dyn Database,
+        ty: TypeId<'db>,
+    ) -> Option<ArrayElementViolation<'db>> {
+        if ty.is_phantom(db) {
+            return None;
+        }
+        array_element_deps_or_issue(db, ty, |dep| array_element_violation(db, dep))
+    }
+    array_element_violation(db, ty)
 }
 
 /// Searches `ty` for a bad array element. An array's element is checked directly (phantom or
@@ -1098,64 +1107,68 @@ pub enum TypeSizeInformation {
     Other,
 }
 
-/// Implementation of [TypesSemantic::type_size_info].
-fn type_size_info(db: &dyn Database, ty: TypeId<'_>) -> Maybe<TypeSizeInformation> {
-    match ty.long(db) {
-        TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
-            ConcreteTypeId::Struct(id) => {
-                if check_all_type_are_zero_sized(
-                    db,
-                    db.concrete_struct_members(*id)?.iter().map(|(_, member)| &member.ty),
-                )? {
+/// Query implementation of [TypesSemantic::type_size_info].
+fn type_size_info<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<TypeSizeInformation> {
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        _db: &'db dyn Database,
+        _id: salsa::Id,
+        _ty: TypeId<'db>,
+    ) -> Maybe<TypeSizeInformation> {
+        Ok(TypeSizeInformation::Infinite)
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(clone), cycle_result=cycle)]
+    fn type_size_info<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<TypeSizeInformation> {
+        match ty.long(db) {
+            TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
+                ConcreteTypeId::Struct(id) => {
+                    if check_all_type_are_zero_sized(
+                        db,
+                        db.concrete_struct_members(*id)?.iter().map(|(_, member)| &member.ty),
+                    )? {
+                        return Ok(TypeSizeInformation::ZeroSized);
+                    }
+                }
+                ConcreteTypeId::Enum(id) => {
+                    for variant in &db.concrete_enum_variants(*id)? {
+                        // Recursive calling in order to find infinite sized types.
+                        db.type_size_info(variant.ty)?;
+                    }
+                }
+                ConcreteTypeId::Extern(_) => {}
+            },
+            TypeLongId::Tuple(types) => {
+                if check_all_type_are_zero_sized(db, types.iter())? {
                     return Ok(TypeSizeInformation::ZeroSized);
                 }
             }
-            ConcreteTypeId::Enum(id) => {
-                for variant in &db.concrete_enum_variants(*id)? {
-                    // Recursive calling in order to find infinite sized types.
-                    db.type_size_info(variant.ty)?;
+            TypeLongId::Snapshot(ty) => {
+                if db.type_size_info(*ty)? == TypeSizeInformation::ZeroSized {
+                    return Ok(TypeSizeInformation::ZeroSized);
                 }
             }
-            ConcreteTypeId::Extern(_) => {}
-        },
-        TypeLongId::Tuple(types) => {
-            if check_all_type_are_zero_sized(db, types.iter())? {
-                return Ok(TypeSizeInformation::ZeroSized);
+            TypeLongId::Closure(closure_ty) => {
+                if check_all_type_are_zero_sized(db, closure_ty.captured_types.iter())? {
+                    return Ok(TypeSizeInformation::ZeroSized);
+                }
+            }
+            TypeLongId::Coupon(_) => return Ok(TypeSizeInformation::ZeroSized),
+            TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::NumericLiteral(_)
+            | TypeLongId::Missing(_)
+            | TypeLongId::ImplType(_) => {}
+            TypeLongId::FixedSizeArray { type_id, size } => {
+                if matches!(size.long(db), ConstValue::Int(value,_) if value.is_zero())
+                    || db.type_size_info(*type_id)? == TypeSizeInformation::ZeroSized
+                {
+                    return Ok(TypeSizeInformation::ZeroSized);
+                }
             }
         }
-        TypeLongId::Snapshot(ty) => {
-            if db.type_size_info(*ty)? == TypeSizeInformation::ZeroSized {
-                return Ok(TypeSizeInformation::ZeroSized);
-            }
-        }
-        TypeLongId::Closure(closure_ty) => {
-            if check_all_type_are_zero_sized(db, closure_ty.captured_types.iter())? {
-                return Ok(TypeSizeInformation::ZeroSized);
-            }
-        }
-        TypeLongId::Coupon(_) => return Ok(TypeSizeInformation::ZeroSized),
-        TypeLongId::GenericParameter(_)
-        | TypeLongId::Var(_)
-        | TypeLongId::NumericLiteral(_)
-        | TypeLongId::Missing(_)
-        | TypeLongId::ImplType(_) => {}
-        TypeLongId::FixedSizeArray { type_id, size } => {
-            if matches!(size.long(db), ConstValue::Int(value,_) if value.is_zero())
-                || db.type_size_info(*type_id)? == TypeSizeInformation::ZeroSized
-            {
-                return Ok(TypeSizeInformation::ZeroSized);
-            }
-        }
+        Ok(TypeSizeInformation::Other)
     }
-    Ok(TypeSizeInformation::Other)
-}
-
-/// Query implementation of [TypesSemantic::type_size_info].
-#[salsa::tracked(returns(clone), cycle_result=type_size_info_cycle)]
-fn type_size_info_tracked<'db>(
-    db: &'db dyn Database,
-    ty: TypeId<'db>,
-) -> Maybe<TypeSizeInformation> {
     type_size_info(db, ty)
 }
 
@@ -1171,15 +1184,6 @@ fn check_all_type_are_zero_sized<'a>(
         }
     }
     Ok(zero_sized)
-}
-
-/// Cycle handling of [TypesSemantic::type_size_info].
-fn type_size_info_cycle<'db>(
-    _db: &'db dyn Database,
-    _id: salsa::Id,
-    _ty: TypeId<'db>,
-) -> Maybe<TypeSizeInformation> {
-    Ok(TypeSizeInformation::Infinite)
 }
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
@@ -1443,7 +1447,7 @@ pub trait TypesSemantic<'db>: Database {
     }
     /// Returns the type size information for the given type.
     fn type_size_info(&'db self, ty: TypeId<'db>) -> Maybe<TypeSizeInformation> {
-        type_size_info_tracked(self.as_dyn_database(), ty)
+        type_size_info(self.as_dyn_database(), ty)
     }
     /// Returns the type info for a type in a context.
     fn type_info(

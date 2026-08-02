@@ -24,60 +24,66 @@ struct ModuleTypeAliasData<'db> {
 }
 
 /// Returns the data of a type alias.
-#[salsa::tracked(cycle_result=module_type_alias_semantic_data_cycle, returns(ref))]
 fn module_type_alias_semantic_data<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<ModuleTypeAliasData<'db>> {
-    module_type_alias_semantic_data_inner(db, module_type_alias_id, false)
-}
+) -> &'db Maybe<ModuleTypeAliasData<'db>> {
+    /// Shared code for the query and cycle handling.
+    /// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
+    fn calc<'db>(
+        db: &'db dyn Database,
+        module_type_alias_id: ModuleTypeAliasId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ModuleTypeAliasData<'db>> {
+        let module_id = module_type_alias_id.parent_module(db);
+        // TODO(spapini): when code changes in a file, all the AST items change (as they contain a
+        // path to the green root that changes. Once ASTs are rooted on items, use a selector
+        // that picks only the item instead of all the module data.
+        // TODO(spapini): Add generic args when they are supported on structs.
+        let module_type_aliases = module_id.module_data(db)?.type_aliases(db);
+        let module_type_alias_ast = module_type_aliases.get(&module_type_alias_id).to_maybe()?;
+        let generic_params_data =
+            module_type_alias_generic_params_data(db, module_type_alias_id).maybe_as_ref()?.clone();
+        let lookup_item_id =
+            LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 
-/// Cycle handling for [module_type_alias_semantic_data].
-fn module_type_alias_semantic_data_cycle<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<ModuleTypeAliasData<'db>> {
-    module_type_alias_semantic_data_inner(db, module_type_alias_id, true)
-}
-
-/// Shared code for the query and cycle handling of [module_type_alias_semantic_data].
-/// The cycle handling logic needs to pass in_cycle=true to prevent the cycle.
-fn module_type_alias_semantic_data_inner<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-    in_cycle: bool,
-) -> Maybe<ModuleTypeAliasData<'db>> {
-    let module_id = module_type_alias_id.parent_module(db);
-    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
-    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
-    // the item instead of all the module data.
-    // TODO(spapini): Add generic args when they are supported on structs.
-    let module_type_aliases = module_id.module_data(db)?.type_aliases(db);
-    let module_type_alias_ast = module_type_aliases.get(&module_type_alias_id).to_maybe()?;
-    let generic_params_data =
-        module_type_alias_generic_params_data(db, module_type_alias_id).maybe_as_ref()?.clone();
-    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
-
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let type_alias_data = if in_cycle {
-        type_alias_semantic_data_cycle_helper(
-            db,
-            &mut diagnostics,
-            module_type_alias_ast,
-            lookup_item_id,
-            generic_params_data,
-        )?
-    } else {
-        type_alias_semantic_data_helper(
-            db,
-            &mut diagnostics,
-            module_type_alias_ast,
-            lookup_item_id,
-            generic_params_data,
-        )?
-    };
-    Ok(ModuleTypeAliasData { type_alias_data, diagnostics: diagnostics.build() })
+        let mut diagnostics = SemanticDiagnostics::new(module_id);
+        let type_alias_data = if in_cycle {
+            type_alias_semantic_data_cycle_helper(
+                db,
+                &mut diagnostics,
+                module_type_alias_ast,
+                lookup_item_id,
+                generic_params_data,
+            )?
+        } else {
+            type_alias_semantic_data_helper(
+                db,
+                &mut diagnostics,
+                module_type_alias_ast,
+                lookup_item_id,
+                generic_params_data,
+            )?
+        };
+        Ok(ModuleTypeAliasData { type_alias_data, diagnostics: diagnostics.build() })
+    }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        module_type_alias_id: ModuleTypeAliasId<'db>,
+    ) -> Maybe<ModuleTypeAliasData<'db>> {
+        calc(db, module_type_alias_id, true)
+    }
+    /// Query implementation.
+    #[salsa::tracked(cycle_result=cycle, returns(ref))]
+    fn module_type_alias_semantic_data<'db>(
+        db: &'db dyn Database,
+        module_type_alias_id: ModuleTypeAliasId<'db>,
+    ) -> Maybe<ModuleTypeAliasData<'db>> {
+        calc(db, module_type_alias_id, false)
+    }
+    module_type_alias_semantic_data(db, module_type_alias_id)
 }
 
 /// Returns the generic parameters data of a type alias.

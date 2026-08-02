@@ -48,32 +48,38 @@ pub fn function_with_body_direct_function_with_body_callees<'db>(
 }
 
 /// Query implementation of [LoweringGroup::final_contains_call_cycle].
-#[salsa::tracked(returns(copy), cycle_result=final_contains_call_cycle_handle_cycle)]
 pub fn final_contains_call_cycle<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
-    let direct_callees = db.lowered_direct_callees_with_body(
-        function_id,
-        DependencyType::Call,
-        LoweringStage::Final,
-    )?;
-    for callee in direct_callees {
-        if db.final_contains_call_cycle(*callee)? {
-            return Ok(true);
-        }
+    /// Cycle handling for the query.
+    fn cycle<'db>(
+        _db: &'db dyn Database,
+        _id: salsa::Id,
+        _function_id: ConcreteFunctionWithBodyId<'db>,
+    ) -> Maybe<bool> {
+        Ok(true)
     }
+    /// Query implementation.
+    #[salsa::tracked(returns(copy), cycle_result=cycle)]
+    fn final_contains_call_cycle<'db>(
+        db: &'db dyn Database,
+        function_id: ConcreteFunctionWithBodyId<'db>,
+    ) -> Maybe<bool> {
+        let direct_callees = db.lowered_direct_callees_with_body(
+            function_id,
+            DependencyType::Call,
+            LoweringStage::Final,
+        )?;
+        for callee in direct_callees {
+            if db.final_contains_call_cycle(*callee)? {
+                return Ok(true);
+            }
+        }
 
-    Ok(false)
-}
-
-/// Cycle handling for [LoweringGroup::final_contains_call_cycle].
-pub fn final_contains_call_cycle_handle_cycle<'db>(
-    _db: &'db dyn Database,
-    _id: salsa::Id,
-    _function_id: ConcreteFunctionWithBodyId<'db>,
-) -> Maybe<bool> {
-    Ok(true)
+        Ok(false)
+    }
+    final_contains_call_cycle(db, function_id)
 }
 
 /// Query implementation of [LoweringGroup::in_cycle].

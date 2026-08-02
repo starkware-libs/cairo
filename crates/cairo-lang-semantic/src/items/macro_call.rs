@@ -34,85 +34,161 @@ pub struct MacroCallData<'db> {
     pub parent_macro_call_data: Option<Arc<ResolverMacroData<'db>>>,
 }
 
-/// Implementation of [MacroCallSemantic::priv_macro_call_data].
+/// Query implementation of [MacroCallSemantic::priv_macro_call_data].
 fn priv_macro_call_data<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<MacroCallData<'db>> {
-    let inference_id = InferenceId::MacroCall(macro_call_id);
-    let module_id = macro_call_id.parent_module(db);
-    let mut resolver = Resolver::new(db, module_id, inference_id);
-    let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
-    // Resolve the macro call path, and report diagnostics if it finds no match or
-    // the resolved item is not a macro declaration.
-    let macro_call_path = macro_call_syntax.path(db);
-    let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
-    let callsite_module_id = macro_call_id.parent_module(db);
-    // If the call is to `expose!` and no other `expose` item is locally declared - using expose.
-    if macro_name.long(db) == EXPOSE_MACRO_NAME
-        && let Ok(None) = db.module_item_by_name(callsite_module_id, macro_name)
-    {
-        let (content, mapping) = expose_content_and_mapping(db, macro_call_syntax.arguments(db))?;
-        let code_mappings: Arc<[CodeMapping]> = [mapping].into();
-        let generated_file_id = FileLongId::Virtual(VirtualFile {
-            parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
-            name: macro_name,
-            content: SmolStrId::from(db, content),
-            code_mappings: code_mappings.clone(),
-            kind: FileKind::Module,
-            original_item_removed: false,
+    /// The initial value for the cycle handling of the query.
+    ///
+    /// Returns an empty MacroCallData with no diagnostics, to prevent infinite recursion in case
+    /// of cyclic macro calls.
+    fn cycle_initial<'db>(
+        db: &'db dyn Database,
+        _id: salsa::Id,
+        macro_call_id: MacroCallId<'db>,
+    ) -> Maybe<MacroCallData<'db>> {
+        let module_id = macro_call_id.parent_module(db);
+        let mut diagnostics = SemanticDiagnostics::new(module_id);
+        let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
+        let macro_call_path = macro_call_syntax.path(db);
+        let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
+
+        let diag_added = diagnostics.report(
+            macro_call_id.stable_ptr(db).untyped(),
+            SemanticDiagnosticKind::InlineMacroNotFound(macro_name),
+        );
+
+        Ok(MacroCallData {
+            macro_call_module: Err(diag_added),
+            diagnostics: diagnostics.build(),
+            defsite_module_id: module_id,
+            callsite_module_id: module_id,
+            expansion_mappings: Arc::new([]),
+            parent_macro_call_data: None,
         })
-        .intern(db);
-        let macro_call_module =
-            ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: true };
-        return Ok(MacroCallData {
-            macro_call_module: Ok(macro_call_module),
-            diagnostics: Default::default(),
-            // Defsite and callsite aren't actually used, as it defines nothing in its code.
-            defsite_module_id: callsite_module_id,
-            callsite_module_id,
-            expansion_mappings: code_mappings,
-            parent_macro_call_data: resolver.macro_call_data,
-        });
     }
-    let mut diagnostics = SemanticDiagnostics::new(callsite_module_id);
-    let macro_declaration_id = match resolver.resolve_generic_path(
-        &mut diagnostics,
-        &macro_call_path,
-        NotFoundItemType::Macro,
-        ResolutionContext::Default,
-    ) {
-        Ok(ResolvedGenericItem::Macro(macro_declaration_id)) => macro_declaration_id,
-        Ok(_) => {
+    /// The update function for the cycle handling of the query.
+    fn cycle_update<'db>(
+        _db: &'db dyn Database,
+        _cycle: &salsa::Cycle<'_>,
+        _last_provisional_value: &Maybe<MacroCallData<'db>>,
+        value: Maybe<MacroCallData<'db>>,
+        _macro_call_id: MacroCallId<'db>,
+    ) -> Maybe<MacroCallData<'db>> {
+        value
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(clone), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
+    fn priv_macro_call_data<'db>(
+        db: &'db dyn Database,
+        macro_call_id: MacroCallId<'db>,
+    ) -> Maybe<MacroCallData<'db>> {
+        let inference_id = InferenceId::MacroCall(macro_call_id);
+        let module_id = macro_call_id.parent_module(db);
+        let mut resolver = Resolver::new(db, module_id, inference_id);
+        let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
+        // Resolve the macro call path, and report diagnostics if it finds no match or
+        // the resolved item is not a macro declaration.
+        let macro_call_path = macro_call_syntax.path(db);
+        let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
+        let callsite_module_id = macro_call_id.parent_module(db);
+        // If the call is to `expose!` and no other `expose` item is locally declared - using
+        // expose.
+        if macro_name.long(db) == EXPOSE_MACRO_NAME
+            && let Ok(None) = db.module_item_by_name(callsite_module_id, macro_name)
+        {
+            let (content, mapping) =
+                expose_content_and_mapping(db, macro_call_syntax.arguments(db))?;
+            let code_mappings: Arc<[CodeMapping]> = [mapping].into();
+            let generated_file_id = FileLongId::Virtual(VirtualFile {
+                parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
+                name: macro_name,
+                content: SmolStrId::from(db, content),
+                code_mappings: code_mappings.clone(),
+                kind: FileKind::Module,
+                original_item_removed: false,
+            })
+            .intern(db);
+            let macro_call_module =
+                ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: true };
+            return Ok(MacroCallData {
+                macro_call_module: Ok(macro_call_module),
+                diagnostics: Default::default(),
+                // Defsite and callsite aren't actually used, as it defines nothing in its code.
+                defsite_module_id: callsite_module_id,
+                callsite_module_id,
+                expansion_mappings: code_mappings,
+                parent_macro_call_data: resolver.macro_call_data,
+            });
+        }
+        let mut diagnostics = SemanticDiagnostics::new(callsite_module_id);
+        let macro_declaration_id = match resolver.resolve_generic_path(
+            &mut diagnostics,
+            &macro_call_path,
+            NotFoundItemType::Macro,
+            ResolutionContext::Default,
+        ) {
+            Ok(ResolvedGenericItem::Macro(macro_declaration_id)) => macro_declaration_id,
+            Ok(_) => {
+                let diag_added = diagnostics.report(
+                    macro_call_syntax.stable_ptr(db),
+                    SemanticDiagnosticKind::InlineMacroNotFound(macro_name),
+                );
+                return Ok(MacroCallData {
+                    macro_call_module: Err(diag_added),
+                    diagnostics: diagnostics.build(),
+                    defsite_module_id: callsite_module_id,
+                    callsite_module_id,
+                    expansion_mappings: Arc::new([]),
+                    parent_macro_call_data: resolver.macro_call_data,
+                });
+            }
+            Err(diag_added) => {
+                return Ok(MacroCallData {
+                    macro_call_module: Err(diag_added),
+                    diagnostics: diagnostics.build(),
+                    defsite_module_id: callsite_module_id,
+                    callsite_module_id,
+                    expansion_mappings: Arc::new([]),
+                    parent_macro_call_data: resolver.macro_call_data,
+                });
+            }
+        };
+        let defsite_module_id = macro_declaration_id.parent_module(db);
+        let parent_macro_call_data = resolver.macro_call_data;
+        let macro_rules = match db.macro_declaration_rules(macro_declaration_id) {
+            Ok(rules) => rules,
+            Err(diag_added) => {
+                return Ok(MacroCallData {
+                    macro_call_module: Err(diag_added),
+                    diagnostics: diagnostics.build(),
+                    defsite_module_id,
+                    callsite_module_id,
+                    expansion_mappings: Arc::new([]),
+                    parent_macro_call_data,
+                });
+            }
+        };
+        let Some((rule, (captures, placeholder_to_rep_id))) = macro_rules.iter().find_map(|rule| {
+            is_macro_rule_match(db, rule, &macro_call_syntax.arguments(db)).map(|res| (rule, res))
+        }) else {
             let diag_added = diagnostics.report(
                 macro_call_syntax.stable_ptr(db),
-                SemanticDiagnosticKind::InlineMacroNotFound(macro_name),
+                SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name),
             );
             return Ok(MacroCallData {
                 macro_call_module: Err(diag_added),
                 diagnostics: diagnostics.build(),
-                defsite_module_id: callsite_module_id,
+                defsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
-                parent_macro_call_data: resolver.macro_call_data,
+                parent_macro_call_data,
             });
-        }
-        Err(diag_added) => {
-            return Ok(MacroCallData {
-                macro_call_module: Err(diag_added),
-                diagnostics: diagnostics.build(),
-                defsite_module_id: callsite_module_id,
-                callsite_module_id,
-                expansion_mappings: Arc::new([]),
-                parent_macro_call_data: resolver.macro_call_data,
-            });
-        }
-    };
-    let defsite_module_id = macro_declaration_id.parent_module(db);
-    let parent_macro_call_data = resolver.macro_call_data;
-    let macro_rules = match db.macro_declaration_rules(macro_declaration_id) {
-        Ok(rules) => rules,
-        Err(diag_added) => {
+        };
+        // If the rule has declaration-time errors, skip expansion to avoid panics on malformed
+        // rules.
+        if let Err(diag_added) = rule.err {
             return Ok(MacroCallData {
                 macro_call_module: Err(diag_added),
                 diagnostics: diagnostics.build(),
@@ -122,63 +198,29 @@ fn priv_macro_call_data<'db>(
                 parent_macro_call_data,
             });
         }
-    };
-    let Some((rule, (captures, placeholder_to_rep_id))) = macro_rules.iter().find_map(|rule| {
-        is_macro_rule_match(db, rule, &macro_call_syntax.arguments(db)).map(|res| (rule, res))
-    }) else {
-        let diag_added = diagnostics.report(
-            macro_call_syntax.stable_ptr(db),
-            SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name),
-        );
-        return Ok(MacroCallData {
-            macro_call_module: Err(diag_added),
+        let mut matcher_ctx =
+            MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
+        let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
+        let generated_file_id = FileLongId::Virtual(VirtualFile {
+            parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
+            name: macro_name,
+            content: SmolStrId::from_arcstr(db, &expanded_code.text),
+            code_mappings: expanded_code.code_mappings.clone(),
+            kind: FileKind::Module,
+            original_item_removed: false,
+        })
+        .intern(db);
+        let macro_call_module =
+            ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: false };
+        Ok(MacroCallData {
+            macro_call_module: Ok(macro_call_module),
             diagnostics: diagnostics.build(),
             defsite_module_id,
             callsite_module_id,
-            expansion_mappings: Arc::new([]),
+            expansion_mappings: expanded_code.code_mappings,
             parent_macro_call_data,
-        });
-    };
-    // If the rule has declaration-time errors, skip expansion to avoid panics on malformed rules.
-    if let Err(diag_added) = rule.err {
-        return Ok(MacroCallData {
-            macro_call_module: Err(diag_added),
-            diagnostics: diagnostics.build(),
-            defsite_module_id,
-            callsite_module_id,
-            expansion_mappings: Arc::new([]),
-            parent_macro_call_data,
-        });
+        })
     }
-    let mut matcher_ctx = MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
-    let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
-    let generated_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
-        name: macro_name,
-        content: SmolStrId::from_arcstr(db, &expanded_code.text),
-        code_mappings: expanded_code.code_mappings.clone(),
-        kind: FileKind::Module,
-        original_item_removed: false,
-    })
-    .intern(db);
-    let macro_call_module =
-        ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: false };
-    Ok(MacroCallData {
-        macro_call_module: Ok(macro_call_module),
-        diagnostics: diagnostics.build(),
-        defsite_module_id,
-        callsite_module_id,
-        expansion_mappings: expanded_code.code_mappings,
-        parent_macro_call_data,
-    })
-}
-
-/// Query implementation of [MacroCallSemantic::priv_macro_call_data].
-#[salsa::tracked(returns(clone), cycle_fn=priv_macro_call_data_cycle, cycle_initial=priv_macro_call_data_initial)]
-fn priv_macro_call_data_tracked<'db>(
-    db: &'db dyn Database,
-    macro_call_id: MacroCallId<'db>,
-) -> Maybe<MacroCallData<'db>> {
     priv_macro_call_data(db, macro_call_id)
 }
 
@@ -208,46 +250,6 @@ pub fn expose_content_and_mapping<'db>(
     ))
 }
 
-/// Cycle handling for [MacroCallSemantic::priv_macro_call_data].
-fn priv_macro_call_data_cycle<'db>(
-    _db: &'db dyn Database,
-    _cycle: &salsa::Cycle<'_>,
-    _last_provisional_value: &Maybe<MacroCallData<'db>>,
-    value: Maybe<MacroCallData<'db>>,
-    _macro_call_id: MacroCallId<'db>,
-) -> Maybe<MacroCallData<'db>> {
-    value
-}
-
-/// Cycle handling for [MacroCallSemantic::priv_macro_call_data].
-fn priv_macro_call_data_initial<'db>(
-    db: &'db dyn Database,
-    _id: salsa::Id,
-    macro_call_id: MacroCallId<'db>,
-) -> Maybe<MacroCallData<'db>> {
-    // If we are in a cycle, we return an empty MacroCallData with no diagnostics.
-    // This is to prevent infinite recursion in case of cyclic macro calls.
-    let module_id = macro_call_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
-    let macro_call_path = macro_call_syntax.path(db);
-    let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
-
-    let diag_added = diagnostics.report(
-        macro_call_id.stable_ptr(db).untyped(),
-        SemanticDiagnosticKind::InlineMacroNotFound(macro_name),
-    );
-
-    Ok(MacroCallData {
-        macro_call_module: Err(diag_added),
-        diagnostics: diagnostics.build(),
-        defsite_module_id: module_id,
-        callsite_module_id: module_id,
-        expansion_mappings: Arc::new([]),
-        parent_macro_call_data: None,
-    })
-}
-
 /// Implementation of [MacroCallSemantic::macro_call_diagnostics].
 fn macro_call_diagnostics<'db>(
     db: &'db dyn Database,
@@ -265,40 +267,38 @@ fn macro_call_diagnostics_tracked<'db>(
     macro_call_diagnostics(db, macro_call_id)
 }
 
-/// Implementation of [MacroCallSemantic::macro_call_module_id].
+/// Query implementation of [MacroCallSemantic::macro_call_module_id].
 fn macro_call_module_id<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ModuleId<'db>> {
-    db.priv_macro_call_data(macro_call_id)?.macro_call_module
-}
-
-/// Query implementation of [MacroCallSemantic::macro_call_module_id].
-#[salsa::tracked(returns(copy), cycle_fn=macro_call_module_id_cycle, cycle_initial=macro_call_module_id_initial)]
-fn macro_call_module_id_tracked<'db>(
-    db: &'db dyn Database,
-    macro_call_id: MacroCallId<'db>,
-) -> Maybe<ModuleId<'db>> {
+    /// The initial value for the cycle handling of the query.
+    fn cycle_initial<'db>(
+        _db: &'db dyn Database,
+        _id: salsa::Id,
+        _macro_call_id: MacroCallId<'db>,
+    ) -> Maybe<ModuleId<'db>> {
+        Err(skip_diagnostic())
+    }
+    /// The update function for the cycle handling of the query.
+    fn cycle_update<'db>(
+        _db: &'db dyn Database,
+        _cycle: &salsa::Cycle<'_>,
+        _last_provisional_value: &Maybe<ModuleId<'db>>,
+        value: Maybe<ModuleId<'db>>,
+        _macro_call_id: MacroCallId<'db>,
+    ) -> Maybe<ModuleId<'db>> {
+        value
+    }
+    /// Query implementation.
+    #[salsa::tracked(returns(copy), cycle_fn=cycle_update, cycle_initial=cycle_initial)]
+    fn macro_call_module_id<'db>(
+        db: &'db dyn Database,
+        macro_call_id: MacroCallId<'db>,
+    ) -> Maybe<ModuleId<'db>> {
+        db.priv_macro_call_data(macro_call_id)?.macro_call_module
+    }
     macro_call_module_id(db, macro_call_id)
-}
-
-/// Cycle handling for [MacroCallSemantic::macro_call_module_id].
-fn macro_call_module_id_cycle<'db>(
-    _db: &'db dyn Database,
-    _cycle: &salsa::Cycle<'_>,
-    _last_provisional_value: &Maybe<ModuleId<'db>>,
-    value: Maybe<ModuleId<'db>>,
-    _macro_call_id: MacroCallId<'db>,
-) -> Maybe<ModuleId<'db>> {
-    value
-}
-/// Cycle handling for [MacroCallSemantic::macro_call_module_id].
-fn macro_call_module_id_initial<'db>(
-    _db: &'db dyn Database,
-    _id: salsa::Id,
-    _macro_call_id: MacroCallId<'db>,
-) -> Maybe<ModuleId<'db>> {
-    Err(skip_diagnostic())
 }
 
 /// Returns the modules that are considered a part of this module.
@@ -358,11 +358,11 @@ pub trait MacroCallSemantic<'db>: Database {
         &'db self,
         macro_call_id: MacroCallId<'db>,
     ) -> Maybe<MacroCallData<'db>> {
-        priv_macro_call_data_tracked(self.as_dyn_database(), macro_call_id)
+        priv_macro_call_data(self.as_dyn_database(), macro_call_id)
     }
     /// Returns the expansion result of a macro call.
     fn macro_call_module_id(&'db self, macro_call_id: MacroCallId<'db>) -> Maybe<ModuleId<'db>> {
-        macro_call_module_id_tracked(self.as_dyn_database(), macro_call_id)
+        macro_call_module_id(self.as_dyn_database(), macro_call_id)
     }
     /// Returns the semantic diagnostics of a macro call.
     fn macro_call_diagnostics(
