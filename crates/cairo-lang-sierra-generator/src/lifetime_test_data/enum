@@ -3,10 +3,20 @@
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+    C: (felt252, felt252),
+}
 
-//! > function_code
+impl MyEnumDrop of Drop<MyEnum>;
+
+#[inline(never)]
+fn immovable<T>(t: T) -> T {
+    t
+}
+#[target_function]
 fn foo(x: MyEnum, y: felt252, z: felt252, w: felt252) -> felt252 {
     immovable(
         match x {
@@ -19,20 +29,6 @@ fn foo(x: MyEnum, y: felt252, z: felt252, w: felt252) -> felt252 {
         },
     );
     w
-}
-
-//! > module_code
-enum MyEnum {
-    A: felt252,
-    B: felt252,
-    C: (felt252, felt252),
-}
-
-impl MyEnumDrop of Drop<MyEnum>;
-
-#[inline(never)]
-fn immovable<T>(t: T) -> T {
-    t
 }
 
 //! > lowering_format

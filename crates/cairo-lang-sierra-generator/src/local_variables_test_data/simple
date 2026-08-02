@@ -3,10 +3,12 @@
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     let y0 = x + x;
     let y1 = y0 + y0;
@@ -16,12 +18,6 @@ fn foo(x: felt252) -> felt252 {
     revoke_ap();
     let _w = x + y1 + z;
     x
-}
-
-//! > module_code
-// Revokes ap since this function is recursive.
-fn revoke_ap() -> felt252 {
-    revoke_ap()
 }
 
 //! > lowering_format
@@ -49,20 +45,16 @@ v5, v2
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     let y0 = x + x;
     revoke_ap();
     return y0;
-}
-
-//! > module_code
-// Revokes ap since this function is recursive.
-fn revoke_ap() -> felt252 {
-    revoke_ap()
 }
 
 //! > lowering_format
@@ -84,10 +76,15 @@ v1
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn dup<T, +Copy<T>>(value: T) -> (T, T) nopanic;
 
-//! > function_code
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     let y = x + x;
     let z = y + y;
@@ -96,15 +93,6 @@ fn foo(x: felt252) -> felt252 {
     let (z4, z5) = dup::<felt252>(z2);
     revoke_ap();
     z4 + z5
-}
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn dup<T, +Copy<T>>(value: T) -> (T, T) nopanic;
-
-// Revokes ap since this function is recursive.
-fn revoke_ap() -> felt252 {
-    revoke_ap()
 }
 
 //! > lowering_format

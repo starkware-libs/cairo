@@ -5,20 +5,16 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+#[inline(never)]
+fn bar(x: felt252) {
+    bar(x)
+}
+#[target_function]
 fn foo() -> () {
     let x = 5;
     bar(x);
     bar(x);
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(never)]
-fn bar(x: felt252) {
-    bar(x)
 }
 
 //! > semantic_diagnostics

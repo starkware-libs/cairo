@@ -3,19 +3,15 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(a: MyStruct) -> Box<MyStruct> {
-    BoxTrait::new(a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     x: felt252,
     y: felt252,
     z: felt252,
+}
+#[target_function]
+fn foo(a: MyStruct) -> Box<MyStruct> {
+    BoxTrait::new(a)
 }
 
 //! > semantic_diagnostics
@@ -37,18 +33,14 @@ return([1])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(a: SmallStruct) -> Box<SmallStruct> {
-    BoxTrait::new(a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct SmallStruct {
     x: felt252,
     y: felt252,
+}
+#[target_function]
+fn foo(a: SmallStruct) -> Box<SmallStruct> {
+    BoxTrait::new(a)
 }
 
 //! > semantic_diagnostics
@@ -69,19 +61,15 @@ return([1])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(a: MyStruct) -> Box<Box<MyStruct>> {
-    BoxTrait::new(BoxTrait::new(a))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     x: felt252,
     y: felt252,
     z: felt252,
+}
+#[target_function]
+fn foo(a: MyStruct) -> Box<Box<MyStruct>> {
+    BoxTrait::new(BoxTrait::new(a))
 }
 
 //! > semantic_diagnostics
@@ -104,16 +92,7 @@ return([2])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo() -> Box<MyStruct> {
-    let x = create_struct();
-    BoxTrait::new(x)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
@@ -124,6 +103,11 @@ struct MyStruct {
 #[inline(never)]
 fn create_struct() -> MyStruct {
     MyStruct { x: 1, y: 2, z: 3 }
+}
+#[target_function]
+fn foo() -> Box<MyStruct> {
+    let x = create_struct();
+    BoxTrait::new(x)
 }
 
 //! > semantic_diagnostics
@@ -149,20 +133,16 @@ return([2])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(a: MyStruct) -> Box<@MyStruct> {
-    BoxTrait::new(@a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
     y: felt252,
     z: felt252,
+}
+#[target_function]
+fn foo(a: MyStruct) -> Box<@MyStruct> {
+    BoxTrait::new(@a)
 }
 
 //! > semantic_diagnostics
@@ -186,20 +166,16 @@ return([3])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(x: felt252) -> Box<MyStruct> {
-    BoxTrait::new(MyStruct { x, y: 2, z: 3 })
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
     y: felt252,
     z: felt252,
+}
+#[target_function]
+fn foo(x: felt252) -> Box<MyStruct> {
+    BoxTrait::new(MyStruct { x, y: 2, z: 3 })
 }
 
 //! > semantic_diagnostics
@@ -227,15 +203,7 @@ return([5])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(s: Wrapper) -> Box<Inner> {
-    BoxTrait::new(s.inner)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct Wrapper {
     inner: Inner,
 }
@@ -244,6 +212,10 @@ struct Inner {
     a: felt252,
     b: felt252,
     c: felt252,
+}
+#[target_function]
+fn foo(s: Wrapper) -> Box<Inner> {
+    BoxTrait::new(s.inner)
 }
 
 //! > semantic_diagnostics
@@ -266,15 +238,7 @@ return([2])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(s: Outer) -> Box<Inner> {
-    BoxTrait::new(s.mid.inner)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct Outer {
     mid: Mid,
 }
@@ -287,6 +251,10 @@ struct Inner {
     a: felt252,
     b: felt252,
     c: felt252,
+}
+#[target_function]
+fn foo(s: Outer) -> Box<Inner> {
+    BoxTrait::new(s.mid.inner)
 }
 
 //! > semantic_diagnostics

@@ -3,18 +3,14 @@
 //! > test_runner_name
 test_sierra_locations
 
-//! > function_code
+//! > cairo_code
+fn bar(x: felt252, y: felt252, z: felt252) -> felt252 {
+    bar(x, y, z)
+}
+#[target_function]
 fn foo(a: felt252, b: felt252) -> felt252 {
     let b = felt252_add(a, 5);
     bar(b, b, b)
-}
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar(x: felt252, y: felt252, z: felt252) -> felt252 {
-    bar(x, y, z)
 }
 
 //! > semantic_diagnostics
@@ -113,7 +109,13 @@ In function: lib.cairo::foo
 //! > test_runner_name
 test_sierra_locations
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: u8,
+    B: u8,
+    C: (u8, u8),
+}
+#[target_function]
 fn foo(my_enum: MyEnum) -> u8 {
     match my_enum {
         MyEnum::A(a) => a,
@@ -124,16 +126,6 @@ fn foo(my_enum: MyEnum) -> u8 {
             c1 * c2
         } },
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: u8,
-    B: u8,
-    C: (u8, u8),
 }
 
 //! > semantic_diagnostics
@@ -663,7 +655,7 @@ In function: lib.cairo::foo
 //! > var_locations
 [0]:
 Originating location:
-  fn foo(my_enum: MyEnum) -> u8 {
+  #[target_function]
  _^
 | ...
 | }
@@ -952,13 +944,11 @@ In function: lib.cairo::foo
 //! > test_runner_name
 test_sierra_locations
 
-//! > function_code
+//! > cairo_code
+>>> file: ../../examples/enum_flow.cairo
 
 //! > function_name
 main
-
-//! > module_code
->>> file: ../../examples/enum_flow.cairo
 
 //! > semantic_diagnostics
 
@@ -994,13 +984,11 @@ In function: lib.cairo::main
 //! > test_runner_name
 test_sierra_locations
 
-//! > function_code
+//! > cairo_code
+>>> file: ../../examples/match_or.cairo
 
 //! > function_name
 main
-
-//! > module_code
->>> file: ../../examples/match_or.cairo
 
 //! > semantic_diagnostics
 
@@ -1070,13 +1058,11 @@ In function: lib.cairo::main
 //! > test_runner_name
 test_sierra_locations
 
-//! > function_code
+//! > cairo_code
+>>> file: ../../examples/pedersen_test.cairo
 
 //! > function_name
 test_pedersen
-
-//! > module_code
->>> file: ../../examples/pedersen_test.cairo
 
 //! > semantic_diagnostics
 
@@ -1226,7 +1212,8 @@ In function: lib.cairo::test_pedersen
 //! > test_runner_name
 test_sierra_locations
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {
     let x = 10; // highlighted
     let y = 20; // highlighted
@@ -1237,11 +1224,6 @@ fn foo() {
         println!("x != y"); // no runtime cost - not highlighted
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -2289,15 +2271,11 @@ In function: writeln_macro::writeln_macro
 //! > test_runner_name
 test_sierra_locations
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn some_array_checks() {
     assert!(array![1, 2] != array![2, 1], "");
 }
-
-//! > function_name
-some_array_checks
-
-//! > module_code
 
 //! > semantic_diagnostics
 

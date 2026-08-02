@@ -3,7 +3,8 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     match x {
         0 => 3,
@@ -13,9 +14,6 @@ fn foo(x: felt252) -> felt252 {
         },
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -66,16 +64,14 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     match x {
         0 => x,
         _ => 7,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -126,16 +122,14 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(opt: Option<@felt252>) -> felt252 {
     match opt {
         Some(x) => *x,
         None => 0,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -186,14 +180,12 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut a: Array<u32>) {
     a.pop_front().unwrap();
     a.pop_front().unwrap();
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -282,20 +274,16 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+enum SingleVariant {
+    Only: felt252,
+}
+#[target_function]
 fn foo(x: SingleVariant) -> felt252 {
     match x {
         SingleVariant::Only(v) => v + 1,
     }
 }
-
-//! > module_code
-enum SingleVariant {
-    Only: felt252,
-}
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

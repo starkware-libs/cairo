@@ -3,10 +3,13 @@
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+use zeroable::IsZeroResult;
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     match felt252_is_zero(x) {
         IsZeroResult::Zero => 1,
@@ -25,13 +28,6 @@ fn foo(x: felt252) -> felt252 {
             y.into()
         },
     }
-}
-
-//! > module_code
-use zeroable::IsZeroResult;
-// Revokes ap since this function is recursive.
-fn revoke_ap() -> felt252 {
-    revoke_ap()
 }
 
 //! > lowering_format
@@ -88,10 +84,12 @@ v4
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     let x1 = x + x;
     let x2 = x1 + x1;
@@ -109,12 +107,6 @@ fn foo(x: felt252) -> felt252 {
     };
     revoke_ap();
     x4
-}
-
-//! > module_code
-// Revokes ap since this function is recursive.
-fn revoke_ap() -> felt252 {
-    revoke_ap()
 }
 
 //! > lowering_format
@@ -178,10 +170,13 @@ v10
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+use zeroable::IsZeroResult;
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     let w1 = x + x;
 
@@ -206,13 +201,6 @@ fn foo(x: felt252) -> felt252 {
 
     // w2 is revoked.
     w2 + x
-}
-
-//! > module_code
-use zeroable::IsZeroResult;
-// Revokes ap since this function is recursive.
-fn revoke_ap() -> felt252 {
-    revoke_ap()
 }
 
 //! > lowering_format
