@@ -55,7 +55,8 @@ pub struct MatcherContext<'db> {
     pub rep_ids: OrderedHashMap<SyntaxStablePtrId<'db>, RepetitionId>,
 
     /// The nesting depth of each repetition within the pattern, starting at 1. Used to pick the
-    /// driver of an expansion block: the outermost repetition still available drives it.
+    /// driver of an expansion block: a block nested in `d` blocks iterates the repetition at
+    /// depth `d`.
     pub rep_depths: OrderedHashMap<RepetitionId, usize>,
 
     /// The repetition each repetition is nested in, absent for a top-level one.
@@ -599,12 +600,15 @@ pub fn expand_macro_rule(
     let node = rule.expansion.as_syntax_node();
     let mut res_buffer = String::new();
     let mut code_mappings = Vec::new();
-    expand_macro_rule_ex(db, node, matcher_ctx, &mut res_buffer, &mut code_mappings)?;
+    expand_macro_rule_ex(db, node, matcher_ctx, &mut res_buffer, &mut code_mappings, 0)?;
     Ok(MacroExpansionResult { text: res_buffer.into(), code_mappings: code_mappings.into() })
 }
 
 /// Helper function for [expand_macro_rule]. Traverses the macro expansion and replaces the
 /// placeholders with the provided values while collecting the result in res_buffer.
+///
+/// `depth` is the number of `$()` expansion blocks enclosing `node`, and selects which pattern
+/// repetition the next block drives.
 ///
 /// Returns an error if a placeholder is not found in captures.
 /// When an error is returned, appropriate diagnostics will already have been reported.
@@ -614,6 +618,7 @@ fn expand_macro_rule_ex(
     matcher_ctx: &mut MatcherContext<'_>,
     res_buffer: &mut String,
     code_mappings: &mut Vec<CodeMapping>,
+    depth: usize,
 ) -> Maybe<()> {
     match node.kind(db) {
         SyntaxKind::MacroParam => {
@@ -643,9 +648,8 @@ fn expand_macro_rule_ex(
             let repetition = ast::MacroRepetition::from_syntax_node(db, node);
             let elements = repetition.elements(db);
             // A block with no driver is rejected at declaration time.
-            let (_placeholder_name, rep_id) =
-                find_repetition_driver(db, elements.elements(db), matcher_ctx)
-                    .ok_or_else(skip_diagnostic)?;
+            let rep_id = find_repetition_driver(db, elements.elements(db), matcher_ctx, depth + 1)
+                .ok_or_else(skip_diagnostic)?;
             let (group_offset, repetition_len) = repetition_group(matcher_ctx, rep_id);
             for i in 0..repetition_len {
                 matcher_ctx.repetition_indices.insert(rep_id, group_offset + i);
@@ -656,6 +660,7 @@ fn expand_macro_rule_ex(
                         matcher_ctx,
                         res_buffer,
                         code_mappings,
+                        depth + 1,
                     )?;
                 }
 
@@ -676,7 +681,7 @@ fn expand_macro_rule_ex(
             }
 
             for child in node.get_children(db).iter() {
-                expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
+                expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings, depth)?;
             }
             return Ok(());
         }
@@ -686,7 +691,7 @@ fn expand_macro_rule_ex(
         return Ok(());
     }
     for child in node.get_children(db).iter() {
-        expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
+        expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings, depth)?;
     }
     Ok(())
 }
@@ -699,16 +704,28 @@ fn expand_macro_rule_ex(
 /// its placeholders with no binding at all - which the expansion cannot tell apart from an unknown
 /// placeholder. A nested repetition that *is* entered rebinds its own placeholders back in
 /// [`is_macro_rule_match_ex`], so a non-empty match ends up with the innermost binding.
+///
+/// A binding already made by a deeper repetition is kept: this runs again on every iteration of the
+/// enclosing repetition, and a nested repetition matching zero times in a later one is not entered,
+/// so it would not restore the binding this would otherwise overwrite.
 fn register_repetition_placeholders<'db>(
     db: &'db dyn Database,
     elements: impl IntoIterator<Item = MacroElement<'db>>,
     rep_id: RepetitionId,
     ctx: &mut MatcherContext<'db>,
 ) {
+    let depth = *ctx
+        .rep_depths
+        .get(&rep_id)
+        .expect("Every repetition records its depth when its id is created.");
     for element in elements {
         let inner_elements = match element {
             ast::MacroElement::Param(param) => {
-                if let Some(name) = extract_placeholder(db, &param) {
+                if let Some(name) = extract_placeholder(db, &param)
+                    && !ctx.placeholder_to_rep_id.get(&name).is_some_and(|bound| {
+                        ctx.rep_depths.get(bound).is_some_and(|&bound_depth| bound_depth > depth)
+                    })
+                {
                     ctx.placeholder_to_rep_id.insert(name, rep_id);
                 }
                 continue;
@@ -731,64 +748,68 @@ fn repetition_group(matcher_ctx: &MatcherContext<'_>, rep_id: RepetitionId) -> (
         .rep_group_lens
         .get(&rep_id)
         .expect("Every repetition records its group lengths while matching.");
-    // A block driven by a repetition whose parent is not being iterated is the degenerate shape
-    // where the pattern binds nothing at this level - every such block then uses the first group.
-    let group = matcher_ctx
-        .rep_parents
-        .get(&rep_id)
-        .and_then(|parent| matcher_ctx.repetition_indices.get(parent))
-        .copied()
-        .unwrap_or(0);
+    // A repetition is entered once per iteration of its parent, and the block enclosing this one
+    // drives that parent - so the parent's current index selects the group. A top-level repetition
+    // is entered once, and has a single group.
+    let group = match matcher_ctx.rep_parents.get(&rep_id) {
+        Some(parent) => *matcher_ctx.repetition_indices.get(parent).expect(
+            "A nested repetition is driven from within the block driving its parent, so the \
+             parent is being iterated.",
+        ),
+        None => 0,
+    };
     (group_lens[..group].iter().sum(), group_lens.get(group).copied().unwrap_or(0))
 }
 
-/// Returns the placeholder driving the given expansion repetition block, and the repetition it is
-/// bound to.
+/// Returns the ancestor of `rep_id` at `depth`, or `None` if `rep_id` is itself shallower than
+/// `depth` and so has none.
+fn repetition_at_depth(
+    matcher_ctx: &MatcherContext<'_>,
+    mut rep_id: RepetitionId,
+    depth: usize,
+) -> Option<RepetitionId> {
+    loop {
+        let rep_depth = *matcher_ctx
+            .rep_depths
+            .get(&rep_id)
+            .expect("Every repetition records its depth when its id is created.");
+        if rep_depth <= depth {
+            return (rep_depth == depth).then_some(rep_id);
+        }
+        rep_id = *matcher_ctx.rep_parents.get(&rep_id)?;
+    }
+}
+
+/// Returns the repetition that an expansion repetition block nested in `depth` blocks iterates,
+/// picked from the placeholders it contains.
 ///
-/// A placeholder carries the iteration count of the repetition it is bound to. Candidates are
-/// ranked by `(already iterated by an enclosing block, pattern depth)`, lowest first, so the block
-/// takes the outermost repetition no enclosing block is iterating. One already being iterated is a
-/// last resort: the pattern binds nothing at this level, and the same values repeat.
+/// A block at depth `d` iterates the pattern repetition at depth `d`. A placeholder bound deeper
+/// than `d` reaches it through its repetition's ancestor at `d`; one bound shallower, or captured
+/// outside any repetition, has no such ancestor and cannot drive.
+///
+/// Every candidate yields the same repetition - a block mixing placeholders from different ones is
+/// rejected at declaration time, as is a block with no candidate at all - so the first is used.
 fn find_repetition_driver<'db>(
     db: &'db dyn Database,
     elements: impl IntoIterator<Item = MacroElement<'db>>,
     matcher_ctx: &MatcherContext<'_>,
-) -> Option<(SmolStrId<'db>, RepetitionId)> {
-    let mut best = None;
-    for element in elements {
-        let found = match element {
-            // A placeholder captured outside any repetition has a single value, repeated as-is in
-            // every iteration, so it carries no iteration count and cannot drive a block.
-            ast::MacroElement::Param(param) => extract_placeholder(db, &param).and_then(|name| {
-                matcher_ctx.placeholder_to_rep_id.get(&name).map(|&rep_id| (name, rep_id))
-            }),
-            ast::MacroElement::Token(_) => None,
-            ast::MacroElement::Subtree(subtree) => find_repetition_driver(
-                db,
-                get_macro_elements(db, subtree.subtree(db)).elements(db),
-                matcher_ctx,
-            ),
-            ast::MacroElement::Repetition(repetition) => {
-                find_repetition_driver(db, repetition.elements(db).elements(db), matcher_ctx)
-            }
-        };
-        let Some((name, rep_id)) = found else { continue };
-        const BEST_DRIVER_RANK: (bool, usize) = (false, 1);
-        let rank = {
-            let depth = *matcher_ctx
-                .rep_depths
-                .get(&rep_id)
-                .expect("Every repetition records its depth when its id is created.");
-            (matcher_ctx.repetition_indices.contains_key(&rep_id), depth)
-        };
-        if rank == BEST_DRIVER_RANK {
-            return Some((name, rep_id));
+    depth: usize,
+) -> Option<RepetitionId> {
+    elements.into_iter().find_map(|element| match element {
+        ast::MacroElement::Param(param) => extract_placeholder(db, &param).and_then(|name| {
+            repetition_at_depth(matcher_ctx, *matcher_ctx.placeholder_to_rep_id.get(&name)?, depth)
+        }),
+        ast::MacroElement::Token(_) => None,
+        ast::MacroElement::Subtree(subtree) => find_repetition_driver(
+            db,
+            get_macro_elements(db, subtree.subtree(db)).elements(db),
+            matcher_ctx,
+            depth,
+        ),
+        ast::MacroElement::Repetition(repetition) => {
+            find_repetition_driver(db, repetition.elements(db).elements(db), matcher_ctx, depth)
         }
-        if best.is_none_or(|(_, best_rank)| rank < best_rank) {
-            best = Some(((name, rep_id), rank));
-        }
-    }
-    Some(best?.0)
+    })
 }
 
 /// Implementation of [MacroDeclarationSemantic::macro_declaration_diagnostics].
