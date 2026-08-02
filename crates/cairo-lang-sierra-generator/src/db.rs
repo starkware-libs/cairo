@@ -287,7 +287,6 @@ fn get_function_signature(
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
     let lowered_function_id = db.lookup_sierra_function(&function_id);
-    let signature = lowered_function_id.signature(db)?;
 
     let implicits = db
         .function_implicits(lowered_function_id)?
@@ -295,13 +294,33 @@ fn get_function_signature(
         .map(|ty| db.get_concrete_type_id(*ty).cloned())
         .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
 
+    // For functions with a body, the actual parameters are those of the final lowering: they
+    // include the implicits, and reflect optimization phases that may change the signature of
+    // compiler-generated functions (whose signatures are not user-visible). The signature is used
+    // only for the return-side types, which no lowering phase changes.
+    // For body-less functions everything is derived from the declared signature.
+    let (signature, all_params) = match lowered_function_id.body(db)? {
+        Some(body) => {
+            let lowered = db.lowered_body(body, lowering::LoweringStage::Final)?;
+            let params = lowered
+                .parameters
+                .iter()
+                .map(|var| db.get_concrete_type_id(lowered.variables[*var].ty).cloned())
+                .collect::<Maybe<Vec<_>>>()?;
+            (lowered.signature.clone(), params)
+        }
+        None => {
+            let signature = lowered_function_id.signature(db)?;
+            let mut params = implicits.clone();
+            for param in &signature.params {
+                params.push(db.get_concrete_type_id(param.ty)?.clone());
+            }
+            (signature, params)
+        }
+    };
+
     // TODO(spapini): Handle ret_types in lowering.
-    let mut all_params = implicits.clone();
     let mut extra_rets = vec![];
-    for param in &signature.params {
-        let concrete_type_id = db.get_concrete_type_id(param.ty)?;
-        all_params.push(concrete_type_id.clone());
-    }
     for var in &signature.extra_rets {
         let concrete_type_id = db.get_concrete_type_id(var.ty())?;
         extra_rets.push(concrete_type_id.clone());
