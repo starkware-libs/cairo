@@ -3,16 +3,14 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     if x == 0 {
         return 1;
     }
     2
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

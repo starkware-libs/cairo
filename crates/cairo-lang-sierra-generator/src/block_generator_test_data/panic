@@ -3,15 +3,7 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
-fn foo(opt: Option<felt252>) -> felt252 {
-    expect(opt)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn expect(opt: Option<felt252>) -> felt252 {
     match opt {
@@ -26,6 +18,10 @@ fn no_inline_panic() -> never {
     let mut data = array![];
     data.append(1);
     panic(data)
+}
+#[target_function]
+fn foo(opt: Option<felt252>) -> felt252 {
+    expect(opt)
 }
 
 //! > semantic_diagnostics

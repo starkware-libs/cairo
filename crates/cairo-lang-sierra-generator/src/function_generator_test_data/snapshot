@@ -3,18 +3,7 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(ref arr: Array<felt252>) {
-    arr.append(5);
-    let _ = immovable(@arr);
-    revoke_ap();
-    arr.append(6);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()
@@ -23,6 +12,13 @@ fn revoke_ap() -> felt252 {
 #[inline(never)]
 fn immovable<T>(t: T) -> T {
     t
+}
+#[target_function]
+fn foo(ref arr: Array<felt252>) {
+    arr.append(5);
+    let _ = immovable(@arr);
+    revoke_ap();
+    arr.append(6);
 }
 
 //! > semantic_diagnostics
@@ -59,16 +55,14 @@ return([9])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: @u32) {
     *x + 1;
     if true {
         *x + 2;
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

@@ -3,22 +3,18 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+#[inline(never)]
+fn immovable<T>(t: T) -> T {
+    t
+}
+#[target_function]
 fn foo(a: felt252) {
     let (_x, _y) = immovable(if a == 0 {
         (a, a)
     } else {
         (a, a)
     });
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(never)]
-fn immovable<T>(t: T) -> T {
-    t
 }
 
 //! > semantic_diagnostics

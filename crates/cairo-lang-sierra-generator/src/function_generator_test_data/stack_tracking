@@ -3,16 +3,7 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo() {
-    let (a, _, b) = get_val();
-    test_func(a, b)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn get_val() -> (u32, (), u32) {
     (13, (), 17)
@@ -20,6 +11,11 @@ fn get_val() -> (u32, (), u32) {
 
 #[inline(never)]
 fn test_func(a: u32, b: u32) {}
+#[target_function]
+fn foo() {
+    let (a, _, b) = get_val();
+    test_func(a, b)
+}
 
 //! > semantic_diagnostics
 
@@ -44,25 +40,21 @@ return()
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo() -> (felt252, felt252) {
-    let tuple = get_val();
-    let (_a, b) = tuple;
-    // Call drop explicitly to avoid the `struct_deconstruct` above from being optimized out.
-    drop::<felt252>(b);
-    tuple
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[allow(extern_outside_corelib)]
 extern fn drop<T, +Drop<T>>(value: T) nopanic;
 
 #[inline(never)]
 fn get_val() -> (felt252, felt252) {
     (13, 17)
+}
+#[target_function]
+fn foo() -> (felt252, felt252) {
+    let tuple = get_val();
+    let (_a, b) = tuple;
+    // Call drop explicitly to avoid the `struct_deconstruct` above from being optimized out.
+    drop::<felt252>(b);
+    tuple
 }
 
 //! > semantic_diagnostics
@@ -87,16 +79,7 @@ return([0])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo() {
-    let arr = get_val();
-    test_func(arr.span());
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn get_val() -> Array<felt252> {
     ArrayTrait::new()
@@ -104,6 +87,11 @@ fn get_val() -> Array<felt252> {
 
 #[inline(never)]
 fn test_func(a: Span<felt252>) {}
+#[target_function]
+fn foo() {
+    let arr = get_val();
+    test_func(arr.span());
+}
 
 //! > semantic_diagnostics
 

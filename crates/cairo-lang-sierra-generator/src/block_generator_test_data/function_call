@@ -3,7 +3,10 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+struct MyStruct {}
+#[target_function]
 fn foo(mut z: MyStruct) -> () {
     let x = bar(1, 2, ref z);
     bar(x, felt252_add(x, x), ref z);
@@ -13,13 +16,6 @@ fn foo(mut z: MyStruct) -> () {
 fn bar(a: felt252, b: felt252, ref z: MyStruct) -> felt252 {
     0
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-struct MyStruct {}
 
 //! > semantic_diagnostics
 
@@ -61,17 +57,7 @@ return()
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
-fn foo() -> felt252 {
-    let x = 7;
-    bar(x, 7);
-    bar2(bar(x, 7), bar(x, 7))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn bar(a: felt252, b: felt252) -> felt252 {
     bar(a, b)
@@ -79,6 +65,12 @@ fn bar(a: felt252, b: felt252) -> felt252 {
 #[inline(never)]
 fn bar2(a: felt252, b: felt252) -> felt252 {
     bar2(a, b)
+}
+#[target_function]
+fn foo() -> felt252 {
+    let x = 7;
+    bar(x, 7);
+    bar2(bar(x, 7), bar(x, 7))
 }
 
 //! > semantic_diagnostics
@@ -120,17 +112,13 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
+#[target_function]
 fn foo() -> felt252 {
     felt252_add(3, 6)
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
 
 //! > semantic_diagnostics
 
