@@ -15,6 +15,8 @@ enum MyEnum {
     D: P,
 }
 
+#[allow_attr(target_function)]
+#[target_function]
 fn main() {
     let a = MyEnum::A((1, 2));
     let b = MyEnum::B((1, 2));

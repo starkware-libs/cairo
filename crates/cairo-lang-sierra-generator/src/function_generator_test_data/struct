@@ -3,14 +3,12 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Box<u256>) -> u128 {
     let val: u256 = a.unbox();
     val.high
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -33,16 +31,12 @@ return([3])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Box<u256>) -> Box<u128> {
     let val: u256 = a.unbox();
     BoxTrait::new(val.high)
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -64,15 +58,11 @@ return([2])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: @Box<u256>) -> Box<u128> {
     BoxTrait::new(a.unbox().high)
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -93,19 +83,15 @@ return([3])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(box: Box<@A>) -> Box<@Array<felt252>> {
-    BoxTrait::new(box.unbox().a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct A {
     a: Array<felt252>,
     b: Array<felt252>,
+}
+#[target_function]
+fn foo(box: Box<@A>) -> Box<@Array<felt252>> {
+    BoxTrait::new(box.unbox().a)
 }
 
 //! > semantic_diagnostics
@@ -126,19 +112,15 @@ return([1])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(box: Box<@A>) -> Box<@Array<felt252>> {
-    BoxTrait::new(box.unbox().a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct A {
     a: Array<felt252>,
     b: Array<felt252>,
+}
+#[target_function]
+fn foo(box: Box<@A>) -> Box<@Array<felt252>> {
+    BoxTrait::new(box.unbox().a)
 }
 
 //! > semantic_diagnostics
@@ -159,19 +141,15 @@ return([1])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo(box: Box<@@@A>) -> Box<@@@Array<felt252>> {
-    BoxTrait::new(box.unbox().a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct A {
     a: Array<felt252>,
     b: Array<felt252>,
+}
+#[target_function]
+fn foo(box: Box<@@@A>) -> Box<@@@Array<felt252>> {
+    BoxTrait::new(box.unbox().a)
 }
 
 //! > semantic_diagnostics

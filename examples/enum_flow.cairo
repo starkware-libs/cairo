@@ -15,6 +15,8 @@ enum MyEnumGeneric<S, T> {
 
 impl MyEnumGenericDrop of Drop<MyEnumGeneric<(), felt252>>;
 
+#[allow_attr(target_function)]
+#[target_function]
 fn main() -> felt252 {
     let es0 = MyEnumShort::a(10);
     match_short(es0);
