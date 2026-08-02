@@ -22,17 +22,23 @@
 //! ## Usage
 //! As a library, from another (throwaway) test/bin in this workspace:
 //! ```ignore
-//! use cairo_lang_test_utils::migrate_target_function::migrate_file;
-//! let report = migrate_file(std::path::Path::new(
-//!     "crates/cairo-lang-sierra-generator/src/function_generator_test_data/simple",
-//! ))?;
+//! use cairo_lang_test_utils::migrate_target_function::{migrate_file, MigrationOptions};
+//! let report = migrate_file(
+//!     std::path::Path::new(
+//!         "crates/cairo-lang-sierra-generator/src/function_generator_test_data/simple",
+//!     ),
+//!     MigrationOptions::default(),
+//! )?;
 //! println!("{report:?}");
 //! ```
-//! `migrate_file` rewrites the file in place and returns a report of what happened per test.
-//! Rewriting is per-test and all-or-nothing per test: any test flagged `NeedsManualReview` is
-//! left byte-for-byte untouched (its tags are dumped back exactly as parsed) while the rest of
-//! the file's tests are still safely rewritten - ambiguity in one test never blocks progress on
-//! the others, and it's never silently guessed at either.
+//! `migrate_file` rewrites the file in place (skipping the write entirely if nothing needed
+//! rewriting) and returns a report of what happened per test. Rewriting is per-test and
+//! all-or-nothing per test: any test flagged `NeedsManualReview` is left byte-for-byte untouched
+//! (its tags are dumped back exactly as parsed) while the rest of the file's tests are still
+//! safely rewritten - ambiguity in one test never blocks progress on the others, and it's never
+//! silently guessed at either. See [`MigrationOptions`] for the one behavioral knob (whether the
+//! legacy family inserts a `#[target_function]` marker - the default - or keeps `function_name` to
+//! stay span-preserving).
 //!
 //! Ad hoc, from the command line (no binary target is wired up - this is deliberately only
 //! reachable through `cargo test`, since it depends on this crate's `testing`-gated code):
@@ -41,6 +47,7 @@
 //!     cargo test -p cairo-lang-test-utils --features testing \
 //!     migrate_target_function::tests::migrate_file_from_env -- --ignored --nocapture
 //! ```
+//! Add `MIGRATE_KEEP_FUNCTION_NAME=1` to opt into the span-preserving legacy-family mode instead.
 //!
 //! Runner classification (whether a runner needs a specific resolved target function at all, vs.
 //! whole-module diagnostics where no target is needed - see [`classify_runner`]) is a small,
@@ -242,9 +249,11 @@ fn rebuild_tags(
 }
 
 /// Migrates the legacy `function_code` (+ optional `module_code`) (+ `function_name`) family for
-/// one test.
+/// one test. `insert_marker` controls what happens when the runner needs a target function - see
+/// [`MigrationOptions::insert_marker_for_legacy_family`].
 fn migrate_legacy_family(
     attrs: &OrderedHashMap<String, String>,
+    insert_marker: bool,
 ) -> (OrderedHashMap<String, String>, RewriteOutcome) {
     let function_code = &attrs["function_code"];
     let module_code = attrs.get("module_code").map(String::as_str).unwrap_or("");
@@ -258,24 +267,36 @@ fn migrate_legacy_family(
 
     let runner = attrs.get("test_runner_name").map(String::as_str).unwrap_or("");
     match classify_runner(runner_name(runner)) {
+        TargetFunctionNeed::NeedsTarget if insert_marker => {
+            // Rename the tags, insert a `#[target_function]` marker on the matched `fn`, and drop
+            // `function_name` - the fully-unified end state. This adds a line, so it shifts every
+            // span inside the function body by one; golden outputs that print positions from
+            // *inside* the function (rather than e.g. whole-module diagnostics unaffected by where
+            // the target function sits) will need `CAIRO_FIX_TESTS` after this.
+            let function_name = &attrs["function_name"];
+            match insert_target_function_marker(&merged, function_name) {
+                Ok(cairo_code) => (
+                    rebuild_tags(attrs, &cairo_code, &["function_name"]),
+                    RewriteOutcome::Rewritten,
+                ),
+                Err(reason) => (attrs.clone(), RewriteOutcome::NeedsManualReview(reason)),
+            }
+        }
         TargetFunctionNeed::NeedsTarget => {
-            // Span-preserving: rename the tags, but keep `function_name` exactly as-is so
-            // `setup_test_function` resolves the target exactly like it does today. No
-            // `#[target_function]` marker is inserted here - doing so would add a line and shift
-            // every span inside the function body by one (see `insert_target_function_marker`'s
-            // docs and the module doc above); that's out of scope for a span-preserving rewrite.
-            let out = rebuild_tags(attrs, &merged, &[]);
-            (out, RewriteOutcome::Rewritten)
+            // Span-preserving alternative: rename the tags, but keep `function_name` exactly as-is
+            // so `setup_test_function` resolves the target exactly like it does today, inserting
+            // no marker. Useful for files whose golden output would otherwise need
+            // `CAIRO_FIX_TESTS` due to the span shift above.
+            (rebuild_tags(attrs, &merged, &[]), RewriteOutcome::Rewritten)
         }
         TargetFunctionNeed::NoTargetNeeded => {
-            // No function is ever resolved for this runner class, so `function_name` is dropped,
-            // and a trivial stub `function_code` (which only existed to satisfy the old
-            // mandatory-function_code API) is dropped too - both span-preserving, since the stub
-            // only ever sits *after* `module_code`.
+            // No function is ever resolved for this runner class, so `function_name` is dropped
+            // (no marker is needed either), and a trivial stub `function_code` (which only existed
+            // to satisfy the old mandatory-function_code API) is dropped too - both
+            // span-preserving, since the stub only ever sits *after* `module_code`.
             let cairo_code =
                 if is_trivial_stub(function_code) { module_code.to_string() } else { merged };
-            let out = rebuild_tags(attrs, &cairo_code, &["function_name"]);
-            (out, RewriteOutcome::Rewritten)
+            (rebuild_tags(attrs, &cairo_code, &["function_name"]), RewriteOutcome::Rewritten)
         }
     }
 }
@@ -322,16 +343,45 @@ fn rebuild_tags_keep_cairo_code(
     out
 }
 
+/// Tunable knobs for [`migrate_test`]/[`migrate_tests`]/[`migrate_file`].
+#[derive(Clone, Copy, Debug)]
+pub struct MigrationOptions {
+    /// For the legacy `function_code`(+`module_code`)+`function_name` family, when the runner
+    /// needs a target function (see [`TargetFunctionNeed::NeedsTarget`]): whether to insert a
+    /// `#[target_function]` marker and drop `function_name` (`true`, the fully-unified end state
+    /// the migration is aiming for - but shifts spans by one line, which needs `CAIRO_FIX_TESTS`
+    /// for golden outputs that print positions from inside the function body), or to keep
+    /// `function_name` untouched and insert no marker (`false`, span-preserving, needs no
+    /// `CAIRO_FIX_TESTS`, but leaves `function_name` in place).
+    ///
+    /// The `cairo_code`+`function_name` family (no `module_code`/`function_code` to fold in)
+    /// always inserts the marker regardless of this flag - there's no tag left to keep the
+    /// target-by-name otherwise.
+    pub insert_marker_for_legacy_family: bool,
+}
+
+impl Default for MigrationOptions {
+    /// Defaults to inserting the marker: the fully-unified end state the task describes. Pass
+    /// `insert_marker_for_legacy_family: false` explicitly for files whose golden output would
+    /// otherwise need `CAIRO_FIX_TESTS`.
+    fn default() -> Self {
+        Self { insert_marker_for_legacy_family: true }
+    }
+}
+
 /// Migrates a single test's tags. Never mutates `test`; returns the new tag map plus what
 /// happened. See the module docs for the family dispatch rules.
-pub fn migrate_test(test: &Test) -> (OrderedHashMap<String, String>, RewriteOutcome) {
+pub fn migrate_test(
+    test: &Test,
+    options: MigrationOptions,
+) -> (OrderedHashMap<String, String>, RewriteOutcome) {
     let attrs = &test.attributes;
     if attrs.contains_key("expr_code") || attrs.contains_key("function_body") {
         // That family is explicitly out of scope for this migration.
         return (attrs.clone(), RewriteOutcome::Unchanged);
     }
     if attrs.contains_key("function_code") {
-        return migrate_legacy_family(attrs);
+        return migrate_legacy_family(attrs, options.insert_marker_for_legacy_family);
     }
     if attrs.contains_key("cairo_code") && attrs.contains_key("function_name") {
         return migrate_cairo_code_function_name_family(attrs);
@@ -354,11 +404,12 @@ pub struct MigrationReport {
 /// returned with their original tags, unmodified.
 pub fn migrate_tests(
     tests: &OrderedHashMap<String, Test>,
+    options: MigrationOptions,
 ) -> (OrderedHashMap<String, Test>, MigrationReport) {
     let mut out = OrderedHashMap::default();
     let mut report = MigrationReport::default();
     for (name, test) in tests.iter() {
-        let (new_attrs, outcome) = migrate_test(test);
+        let (new_attrs, outcome) = migrate_test(test, options);
         match outcome {
             RewriteOutcome::Rewritten => report.rewritten.push(name.clone()),
             RewriteOutcome::Unchanged => report.unchanged.push(name.clone()),
@@ -375,11 +426,16 @@ pub fn migrate_tests(
 /// [`crate::parse_test_file::parse_test_file`], rewrites tags, and dumps it back with
 /// [`crate::parse_test_file::dump_to_test_file`] - the exact same format the test framework
 /// itself reads/writes, so untouched tags round-trip byte-for-byte). Tests needing manual review
-/// are left untouched in place; nothing is silently guessed.
-pub fn migrate_file(path: &Path) -> std::io::Result<MigrationReport> {
+/// are left untouched in place; nothing is silently guessed. Does not touch the file on disk at
+/// all when nothing was rewritten (every test was already `Unchanged`/`NeedsManualReview`), to
+/// avoid needless churn; call [`crate::parse_test_file::parse_test_file`] +
+/// [`crate::parse_test_file::dump_to_test_file`] directly if a pure round-trip write is wanted.
+pub fn migrate_file(path: &Path, options: MigrationOptions) -> std::io::Result<MigrationReport> {
     let tests = parse_test_file(path)?;
-    let (new_tests, report) = migrate_tests(&tests);
-    dump_to_test_file(new_tests, path.to_str().expect("non-utf8 path"))?;
+    let (new_tests, report) = migrate_tests(&tests, options);
+    if !report.rewritten.is_empty() {
+        dump_to_test_file(new_tests, path.to_str().expect("non-utf8 path"))?;
+    }
     Ok(report)
 }
 
@@ -472,13 +528,13 @@ other sierra output
             ("function_body", ""),
             ("expected_diagnostics", ""),
         ]);
-        let (new_attrs, outcome) = migrate_test(&test);
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
         assert_eq!(outcome, RewriteOutcome::Unchanged);
         assert_eq!(new_attrs, test.attributes);
     }
 
     #[test]
-    fn test_legacy_family_needs_target_keeps_function_name_no_marker() {
+    fn test_legacy_family_needs_target_default_inserts_marker_drops_name() {
         let test = test_with(&[
             ("test_runner_name", "test_function_generator"),
             ("function_code", "fn foo(a: felt252) -> felt252 {\n    bar(a)\n}"),
@@ -486,7 +542,38 @@ other sierra output
             ("module_code", "fn bar(x: felt252) -> felt252 {\n    x\n}"),
             ("sierra_code", "..."),
         ]);
-        let (new_attrs, outcome) = migrate_test(&test);
+        // Default options: insert the marker (the fully-unified end state).
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
+        assert_eq!(outcome, RewriteOutcome::Rewritten);
+        assert!(!new_attrs.contains_key("function_code"));
+        assert!(!new_attrs.contains_key("module_code"));
+        assert!(!new_attrs.contains_key("function_name"));
+        assert_eq!(
+            new_attrs.get("cairo_code").map(String::as_str),
+            Some(
+                "fn bar(x: felt252) -> felt252 {\n    x\n}\n#[target_function]\nfn foo(a: \
+                 felt252) -> felt252 {\n    bar(a)\n}"
+            )
+        );
+        // Tag order preserved: `cairo_code` sits where `function_code` (the earlier of the two
+        // original tags) used to be, and `function_name` is gone entirely.
+        assert_eq!(
+            new_attrs.keys().cloned().collect::<Vec<_>>(),
+            vec!["test_runner_name", "cairo_code", "sierra_code"]
+        );
+    }
+
+    #[test]
+    fn test_legacy_family_needs_target_opt_out_keeps_function_name_no_marker() {
+        let test = test_with(&[
+            ("test_runner_name", "test_function_generator"),
+            ("function_code", "fn foo(a: felt252) -> felt252 {\n    bar(a)\n}"),
+            ("function_name", "foo"),
+            ("module_code", "fn bar(x: felt252) -> felt252 {\n    x\n}"),
+            ("sierra_code", "..."),
+        ]);
+        let (new_attrs, outcome) =
+            migrate_test(&test, MigrationOptions { insert_marker_for_legacy_family: false });
         assert_eq!(outcome, RewriteOutcome::Rewritten);
         assert!(!new_attrs.contains_key("function_code"));
         assert!(!new_attrs.contains_key("module_code"));
@@ -498,12 +585,28 @@ other sierra output
                  bar(a)\n}"
             )
         );
-        // Tag order preserved: `cairo_code` sits where `function_code` (the earlier of the two
-        // original tags) used to be, and `function_name` keeps its original position after it.
+        // Tag order preserved: `cairo_code` sits where `function_code` used to be, and
+        // `function_name` keeps its original position after it.
         assert_eq!(
             new_attrs.keys().cloned().collect::<Vec<_>>(),
             vec!["test_runner_name", "cairo_code", "function_name", "sierra_code"]
         );
+    }
+
+    #[test]
+    fn test_legacy_family_needs_target_ambiguous_needs_manual_review() {
+        // `function_name` "foo" only appears nested in an `impl` body here - the marker-insertion
+        // mode must refuse to guess (the keep-`function_name` mode wouldn't even notice, since it
+        // never anchors on the `fn`).
+        let test = test_with(&[
+            ("test_runner_name", "test_function_generator"),
+            ("function_code", "impl Foo { fn foo() -> felt252 { 1 } }"),
+            ("function_name", "foo"),
+            ("sierra_code", "..."),
+        ]);
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
+        assert!(matches!(outcome, RewriteOutcome::NeedsManualReview(_)), "{outcome:?}");
+        assert_eq!(new_attrs, test.attributes);
     }
 
     #[test]
@@ -515,7 +618,7 @@ other sierra output
             ("module_code", "fn abc() {}\n\nfn abc(a: felt252) {}"),
             ("expected_diagnostics", "..."),
         ]);
-        let (new_attrs, outcome) = migrate_test(&test);
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
         assert_eq!(outcome, RewriteOutcome::Rewritten);
         assert!(!new_attrs.contains_key("function_code"));
         assert!(!new_attrs.contains_key("function_name"));
@@ -534,7 +637,7 @@ other sierra output
             ("module_code", "fn abc() {}"),
             ("expected_diagnostics", "..."),
         ]);
-        let (new_attrs, outcome) = migrate_test(&test);
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
         assert_eq!(outcome, RewriteOutcome::Rewritten);
         assert!(!new_attrs.contains_key("function_name"));
         assert_eq!(
@@ -555,7 +658,7 @@ other sierra output
             ("function_name", "pow2_14000"),
             ("expected_profiling_info", "..."),
         ]);
-        let (new_attrs, outcome) = migrate_test(&test);
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
         assert_eq!(outcome, RewriteOutcome::Rewritten);
         assert!(!new_attrs.contains_key("function_name"));
         assert_eq!(
@@ -575,7 +678,7 @@ other sierra output
             ("function_name", "main"),
             ("expected_profiling_info", "..."),
         ]);
-        let (new_attrs, outcome) = migrate_test(&test);
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
         assert_eq!(outcome, RewriteOutcome::Unchanged);
         assert_eq!(new_attrs, test.attributes);
     }
@@ -591,7 +694,7 @@ other sierra output
             ("function_name", "target"),
             ("expected_profiling_info", "..."),
         ]);
-        let (new_attrs, outcome) = migrate_test(&test);
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
         assert!(matches!(outcome, RewriteOutcome::NeedsManualReview(_)), "{outcome:?}");
         // Never silently rewritten: attributes are untouched.
         assert_eq!(new_attrs, test.attributes);
@@ -605,16 +708,27 @@ other sierra output
             ("function_name", "target"),
             ("expected_profiling_info", "..."),
         ]);
-        let (_new_attrs, outcome) = migrate_test(&test);
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
         assert!(matches!(outcome, RewriteOutcome::NeedsManualReview(_)), "{outcome:?}");
+        assert_eq!(new_attrs, test.attributes);
     }
 
     #[test]
     fn test_multiple_top_level_matches_needs_manual_review() {
-        // Not valid Cairo (duplicate name), but exercises the ambiguity guard itself.
-        let code = "fn dup() -> felt252 { 1 }\nfn dup() -> felt252 { 2 }";
-        let err = find_top_level_fn_line(code, "dup").unwrap_err();
-        assert!(err.contains("ambiguous"), "{err}");
+        // Not valid Cairo (duplicate name), but exercises the ambiguity guard end-to-end through
+        // `migrate_test`, the same path a real ambiguous file would hit.
+        let test = test_with(&[
+            ("test_runner_name", "test_profiling"),
+            ("cairo_code", "fn dup() -> felt252 { 1 }\nfn dup() -> felt252 { 2 }"),
+            ("function_name", "dup"),
+            ("expected_profiling_info", "..."),
+        ]);
+        let (new_attrs, outcome) = migrate_test(&test, MigrationOptions::default());
+        let RewriteOutcome::NeedsManualReview(reason) = outcome else {
+            panic!("expected NeedsManualReview, got {outcome:?}");
+        };
+        assert!(reason.contains("ambiguous"), "{reason}");
+        assert_eq!(new_attrs, test.attributes);
     }
 
     #[test]
@@ -639,13 +753,18 @@ other sierra output
 
     /// Ad hoc entry point: set `MIGRATE_FILE` to a path (relative to the current working
     /// directory when running `cargo test`, typically a crate's manifest dir) and run this
-    /// specific ignored test to migrate that one file in place. See the module docs for the full
-    /// invocation.
+    /// specific ignored test to migrate that one file in place. Set `MIGRATE_KEEP_FUNCTION_NAME=1`
+    /// to opt into the span-preserving legacy-family mode (see
+    /// [`MigrationOptions::insert_marker_for_legacy_family`]) instead of the default
+    /// marker-insertion mode. See the module docs for the full invocation.
     #[test]
     #[ignore = "ad hoc migration entry point, not part of the regular test suite"]
     fn migrate_file_from_env() {
         let path = std::env::var("MIGRATE_FILE").expect("Set MIGRATE_FILE to the file to migrate.");
-        let report = migrate_file(Path::new(&path)).expect("Failed to migrate file.");
+        let insert_marker_for_legacy_family =
+            std::env::var("MIGRATE_KEEP_FUNCTION_NAME") != Ok("1".into());
+        let options = MigrationOptions { insert_marker_for_legacy_family };
+        let report = migrate_file(Path::new(&path), options).expect("Failed to migrate file.");
         println!("{report:#?}");
         assert!(
             report.needs_manual_review.is_empty(),
