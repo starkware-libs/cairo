@@ -36,6 +36,50 @@ Key points:
 - Tags are separated by blank lines
 - Tests are separated by `//! > ==========================================================================`
 
+## Cairo Input: `cairo_code` + `#[target_function]`
+
+Compiler-stage golden tests (semantic, lowering, sierra-generator, runner) take their Cairo input
+as a **single `cairo_code` tag holding the whole test module**. The legacy
+`function_code`/`module_code`/`function_name` input tags no longer exist. When the runner operates
+on one specific function, mark it with the `#[target_function]` attribute:
+
+```
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+fn helper() -> felt252 {
+    5
+}
+
+#[target_function]
+fn foo() -> felt252 {
+    helper()
+}
+```
+
+Rules:
+- `setup_test_function(db, inputs)` (in `cairo_lang_semantic::test_utils`) reads `cairo_code` and
+  resolves the single `#[target_function]`-marked free function. Marking several functions is
+  supported at the resolution level (`resolve_target_functions` returns all, in definition order),
+  but single-target runners panic on more than one.
+- **Module-level runners need no marker** — diagnostics runners (`test_function_diagnostics`) and
+  whole-module runners (e.g. `ap_change_test`) work on the entire module. Never add a stub like
+  `fn foo() {}` just to satisfy a runner.
+- The attribute is declared by the test-only `TargetFunctionPlugin`
+  (`cairo_lang_semantic::test_utils`). Every golden-test database must include it — build plugin
+  suites through `with_target_function_plugin(...)`; the standard `*DatabaseForTesting` types
+  already do.
+- `cairo_code` may be a `>>> file: <path>` reference. A referenced file that is also compiled
+  outside the test framework (e.g. `examples/*.cairo`, compiled by `examples_test` and `cairo-run`
+  with a plain production database) must put `#[allow_attr(target_function)]` directly above the
+  `#[target_function]` marker, so the attribute is accepted without the plugin.
+- Rust-side synthesized module code goes through `setup_test_function_from_content` with a
+  `#[target_function]` marker embedded in the string — target functions are never resolved by name.
+- Exception: the expr-family runners (`setup_test_expr`/`test_expr_diagnostics`, using
+  `expr_code`/`function_body`/`module_code` tags) keep their own tag family; their synthesized
+  wrapper function is marker-annotated internally.
+
 ## Creating a Test Runner
 
 ### Basic Pattern (Function-based)

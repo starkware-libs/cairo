@@ -127,7 +127,7 @@ fn test_location_and_diagnostics() {
         format!("{:?}", location.debug(db)),
         indoc::indoc! {"
 lib.cairo:1:1-3:4
-  fn test_func() { let mut a = 5; {
+  #[target_function] fn test_func() { let mut a = 5; {
  _^
 | a = a * 3
 | }; }
@@ -151,7 +151,7 @@ a = a * 3
         indoc::indoc! {"
 error[E3005]: Cannot inline a function that might call itself.
  --> lib.cairo:1:1-3:4
-  fn test_func() { let mut a = 5; {
+  #[target_function] fn test_func() { let mut a = 5; {
  _^
 | a = a * 3
 | }; }
