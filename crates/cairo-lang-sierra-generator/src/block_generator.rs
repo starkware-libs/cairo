@@ -26,9 +26,9 @@ use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, disable_ap_tracking_libfunc_id,
     drop_libfunc_id, dup_libfunc_id, enable_ap_tracking_libfunc_id,
     enum_from_bounded_int_libfunc_id, enum_init_libfunc_id, get_concrete_libfunc_id,
-    get_libfunc_signature, into_box_libfunc_id, is_externally_provided_const, jump_libfunc_id,
-    jump_statement, local_into_box_libfunc_id, match_enum_libfunc_id, rename_libfunc_id,
-    return_statement, simple_basic_statement, snapshot_take_libfunc_id,
+    get_libfunc_signature, get_match_libfunc_id, into_box_libfunc_id, is_externally_provided_const,
+    jump_libfunc_id, jump_statement, local_into_box_libfunc_id, match_enum_libfunc_id,
+    rename_libfunc_id, return_statement, simple_basic_statement, snapshot_take_libfunc_id,
     struct_construct_libfunc_id, struct_deconstruct_libfunc_id, unbox_libfunc_id,
 };
 
@@ -492,8 +492,7 @@ fn generate_match_extern_code<'db>(
     // Prepare the Sierra input variables.
     let args = maybe_add_dup_statements(context, statement_location, &match_info.inputs)?;
     // Get the [ConcreteLibfuncId].
-    let (_function_long_id, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), match_info.function, false);
+    let libfunc_id = get_match_libfunc_id(context.get_db(), match_info.function);
 
     generate_match_code(context, block_gen_stack, libfunc_id, args, &match_info.arms)
 }

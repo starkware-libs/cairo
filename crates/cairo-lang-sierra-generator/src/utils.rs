@@ -421,6 +421,19 @@ pub fn is_externally_provided_const<'db>(
         .is_some_and(|(extern_id, _)| extern_id.name(db).long(db) == EXTERNALLY_PROVIDED_CONST)
 }
 
+/// Returns the [ConcreteLibfuncId] used for a match on the given extern function.
+pub fn get_match_libfunc_id<'db>(
+    db: &'db dyn Database,
+    function: lowering::ids::FunctionId<'db>,
+) -> ConcreteLibfuncId {
+    // An extern returning an enum is lowered as a match, which no constant can replace.
+    assert!(
+        !is_externally_provided_const(db, function),
+        "`{EXTERNALLY_PROVIDED_CONST}` must not return an enum."
+    );
+    get_concrete_libfunc_id(db, function, false).1
+}
+
 /// Returns the [ConcreteLibfuncId] used for calling a function (either user-defined or libfunc).
 pub fn get_concrete_libfunc_id<'db>(
     db: &'db dyn Database,

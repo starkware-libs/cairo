@@ -26,7 +26,7 @@ use crate::ap_tracking::{ApTrackingConfiguration, get_ap_tracking_configuration}
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
-    enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature,
+    enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, get_match_libfunc_id,
     is_externally_provided_const, match_enum_libfunc_id, struct_construct_libfunc_id,
     struct_deconstruct_libfunc_id,
 };
@@ -474,7 +474,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
     ) -> Maybe<&'db LibfuncSignature> {
         let db = self.db;
         let concrete_libfunc_id = match match_info {
-            MatchInfo::Extern(s) => get_concrete_libfunc_id(db, s.function, false).1,
+            MatchInfo::Extern(s) => get_match_libfunc_id(db, s.function),
             MatchInfo::Enum(s) => {
                 let enum_ty =
                     db.get_concrete_type_id(self.lowered_function.variables[s.input.var_id].ty)?;
