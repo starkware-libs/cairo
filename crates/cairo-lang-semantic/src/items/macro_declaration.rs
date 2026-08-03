@@ -228,8 +228,7 @@ fn check_pattern_elements<'db>(
                 // The end of a group is followed either by the separator, when another group
                 // comes after it, or by whatever comes after the repetition itself.
                 let mut body_outer = after();
-                if let ast::OptionTerminalComma::TerminalComma(separator) = repetition.separator(db)
-                {
+                if let Some(separator) = repetition_separator(db, repetition) {
                     body_outer.push(separator.as_syntax_node());
                 }
                 res = res
@@ -258,6 +257,26 @@ fn check_pattern_elements<'db>(
     res
 }
 
+/// The separator token of `repetition`, if it declares one.
+///
+/// The grammar allows any token in the separator slot, but only a comma is currently supported.
+/// Any other token is treated as if no separator was given.
+// TODO(Dean): Add support for more kinds of separators.
+fn repetition_separator<'db>(
+    db: &'db dyn Database,
+    repetition: &ast::MacroRepetition<'db>,
+) -> Option<ast::TerminalComma<'db>> {
+    match repetition.separator(db) {
+        ast::OptionMacroRepetitionSeparator::MacroRepetitionSeparator(separator) => {
+            match separator.token(db) {
+                ast::TokenNode::TerminalComma(comma) => Some(comma),
+                _ => None,
+            }
+        }
+        ast::OptionMacroRepetitionSeparator::Empty(_) => None,
+    }
+}
+
 /// Reports `repetition`, a `$()` block of a macro rule, if it takes a separator while allowing at
 /// most one group.
 ///
@@ -269,7 +288,7 @@ fn check_repetition_separator<'db>(
     repetition: &ast::MacroRepetition<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> Maybe<()> {
-    if let ast::OptionTerminalComma::TerminalComma(separator) = repetition.separator(db)
+    if let Some(separator) = repetition_separator(db, repetition)
         && matches!(repetition.operator(db), ast::MacroRepetitionOperator::ZeroOrOne(_))
     {
         return Err(diagnostics.report(
@@ -950,13 +969,8 @@ fn is_macro_rule_match_ex<'db>(
                 ctx.repetition_depth += 1;
                 let elements = repetition.elements(db);
                 let operator = repetition.operator(db);
-                let separator_token = repetition.separator(db);
-                let expected_separator = match separator_token {
-                    ast::OptionTerminalComma::TerminalComma(sep) => {
-                        Some(sep.as_syntax_node().get_text_without_trivia(db))
-                    }
-                    ast::OptionTerminalComma::Empty(_) => None,
-                };
+                let expected_separator = repetition_separator(db, &repetition)
+                    .map(|sep| sep.as_syntax_node().get_text_without_trivia(db));
                 let mut match_count = 0;
                 loop {
                     let mut inner_ctx = ctx.clone();
@@ -1242,7 +1256,7 @@ impl<'db> ExpansionContext<'db, '_> {
             self.group_indices.pop();
             expanded?;
             if index + 1 < group_count
-                && let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db)
+                && let Some(sep) = repetition_separator(db, repetition)
             {
                 self.res_buffer.push_str(sep.as_syntax_node().get_text(db));
             }
