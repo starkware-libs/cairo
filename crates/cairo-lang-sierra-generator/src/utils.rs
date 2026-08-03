@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
-use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_lowering as lowering;
@@ -24,7 +24,7 @@ use semantic::items::constant::ConstValue;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
 
-use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
+use crate::db::{EXTERNALLY_PROVIDED_CONST, SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -408,6 +408,34 @@ pub fn generic_libfunc_id(
         generic_id: GenericLibfuncId::from_string(extern_id.name(db).long(db).clone()),
         generic_args,
     })
+}
+
+/// Returns the declaration of the given function if it is the reserved
+/// `__externally_provided_const__` extern function, whose calls are replaced by an externally
+/// provided constant.
+pub fn externally_provided_const_extern<'db>(
+    db: &'db dyn Database,
+    function: lowering::ids::FunctionId<'db>,
+) -> Option<defs::ids::ExternFunctionId<'db>> {
+    function
+        .get_extern(db)
+        .map(|(extern_id, _)| extern_id)
+        .filter(|extern_id| extern_id.name(db).long(db) == EXTERNALLY_PROVIDED_CONST)
+}
+
+/// Returns the [ConcreteLibfuncId] used for a match on the given extern function.
+pub fn get_match_libfunc_id<'db>(
+    db: &'db dyn Database,
+    function: lowering::ids::FunctionId<'db>,
+) -> ConcreteLibfuncId {
+    // An extern returning an enum is lowered as a match, which no constant can replace.
+    if let Some(extern_id) = externally_provided_const_extern(db, function) {
+        panic!(
+            "`{EXTERNALLY_PROVIDED_CONST}` must not return an enum: {:?}",
+            extern_id.stable_location(db).span_in_file(db).user_location(db).debug(db)
+        );
+    }
+    get_concrete_libfunc_id(db, function, false).1
 }
 
 /// Returns the [ConcreteLibfuncId] used for calling a function (either user-defined or libfunc).
