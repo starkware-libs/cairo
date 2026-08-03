@@ -2730,7 +2730,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function_code
 fn foo() {
-    m!(1 + 2, 3, 4);
+    let _a = m!(1 + 2, 3, 4);
 }
 
 //! > function_name
@@ -2738,14 +2738,14 @@ foo
 
 //! > module_code
 macro m {
-    ($x:expr, $($y:expr),*) => { $($x + $y),* };
+    ($x:expr, $($y:expr),*) => { [$($x + $y),*] };
 }
 
 //! > expected_diagnostics
 
 //! > ==========================================================================
 
-//! > Test cross-repetition placeholder mixing in expansion (E2199).
+//! > Test cross-repetition placeholder mixing in expansion.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -2790,6 +2790,82 @@ error[E2199]: Macro placeholder 'y' is from a different repetition than the one 
  --> lib.cairo:2:54
     ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
                                                      ^^
+
+//! > ==========================================================================
+
+//! > Test expansion repetition block with no placeholder at all.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),*) => { $(1 +)* 0 };
+}
+
+//! > expected_diagnostics
+error[E2202]: Macro expansion repetition block has no placeholder to repeat over. Consider using a placeholder declared inside a `$()` repetition in the pattern - only such a placeholder can drive one.
+ --> lib.cairo:2:25
+    ($($x:expr),*) => { $(1 +)* 0 };
+                        ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test expansion repetition block driven only by `$defsite`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar() -> felt252 {
+    1
+}
+
+macro m {
+    ($($x:expr),*) => { $($defsite::bar() +)* 0 };
+}
+
+//! > expected_diagnostics
+error[E2202]: Macro expansion repetition block has no placeholder to repeat over. Consider using a placeholder declared inside a `$()` repetition in the pattern - only such a placeholder can drive one.
+ --> lib.cairo:6:25
+    ($($x:expr),*) => { $($defsite::bar() +)* 0 };
+                        ^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test expansion repetition block whose only placeholder is depth-0.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($x:expr) => { $($x +)* 0 };
+}
+
+//! > expected_diagnostics
+error[E2202]: Macro expansion repetition block has no placeholder to repeat over. Consider using a placeholder declared inside a `$()` repetition in the pattern - only such a placeholder can drive one.
+ --> lib.cairo:2:20
+    ($x:expr) => { $($x +)* 0 };
+                   ^^^^^^^^
 
 //! > ==========================================================================
 
@@ -3066,3 +3142,29 @@ error[E2313]: Trait `test::MyTrait` has multiple implementations, in: `test::mak
  --> lib.cairo:18:14
     MyTrait::foo();
              ^^^
+
+//! > ==========================================================================
+
+//! > Test expansion repetition block whose only placeholder drives an enclosing block.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    m!(1 =>[2]);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($a:expr => [$($b:expr),*]),*) => { $($a + $($a +)*)* 0 };
+}
+
+//! > expected_diagnostics
+error[E2202]: Macro expansion repetition block has no placeholder to repeat over. Consider using a placeholder declared inside a `$()` repetition in the pattern - only such a placeholder can drive one.
+ --> lib.cairo:2:50
+    ($($a:expr => [$($b:expr),*]),*) => { $($a + $($a +)*)* 0 };
+                                                 ^^^^^^^^
