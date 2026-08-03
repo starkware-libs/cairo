@@ -1,0 +1,231 @@
+//! > Test that a call to `__externally_provided_const__` becomes a const_as_immediate.
+
+//! > test_runner_name
+block_generator_test
+
+//! > function_code
+mod seven {
+    #[allow(extern_outside_corelib)]
+    pub extern fn __externally_provided_const__() -> felt252 nopanic;
+}
+
+fn foo() -> felt252 {
+    seven::__externally_provided_const__()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+const_as_immediate<Const<felt252, 7777>>() -> ([0])
+PushValues([0]: felt252) -> ([0])
+return([0])
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- test::seven::__externally_provided_const__()
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Test that each of the installed plugins provides the const of its own extern.
+
+//! > test_runner_name
+block_generator_test
+
+//! > function_code
+mod seven {
+    #[allow(extern_outside_corelib)]
+    pub extern fn __externally_provided_const__() -> felt252 nopanic;
+}
+
+mod eight {
+    #[allow(extern_outside_corelib)]
+    pub extern fn __externally_provided_const__() -> felt252 nopanic;
+}
+
+fn foo() -> (felt252, felt252) {
+    (seven::__externally_provided_const__(), eight::__externally_provided_const__())
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+const_as_immediate<Const<felt252, 7777>>() -> ([0])
+const_as_immediate<Const<felt252, 8888>>() -> ([1])
+struct_construct<Tuple<felt252, felt252>>([0], [1]) -> ([2])
+PushValues([2]: Tuple<felt252, felt252>) -> ([2])
+return([2])
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- test::seven::__externally_provided_const__()
+  (v1: core::felt252) <- test::eight::__externally_provided_const__()
+  (v2: (core::felt252, core::felt252)) <- struct_construct(v0, v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test differently sized externally provided consts, used across an ap revoking call.
+
+//! > test_runner_name
+block_generator_test
+
+//! > function_code
+mod seven {
+    #[allow(extern_outside_corelib)]
+    pub extern fn __externally_provided_const__() -> u16 nopanic;
+}
+
+mod eight {
+    #[allow(extern_outside_corelib)]
+    pub extern fn __externally_provided_const__() -> u256 nopanic;
+}
+
+fn foo(n: felt252) -> (u16, u256) {
+    let single_slot = seven::__externally_provided_const__();
+    let multi_slot = eight::__externally_provided_const__();
+    // The recursive call revokes ap, so both consts are used across a revocation.
+    if n != 0 {
+        foo(n - 1);
+    }
+    (single_slot, multi_slot)
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+const_as_immediate<Const<u16, 7777>>() -> ([0])
+const_as_immediate<Const<core::integer::u256, Const<u128, 8888>, Const<u128, 0>>>() -> ([1])
+dup<felt252>([2]) -> ([2], [3])
+felt252_is_zero([3]) { fallthrough() label_test::foo::0([4]) }
+branch_align() -> ()
+drop<felt252>([2]) -> ()
+struct_construct<Unit>() -> ([5])
+enum_init<core::bool, 1>([5]) -> ([6])
+bool_not_impl([6]) -> ([7])
+drop<core::bool>([7]) -> ()
+struct_construct<Tuple<u16, core::integer::u256>>([0], [1]) -> ([8])
+PushValues([8]: Tuple<u16, core::integer::u256>) -> ([8])
+return([8])
+label_test::foo::0:
+branch_align() -> ()
+drop<NonZero<felt252>>([4]) -> ()
+struct_construct<Unit>() -> ([9])
+enum_init<core::bool, 0>([9]) -> ([10])
+bool_not_impl([10]) -> ([11])
+drop<core::bool>([11]) -> ()
+const_as_immediate<Const<felt252, 1>>() -> ([12])
+felt252_sub([2], [12]) -> ([13])
+PushValues([13]: felt252) -> ([13])
+function_call<user@test::foo>([13]) -> ([14])
+drop<Tuple<u16, core::integer::u256>>([14]) -> ()
+struct_construct<Tuple<u16, core::integer::u256>>([0], [1]) -> ([15])
+PushValues([15]: Tuple<u16, core::integer::u256>) -> ([15])
+return([15])
+label_test::foo::1:
+
+//! > lowering_flat
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::integer::u16) <- test::seven::__externally_provided_const__()
+  (v2: core::integer::u256) <- test::eight::__externally_provided_const__()
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: ()) <- struct_construct()
+  (v5: core::bool) <- bool::True(v4)
+  (v6: core::bool) <- core::bool_not_impl(v5)
+  (v7: (core::integer::u16, core::integer::u256)) <- struct_construct(v1, v2)
+End:
+  Return(v7)
+
+blk2:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::False(v8)
+  (v10: core::bool) <- core::bool_not_impl(v9)
+  (v11: core::felt252) <- 1
+  (v12: core::felt252) <- core::felt252_sub(v0, v11)
+  (v13: (core::integer::u16, core::integer::u256)) <- test::foo(v12)
+  (v14: (core::integer::u16, core::integer::u256)) <- struct_construct(v1, v2)
+End:
+  Return(v14)
+
+//! > ==========================================================================
+
+//! > Test a generic externally provided const, instantiated at two types.
+
+//! > test_runner_name
+block_generator_test
+
+//! > function_code
+mod seven {
+    #[allow(extern_outside_corelib)]
+    pub extern fn __externally_provided_const__<T>() -> T nopanic;
+}
+
+fn foo() -> (u16, felt252) {
+    (
+        seven::__externally_provided_const__::<u16>(),
+        seven::__externally_provided_const__::<felt252>(),
+    )
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+const_as_immediate<Const<u16, 7777>>() -> ([0])
+const_as_immediate<Const<felt252, 7777>>() -> ([1])
+struct_construct<Tuple<u16, felt252>>([0], [1]) -> ([2])
+PushValues([2]: Tuple<u16, felt252>) -> ([2])
+return([2])
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u16) <- test::seven::__externally_provided_const__::<core::integer::u16>()
+  (v1: core::felt252) <- test::seven::__externally_provided_const__::<core::felt252>()
+  (v2: (core::integer::u16, core::felt252)) <- struct_construct(v0, v1)
+End:
+  Return(v2)

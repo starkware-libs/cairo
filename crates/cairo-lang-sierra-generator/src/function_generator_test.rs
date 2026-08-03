@@ -13,6 +13,7 @@ cairo_lang_test_utils::test_file_test!(
         stack_tracking: "stack_tracking",
         literals: "literals",
         generics: "generics",
+        externally_provided_const: "externally_provided_const",
 
     },
     test_function_generator,
