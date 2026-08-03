@@ -183,6 +183,8 @@ pub enum SyntaxKind {
     OptionParamKindEmpty,
     MacroParam,
     MacroRepetition,
+    MacroRepetitionSeparator,
+    OptionMacroRepetitionSeparatorEmpty,
     OptionTerminalCommaEmpty,
     MacroRepetitionOperatorMissing,
     ParamIdent,
