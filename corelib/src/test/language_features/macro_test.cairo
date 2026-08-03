@@ -711,3 +711,15 @@ mod item_level_macro {
         }
     }
 }
+
+mod nested_repetitions {
+    macro flatten_pairs {
+        ($([$($x:expr),*]),*) => { array![$($($x),*),*] };
+    }
+
+    #[test]
+    fn test_nested_repetition_expansion() {
+        let flattened = flatten_pairs!([1, 2], [3]);
+        assert_eq!(flattened, array![1, 2, 3]);
+    }
+}
