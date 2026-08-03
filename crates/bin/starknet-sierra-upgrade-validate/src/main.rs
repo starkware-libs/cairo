@@ -14,8 +14,13 @@ use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use num_bigint::BigUint;
+use prost::Message;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use tonic::codegen::http::uri::PathAndQuery;
+use tonic::transport::{Channel, ClientTlsConfig};
+
+mod dna;
 
 const NUM_OF_PROCESSORS: usize = 32;
 
@@ -77,6 +82,13 @@ struct FullnodeArgs {
     /// The number of last n blocks to test.
     #[arg(long, conflicts_with = "range")]
     last_n_blocks: Option<u64>,
+    /// The url of an Apibara DNA server. If provided, the declared class hashes are streamed from
+    /// it instead of scanning the block range through the fullnode rpc. The classes themselves are
+    /// still read from the fullnode.
+    ///
+    /// If the server requires authentication, set the `DNA_TOKEN` environment variable.
+    #[arg(long)]
+    apibara_url: Option<String>,
 }
 /// Parses version id from string.
 fn parse_version_id(major_minor_patch: &str) -> anyhow::Result<VersionId> {
@@ -136,6 +148,11 @@ struct CompilationMismatch {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // Both `ring` and `aws-lc-rs` rustls backends are enabled by different dependencies, so the
+    // process-level default must be selected explicitly.
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install default crypto provider.");
     let args = Cli::parse();
     let list_selector =
         ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
@@ -194,14 +211,25 @@ async fn main() -> anyhow::Result<()> {
             (start_block, end_block)
         };
         let (class_hashes_tx, class_hashes_rx) = async_channel::bounded(128);
-        spawn_block_class_hashes_retrievers(
-            &client,
-            start_block,
-            end_block,
-            class_hashes_tx,
-            reader_bar.clone(),
-            classes_bar.clone(),
-        );
+        if let Some(apibara_url) = fullnode_args.apibara_url {
+            spawn_apibara_class_hashes_retriever(
+                apibara_url,
+                start_block,
+                end_block,
+                class_hashes_tx,
+                reader_bar.clone(),
+                classes_bar.clone(),
+            );
+        } else {
+            spawn_block_class_hashes_retrievers(
+                &client,
+                start_block,
+                end_block,
+                class_hashes_tx,
+                reader_bar.clone(),
+                classes_bar.clone(),
+            );
+        }
         spawn_classes_from_class_hashes(&client, class_hashes_rx, classes_tx);
     } else {
         spawn_input_file_readers(
@@ -553,6 +581,127 @@ fn spawn_block_class_hashes_retrievers(
             blocks_bar.finish_and_clear();
         });
     }
+}
+
+/// Spawns a task that streams the declared class hashes in the block range from an Apibara DNA
+/// server.
+fn spawn_apibara_class_hashes_retriever(
+    apibara_url: String,
+    start_block: u64,
+    end_block: u64,
+    class_hashes_tx: async_channel::Sender<ClassHashes>,
+    blocks_bar: ProgressBar,
+    class_hashes_bar: ProgressBar,
+) {
+    blocks_bar.set_length(end_block - start_block);
+    tokio::spawn(async move {
+        if let Err(err) = retrieve_apibara_class_hashes(
+            apibara_url,
+            start_block,
+            end_block,
+            class_hashes_tx,
+            &blocks_bar,
+            &class_hashes_bar,
+        )
+        .await
+        {
+            eprintln!("Apibara streaming failed: {err:#?}");
+        }
+        blocks_bar.finish_and_clear();
+    });
+}
+
+/// Streams the declared class hashes in the block range from an Apibara DNA server and sends them
+/// to the class hashes channel.
+async fn retrieve_apibara_class_hashes(
+    apibara_url: String,
+    start_block: u64,
+    end_block: u64,
+    class_hashes_tx: async_channel::Sender<ClassHashes>,
+    blocks_bar: &ProgressBar,
+    class_hashes_bar: &ProgressBar,
+) -> anyhow::Result<()> {
+    let channel = Channel::builder(apibara_url.parse().with_context(|| "Invalid apibara url.")?)
+        .tls_config(ClientTlsConfig::new().with_native_roots())?
+        .connect()
+        .await
+        .with_context(|| "Failed to connect to the Apibara server.")?;
+    let mut client = tonic::client::Grpc::new(channel);
+    let filter = dna::Filter {
+        // Requesting all headers - so progress is advanced by empty blocks as well, and the stream
+        // does not stall waiting for the next declaration after the last block in the range.
+        header: dna::HEADER_FILTER_ALWAYS,
+        contract_changes: vec![dna::ContractChangeFilter {
+            change: Some(dna::contract_change_filter::Change::DeclaredClass(
+                dna::DeclaredClassFilter {},
+            )),
+        }],
+    };
+    let request = dna::StreamDataRequest {
+        // The stream starts right after the cursor, so the cursor is the block before
+        // `start_block`. For `start_block == 0` the stream starts from genesis.
+        starting_cursor: start_block
+            .checked_sub(1)
+            .map(|order_key| dna::Cursor { order_key, unique_key: vec![] }),
+        finality: Some(dna::DATA_FINALITY_ACCEPTED),
+        filter: vec![filter.encode_to_vec()],
+    };
+    let mut request = tonic::Request::new(request);
+    if let Ok(token) = std::env::var("DNA_TOKEN") {
+        request.metadata_mut().insert(
+            "authorization",
+            format!("Bearer {token}").parse().with_context(|| "Invalid `DNA_TOKEN` value.")?,
+        );
+    }
+    client.ready().await.with_context(|| "Apibara server is not ready.")?;
+    let mut stream = client
+        .server_streaming(
+            request,
+            PathAndQuery::from_static(dna::STREAM_DATA_PATH),
+            tonic::codec::ProstCodec::<dna::StreamDataRequest, dna::StreamDataResponse>::default(),
+        )
+        .await?
+        .into_inner();
+    let mut next_block = start_block;
+    while let Some(response) = stream.message().await? {
+        let Some(dna::stream_data_response::Message::Data(data)) = response.message else {
+            // Ignoring heartbeat and other messages.
+            continue;
+        };
+        let block_number =
+            data.end_cursor.with_context(|| "Data message with no cursor.")?.order_key;
+        for block_data in data.data {
+            let block = dna::Block::decode(block_data.as_slice())?;
+            for change in block.contract_changes {
+                // Non-declaration changes are filtered out by the request.
+                let Some(dna::contract_change::Change::DeclaredClass(declared)) = change.change
+                else {
+                    continue;
+                };
+                // `compiled_class_hash` is unset for deprecated Cairo 0 declarations.
+                let (Some(class_hash), Some(compiled_class_hash)) =
+                    (declared.class_hash, declared.compiled_class_hash)
+                else {
+                    continue;
+                };
+                class_hashes_bar.inc_length(1);
+                class_hashes_tx
+                    .send(ClassHashes {
+                        class_hash: BigUintAsHex { value: class_hash.to_biguint() },
+                        compiled_class_hash: BigUintAsHex {
+                            value: compiled_class_hash.to_biguint(),
+                        },
+                    })
+                    .await?;
+            }
+        }
+        blocks_bar.inc(block_number + 1 - next_block);
+        next_block = block_number + 1;
+        if next_block >= end_block {
+            break;
+        }
+    }
+    Ok(())
 }
 
 /// Given a class hash, retrieves the matching ContractClassInfo.
