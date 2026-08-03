@@ -834,3 +834,266 @@ sum!([], [3, 4])
 3+4+0
 
 //! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test two multi token expressions captured by two placeholders.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Each capture is the longest expression its tokens start with, so it stops at the `,` the
+// pattern puts after it. `rustc` expands the same call to `(1 + 2, 3 * 4)`, which evaluates to
+// `(3, 12)`.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+pair!(1 + 2, 3 * 4)
+
+//! > expanded_code
+(1 + 2, 3 * 4)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expression capture opening with a parenthesized subtree.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The capture runs past the subtree it starts with, over the tokens that continue the expression.
+// `rustc` expands the same call to `((1 + 2) * 3, 4)`, which evaluates to `(9, 4)`.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+pair!((1 + 2) * 3, 4)
+
+//! > expanded_code
+((1 + 2) * 3, 4)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a line comment before an expression capture.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A line comment is the one comment form Cairo has, and it is trivia: here it is the trailing
+// trivia of the call's `(`, so it is not part of the capture at all. `rustc` expands the same call
+// to `(1, 2)`.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+pair!(// c
+1, 2)
+
+//! > expanded_code
+(1, 2)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a line comment inside an expression capture.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The comment is trivia of a token in the middle of the captured expression, so it is spliced
+// into the expansion with it - harmlessly, as the newline that ends it comes along. `rustc`
+// expands the same call to `(1 + 2, 3)`, which evaluates to `(3, 3)`.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+pair!(1 + // c
+2, 3)
+
+//! > expanded_code
+(1 + // c
+2, 3)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a line comment after an expression capture.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The comment is the trailing trivia of the capture's last token, so it ends up inside it, ahead
+// of whatever the expansion writes next. `rustc` expands the same call to `(1, 2)`.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+pair!(1 // c
+, 2)
+
+//! > expanded_code
+(1 // c
+, 2)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `/* */` run inside an expression capture, which Cairo does not lex as a comment.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// Cairo has no block comments - `/* c */` lexes as the tokens `/ * c * /`, so the first capture's
+// tokens do not start with an expression and the rule does not match. `rustc`, where `/* c */` is
+// a comment, expands the same call to `(2, 5)`; the divergence is the missing lexer support, not
+// the matcher.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+pair!(2 /* c */, 5)
+
+//! > expanded_code
+pair!(2 /* c */, 5)
+
+//! > diagnostics
+error[E2158]: No matching rule found in inline macro `pair`.
+ --> lib.cairo:10:1
+pair!(2 /* c */, 5)
+^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a `/* */` run before an expression capture, which Cairo does not lex as a comment.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The capture's tokens start with `/`, which begins no expression. `rustc`, where `/* c */` is a
+// comment, expands the same call to `(2, 5)`.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+pair!(/* c */ 2, /* d */ 5)
+
+//! > expanded_code
+pair!(/* c */ 2, /* d */ 5)
+
+//! > diagnostics
+error[E2158]: No matching rule found in inline macro `pair`.
+ --> lib.cairo:8:1
+pair!(/* c */ 2, /* d */ 5)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a repetition whose first group holds a `/* */` run.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The first group's capture is not an expression, so the repetition matches no group and the
+// three tokens left over reject the rule. `rustc`, where the runs are comments, expands the same
+// call to `0 + 1 + 2 + 3`, which evaluates to `6`.
+#[feature("user_defined_inline_macros")]
+macro sum {
+    ($($x:expr),*) => { 0 $(+ $x)* };
+}
+
+//! > expr_code
+sum!(1 /* a */, 2 /* b */, 3)
+
+//! > expanded_code
+sum!(1 /* a */, 2 /* b */, 3)
+
+//! > diagnostics
+error[E2158]: No matching rule found in inline macro `sum`.
+ --> lib.cairo:9:1
+sum!(1 /* a */, 2 /* b */, 3)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an expression capture the parser reports an error on rejecting the rule.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The second capture is a subtree with a syntax error in it, and the expansion drops that
+// placeholder - so before the call's tokens had to parse, this expanded to `1` and the error was
+// never reported. `rustc` rejects the same call with "expected one of `!`, `)`, `,`, `.`, `::`,
+// `?`, `{`, or an operator, found `b`".
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($a:expr, $b:expr) => { $a };
+}
+
+//! > expr_code
+m!(1, (a b))
+
+//! > expanded_code
+m!(1, (a b))
+
+//! > diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:10:1
+m!(1, (a b))
+^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an expression capture with no tokens to parse.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The first capture starts on the `,` the pattern expects after it, so there is no expression to
+// capture. `rustc` rejects the same call with "no rules expected `,`".
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+pair!(, 5)
+
+//! > expanded_code
+pair!(, 5)
+
+//! > diagnostics
+error[E2158]: No matching rule found in inline macro `pair`.
+ --> lib.cairo:8:1
+pair!(, 5)
+^^^^^^^^^^
