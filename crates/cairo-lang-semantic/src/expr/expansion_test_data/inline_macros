@@ -430,6 +430,143 @@ empty_non_final_group: 3+4+0
 
 //! > ==========================================================================
 
+//! > Test expression captures consuming exactly what the parser consumed.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Each capture is the longest expression its tokens start with, so it stops at the `,` the
+// pattern puts after it. `rustc` expands the same call to `(1 + 2, 3 * 4)`, which evaluates to
+// `(3, 12)`.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+let two_multi_token = pair!(1 + 2, 3 * 4);
+let parenthesized_subtree = pair!((1 + 2) * 3, 4);
+let comment_before = pair!(// c
+1, 2);
+let comment_inside = pair!(1 + // c
+2, 3);
+let comment_after = pair!(1 // c
+, 2);
+
+//! > expanded_code
+two_multi_token: (1 + 2, 3 * 4) 
+parenthesized_subtree: ((1 + 2) * 3, 4) 
+comment_before: (1, 2) 
+comment_inside: (1 + // c
+2, 3) 
+comment_after: (1 // c
+, 2)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test `/* */` runs in expression captures, which Cairo does not lex as comments.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// Cairo has no block comments - `/* c */` lexes as the tokens `/ * c * /`, so the first capture's
+// tokens do not start with an expression and the rule does not match. `rustc`, where `/* c */` is
+// a comment, expands the same call to `(2, 5)`; the divergence is the missing lexer support, not
+// the matcher.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+let run_inside = pair!(2 /* c */, 5);
+let run_before = pair!(/* c */ 2, /* d */ 5);
+let no_tokens = pair!(, 5);
+
+//! > expanded_code
+run_inside: pair!(2 /* c */, 5)
+run_before: pair!(/* c */ 2, /* d */ 5)
+no_tokens: pair!(, 5)
+
+//! > diagnostics
+error[E2158]: No matching rule found in inline macro `pair`.
+ --> lib.cairo:10:18
+let run_inside = pair!(2 /* c */, 5);
+                 ^^^^^^^^^^^^^^^^^^^
+
+error[E2158]: No matching rule found in inline macro `pair`.
+ --> lib.cairo:11:18
+let run_before = pair!(/* c */ 2, /* d */ 5);
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2158]: No matching rule found in inline macro `pair`.
+ --> lib.cairo:12:17
+let no_tokens = pair!(, 5);
+                ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a repetition whose first group holds a `/* */` run.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The first group's capture is not an expression, so the repetition matches no group and the
+// three tokens left over reject the rule. `rustc`, where the runs are comments, expands the same
+// call to `0 + 1 + 2 + 3`, which evaluates to `6`.
+#[feature("user_defined_inline_macros")]
+macro sum {
+    ($($x:expr),*) => { 0 $(+ $x)* };
+}
+
+//! > expr_code
+let expanded = sum!(1 /* a */, 2 /* b */, 3);
+
+//! > expanded_code
+expanded: sum!(1 /* a */, 2 /* b */, 3)
+
+//! > diagnostics
+error[E2158]: No matching rule found in inline macro `sum`.
+ --> lib.cairo:9:16
+let expanded = sum!(1 /* a */, 2 /* b */, 3);
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an expression capture the parser reports an error on rejecting the rule.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The second capture is a subtree with a syntax error in it, and the expansion drops that
+// placeholder - so before the call's tokens had to parse, this expanded to `1` and the error was
+// never reported. `rustc` rejects the same call with "expected one of `!`, `)`, `,`, `.`, `::`,
+// `?`, `{`, or an operator, found `b`".
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($a:expr, $b:expr) => { $a };
+}
+
+//! > expr_code
+let expanded = m!(1, (a b));
+
+//! > expanded_code
+expanded: m!(1, (a b))
+
+//! > diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:10:16
+let expanded = m!(1, (a b));
+               ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test expansion of panic macro
 
 //! > test_runner_name
