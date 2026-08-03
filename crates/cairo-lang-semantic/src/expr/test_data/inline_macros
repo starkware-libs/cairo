@@ -2413,8 +2413,10 @@ fn foo() {
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > cairo_code
+// The expansion is wrapped in a tuple because the block is expanded once per capture of `y`, so a
+// bare comma separated list would not be a single expression.
 macro m {
-    ($x:expr, $($y:expr),*) => { $($x + $y),* };
+    ($x:expr, $($y:expr),*) => { ($($x + $y),*) };
 }
 fn foo() {
     m!(1 + 2, 3, 4);
@@ -3000,3 +3002,47 @@ fn foo() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test item-position nested expansion blocks generating one item per capture.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// Each generated function is defined exactly once, which only holds if the inner block is expanded
+// over the captures of its own group: expanding it over all of them would define each function once
+// per group.
+macro make_fns {
+    ($([$($name:ident),*]),*) => { $($(fn $name() {})*)* };
+}
+
+make_fns!([first, second], [third, fourth]);
+fn foo() {}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repetition whose placeholder shares its name with a non-repeating one.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// Placeholder names are not verified to be unique, so `y` is captured both outside the repetition
+// and inside it. Only one of the two nestings fits a single placeholder, so the number of
+// repetitions of the expansion block cannot be determined.
+macro m {
+    ($y:ident, $($y:ident),*) => { $($y),* };
+}
+fn foo() {
+    m!(base, one, two);
+}
+
+//! > expected_diagnostics
+error[E2202]: No placeholder of this macro expansion block repeats at its depth, so its number of repetitions cannot be determined.
+ --> lib.cairo:5:36
+    ($y:ident, $($y:ident),*) => { $($y),* };
+                                   ^^^^^^^
