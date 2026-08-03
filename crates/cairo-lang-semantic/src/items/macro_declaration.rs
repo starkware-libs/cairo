@@ -15,6 +15,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use salsa::Database;
 
 use crate::SemanticDiagnostic;
@@ -32,6 +33,37 @@ pub struct RepetitionId(usize);
 /// Each macro parameter name maps to a flat list of matched strings.
 type Captures<'db> = OrderedHashMap<SmolStrId<'db>, Vec<CapturedValue<'db>>>;
 
+/// The values captured for a single placeholder, nested by the repetition structure of the pattern
+/// that matched them: a placeholder nested in `d` `$()` repetitions has each value as a `Leaf`
+/// under `d` `Seq` levels, the `Seq` at level `j` holding one element per group of the repetition
+/// at depth `j`. A repetition that matched zero times is an empty `Seq`.
+///
+/// For example, matching `$( $a:ident $( $b:ident )* ),*` against `x y z, w, v u` captures:
+/// * `a`: `Seq([Leaf(x), Leaf(w), Leaf(v)])`.
+/// * `b`: `Seq([Seq([Leaf(y), Leaf(z)]), Seq([]), Seq([Leaf(u)])])`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CaptureTree<'db> {
+    /// A single captured value.
+    Leaf(CapturedValue<'db>),
+    /// The groups of a pattern repetition, in match order.
+    Seq(Vec<CaptureTree<'db>>),
+}
+
+impl<'db> CaptureTree<'db> {
+    /// The groups of the `Seq` at nesting `level` that is open for new content - the last group of
+    /// every level above it. `None` if a `Leaf` is in the way or a level has no group yet, which
+    /// means the pattern uses the name at conflicting nesting positions.
+    fn open_groups_mut(&mut self, level: usize) -> Option<&mut Vec<Self>> {
+        let mut node = self;
+        for _ in 0..level {
+            let Self::Seq(groups) = node else { return None };
+            node = groups.last_mut()?;
+        }
+        let Self::Seq(groups) = node else { return None };
+        Some(groups)
+    }
+}
+
 /// Context used during macro pattern matching and expansion.
 /// Tracks captured values, active repetition scopes, and repetition ownership per placeholder.
 #[derive(Default, Clone, Debug)]
@@ -39,6 +71,12 @@ pub struct MatcherContext<'db> {
     /// The captured values per macro parameter name.
     /// These are flat lists, even for repeated placeholders.
     pub captures: Captures<'db>,
+
+    /// The captured values per macro parameter name, nested by the repetition structure of the
+    /// pattern - see [`CaptureTree`]. Includes placeholders whose repetition matched zero times.
+    /// Mirrors [`Self::captures`] for now; as param name uniqueness is not verified, a name the
+    /// pattern uses at conflicting nesting positions only holds the values of the first.
+    pub capture_trees: OrderedHashMap<SmolStrId<'db>, CaptureTree<'db>>,
 
     /// Maps each placeholder to the `RepetitionId` of the repetition block
     /// they are part of. This helps the expansion phase know which iterators to advance together.
@@ -59,6 +97,83 @@ pub struct MatcherContext<'db> {
 
     /// Store the repetition operator for each repetition.
     pub repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator<'db>>,
+}
+
+impl<'db> MatcherContext<'db> {
+    /// Records `value` as the next capture of `name`, in both [`Self::captures`] and
+    /// [`Self::capture_trees`].
+    fn record_capture(&mut self, name: SmolStrId<'db>, value: CapturedValue<'db>) {
+        self.captures.entry(name).or_default().push(value.clone());
+        // The leaves of a placeholder are the elements of the `Seq` one level above its own depth.
+        let Some(level) = self.current_repetition_stack.len().checked_sub(1) else {
+            self.capture_trees.entry(name).or_insert(CaptureTree::Leaf(value));
+            return;
+        };
+        // A `Seq` as the last group means the name is also used at a deeper nesting position.
+        if let Some(groups) = self
+            .capture_trees
+            .get_mut(&name)
+            .and_then(|tree| tree.open_groups_mut(level))
+            .filter(|groups| !matches!(groups.last(), Some(CaptureTree::Seq(_))))
+        {
+            groups.push(CaptureTree::Leaf(value));
+        }
+    }
+
+    /// Opens a group in the tree of every placeholder nested in `repetition`, which is about to be
+    /// matched. Called once per encounter of the repetition, before it is pushed onto
+    /// [`Self::current_repetition_stack`], so a zero-match repetition still leaves an empty group.
+    fn open_repetition_groups(
+        &mut self,
+        db: &'db dyn Database,
+        repetition: &ast::MacroRepetition<'db>,
+    ) {
+        let depth = self.current_repetition_stack.len();
+        let mut names = OrderedHashSet::default();
+        collect_pattern_placeholder_names(db, repetition.elements(db).elements(db), &mut names);
+        for name in names {
+            let Some(level) = depth.checked_sub(1) else {
+                self.capture_trees.entry(name).or_insert(CaptureTree::Seq(vec![]));
+                continue;
+            };
+            // A `Leaf` as the last group means the name is also used at a shallower position.
+            if let Some(groups) = self
+                .capture_trees
+                .get_mut(&name)
+                .and_then(|tree| tree.open_groups_mut(level))
+                .filter(|groups| !matches!(groups.last(), Some(CaptureTree::Leaf(_))))
+            {
+                groups.push(CaptureTree::Seq(vec![]));
+            }
+        }
+    }
+}
+
+/// Collects the names of all the placeholders in the given pattern elements, including the ones
+/// nested in inner repetitions and subtrees.
+fn collect_pattern_placeholder_names<'db>(
+    db: &'db dyn Database,
+    elements: impl IntoIterator<Item = ast::MacroElement<'db>>,
+    names: &mut OrderedHashSet<SmolStrId<'db>>,
+) {
+    for element in elements {
+        match element {
+            ast::MacroElement::Param(param) => {
+                names.insert(param.name(db).as_syntax_node().get_text_without_trivia(db));
+            }
+            ast::MacroElement::Repetition(repetition) => {
+                collect_pattern_placeholder_names(db, repetition.elements(db).elements(db), names);
+            }
+            ast::MacroElement::Subtree(subtree) => {
+                collect_pattern_placeholder_names(
+                    db,
+                    get_macro_elements(db, subtree.subtree(db)).elements(db),
+                    names,
+                );
+            }
+            ast::MacroElement::Token(_) => {}
+        }
+    }
 }
 
 /// The semantic data for a macro declaration.
@@ -444,10 +559,13 @@ fn is_macro_rule_match_ex<'db>(
                             }
                             _ => return None,
                         };
-                        ctx.captures.entry(placeholder_name).or_default().push(CapturedValue {
-                            text: captured_text,
-                            stable_ptr: input_token.stable_ptr(db).untyped(),
-                        });
+                        ctx.record_capture(
+                            placeholder_name,
+                            CapturedValue {
+                                text: captured_text,
+                                stable_ptr: input_token.stable_ptr(db).untyped(),
+                            },
+                        );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
                             ctx.placeholder_to_rep_id.insert(placeholder_name, *rep_id);
                         }
@@ -465,10 +583,13 @@ fn is_macro_rule_match_ex<'db>(
                             return None;
                         }
 
-                        ctx.captures.entry(placeholder_name).or_default().push(CapturedValue {
-                            text: expr_text.to_string(),
-                            stable_ptr: peek_token.stable_ptr(db).untyped(),
-                        });
+                        ctx.record_capture(
+                            placeholder_name,
+                            CapturedValue {
+                                text: expr_text.to_string(),
+                                stable_ptr: peek_token.stable_ptr(db).untyped(),
+                            },
+                        );
                         if let Some(rep_id) = ctx.current_repetition_stack.last() {
                             ctx.placeholder_to_rep_id.insert(placeholder_name, *rep_id);
                         }
@@ -518,6 +639,7 @@ fn is_macro_rule_match_ex<'db>(
             ast::MacroElement::Repetition(repetition) => {
                 let rep_id = RepetitionId(ctx.next_repetition_id);
                 ctx.next_repetition_id += 1;
+                ctx.open_repetition_groups(db, &repetition);
                 ctx.current_repetition_stack.push(rep_id);
                 let elements = repetition.elements(db);
                 let operator = repetition.operator(db);
