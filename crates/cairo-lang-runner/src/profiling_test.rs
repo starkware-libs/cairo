@@ -1,6 +1,6 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_semantic::test_utils::{setup_test_module, with_target_function_plugin};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -40,7 +40,7 @@ pub fn test_profiling(
     }
 
     let db = RootDatabase::builder()
-        .with_default_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(with_target_function_plugin(starknet_plugin_suite()))
         .detect_corelib()
         .build()
         .unwrap();

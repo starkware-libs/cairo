@@ -7,6 +7,7 @@ use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, SmolStrId};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::indoc;
 use itertools::Itertools;
 use salsa::Database;
@@ -15,7 +16,10 @@ use crate::db::SemanticGroup;
 use crate::inline_macros::get_default_plugin_suite;
 use crate::items::free_function::FreeFunctionSemantic;
 use crate::items::module::ModuleSemantic;
-use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
+use crate::test_utils::{
+    SemanticDatabaseForTesting, resolve_target_functions, setup_test_function, setup_test_module,
+    test_function_diagnostics,
+};
 
 #[test]
 fn test_resolve() {
@@ -172,5 +176,64 @@ fn test_mapping_translate_consecutive_spans() {
             ^^^^^
 
     "#}
+    );
+}
+
+/// Builds the inputs map of a test block with a single `cairo_code` tag.
+fn cairo_code_inputs(cairo_code: &str) -> OrderedHashMap<String, String> {
+    OrderedHashMap::from([("cairo_code".to_string(), cairo_code.to_string())])
+}
+
+#[test]
+fn test_target_function_resolution() {
+    let db = &SemanticDatabaseForTesting::default();
+    let inputs = cairo_code_inputs(indoc! {"
+        fn not_the_target() {}
+        #[target_function]
+        fn the_target() {}
+    "});
+    let test_function = setup_test_function(db, &inputs).unwrap();
+    assert_eq!(
+        format!("{:?}", test_function.function_id.debug(db)),
+        "FreeFunctionId(test::the_target)"
+    );
+}
+
+#[test]
+fn test_multiple_target_functions_resolution() {
+    let db = &SemanticDatabaseForTesting::default();
+    let (test_module, diagnostics) = setup_test_module(
+        db,
+        indoc! {"
+            #[target_function]
+            fn first() {}
+            fn untargeted() {}
+            #[target_function]
+            fn second() {}
+        "},
+    )
+    .split();
+    // The `#[target_function]` attribute is declared by the testing plugin, so it is not reported
+    // as an unsupported attribute.
+    assert_eq!(diagnostics, "");
+    let target_functions = resolve_target_functions(db, test_module.module_id);
+    assert_eq!(
+        target_functions.iter().map(|id| format!("{:?}", id.debug(db))).collect_vec(),
+        vec!["FreeFunctionId(test::first)", "FreeFunctionId(test::second)"]
+    );
+}
+
+#[test]
+fn test_no_target_function_is_fine_for_module_diagnostics() {
+    let inputs = cairo_code_inputs("fn foo() { let _x: felt252 = 5_u8; }");
+    let result = test_function_diagnostics(
+        &inputs,
+        &OrderedHashMap::from([("expect_diagnostics".to_string(), "true".to_string())]),
+    );
+    assert!(result.error.is_none(), "{:?}", result.error);
+    assert!(
+        result.outputs["expected_diagnostics"].contains("Unexpected argument type"),
+        "{}",
+        result.outputs["expected_diagnostics"]
     );
 }
