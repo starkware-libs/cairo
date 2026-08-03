@@ -15,10 +15,13 @@ cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.20.0", featu
 clap.workspace = true
 indicatif = "0.18.0"
 num-bigint.workspace = true
+prost = "0.13"
 reqwest = { version = "0.13", features = ["json"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 tokio.workspace = true
+tonic = { version = "0.12", features = ["tls-native-roots"] }
 
 # This is not a direct dependency of this package, but it is included here to make sure that the
 # `vendored` feature is enabled (needed for the compilation to succeed on remote machines).
