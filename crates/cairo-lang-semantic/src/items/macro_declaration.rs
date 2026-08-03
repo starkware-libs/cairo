@@ -282,7 +282,6 @@ fn priv_macro_declaration_data<'db>(
     ));
     let resolver = Resolver::new(db, module_id, inference_id);
 
-    // TODO(Dean): Verify consistency bracket terminals.
     let mut rules = vec![];
     for rule_syntax in macro_declaration_syntax.rules(db).elements(db) {
         let pattern = rule_syntax.lhs(db);
@@ -664,22 +663,31 @@ fn is_macro_rule_match_ex<'db>(
             }
             ast::MacroElement::Subtree(matcher_subtree) => {
                 advanced = true;
-                let input_token = input_iter.next()?;
-                if let ast::TokenTree::Subtree(input_subtree) = input_token {
-                    let inner_elements = get_macro_elements(db, matcher_subtree.subtree(db));
-                    let mut inner_input_iter = match input_subtree.subtree(db) {
-                        ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db),
-                        ast::WrappedTokenTree::Braced(tt) => tt.tokens(db),
-                        ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
-                        ast::WrappedTokenTree::Missing(_) => unreachable!(),
-                    }
-                    .elements(db)
-                    .peekable();
-                    is_macro_rule_match_ex(db, inner_elements, &mut inner_input_iter, ctx, true)?;
-                    continue;
-                } else {
+                let ast::TokenTree::Subtree(input_subtree) = input_iter.next()? else {
                     return None;
-                }
+                };
+                // The delimiters of a subtree are part of the pattern: a subtree of the input
+                // whose delimiters are of another kind does not match, so the rule does not - it
+                // is not an error, as another rule may match the call.
+                let (inner_elements, inner_input_tokens) =
+                    match (matcher_subtree.subtree(db), input_subtree.subtree(db)) {
+                        (
+                            ast::WrappedMacro::Parenthesized(matcher),
+                            ast::WrappedTokenTree::Parenthesized(input),
+                        ) => (matcher.elements(db), input.tokens(db)),
+                        (
+                            ast::WrappedMacro::Braced(matcher),
+                            ast::WrappedTokenTree::Braced(input),
+                        ) => (matcher.elements(db), input.tokens(db)),
+                        (
+                            ast::WrappedMacro::Bracketed(matcher),
+                            ast::WrappedTokenTree::Bracketed(input),
+                        ) => (matcher.elements(db), input.tokens(db)),
+                        _ => return None,
+                    };
+                let mut inner_input_iter = inner_input_tokens.elements(db).peekable();
+                is_macro_rule_match_ex(db, inner_elements, &mut inner_input_iter, ctx, true)?;
+                continue;
             }
             ast::MacroElement::Repetition(repetition) => {
                 let rep_id = RepetitionId(ctx.next_repetition_id);
