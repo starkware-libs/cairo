@@ -289,3 +289,129 @@ error[E1001]: Missing token ']'.
  --> lib.cairo:2:12
 array![1, 2
            ^
+
+//! > ==========================================================================
+
+//! > Test nested expansion blocks each expanding over their own group of captures.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro nested {
+    ($([$($x:expr),*]),*) => { ($([$($x),*]),*) };
+}
+
+//! > expr_code
+nested!([1, 2], [3, 4])
+
+//! > expanded_code
+([1,2],[3,4])
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a non-repeating placeholder broadcast to every group of a repeating one.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro broadcast {
+    ($base:expr, $($x:expr),*) => { ($($base + $x),*) };
+}
+
+//! > expr_code
+broadcast!(10, 1, 2)
+
+//! > expanded_code
+(10+ 1,10+ 2)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an inner group that matched nothing expanding to nothing, next to one that did.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sums {
+    ($([$($x:expr),*]),*) => { ($((0 $(+ $x)*)),*) };
+}
+
+//! > expr_code
+sums!([1, 2], [])
+
+//! > expanded_code
+((0 + 1+ 2),(0 ))
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test every inner group matching nothing, with the outer groups still expanded.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sums {
+    ($([$($x:expr),*]),*) => { ($((0 $(+ $x)*)),*) };
+}
+
+//! > expr_code
+sums!([], [])
+
+//! > expanded_code
+((0 ),(0 ))
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a call matching no group at all expanding every block to nothing.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sums {
+    ($([$($x:expr),*]),*) => { ($((0 $(+ $x)*)),*) };
+}
+
+//! > expr_code
+sums!()
+
+//! > expanded_code
+()
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test nested expansion blocks flattening a nested pattern into one list.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro flatten {
+    ($([$($x:expr),*]),*) => { ($($($x),*),*) };
+}
+
+//! > expr_code
+flatten!([1, 2], [3, 4])
+
+//! > expanded_code
+(1,2,3,4)
+
+//! > diagnostics
