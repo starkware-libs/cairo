@@ -17,7 +17,7 @@ use crate::diagnostic::{
 };
 use crate::expr::inference::InferenceId;
 use crate::items::macro_declaration::{
-    MacroDeclarationSemantic, MatcherContext, expand_macro_rule, is_macro_rule_match,
+    MacroDeclarationSemantic, expand_macro_rule, is_macro_rule_match,
 };
 use crate::items::module::ModuleSemantic;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
@@ -135,7 +135,7 @@ fn priv_macro_call_data<'db>(
             });
         }
     };
-    let Some((rule, (captures, placeholder_to_rep_id))) = macro_rules.iter().find_map(|rule| {
+    let Some((rule, capture_trees)) = macro_rules.iter().find_map(|rule| {
         is_macro_rule_match(db, rule, &macro_call_syntax.arguments(db)).map(|res| (rule, res))
     }) else {
         let diag_added = diagnostics.report(
@@ -162,8 +162,7 @@ fn priv_macro_call_data<'db>(
             parent_macro_call_data,
         });
     }
-    let mut matcher_ctx = MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
-    let expanded_code = match expand_macro_rule(db, rule, &mut matcher_ctx) {
+    let expanded_code = match expand_macro_rule(db, rule, &capture_trees) {
         Ok(expanded_code) => expanded_code,
         Err(err) => {
             let diag_added = err.report(&mut diagnostics);
