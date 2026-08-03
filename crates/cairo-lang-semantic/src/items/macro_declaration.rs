@@ -276,16 +276,32 @@ fn check_repetition_separator<'db>(
     repetition: &ast::MacroRepetition<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> Maybe<()> {
-    let Some(separator) = repetition_separator(db, repetition) else {
+    let Some(separator) = declared_separator_token(db, repetition) else {
         return Ok(());
     };
     if !matches!(repetition.operator(db), ast::MacroRepetitionOperator::ZeroOrOne(_)) {
         return Ok(());
     }
     Err(diagnostics.report(
-        separator.stable_ptr(db).untyped(),
+        separator.stable_ptr(db),
         SemanticDiagnosticKind::MacroRepetitionSeparatorWithZeroOrOne,
     ))
+}
+
+/// The token of `repetition`'s declared separator, of any kind.
+///
+/// The declaration-time checks apply to every separator the parser accepts, not only to the comma
+/// the matcher currently supports - see [`repetition_separator`].
+fn declared_separator_token<'db>(
+    db: &'db dyn Database,
+    repetition: &ast::MacroRepetition<'db>,
+) -> Option<SyntaxNode<'db>> {
+    match repetition.separator(db) {
+        ast::OptionMacroRepetitionSeparator::MacroRepetitionSeparator(separator) => {
+            Some(separator.token(db).as_syntax_node())
+        }
+        ast::OptionMacroRepetitionSeparator::Empty(_) => None,
+    }
 }
 
 /// Reports `repetition`, a `$()` block of a macro rule's pattern, if its body is empty.
@@ -420,8 +436,8 @@ fn check_expr_follow_set<'db>(
                 // The end of a group is followed either by the separator, when another group comes
                 // after it, or by whatever comes after the repetition itself.
                 let mut body_outer = after();
-                if let Some(separator) = repetition_separator(db, repetition) {
-                    body_outer.push(Follower::new(db, separator.as_syntax_node()));
+                if let Some(separator) = declared_separator_token(db, repetition) {
+                    body_outer.push(Follower::new(db, separator));
                 }
                 res = res.and(check_expr_follow_set(
                     db,
