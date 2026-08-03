@@ -41,35 +41,58 @@ pub fn token_tree_as_wrapped_arg_list<'a>(
     Some(wrapped_arg_list_green)
 }
 
-/// Takes a token tree syntax node, which is assumed to be parsable as an expression (it assumes
-/// that the prefix is an expr, not the whole iterator), tries to parse it as such, and returns the
-/// result. The token tree iterator is consumed entirely. The resulting expression's offset
-/// corresponds to the offset of the first token in the provided token tree.
-pub fn as_expr_macro_token_tree<'a>(
-    mut token_tree: impl DoubleEndedIterator<Item = TokenTree<'a>>,
+/// Parses the expression the given token trees start with - only a prefix of them is expected to
+/// be one - and advances the iterator past exactly the token trees the parser consumed. The
+/// resulting expression's offset corresponds to the offset of the first token tree.
+///
+/// Returns `None`, leaving the iterator where it was, when the token trees do not start with a
+/// well formed expression. Ignoring the parser's diagnostics instead would capture text that is
+/// not an expression, and the caller would splice it into generated code, where the very same
+/// parse error is reported again - against code the user did not write.
+pub fn as_expr_macro_token_tree<'a, TokenTrees>(
+    token_trees: &mut TokenTrees,
     file_id: FileId<'a>,
     db: &'a dyn Database,
-) -> Option<ast::Expr<'a>> {
-    let mut diagnostics: DiagnosticsBuilder<'_, ParserDiagnostic<'_>> =
-        DiagnosticsBuilder::default();
-    let first_token = token_tree.next()?.as_syntax_node();
-    let last_token =
-        token_tree.next_back().map(|last| last.as_syntax_node()).unwrap_or(first_token);
+) -> Option<ast::Expr<'a>>
+where
+    TokenTrees: DoubleEndedIterator<Item = TokenTree<'a>> + Clone,
+{
+    let mut remaining = token_trees.clone();
+    let first_token = remaining.next()?.as_syntax_node();
+    let last_token = remaining.next_back().map(|last| last.as_syntax_node()).unwrap_or(first_token);
     let file_content = db.file_content(file_id).expect("Failed to read file content");
 
-    let span = TextSpan::new(first_token.offset(db), last_token.span(db).end);
+    let start = first_token.offset(db);
+    let span = TextSpan::new(start, last_token.span(db).end);
 
+    let mut diagnostics: DiagnosticsBuilder<'_, ParserDiagnostic<'_>> =
+        DiagnosticsBuilder::default();
     let mut parser = Parser::new(db, file_id, span.take(file_content), &mut diagnostics);
     let expr_green = parser.parse_expr();
+    if !diagnostics.build().is_empty() {
+        return None;
+    }
     let expr = ast::Expr::from_syntax_node(
         db,
-        SyntaxNode::new_detached_root_with_offset(
-            db,
-            file_id,
-            expr_green.0,
-            Some(first_token.offset(db)),
-        ),
+        SyntaxNode::new_detached_root_with_offset(db, file_id, expr_green.0, Some(start)),
     );
+
+    // The parser works on the text of the token trees, so the expression it built is the exact
+    // prefix of them that ends where it does - consume the token trees up to that point.
+    let expr_end = expr.as_syntax_node().span(db).end;
+    let mut consumed = token_trees.clone();
+    let mut consumed_end = start;
+    while consumed_end < expr_end {
+        let token_tree_end = consumed.next()?.as_syntax_node().span(db).end;
+        // An expression that parsed with no diagnostics is not expected to end inside a token
+        // tree, but a rule is conservatively taken as unmatched rather than capturing a token in
+        // half, which would leave the rest of the pattern matching against its other half.
+        if token_tree_end > expr_end {
+            return None;
+        }
+        consumed_end = token_tree_end;
+    }
+    *token_trees = consumed;
     Some(expr)
 }
 
