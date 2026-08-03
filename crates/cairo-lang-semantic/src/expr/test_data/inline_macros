@@ -3025,15 +3025,14 @@ fn foo() {}
 
 //! > ==========================================================================
 
-//! > Test a repetition whose placeholder shares its name with a non-repeating one.
+//! > Test a placeholder name reused by a pattern at two nesting depths.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
-// Placeholder names are not verified to be unique, so `y` is captured both outside the repetition
-// and inside it. Only one of the two nestings fits a single placeholder, so the number of
-// repetitions of the expansion block cannot be determined.
+// `y` names both a capture outside the repetition and one inside it, so the nesting depth of the
+// values it stands for is ambiguous. rustc's `macro_rules!` rejects the equivalent pattern too.
 macro m {
     ($y:ident, $($y:ident),*) => { $($y),* };
 }
@@ -3042,7 +3041,114 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2202]: The number of repetitions of this macro expansion block cannot be determined from the captured values.
- --> lib.cairo:5:36
+error[E2204]: Macro placeholder 'y' is already captured by this rule's pattern. A placeholder name may be used only once per pattern.
+ --> lib.cairo:4:18
     ($y:ident, $($y:ident),*) => { $($y),* };
-                                   ^^^^^^^
+                 ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a placeholder name reused by a pattern after a repetition capturing it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// rustc's `macro_rules!` rejects the equivalent pattern with `error: duplicate matcher binding`.
+macro m {
+    ($($x:expr),* ; $x:expr) => { $x };
+}
+fn foo() {
+    m!(1, 2; 3);
+}
+
+//! > expected_diagnostics
+error[E2204]: Macro placeholder 'x' is already captured by this rule's pattern. A placeholder name may be used only once per pattern.
+ --> lib.cairo:3:21
+    ($($x:expr),* ; $x:expr) => { $x };
+                    ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a placeholder name reused by two sibling repetitions of a pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro dup {
+    ([$($x:ident),*] [$($x:ident),*]) => { 0 $(+ $x)* };
+}
+fn foo() {
+    dup!([a, b][c, d]);
+}
+
+//! > expected_diagnostics
+error[E2204]: Macro placeholder 'x' is already captured by this rule's pattern. A placeholder name may be used only once per pattern.
+ --> lib.cairo:2:25
+    ([$($x:ident),*] [$($x:ident),*]) => { 0 $(+ $x)* };
+                        ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a placeholder name reused by a pattern three times is reported once.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro dup {
+    ($p:ident, $p:ident, $p:ident) => { $p };
+}
+fn foo() {
+    dup!(a, b, c);
+}
+
+//! > expected_diagnostics
+error[E2204]: Macro placeholder 'p' is already captured by this rule's pattern. A placeholder name may be used only once per pattern.
+ --> lib.cairo:2:16
+    ($p:ident, $p:ident, $p:ident) => { $p };
+               ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a pattern reusing a placeholder name at two depths, at item position.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The reused name makes the pattern depth of `p` ambiguous, which used to be resolved by taking the
+// last occurrence and reporting the expansion against it. The pattern itself is reported now.
+macro two_kinds {
+    ([$([$($p:ident),*]),*] [$($p:ident),*]) => { fn $p() {} };
+}
+
+two_kinds!([[], []][]);
+fn foo() {}
+
+//! > expected_diagnostics
+error[E2204]: Macro placeholder 'p' is already captured by this rule's pattern. A placeholder name may be used only once per pattern.
+ --> lib.cairo:4:32
+    ([$([$($p:ident),*]),*] [$($p:ident),*]) => { fn $p() {} };
+                               ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a pattern using distinct placeholder names at the same positions (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// Names are unique per pattern, not per macro: the second rule is free to reuse `a` and `b`.
+macro pair {
+    ($($a:ident),* ; $b:expr) => { $b };
+
+    ($a:ident, $b:expr) => { $b };
+}
+fn foo() -> felt252 {
+    pair!(a, b; 3)
+}
+
+//! > expected_diagnostics
