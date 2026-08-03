@@ -61,6 +61,94 @@ let empty = array![];
 
 //! > ==========================================================================
 
+//! > Test nested expansion blocks each expanding over their own group of captures.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro nested {
+    ($([$($x:expr),*]),*) => { ($([$($x),*]),*) };
+}
+
+//! > expr_code
+let expanded = nested!([1, 2], [3, 4]);
+
+//! > expanded_code
+expanded: ([1,2],[3,4])
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a non-repeating placeholder broadcast to every group of a repeating one.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro broadcast {
+    ($base:expr, $($x:expr),*) => { ($($base + $x),*) };
+}
+
+//! > expr_code
+let expanded = broadcast!(10, 1, 2);
+
+//! > expanded_code
+expanded: (10+ 1,10+ 2)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test groups that matched nothing expanding to nothing, next to ones that did.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro sums {
+    ($([$($x:expr),*]),*) => { ($((0 $(+ $x)*)),*) };
+}
+
+//! > expr_code
+let inner_empty = sums!([1, 2], []);
+let all_inner_empty = sums!([], []);
+let no_groups = sums!();
+
+//! > expanded_code
+inner_empty: ((0 + 1+ 2),(0 )) 
+all_inner_empty: ((0 ),(0 )) 
+no_groups: ()
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test nested expansion blocks flattening a nested pattern into one list.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro flatten {
+    ($([$($x:expr),*]),*) => { ($($($x),*),*) };
+}
+
+//! > expr_code
+let expanded = flatten!([1, 2], [3, 4]);
+
+//! > expanded_code
+expanded: (1,2,3,4)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
 //! > Test expansion of panic macro
 
 //! > test_runner_name
