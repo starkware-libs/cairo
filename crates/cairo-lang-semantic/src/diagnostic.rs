@@ -1187,6 +1187,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
                 format!("Undefined macro placeholder: '{}'.", name.long(db))
             }
+            SemanticDiagnosticKind::DuplicateMacroPlaceholder(name) => {
+                format!(
+                    "Macro placeholder '{}' is already captured by this rule's pattern. A \
+                     placeholder name may be used only once per pattern.",
+                    name.long(db)
+                )
+            }
             SemanticDiagnosticKind::MacroPlaceholderRepDepthMismatch { name, required, actual } => {
                 format!(
                     "Macro placeholder '{}' requires {} repetition level(s) in the expansion, but \
@@ -1507,6 +1514,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder => {
                 error_code!(E2203)
             }
+            SemanticDiagnosticKind::DuplicateMacroPlaceholder(_) => error_code!(E2204),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1922,6 +1930,7 @@ pub enum SemanticDiagnosticKind<'db> {
     TypeConstraintsSyntaxNotEnabled,
     PatternMissingArgs(ast::ExprPath<'db>),
     UndefinedMacroPlaceholder(SmolStrId<'db>),
+    DuplicateMacroPlaceholder(SmolStrId<'db>),
     MacroPlaceholderRepDepthMismatch {
         name: SmolStrId<'db>,
         required: usize,
