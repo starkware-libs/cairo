@@ -180,11 +180,6 @@ error[E0006]: Type not found.
     A: P,
        ^
 
-error[E2156]: Inline macro `MyEnum::A` not found.
- --> lib.cairo:4:1
-MyEnum::A(());
-^^^^^^^^^^^^^^
-
 //! > ==========================================================================
 
 //! > Test no ICE when an item-level macro call names an enum variant whose type is a generic enum with a trait bound.
