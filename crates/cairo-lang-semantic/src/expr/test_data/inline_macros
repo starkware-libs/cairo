@@ -2413,8 +2413,9 @@ fn foo() {
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > cairo_code
+// The block expands once per capture of `y`, so the list must be wrapped to stay one expression.
 macro m {
-    ($x:expr, $($y:expr),*) => { $($x + $y),* };
+    ($x:expr, $($y:expr),*) => { ($($x + $y),*) };
 }
 fn foo() {
     m!(1 + 2, 3, 4);
@@ -3062,3 +3063,65 @@ fn foo() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test item-position nested expansion blocks generating one item per capture.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// Each function must be defined exactly once - the inner block expands over its own group.
+macro make_fns {
+    ($([$($name:ident),*]),*) => { $($(fn $name() {})*)* };
+}
+
+make_fns!([first, second], [third, fourth]);
+fn foo() {}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repetition whose placeholder shares its name with a non-repeating one.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// Placeholder names are not verified to be unique; only the first nesting of `y` is captured.
+macro m {
+    ($y:ident, $($y:ident),*) => { $($y),* };
+}
+fn foo() {
+    m!(base, one, two);
+}
+
+//! > expected_diagnostics
+error[E2202]: No placeholder of this macro expansion block repeats at its depth, so its number of repetitions cannot be determined.
+ --> lib.cairo:3:36
+    ($y:ident, $($y:ident),*) => { $($y),* };
+                                   ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an expansion block whose placeholders repeat a different number of times.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// Placeholder names are not verified to be unique; `a` holds the groups of both repetitions.
+macro m {
+    ($($a:ident),* ; $($a:ident $b:ident),*) => { $($a $b),* };
+}
+fn foo() {
+    m!(x, y; z w);
+}
+
+//! > expected_diagnostics
+error[E2202]: The placeholders of this macro expansion block disagree on the number of repetitions.
+ --> lib.cairo:3:51
+    ($($a:ident),* ; $($a:ident $b:ident),*) => { $($a $b),* };
+                                                  ^^^^^^^^^^
