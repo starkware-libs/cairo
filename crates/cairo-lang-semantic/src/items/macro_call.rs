@@ -76,6 +76,18 @@ fn priv_macro_call_data<'db>(
         });
     }
     let mut diagnostics = SemanticDiagnostics::new(callsite_module_id);
+    // Skipping the expansion of a macro call that had a parser error, as the reported parser errors
+    // already describe the problem.
+    if macro_call_syntax.as_syntax_node().descendants(db).any(|node| node.kind(db).is_missing()) {
+        return Ok(MacroCallData {
+            macro_call_module: Err(skip_diagnostic()),
+            diagnostics: diagnostics.build(),
+            defsite_module_id: callsite_module_id,
+            callsite_module_id,
+            expansion_mappings: Arc::new([]),
+            parent_macro_call_data: resolver.macro_call_data,
+        });
+    }
     let macro_declaration_id = match resolver.resolve_generic_path(
         &mut diagnostics,
         &macro_call_path,
@@ -151,7 +163,20 @@ fn priv_macro_call_data<'db>(
         });
     }
     let mut matcher_ctx = MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
-    let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
+    let expanded_code = match expand_macro_rule(db, rule, &mut matcher_ctx) {
+        Ok(expanded_code) => expanded_code,
+        Err(err) => {
+            let diag_added = err.report(&mut diagnostics);
+            return Ok(MacroCallData {
+                macro_call_module: Err(diag_added),
+                diagnostics: diagnostics.build(),
+                defsite_module_id,
+                callsite_module_id,
+                expansion_mappings: Arc::new([]),
+                parent_macro_call_data,
+            });
+        }
+    };
     let generated_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
         name: macro_name,
