@@ -30,14 +30,20 @@ pub mod canaries;
 pub mod staking;
 
 /// Cargo's target directory, used to place bench outputs and checkouts alongside `target/`.
-/// Honors `CARGO_TARGET_DIR` if set; otherwise derives from the bench binary's own path
-/// (`<target>/release/deps/<bench>-<hash>`), which covers the default cargo layout.
+/// Honors `CARGO_TARGET_DIR` if set; otherwise derives from the bench binary's own path by
+/// walking up to the ancestor directory literally named `target`. Cargo doesn't place bench
+/// binaries at a fixed depth under `target/` (e.g. plain `<target>/release/deps/<bench>-<hash>`
+/// vs. `<target>/release/build/<pkg>-<hash>/out/<bench>-<hash>`), so a fixed ancestor count is
+/// unreliable across cargo/toolchain versions.
 pub fn target_dir() -> PathBuf {
     if let Some(dir) = std::env::var_os("CARGO_TARGET_DIR") {
         return PathBuf::from(dir);
     }
     let exe = std::env::current_exe().expect("current_exe");
-    exe.ancestors().nth(3).expect("bench binary not under <target>/release/deps/").to_path_buf()
+    exe.ancestors()
+        .find(|p| p.file_name().is_some_and(|name| name == "target"))
+        .expect("bench binary not under a `target` directory")
+        .to_path_buf()
 }
 
 /// Configuration for a benchmarked project.
