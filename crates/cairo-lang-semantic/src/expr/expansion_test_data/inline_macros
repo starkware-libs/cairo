@@ -563,3 +563,274 @@ zero_match!({})
 2
 
 //! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a bracketed call of a rule written with parentheses (valid).
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The delimiter a call is written with is not part of any rule's pattern, so a bracketed call
+// matches a rule written with parentheses. Only the delimiters of a subtree inside the pattern are
+// matched - see the cases above.
+#[feature("user_defined_inline_macros")]
+macro outer_delim {
+    ($($x:expr),*) => { ($($x,)*) };
+}
+
+//! > expr_code
+outer_delim![1, 2]
+
+//! > expanded_code
+(1,2,)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a braced call of a rule written with parentheses (valid).
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro outer_delim {
+    ($($x:expr),*) => { ($($x,)*) };
+}
+
+//! > expr_code
+outer_delim! {1, 2}
+
+//! > expanded_code
+(1,2,)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an empty bracketed call of a rule written with parentheses (valid).
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro outer_delim {
+    ($($x:expr),*) => { ($($x,)*) };
+}
+
+//! > expr_code
+outer_delim![]
+
+//! > expanded_code
+()
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a call matching a later rule after the first rule's `+` matched nothing.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A `+` that matched nothing fails the rule rather than the whole call, so the next rule is tried.
+// The violating group is the non-final one, and the group that did match holds two captures.
+#[feature("user_defined_inline_macros")]
+macro fallthrough {
+    ($([$($x:ident),+]),*) => { 1 };
+
+    ($([$($x:ident),*]),*) => { 2 };
+}
+
+//! > expr_code
+fallthrough!([], [a, b])
+
+//! > expanded_code
+2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repeating rule matching a call with two captures, ahead of an empty rule.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro at_least_one {
+    ($($x:ident),+) => { 1 };
+
+    () => { 2 };
+}
+
+//! > expr_code
+at_least_one!(a, b)
+
+//! > expanded_code
+1
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an empty call matching the empty rule after the `+` rule rejected it.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro at_least_one {
+    ($($x:ident),+) => { 1 };
+
+    () => { 2 };
+}
+
+//! > expr_code
+at_least_one!()
+
+//! > expanded_code
+2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expansion repetition whose operator differs from the pattern's (valid).
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The operator of an expansion repetition is ignored: the block is expanded once per group the
+// captures hold, so a `?` block over a `*` pattern still emits both captures. The block is not the
+// first element of the expansion.
+#[feature("user_defined_inline_macros")]
+macro ignored_op {
+    ($($x:expr),*) => { (0, $($x,)?) };
+}
+
+//! > expr_code
+ignored_op!(1, 2)
+
+//! > expanded_code
+(0, 1,2,)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expansion repetition with a differing operator over no captures at all.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro ignored_op {
+    ($($x:expr),*) => { (0, $($x,)?) };
+}
+
+//! > expr_code
+ignored_op!()
+
+//! > expanded_code
+(0, )
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repeating placeholder broadcast into a deeper expansion block.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// `$k` repeats at depth 1 and is used inside the depth-2 block driven by `$v`, so each `$k` is
+// broadcast to every capture of the `$v` group it encloses.
+#[feature("user_defined_inline_macros")]
+macro bcast {
+    ($(($k:expr, [$($v:expr),*])),*) => { ($($(($k * $v),)*)*) };
+}
+
+//! > expr_code
+bcast!((10, [1, 2]), (20, [3, 4]))
+
+//! > expanded_code
+((10* 1),(10* 2),(20* 3),(20* 4),)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a deeper expansion block whose non-final broadcast group has no captures.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro bcast {
+    ($(($k:expr, [$($v:expr),*])),*) => { ($($(($k * $v),)*)*) };
+}
+
+//! > expr_code
+bcast!((10, []), (20, [3, 4]))
+
+//! > expanded_code
+((20* 3),(20* 4),)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a doubly nested expansion block flattened into one sum.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The two nested blocks hold the whole term `$x +`, so both nesting levels flatten into a single
+// sum that the trailing `0` terminates.
+#[feature("user_defined_inline_macros")]
+macro sum {
+    ($([$($x:expr),*]),*) => { $($($x +)*)* 0 };
+}
+
+//! > expr_code
+sum!([1, 2], [3, 4])
+
+//! > expanded_code
+1+2+3+4+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a doubly nested expansion block whose non-final group matched nothing.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A group that matched nothing contributes no term, so the sum is well formed either way.
+#[feature("user_defined_inline_macros")]
+macro sum {
+    ($([$($x:expr),*]),*) => { $($($x +)*)* 0 };
+}
+
+//! > expr_code
+sum!([], [3, 4])
+
+//! > expanded_code
+3+4+0
+
+//! > diagnostics
