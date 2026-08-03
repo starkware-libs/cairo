@@ -149,6 +149,33 @@ expanded: (1,2,3,4)
 
 //! > ==========================================================================
 
+//! > Test a rule whose pattern reuses a placeholder name is not expanded.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The call is left as written: the rule is rejected at declaration time, so it never expands, and
+// the only diagnostic is the declaration error.
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($($x:expr),* ; $x:expr) => { $x };
+}
+
+//! > expr_code
+let expanded = m!(1, 2; 3);
+
+//! > expanded_code
+expanded: m!(1, 2; 3)
+
+//! > diagnostics
+error[E2204]: Macro placeholder 'x' is already captured by this rule's pattern. A placeholder name may be used only once per pattern.
+ --> lib.cairo:5:21
+    ($($x:expr),* ; $x:expr) => { $x };
+                    ^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test expansion of panic macro
 
 //! > test_runner_name
