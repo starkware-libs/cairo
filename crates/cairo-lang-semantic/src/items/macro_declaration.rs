@@ -120,8 +120,10 @@ struct MatcherContext<'db> {
 impl<'db> MatcherContext<'db> {
     /// Records `value` as the next capture of `name` in [`Self::capture_trees`].
     ///
-    /// A name used at conflicting nesting positions cannot have all of its values in one tree;
-    /// the value is dropped, and expanding the name reports [`MacroExpansionFailure`].
+    /// A name used at conflicting nesting positions cannot have all of its values in one tree; the
+    /// value is dropped. Such a pattern is rejected at declaration time by
+    /// [`SemanticDiagnosticKind::DuplicateMacroPlaceholder`], but its rule is still matched against
+    /// every call before the error is honored, so the drop is reachable.
     fn record_capture(&mut self, name: SmolStrId<'db>, value: CapturedValue<'db>) {
         // The placeholder is nested in one pattern repetition per level of the current depth, so
         // its leaves are the elements of the `Seq` one level above its own nesting depth.
@@ -156,8 +158,9 @@ impl<'db> MatcherContext<'db> {
     /// nesting depth of the repetitions enclosing `repetition`.
     ///
     /// Finding a leaf of the placeholder where the group belongs means the pattern uses the name at
-    /// a shallower nesting position as well; as in [`Self::record_capture`], the group is then not
-    /// opened and the name's values under `repetition` are dropped.
+    /// a shallower nesting position as well - rejected at declaration time, but still matched; as
+    /// in [`Self::record_capture`], the group is then not opened and the name's values under
+    /// `repetition` are dropped.
     fn open_repetition_groups(
         &mut self,
         db: &'db dyn Database,
@@ -279,40 +282,51 @@ fn priv_macro_declaration_data<'db>(
     ));
     let resolver = Resolver::new(db, module_id, inference_id);
 
-    // TODO(Dean): Verify uniqueness of param names.
     // TODO(Dean): Verify consistency bracket terminals.
     let mut rules = vec![];
     for rule_syntax in macro_declaration_syntax.rules(db).elements(db) {
         let pattern = rule_syntax.lhs(db);
         let expansion = rule_syntax.rhs(db).elements(db);
         let pattern_elements = get_macro_elements(db, pattern.clone());
-        // Collect the repetition path (outermost-to-innermost pattern rep IDs) for every
-        // placeholder defined in the pattern.
-        let mut placeholder_paths: OrderedHashMap<SmolStrId<'db>, Vec<usize>> = Default::default();
-        let mut next_rep_id = 0;
-        collect_placeholder_paths(
-            db,
-            pattern_elements.elements(db),
-            &mut vec![],
-            &mut next_rep_id,
-            &mut placeholder_paths,
-        );
-
-        let mut ctx = ExpansionCheckCtx {
-            db,
-            known_path: &[],
-            curr_rep_depth: 0,
-            placeholder_paths: &placeholder_paths,
-            diagnostics: &mut diagnostics,
-            rule_err: Ok(()),
-            in_non_repeating_block: false,
-        };
-        ctx.check_node(expansion.as_syntax_node());
+        let placeholders = PatternPlaceholders::collect(db, pattern_elements.elements(db));
+        // A pattern with a parse error may hold several nameless placeholders, which are not
+        // actually reusing a name - such a rule is dropped below anyway.
+        let pattern_is_parsed = !pattern.as_syntax_node().contains_missing(db);
+        let mut rule_err = Ok(());
+        if pattern_is_parsed {
+            for (name, ptr) in placeholders.reused_names.iter() {
+                rule_err = Err(diagnostics
+                    .report(*ptr, SemanticDiagnosticKind::DuplicateMacroPlaceholder(*name)));
+            }
+        }
+        // The expansion is checked against the nesting depth every placeholder is captured at,
+        // which a reused name leaves ambiguous - checking it then reports the ambiguity as
+        // a defect of the expansion, which it is not.
+        if rule_err.is_ok() {
+            let mut block_driving_depths = OrderedHashMap::default();
+            collect_block_driving_depths(
+                db,
+                expansion.as_syntax_node(),
+                &placeholders.paths,
+                &mut block_driving_depths,
+            );
+            let mut ctx = ExpansionCheckCtx {
+                db,
+                known_path: &[],
+                curr_rep_depth: 0,
+                placeholder_paths: &placeholders.paths,
+                block_driving_depths: &block_driving_depths,
+                diagnostics: &mut diagnostics,
+                rule_err: Ok(()),
+            };
+            ctx.check_node(expansion.as_syntax_node(), false);
+            rule_err = ctx.rule_err;
+        }
         // Skipping expanding an inline macro if it had a parser error.
-        if pattern.as_syntax_node().contains_missing(db) {
+        if !pattern_is_parsed {
             continue;
         }
-        rules.push(MacroRuleData { pattern, expansion, err: ctx.rule_err });
+        rules.push(MacroRuleData { pattern, expansion, err: rule_err });
     }
     let resolver_data = Arc::new(resolver.data);
     Ok(MacroDeclarationData { diagnostics: diagnostics.build(), attributes, resolver_data, rules })
@@ -352,60 +366,108 @@ fn extract_placeholder<'db>(
     None
 }
 
-/// Assigns a unique ID to every `$()` repetition block in the pattern (left-to-right DFS order)
-/// and records, for each placeholder, its path: the ordered list of ancestor repetition IDs from
-/// outermost to innermost. The resulting map is used by [`ExpansionCheckCtx`] to validate the
-/// expansion.
-fn collect_placeholder_paths<'db>(
-    db: &'db dyn Database,
-    elements: impl IntoIterator<Item = ast::MacroElement<'db>>,
-    current_path: &mut Vec<usize>,
-    next_rep_id: &mut usize,
-    result: &mut OrderedHashMap<SmolStrId<'db>, Vec<usize>>,
-) {
-    for element in elements {
-        match element {
-            ast::MacroElement::Param(param) => {
-                result.insert(
-                    param.name(db).as_syntax_node().get_text_without_trivia(db),
-                    current_path.clone(),
-                );
+/// The placeholders a macro rule's pattern defines, collected by [`Self::collect`].
+#[derive(Default)]
+struct PatternPlaceholders<'db> {
+    /// The path of every placeholder the pattern defines: the IDs of the `$()` repetitions it is
+    /// nested in, outermost first. A unique ID is assigned to every repetition of the pattern, in
+    /// left-to-right DFS order. Used by [`ExpansionCheckCtx`] to validate the expansion.
+    ///
+    /// A name the pattern reuses is mapped to the path of its last use, so its path is meaningless
+    /// once the name is in [`Self::reused_names`].
+    paths: OrderedHashMap<SmolStrId<'db>, Vec<usize>>,
+    /// Every name the pattern uses for more than one placeholder, pointing at its second use - the
+    /// one making the name ambiguous.
+    reused_names: OrderedHashMap<SmolStrId<'db>, SyntaxStablePtrId<'db>>,
+}
+
+impl<'db> PatternPlaceholders<'db> {
+    /// Collects the placeholders of `elements`, the elements of a macro rule's pattern, including
+    /// the ones nested in its repetitions and subtrees.
+    fn collect(
+        db: &'db dyn Database,
+        elements: impl IntoIterator<Item = ast::MacroElement<'db>>,
+    ) -> Self {
+        let mut res = Self::default();
+        res.collect_elements(db, elements, &mut vec![], &mut 0);
+        res
+    }
+
+    /// Recursive part of [`Self::collect`]: `current_path` is the path of the elements being
+    /// traversed, and `next_rep_id` the counter assigning repetition IDs.
+    fn collect_elements(
+        &mut self,
+        db: &'db dyn Database,
+        elements: impl IntoIterator<Item = ast::MacroElement<'db>>,
+        current_path: &mut Vec<usize>,
+        next_rep_id: &mut usize,
+    ) {
+        for element in elements {
+            match element {
+                ast::MacroElement::Param(param) => {
+                    let name = param.name(db).as_syntax_node().get_text_without_trivia(db);
+                    if self.paths.insert(name, current_path.clone()).is_some() {
+                        self.reused_names.entry(name).or_insert(param.stable_ptr(db).untyped());
+                    }
+                }
+                ast::MacroElement::Repetition(rep) => {
+                    let rep_id = *next_rep_id;
+                    *next_rep_id += 1;
+                    current_path.push(rep_id);
+                    self.collect_elements(
+                        db,
+                        rep.elements(db).elements(db),
+                        current_path,
+                        next_rep_id,
+                    );
+                    assert_eq!(current_path.pop(), Some(rep_id));
+                }
+                ast::MacroElement::Subtree(subtree) => {
+                    self.collect_elements(
+                        db,
+                        get_macro_elements(db, subtree.subtree(db)).elements(db),
+                        current_path,
+                        next_rep_id,
+                    );
+                }
+                ast::MacroElement::Token(_) => {}
             }
-            ast::MacroElement::Repetition(rep) => {
-                let rep_id = *next_rep_id;
-                *next_rep_id += 1;
-                current_path.push(rep_id);
-                let inner = rep.elements(db).elements(db);
-                collect_placeholder_paths(db, inner, current_path, next_rep_id, result);
-                assert_eq!(current_path.pop(), Some(rep_id));
-            }
-            ast::MacroElement::Subtree(subtree) => {
-                let inner = get_macro_elements(db, subtree.subtree(db)).elements(db);
-                collect_placeholder_paths(db, inner, current_path, next_rep_id, result);
-            }
-            ast::MacroElement::Token(_) => {}
         }
     }
 }
 
-/// Whether `block`, a `$()` block of a macro expansion nested in `enclosing_depth` other such
-/// blocks, holds a placeholder that can drive its repetitions - one whose pattern repetition depth
-/// is greater than `enclosing_depth`. Placeholders nested deeper in `block` count, as they are
-/// consumed by the enclosing repetitions as well.
+/// Fills `depths` with, per `$()` block of the expansion, the deepest pattern repetition depth of
+/// any placeholder in the block - including in blocks nested in it, as enclosing repetitions
+/// consume those as well. A block whose entry is not greater than its own nesting depth holds
+/// nothing to drive its repetitions. Returns the deepest depth of `node`'s subtree.
 ///
-/// A placeholder undefined in the pattern counts as driving: it is reported on its own, and
-/// reporting the block too would double up on a single defect.
-fn has_driving_placeholder<'db>(
+/// `None` stands for unbounded depth: the subtree holds a placeholder undefined in the pattern,
+/// which drives any block. It is reported on its own, and reporting a block for it too would
+/// double up on a single defect.
+fn collect_block_driving_depths<'db>(
     db: &'db dyn Database,
-    block: SyntaxNode<'db>,
+    node: SyntaxNode<'db>,
     placeholder_paths: &OrderedHashMap<SmolStrId<'db>, Vec<usize>>,
-    enclosing_depth: usize,
-) -> bool {
-    block
-        .descendants(db)
-        .filter_map(|node| MacroParam::cast(db, node))
-        .filter_map(|param| extract_placeholder(db, &param))
-        .any(|name| placeholder_paths.get(&name).is_none_or(|path| path.len() > enclosing_depth))
+    depths: &mut OrderedHashMap<SyntaxStablePtrId<'db>, Option<usize>>,
+) -> Option<usize> {
+    if let Some(param) = MacroParam::cast(db, node) {
+        let Some(name) = extract_placeholder(db, &param) else { return Some(0) };
+        return placeholder_paths.get(&name).map(|path| path.len());
+    }
+    let mut max = Some(0);
+    if !node.kind(db).is_terminal() {
+        for child in node.get_children(db).iter() {
+            let child_depth = collect_block_driving_depths(db, *child, placeholder_paths, depths);
+            max = match (max, child_depth) {
+                (Some(a), Some(b)) => Some(a.max(b)),
+                _ => None,
+            };
+        }
+    }
+    if node.kind(db) == SyntaxKind::MacroRepetition {
+        depths.insert(node.stable_ptr(db), max);
+    }
+    max
 }
 
 /// Context for validating placeholder usage in a macro rule's expansion.
@@ -414,6 +476,9 @@ struct ExpansionCheckCtx<'db, 'a> {
     /// Maps each placeholder name to its pattern path: the sequence of repetition IDs
     /// (outermost to innermost) of the `$()` blocks it is nested in within the pattern.
     placeholder_paths: &'a OrderedHashMap<SmolStrId<'db>, Vec<usize>>,
+    /// Per `$()` block of the expansion, the deepest pattern repetition depth of any placeholder
+    /// in it, `None` for unbounded - precomputed by [collect_block_driving_depths].
+    block_driving_depths: &'a OrderedHashMap<SyntaxStablePtrId<'db>, Option<usize>>,
     /// Number of `$()` expansion blocks currently entered. Used for depth checks
     /// and to trim `known_path` when exiting a block.
     curr_rep_depth: usize,
@@ -425,9 +490,6 @@ struct ExpansionCheckCtx<'db, 'a> {
     diagnostics: &'a mut SemanticDiagnostics<'db>,
     /// `Err` if any diagnostic has been emitted; callers skip expansion when set.
     rule_err: Maybe<()>,
-    /// Whether an enclosing `$()` block was already reported as non-repeating. A block
-    /// nested in such a block fails for the same reason, so only the outermost one is reported.
-    in_non_repeating_block: bool,
 }
 
 impl<'db> ExpansionCheckCtx<'db, '_> {
@@ -438,7 +500,10 @@ impl<'db> ExpansionCheckCtx<'db, '_> {
     /// * Context mismatch: placeholder from a different repetition than the driving one.
     /// * Non-repeating block: a `$()` block holding no placeholder that repeats at its depth, so
     ///   there is nothing to drive it.
-    fn check_node(&mut self, node: SyntaxNode<'db>) {
+    /// `in_non_repeating_block` is whether an enclosing `$()` block was already reported as
+    /// non-repeating - a block nested in such a block fails for the same reason, so only the
+    /// outermost one is reported.
+    fn check_node(&mut self, node: SyntaxNode<'db>, in_non_repeating_block: bool) {
         let db = self.db;
         if let Some(param) = MacroParam::cast(db, node) {
             if let Some(name) = extract_placeholder(db, &param) {
@@ -477,29 +542,29 @@ impl<'db> ExpansionCheckCtx<'db, '_> {
         }
 
         if let Some(repetition) = ast::MacroRepetition::cast(db, node) {
-            let outer_in_non_repeating_block = self.in_non_repeating_block;
-            if !outer_in_non_repeating_block
-                && !has_driving_placeholder(db, node, self.placeholder_paths, self.curr_rep_depth)
+            let mut reported = in_non_repeating_block;
+            if !in_non_repeating_block
+                && self.block_driving_depths[&node.stable_ptr(db)]
+                    .is_some_and(|depth| depth <= self.curr_rep_depth)
             {
                 self.rule_err = Err(self.diagnostics.report(
                     repetition.stable_ptr(db).untyped(),
                     SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder,
                 ));
-                self.in_non_repeating_block = true;
+                reported = true;
             }
             self.curr_rep_depth += 1;
             for element in repetition.elements(db).elements(db) {
-                self.check_node(element.as_syntax_node());
+                self.check_node(element.as_syntax_node(), reported);
             }
             self.curr_rep_depth -= 1;
-            self.in_non_repeating_block = outer_in_non_repeating_block;
             if self.curr_rep_depth < self.known_path.len() {
                 // Trimming `self.known_path` so it won't leak between different repetitions.
                 self.known_path = &self.known_path[..self.curr_rep_depth];
             }
         } else if !node.kind(db).is_terminal() {
             for child in node.get_children(db).iter() {
-                self.check_node(*child);
+                self.check_node(*child, in_non_repeating_block);
             }
         }
     }
