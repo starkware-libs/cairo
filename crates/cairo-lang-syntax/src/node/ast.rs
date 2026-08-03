@@ -22682,7 +22682,7 @@ impl<'db> MacroRepetition<'db> {
         lparen: TerminalLParenGreen<'db>,
         elements: MacroElementsGreen<'db>,
         rparen: TerminalRParenGreen<'db>,
-        separator: OptionTerminalCommaGreen<'db>,
+        separator: OptionMacroRepetitionSeparatorGreen<'db>,
         operator: MacroRepetitionOperatorGreen<'db>,
     ) -> MacroRepetitionGreen<'db> {
         let children = [dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
@@ -22709,8 +22709,8 @@ impl<'db> MacroRepetition<'db> {
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[3])
     }
-    pub fn separator(&self, db: &'db dyn Database) -> OptionTerminalComma<'db> {
-        OptionTerminalComma::from_syntax_node(db, self.node.get_children(db)[4])
+    pub fn separator(&self, db: &'db dyn Database) -> OptionMacroRepetitionSeparator<'db> {
+        OptionMacroRepetitionSeparator::from_syntax_node(db, self.node.get_children(db)[4])
     }
     pub fn operator(&self, db: &'db dyn Database) -> MacroRepetitionOperator<'db> {
         MacroRepetitionOperator::from_syntax_node(db, self.node.get_children(db)[5])
@@ -22749,7 +22749,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetition<'db> {
                         TerminalLParen::missing(db).0,
                         MacroElements::missing(db).0,
                         TerminalRParen::missing(db).0,
-                        OptionTerminalComma::missing(db).0,
+                        OptionMacroRepetitionSeparator::missing(db).0,
                         MacroRepetitionOperator::missing(db).0,
                     ]
                     .into(),
@@ -22783,6 +22783,280 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetition<'db> {
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
         MacroRepetitionPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct MacroRepetitionSeparator<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> MacroRepetitionSeparator<'db> {
+    pub const INDEX_TOKEN: usize = 0;
+    pub fn new_green(
+        db: &'db dyn Database,
+        token: TokenNodeGreen<'db>,
+    ) -> MacroRepetitionSeparatorGreen<'db> {
+        let children = [token.0];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        MacroRepetitionSeparatorGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroRepetitionSeparator,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> MacroRepetitionSeparator<'db> {
+    pub fn token(&self, db: &'db dyn Database) -> TokenNode<'db> {
+        TokenNode::from_syntax_node(db, self.node.get_children(db)[0])
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct MacroRepetitionSeparatorPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> MacroRepetitionSeparatorPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for MacroRepetitionSeparatorPtr<'db> {
+    type SyntaxNode = MacroRepetitionSeparator<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> MacroRepetitionSeparator<'db> {
+        MacroRepetitionSeparator::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<MacroRepetitionSeparatorPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: MacroRepetitionSeparatorPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct MacroRepetitionSeparatorGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for MacroRepetitionSeparator<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRepetitionSeparator);
+    type StablePtr = MacroRepetitionSeparatorPtr<'db>;
+    type Green = MacroRepetitionSeparatorGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        MacroRepetitionSeparatorGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroRepetitionSeparator,
+                details: GreenNodeDetails::Node {
+                    children: [TokenNode::missing(db).0].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroRepetitionSeparator,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroRepetitionSeparator
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroRepetitionSeparator {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        MacroRepetitionSeparatorPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub enum OptionMacroRepetitionSeparator<'db> {
+    Empty(OptionMacroRepetitionSeparatorEmpty<'db>),
+    MacroRepetitionSeparator(MacroRepetitionSeparator<'db>),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct OptionMacroRepetitionSeparatorPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> TypedStablePtr<'db> for OptionMacroRepetitionSeparatorPtr<'db> {
+    type SyntaxNode = OptionMacroRepetitionSeparator<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> Self::SyntaxNode {
+        OptionMacroRepetitionSeparator::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<OptionMacroRepetitionSeparatorPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: OptionMacroRepetitionSeparatorPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+impl<'db> From<OptionMacroRepetitionSeparatorEmptyPtr<'db>>
+    for OptionMacroRepetitionSeparatorPtr<'db>
+{
+    fn from(value: OptionMacroRepetitionSeparatorEmptyPtr<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<MacroRepetitionSeparatorPtr<'db>> for OptionMacroRepetitionSeparatorPtr<'db> {
+    fn from(value: MacroRepetitionSeparatorPtr<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<OptionMacroRepetitionSeparatorEmptyGreen<'db>>
+    for OptionMacroRepetitionSeparatorGreen<'db>
+{
+    fn from(value: OptionMacroRepetitionSeparatorEmptyGreen<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<MacroRepetitionSeparatorGreen<'db>> for OptionMacroRepetitionSeparatorGreen<'db> {
+    fn from(value: MacroRepetitionSeparatorGreen<'db>) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct OptionMacroRepetitionSeparatorGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for OptionMacroRepetitionSeparator<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionMacroRepetitionSeparatorPtr<'db>;
+    type Green = OptionMacroRepetitionSeparatorGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionMacroRepetitionSeparatorEmpty => {
+                OptionMacroRepetitionSeparator::Empty(
+                    OptionMacroRepetitionSeparatorEmpty::from_syntax_node(db, node),
+                )
+            }
+            SyntaxKind::MacroRepetitionSeparator => {
+                OptionMacroRepetitionSeparator::MacroRepetitionSeparator(
+                    MacroRepetitionSeparator::from_syntax_node(db, node),
+                )
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionMacroRepetitionSeparator"
+            ),
+        }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionMacroRepetitionSeparatorEmpty => {
+                Some(OptionMacroRepetitionSeparator::Empty(
+                    OptionMacroRepetitionSeparatorEmpty::from_syntax_node(db, node),
+                ))
+            }
+            SyntaxKind::MacroRepetitionSeparator => {
+                Some(OptionMacroRepetitionSeparator::MacroRepetitionSeparator(
+                    MacroRepetitionSeparator::from_syntax_node(db, node),
+                ))
+            }
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        match self {
+            OptionMacroRepetitionSeparator::Empty(x) => x.as_syntax_node(),
+            OptionMacroRepetitionSeparator::MacroRepetitionSeparator(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        OptionMacroRepetitionSeparatorPtr(self.as_syntax_node().stable_ptr(db))
+    }
+}
+impl<'db> OptionMacroRepetitionSeparator<'db> {
+    /// Checks if a kind of a variant of [OptionMacroRepetitionSeparator].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(
+            kind,
+            SyntaxKind::OptionMacroRepetitionSeparatorEmpty | SyntaxKind::MacroRepetitionSeparator
+        )
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct OptionMacroRepetitionSeparatorEmpty<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> OptionMacroRepetitionSeparatorEmpty<'db> {
+    pub fn new_green(db: &'db dyn Database) -> OptionMacroRepetitionSeparatorEmptyGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        OptionMacroRepetitionSeparatorEmptyGreen(
+            GreenNode {
+                kind: SyntaxKind::OptionMacroRepetitionSeparatorEmpty,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> OptionMacroRepetitionSeparatorEmpty<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct OptionMacroRepetitionSeparatorEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> OptionMacroRepetitionSeparatorEmptyPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for OptionMacroRepetitionSeparatorEmptyPtr<'db> {
+    type SyntaxNode = OptionMacroRepetitionSeparatorEmpty<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> OptionMacroRepetitionSeparatorEmpty<'db> {
+        OptionMacroRepetitionSeparatorEmpty::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<OptionMacroRepetitionSeparatorEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: OptionMacroRepetitionSeparatorEmptyPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct OptionMacroRepetitionSeparatorEmptyGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for OptionMacroRepetitionSeparatorEmpty<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionMacroRepetitionSeparatorEmpty);
+    type StablePtr = OptionMacroRepetitionSeparatorEmptyPtr<'db>;
+    type Green = OptionMacroRepetitionSeparatorEmptyGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        OptionMacroRepetitionSeparatorEmptyGreen(
+            GreenNode {
+                kind: SyntaxKind::OptionMacroRepetitionSeparatorEmpty,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionMacroRepetitionSeparatorEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionMacroRepetitionSeparatorEmpty
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionMacroRepetitionSeparatorEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        OptionMacroRepetitionSeparatorEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
