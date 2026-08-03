@@ -2,6 +2,7 @@
 #[path = "block_generator_test.rs"]
 mod test;
 
+use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::BlockId;
@@ -16,7 +17,7 @@ use sierra::extensions::lib_func::SierraApChange;
 use sierra::program;
 
 use crate::block_generator::sierra::ids::ConcreteLibfuncId;
-use crate::db::SierraGenGroup;
+use crate::db::{EXTERNALLY_PROVIDED_CONST, SierraGenGroup};
 use crate::expr_generator_context::{ExprGenerationResult, ExprGeneratorContext};
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
 use crate::local_variables::MIN_SIZE_FOR_LOCAL_INTO_BOX;
@@ -25,11 +26,11 @@ use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, disable_ap_tracking_libfunc_id,
     drop_libfunc_id, dup_libfunc_id, enable_ap_tracking_libfunc_id,
-    enum_from_bounded_int_libfunc_id, enum_init_libfunc_id, get_concrete_libfunc_id,
-    get_libfunc_signature, into_box_libfunc_id, jump_libfunc_id, jump_statement,
-    local_into_box_libfunc_id, match_enum_libfunc_id, rename_libfunc_id, return_statement,
-    simple_basic_statement, snapshot_take_libfunc_id, struct_construct_libfunc_id,
-    struct_deconstruct_libfunc_id, unbox_libfunc_id,
+    enum_from_bounded_int_libfunc_id, enum_init_libfunc_id, externally_provided_const_extern,
+    get_concrete_libfunc_id, get_libfunc_signature, get_match_libfunc_id, into_box_libfunc_id,
+    jump_libfunc_id, jump_statement, local_into_box_libfunc_id, match_enum_libfunc_id,
+    rename_libfunc_id, return_statement, simple_basic_statement, snapshot_take_libfunc_id,
+    source_link, struct_construct_libfunc_id, struct_deconstruct_libfunc_id, unbox_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::Block].
@@ -331,15 +332,22 @@ fn generate_statement_call_code<'db>(
     statement: &lowering::StatementCall<'db>,
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
+    let db = context.get_db();
+
+    // Handle the reserved `__externally_provided_const__` extern function: replace the call with a
+    // `const_as_immediate` of the value supplied by the installed `ExternalConstPlugin`s.
+    if let Some(extern_id) = externally_provided_const_extern(db, statement.function) {
+        return generate_externally_provided_const_code(context, statement, extern_id);
+    }
+
     // Check if this is a user defined function or a libfunc.
-    let (body, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), statement.function, statement.with_coupon);
+    let (body, libfunc_id) = get_concrete_libfunc_id(db, statement.function, statement.with_coupon);
     // Checks if the call invalidates ap tracking.
-    let libfunc_signature = get_libfunc_signature(context.get_db(), &libfunc_id);
+    let libfunc_signature = get_libfunc_signature(db, &libfunc_id);
     let [branch_signature] = &libfunc_signature.branch_signatures[..] else {
         panic!(
             "Unexpected branches in '{}'.",
-            DebugReplacer { db: context.get_db() }.replace_libfunc_id(&libfunc_id)
+            DebugReplacer { db }.replace_libfunc_id(&libfunc_id)
         );
     };
     if matches!(branch_signature.ap_change, SierraApChange::Unknown) {
@@ -390,6 +398,40 @@ fn generate_statement_call_code<'db>(
         );
         context.push_statement(stmt);
     }
+    Ok(())
+}
+
+/// Generates Sierra code for a call to the reserved `__externally_provided_const__` extern
+/// function, replacing it with a `const_as_immediate`.
+///
+/// The value is supplied by the installed [`crate::db::ExternalConstPlugin`]s - see
+/// [`SierraGenGroup::externally_provided_const`].
+fn generate_externally_provided_const_code<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementCall<'db>,
+    extern_id: ExternFunctionId<'db>,
+) -> Maybe<()> {
+    let db = context.get_db();
+    let link = || source_link(db, statement.location.long(db).stable_location);
+    let [output] = statement.outputs[..] else {
+        panic!("`{EXTERNALLY_PROVIDED_CONST}` must have exactly one output: {}", link());
+    };
+    // Nothing is consumed here, so an argument would be neither used nor dropped in the generated
+    // code.
+    assert!(
+        statement.inputs.is_empty() && !statement.with_coupon,
+        "`{EXTERNALLY_PROVIDED_CONST}` must be called with no arguments: {}",
+        link()
+    );
+    // The lowered variable's type is the extern's declared return type.
+    let value = db.externally_provided_const(extern_id, context.get_lowered_variable(output).ty)?;
+
+    let output_var = context.get_sierra_variable(output);
+    context.push_statement(simple_basic_statement(
+        const_libfunc_id_by_type(db, value, false),
+        &[],
+        &[output_var],
+    ));
     Ok(())
 }
 
@@ -453,8 +495,7 @@ fn generate_match_extern_code<'db>(
     // Prepare the Sierra input variables.
     let args = maybe_add_dup_statements(context, statement_location, &match_info.inputs)?;
     // Get the [ConcreteLibfuncId].
-    let (_function_long_id, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), match_info.function, false);
+    let libfunc_id = get_match_libfunc_id(context.get_db(), match_info.function);
 
     generate_match_code(context, block_gen_stack, libfunc_id, args, &match_info.arms)
 }

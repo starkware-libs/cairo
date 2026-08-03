@@ -26,7 +26,8 @@ use crate::ap_tracking::{ApTrackingConfiguration, get_ap_tracking_configuration}
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
-    enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
+    enum_init_libfunc_id, externally_provided_const_extern, get_concrete_libfunc_id,
+    get_libfunc_signature, get_match_libfunc_id, match_enum_libfunc_id,
     struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
@@ -390,13 +391,23 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::Call(statement_call) => {
-                let (_, concrete_function_id) = get_concrete_libfunc_id(
-                    self.db,
-                    statement_call.function,
-                    statement_call.with_coupon,
-                );
+                // The reserved `__externally_provided_const__` extern is replaced by a
+                // `const_as_immediate` at code generation, so treat it as a constant here (known
+                // ap-change, constant output) rather than resolving a (non-existent) libfunc.
+                if externally_provided_const_extern(self.db, statement_call.function).is_some() {
+                    if let [output] = statement_call.outputs[..] {
+                        self.constants.insert(output);
+                    }
+                    BranchInfo { known_ap_change: true }
+                } else {
+                    let (_, concrete_function_id) = get_concrete_libfunc_id(
+                        self.db,
+                        statement_call.function,
+                        statement_call.with_coupon,
+                    );
 
-                self.analyze_call(concrete_function_id, inputs, outputs)
+                    self.analyze_call(concrete_function_id, inputs, outputs)
+                }
             }
             lowering::Statement::StructConstruct(statement_struct_construct) => {
                 let ty = self.db.get_concrete_type_id(
@@ -463,7 +474,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
     ) -> Maybe<&'db LibfuncSignature> {
         let db = self.db;
         let concrete_libfunc_id = match match_info {
-            MatchInfo::Extern(s) => get_concrete_libfunc_id(db, s.function, false).1,
+            MatchInfo::Extern(s) => get_match_libfunc_id(db, s.function),
             MatchInfo::Enum(s) => {
                 let enum_ty =
                     db.get_concrete_type_id(self.lowered_function.variables[s.input.var_id].ty)?;
