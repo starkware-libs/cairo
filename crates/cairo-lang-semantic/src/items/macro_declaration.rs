@@ -228,8 +228,8 @@ fn check_pattern_elements<'db>(
                 // The end of a group is followed either by the separator, when another group
                 // comes after it, or by whatever comes after the repetition itself.
                 let mut body_outer = after();
-                if let Some(separator) = repetition_separator(db, repetition) {
-                    body_outer.push(separator.as_syntax_node());
+                if let Some(separator) = declared_separator_token(db, repetition) {
+                    body_outer.push(separator);
                 }
                 res = res
                     .and(check_repetition_separator(db, repetition, diagnostics))
@@ -288,15 +288,31 @@ fn check_repetition_separator<'db>(
     repetition: &ast::MacroRepetition<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> Maybe<()> {
-    if let Some(separator) = repetition_separator(db, repetition)
+    if let Some(separator) = declared_separator_token(db, repetition)
         && matches!(repetition.operator(db), ast::MacroRepetitionOperator::ZeroOrOne(_))
     {
         return Err(diagnostics.report(
-            separator.stable_ptr(db).untyped(),
+            separator.stable_ptr(db),
             SemanticDiagnosticKind::MacroRepetitionSeparatorWithZeroOrOne,
         ));
     }
     Ok(())
+}
+
+/// The token of `repetition`'s declared separator, of any kind.
+///
+/// The declaration-time checks apply to every separator the parser accepts, not only to the comma
+/// the matcher currently supports - see [`repetition_separator`].
+fn declared_separator_token<'db>(
+    db: &'db dyn Database,
+    repetition: &ast::MacroRepetition<'db>,
+) -> Option<SyntaxNode<'db>> {
+    match repetition.separator(db) {
+        ast::OptionMacroRepetitionSeparator::MacroRepetitionSeparator(separator) => {
+            Some(separator.token(db).as_syntax_node())
+        }
+        ast::OptionMacroRepetitionSeparator::Empty(_) => None,
+    }
 }
 
 /// Reports `repetition`, a `$()` block of a macro rule's pattern, if its body is empty.
