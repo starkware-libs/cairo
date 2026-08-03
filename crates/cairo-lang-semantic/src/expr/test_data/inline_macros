@@ -3786,3 +3786,30 @@ error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may o
  --> lib.cairo:2:15
     ([$x:expr 2]) => { $x };
               ^
+
+//! > ==========================================================================
+
+//! > Test `_` not matched by an ident placeholder.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// `_` is not an identifier, so an `ident` placeholder does not match it. The first call, which the
+// rule does match, shows the rejection is the `_` and not the repetition itself; in the second call
+// the offending element is not the first.
+// rustc's `macro_rules!` rejects the equivalent calls too: `_` only matches dedicated `pat`-family
+// fragments there, never `ident`.
+macro m {
+    ($($x:ident),*) => { 1 };
+}
+fn foo() {
+    m!(a, b);
+    m!(a, _, b);
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:11:5
+    m!(a, _, b);
+    ^^^^^^^^^^^
