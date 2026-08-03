@@ -1235,9 +1235,14 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     .into()
             }
             SemanticDiagnosticKind::MacroExpansionFailed(failure) => match failure {
-                MacroExpansionFailure::RepetitionWithoutPlaceholder => {
-                    "Repetition in the macro expansion holds no placeholder, so the number of \
-                     repetitions cannot be determined."
+                MacroExpansionFailure::MissingRepetitionDriver => {
+                    "No placeholder of this macro expansion block repeats at its depth, so its \
+                     number of repetitions cannot be determined."
+                        .into()
+                }
+                MacroExpansionFailure::ConflictingRepetitionDrivers => {
+                    "The placeholders of this macro expansion block disagree on the number of \
+                     repetitions."
                         .into()
                 }
                 MacroExpansionFailure::MissingCapture(name) => format!(
