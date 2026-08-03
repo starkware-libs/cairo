@@ -2398,7 +2398,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > cairo_code
 macro m {
-    ($($x:expr),*) => { $($x)* };
+    ($($x:expr),*) => { ($($x,)*) };
 }
 fn foo() {
     m!(1, 2, 3);
@@ -3814,8 +3814,10 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > cairo_code
 // A subtree's closing delimiter bounds its last placeholder just as the end of the pattern would.
+// The `+` in every group keeps the captures apart: a `$()` block carries no trivia between its
+// groups, so juxtaposed captures glue together - a known divergence from rustc.
 macro grid {
-    ($($x:expr),* ; $([$($y:expr),*]),*) => { $($x)* $($($y)*)* };
+    ($($x:expr),* ; $([$($y:expr),*]),*) => { 0 $(+ $x)* $($(+ $y)*)* };
 }
 fn foo() -> felt252 {
     grid!(1, 2;[3, 4],[5, 6])
@@ -3889,3 +3891,26 @@ error[E2158]: No matching rule found in inline macro `m`.
  --> lib.cairo:11:5
     m!(a, _, b);
     ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a placeholder indented on its own line resolving to a call-site local (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// The placeholder's leading trivia is not emitted, or the local's offset would miss its mapping.
+macro m {
+    ($x:ident) => {
+        {
+            $x
+        }
+    };
+}
+fn foo() -> felt252 {
+    let a = 1;
+    m!(a)
+}
+
+//! > expected_diagnostics
