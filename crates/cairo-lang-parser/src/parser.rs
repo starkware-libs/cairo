@@ -821,17 +821,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                         let lparen = self.take::<TerminalLParen<'_>>();
                         let elements = self.expect_wrapped_macro();
                         let rparen = self.parse_token::<TerminalRParen<'_>>();
-                        // TODO(Dean): Add support for more kinds of separators. The grammar node
-                        // already allows any token, only the parser restricts it to a comma.
-                        let separator: OptionMacroRepetitionSeparatorGreen<'_> =
-                            match self.peek().kind {
-                                SyntaxKind::TerminalComma => MacroRepetitionSeparator::new_green(
-                                    self.db,
-                                    self.take::<TerminalComma<'_>>().into(),
-                                )
-                                .into(),
-                                _ => OptionMacroRepetitionSeparatorEmpty::new_green(self.db).into(),
-                            };
+                        let separator = self.parse_option_macro_repetition_separator();
                         let operator = match self.peek().kind {
                             SyntaxKind::TerminalQuestionMark => {
                                 self.take::<TerminalQuestionMark<'_>>().into()
@@ -887,6 +877,32 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 Ok(token.into())
             }
         }
+    }
+
+    /// Returns a GreenId of a node with an OptionMacroRepetitionSeparator kind, taking the
+    /// separator token of a macro repetition, if there is one.
+    ///
+    /// Any single token may serve as a separator, except a delimiter and the repetition operators
+    /// themselves, which are never taken as a separator as they terminate the repetition.
+    fn parse_option_macro_repetition_separator(
+        &mut self,
+    ) -> OptionMacroRepetitionSeparatorGreen<'a> {
+        if matches!(
+            self.peek().kind,
+            SyntaxKind::TerminalQuestionMark
+                | SyntaxKind::TerminalPlus
+                | SyntaxKind::TerminalMul
+                | SyntaxKind::TerminalLParen
+                | SyntaxKind::TerminalRParen
+                | SyntaxKind::TerminalLBrace
+                | SyntaxKind::TerminalRBrace
+                | SyntaxKind::TerminalLBrack
+                | SyntaxKind::TerminalRBrack
+                | SyntaxKind::TerminalEndOfFile
+        ) {
+            return OptionMacroRepetitionSeparatorEmpty::new_green(self.db).into();
+        }
+        MacroRepetitionSeparator::new_green(self.db, self.take_token_node()).into()
     }
 
     fn parse_macro_elements(&mut self) -> WrappedMacroGreen<'a> {
