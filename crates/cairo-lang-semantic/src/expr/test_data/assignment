@@ -3,7 +3,9 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern type MyType;
 fn foo(p: felt252) {
     p = 7;
     a = 1 + 2;
@@ -12,13 +14,6 @@ fn foo(p: felt252) {
     let mut x = 1;
     x = true;
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern type MyType;
 
 //! > expected_diagnostics
 error[E2083]: Cannot assign to an immutable variable.
@@ -53,13 +48,10 @@ error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "()".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: ByteArray = "error";
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -70,13 +62,10 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: felt252 = "error";
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2311]: Mismatched types. The type `core::felt252` cannot be created from a string literal.
@@ -91,13 +80,10 @@ error[E2311]: Mismatched types. The type `core::felt252` cannot be created from 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: felt252 = 252;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -108,13 +94,10 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: ByteArray = 252;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2315]: Mismatched types. The type `core::byte_array::ByteArray` cannot be created from a numeric literal.

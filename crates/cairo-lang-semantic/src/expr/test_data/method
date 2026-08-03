@@ -3,17 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> Option<felt252> {
-    let x = None;
-    let _ = x.is_some();
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     fn is_some(self: felt252) -> bool;
 }
@@ -21,6 +11,11 @@ impl OtherImpl of AnotherTrait {
     fn is_some(self: felt252) -> bool {
         true
     }
+}
+fn foo() -> Option<felt252> {
+    let x = None;
+    let _ = x.is_some();
+    x
 }
 
 //! > expected_diagnostics
@@ -32,21 +27,7 @@ impl OtherImpl of AnotherTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> Option<felt252> {
-    let x = None;
-    x.is_foo();
-    x.is_bla();
-    let y = Some(true);
-    y.is_bar();
-    y.SomeOtherPrefix::is_bar();
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn is_bla(self: Option<T>) -> bool;
     fn is_bar(self: Option<T>) -> bool;
@@ -81,6 +62,15 @@ impl AnotherTraitImpl of AnotherTrait {
         false
     }
 }
+fn foo() -> Option<felt252> {
+    let x = None;
+    x.is_foo();
+    x.is_bla();
+    let y = Some(true);
+    y.is_bar();
+    y.SomeOtherPrefix::is_bar();
+    x
+}
 
 //! > expected_diagnostics
 error[E0002]: Method `is_foo` not found on type `core::option::Option::<?0>`. Did you import the correct trait and impl?
@@ -110,15 +100,7 @@ error[E2313]: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generi
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar(3_u8);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<T, impl CallableImpl: callable::CallableTrait<T>>(x: T) {
     x.call();
 }
@@ -130,6 +112,9 @@ mod callable {
         fn call(self: u8) {}
     }
 }
+fn foo() {
+    bar(3_u8);
+}
 
 //! > expected_diagnostics
 
@@ -140,15 +125,7 @@ mod callable {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    bar(3_u8);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<T, +unknown, +callable::CallableTrait<T>>(x: T) {
     x.call();
 }
@@ -159,6 +136,9 @@ mod callable {
     impl U8Callable of CallableTrait<u8> {
         fn call(self: u8) {}
     }
+}
+fn foo() {
+    bar(3_u8);
 }
 
 //! > expected_diagnostics
@@ -174,15 +154,7 @@ fn bar<T, +unknown, +callable::CallableTrait<T>>(x: T) {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar(3_u8);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(x: u8) {
     x.call();
 }
@@ -194,6 +166,9 @@ mod callable {
 impl U8Callable of callable::CallableTrait<u8> {
     fn call(self: u8) {}
 }
+fn foo() {
+    bar(3_u8);
+}
 
 //! > expected_diagnostics
 
@@ -204,15 +179,7 @@ impl U8Callable of callable::CallableTrait<u8> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar(3_u8);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar(x: u8) {
     x.call();
 }
@@ -227,6 +194,9 @@ mod callable {
 impl U16Callable of callable::CallableTrait<u16> {
     fn call(self: u16) {}
 }
+fn foo() {
+    bar(3_u8);
+}
 
 //! > expected_diagnostics
 
@@ -237,15 +207,7 @@ impl U16Callable of callable::CallableTrait<u16> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar(3_u8);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 impl X = callable::U8Callable;
 fn bar(x: u8) {
     x.call();
@@ -258,6 +220,9 @@ mod callable {
         fn call(self: u8) {}
     }
 }
+fn foo() {
+    bar(3_u8);
+}
 
 //! > expected_diagnostics
 
@@ -268,15 +233,7 @@ mod callable {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar(3_u8);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 impl X = callable::U16Callable;
 fn bar(x: u8) {
     x.call();
@@ -292,6 +249,9 @@ mod callable {
         fn call(self: u16) {}
     }
 }
+fn foo() {
+    bar(3_u8);
+}
 
 //! > expected_diagnostics
 
@@ -302,17 +262,12 @@ mod callable {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    3_u16.bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn bar(self: T);
+}
+fn foo() {
+    3_u16.bar();
 }
 
 //! > expected_diagnostics
@@ -329,17 +284,12 @@ Candidate `test::MyTrait::bar` inference failed with: Trait has no implementatio
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    (3_u16 + 3_u16).bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn bar(self: T);
+}
+fn foo() {
+    (3_u16 + 3_u16).bar();
 }
 
 //! > expected_diagnostics
@@ -356,21 +306,16 @@ Candidate `test::MyTrait::bar` inference failed with: Trait has no implementatio
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    0.bar(1);
-    0.bar(1, 2, 3);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn bar(self: T, a: felt252, b: felt252);
 }
 impl MyImpl of MyTrait<felt252> {
     fn bar(self: felt252, a: felt252, b: felt252) {}
+}
+fn foo() {
+    0.bar(1);
+    0.bar(1, 2, 3);
 }
 
 //! > expected_diagnostics
@@ -391,16 +336,7 @@ error[E2030]: Wrong number of arguments. Expected 3, found: 4
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let channel = PoseidonChannel {};
-    channel.draw_felt();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait ChannelTrait {
     type Channel;
 
@@ -415,6 +351,10 @@ impl PoseidonChannelImpl of ChannelTrait {
     fn draw_felt(ref self: PoseidonChannel) -> felt252 {
         5
     }
+}
+fn foo() {
+    let channel = PoseidonChannel {};
+    channel.draw_felt();
 }
 
 //! > expected_diagnostics
@@ -431,17 +371,7 @@ Candidate `test::ChannelTrait::draw_felt` inference failed with: Type mismatch: 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    // ref self method called on expression (not a variable) should work
-    let _ = make_counter().increment();
-    let _ = make_counter().increment().increment();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct Counter {
     value: u32,
@@ -461,6 +391,11 @@ impl CounterImpl of CounterTrait {
 fn make_counter() -> Counter {
     Counter { value: 0 }
 }
+fn foo() {
+    // ref self method called on expression (not a variable) should work
+    let _ = make_counter().increment();
+    let _ = make_counter().increment().increment();
+}
 
 //! > expected_diagnostics
 
@@ -471,18 +406,7 @@ fn make_counter() -> Counter {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    // ref self on expression works
-    let _ = make_counter().increment();
-    // but regular ref arg (not self) still requires a variable
-    bar(make_counter());
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct Counter {
     value: u32,
@@ -504,6 +428,12 @@ fn make_counter() -> Counter {
 }
 
 fn bar(ref x: Counter) {}
+fn foo() {
+    // ref self on expression works
+    let _ = make_counter().increment();
+    // but regular ref arg (not self) still requires a variable
+    bar(make_counter());
+}
 
 //! > expected_diagnostics
 error[E2079]: ref argument must be a variable.

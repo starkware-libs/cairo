@@ -3,7 +3,12 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar(a: felt252, b: felt252, c: felt252, d: felt252, e: felt252) {}
+
+enum MyEnum {
+    A: felt252,
+}
 fn foo(d: bool) {
     // Valid names (one wrong type).
     bar(0, 1, 2, :d, e: 0);
@@ -15,16 +20,6 @@ fn foo(d: bool) {
     bar(0, 1, 2, 3);
     // Wrong number of params.
     bar(0, 1, 2, 3, 4, 5);
-}
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar(a: felt252, b: felt252, c: felt252, d: felt252, e: felt252) {}
-
-enum MyEnum {
-    A: felt252,
 }
 
 //! > expected_diagnostics
@@ -70,7 +65,8 @@ error[E2030]: Wrong number of arguments. Expected 5, found: 6
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar(a: felt252, ref b: felt252) {}
 fn foo(ref a: felt252) {
     let b = 1;
     let mut c = 2;
@@ -81,12 +77,6 @@ fn foo(ref a: felt252) {
     bar(ref b, ref b);
     bar(ref c, ref c);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar(a: felt252, ref b: felt252) {}
 
 //! > expected_diagnostics
 error[E2081]: ref argument must be passed with a preceding 'ref'.
@@ -136,19 +126,7 @@ error[E2082]: Argument to immutable parameter cannot have modifiers.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(d: MyStruct) {
-    bar(0);
-    d + 0;
-    -d;
-    d.bar();
-    d.baz();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {}
 
 struct OtherStruct {}
@@ -158,6 +136,13 @@ trait MyTrait<T> {
 }
 impl OtherStructImpl of MyTrait<OtherStruct> {
     fn baz(self: OtherStruct) {}
+}
+fn foo(d: MyStruct) {
+    bar(0);
+    d + 0;
+    -d;
+    d.bar();
+    d.baz();
 }
 
 //! > expected_diagnostics
@@ -189,13 +174,10 @@ Candidate `test::MyTrait::baz` inference failed with: Trait has no implementatio
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> () {
     4_u8
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "()", found: "core::integer::u8".
@@ -210,11 +192,8 @@ error[E2042]: Unexpected return type. Expected: "()", found: "core::integer::u8"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> u8 {}
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "()".
@@ -229,18 +208,13 @@ fn foo() -> u8 {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> () {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn bar() -> u8 {
         1_u16
     }
 }
+fn foo() -> () {}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
@@ -255,13 +229,7 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "cor
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> () {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn bar() -> u8;
 }
@@ -271,6 +239,7 @@ impl MyImpl of MyTrait {
         1_u16
     }
 }
+fn foo() -> () {}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
@@ -285,15 +254,12 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "cor
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> () {
     || -> u8 {
         1_u16
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
@@ -308,18 +274,13 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "cor
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+fn takes_val(x: felt252) -> felt252 {
+    x
+}
 fn foo() -> felt252 {
     const x: felt252 = 42;
     takes_val(:x)
-}
-
-//! > function_name
-foo
-
-//! > module_code
-fn takes_val(x: felt252) -> felt252 {
-    x
 }
 
 //! > expected_diagnostics

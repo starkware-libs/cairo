@@ -3,15 +3,10 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo(t: (felt252, u8)) -> u8 {
     t.1
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -22,15 +17,10 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(t: (felt252, u8)) -> felt252 {
     t.5
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E0007]: Type "(core::felt252, core::integer::u8)" has no member "5"
@@ -45,15 +35,10 @@ error[E0007]: Type "(core::felt252, core::integer::u8)" has no member "5"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(x: felt252) -> felt252 {
     x.0
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E0007]: Type "core::felt252" has no member "0"
@@ -68,15 +53,10 @@ error[E0007]: Type "core::felt252" has no member "0"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(t: (felt252, u8)) -> felt252 {
     t.0_u8
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E2085]: Invalid member expression.
@@ -91,15 +71,10 @@ error[E2085]: Invalid member expression.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(t: (felt252, u8)) -> u8 {
     t.0x1
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E2085]: Invalid member expression.
@@ -114,15 +89,10 @@ error[E2085]: Invalid member expression.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(t: (felt252, u8)) -> (felt252, felt252) {
     (t.00, t.0x1)
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E0007]: Type "(core::felt252, core::integer::u8)" has no member "00"
@@ -142,15 +112,10 @@ error[E2085]: Invalid member expression.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo(mut t: (felt252, u8)) {
     t.0 = 5;
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -161,15 +126,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(w: Wrapper) -> u8 {
-    w.1
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct Wrapper {
     inner: (felt252, u8),
@@ -180,6 +137,9 @@ impl WrapperDeref of core::ops::Deref<Wrapper> {
     fn deref(self: Wrapper) -> (felt252, u8) {
         self.inner
     }
+}
+fn foo(w: Wrapper) -> u8 {
+    w.1
 }
 
 //! > expected_diagnostics

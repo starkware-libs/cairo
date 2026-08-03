@@ -3,17 +3,12 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> Option<felt252> {
-    with_err()?;
+//! > cairo_code
+fn with_err() -> Option<felt252> {
     Option::<felt252>::None
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn with_err() -> Option<felt252> {
+fn foo() -> Option<felt252> {
+    with_err()?;
     Option::<felt252>::None
 }
 
@@ -26,18 +21,13 @@ fn with_err() -> Option<felt252> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn with_err() -> Option<felt252> {
+    Option::<felt252>::None
+}
 fn foo() -> felt252 {
     with_err()?;
     1
-}
-
-//! > function_name
-foo
-
-//! > module_code
-fn with_err() -> Option<felt252> {
-    Option::<felt252>::None
 }
 
 //! > expected_diagnostics
@@ -53,22 +43,17 @@ error[E2061]: `?` can only be used in a function with `Option` or `Result` retur
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> Result<felt252, u128> {
-    with_err()?;
-    Result::<felt252, u128>::Ok(with_err2()?)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn with_err() -> Result<(), u128> {
     Result::<(), u128>::Ok(())
 }
 
 fn with_err2() -> Result<felt252, u128> {
     Result::<felt252, u128>::Ok((0))
+}
+fn foo() -> Result<felt252, u128> {
+    with_err()?;
+    Result::<felt252, u128>::Ok(with_err2()?)
 }
 
 //! > expected_diagnostics
@@ -80,18 +65,13 @@ fn with_err2() -> Result<felt252, u128> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn with_err() -> Result<felt252, u128> {
+    Result::<felt252, u128>::Ok((0))
+}
 fn foo() -> felt252 {
     with_err()?;
     1
-}
-
-//! > function_name
-foo
-
-//! > module_code
-fn with_err() -> Result<felt252, u128> {
-    Result::<felt252, u128>::Ok((0))
 }
 
 //! > expected_diagnostics
@@ -107,17 +87,12 @@ error[E2061]: `?` can only be used in a function with `Option` or `Result` retur
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> Result<felt252, u128> {
-    with_other_err()?;
+//! > cairo_code
+fn with_other_err() -> Result<felt252, felt252> {
     Result::<felt252, felt252>::Ok((0))
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn with_other_err() -> Result<felt252, felt252> {
+fn foo() -> Result<felt252, u128> {
+    with_other_err()?;
     Result::<felt252, felt252>::Ok((0))
 }
 
@@ -139,14 +114,11 @@ error[E2042]: Unexpected return type. Expected: "core::result::Result::<core::fe
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> Option<felt252> {
     6_u32?;
     None
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2063]: Type "core::integer::u32" cannot error propagate
@@ -161,18 +133,13 @@ error[E2063]: Type "core::integer::u32" cannot error propagate
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(a: Option<felt252>) -> Option<felt252> {
-    bar(a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<T, +Copy<T>>(t: T) -> T {
     t?;
     t
+}
+fn foo(a: Option<felt252>) -> Option<felt252> {
+    bar(a)
 }
 
 //! > expected_diagnostics

@@ -3,14 +3,11 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 use u32 as myU32;
 fn foo(a: myU32) -> u32 {
     a
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -21,21 +18,16 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let x = @1.into();
-    bar(x, @1);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod internal {
     fn bar<T, +PartialEq<T>>(a: @T, b: @T) {}
 }
 use NonExisting;
 use internal::bar;
+fn foo() {
+    let x = @1.into();
+    bar(x, @1);
+}
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.
@@ -50,13 +42,7 @@ use NonExisting;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 use Array;
 
 //! > expected_diagnostics
@@ -68,13 +54,7 @@ use Array;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 use core;
 
 //! > expected_diagnostics
@@ -86,13 +66,7 @@ use core;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     use super::a::b;
 }
@@ -110,13 +84,7 @@ error[E2025]: Cycle detected while resolving 'use' items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     mod b {
         mod c {}
@@ -134,13 +102,7 @@ use b::c as again;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     mod b {
         mod c {}
@@ -162,13 +124,7 @@ use a::b::self;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 use {self, u8};
 
 //! > expected_diagnostics
@@ -184,13 +140,7 @@ use {self, u8};
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 use self;
 
 //! > expected_diagnostics
@@ -209,15 +159,7 @@ test_function_diagnostics(expect_diagnostics: false)
 //! > crate_settings
 edition = "2024_07"
 
-//! > function_code
-fn foo() {
-    C::test();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod A {
     pub mod B {
         pub mod C {
@@ -227,6 +169,9 @@ mod A {
 }
 use A::*;
 use B::*;
+fn foo() {
+    C::test();
+}
 
 //! > expected_diagnostics
 
@@ -240,16 +185,11 @@ edition = "2024_07"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+use B::*;
 fn foo() {
     C::test();
 }
-
-//! > function_name
-foo
-
-//! > module_code
-use B::*;
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.
@@ -272,13 +212,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > crate_settings
 edition = "2024_07"
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     pub use super::b::*;
 }

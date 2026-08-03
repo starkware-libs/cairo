@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     loop {
         if true {
@@ -13,9 +13,6 @@ fn foo() {
         }
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2056]: Loop has incompatible return types: "core::bool" and "{numeric}"
@@ -30,7 +27,7 @@ error[E2056]: Loop has incompatible return types: "core::bool" and "{numeric}"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(x: Option<()>) {
     loop {
         if true {
@@ -40,9 +37,6 @@ fn foo(x: Option<()>) {
         }
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2056]: Loop has incompatible return types: "core::bool" and "{numeric}"
@@ -65,13 +59,10 @@ error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     continue;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2145]: `continue` only allowed inside a `loop`.
@@ -86,13 +77,10 @@ error[E2145]: `continue` only allowed inside a `loop`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     break 5;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2146]: `break` only allowed inside a `loop`.
@@ -107,15 +95,12 @@ error[E2146]: `break` only allowed inside a `loop`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> bool {
     loop {
         break true;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -126,13 +111,10 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> bool {
     return;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
@@ -147,13 +129,10 @@ error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     return;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -164,15 +143,12 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> bool {
     loop {
         return;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
@@ -187,15 +163,12 @@ error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> bool {
     loop {
         break;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
@@ -213,15 +186,12 @@ error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     loop {
         break;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -232,13 +202,10 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     break;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2146]: `break` only allowed inside a `loop`.
@@ -253,7 +220,8 @@ error[E2146]: `break` only allowed inside a `loop`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+use option::Option;
 fn foo() -> Option<bool> {
     loop {
         let res = Some(true);
@@ -262,12 +230,6 @@ fn foo() -> Option<bool> {
     }
     None
 }
-
-//! > function_name
-foo
-
-//! > module_code
-use option::Option;
 
 //! > expected_diagnostics
 
@@ -278,19 +240,14 @@ use option::Option;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+use option::Option;
 fn foo() -> Option<bool> {
     loop {
         1
     }
     None
 }
-
-//! > function_name
-foo
-
-//! > module_code
-use option::Option;
 
 //! > expected_diagnostics
 error[E2144]: Tail expression not allowed in a `loop` block.
@@ -305,19 +262,14 @@ error[E2144]: Tail expression not allowed in a `loop` block.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+use option::Option;
 fn foo() -> Option<bool> {
     loop {
         ()
     }
     None
 }
-
-//! > function_name
-foo
-
-//! > module_code
-use option::Option;
 
 //! > expected_diagnostics
 
@@ -328,19 +280,14 @@ use option::Option;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+use option::Option;
 fn foo() -> Option<bool> {
     loop {
         panic_with_felt252('no return')
     }
     None
 }
-
-//! > function_name
-foo
-
-//! > module_code
-use option::Option;
 
 //! > expected_diagnostics
 
@@ -351,7 +298,7 @@ use option::Option;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: u32) -> Option<bool> {
     loop {
         if a == 0 {
@@ -361,9 +308,6 @@ fn foo(a: u32) -> Option<bool> {
     }
     None
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2056]: Loop has incompatible return types: "core::never" and "()"

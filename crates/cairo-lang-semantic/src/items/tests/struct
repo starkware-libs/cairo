@@ -3,17 +3,12 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: A<felt252>) -> felt252 {
-    a.a
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A<T> {
     a: T,
+}
+fn foo(a: A<felt252>) -> felt252 {
+    a.a
 }
 
 //! > expected_diagnostics
@@ -25,13 +20,7 @@ struct A<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     member: A,
 }
@@ -73,13 +62,7 @@ error[E2052]: Recursive type "test::B" has infinite size.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 struct A {
     member: A,
@@ -94,13 +77,7 @@ struct A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 struct A {}
 
@@ -121,13 +98,7 @@ error[E2020]: Non-phantom type containing phantom type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     member: Array<((), ())>,
 }
@@ -145,13 +116,7 @@ error[E2053]: Cannot have array of type "((), ())" that is zero sized.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct W<T, +Drop<T>> {
     x: T,
 }

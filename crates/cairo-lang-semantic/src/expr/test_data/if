@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let x = 7_felt252;
     if x {
@@ -12,9 +12,6 @@ fn foo() {
         0
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2055]: Condition has type "core::felt252", expected bool.
@@ -42,7 +39,7 @@ error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> bool {
     let x = 7_u64;
     if x {
@@ -50,9 +47,6 @@ fn foo() -> bool {
     } else {}
     false
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2055]: Condition has type "core::integer::u64", expected bool.
@@ -67,7 +61,10 @@ error[E2055]: Condition has type "core::integer::u64", expected bool.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+}
 fn foo() -> bool {
     let x = Some(7_u64);
     if let MyEnum::A(y) = x {
@@ -75,14 +72,6 @@ fn foo() -> bool {
     } else {
         return false;
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: felt252,
 }
 
 //! > expected_diagnostics
@@ -103,7 +92,7 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> bool {
     let x = Some(7_u64);
     if let Some(y) = x || true {
@@ -112,9 +101,6 @@ fn foo() -> bool {
         return false;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E1030]: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
@@ -129,7 +115,7 @@ error[E1030]: Operator '||' is not allowed in let chains. Consider wrapping the 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> bool {
     let x = Some(7_u64);
     if let Some = x {
@@ -138,9 +124,6 @@ fn foo() -> bool {
         return false;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 warning[E2192]: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
@@ -155,7 +138,10 @@ warning[E2192]: Pattern missing subpattern for the payload of variant. Consider 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    B: (),
+}
 fn foo() -> bool {
     let a = A::B(());
     if let A::B = a {
@@ -163,14 +149,6 @@ fn foo() -> bool {
     } else {
         return false;
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    B: (),
 }
 
 //! > expected_diagnostics
@@ -182,7 +160,7 @@ enum A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: Option<Option<Option<felt252>>>) {
     if let Some(b) = a && let Some(_c) = b {}
     // The opposite order doesn't work.
@@ -195,9 +173,6 @@ fn foo(a: Option<Option<Option<felt252>>>) {
         1
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.

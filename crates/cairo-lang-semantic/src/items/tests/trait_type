@@ -3,17 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::foo1(3_u32);
-    MyImpl::foo2(3_u32);
-    MyImpl::foo3(3_u32);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     type OutputType;
@@ -34,6 +24,11 @@ impl MyImpl of MyTrait {
         x
     }
 }
+fn foo() {
+    MyImpl::foo1(3_u32);
+    MyImpl::foo2(3_u32);
+    MyImpl::foo3(3_u32);
+}
 
 //! > expected_diagnostics
 
@@ -44,13 +39,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     type InputType;
     type OutputType;
@@ -80,13 +69,7 @@ impl MyImplU32 of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     type OutputType;
@@ -102,13 +85,7 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     type InputType;
     type OutputType;
@@ -124,17 +101,7 @@ trait MyTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::<u32>::foo1(3_u32);
-    MyImpl::<u32>::foo2(3_u32);
-    MyImpl::<u32>::foo3(3_u32);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T, S> {
     type InputType;
     type OutputType;
@@ -155,6 +122,11 @@ impl MyImpl<T> of MyTrait<T, u32> {
         x
     }
 }
+fn foo() {
+    MyImpl::<u32>::foo1(3_u32);
+    MyImpl::<u32>::foo2(3_u32);
+    MyImpl::<u32>::foo3(3_u32);
+}
 
 //! > expected_diagnostics
 
@@ -165,13 +137,7 @@ impl MyImpl<T> of MyTrait<T, u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     type OutputType;
@@ -196,13 +162,7 @@ warning[E2094]: In a trait, paths of the same trait are not allowed. Did you mea
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     type InputType;
     type OutputType;
@@ -227,13 +187,7 @@ warning[E2094]: In a trait, paths of the same trait are not allowed. Did you mea
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     type InputType;
     type OutputType;
@@ -256,13 +210,7 @@ impl MyImpl of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait SomeTrait {}
 trait MyTrait<T, +SomeTrait> {
     type InputType;
@@ -282,13 +230,7 @@ warning[E2092]: In a trait, paths of the same trait must be fully explicit. Eith
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     type OutputType;
@@ -329,13 +271,7 @@ warning[E2096]: In an impl, paths of the same impl are not allowed. Did you mean
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     type OutputType;
@@ -373,13 +309,7 @@ warning[E2096]: In an impl, paths of the same impl are not allowed. Did you mean
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     type InputType;
     type OutputType;
@@ -412,13 +342,7 @@ error[E2045]: Return type of impl function `MyImpl::foo` is incompatible with `M
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait SomeTrait {}
 trait MyTrait {
     type InputType;
@@ -444,13 +368,7 @@ warning[E2093]: In an impl, paths of the same impl must be fully explicit. Eithe
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     type OutputType;
@@ -491,13 +409,7 @@ warning[E2095]: In an impl, paths of the impl's trait are not allowed. Did you m
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     type InputType;
     type OutputType;
@@ -538,13 +450,7 @@ warning[E2095]: In an impl, paths of the impl's trait are not allowed. Did you m
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     type InputType;
     type OutputType;
@@ -576,13 +482,7 @@ impl MyImpl_u32 of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     type OutputType;
@@ -632,16 +532,7 @@ error[E2045]: Return type of impl function `MyImpl::foo4` is incompatible with `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let x = MyStruct { value: 3_u32 };
-    let _: MyStruct<u32> = MyImpl::foo(x);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct<T> {
     value: T,
 }
@@ -657,6 +548,10 @@ impl MyImpl of MyTrait {
         MyStruct { value: x.value }
     }
 }
+fn foo() {
+    let x = MyStruct { value: 3_u32 };
+    let _: MyStruct<u32> = MyImpl::foo(x);
+}
 
 //! > expected_diagnostics
 
@@ -667,15 +562,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::foo(Some(3));
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     fn foo(x: Self::InputType);
@@ -685,6 +572,9 @@ impl MyImpl of MyTrait {
     fn foo(x: Self::InputType) {
         x.unwrap();
     }
+}
+fn foo() {
+    MyImpl::foo(Some(3));
 }
 
 //! > expected_diagnostics
@@ -696,13 +586,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     fn foo(x: Self::InputType);
@@ -729,15 +613,7 @@ Candidate `core::result::ResultTrait::unwrap` inference failed with: Type mismat
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::foo(3);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     fn foo(x: Self::InputType);
@@ -747,6 +623,9 @@ impl MyImpl of MyTrait {
     fn foo(x: Self::InputType) {
         -x;
     }
+}
+fn foo() {
+    MyImpl::foo(3);
 }
 
 //! > expected_diagnostics
@@ -758,13 +637,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     fn foo(x: Self::InputType);
@@ -789,15 +662,7 @@ error[E2311]: Trait has no implementation in context: core::traits::Neg::<core::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let _: usize = MyImpl::foo(3, 4);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType1;
     type InputType2;
@@ -812,6 +677,9 @@ impl MyImpl of MyTrait {
         x + y
     }
 }
+fn foo() {
+    let _: usize = MyImpl::foo(3, 4);
+}
 
 //! > expected_diagnostics
 
@@ -822,13 +690,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     fn foo(x: Self::InputType);
@@ -853,15 +715,7 @@ error[E2311]: Trait has no implementation in context: core::traits::Add::<core::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyImpl::foo(array![0]);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     type OutputType;
@@ -874,6 +728,9 @@ impl MyImpl of MyTrait {
         *x[0_u32]
     }
 }
+fn foo() {
+    MyImpl::foo(array![0]);
+}
 
 //! > expected_diagnostics
 
@@ -884,13 +741,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
     fn foo(x: Self::InputType);
@@ -917,13 +768,7 @@ Candidate `core::ops::index::IndexView::index` inference failed with: Trait has 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     type AnotherType;
 }
@@ -950,13 +795,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     type AnotherType;
 }
@@ -992,13 +831,7 @@ error[E2045]: Return type of impl function `MyImpl::bar2` is incompatible with `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 // A trait with 0 impls in the context.
 trait AnotherTrait0 {
     type AnotherType;
@@ -1049,13 +882,7 @@ error[E2313]: Trait `test::AnotherTrait2` has multiple implementations, in: `tes
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     type AnotherType;
 }
@@ -1093,13 +920,7 @@ fn bar3() {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     type AnotherType;
 }
@@ -1163,13 +984,7 @@ error[E2308]: `test::MyImpl::MyType` type mismatch: `core::integer::u32` and `co
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     type AnotherType;
 }
@@ -1224,13 +1039,7 @@ error[E2311]: Trait has no implementation in context: test::AnotherTrait.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     type AnotherType;
 }
@@ -1291,13 +1100,7 @@ error[E2313]: Trait `test::AnotherTrait` has multiple implementations, in: `test
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait AnotherTrait {
     type AnotherType;
 }
@@ -1334,13 +1137,7 @@ fn bar3() {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType;
     fn foo1() -> MyImpl::MyType;
@@ -1363,13 +1160,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType;
     fn foo1() -> MyImpl::MyType;
@@ -1396,13 +1187,7 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u32", found: "co
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType1;
     type MyType2;
@@ -1459,13 +1244,7 @@ fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType1;
     type MyType2;
@@ -1559,13 +1338,7 @@ error[E2042]: Unexpected return type. Expected: "core::option::Option::<core::in
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType1;
     type MyType2;
@@ -1619,13 +1392,7 @@ fn complex2(
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType1;
     type MyType2;
@@ -1713,15 +1480,7 @@ error[E2042]: Unexpected return type. Expected: "@(core::integer::u16, core::opt
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(x: MyImpl::my_function) {
-    let _: MyImpl::my_function = 3;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType;
     fn my_function() -> u16;
@@ -1731,6 +1490,9 @@ impl MyImpl of MyTrait {
     fn my_function() -> u16 {
         2_u16
     }
+}
+fn foo(x: MyImpl::my_function) {
+    let _: MyImpl::my_function = 3;
 }
 
 //! > expected_diagnostics
@@ -1751,13 +1513,7 @@ error[E2011]: Not a type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType1;
     type MyType2;
@@ -1780,13 +1536,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType1;
     type MyType2;
@@ -1813,13 +1563,7 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u32", found: "co
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType1;
 }
@@ -1840,13 +1584,7 @@ error[E2026]: Cycle detected while resolving type-alias/impl-type items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType1;
     type MyType2;
@@ -1874,13 +1612,7 @@ error[E2026]: Cycle detected while resolving type-alias/impl-type items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType1;
     type MyType2;
@@ -1903,13 +1635,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn free_func(x: Self::MyType1) -> Self::MyType2 {
     let _: Self::MyType3 = 3;
 }
@@ -1937,13 +1663,7 @@ error[E2175]: `Self` is not supported in this context.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyInto<T, S> {
     fn my_into(self: T) -> S;
 }
@@ -1977,22 +1697,17 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> u32 {
-    let x: MyImpl::<u32>::ty = 4;
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
 }
 
 impl MyImpl<K> of MyTrait {
     type ty = K;
+}
+fn foo() -> u32 {
+    let x: MyImpl::<u32>::ty = 4;
+    x
 }
 
 //! > expected_diagnostics
@@ -2004,16 +1719,7 @@ impl MyImpl<K> of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> u32 {
-    let x: MyTrait::ty = 4_u32;
-    x
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
 }
@@ -2022,6 +1728,10 @@ impl MyImpl<K> of MyTrait {
     type ty = K;
 }
 ///TODO(TomerStarkware): infer impl types from trait types.
+fn foo() -> u32 {
+    let x: MyTrait::ty = 4_u32;
+    x
+}
 
 //! > expected_diagnostics
 error[E2313]: Candidate impl test::MyImpl::<?0> has an unused generic parameter.
@@ -2036,15 +1746,7 @@ error[E2313]: Candidate impl test::MyImpl::<?0> has an unused generic parameter.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> u32 {
-    MyTrait::<u32>::foo()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T, K> {
     type ty;
     fn foo() -> Self::ty;
@@ -2056,6 +1758,9 @@ impl MyImpl<K, +Default<K>> of MyTrait<u32, K> {
         Default::default()
     }
 }
+fn foo() -> u32 {
+    MyTrait::<u32>::foo()
+}
 
 //! > expected_diagnostics
 
@@ -2066,15 +1771,7 @@ impl MyImpl<K, +Default<K>> of MyTrait<u32, K> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
-    DepAdd::<felt252>::other_add(x, y)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherAdd<Lhs, Rhs> {
     type Output;
     fn other_add(lhs: Lhs, rhs: Rhs) -> Self::Output;
@@ -2084,6 +1781,9 @@ impl DepAdd<T> of OtherAdd<T, T> {
     fn other_add(lhs: T, rhs: T) -> T {
         lhs
     }
+}
+fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
+    DepAdd::<felt252>::other_add(x, y)
 }
 
 //! > expected_diagnostics
@@ -2095,15 +1795,7 @@ impl DepAdd<T> of OtherAdd<T, T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
-    OtherAdd::<felt252>::other_add(x, y)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherAdd<Lhs, Rhs> {
     type Output;
     fn other_add(lhs: Lhs, rhs: Rhs) -> Self::Output;
@@ -2113,6 +1805,9 @@ impl DepAdd<T> of OtherAdd<T, T> {
     fn other_add(lhs: T, rhs: T) -> T {
         lhs
     }
+}
+fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
+    OtherAdd::<felt252>::other_add(x, y)
 }
 
 //! > expected_diagnostics
@@ -2124,18 +1819,7 @@ impl DepAdd<T> of OtherAdd<T, T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    bar::<_, DepAdd>(3_felt252, 4)
-}
-pub fn bar<T, +OtherAdd<T, T>>(x: T, y: T) -> OtherAdd::<T, T>::Output {
-    OtherAdd::other_add(x, y)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait OtherAdd<Lhs, Rhs> {
     type Output;
     fn other_add(lhs: Lhs, rhs: Rhs) -> Self::Output;
@@ -2145,6 +1829,12 @@ impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
     fn other_add(lhs: T, rhs: T) -> T {
         lhs
     }
+}
+fn foo() -> felt252 {
+    bar::<_, DepAdd>(3_felt252, 4)
+}
+pub fn bar<T, +OtherAdd<T, T>>(x: T, y: T) -> OtherAdd::<T, T>::Output {
+    OtherAdd::other_add(x, y)
 }
 
 //! > expected_diagnostics
@@ -2156,19 +1846,14 @@ impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> felt252 {
-    let x = Trt::foo();
-    x.t
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Trt {
     type T;
     fn foo() -> Self::T;
+}
+fn foo() -> felt252 {
+    let x = Trt::foo();
+    x.t
 }
 
 //! > expected_diagnostics
@@ -2189,13 +1874,7 @@ error[E2311]: Trait has no implementation in context: test::Trt.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Trt<T> {
     type Assoc;
     fn func(self: T) -> Self::Assoc;
@@ -2214,15 +1893,7 @@ fn bar<T, impl TrtImp: Trt<T>>(x: T) -> TrtImp::Assoc {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> u32 {
-    array![12, 13, 14].first()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait FirstTrait<T> {
     type Element;
     fn first(self: T) -> Self::Element;
@@ -2234,6 +1905,9 @@ impl ArrayFirst<T> of FirstTrait<Array<T>> {
         self.pop_front().unwrap()
     }
 }
+fn foo() -> u32 {
+    array![12, 13, 14].first()
+}
 
 //! > expected_diagnostics
 
@@ -2244,19 +1918,14 @@ impl ArrayFirst<T> of FirstTrait<Array<T>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let _: MyImpl::ty = 5;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
 }
 impl MyImpl of MyTrait {}
+fn foo() {
+    let _: MyImpl::ty = 5;
+}
 
 //! > expected_diagnostics
 error[E0004]: Not all trait items are implemented. Missing: 'ty'.
@@ -2279,21 +1948,16 @@ error[E2311]: Trait has no implementation in context: test::MyTrait.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+}
 fn bar<+MyTrait, +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>>(
     _y: MyTrait::ty,
 ) -> felt252 {
     _y + 3
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-}
 
 //! > expected_diagnostics
 
@@ -2304,7 +1968,10 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+}
 fn bar<
     impl I1: MyTrait,
     impl I2: MyTrait,
@@ -2314,14 +1981,6 @@ fn bar<
     3_u32
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::felt252", found: "core::integer::u32".
@@ -2336,7 +1995,10 @@ error[E2042]: Unexpected return type. Expected: "core::felt252", found: "core::i
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+}
 fn bar<
     +MyTrait,
     +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
@@ -2347,14 +2009,6 @@ fn bar<
     _y
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-}
 
 //! > expected_diagnostics
 error[E2302]: Type mismatch: `core::felt252` and `core::integer::u32`.
@@ -2372,23 +2026,7 @@ error[E2302]: Type mismatch: `core::felt252` and `core::integer::u32`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-///TODO(TomerStarkware): remove diagnostic and make it compile without errors.
-fn bar<
-    +MyTrait,
-    +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
-    +TraitWithInferredParams<MyTrait::ty>,
->(
-    _y: MyTrait::ty,
-) -> MyTrait::ty {
-    _y + TraitWithInferredParams::<MyTrait::ty>::foo()
-}
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
 }
@@ -2403,6 +2041,17 @@ impl OtherImpl of OtherTrait<felt252> {
 trait TraitWithInferredParams<T, +OtherTrait<T>> {
     fn foo() -> T;
 }
+///TODO(TomerStarkware): remove diagnostic and make it compile without errors.
+fn bar<
+    +MyTrait,
+    +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
+    +TraitWithInferredParams<MyTrait::ty>,
+>(
+    _y: MyTrait::ty,
+) -> MyTrait::ty {
+    _y + TraitWithInferredParams::<MyTrait::ty>::foo()
+}
+fn foo() {}
 
 //! > expected_diagnostics
 error[E2311]: Trait has no implementation in context: test::OtherTrait::<+MyTrait::ty>.
@@ -2422,21 +2071,7 @@ error[E2311]: Trait has no implementation in context: test::TraitWithInferredPar
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn bar<
-    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
->() -> I1::ty {
-    I2::foo()
-}
-fn foo() {
-    bar::<MyImplu32, MyImplu32>();
-    bar::<MyImplfelt252, MyImplfelt252>();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
@@ -2452,6 +2087,15 @@ impl MyImplfelt252 of MyTrait {
     fn foo() -> Self::ty {
         3
     }
+}
+fn bar<
+    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
+>() -> I1::ty {
+    I2::foo()
+}
+fn foo() {
+    bar::<MyImplu32, MyImplu32>();
+    bar::<MyImplfelt252, MyImplfelt252>();
 }
 
 //! > expected_diagnostics
@@ -2463,20 +2107,7 @@ impl MyImplfelt252 of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn bar<
-    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
->() -> I1::ty {
-    I2::foo()
-}
-fn foo() {
-    bar::<MyImplu32, MyImplfelt252>();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
@@ -2492,6 +2123,14 @@ impl MyImplfelt252 of MyTrait {
     fn foo() -> Self::ty {
         3
     }
+}
+fn bar<
+    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
+>() -> I1::ty {
+    I2::foo()
+}
+fn foo() {
+    bar::<MyImplu32, MyImplfelt252>();
 }
 
 //! > expected_diagnostics
@@ -2507,7 +2146,11 @@ error[E2311]: Trait has no implementation in context: core::metaprogramming::Typ
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
 fn bar<
     impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
 >() -> I2::ty {
@@ -2517,15 +2160,6 @@ fn bar2<impl I1: MyTrait, impl I2: MyTrait>() -> I2::ty {
     bar::<I1, I2>()
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-    fn foo() -> Self::ty;
-}
 
 //! > expected_diagnostics
 error[E2311]: Trait has no implementation in context: core::metaprogramming::TypeEqual::<I1::ty, I2::ty>.
@@ -2540,13 +2174,7 @@ error[E2311]: Trait has no implementation in context: core::metaprogramming::Typ
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 impl I of core::metaprogramming::TypeEqual<u32, felt252>;
 
 //! > expected_diagnostics
@@ -2562,13 +2190,7 @@ impl I of core::metaprogramming::TypeEqual<u32, felt252>;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<T, impl I: core::metaprogramming::TypeEqual<T, T, T>>() {}
 
 //! > expected_diagnostics
@@ -2584,13 +2206,7 @@ fn bar<T, impl I: core::metaprogramming::TypeEqual<T, T, T>>() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<T, const C: u32, impl I: core::metaprogramming::TypeEqual<T, C>>() {}
 
 //! > expected_diagnostics
@@ -2606,16 +2222,7 @@ fn bar<T, const C: u32, impl I: core::metaprogramming::TypeEqual<T, C>>() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-///TODO(TomerStarkware): change diagnostics to mismatch types instead of missing impl.
-fn foo() {
-    let _: felt252 = MyTrait::my_function();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type MyType;
     fn my_function() -> Self::MyType;
@@ -2625,6 +2232,10 @@ impl MyImpl of MyTrait {
     fn my_function() -> u16 {
         2_u16
     }
+}
+///TODO(TomerStarkware): change diagnostics to mismatch types instead of missing impl.
+fn foo() {
+    let _: felt252 = MyTrait::my_function();
 }
 
 //! > expected_diagnostics
@@ -2640,19 +2251,14 @@ error[E2308]: `test::MyImpl::MyType` type mismatch: `core::felt252` and `core::i
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+}
 fn bar<+MyTrait[ty: felt252]>(y: MyTrait::ty) -> felt252 {
     y + 3
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-}
 
 //! > expected_diagnostics
 
@@ -2663,19 +2269,14 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+}
 fn bar<impl I1: MyTrait[ty: u32], impl I2: MyTrait[ty: I1::ty]>() -> I2::ty {
     3_u8
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u8".
@@ -2690,21 +2291,16 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u32", found: "co
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+}
 fn bar<+MyTrait[ty: felt252], +core::metaprogramming::TypeEqual<MyTrait::ty, u32>>(
     _y: MyTrait::ty,
 ) -> MyTrait::ty {
     _y
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-}
 
 //! > expected_diagnostics
 error[E2302]: Type mismatch: `core::felt252` and `core::integer::u32`.
@@ -2722,19 +2318,7 @@ error[E2302]: Type mismatch: `core::felt252` and `core::integer::u32`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn bar<impl I1: MyTrait, impl I2: MyTrait[ty: I1::ty]>() -> I1::ty {
-    I2::foo()
-}
-fn foo() {
-    bar::<MyImplu32, MyImplu32>();
-    bar::<MyImplfelt252, MyImplfelt252>();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
@@ -2750,6 +2334,13 @@ impl MyImplfelt252 of MyTrait {
     fn foo() -> Self::ty {
         3
     }
+}
+fn bar<impl I1: MyTrait, impl I2: MyTrait[ty: I1::ty]>() -> I1::ty {
+    I2::foo()
+}
+fn foo() {
+    bar::<MyImplu32, MyImplu32>();
+    bar::<MyImplfelt252, MyImplfelt252>();
 }
 
 //! > expected_diagnostics
@@ -2761,18 +2352,7 @@ impl MyImplfelt252 of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn bar<impl I1: MyTrait[ty: I2::ty], impl I2: MyTrait>() -> I1::ty {
-    I2::foo()
-}
-fn foo() {
-    bar::<MyImplu32, MyImplfelt252>();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
@@ -2788,6 +2368,12 @@ impl MyImplfelt252 of MyTrait {
     fn foo() -> Self::ty {
         3
     }
+}
+fn bar<impl I1: MyTrait[ty: I2::ty], impl I2: MyTrait>() -> I1::ty {
+    I2::foo()
+}
+fn foo() {
+    bar::<MyImplu32, MyImplfelt252>();
 }
 
 //! > expected_diagnostics
@@ -2803,7 +2389,11 @@ error[E2302]: Type mismatch: `core::integer::u32` and `I2::ty`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
 fn bar<impl I1: MyTrait[ty: felt252]>() -> I1::ty {
     I1::foo()
 }
@@ -2811,15 +2401,6 @@ fn bar2<impl J1: MyTrait>() -> J1::ty {
     bar()
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-    fn foo() -> Self::ty;
-}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "J1::ty", found: "core::felt252".
@@ -2834,7 +2415,11 @@ error[E2042]: Unexpected return type. Expected: "J1::ty", found: "core::felt252"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
 fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
     I1::foo()
 }
@@ -2843,15 +2428,6 @@ fn bar2<impl J1: MyTrait[ty: u32]>() -> J1::ty {
     bar()
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-    fn foo() -> Self::ty;
-}
 
 //! > expected_diagnostics
 
@@ -2862,7 +2438,11 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
 fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
     I1::foo()
 }
@@ -2870,15 +2450,6 @@ fn bar2<impl I1: MyTrait[ty: u8]>() -> I1::ty {
     bar()
 }
 fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
-trait MyTrait {
-    type ty;
-    fn foo() -> Self::ty;
-}
 
 //! > expected_diagnostics
 error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u32".
@@ -2893,18 +2464,7 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "cor
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
-    I1::foo()
-}
-fn foo() {
-    bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
@@ -2923,6 +2483,12 @@ impl I2 of MyTrait {
         3
     }
 }
+fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
+    I1::foo()
+}
+fn foo() {
+    bar();
+}
 
 //! > expected_diagnostics
 error[E2313]: Trait `test::MyTrait` has multiple implementations, in: `test::I1`, `test::I2`
@@ -2937,21 +2503,16 @@ error[E2313]: Trait `test::MyTrait` has multiple implementations, in: `test::I1`
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn bar<impl I1: MyTrait[ty: u32]>() -> u32 {
-    I1::foo()
-}
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     const ty: u32;
 
     fn foo() -> u32;
 }
+fn bar<impl I1: MyTrait[ty: u32]>() -> u32 {
+    I1::foo()
+}
+fn foo() {}
 
 //! > expected_diagnostics
 error[E2189]: associated type `ty` not found for `MyTrait`
@@ -2966,20 +2527,15 @@ fn bar<impl I1: MyTrait[ty: u32]>() -> u32 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn bar<impl I1: MyTrait[ty: u32, ty: felt252]>() -> u32 {
-    I1::foo()
-}
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
 }
+fn bar<impl I1: MyTrait[ty: u32, ty: felt252]>() -> u32 {
+    I1::foo()
+}
+fn foo() {}
 
 //! > expected_diagnostics
 error[E2190]: the value of the associated type `ty` in trait `MyTrait` is already specified
@@ -2994,18 +2550,7 @@ fn bar<impl I1: MyTrait[ty: u32, ty: felt252]>() -> u32 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn bar<impl I1: MyTrait[ty: u32]>() {
-    I1::foo();
-}
-fn foo() {
-    bar::<MyImpl>();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
@@ -3015,6 +2560,12 @@ impl MyImpl of MyTrait {
     fn foo() -> u8 {
         3
     }
+}
+fn bar<impl I1: MyTrait[ty: u32]>() {
+    I1::foo();
+}
+fn foo() {
+    bar::<MyImpl>();
 }
 
 //! > expected_diagnostics
@@ -3030,18 +2581,7 @@ error[E2302]: Type mismatch: `core::integer::u8` and `core::integer::u32`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn bar<impl I1: MyTrait[ty: u32]>() {
-    I1::foo();
-}
-fn foo() {
-    bar::<MyImpl>();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
@@ -3055,6 +2595,12 @@ impl MyImpl of OtherTrait {
     fn foo() -> u8 {
         3
     }
+}
+fn bar<impl I1: MyTrait[ty: u32]>() {
+    I1::foo();
+}
+fn foo() {
+    bar::<MyImpl>();
 }
 
 //! > expected_diagnostics
@@ -3070,16 +2616,7 @@ error[E2134]: Expected an impl of `test::MyTrait`. Got an impl of `test::OtherTr
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>>() {
-    OtherTrait::foo(5_u32);
-}
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
@@ -3087,6 +2624,10 @@ trait MyTrait {
 trait OtherTrait<T> {
     fn foo(a: T) -> T;
 }
+fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>>() {
+    OtherTrait::foo(5_u32);
+}
+fn foo() {}
 
 //! > expected_diagnostics
 
@@ -3097,16 +2638,7 @@ trait OtherTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>, +OtherTrait<u32>>() {
-    OtherTrait::foo(5_u32);
-}
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
     fn foo() -> Self::ty;
@@ -3114,6 +2646,10 @@ trait MyTrait {
 trait OtherTrait<T> {
     fn foo(a: T) -> T;
 }
+fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>, +OtherTrait<u32>>() {
+    OtherTrait::foo(5_u32);
+}
+fn foo() {}
 
 //! > expected_diagnostics
 error[E2313]: Trait `test::OtherTrait::<core::integer::u32>` has multiple implementations, in: `+OtherTrait<I1::ty>`, `+OtherTrait<u32>`
@@ -3128,13 +2664,7 @@ error[E2313]: Trait `test::OtherTrait::<core::integer::u32>` has multiple implem
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type ty;
 }
@@ -3159,15 +2689,7 @@ error[E2037]: Generic parameter trait of impl function `I::foo` is incompatible 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> S<M> {
-    S { x: 3_felt252 }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     type InputType;
 }
@@ -3178,6 +2700,9 @@ impl M of MyTrait {
 
 struct S<impl M: MyTrait> {
     x: M::InputType,
+}
+fn foo() -> S<M> {
+    S { x: 3_felt252 }
 }
 
 //! > expected_diagnostics

@@ -3,15 +3,12 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: [u32; 3] = [1; 3];
     let _y: [u32; 3] = [1, 2, 3];
     let _z = [1, 2, 3];
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -22,18 +19,13 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+const SIZE: usize = 3;
 fn foo() {
     let _x: [u32; 1 + 2] = [1; 1 + 2];
     let _x: [u32; SIZE] = [1; 1 + 2];
     let _x: [u32; SIZE + 1] = [1; 5 - 1];
 }
-
-//! > function_name
-foo
-
-//! > module_code
-const SIZE: usize = 3;
 
 //! > expected_diagnostics
 
@@ -44,14 +36,11 @@ const SIZE: usize = 3;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: [u32; 2] = [1, 2, 3];
     let _x: [u32; 2] = [1; 3];
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[{numeric}; 3]".
@@ -71,7 +60,7 @@ error[E2041]: Unexpected argument type. Expected: "[core::integer::u32; 2]", fou
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: [u32, u32; 2] = [1, 2];
     let _x: [; 2] = [1, 2];
@@ -79,9 +68,6 @@ fn foo() {
     let _x: [u32; 2] = [];
     let _x: [u32; 2] = [; 2];
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2170]: Fixed size array type must have exactly one type.
@@ -116,7 +102,8 @@ error[E2173]: Fixed size array with defined size must have exactly one value.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+const SIZE: usize = 2;
 fn foo() {
     let _x: [u32; -1] = [1; -1];
     let _x: [u32; SIZE] = [1; SIZE];
@@ -124,12 +111,6 @@ fn foo() {
     let _x: [u32; 32768] = [1; 32768];
     let _x = [1_felt252; 32768];
 }
-
-//! > function_name
-foo
-
-//! > module_code
-const SIZE: usize = 2;
 
 //! > expected_diagnostics
 error[E2008]: The value does not fit within the range of type core::integer::u32.
@@ -174,18 +155,13 @@ error[E2174]: Fixed size array size must be smaller than 2^15.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+const SIZE: usize = 2;
 fn foo() {
     let _x: [u32; 2] = [1, 2_u16];
     let _x = [1_u32, 2_u16];
     let _x: [u32; 2] = [true, false];
 }
-
-//! > function_name
-foo
-
-//! > module_code
-const SIZE: usize = 2;
 
 //! > expected_diagnostics
 error[E2041]: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[core::integer::u16; 2]".
@@ -210,17 +186,12 @@ error[E2041]: Unexpected argument type. Expected: "[core::integer::u32; 2]", fou
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> [felt252; 1] {
-    bar()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar<const N: usize>() -> [felt252; N] {
     [0; N]
+}
+fn foo() -> [felt252; 1] {
+    bar()
 }
 
 //! > expected_diagnostics
@@ -236,17 +207,12 @@ error[E2172]: Fixed size array type must have a positive integer size.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar<const N: usize>() -> [felt252; N] nopanic;
 fn foo() {
     let [_a, _b] = bar();
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn bar<const N: usize>() -> [felt252; N] nopanic;
 
 //! > expected_diagnostics
 
@@ -257,17 +223,12 @@ extern fn bar<const N: usize>() -> [felt252; N] nopanic;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar<const N: usize>() -> [felt252; N] nopanic;
 fn foo() {
     let [_a, _b] = bar::<3>();
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn bar<const N: usize>() -> [felt252; N] nopanic;
 
 //! > expected_diagnostics
 error[E2108]: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
@@ -282,13 +243,7 @@ error[E2108]: Wrong number of fixed size array elements in pattern. Expected: 3.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Default, Clone, Debug, Drop, PartialEq, Serde)]
 pub struct StructWithByteArray {
     pub features: [felt252; 2],
@@ -303,13 +258,10 @@ pub struct StructWithByteArray {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: [_; 3] = [1_u8, 2_u8, 3_u8];
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -320,13 +272,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn f() -> [felt252; for _ in 0..1_u32 {}] {
     [0]
 }
