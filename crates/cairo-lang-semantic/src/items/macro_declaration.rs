@@ -902,7 +902,12 @@ fn is_macro_rule_match_ex<'db>(
                         ctx.record_capture(
                             placeholder_name,
                             CapturedValue {
-                                text: expr_node.as_syntax_node().get_text(db).to_string(),
+                                // The trivia around the expression belongs to the call, not to the
+                                // expression - the expansion spaces the value by its own trivia.
+                                text: expr_node
+                                    .as_syntax_node()
+                                    .get_text_without_trivia(db)
+                                    .to_string(db),
                                 stable_ptr: peek_token.stable_ptr(db).untyped(),
                             },
                         );
@@ -1095,11 +1100,16 @@ impl<'db> ExpansionContext<'db, '_> {
                 // `$defsite` / `$callsite` are not placeholders; they are emitted as written, by
                 // the fallthrough below.
                 if let Some(name) = extract_placeholder(db, &param) {
-                    return self.expand_placeholder(&param, name);
+                    self.expand_placeholder(&param, name)?;
+                    self.push_trailing_trivia(node);
+                    return Ok(());
                 }
             }
             SyntaxKind::MacroRepetition => {
-                return self.expand_repetition(&ast::MacroRepetition::from_syntax_node(db, node));
+                let repetition = ast::MacroRepetition::from_syntax_node(db, node);
+                self.expand_repetition(&repetition)?;
+                self.push_trailing_trivia(node);
+                return Ok(());
             }
             _ => {}
         }
@@ -1113,8 +1123,32 @@ impl<'db> ExpansionContext<'db, '_> {
         Ok(())
     }
 
+    /// Appends the trivia `node` carries after its last token to [`Self::res_buffer`].
+    ///
+    /// A node whose text is replaced by the expansion - a placeholder, a `$()` block - is not
+    /// emitted by [`Self::expand_node`]'s terminal case, so the trivia it carries has to be
+    /// emitted separately. It is the whitespace the rule's author wrote between that node and the
+    /// one after it, and dropping it glues their tokens together.
+    ///
+    /// The leading trivia of such a node is deliberately not emitted. The resolver maps a path of
+    /// the expanded code back to the call by the offset of its syntax node, which includes that
+    /// node's leading trivia, and it needs that offset to land inside the [`CodeMapping`] of the
+    /// value the path came from. Trivia emitted before a value puts the offset before its mapping,
+    /// so the value resolves at the definition site instead. Nothing is glued by dropping it:
+    /// whitespace before a node is the trailing trivia of the token before it unless a newline
+    /// separates them, and the lexer puts that newline in the same trailing trivia, so only
+    /// indentation is lost.
+    fn push_trailing_trivia(&mut self, node: SyntaxNode<'db>) {
+        let db = self.db;
+        let span = TextSpan::new(node.span_without_trivia(db).end, node.span(db).end);
+        self.res_buffer.push_str(node.get_text_of_span(db, span));
+    }
+
     /// Expands the placeholder `name`, used by `param`, to the value it captured in the group being
     /// expanded.
+    ///
+    /// The value is emitted without the trivia surrounding it in the call - the spacing of the
+    /// expansion is the one the rule's author wrote, emitted by [`Self::push_trailing_trivia`].
     fn expand_placeholder(
         &mut self,
         param: &MacroParam<'db>,
