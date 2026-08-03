@@ -13,7 +13,7 @@ use crate::optimizations::strategy::{ApplyOptimization, OptimizationPhase};
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
-    scrub_units,
+    early_unsafe_panic,
     "src/optimizations/test_data",
     {
         early_unsafe_panic: "early_unsafe_panic"

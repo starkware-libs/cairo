@@ -11,7 +11,7 @@ use crate::optimizations::strategy::{ApplyOptimization, OptimizationPhase};
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
-    scrub_units,
+    trim_unreachable,
     "src/optimizations/test_data",
     {
         trim_unreachable: "trim_unreachable"
