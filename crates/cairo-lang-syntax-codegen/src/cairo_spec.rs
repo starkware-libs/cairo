@@ -829,6 +829,8 @@ pub fn get_spec() -> Vec<Node> {
         .node("dollar", "TerminalDollar")
         .node("name", "TerminalIdentifier")
     )
+    // Used only by TokenTreeRepetition above - remove together with it.
+    .add_option("TerminalComma")
     .add_enum(EnumBuilder::new("TokenTree")
         .include_missing()
         .node_with_explicit_kind("Token", "TokenTreeLeaf")
@@ -899,11 +901,15 @@ pub fn get_spec() -> Vec<Node> {
         .node("lparen", "TerminalLParen")
         .node("elements", "MacroElements")
         .node("rparen", "TerminalRParen")
-        // TODO(Dean): Add support for more kinds of separators.
-        .node("separator", "OptionTerminalComma")
+        .node("separator", "OptionMacroRepetitionSeparator")
         .node("operator", "MacroRepetitionOperator")
     )
-    .add_option("TerminalComma")
+    // A single token separating the repetition's matches. The grammar allows any token here; the
+    // set of tokens actually supported as separators is enforced by the parser.
+    .add_struct(StructBuilder::new("MacroRepetitionSeparator")
+        .node("token", "TokenNode")
+    )
+    .add_option("MacroRepetitionSeparator")
     .add_enum(EnumBuilder::new("MacroRepetitionOperator")
         .node_with_explicit_kind("ZeroOrOne", "TerminalQuestionMark")
         .node_with_explicit_kind("OneOrMore", "TerminalPlus")
