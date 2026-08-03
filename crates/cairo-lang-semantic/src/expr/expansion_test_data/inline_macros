@@ -442,3 +442,124 @@ error[E2204]: Macro placeholder 'x' is already captured by this rule's pattern. 
  --> lib.cairo:5:21
     ($($x:expr),* ; $x:expr) => { $x };
                     ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a call subtree with a different delimiter than the first rule's, matching the second.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The delimiter of a pattern subtree is part of the pattern, so the braced call falls through the
+// bracketed rule onto the braced one.
+#[feature("user_defined_inline_macros")]
+macro pick {
+    ([$x:ident]) => { 1 };
+
+    ({$x:ident}) => { 2 };
+}
+
+//! > expr_code
+pick!({a})
+
+//! > expanded_code
+2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a call subtree with the same delimiter as the first rule's, matching it (valid).
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro pick {
+    ([$x:ident]) => { 1 };
+
+    ({$x:ident}) => { 2 };
+}
+
+//! > expr_code
+pick!([a])
+
+//! > expanded_code
+1
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an inner subtree of a nested pattern rejected for its delimiter, matching the next rule.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Both rules capture two placeholders per repetition level and repeat over two elements; they
+// differ only in the delimiter of their inner subtree.
+#[feature("user_defined_inline_macros")]
+macro nested {
+    ($([$($a:ident, $b:ident),*]),*) => { 1 };
+
+    ($(($($a:ident, $b:ident),*)),*) => { 2 };
+}
+
+//! > expr_code
+nested!((x, y, z, w), (p, q, r, s))
+
+//! > expanded_code
+2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a mismatched subtree delimiter that is not the first pattern element.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The offending subtree is the second element of the pattern, after one that matched.
+#[feature("user_defined_inline_macros")]
+macro not_first {
+    (($a:ident) [$b:ident]) => { 1 };
+
+    (($a:ident) ($b:ident)) => { 2 };
+}
+
+//! > expr_code
+not_first!((x) (y))
+
+//! > expanded_code
+2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an empty call subtree with a different delimiter than the first rule's.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A subtree whose repetition matches nothing is still matched by its delimiter.
+#[feature("user_defined_inline_macros")]
+macro zero_match {
+    ([$($x:ident),*]) => { 1 };
+
+    ({$($x:ident),*}) => { 2 };
+}
+
+//! > expr_code
+zero_match!({})
+
+//! > expanded_code
+2
+
+//! > diagnostics
