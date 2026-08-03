@@ -1241,6 +1241,21 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                  number of repetitions cannot be determined."
                     .into()
             }
+            SemanticDiagnosticKind::MacroPlaceholderNamedAfterResolverModifier(name) => {
+                format!(
+                    "A macro placeholder may not be named after the resolver modifier `${}`.",
+                    name.long(db)
+                )
+            }
+            SemanticDiagnosticKind::MacroRepetitionSeparatorWithZeroOrOne => {
+                "The `?` macro repetition operator does not take a separator.".into()
+            }
+            SemanticDiagnosticKind::MacroRepetitionWithEmptyBody => {
+                "Macro repetition block is empty, so it matches nothing.".into()
+            }
+            SemanticDiagnosticKind::MacroRuleWithUnparsablePattern => {
+                "This macro rule's pattern could not be parsed.".into()
+            }
             SemanticDiagnosticKind::MacroExpansionFailed(failure) => match failure {
                 MacroExpansionFailure::MissingRepetitionDriver => {
                     "No placeholder of this macro expansion block repeats at its depth, so its \
@@ -1541,6 +1556,12 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 error_code!(E2203)
             }
             SemanticDiagnosticKind::DuplicateMacroPlaceholder(_) => error_code!(E2204),
+            SemanticDiagnosticKind::MacroPlaceholderNamedAfterResolverModifier(_) => {
+                error_code!(E2205)
+            }
+            SemanticDiagnosticKind::MacroRepetitionSeparatorWithZeroOrOne => error_code!(E2206),
+            SemanticDiagnosticKind::MacroRepetitionWithEmptyBody => error_code!(E2207),
+            SemanticDiagnosticKind::MacroRuleWithUnparsablePattern => error_code!(E2208),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1964,6 +1985,10 @@ pub enum SemanticDiagnosticKind<'db> {
     },
     MacroPlaceholderRepDriverMismatch(SmolStrId<'db>),
     MacroRepetitionWithoutRepeatingPlaceholder,
+    MacroPlaceholderNamedAfterResolverModifier(SmolStrId<'db>),
+    MacroRepetitionSeparatorWithZeroOrOne,
+    MacroRepetitionWithEmptyBody,
+    MacroRuleWithUnparsablePattern,
     MacroExpansionFailed(MacroExpansionFailure<'db>),
     UserDefinedInlineMacrosDisabled,
     NonNeverLetElseType,
