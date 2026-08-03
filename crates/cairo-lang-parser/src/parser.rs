@@ -821,10 +821,17 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                         let lparen = self.take::<TerminalLParen<'_>>();
                         let elements = self.expect_wrapped_macro();
                         let rparen = self.parse_token::<TerminalRParen<'_>>();
-                        let separator: OptionTerminalCommaGreen<'_> = match self.peek().kind {
-                            SyntaxKind::TerminalComma => self.take::<TerminalComma<'_>>().into(),
-                            _ => OptionTerminalCommaEmpty::new_green(self.db).into(),
-                        };
+                        // TODO(Dean): Add support for more kinds of separators. The grammar node
+                        // already allows any token, only the parser restricts it to a comma.
+                        let separator: OptionMacroRepetitionSeparatorGreen<'_> =
+                            match self.peek().kind {
+                                SyntaxKind::TerminalComma => MacroRepetitionSeparator::new_green(
+                                    self.db,
+                                    self.take::<TerminalComma<'_>>().into(),
+                                )
+                                .into(),
+                                _ => OptionMacroRepetitionSeparatorEmpty::new_green(self.db).into(),
+                            };
                         let operator = match self.peek().kind {
                             SyntaxKind::TerminalQuestionMark => {
                                 self.take::<TerminalQuestionMark<'_>>().into()
