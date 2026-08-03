@@ -286,6 +286,165 @@ fn check_repetition_body<'db>(
     ))
 }
 
+/// The texts a `$name:expr` placeholder of a macro rule's pattern may be followed by.
+///
+/// An `expr` placeholder captures by parsing the longest expression the call's tokens start with,
+/// so whatever the pattern puts after it is only reachable when the expression grammar cannot
+/// extend over it. These three are the tokens that can never continue an expression, which is the
+/// same set `rustc` allows after its own `expr` fragment.
+const EXPR_FOLLOW_SET: [&str; 3] = [",", ";", "=>"];
+
+/// Something a macro rule's pattern can match right after a given position in it - a token of the
+/// pattern, the opening delimiter of one of its subtrees, or a placeholder.
+///
+/// The pattern or a subtree of it running out is deliberately not one of these: it bounds whatever
+/// the placeholder before it consumes, so every follow set allows it.
+#[derive(Clone, Debug)]
+struct Follower<'db> {
+    /// The text of the pattern node, for reporting. A placeholder's text is its whole
+    /// `$name:kind`, which no follow set holds, so a follow set is a plain text lookup.
+    text: SmolStrId<'db>,
+    ptr: SyntaxStablePtrId<'db>,
+}
+
+impl<'db> Follower<'db> {
+    fn new(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        Self { text: node.get_text_without_trivia(db), ptr: node.stable_ptr(db) }
+    }
+}
+
+/// The things `elements`, a run of a macro rule's pattern, can match first, where `outer` holds the
+/// things the pattern can match right after all of `elements`.
+///
+/// A repetition contributes what its body can match first, and is matched over when it may match no
+/// input at all - because its operator allows zero groups, or because its body can match nothing.
+fn first_followers<'db>(
+    db: &'db dyn Database,
+    elements: &[ast::MacroElement<'db>],
+    outer: &[Follower<'db>],
+) -> Vec<Follower<'db>> {
+    let mut res = vec![];
+    for element in elements {
+        match element {
+            ast::MacroElement::Token(token) => {
+                res.push(Follower::new(db, token.as_syntax_node()));
+                return res;
+            }
+            ast::MacroElement::Param(param) => {
+                res.push(Follower::new(db, param.as_syntax_node()));
+                return res;
+            }
+            ast::MacroElement::Subtree(subtree) => {
+                res.push(Follower::new(db, subtree_open_delimiter(db, &subtree.subtree(db))));
+                return res;
+            }
+            ast::MacroElement::Repetition(repetition) => {
+                let body_first =
+                    first_followers(db, &repetition.elements(db).elements_vec(db), &[]);
+                let may_match_nothing = body_first.is_empty()
+                    || matches!(
+                        repetition.operator(db),
+                        ast::MacroRepetitionOperator::ZeroOrOne(_)
+                            | ast::MacroRepetitionOperator::ZeroOrMore(_)
+                    );
+                res.extend(body_first);
+                if !may_match_nothing {
+                    return res;
+                }
+            }
+        }
+    }
+    res.extend(outer.iter().cloned());
+    res
+}
+
+/// Reports every `$name:expr` placeholder of `elements`, a run of a macro rule's pattern, that the
+/// pattern can follow with something outside [`EXPR_FOLLOW_SET`], including the ones nested in its
+/// repetitions and subtrees.
+///
+/// `outer` holds the things the pattern can match right after all of `elements`.
+///
+/// `Err` if any was reported, for the caller to mark the rule with - the placeholder would swallow
+/// the tokens the pattern puts after it, so the rule must not expand.
+fn check_expr_follow_set<'db>(
+    db: &'db dyn Database,
+    elements: &[ast::MacroElement<'db>],
+    outer: &[Follower<'db>],
+    diagnostics: &mut SemanticDiagnostics<'db>,
+) -> Maybe<()> {
+    let mut res = Ok(());
+    for (index, element) in elements.iter().enumerate() {
+        // What the pattern can match right after this element - also what it can match right after
+        // the last element of this element's body, when it has one.
+        let after = || first_followers(db, &elements[index + 1..], outer);
+        match element {
+            ast::MacroElement::Param(param) => {
+                if !is_expr_param(db, param) {
+                    continue;
+                }
+                let name = param.name(db).as_syntax_node().get_text_without_trivia(db);
+                for follower in after() {
+                    if EXPR_FOLLOW_SET.contains(&follower.text.long(db).as_str()) {
+                        continue;
+                    }
+                    res = Err(diagnostics.report(
+                        follower.ptr,
+                        SemanticDiagnosticKind::MacroExprPlaceholderFollower {
+                            name,
+                            follower: follower.text,
+                        },
+                    ));
+                }
+            }
+            ast::MacroElement::Repetition(repetition) => {
+                // The end of a group is followed either by the separator, when another group comes
+                // after it, or by whatever comes after the repetition itself.
+                let mut body_outer = after();
+                if let ast::OptionTerminalComma::TerminalComma(separator) = repetition.separator(db)
+                {
+                    body_outer.push(Follower::new(db, separator.as_syntax_node()));
+                }
+                res = res.and(check_expr_follow_set(
+                    db,
+                    &repetition.elements(db).elements_vec(db),
+                    &body_outer,
+                    diagnostics,
+                ));
+            }
+            ast::MacroElement::Subtree(subtree) => {
+                // The subtree's closing delimiter bounds its last element, so nothing of the
+                // pattern outside the subtree can follow it.
+                res = res.and(check_expr_follow_set(
+                    db,
+                    &get_macro_elements(db, subtree.subtree(db)).elements_vec(db),
+                    &[],
+                    diagnostics,
+                ));
+            }
+            ast::MacroElement::Token(_) => {}
+        }
+    }
+    res
+}
+
+/// Whether `param`, a placeholder of a macro rule's pattern, captures an expression.
+fn is_expr_param<'db>(db: &'db dyn Database, param: &MacroParam<'db>) -> bool {
+    let ast::OptionParamKind::ParamKind(kind) = param.kind(db) else { return false };
+    matches!(kind.kind(db), ast::MacroParamKind::Expr(_))
+}
+
+/// The opening delimiter of a macro rule pattern's subtree.
+fn subtree_open_delimiter<'db>(
+    db: &'db dyn Database,
+    subtree: &ast::WrappedMacro<'db>,
+) -> SyntaxNode<'db> {
+    match subtree {
+        ast::WrappedMacro::Parenthesized(inner) => inner.lparen(db).as_syntax_node(),
+        ast::WrappedMacro::Braced(inner) => inner.lbrace(db).as_syntax_node(),
+        ast::WrappedMacro::Bracketed(inner) => inner.lbrack(db).as_syntax_node(),
+    }
+}
+
 /// Collects the names of all the placeholders in the given pattern elements, including the ones
 /// nested in inner repetitions and subtrees.
 fn collect_pattern_placeholder_names<'db>(
@@ -396,11 +555,14 @@ fn priv_macro_declaration_data<'db>(
                 rule_err = Err(diagnostics
                     .report(*ptr, SemanticDiagnosticKind::DuplicateMacroPlaceholder(*name)));
             }
-            rule_err = rule_err.and(check_pattern_elements(
-                db,
-                pattern_elements.elements(db),
-                &mut diagnostics,
-            ));
+            rule_err = rule_err
+                .and(check_pattern_elements(db, pattern_elements.elements(db), &mut diagnostics))
+                .and(check_expr_follow_set(
+                    db,
+                    &pattern_elements.elements_vec(db),
+                    &[],
+                    &mut diagnostics,
+                ));
         }
         // The expansion is checked against the nesting depth every placeholder is captured at,
         // which a reused name leaves ambiguous - checking it then reports the ambiguity as
