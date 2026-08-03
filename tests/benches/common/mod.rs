@@ -6,7 +6,7 @@
 //! other — silence those false positives module-wide.
 #![allow(dead_code)]
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
@@ -30,14 +30,20 @@ pub mod canaries;
 pub mod staking;
 
 /// Cargo's target directory, used to place bench outputs and checkouts alongside `target/`.
-/// Honors `CARGO_TARGET_DIR` if set; otherwise derives from the bench binary's own path
-/// (`<target>/release/deps/<bench>-<hash>`), which covers the default cargo layout.
+/// Honors `CARGO_TARGET_DIR` if set; otherwise resolves to `target/` next to this crate's
+/// manifest (`tests/`, a direct workspace member), which is where cargo puts it by default.
+/// `CARGO_MANIFEST_DIR` is baked in at compile time, unlike deriving the target dir from the
+/// running binary's own path: cargo's placement of bench binaries under `target/` (plain
+/// `deps/<bench>-<hash>` vs. `build/<pkg>-<hash>/out/<bench>-<hash>`) isn't a stable contract and
+/// has changed across cargo/toolchain versions.
 pub fn target_dir() -> PathBuf {
     if let Some(dir) = std::env::var_os("CARGO_TARGET_DIR") {
         return PathBuf::from(dir);
     }
-    let exe = std::env::current_exe().expect("current_exe");
-    exe.ancestors().nth(3).expect("bench binary not under <target>/release/deps/").to_path_buf()
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("the `tests` crate is expected to be a direct workspace member")
+        .join("target")
 }
 
 /// Configuration for a benchmarked project.
