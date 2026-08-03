@@ -2552,11 +2552,6 @@ error[E1001]: Missing token ';'.
 m!
   ^
 
-error[E2158]: No matching rule found in inline macro `m`.
- --> lib.cairo:5:1
-m!
-^^
-
 //! > ==========================================================================
 
 //! > Regression for #9993: macro call with `$(...)` without an operator does not ICE.
@@ -2704,3 +2699,106 @@ error[E2199]: Macro placeholder 'b' is from a different repetition than the one 
  --> lib.cairo:2:49
     ($($a:ident),* ; $($b:ident),*) => { $($a + $b + )* 0 };
                                                 ^^
+
+//! > ==========================================================================
+
+//! > Test item-position macro call whose expansion repeats a placeholder-free block.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    () => { $(foo)* };
+}
+
+m!();
+fn foo() {}
+
+//! > expected_diagnostics
+error[E2202]: Repetition in the macro expansion holds no placeholder, so the number of repetitions cannot be determined.
+ --> lib.cairo:2:13
+    () => { $(foo)* };
+            ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test expression-position macro call whose expansion repeats a placeholder-free block.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    () => { $(foo)* 0 };
+}
+fn foo() -> felt252 {
+    m!()
+}
+
+//! > expected_diagnostics
+error[E2202]: Repetition in the macro expansion holds no placeholder, so the number of repetitions cannot be determined.
+ --> lib.cairo:2:13
+    () => { $(foo)* 0 };
+            ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test item-position macro call whose expansion repeats its own placeholder (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro make_fns {
+    ($($name:ident),*) => { $(fn $name() {})* };
+}
+
+make_fns!(first, second);
+fn foo() {}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test item-position macro call with a parse error in its arguments reports only that error.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($x:ident) => { fn $x() {} };
+}
+
+m!([1);
+fn foo() {}
+
+//! > expected_diagnostics
+error[E1001]: Missing token ']'.
+ --> lib.cairo:5:6
+m!([1);
+     ^
+
+//! > ==========================================================================
+
+//! > Test placeholder-free repetition in a macro declared in another module.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+mod helpers {
+    pub macro m {
+        () => { $(foo)* };
+    }
+}
+
+helpers::m!();
+fn foo() {}
+
+//! > expected_diagnostics
+error[E2202]: Repetition in the macro expansion holds no placeholder, so the number of repetitions cannot be determined.
+ --> lib.cairo:3:17
+        () => { $(foo)* };
+                ^^^^^^^

@@ -835,7 +835,8 @@ fn expand_inline_macro<'db>(
         rule.err?;
         let mut matcher_ctx =
             MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
-        let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)?;
+        let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)
+            .map_err(|err| err.report(ctx.diagnostics))?;
 
         let macro_defsite_resolver_data =
             ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
