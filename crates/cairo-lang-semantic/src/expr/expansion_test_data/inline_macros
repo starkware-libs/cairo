@@ -276,6 +276,160 @@ expanded: 2
 
 //! > ==========================================================================
 
+//! > Test calls of a parenthesized rule written with every call delimiter (valid).
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The delimiter a call is written with is not part of any rule's pattern, so a bracketed call
+// matches a rule written with parentheses. Only the delimiters of a subtree inside the pattern are
+// matched - see the cases above.
+#[feature("user_defined_inline_macros")]
+macro outer_delim {
+    ($($x:expr),*) => { ($($x,)*) };
+}
+
+//! > expr_code
+let bracketed = outer_delim![1, 2];
+let braced = outer_delim! {1, 2};
+let empty_bracketed = outer_delim![];
+
+//! > expanded_code
+bracketed: (1,2,) 
+braced: (1,2,) 
+empty_bracketed: ()
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a call matching a later rule after the first rule's `+` matched nothing.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A `+` that matched nothing fails the rule rather than the whole call, so the next rule is tried.
+// The violating group is the non-final one, and the group that did match holds two captures.
+#[feature("user_defined_inline_macros")]
+macro fallthrough {
+    ($([$($x:ident),+]),*) => { 1 };
+
+    ($([$($x:ident),*]),*) => { 2 };
+}
+
+//! > expr_code
+let expanded = fallthrough!([], [a, b]);
+
+//! > expanded_code
+expanded: 2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `+` rule matching at least one capture, next to an empty rule.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro at_least_one {
+    ($($x:ident),+) => { 1 };
+
+    () => { 2 };
+}
+
+//! > expr_code
+let two_captures = at_least_one!(a, b);
+let empty_call = at_least_one!();
+
+//! > expanded_code
+two_captures: 1 
+empty_call: 2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expansion repetition whose operator differs from the pattern's (valid).
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The operator of an expansion repetition is ignored: the block is expanded once per group the
+// captures hold, so a `?` block over a `*` pattern still emits both captures. The block is not the
+// first element of the expansion.
+#[feature("user_defined_inline_macros")]
+macro ignored_op {
+    ($($x:expr),*) => { (0, $($x,)?) };
+}
+
+//! > expr_code
+let some_captures = ignored_op!(1, 2);
+let no_captures = ignored_op!();
+
+//! > expanded_code
+some_captures: (0, 1,2,) 
+no_captures: (0, )
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repeating placeholder broadcast into a deeper expansion block.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// `$k` repeats at depth 1 and is used inside the depth-2 block driven by `$v`, so each `$k` is
+// broadcast to every capture of the `$v` group it encloses.
+#[feature("user_defined_inline_macros")]
+macro bcast {
+    ($(($k:expr, [$($v:expr),*])),*) => { ($($(($k * $v),)*)*) };
+}
+
+//! > expr_code
+let broadcast = bcast!((10, [1, 2]), (20, [3, 4]));
+let empty_non_final_group = bcast!((10, []), (20, [3, 4]));
+
+//! > expanded_code
+broadcast: ((10* 1),(10* 2),(20* 3),(20* 4),) 
+empty_non_final_group: ((20* 3),(20* 4),)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a doubly nested expansion block flattened into one sum.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The two nested blocks hold the whole term `$x +`, so both nesting levels flatten into a single
+// sum that the trailing `0` terminates.
+#[feature("user_defined_inline_macros")]
+macro sum {
+    ($([$($x:expr),*]),*) => { $($($x +)*)* 0 };
+}
+
+//! > expr_code
+let full = sum!([1, 2], [3, 4]);
+let empty_non_final_group = sum!([], [3, 4]);
+
+//! > expanded_code
+full: 1+2+3+4+0 
+empty_non_final_group: 3+4+0
+
+//! > diagnostics
+
+//! > ==========================================================================
+
 //! > Test expansion of panic macro
 
 //! > test_runner_name
