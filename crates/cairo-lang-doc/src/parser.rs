@@ -115,12 +115,15 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
     let mut table_alignment: Vec<Alignment> = Vec::new();
 
     for (event, range) in parser.into_offset_iter() {
+        let mut maybe_write_list_item_prefix = || {
+            if prefix_list_item {
+                write_list_item_prefix(&mut list_nesting, &mut tokens);
+                prefix_list_item = false;
+            }
+        };
         match &event {
             Event::Text(text) => {
-                if prefix_list_item {
-                    write_list_item_prefix(&mut list_nesting, &mut tokens);
-                    prefix_list_item = false;
-                }
+                maybe_write_list_item_prefix();
                 if let Some(link) = current_link.as_mut() {
                     link.label.push_str(text.as_ref());
                     link.label_range = Some(range.clone());
@@ -136,10 +139,7 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
                 }
             }
             Event::Code(code) => {
-                if prefix_list_item {
-                    write_list_item_prefix(&mut list_nesting, &mut tokens);
-                    prefix_list_item = false;
-                }
+                maybe_write_list_item_prefix();
                 let complete_code = format!("`{code}`");
                 if let Some(link) = current_link.as_mut() {
                     link.label.push_str(&complete_code);
@@ -214,9 +214,11 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
                     tokens.push(DocumentationCommentToken::Content("|".to_string()));
                 }
                 Tag::Strong => {
+                    maybe_write_list_item_prefix();
                     tokens.push(DocumentationCommentToken::Content("**".to_string()));
                 }
                 Tag::Emphasis => {
+                    maybe_write_list_item_prefix();
                     tokens.push(DocumentationCommentToken::Content("_".to_string()));
                 }
                 _ => {}
