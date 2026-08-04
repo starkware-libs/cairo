@@ -1067,16 +1067,19 @@ pub struct MacroExpansionResult {
 
 /// The reason the expansion of a macro rule could not be performed.
 ///
-/// No user-writable program currently reaches any of these variants: expansion only runs on
-/// rules that
-/// have passed the declaration-time checks, and each failure below is foreclosed by one of them -
+/// No user-writable program currently reaches [`MacroExpansionFailure::MissingRepetitionDriver`],
+/// [`MacroExpansionFailure::ConflictingRepetitionDrivers`] or
+/// [`MacroExpansionFailure::MissingCapture`]: expansion only runs on rules that have passed the
+/// declaration-time checks, and each of the three is foreclosed by one of them -
 /// [`SemanticDiagnosticKind::UndefinedMacroPlaceholder`],
 /// [`SemanticDiagnosticKind::MacroPlaceholderRepDepthMismatch`],
 /// [`SemanticDiagnosticKind::MacroPlaceholderRepDriverMismatch`],
 /// [`SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder`] and
 /// [`SemanticDiagnosticKind::DuplicateMacroPlaceholder`] (see the notes at the construction
-/// sites). The variants are kept as a backstop, so that a rule a future matcher or checker change
-/// lets through fails with a diagnostic instead of expanding to something arbitrary.
+/// sites). They are kept as a backstop, so that a rule a future matcher or checker change lets
+/// through fails with a diagnostic instead of expanding to something arbitrary.
+/// [`MacroExpansionFailure::EmptyPlusRepetition`] is reachable by design: the number of groups is
+/// only known once a call is matched.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MacroExpansionFailure<'db> {
     /// No placeholder of a `$( ... )` block in the expansion repeats at the block's depth, so the
@@ -1087,6 +1090,9 @@ pub enum MacroExpansionFailure<'db> {
     ConflictingRepetitionDrivers,
     /// A placeholder in the expansion has no captured value for the group being expanded.
     MissingCapture(SmolStrId<'db>),
+    /// A `$( ... )+` block in the expansion expands over zero groups, violating the at-least-once
+    /// promise of its `+` operator.
+    EmptyPlusRepetition,
 }
 
 /// An error preventing the expansion of a macro rule, to be reported by the caller performing the
@@ -1269,6 +1275,16 @@ impl<'db> ExpansionContext<'db, '_> {
     ) -> Result<(), MacroExpansionError<'db>> {
         let db = self.db;
         let group_count = self.group_count(repetition)?;
+        if group_count == 0
+            && matches!(repetition.operator(db), ast::MacroRepetitionOperator::OneOrMore(_))
+        {
+            // `rustc` errors here as well ("this must repeat at least once"): a `+` block promises
+            // at least one repetition, and only the matched call determines the group count.
+            return Err(MacroExpansionError {
+                stable_ptr: repetition.stable_ptr(db).untyped(),
+                failure: MacroExpansionFailure::EmptyPlusRepetition,
+            });
+        }
         let elements = repetition.elements(db);
         for index in 0..group_count {
             self.group_indices.push(index);
