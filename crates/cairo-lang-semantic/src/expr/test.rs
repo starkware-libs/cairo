@@ -1,6 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, NamedLanguageElementId, VarId};
-use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_defs::ids::{NamedLanguageElementId, VarId};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
@@ -11,10 +10,9 @@ use salsa::Database;
 
 use crate::expr::fmt::ExprFormatter;
 use crate::items::function_with_body::FunctionWithBodySemantic;
-use crate::items::module::ModuleSemantic;
 use crate::semantic;
 use crate::test_utils::{
-    SemanticDatabaseForTesting, TestFunction, setup_test_expr, setup_test_function_from_content,
+    SemanticDatabaseForTesting, setup_test_expr, setup_test_function_from_content,
     test_function_diagnostics,
 };
 
@@ -162,79 +160,92 @@ fn test_expr_semantics(
 
 #[test]
 fn test_function_with_param() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_db_for_function(&db_val, "fn foo(a: felt252) {}");
-    let _db = &db_val;
-    let signature = test_function.signature;
-
-    // TODO(spapini): Verify params names and tests after StablePtr feature is added.
-    assert_eq!(signature.params.len(), 1);
-    let param = &signature.params[0];
-    let _param_ty = param.ty;
+    let db = &SemanticDatabaseForTesting::default();
+    let test_function = setup_test_function_from_content(
+        db,
+        indoc! {"
+            #[target_function]
+            fn foo(a: felt252) {}
+        "},
+        None,
+        None,
+    );
+    assert_eq!(
+        format!("{:?}", test_function.unwrap().signature.params.debug(db)),
+        "[Parameter { id: ParamId(test::foo::a), name: \"a\", ty: core::felt252, mutability: \
+         Immutable }]"
+    );
 }
 
 #[test]
 fn test_tuple_type() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function =
-        setup_db_for_function(&db_val, "fn foo(mut a: (felt252, (), (felt252,))) {}");
-    let db = &db_val;
-    let signature = test_function.signature;
-
-    assert_eq!(signature.params.len(), 1);
-    let param = &signature.params[0];
+    let db = &SemanticDatabaseForTesting::default();
+    let test_function = setup_test_function_from_content(
+        db,
+        indoc! {"
+            #[target_function]
+            fn foo(mut a: (felt252, (), (felt252,))) {}
+        "},
+        None,
+        None,
+    );
     assert_eq!(
-        format!("{:?}", param.debug(db)),
-        "Parameter { id: ParamId(test::foo::a), name: \"a\", ty: (core::felt252, (), \
-         (core::felt252,)), mutability: Mutable }"
+        format!("{:?}", test_function.unwrap().signature.params.debug(db)),
+        "[Parameter { id: ParamId(test::foo::a), name: \"a\", ty: (core::felt252, (), \
+         (core::felt252,)), mutability: Mutable }]"
     );
 }
 
 #[test]
 fn test_function_with_return_type() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_db_for_function(&db_val, "fn foo() -> felt252 { 5 }");
-    let _db = &db_val;
-    let signature = test_function.signature;
-
-    // TODO(spapini): Verify params names and tests after StablePtr feature is added.
-    let _ret_ty = signature.return_type;
+    let db = &SemanticDatabaseForTesting::default();
+    let test_function = setup_test_function_from_content(
+        db,
+        indoc! {"
+            #[target_function]
+            fn foo() -> felt252 {
+                5
+            }
+        "},
+        None,
+        None,
+    );
+    assert_eq!(test_function.unwrap().signature.return_type.format(db), "core::felt252");
 }
 
 #[test]
 fn test_expr_var() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_db_for_function(
-        &db_val,
+    let db = &SemanticDatabaseForTesting::default();
+    let test_function = setup_test_function_from_content(
+        db,
         indoc! {"
+            #[target_function]
             fn foo(a: felt252) -> felt252 {
                 a
             }
         "},
-    );
-    let db = &db_val;
-
-    let sdb: &dyn Database = db;
+        None,
+        None,
+    )
+    .unwrap();
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
-        sdb.expr_semantic(test_function.function_id, test_function.body),
+        db.expr_semantic(test_function.function_id, test_function.body),
         crate::Expr::Block
     );
 
     // Check expr.
-    let semantic::ExprVar { var: _, ty: _, stable_ptr: _ } = extract_matches!(
-        sdb.expr_semantic(test_function.function_id, tail.unwrap()),
+    let semantic::ExprVar { var, ty: _, stable_ptr: _ } = extract_matches!(
+        db.expr_semantic(test_function.function_id, tail.unwrap()),
         crate::Expr::Var,
         "Expected a variable."
     );
-    // TODO(spapini): Check Var against param using param.id.
+    assert_eq!(var, VarId::Param(test_function.signature.params[0].id));
 }
 
 #[test]
 fn test_expr_call_failures() {
-    let db_val = SemanticDatabaseForTesting::default();
-    // TODO(spapini): Add types.
-    let (test_expr, diagnostics) = setup_test_expr(&db_val, "foo()", "", "", None).split();
-    let db = &db_val;
+    let db = &SemanticDatabaseForTesting::default();
+    let (test_expr, diagnostics) = setup_test_expr(db, "foo()", "", "", None).split();
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     // Check expr.
@@ -248,12 +259,11 @@ fn test_expr_call_failures() {
 
         "}
     );
-    let sdb: &dyn Database = db;
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
     assert_eq!(
         format!(
             "{:?}",
-            sdb.expr_semantic(test_expr.function_id, test_expr.expr_id).debug(&expr_formatter)
+            db.expr_semantic(test_expr.function_id, test_expr.expr_id).debug(&expr_formatter)
         ),
         "Missing(ExprMissing { ty: <missing> })"
     );
@@ -261,48 +271,34 @@ fn test_expr_call_failures() {
 
 #[test]
 fn test_function_body() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_db_for_function(
-        &db_val,
+    let db = &SemanticDatabaseForTesting::default();
+    let test_function = setup_test_function_from_content(
+        db,
         indoc! {"
+            #[target_function]
             fn foo(a: felt252) {
                 a;
             }
         "},
+        None,
+        None,
     );
-    let db = &db_val;
-    let item_id = db
-        .module_item_by_name(test_function.module_id, SmolStrId::from(db, "foo"))
-        .unwrap()
-        .unwrap();
-
-    let function_id =
-        FunctionWithBodyId::Free(extract_matches!(item_id, ModuleItemId::FreeFunction));
-    let sdb: &dyn Database = db;
-    let body = sdb.function_body_expr(function_id).unwrap();
+    let function_id = test_function.unwrap().function_id;
+    let body = db.function_body_expr(function_id).unwrap();
 
     // Test the resulting semantic function body.
     let semantic::ExprBlock { statements, .. } = extract_matches!(
-        sdb.expr_semantic(test_function.function_id, body),
+        db.expr_semantic(function_id, body),
         crate::Expr::Block,
         "Expected a block."
     );
     assert_eq!(statements.len(), 1);
-    let expr = sdb.expr_semantic(
-        test_function.function_id,
-        extract_matches!(
-            sdb.statement_semantic(test_function.function_id, statements[0]),
-            crate::Statement::Expr
-        )
-        .expr,
+    let expr = db.expr_semantic(
+        function_id,
+        extract_matches!(db.statement_semantic(function_id, statements[0]), crate::Statement::Expr)
+            .expr,
     );
     let semantic::ExprVar { var, ty: _, stable_ptr: _ } = extract_matches!(expr, crate::Expr::Var);
     let param = extract_matches!(var, VarId::Param);
     assert_eq!(param.name(db).long(db), "a");
-}
-
-/// Returns the semantic model of the given single-function code.
-fn setup_db_for_function<'db>(db: &'db dyn Database, foo_code: &str) -> TestFunction<'db> {
-    setup_test_function_from_content(db, &format!("#[target_function]\n{foo_code}"), None, None)
-        .unwrap()
 }
