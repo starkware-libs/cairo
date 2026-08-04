@@ -192,24 +192,36 @@ Convention in this codebase:
 
 ### Before/After Comparison (Optimizations)
 
+Do NOT hand-roll a before/after runner — delegate to the shared
+`cairo_lang_lowering::test_runner::run_lowering_phases_test`. It lowers the test function up to
+`stage`, applies the `before_phases` list to get `before`, applies `after_phases` on a clone to get
+`after`, and emits the standard tags (`semantic_diagnostics`, `before`, `after`,
+`lowering_diagnostics`):
+
 ```rust
 fn test_optimization(inputs: &OrderedHashMap<String, String>, _args: &...) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, _) = setup_test_function(db, inputs).split();
-
-    let lowered = db.lowered_body(...);
-    let before = formatted_lowered(db, Some(lowered));
-
-    let mut modified = (*lowered).clone();
-    run_optimization(&mut modified);
-    let after = formatted_lowered(db, Some(&modified));
-
-    TestRunnerResult::success(OrderedHashMap::from([
-        ("before".into(), before),
-        ("after".into(), after),
-    ]))
+    run_lowering_phases_test(
+        inputs,
+        LoweringStage::PreOptimizations,
+        &[OptimizationPhase::ApplyInlining { enable_const_folding: true }],
+        &[OptimizationPhase::MyNewOptimization],
+    )
 }
 ```
+
+Two variants take one extra parameter each, for tests the plain entry point cannot express:
+
+- `run_lowering_phases_test_with_db(db, inputs, stage, before_phases, after_phases)` — runs on the
+  `LoweringDatabaseForTesting` you pass in instead of a default one, for tests that must configure
+  the database *before* the test function is lowered. `early_unsafe_panic_test.rs` uses it to set
+  `Flag::UnsafePanic`.
+- `run_lowering_phases_test_with_extra_outputs(inputs, stage, before_phases, after_phases,
+  extra_outputs)` — `extra_outputs` is a `|before, after| -> Vec<(String, String)>` closure whose
+  entries are appended as output tags after the standard four; it is not called if the function
+  failed to lower. `reboxing_test.rs` uses it to emit a `candidates` tag computed from `before`.
+
+The optimization must have an `OptimizationPhase` variant; steps hardcoded in `lowered_body`
+(e.g. `scrub_units`) keep bespoke runners.
 
 ### With Diagnostics
 

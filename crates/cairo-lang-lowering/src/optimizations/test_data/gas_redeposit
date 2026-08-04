@@ -1,7 +1,7 @@
 //! > Test gas redeposit skip.
 
 //! > test_runner_name
-GetRedepositTestRunner
+test_gas_redeposit
 
 //! > cairo_code
 #[inline(never)]
@@ -93,7 +93,7 @@ End:
 //! > Test gas redeposit.
 
 //! > test_runner_name
-GetRedepositTestRunner
+test_gas_redeposit
 
 //! > cairo_code
 #[inline(never)]
