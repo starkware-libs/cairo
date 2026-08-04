@@ -3,20 +3,16 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[inline(never)]
+fn immovable<T>(t: T) -> T {
+    t
+}
+#[target_function]
 fn foo() {
     let a = (1, 2);
     let (_x, _y) = immovable(a);
     let (_x, _y) = immovable((1, 2));
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(never)]
-fn immovable<T>(t: T) -> T {
-    t
 }
 
 //! > semantic_diagnostics
@@ -42,15 +38,11 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(t: (felt252, u8)) -> u8 {
     t.1
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -71,15 +63,11 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(t: (felt252, (u8, u16))) -> u16 {
     t.1.1
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -101,16 +89,12 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut t: (felt252, u8)) -> (felt252, u8) {
     t.0 = 5;
     t
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -133,18 +117,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+fn bar(ref x: felt252) {
+    x = 7;
+}
+#[target_function]
 fn foo(mut t: (felt252, u8)) -> (felt252, u8) {
     bar(ref t.0);
     t
-}
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar(ref x: felt252) {
-    x = 7;
 }
 
 //! > semantic_diagnostics
@@ -168,18 +148,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+fn bar(ref x: (felt252, u8)) {
+    x.1 = 7;
+}
+#[target_function]
 fn foo(mut t: ((felt252, u8), u16)) -> ((felt252, u8), u16) {
     bar(ref t.0);
     t
-}
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar(ref x: (felt252, u8)) {
-    x.1 = 7;
 }
 
 //! > semantic_diagnostics
@@ -205,16 +181,12 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(t: (felt252, u8)) -> @u8 {
     let s = @t;
     s.1
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -236,18 +208,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(w: Wrapper) -> @u8 {
-    w.inner.1
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct Wrapper {
     inner: @(felt252, u8),
+}
+#[target_function]
+fn foo(w: Wrapper) -> @u8 {
+    w.inner.1
 }
 
 //! > semantic_diagnostics

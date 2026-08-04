@@ -3,17 +3,13 @@
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-main
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct A {
     a: felt252,
     b: felt252,
 }
-
-//! > function_code
+#[target_function]
 fn main(a: Box<A>) -> Box<felt252> {
     BoxTrait::new(a.b)
 }
@@ -52,18 +48,14 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-multi_member
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct Point {
     x: u32,
     y: u32,
     z: u32,
 }
-
-//! > function_code
+#[target_function]
 fn multi_member(p: Box<Point>) -> (Box<u32>, Box<u32>) {
     (BoxTrait::new(p.x), BoxTrait::new(p.z))
 }
@@ -110,10 +102,7 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-nested_struct
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct Inner {
     value: felt252,
@@ -124,8 +113,7 @@ struct Outer {
     inner: Inner,
     other: felt252,
 }
-
-//! > function_code
+#[target_function]
 fn nested_struct(o: Box<Outer>) -> Box<felt252> {
     BoxTrait::new(o.inner.value)
 }
@@ -167,10 +155,7 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-with_snapshot
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct Data {
     non_copy: NonCopy,
@@ -181,8 +166,7 @@ struct Data {
 struct NonCopy {
     a: felt252,
 }
-
-//! > function_code
+#[target_function]
 fn with_snapshot(data: Box<@Data>) -> Box<@NonCopy> {
     BoxTrait::new(data.unbox().non_copy)
 }
@@ -221,15 +205,11 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-rebox_whole
-
-//! > module_code
+//! > cairo_code
 struct Simple {
     value: felt252,
 }
-
-//! > function_code
+#[target_function]
 fn rebox_whole(s: Box<Simple>) -> Box<Simple> {
     BoxTrait::new(s.unbox())
 }
@@ -265,17 +245,13 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-no_opportunity
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct Data {
     a: felt252,
     b: felt252,
 }
-
-//! > function_code
+#[target_function]
 fn no_opportunity(d: Box<Data>, x: felt252) -> Box<felt252> {
     let _unused = d.a;
     BoxTrait::new(x)
@@ -310,17 +286,13 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-enum_rebox
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 enum MyEnum {
     A: u32,
     B: u32,
 }
-
-//! > function_code
+#[target_function]
 fn enum_rebox(e: Box<MyEnum>) -> Box<u32> {
     let a = match e.unbox() {
         MyEnum::A(x) => x,
@@ -396,12 +368,8 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-tuple_rebox
-
-//! > module_code
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn tuple_rebox(t: Box<(u32, felt252, u64)>) -> Box<felt252> {
     let (_, mid, _) = t.unbox();
     BoxTrait::new(mid)
@@ -441,19 +409,15 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-non_copy_struct_rebox
-
 //! > TODO(eytan-starkware): Add support for non-copy structs where applicable
 
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct NonCopyStruct {
     arr: Array<felt252>,
     val: felt252,
 }
-
-//! > function_code
+#[target_function]
 fn non_copy_struct_rebox(s: Box<NonCopyStruct>) -> Box<felt252> {
     BoxTrait::new(s.unbox().val)
 }
@@ -491,12 +455,8 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-non_copy_tuple_rebox
-
-//! > module_code
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn non_copy_tuple_rebox(t: Box<(Array<felt252>, felt252)>) -> Box<felt252> {
     let (_, val) = t.unbox();
     BoxTrait::new(val)
@@ -535,19 +495,15 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-branch_mut_unbox
-
 //! > TODO(eytan-starkware): Support equality tracking and replacing the original deconstruct statement
 
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct Pair {
     left: felt252,
     right: felt252,
 }
-
-//! > function_code
+#[target_function]
 fn branch_mut_unbox(flag: bool, p1: Box<Pair>, p2: Box<Pair>) -> Box<felt252> {
     let mut x = p1.unbox();
     if flag {
@@ -629,12 +585,9 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-main
-
 //! > TODO(eytan-starkware): Support non-drop by unboxing each member.
 
-//! > module_code
+//! > cairo_code
 #[derive(Copy)]
 struct NonDrop {
     b: felt252,
@@ -645,8 +598,7 @@ struct A {
     a: felt252,
     non_drop: NonDrop,
 }
-
-//! > function_code
+#[target_function]
 fn main(a: Box<A>) -> (Box<felt252>, NonDrop) {
     let unboxed = a.unbox();
     (BoxTrait::new(unboxed.a), unboxed.non_drop)
@@ -687,10 +639,7 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-main
-
-//! > module_code
+//! > cairo_code
 use core::box::BoxTrait;
 
 #[derive(Copy)]
@@ -703,8 +652,7 @@ struct A {
     a: felt252,
     non_drop: NonDrop,
 }
-
-//! > function_code
+#[target_function]
 fn main(a: Box<@A>) -> (Box<@felt252>, @NonDrop) {
     let a = a.unbox();
     (BoxTrait::new(a.a), a.non_drop)
@@ -748,21 +696,17 @@ End:
 //! > test_runner_name
 test_reboxing_analysis
 
-//! > function_name
-mixed_reboxing
-
 //! > TODO(eytan-starkware): When removing demand for Copy, check no double
 
 //! >     into_box remain
 
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct Point {
     x: felt252,
     y: felt252,
 }
-
-//! > function_code
+#[target_function]
 fn mixed_reboxing(p: Box<Point>, flag: bool) -> Box<felt252> {
     if flag {
         let unboxed = p.unbox();

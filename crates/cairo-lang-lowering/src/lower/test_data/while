@@ -3,7 +3,8 @@
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(y: felt252) -> felt252 {
     let mut x = 5;
     while x != 0 {
@@ -11,9 +12,6 @@ fn foo(y: felt252) -> felt252 {
     }
     x
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -28,7 +26,7 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 5
-  (v3: core::felt252, v2: ()) <- test::foo[51-95](v1)
+  (v3: core::felt252, v2: ()) <- test::foo[70-114](v1)
 End:
   Return(v3)
 
@@ -37,7 +35,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95]{5, }(v0, v1)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[70-114]{5, }(v0, v1)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -84,7 +82,7 @@ blk1:
 Statements:
   (v8: core::felt252) <- 1
   (v9: core::felt252) <- core::Felt252Sub::sub(v1, v8)
-  (v11: core::felt252, v10: ()) <- test::foo[51-95](v9)
+  (v11: core::felt252, v10: ()) <- test::foo[70-114](v9)
 End:
   Return(v11, v10)
 
@@ -127,7 +125,7 @@ Statements:
   (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
   (v13: core::felt252) <- 1
   (v14: core::felt252) <- core::felt252_sub(v2, v13)
-  (v15: core::RangeCheck, v16: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95](v3, v12, v14)
+  (v15: core::RangeCheck, v16: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[70-114](v3, v12, v14)
 End:
   Return(v15, v16, v17)
 
@@ -139,7 +137,7 @@ End:
   Return(v5, v6, v19)
 
 
-Final lowering of specialized call "test::foo[51-95]{5, }":
+Final lowering of specialized call "test::foo[70-114]{5, }":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
@@ -153,7 +151,7 @@ blk1:
 Statements:
   (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
   (v7: core::felt252) <- 4
-  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95](v2, v6, v7)
+  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[70-114](v2, v6, v7)
 End:
   Return(v8, v9, v10)
 
@@ -171,7 +169,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(ref arr: Array<felt252>, mut x: felt252) -> felt252 {
     while let true = (x != 0) {
         x = x - 1;
@@ -179,9 +178,6 @@ fn foo(ref arr: Array<felt252>, mut x: felt252) -> felt252 {
     }
     x
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -195,7 +191,7 @@ Main:
 Parameters: v0: core::array::Array::<core::felt252>, v1: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt252, v2: ()) <- test::foo[61-133](v1)
+  (v3: core::felt252, v2: ()) <- test::foo[80-152](v1)
 End:
   Return(v0, v3)
 
@@ -292,7 +288,15 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B,
+    C,
+}
+#[allow(extern_outside_corelib)]
+extern fn a() -> MyEnum nopanic;
+#[target_function]
 fn foo() -> felt252 {
     let mut y = 0;
     while let MyEnum::A(x) = a() {
@@ -301,18 +305,6 @@ fn foo() -> felt252 {
     y = y + 1;
     return y;
 }
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: felt252,
-    B,
-    C,
-}
-#[allow(extern_outside_corelib)]
-extern fn a() -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -326,7 +318,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 0
-  (v2: core::felt252, v1: ()) <- test::foo[41-100](v0)
+  (v2: core::felt252, v1: ()) <- test::foo[60-119](v0)
   (v3: core::felt252) <- 1
   (v4: core::felt252) <- core::Felt252Add::add(v2, v3)
 End:
@@ -337,7 +329,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100]{0, }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[60-119]{0, }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -382,7 +374,7 @@ End:
 blk1:
 Statements:
   (v4: core::felt252) <- core::Felt252Add::add(v0, v1)
-  (v6: core::felt252, v5: ()) <- test::foo[41-100](v4)
+  (v6: core::felt252, v5: ()) <- test::foo[60-119](v4)
 End:
   Return(v6, v5)
 
@@ -433,7 +425,7 @@ blk2:
 Statements:
   (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
   (v9: core::felt252) <- core::felt252_add(v2, v7)
-  (v10: core::RangeCheck, v11: core::gas::GasBuiltin, v12: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100](v3, v8, v9)
+  (v10: core::RangeCheck, v11: core::gas::GasBuiltin, v12: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[60-119](v3, v8, v9)
 End:
   Return(v10, v11, v12)
 
@@ -465,7 +457,7 @@ End:
   Return(v5, v6, v20)
 
 
-Final lowering of specialized call "test::foo[41-100]{0, }":
+Final lowering of specialized call "test::foo[60-119]{0, }":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
@@ -488,7 +480,7 @@ End:
 blk2:
 Statements:
   (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
-  (v9: core::RangeCheck, v10: core::gas::GasBuiltin, v11: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100](v2, v8, v7)
+  (v9: core::RangeCheck, v10: core::gas::GasBuiltin, v11: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[60-119](v2, v8, v7)
 End:
   Return(v9, v10, v11)
 

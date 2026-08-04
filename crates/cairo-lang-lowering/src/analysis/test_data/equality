@@ -3,17 +3,13 @@
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: Array<felt252>) -> (@Array<felt252>, @Array<felt252>) {
     let snap1 = @x;
     let snap2 = @x;
     (snap1, snap2)
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -38,15 +34,11 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) -> felt252 {
     x + y
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -69,18 +61,14 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: Array<felt252>) -> (@Array<felt252>, @Array<felt252>, @Array<felt252>) {
     let snap1 = @x;
     let snap2 = @x;
     let snap3 = @x;
     (snap1, snap2, snap3)
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -106,17 +94,13 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> (Box<felt252>, Box<felt252>) {
     let box1 = BoxTrait::new(x);
     let box2 = BoxTrait::new(x);
     (box1, box2)
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -141,21 +125,17 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
-fn foo(a: felt252, b: felt252) -> (MyStruct, felt252, felt252) {
-    let s = MyStruct { x: a, y: b };
-    let MyStruct { x, y } = s;
-    (MyStruct { x, y }, x, y)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct MyStruct {
     x: felt252,
     y: felt252,
+}
+#[target_function]
+fn foo(a: felt252, b: felt252) -> (MyStruct, felt252, felt252) {
+    let s = MyStruct { x: a, y: b };
+    let MyStruct { x, y } = s;
+    (MyStruct { x, y }, x, y)
 }
 
 //! > semantic_diagnostics
@@ -182,19 +162,15 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
-fn foo(x: felt252) -> MyEnum {
-    MyEnum::A(x)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 enum MyEnum {
     A: felt252,
     B: felt252,
+}
+#[target_function]
+fn foo(x: felt252) -> MyEnum {
+    MyEnum::A(x)
 }
 
 //! > semantic_diagnostics
@@ -218,7 +194,8 @@ A(v0) = v1
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     let snap1 = @x;
     let result = match x {
@@ -228,14 +205,9 @@ fn foo(x: felt252) -> felt252 {
     result
 }
 
-//! > function_name
-foo
-
-//! > module_code
-
 //! > semantic_diagnostics
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:2:9
+ --> lib.cairo:3:9
     let snap1 = @x;
         ^^^^^
 
@@ -279,18 +251,14 @@ Block 2:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(opt: Option<felt252>) -> felt252 {
     match opt {
         Option::Some(val) => val,
         Option::None => 0,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -332,7 +300,8 @@ None(v2) = v0
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(arr: Array<felt252>) -> @Array<felt252> {
     match arr.len() {
         0 => {
@@ -345,11 +314,6 @@ fn foo(arr: Array<felt252>) -> @Array<felt252> {
         },
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -395,7 +359,8 @@ Block 2:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> (Box<Box<felt252>>, felt252) {
     let box1 = BoxTrait::new(x);
     let box2 = BoxTrait::new(box1);
@@ -404,11 +369,6 @@ fn foo(x: felt252) -> (Box<Box<felt252>>, felt252) {
     // Return both to prevent optimization from eliminating the boxes
     (box2, unbox2)
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -435,18 +395,14 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: Array<felt252>) -> @Box<@Array<felt252>> {
     let snap = @x;
     let boxed = BoxTrait::new(snap);
     let box_snap = @boxed;
     box_snap
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -473,21 +429,17 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[inline(never)]
+fn identity(x: felt252) -> felt252 {
+    x
+}
+#[target_function]
 fn foo(boxed: Box<felt252>) -> Box<felt252> {
     let unboxed = boxed.unbox();
     let modified = identity(unboxed);
     let reboxed = BoxTrait::new(modified);
     reboxed
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(never)]
-fn identity(x: felt252) -> felt252 {
-    x
 }
 
 //! > semantic_diagnostics
@@ -513,7 +465,16 @@ Box(v1) = v0, Box(v2) = v3
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+#[inline(never)]
+fn use_enum(e: MyEnum) {}
+#[target_function]
 fn foo(cond: bool, x: felt252) -> felt252 {
     // Construct same enum variant in both branches
     let e = if cond {
@@ -526,19 +487,6 @@ fn foo(cond: bool, x: felt252) -> felt252 {
     use_enum(e);
     x
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-enum MyEnum {
-    A: felt252,
-    B: felt252,
-}
-
-#[inline(never)]
-fn use_enum(e: MyEnum) {}
 
 //! > semantic_diagnostics
 
@@ -590,7 +538,16 @@ Block 3:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+#[inline(never)]
+fn use_enum(e: MyEnum) {}
+#[target_function]
 fn foo(cond: bool, x: felt252, y: felt252) -> felt252 {
     // Construct different enum variants in branches
     let e = if cond {
@@ -603,19 +560,6 @@ fn foo(cond: bool, x: felt252, y: felt252) -> felt252 {
     use_enum(e);
     x
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-enum MyEnum {
-    A: felt252,
-    B: felt252,
-}
-
-#[inline(never)]
-fn use_enum(e: MyEnum) {}
 
 //! > semantic_diagnostics
 
@@ -667,7 +611,8 @@ Block 3:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(boxed: Box<felt252>) -> (@Box<felt252>, Box<felt252>) {
     let snap = @boxed;
     let desnapped = *snap;
@@ -675,11 +620,6 @@ fn foo(boxed: Box<felt252>) -> (@Box<felt252>, Box<felt252>) {
     let reboxed = BoxTrait::new(unboxed);
     (snap, reboxed)
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -706,7 +646,10 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[inline(never)]
+fn use_snap(x: @felt252) {}
+#[target_function]
 fn foo(boxed: Box<felt252>) -> Box<felt252> {
     let unboxed = boxed.unbox();
     let snap = @unboxed;
@@ -714,13 +657,6 @@ fn foo(boxed: Box<felt252>) -> Box<felt252> {
     let reboxed = BoxTrait::new(unboxed);
     reboxed
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(never)]
-fn use_snap(x: @felt252) {}
 
 //! > semantic_diagnostics
 
@@ -746,18 +682,14 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(boxed: Box<u32>) -> Box<felt252> {
     let unboxed: u32 = boxed.unbox();
     let converted: felt252 = unboxed.into();
     let reboxed = BoxTrait::new(converted);
     reboxed
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -782,19 +714,15 @@ Box(v1) = v0, Box(v2) = v3
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop, Copy)]
+struct EmptyStruct {}
+#[target_function]
 fn foo() -> (EmptyStruct, EmptyStruct) {
     let s1 = EmptyStruct {};
     let s2 = EmptyStruct {};
     (s1, s2)
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop, Copy)]
-struct EmptyStruct {}
 
 //! > semantic_diagnostics
 
@@ -819,16 +747,7 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
-fn foo(a: felt252) -> Outer {
-    let inner = Inner { x: a };
-    Outer { inner }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct Inner {
     x: felt252,
@@ -837,6 +756,11 @@ struct Inner {
 #[derive(Drop, Copy)]
 struct Outer {
     inner: Inner,
+}
+#[target_function]
+fn foo(a: felt252) -> Outer {
+    let inner = Inner { x: a };
+    Outer { inner }
 }
 
 //! > semantic_diagnostics
@@ -861,7 +785,15 @@ test::Inner(v0) = v1, test::Outer(v1) = v2
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop, Copy)]
+struct MyStruct {
+    a: @Array<felt252>,
+}
+
+#[inline(never)]
+fn use_struct(s: @MyStruct) {}
+#[target_function]
 fn foo(arr: Array<felt252>, cond: bool) -> @MyStruct {
     let snap = @arr;
     let s = if cond {
@@ -875,18 +807,6 @@ fn foo(arr: Array<felt252>, cond: bool) -> @MyStruct {
     };
     @s
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop, Copy)]
-struct MyStruct {
-    a: @Array<felt252>,
-}
-
-#[inline(never)]
-fn use_struct(s: @MyStruct) {}
 
 //! > semantic_diagnostics
 
@@ -943,18 +863,14 @@ Block 3:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252, b: felt252) -> Array<felt252> {
     let mut arr = ArrayTrait::new();
     arr.append(a);
     arr.append(b);
     arr
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -983,7 +899,8 @@ test_equality_analysis
 Only the last MAX_ARRAY_TRACKED_ITEMS elements stay individually tracked; everything before
 them is forgotten into a placeholder prefix (rendered `?(*)`).
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(
     a0: felt252, a1: felt252, a2: felt252, a3: felt252, a4: felt252, a5: felt252, a6: felt252,
 ) -> Array<felt252> {
@@ -997,11 +914,6 @@ fn foo(
     arr.append(a6);
     arr
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1035,7 +947,8 @@ test_equality_analysis
 The popped element comes off the forgotten prefix, so its value is unknown; the remainder
 stays tracked under a fresh prefix.
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(
     a0: felt252, a1: felt252, a2: felt252, a3: felt252, a4: felt252, a5: felt252, a6: felt252,
 ) -> felt252 {
@@ -1052,11 +965,6 @@ fn foo(
         None => 0,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1113,7 +1021,8 @@ Both branches build the same 7-element array, whose forgotten prefix has a branc
 placeholder; the merge keeps the shared suffix elements under a fresh placeholder, and the
 post-merge append extends the merged relation.
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(
     a0: felt252,
     a1: felt252,
@@ -1146,11 +1055,6 @@ fn foo(
     arr.append(a7);
     arr
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1215,7 +1119,10 @@ core::array::Array::<core::felt252>[?(*), v2, v3, v4, v5, v6] = v19, core::array
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn use_arr(x: @Array<felt252>) nopanic;
+#[target_function]
 fn foo(a: felt252, b: felt252) -> Array<felt252> {
     let mut arr = ArrayTrait::new();
     arr.append(a);
@@ -1231,13 +1138,6 @@ fn foo(a: felt252, b: felt252) -> Array<felt252> {
     use_arr(@result);
     result
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn use_arr(x: @Array<felt252>) nopanic;
 
 //! > semantic_diagnostics
 
@@ -1327,7 +1227,10 @@ test_equality_analysis
 
 //! > This allows the analysis to track Box(@a)/Box(@b) relationships when popping.
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn use_snap_felt(x: @felt252) nopanic;
+#[target_function]
 fn foo(a: felt252, b: felt252) {
     let mut arr = ArrayTrait::new();
     arr.append(a);
@@ -1346,13 +1249,6 @@ fn foo(a: felt252, b: felt252) {
         Option::None => {},
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn use_snap_felt(x: @felt252) nopanic;
 
 //! > semantic_diagnostics
 
@@ -1435,7 +1331,10 @@ test_equality_analysis
 
 //! > This allows the analysis to track Box(@a)/Box(@b) relationships when popping.
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn use_snap_felt(x: @felt252) nopanic;
+#[target_function]
 fn foo(a: felt252, b: felt252) {
     let mut arr = ArrayTrait::new();
     arr.append(a);
@@ -1454,13 +1353,6 @@ fn foo(a: felt252, b: felt252) {
         Option::None => {},
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn use_snap_felt(x: @felt252) nopanic;
 
 //! > semantic_diagnostics
 
@@ -1541,7 +1433,10 @@ Block 4:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn use_snap_felt(x: @felt252) nopanic;
+#[target_function]
 fn foo(mut arr: Array<felt252>) {
     arr.append(3);
     let mut span = arr.span();
@@ -1550,13 +1445,6 @@ fn foo(mut arr: Array<felt252>) {
         Option::None => {},
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn use_snap_felt(x: @felt252) nopanic;
 
 //! > semantic_diagnostics
 
@@ -1609,7 +1497,8 @@ test_equality_analysis
 The branches build arrays of different lengths (sharing their trailing elements); the
 common trailing elements survive the merge behind a fresh forgotten prefix.
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a0: felt252, a1: felt252, a2: felt252, a3: felt252, c: bool) -> Array<felt252> {
     let mut arr = ArrayTrait::new();
     if c {
@@ -1623,11 +1512,6 @@ fn foo(a0: felt252, a1: felt252, a2: felt252, a3: felt252, c: bool) -> Array<fel
     arr.append(a3);
     arr
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1688,7 +1572,8 @@ One branch's array has a forgotten prefix while the other's is fully known (shar
 trailing elements); all the common trailing elements survive the merge behind a fresh,
 possibly-empty forgotten prefix.
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(
     a0: felt252,
     a1: felt252,
@@ -1717,11 +1602,6 @@ fn foo(
     arr.append(a6);
     arr
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1787,7 +1667,8 @@ test_equality_analysis
 The array is built before the branch and untouched by it, so both arms reach the merge with
 the same placeholder and the relation survives intact.
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(
     a0: felt252,
     a1: felt252,
@@ -1813,11 +1694,6 @@ fn foo(
     arr.append(x);
     arr
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1876,7 +1752,8 @@ core::array::Array::<core::felt252>[?(*), v1, v2, v3, v4, v5] = v14, core::array
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut arr: Array<felt252>) -> Array<felt252> {
     match arr.pop_front() {
         Option::Some(_val) => arr,
@@ -1886,11 +1763,6 @@ fn foo(mut arr: Array<felt252>) -> Array<felt252> {
         },
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1934,7 +1806,10 @@ Block 2:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn use_boxes(a: Box<Option<felt252>>, b: Box<Option<felt252>>) nopanic;
+#[target_function]
 fn foo(x: felt252, y: felt252) {
     let a = Option::Some(x);
     let b: Option<felt252> = Option::None;
@@ -1942,13 +1817,6 @@ fn foo(x: felt252, y: felt252) {
     let box_b = BoxTrait::new(b);
     use_boxes(box_a, box_b);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[allow(extern_outside_corelib)]
-extern fn use_boxes(a: Box<Option<felt252>>, b: Box<Option<felt252>>) nopanic;
 
 //! > semantic_diagnostics
 
@@ -1976,20 +1844,7 @@ Block 0:
 //! > test_runner_name
 test_equality_analysis
 
-//! > function_code
-fn foo(x: @Array<felt252>, cond: bool) {
-    let s = if cond {
-        MyStruct { a: x, b: 1 }
-    } else {
-        MyStruct { a: x, b: 2 }
-    };
-    use_struct(@s);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct MyStruct {
     a: @Array<felt252>,
@@ -1998,6 +1853,15 @@ struct MyStruct {
 
 #[inline(never)]
 fn use_struct(s: @MyStruct) {}
+#[target_function]
+fn foo(x: @Array<felt252>, cond: bool) {
+    let s = if cond {
+        MyStruct { a: x, b: 1 }
+    } else {
+        MyStruct { a: x, b: 2 }
+    };
+    use_struct(@s);
+}
 
 //! > semantic_diagnostics
 

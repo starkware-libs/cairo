@@ -3,14 +3,12 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> ByteArray {
     let x = "hello";
     x
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -34,13 +32,11 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> ByteArray {
     "This is a string of length 31!!"
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -66,13 +62,11 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> ByteArray {
     "This is a string longer than 31 characters."
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -98,13 +92,11 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> ByteArray {
     "This is a very very long string. It is longer than 62 characters!"
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -132,14 +124,12 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> ByteArray {
     let y = "";
     y
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -163,14 +153,12 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> ByteArray {
     let x = "hello";
     x + " world"
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

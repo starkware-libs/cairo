@@ -3,13 +3,7 @@
 //! > test_runner_name
 test_function_lowering
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro generate_unreachable {
     () => {
         fn unreachable_code() {
@@ -19,6 +13,8 @@ macro generate_unreachable {
     };
 }
 generate_unreachable!();
+#[target_function]
+fn foo() {}
 
 //! > semantic_diagnostics
 

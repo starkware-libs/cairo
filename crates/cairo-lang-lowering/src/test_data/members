@@ -3,16 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(ref a: A) {
-    a.f = 5;
-    mutate(ref a.b.c.f);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     b: B,
     f: felt252,
@@ -27,6 +18,11 @@ struct C {
 }
 #[allow(extern_outside_corelib)]
 extern fn mutate(ref f: felt252) nopanic;
+#[target_function]
+fn foo(ref a: A) {
+    a.f = 5;
+    mutate(ref a.b.c.f);
+}
 
 //! > semantic_diagnostics
 
@@ -54,16 +50,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(ref my_struct: MyStruct) {
-    let result = sub_three(my_struct.value);
-    my_struct.value = result;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct MyStruct {
     value: felt252,
@@ -73,6 +60,11 @@ struct MyStruct {
 #[inline(never)]
 fn sub_three(value: felt252) -> felt252 {
     value - 3
+}
+#[target_function]
+fn foo(ref my_struct: MyStruct) {
+    let result = sub_three(my_struct.value);
+    my_struct.value = result;
 }
 
 //! > semantic_diagnostics

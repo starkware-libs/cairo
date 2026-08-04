@@ -3,15 +3,11 @@
 //! > test_runner_name
 test_analysis(analysis: def_site)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) -> felt252 {
     x + y
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -37,7 +33,8 @@ End:
 //! > test_runner_name
 test_analysis(analysis: def_site)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: bool) -> felt252 {
     if x {
         1
@@ -45,11 +42,6 @@ fn foo(x: bool) -> felt252 {
         2
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -91,7 +83,8 @@ End:
 //! > test_runner_name
 test_analysis(analysis: def_site)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: bool) -> felt252 {
     let y = if x {
         1
@@ -100,11 +93,6 @@ fn foo(x: bool) -> felt252 {
     };
     y + 3
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -156,7 +144,8 @@ End:
 //! > test_runner_name
 test_analysis(analysis: def_site)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(n: felt252) -> felt252 {
     let mut i = n;
     loop {
@@ -167,18 +156,13 @@ fn foo(n: felt252) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[51-138](v0)
+  (v1: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[70-157](v0)
 End:
   Match(match_enum(v1) {
     PanicResult::Ok(v2) => blk1,
@@ -219,16 +203,12 @@ End:
 //! > test_runner_name
 test_analysis(analysis: def_site)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: Array<felt252>) -> @Array<felt252> {
     let snap = @x;
     snap
 }
-
-//! > function_name
-foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

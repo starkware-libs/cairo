@@ -3,19 +3,7 @@
 //! > test_runner_name
 GetRedepositTestRunner
 
-//! > function_code
-fn foo(x: felt252) -> felt252 {
-    if x == 0 {
-        heavy_op1()
-    } else {
-        heavy_op2()
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn heavy_op1() -> felt252 {
     0
@@ -24,6 +12,14 @@ fn heavy_op1() -> felt252 {
 #[inline(never)]
 fn heavy_op2() -> felt252 {
     1
+}
+#[target_function]
+fn foo(x: felt252) -> felt252 {
+    if x == 0 {
+        heavy_op1()
+    } else {
+        heavy_op2()
+    }
 }
 
 //! > semantic_diagnostics
@@ -99,19 +95,7 @@ End:
 //! > test_runner_name
 GetRedepositTestRunner
 
-//! > function_code
-fn foo(x: felt252) -> felt252 {
-    if x == 0 {
-        heavy_op1()
-    } else {
-        heavy_op2()
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn heavy_op1() -> felt252 implicits(GasBuiltin) {
     0
@@ -120,6 +104,14 @@ fn heavy_op1() -> felt252 implicits(GasBuiltin) {
 #[inline(never)]
 fn heavy_op2() -> felt252 {
     1
+}
+#[target_function]
+fn foo(x: felt252) -> felt252 {
+    if x == 0 {
+        heavy_op1()
+    } else {
+        heavy_op2()
+    }
 }
 
 //! > semantic_diagnostics

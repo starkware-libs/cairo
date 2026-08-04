@@ -3,7 +3,8 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     let b = match a {
         5 => { 550 },
@@ -12,9 +13,6 @@ fn foo(a: felt252) -> felt252 {
     };
     return b;
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -67,7 +65,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     match a {
         0 => 11,
@@ -76,9 +75,6 @@ fn foo(a: felt252) -> felt252 {
         _ => 44,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -145,16 +141,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252, x: felt252) -> felt252 {
     match x {
         0 => a + 1,
         _ => x,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -189,13 +183,11 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
     core::array::array_get(a, 1_u32)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -232,7 +224,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     let x = 7;
     match x {
@@ -241,14 +234,11 @@ fn foo() -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `_` not covered.
- --> lib.cairo:3:5-6:5
+ --> lib.cairo:4:5-7:5
       match x {
  _____^
 | ...
@@ -265,7 +255,8 @@ error[E3004]: Match is non-exhaustive: `_` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(v: u8) {
     match v {
         0_u8 => 7,
@@ -273,9 +264,6 @@ fn foo(v: u8) {
         _ => 9,
     };
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -339,7 +327,10 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[feature("bounded-int-utils")]
+type Number = core::internal::bounded_int::BoundedInt<-30, 90>;
+#[target_function]
 fn foo(v: Number) {
     match v {
         0 => 7,
@@ -347,13 +338,6 @@ fn foo(v: Number) {
         _ => 9,
     };
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[feature("bounded-int-utils")]
-type Number = core::internal::bounded_int::BoundedInt<-30, 90>;
 
 //! > semantic_diagnostics
 
@@ -417,7 +401,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {
     match 5 {
         0_u8 => 7,
@@ -426,12 +411,9 @@ fn foo() {
     };
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 error[E2302]: Type mismatch: `core::felt252` and `core::integer::u8`.
- --> lib.cairo:4:9
+ --> lib.cairo:5:9
         1_felt252 | 2_u8 => 8,
         ^^^^^^^^^
 
@@ -447,19 +429,17 @@ error[E2302]: Type mismatch: `core::felt252` and `core::integer::u8`.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {
     match Some(5) {};
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `_` not covered.
- --> lib.cairo:2:5
+ --> lib.cairo:3:5
     match Some(5) {};
     ^^^^^^^^^^^^^^^^
 
@@ -473,16 +453,12 @@ error[E3004]: Match is non-exhaustive: `_` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum EmptyEnum {}
+#[target_function]
 fn foo(e: EmptyEnum) {
     match e {};
 }
-
-//! > function_name
-foo
-
-//! > module_code
-enum EmptyEnum {}
 
 //! > semantic_diagnostics
 
@@ -503,19 +479,17 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {
     match felt252_is_zero(5) {};
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `_` not covered.
- --> lib.cairo:2:5
+ --> lib.cairo:3:5
     match felt252_is_zero(5) {};
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -529,18 +503,7 @@ error[E3004]: Match is non-exhaustive: `_` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    match get_a() {
-        A::One(_) => 2,
-        _ => 3,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     One: (),
     Two: (),
@@ -549,6 +512,13 @@ enum A {
 
 #[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
+#[target_function]
+fn foo() -> felt252 {
+    match get_a() {
+        A::One(_) => 2,
+        _ => 3,
+    }
+}
 
 //! > semantic_diagnostics
 
@@ -594,7 +564,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    One: (),
+    Two: (),
+    Three: (felt252, felt252),
+    Four: (felt252,),
+}
+#[target_function]
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => 2,
@@ -605,27 +582,16 @@ fn foo(a: A) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    One: (),
-    Two: (),
-    Three: (felt252, felt252),
-    Four: (felt252,),
-}
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:13:24
+ --> lib.cairo:14:24
         A::Three(_) => 5,
                        ^
 
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:12:22
+ --> lib.cairo:13:22
         A::Two(_) => 4,
                      ^
 
@@ -676,18 +642,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    match get_a() {
-        A::Two(_) => { 2 },
-        A::One(_) => { 1 },
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     One: (),
     Two: (),
@@ -695,6 +650,13 @@ enum A {
 
 #[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
+#[target_function]
+fn foo() -> felt252 {
+    match get_a() {
+        A::Two(_) => { 2 },
+        A::One(_) => { 1 },
+    }
+}
 
 //! > semantic_diagnostics
 
@@ -729,21 +691,17 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    One: (),
+    Two: (),
+}
+#[target_function]
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => { 2 },
         A::One(_) => { 1 },
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    One: (),
-    Two: (),
 }
 
 //! > semantic_diagnostics
@@ -779,16 +737,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: (felt252, felt252)) -> felt252 {
     match a {
         (0, 1) => 0,
         _ => 1,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -844,7 +800,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Option<Option<felt252>>) -> felt252 {
     match a {
         Some(Some(x)) => x,
@@ -852,14 +809,11 @@ fn foo(a: Option<Option<felt252>>) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `Some(None(_))` not covered.
- --> lib.cairo:2:5-5:5
+ --> lib.cairo:3:5-6:5
       match a {
  _____^
 | ...
@@ -876,7 +830,14 @@ error[E3004]: Match is non-exhaustive: `Some(None(_))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    One: (),
+    Two: (),
+    Three: (),
+    Four: (),
+}
+#[target_function]
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => 2,
@@ -884,22 +845,11 @@ fn foo(a: A) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    One: (),
-    Two: (),
-    Three: (),
-    Four: (),
-}
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `Three(_)` not covered.
- --> lib.cairo:8:5-11:5
+ --> lib.cairo:9:5-12:5
       match a {
  _____^
 | ...
@@ -916,16 +866,14 @@ error[E3004]: Match is non-exhaustive: `Three(_)` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: bool) -> felt252 {
     match a {
         true => 2,
         false => 1,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -960,18 +908,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: MyEnum) -> felt252 {
-    match a {
-        MyEnum::A(x) | MyEnum::B((x, _)) => x,
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: t, .. }) => x + t,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct P {
     x: felt252,
     y: felt252,
@@ -983,6 +920,13 @@ enum MyEnum {
     C: (felt252, felt252, felt252),
     B: (felt252, felt252),
     D: P,
+}
+#[target_function]
+fn foo(a: MyEnum) -> felt252 {
+    match a {
+        MyEnum::A(x) | MyEnum::B((x, _)) => x,
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: t, .. }) => x + t,
+    }
 }
 
 //! > semantic_diagnostics
@@ -1037,19 +981,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: felt252) -> felt252 {
-    match a {
-        0 | 1 => 11,
-        2 | 3 => 12,
-        4 | _ => 13,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct P {
     x: felt252,
     y: felt252,
@@ -1061,6 +993,14 @@ enum MyEnum {
     B: (felt252, felt252),
     C: (felt252, felt252, felt252),
     D: P,
+}
+#[target_function]
+fn foo(a: felt252) -> felt252 {
+    match a {
+        0 | 1 => 11,
+        2 | 3 => 12,
+        4 | _ => 13,
+    }
 }
 
 //! > semantic_diagnostics
@@ -1152,7 +1092,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (felt252, felt252),
+    Three: (),
+}
+#[target_function]
 fn foo(a: A, b: A) -> felt252 {
     let x = (@a, b);
     let y = @x;
@@ -1163,17 +1110,6 @@ fn foo(a: A, b: A) -> felt252 {
         (_, A::Three) => 3,
         (_, _) => 6,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy, Drop)]
-enum A {
-    One: felt252,
-    Two: (felt252, felt252),
-    Three: (),
 }
 
 //! > semantic_diagnostics
@@ -1298,7 +1234,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop)]
+enum A {
+    One: felt252,
+    Two: (felt252, felt252),
+    Three: (),
+    Four: (),
+}
+#[target_function]
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::Two(_), A::One(_)) => 5,
@@ -1309,23 +1253,11 @@ fn foo(a: A, b: A) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Copy, Drop)]
-enum A {
-    One: felt252,
-    Two: (felt252, felt252),
-    Three: (),
-    Four: (),
-}
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `(One(_), Two(_))` not covered.
- --> lib.cairo:9:5-15:5
+ --> lib.cairo:10:5-16:5
       match (a, b) {
  _____^
 | ...
@@ -1342,24 +1274,20 @@ error[E3004]: Match is non-exhaustive: `(One(_), Two(_))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: A, b: A) -> felt252 {
-    match (a, (a, b)) {
-        (A::Two(_), (A::One(_), A::One(_))) => 8,
-        _ => 4,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy, Drop)]
 enum A {
     One: felt252,
     Two: (felt252, felt252),
     Three: (),
     Four: (),
+}
+#[target_function]
+fn foo(a: A, b: A) -> felt252 {
+    match (a, (a, b)) {
+        (A::Two(_), (A::One(_), A::One(_))) => 8,
+        _ => 4,
+    }
 }
 
 //! > semantic_diagnostics
@@ -1411,20 +1339,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: A) -> felt252 {
-    match (a, get_bool()) {
-        (A::Two(_), true) => 5,
-        (A::Two(_), _) => 2,
-        (A::One(_), false) => 1,
-        (_, _) => 6,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     One: felt252,
     Two: (felt252, felt252),
@@ -1433,6 +1348,15 @@ enum A {
 }
 #[allow(extern_outside_corelib)]
 extern fn get_bool() -> bool nopanic;
+#[target_function]
+fn foo(a: A) -> felt252 {
+    match (a, get_bool()) {
+        (A::Two(_), true) => 5,
+        (A::Two(_), _) => 2,
+        (A::One(_), false) => 1,
+        (_, _) => 6,
+    }
+}
 
 //! > semantic_diagnostics
 
@@ -1534,16 +1458,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> felt252 {
     match 5_u256 {
         0 => 1,
         _ => 2,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1564,7 +1486,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(v: u32) -> felt252 {
     match v {
         0 => 1,
@@ -1577,9 +1500,6 @@ fn foo(v: u32) -> felt252 {
         _ => 8,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -1663,7 +1583,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    One: (),
+    Two: (),
+    Three: (),
+    Four: (),
+}
+#[target_function]
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => 2,
@@ -1673,22 +1600,11 @@ fn foo(a: A) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    One: (),
-    Two: (),
-    Three: (),
-    Four: (),
-}
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:12:14
+ --> lib.cairo:13:14
         _ => 5,
              ^
 
@@ -1739,7 +1655,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    One: (),
+    Two: (),
+    Three: (),
+    Four: (),
+}
+#[target_function]
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => 2,
@@ -1749,22 +1672,11 @@ fn foo(a: A) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    One: (),
-    Two: (),
-    Three: (),
-    Four: (),
-}
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:12:22
+ --> lib.cairo:13:22
         A::One(_) => 5,
                      ^
 
@@ -1815,22 +1727,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: A, b: A) -> felt252 {
-    match (a, b) {
-        (A::Two((t, _)), A::One(_)) => t + 3,
-        (A::Two(_), _) => 2,
-        (A::One(_), A::One(_)) => 1,
-        (_, A::Three(((_, B::One(x)), _))) => x,
-        (_, A::Three(((_, _), x))) => x,
-        (_, _) => 6,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy, Drop)]
 enum A {
     One: felt252,
@@ -1843,6 +1740,17 @@ enum A {
 enum B {
     One: felt252,
     Two: (felt252, felt252),
+}
+#[target_function]
+fn foo(a: A, b: A) -> felt252 {
+    match (a, b) {
+        (A::Two((t, _)), A::One(_)) => t + 3,
+        (A::Two(_), _) => 2,
+        (A::One(_), A::One(_)) => 1,
+        (_, A::Three(((_, B::One(x)), _))) => x,
+        (_, A::Three(((_, _), x))) => x,
+        (_, _) => 6,
+    }
 }
 
 //! > semantic_diagnostics
@@ -2014,18 +1922,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: A) -> felt252 {
-    match a {
-        A::Two(((_, (t,)), _)) => t + 3,
-        _ => 6,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy, Drop)]
 enum A {
     One: felt252,
@@ -2038,6 +1935,13 @@ enum A {
 enum B {
     One: felt252,
     Two: (felt252, felt252),
+}
+#[target_function]
+fn foo(a: A) -> felt252 {
+    match a {
+        A::Two(((_, (t,)), _)) => t + 3,
+        _ => 6,
+    }
 }
 
 //! > semantic_diagnostics
@@ -2094,18 +1998,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: A) -> felt252 {
-    match a {
-        A::Three(((_, (B::One(t),)), _)) => t + 3,
-        _ => 6,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy, Drop)]
 enum A {
     One: felt252,
@@ -2118,6 +2011,13 @@ enum A {
 enum B {
     One: felt252,
     Two: (felt252, felt252),
+}
+#[target_function]
+fn foo(a: A) -> felt252 {
+    match a {
+        A::Three(((_, (B::One(t),)), _)) => t + 3,
+        _ => 6,
+    }
 }
 
 //! > semantic_diagnostics
@@ -2187,18 +2087,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: ((felt252, (A,)), felt252)) -> felt252 {
-    match a {
-        ((_, (A::One(t),)), _) => t + 3,
-        _ => 6,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy, Drop)]
 enum A {
     One: felt252,
@@ -2211,6 +2100,13 @@ enum A {
 enum B {
     One: felt252,
     Two: (felt252, felt252),
+}
+#[target_function]
+fn foo(a: ((felt252, (A,)), felt252)) -> felt252 {
+    match a {
+        ((_, (A::One(t),)), _) => t + 3,
+        _ => 6,
+    }
 }
 
 //! > semantic_diagnostics
@@ -2267,7 +2163,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Option<felt252>) -> felt252 {
     match a {
         Some(_) => 5,
@@ -2276,14 +2173,11 @@ fn foo(a: Option<felt252>) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 warning[E3004]: Unreachable pattern arm.
- --> lib.cairo:5:14
+ --> lib.cairo:6:14
         _ => 7,
              ^
 
@@ -2316,7 +2210,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     match Some(a) {
         Some => 2,
@@ -2324,12 +2219,9 @@ fn foo(a: felt252) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 warning[E2192]: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
- --> lib.cairo:3:9
+ --> lib.cairo:4:9
         Some => 2,
         ^^^^
 
@@ -2350,16 +2242,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> felt252 {
     match Some(a) {
         Some(_) => 2,
         _ => 0,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -2380,13 +2270,16 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[derive(Copy, Drop)]
+enum EmptyEnum {}
 fn foo(e: EmptyEnum) -> felt252 {
     match e {
         _ => { 1 },
     }
 }
 
+#[target_function]
 fn bar(e: Option<EmptyEnum>) -> felt252 {
     if let Some(e) = e {
         foo(e)
@@ -2394,13 +2287,6 @@ fn bar(e: Option<EmptyEnum>) -> felt252 {
         0
     }
 }
-
-//! > function_name
-bar
-
-//! > module_code
-#[derive(Copy, Drop)]
-enum EmptyEnum {}
 
 //! > semantic_diagnostics
 
@@ -2435,7 +2321,13 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    One: (),
+    Two: (),
+    Three: (),
+}
+#[target_function]
 fn foo(a: Option<Option<A>>) -> felt252 {
     match a {
         Some(Some(A::One)) => 3,
@@ -2445,21 +2337,11 @@ fn foo(a: Option<Option<A>>) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    One: (),
-    Two: (),
-    Three: (),
-}
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `Some(None(_))` not covered.
- --> lib.cairo:7:5-12:5
+ --> lib.cairo:8:5-13:5
       match a {
  _____^
 | ...
@@ -2476,7 +2358,13 @@ error[E3004]: Match is non-exhaustive: `Some(None(_))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum A {
+    One: (),
+    Two: (),
+    Three: (),
+}
+#[target_function]
 fn foo(a: Option<Option<A>>) -> felt252 {
     match a {
         Some(Some(A::One)) => 3,
@@ -2485,16 +2373,6 @@ fn foo(a: Option<Option<A>>) -> felt252 {
         Some(None) => 4,
         None(_) => 1,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    One: (),
-    Two: (),
-    Three: (),
 }
 
 //! > semantic_diagnostics
@@ -2569,17 +2447,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(c: C) -> felt252 {
-    match c {
-        C::One(B::One(A::Two(x))) | C::One(B::One(A::One(x))) => x + x,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     One: felt252,
     Two: felt252,
@@ -2591,6 +2459,12 @@ enum B {
 
 enum C {
     One: B,
+}
+#[target_function]
+fn foo(c: C) -> felt252 {
+    match c {
+        C::One(B::One(A::Two(x))) | C::One(B::One(A::One(x))) => x + x,
+    }
 }
 
 //! > semantic_diagnostics
@@ -2644,7 +2518,11 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+type A = Result<B, B>;
+type B = Result<C, C>;
+type C = Result<felt252, felt252>;
+#[target_function]
 fn foo(a: A) -> felt252 {
     match a {
         Ok(Ok(Ok(x))) => x,
@@ -2652,14 +2530,6 @@ fn foo(a: A) -> felt252 {
         Err(Ok(Err(x))) | Ok(Err(Err(x))) | Err(Err(Ok(x))) => x * x,
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-type A = Result<B, B>;
-type B = Result<C, C>;
-type C = Result<felt252, felt252>;
 
 //! > semantic_diagnostics
 
@@ -2782,7 +2652,11 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+type A = Result<B, B>;
+type B = Result<C, C>;
+type C = Result<(), ()>;
+#[target_function]
 fn foo(a: A) -> felt252 {
     match a {
         // Ok(Ok(Ok(()))) => 1,
@@ -2796,19 +2670,11 @@ fn foo(a: A) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-type A = Result<B, B>;
-type B = Result<C, C>;
-type C = Result<(), ()>;
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `Ok(Ok(Ok(_)))` not covered.
- --> lib.cairo:5:5-14:5
+ --> lib.cairo:6:5-15:5
       match a {
  _____^
 | ...
@@ -2825,7 +2691,11 @@ error[E3004]: Match is non-exhaustive: `Ok(Ok(Ok(_)))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+type A = Result<B, B>;
+type B = Result<C, C>;
+type C = Result<(), ()>;
+#[target_function]
 fn foo(a: A) -> felt252 {
     match a {
         Ok(Ok(Ok(()))) => 1,
@@ -2839,19 +2709,11 @@ fn foo(a: A) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-type A = Result<B, B>;
-type B = Result<C, C>;
-type C = Result<(), ()>;
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `Ok(Err(_))` not covered.
- --> lib.cairo:5:5-14:5
+ --> lib.cairo:6:5-15:5
       match a {
  _____^
 | ...
@@ -2868,7 +2730,11 @@ error[E3004]: Match is non-exhaustive: `Ok(Err(_))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+type A = Result<B, B>;
+type B = Result<C, C>;
+type C = Result<(), ()>;
+#[target_function]
 fn foo(a: A) -> felt252 {
     match a {
         // Ok(Ok(Ok(()))) => 1,
@@ -2882,19 +2748,11 @@ fn foo(a: A) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-type A = Result<B, B>;
-type B = Result<C, C>;
-type C = Result<(), ()>;
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3004]: Match is non-exhaustive: `Ok(_)` not covered.
- --> lib.cairo:5:5-14:5
+ --> lib.cairo:6:5-15:5
       match a {
  _____^
 | ...
@@ -2911,17 +2769,7 @@ error[E3004]: Match is non-exhaustive: `Ok(_)` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(c: C) -> felt252 {
-    match c {
-        C::One(B::One(A::One)) => 1,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 enum A {
     One: (),
@@ -2935,6 +2783,12 @@ enum B {
 #[derive(Drop)]
 enum C {
     One: B,
+}
+#[target_function]
+fn foo(c: C) -> felt252 {
+    match c {
+        C::One(B::One(A::One)) => 1,
+    }
 }
 
 //! > semantic_diagnostics
@@ -2956,17 +2810,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(c: C) -> felt252 {
-    match c {
-        C::One(B::One(A::One(x))) | C::One(B::Two(x)) => x + x,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     One: felt252,
 }
@@ -2978,6 +2822,12 @@ enum B {
 
 enum C {
     One: B,
+}
+#[target_function]
+fn foo(c: C) -> felt252 {
+    match c {
+        C::One(B::One(A::One(x))) | C::One(B::Two(x)) => x + x,
+    }
 }
 
 //! > semantic_diagnostics
@@ -3031,23 +2881,19 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(b: B) -> felt252 {
-    match b {
-        B::One(A::One((x, _))) => x,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     One: (felt252, felt252),
 }
 
 enum B {
     One: A,
+}
+#[target_function]
+fn foo(b: B) -> felt252 {
+    match b {
+        B::One(A::One((x, _))) => x,
+    }
 }
 
 //! > semantic_diagnostics
@@ -3083,23 +2929,19 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(x: @B) -> felt252 {
-    match x {
-        B::Two(A::One(v)) => *****v,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     One: @felt252,
 }
 
 enum B {
     Two: @@@A,
+}
+#[target_function]
+fn foo(x: @B) -> felt252 {
+    match x {
+        B::Two(A::One(v)) => *****v,
+    }
 }
 
 //! > semantic_diagnostics
@@ -3139,24 +2981,20 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    match get_a() {
-        A::One(Some(Some(v))) => v,
-        _ => 3,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     One: Option<Option<felt252>>,
 }
 
 #[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
+#[target_function]
+fn foo() -> felt252 {
+    match get_a() {
+        A::One(Some(Some(v))) => v,
+        _ => 3,
+    }
+}
 
 //! > semantic_diagnostics
 
@@ -3215,18 +3053,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    match @get_a() {
-        A::One(Some(Some(v))) => *****v,
-        _ => 3,
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 enum A {
     One: @Option<@@Option<@felt252>>,
@@ -3234,6 +3061,13 @@ enum A {
 
 #[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
+#[target_function]
+fn foo() -> felt252 {
+    match @get_a() {
+        A::One(Some(Some(v))) => *****v,
+        _ => 3,
+    }
+}
 
 //! > semantic_diagnostics
 
@@ -3298,21 +3132,17 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+struct A {
+    opt: Option<felt252>,
+}
+#[target_function]
 fn foo(x: Option<Option<A>>) -> felt252 {
     match x {
         Some(Some(A { opt: Some(v) })) => v,
         _ => 3,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-struct A {
-    opt: Option<felt252>,
 }
 
 //! > semantic_diagnostics
@@ -3379,21 +3209,17 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+struct A {
+    opt: Option<felt252>,
+}
+#[target_function]
 fn foo(x: Option<Option<felt252>>) -> felt252 {
     match x {
         Some(Some(0)) => 0,
         _ => 3,
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-struct A {
-    opt: Option<felt252>,
 }
 
 //! > semantic_diagnostics
@@ -3460,19 +3286,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> felt252 {
-    match get_a() {}
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {}
 
 #[allow(extern_outside_corelib)]
 extern fn get_a() -> A nopanic;
+#[target_function]
+fn foo() -> felt252 {
+    match get_a() {}
+}
 
 //! > semantic_diagnostics
 

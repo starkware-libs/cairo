@@ -3,16 +3,14 @@
 //! > test_runner_name
 test_early_unsafe_panic
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Option<u32>) -> u32 {
     match a {
         Some(x) => x,
         None => core::panic_with_felt252('error'),
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -68,14 +66,12 @@ End:
 //! > test_runner_name
 test_early_unsafe_panic
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Option<u32>) -> u32 {
     a.unwrap();
     core::panic_with_felt252('error')
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -134,16 +130,14 @@ End:
 //! > test_runner_name
 test_early_unsafe_panic
 
-//! > function_code
+//! > cairo_code
 use core::debug::PrintTrait;
 
+#[target_function]
 fn foo(a: Option<u32>) -> u32 {
     'error'.print();
     core::panic_with_felt252('error')
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -181,17 +175,15 @@ End:
 //! > test_runner_name
 test_early_unsafe_panic
 
-//! > function_code
+//! > cairo_code
 use core::debug::PrintTrait;
 
+#[target_function]
 fn foo(a: Option<u32>) -> u32 {
     'error1'.print();
     'error2'.print();
     core::panic_with_felt252('error3')
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

@@ -3,19 +3,15 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: felt252) -> MyStruct {
-    MyStruct { a: (), c: (3, 7), b: a }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: (),
     b: felt252,
     c: (felt252, felt252),
+}
+#[target_function]
+fn foo(a: felt252) -> MyStruct {
+    MyStruct { a: (), c: (3, 7), b: a }
 }
 
 //! > semantic_diagnostics
@@ -41,19 +37,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(s: MyStruct) -> felt252 {
-    s.b
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: (),
     b: felt252,
     c: (felt252, felt252),
+}
+#[target_function]
+fn foo(s: MyStruct) -> felt252 {
+    s.b
 }
 
 //! > semantic_diagnostics
@@ -75,20 +67,16 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(s: MyStruct) -> (felt252, felt252) {
-    let MyStruct { a: _, c: (v, _), b } = s;
-    (v, b)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: (),
     b: felt252,
     c: (felt252, felt252),
+}
+#[target_function]
+fn foo(s: MyStruct) -> (felt252, felt252) {
+    let MyStruct { a: _, c: (v, _), b } = s;
+    (v, b)
 }
 
 //! > semantic_diagnostics
@@ -112,20 +100,16 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(s: MyStruct) -> MyStruct {
-    MyStruct { c: (1, 2), ..s }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy)]
 struct MyStruct {
     a: (),
     b: felt252,
     c: (felt252, felt252),
+}
+#[target_function]
+fn foo(s: MyStruct) -> MyStruct {
+    MyStruct { c: (1, 2), ..s }
 }
 
 //! > semantic_diagnostics
@@ -151,15 +135,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> MyStruct {
-    MyStruct { c: f2(), a: (), b: f1() }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     b: felt252,
     a: (),
@@ -169,6 +145,10 @@ struct MyStruct {
 extern fn f1() -> felt252 nopanic;
 #[allow(extern_outside_corelib)]
 extern fn f2() -> (felt252, felt252) nopanic;
+#[target_function]
+fn foo() -> MyStruct {
+    MyStruct { c: f2(), a: (), b: f1() }
+}
 
 //! > semantic_diagnostics
 

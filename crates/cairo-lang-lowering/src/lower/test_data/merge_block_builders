@@ -114,7 +114,7 @@ x: B
     (x.n, 2), // Different.
 );
 
-//! > module_code
+//! > helper_code
 struct A {
     m: felt252,
     n: felt252,
@@ -193,7 +193,7 @@ x: C
     (x.b.m, 7), // Same in both blocks.
 );
 
-//! > module_code
+//! > helper_code
 struct A {
     m: felt252,
     n: felt252,

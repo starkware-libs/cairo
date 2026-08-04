@@ -3,19 +3,15 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let x = [10, 20, 30];
-    bar(x);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn bar(x: [felt252; 3]) {
     let _y = x;
+}
+#[target_function]
+fn foo() {
+    let x = [10, 20, 30];
+    bar(x);
 }
 
 //! > semantic_diagnostics
@@ -41,15 +37,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> [felt252; 3] {
-    [get_10(); 3]
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn get_10() -> felt252 {
     10
@@ -58,6 +46,10 @@ fn get_10() -> felt252 {
 #[inline(never)]
 fn bar(x: [felt252; 3]) {
     let _y = x;
+}
+#[target_function]
+fn foo() -> [felt252; 3] {
+    [get_10(); 3]
 }
 
 //! > semantic_diagnostics
@@ -80,18 +72,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> [MyStruct; 3] {
-    foo_ex()
-}
-fn foo_ex<T, +Drop<[T; 3]>, +Copy<T>, +CtorTrait<T>>() -> [T; 3] {
-    [CtorTrait::<T>::new(); 3]
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop, Copy)]
 struct MyStruct {
     x: felt252,
@@ -105,6 +86,13 @@ impl CtorMyStruct of CtorTrait<MyStruct> {
     fn new() -> MyStruct {
         MyStruct { x: 10 }
     }
+}
+#[target_function]
+fn foo() -> [MyStruct; 3] {
+    foo_ex()
+}
+fn foo_ex<T, +Drop<[T; 3]>, +Copy<T>, +CtorTrait<T>>() -> [T; 3] {
+    [CtorTrait::<T>::new(); 3]
 }
 
 //! > semantic_diagnostics
@@ -128,25 +116,21 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> [MyStruct; 3] {
-    [MyStruct { x: 10 }; 3]
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
+}
+#[target_function]
+fn foo() -> [MyStruct; 3] {
+    [MyStruct { x: 10 }; 3]
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3012]: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
- --> lib.cairo:6:5
+ --> lib.cairo:7:5
     [MyStruct { x: 10 }; 3]
     ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -160,18 +144,7 @@ error[E3012]: Fixed size array inner type must implement the `Copy` trait when t
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> [MyStruct; 3] {
-    foo_ex()
-}
-fn foo_ex<T, +Drop<[T; 3]>, +CtorTrait<T>>() -> [T; 3] {
-    [CtorTrait::<T>::new(); 3]
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
@@ -186,12 +159,19 @@ impl CtorMyStruct of CtorTrait<MyStruct> {
         MyStruct { x: 10 }
     }
 }
+#[target_function]
+fn foo() -> [MyStruct; 3] {
+    foo_ex()
+}
+fn foo_ex<T, +Drop<[T; 3]>, +CtorTrait<T>>() -> [T; 3] {
+    [CtorTrait::<T>::new(); 3]
+}
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3012]: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
- --> lib.cairo:19:5
+ --> lib.cairo:20:5
     [CtorTrait::<T>::new(); 3]
     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -205,18 +185,14 @@ error[E3012]: Fixed size array inner type must implement the `Copy` trait when t
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> [MyStruct; 1] {
-    [MyStruct { x: 10 }; 1]
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[derive(Drop)]
 struct MyStruct {
     x: felt252,
+}
+#[target_function]
+fn foo() -> [MyStruct; 1] {
+    [MyStruct { x: 10 }; 1]
 }
 
 //! > semantic_diagnostics
@@ -240,19 +216,17 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> [u32; 0] {
     [0_u32; 0]
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3013]: Fixed size array repeated element size must be greater than 0.
- --> lib.cairo:2:5
+ --> lib.cairo:3:5
     [0_u32; 0]
     ^^^^^^^^^^
 
