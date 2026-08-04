@@ -492,8 +492,8 @@ pub struct MacroRuleData<'db> {
 }
 
 /// The possible kinds of placeholders in a macro rule.
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum PlaceholderKind {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlaceholderKind {
     Identifier,
     Expr,
 }
@@ -515,6 +515,12 @@ impl<'db> From<ast::MacroParamKind<'db>> for PlaceholderKind {
 pub struct CapturedValue<'db> {
     pub text: String,
     pub stable_ptr: SyntaxStablePtrId<'db>,
+    /// Whether the expansion must parenthesize the value to keep it a single operand - see
+    /// `ExpansionContext::expand_placeholder`. True when the value's top level is an operator
+    /// (e.g. `1 + 2`, `-x`) or an operator-adjacent form (a closure, a block, `if`/`match`/loop
+    /// expressions); false for atoms (paths, literals, tuples, calls), which parse the same either
+    /// way and may legally reach non-expression splice positions where parentheses do not parse.
+    pub needs_parens: bool,
 }
 
 /// Implementation of [MacroDeclarationSemantic::priv_macro_declaration_data].
@@ -890,6 +896,7 @@ fn is_macro_rule_match_ex<'db>(
                             CapturedValue {
                                 text: captured_text,
                                 stable_ptr: input_token.stable_ptr(db).untyped(),
+                                needs_parens: false,
                             },
                         );
                         continue;
@@ -910,6 +917,27 @@ fn is_macro_rule_match_ex<'db>(
                                     .get_text_without_trivia(db)
                                     .to_string(db),
                                 stable_ptr: peek_token.stable_ptr(db).untyped(),
+                                needs_parens: match &expr_node {
+                                    // `@` forms types as well as expressions, and a snapshot
+                                    // type reaches type-position splices, where parentheses
+                                    // do not parse. It binds tighter than every binary
+                                    // operator, so a bare splice is also safe in expression
+                                    // positions - up to a postfix operator the expansion
+                                    // writes right after the placeholder, which the author
+                                    // can parenthesize explicitly.
+                                    ast::Expr::Unary(unary) => {
+                                        !matches!(unary.op(db), ast::UnaryOperator::At(_))
+                                    }
+                                    ast::Expr::Binary(_)
+                                    | ast::Expr::Closure(_)
+                                    | ast::Expr::Block(_)
+                                    | ast::Expr::Match(_)
+                                    | ast::Expr::If(_)
+                                    | ast::Expr::Loop(_)
+                                    | ast::Expr::While(_)
+                                    | ast::Expr::For(_) => true,
+                                    _ => false,
+                                },
                             },
                         );
                         continue;
@@ -1150,6 +1178,20 @@ impl<'db> ExpansionContext<'db, '_> {
     ///
     /// The value is emitted without the trivia surrounding it in the call - the spacing of the
     /// expansion is the one the rule's author wrote, emitted by [`Self::push_trailing_trivia`].
+    ///
+    /// A value whose top level is an operator - see [`CapturedValue::needs_parens`] - is wrapped
+    /// in parentheses, as it is spliced as text into an expansion that was written around a single
+    /// operand. Without them the operators of the expansion bind into the value:
+    /// `macro neg { ($x:expr) => { 0 - $x }; }` on `neg!(1 + 2)` would produce `0 - 1 + 2`, which
+    /// is `1` rather than `-3`. `rustc` has no such hazard because an `expr` fragment is one AST
+    /// node there, and the parentheses are how the same atomicity is spelled in text.
+    ///
+    /// An atomic value - a path, a literal, a tuple, a call - is spliced as written. It has no
+    /// top-level operator for the expansion's operators to bind into, so the parentheses would
+    /// change nothing about how it parses - and atoms are the expression shapes that reach the
+    /// non-expression positions a rule can splice a capture into, where parentheses do not parse:
+    /// `use $path;` on a path capture, `let x: $t = ...;` on a tuple capture. Cairo has no `path`
+    /// or `ty` placeholder kinds, so `expr` is how a rule captures these.
     fn expand_placeholder(
         &mut self,
         param: &MacroParam<'db>,
@@ -1170,11 +1212,22 @@ impl<'db> ExpansionContext<'db, '_> {
                 failure: MacroExpansionFailure::MissingCapture(name),
             });
         };
+        // The mapping spans the parentheses along with the value. Everything the expanded code
+        // makes of the value - a path resolved through it, another macro call capturing it whole -
+        // is looked up by an offset that must land inside the mapping, and the offset of a node
+        // starting at the value includes the parenthesis in front of it.
         let start = TextWidth::from_str(&self.res_buffer).as_offset();
-        let span = TextSpan::new_with_width(start, TextWidth::from_str(&value.text));
+        let parenthesize = value.needs_parens;
+        if parenthesize {
+            self.res_buffer.push('(');
+        }
         self.res_buffer.push_str(&value.text);
+        if parenthesize {
+            self.res_buffer.push(')');
+        }
+        let end = TextWidth::from_str(&self.res_buffer).as_offset();
         self.code_mappings.push(CodeMapping {
-            span,
+            span: TextSpan::new(start, end),
             origin: CodeOrigin::Span(value.stable_ptr.lookup(db).span_without_trivia(db)),
         });
         Ok(())
