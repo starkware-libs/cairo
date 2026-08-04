@@ -1235,6 +1235,7 @@ impl<'db> ExpansionContext<'db, '_> {
         let db = self.db;
         let group_count = self.group_count(repetition)?;
         let elements = repetition.elements(db);
+        let separator = repetition_separator(db, repetition);
         for index in 0..group_count {
             self.group_indices.push(index);
             let expanded = elements
@@ -1243,8 +1244,11 @@ impl<'db> ExpansionContext<'db, '_> {
             self.group_indices.pop();
             expanded?;
             if index + 1 < group_count
-                && let Some(sep) = repetition_separator(db, repetition)
+                && let Some(sep) = separator
             {
+                // The separator's leading trivia sits on the repetition's closing `)`, which is
+                // not emitted - so the spacing written before it is pushed from there.
+                self.push_trailing_trivia(repetition.rparen(db).as_syntax_node());
                 self.res_buffer.push_str(sep.get_text(db));
             }
         }

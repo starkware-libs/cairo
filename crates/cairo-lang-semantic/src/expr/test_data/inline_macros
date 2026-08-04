@@ -3933,3 +3933,37 @@ error[E2158]: No matching rule found in inline macro `m`.
  --> lib.cairo:5:5
     m!(a)
     ^^^^^
+
+//! > ==========================================================================
+
+//! > Test a call separating groups with `,` where the rule separates them with `;`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// A separator is part of the pattern, so only the first call is the shape the rule takes: a call
+// writing another separator, or none at all, does not match, and no rule matching it is reported
+// rather than the call being expanded as if the separator were not there. The `a b` call is what
+// pins the separator being honored at all - while the matcher ignored a non-comma separator, the
+// pattern was effectively `$($x:ident)*` and that call did match.
+// rustc's `macro_rules!` rejects both failing calls too.
+macro m {
+    ($($x:ident);*) => { 1 };
+}
+fn foo() {
+    m!(a; b);
+    m!(a, b);
+    m!(a b);
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:12:5
+    m!(a, b);
+    ^^^^^^^^
+
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:13:5
+    m!(a b);
+    ^^^^^^^
