@@ -4,6 +4,7 @@
 test_profiling
 
 //! > cairo_code
+#[target_function]
 fn pow2_14000() {
     pow2_by_add_loop(14000, 1);
 }
@@ -18,9 +19,6 @@ fn pow2_by_add_loop(n: felt252, x: felt252) -> felt252 {
 
 //! > max_stack_trace_depth
 10
-
-//! > function_name
-pow2_14000
 
 //! > expected_profiling_info
 Weight by sierra statement:
@@ -120,6 +118,7 @@ mod test_contract {
     }
 }
 
+#[target_function]
 fn validate_call() {
     let serialized_args = array![
         0x2, // Array with 2 `Call`s.
@@ -147,9 +146,6 @@ fn validate_call() {
         .span();
     test_contract::__wrapper____validate__(serialized_args);
 }
-
-//! > function_name
-validate_call
 
 //! > expected_profiling_info
 Weight by sierra statement:
@@ -356,6 +352,7 @@ mod test_contract {
     }
 }
 
+#[target_function]
 fn validate_call() {
     let serialized_args = array![
         0x1, // Array with a single `Call`.
@@ -370,9 +367,6 @@ fn validate_call() {
         .span();
     test_contract::__wrapper____validate__(serialized_args);
 }
-
-//! > function_name
-validate_call
 
 //! > expected_profiling_info
 Weight by sierra statement:
@@ -536,6 +530,7 @@ Weight by Cairo stack trace:
 test_profiling
 
 //! > cairo_code
+#[target_function]
 fn ecdsa_call() {
     let message_hash = 0x503f4bea29baee10b22a7f10bdc82dda071c977c1f25b8f3973d34e6b03b2c;
     let public_key = 0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec;
@@ -543,9 +538,6 @@ fn ecdsa_call() {
     let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
     core::ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s);
 }
-
-//! > function_name
-ecdsa_call
 
 //! > expected_profiling_info
 Weight by sierra statement:
@@ -719,14 +711,12 @@ mod erc_20 {
     }
 }
 
+#[target_function]
 fn erc20_transfer() {
     const CONTRACT_ADDRESS: ContractAddress = 2_felt252.try_into().unwrap();
     starknet::testing::set_caller_address(CONTRACT_ADDRESS);
     erc_20::__external::transfer(array![1, 0, 0].span());
 }
-
-//! > function_name
-erc20_transfer
 
 //! > expected_profiling_info
 Weight by sierra statement:
