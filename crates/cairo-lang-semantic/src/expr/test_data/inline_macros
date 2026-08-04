@@ -3846,3 +3846,88 @@ error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may o
  --> lib.cairo:2:16
     ($($x:expr).*) => { 0 };
                ^
+
+//! > ==========================================================================
+
+//! > Test a call separating groups with `,` where the rule separates them with `;`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// A separator is part of the pattern, so only the first call is the shape the rule takes: a call
+// writing another separator, or none at all, does not match, and no rule matching it is reported
+// rather than the call being expanded as if the separator were not there. The `a b` call is what
+// pins the separator being honored at all - while the matcher ignored a non-comma separator, the
+// pattern was effectively `$($x:ident)*` and that call did match.
+// rustc's `macro_rules!` rejects both failing calls too.
+macro m {
+    ($($x:ident);*) => { 1 };
+}
+fn foo() {
+    m!(a; b);
+    m!(a, b);
+    m!(a b);
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:12:5
+    m!(a, b);
+    ^^^^^^^^
+
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:13:5
+    m!(a b);
+    ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a `?` pattern repetition taking a non-comma separator.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The separator check reads the declared token the matcher and the expansion read, so a `?` block
+// is rejected for taking a `;` exactly as it is for taking a `,` - otherwise a separator the
+// matcher now consumes would sit on an operator that allows at most one group, which is the hole
+// this check exists to close. rustc's `macro_rules!` reports "error: the `?` macro repetition
+// operator does not take a separator" for the equivalent pattern.
+macro opt {
+    ($($x:ident);?) => { 1 };
+}
+fn foo() -> felt252 {
+    opt!(a)
+}
+
+//! > expected_diagnostics
+error[E2206]: The `?` macro repetition operator does not take a separator.
+ --> lib.cairo:7:17
+    ($($x:ident);?) => { 1 };
+                ^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder followed by a separator outside its follow set.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// Every group but the last is followed by the separator, so the separator is part of what the
+// pattern can put after a capture - and `|` is not one of the tokens an `expr` capture may be
+// followed by. rustc's `macro_rules!` reports "`$x:expr` is followed by `|`, which is not allowed
+// for `expr` fragments", noting "allowed there are: `=>`, `,` or `;`".
+macro bad {
+    ($($x:expr)|*) => { 0 $(+ $x)* };
+}
+fn foo() -> felt252 {
+    bad!(1 | 2)
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `|`.
+ --> lib.cairo:6:16
+    ($($x:expr)|*) => { 0 $(+ $x)* };
+               ^
