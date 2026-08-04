@@ -3051,24 +3051,38 @@ fn foo() -> felt252 {
 
 //! > ==========================================================================
 
-//! > Test a trailing separator absorbed by a repetition (deliberate divergence from rustc).
+//! > Test a trailing separator rejected by a repetition, as rustc does.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
-// The tuple type pins that the absorbed trailing separator adds no empty match (rustc rejects
-// this).
+// A trailing separator belongs to no group, so it is left over and nothing matches it; rustc
+// rejects this too.
 macro m {
     ($($x:ident),*) => { ($($x),*) };
 }
 fn foo() {
     let a: felt252 = 1;
     let b: felt252 = 2;
-    let _t: (felt252, felt252) = m!(a, b,);
+    let _t = m!(a, b,);
+    // A lone separator is not a group either, so it is rejected for the same reason.
+    let _u = m!(,);
+    // Neither rejection is about the call having two elements or none: the same rule accepts these.
+    let _v: (felt252, felt252) = m!(a, b);
+    let _w: () = m!();
 }
 
 //! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:9:14
+    let _t = m!(a, b,);
+             ^^^^^^^^^
+
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:11:14
+    let _u = m!(,);
+             ^^^^^
 
 //! > ==========================================================================
 
@@ -4065,3 +4079,29 @@ error[E2158]: No matching rule found in inline macro `m`.
  --> lib.cairo:13:5
     m!(a b);
     ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test which rule a trailing separator picks, across every group count.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// Rule 1 declares the comma as the separator, so it only stands between groups; rule 2 makes it
+// part of every group, which is how rustc spells trailing-separator tolerance.
+macro m {
+    ($($x:expr),*) => { 1_u8 };
+
+    ($($x:expr,)*) => { 2_u16 };
+}
+fn foo() {
+    // Each annotation is the assertion: rule 1 yields a `u8` and rule 2 a `u16`, so a call that
+    // picked the other rule would be a type mismatch here.
+    let _a: u8 = m!(1, 2);
+    let _b: u16 = m!(1, 2,);
+    let _c: u16 = m!(1,);
+    let _d: u8 = m!();
+}
+
+//! > expected_diagnostics
