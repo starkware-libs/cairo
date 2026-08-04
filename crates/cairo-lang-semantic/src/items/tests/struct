@@ -62,17 +62,12 @@ error[E2052]: Recursive type "test::B" has infinite size.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo(a: A) -> A {
-    a
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     member: A,
+}
+fn foo(a: A) -> A {
+    a
 }
 
 //! > expected_diagnostics

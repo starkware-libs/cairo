@@ -17,14 +17,12 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, OptionFrom, extract_matches};
+use cairo_lang_utils::{Intern, extract_matches};
 use salsa::Database;
 
 use crate::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
 use crate::inline_macros::get_default_plugin_suite;
 use crate::items::function_with_body::FunctionWithBodySemantic;
-use crate::items::functions::GenericFunctionId;
-use crate::items::module::ModuleSemantic;
 use crate::plugin::PluginSuite;
 use crate::{ConcreteFunctionWithBodyId, SemanticDiagnostic, semantic};
 
@@ -235,102 +233,52 @@ pub struct TestFunction<'a> {
 
 /// Returns the code of the module described by the given test inputs.
 ///
-/// Supports both formats:
-/// * New: `inputs["cairo_code"]` is the whole module (possibly a `>>> file: <path>` reference).
-/// * Legacy: `inputs["module_code"]` (optional) and `inputs["function_code"]`, joined by a single
-///   `'\n'`.
+/// `inputs["cairo_code"]` is the whole module - possibly a `>>> file: <path>` reference.
 pub fn test_module_code(inputs: &OrderedHashMap<String, String>) -> String {
-    if let Some(cairo_code) = inputs.get("cairo_code") {
-        let (_path, content) = get_direct_or_file_content(cairo_code);
-        return content;
-    }
-    let function_code = &inputs["function_code"];
-    let module_code = inputs.get("module_code").map_or("", String::as_str);
-    if module_code.is_empty() {
-        function_code.clone()
-    } else {
-        format!("{module_code}\n{function_code}")
-    }
+    let (_path, content) = get_direct_or_file_content(&inputs["cairo_code"]);
+    content
 }
 
 /// Returns the semantic model of the function a test targets.
 ///
 /// The module code is taken as described in [test_module_code], and the target function within it
-/// is resolved either by `inputs["function_name"]`, or - if that tag is absent - by the single
-/// function marked with `#[target_function]`.
+/// is the single function marked with `#[target_function]`.
 ///
 /// `inputs["crate_settings"]` - optional extra settings for the crate.
 pub fn setup_test_function<'a>(
     db: &'a dyn Database,
-    inputs: &'a OrderedHashMap<String, String>,
+    inputs: &OrderedHashMap<String, String>,
 ) -> WithStringDiagnostics<TestFunction<'a>> {
     setup_test_function_from_content(
         db,
         &test_module_code(inputs),
-        inputs.get("function_name").map(String::as_str),
         inputs.get("crate_settings").map(String::as_str),
         None,
     )
 }
 
-/// Returns the semantic model of a given function.
-/// `function_code` - code of the function.
-/// `function_name` - name of the function.
-/// `module_code` - extra setup code in the module context.
-/// `crate_settings` - optional extra settings for the crate.
-/// `cache_crate` - optional cache for the crate.
-pub fn setup_test_function_ex<'a>(
-    db: &'a dyn Database,
-    function_code: &str,
-    function_name: &'a str,
-    module_code: &str,
-    crate_settings: Option<&str>,
-    cache_crate: Option<BlobId<'a>>,
-) -> WithStringDiagnostics<TestFunction<'a>> {
-    let content = if module_code.is_empty() {
-        function_code.to_string()
-    } else {
-        format!("{module_code}\n{function_code}")
-    };
-    setup_test_function_from_content(db, &content, Some(function_name), crate_settings, cache_crate)
-}
-
 /// Returns the semantic model of a function within the module of the given `content`.
 ///
-/// The function is looked up by `function_name` if given, and otherwise by the `#[target_function]`
-/// marker - which must mark exactly one function.
-fn setup_test_function_from_content<'a>(
+/// The function is the single one marked with the `#[target_function]` marker.
+pub fn setup_test_function_from_content<'a>(
     db: &'a dyn Database,
     content: &str,
-    function_name: Option<&'a str>,
     crate_settings: Option<&str>,
     cache_crate: Option<BlobId<'a>>,
 ) -> WithStringDiagnostics<TestFunction<'a>> {
     let (test_module, diagnostics) =
         setup_test_module_ex(db, content, crate_settings, cache_crate).split();
-    let free_function_id = match function_name {
-        Some(function_name) => {
-            let generic_function_id = db
-                .module_item_by_name(test_module.module_id, SmolStrId::from(db, function_name))
-                .expect("Failed to load module")
-                .and_then(GenericFunctionId::option_from)
-                .unwrap_or_else(|| panic!("Function '{function_name}' was not found."));
-            extract_matches!(generic_function_id, GenericFunctionId::Free)
-        }
-        None => {
-            let target_functions = resolve_target_functions(db, test_module.module_id);
-            match target_functions.as_slice() {
-                [free_function_id] => *free_function_id,
-                [] => panic!(
-                    "No function marked with `#[{TARGET_FUNCTION_ATTR}]` was found. Mark the \
-                     tested function, or add a `function_name` tag."
-                ),
-                _ => panic!(
-                    "Expected a single function marked with `#[{TARGET_FUNCTION_ATTR}]`, found {}.",
-                    target_functions.len()
-                ),
-            }
-        }
+    let target_functions = resolve_target_functions(db, test_module.module_id);
+    let free_function_id = match target_functions.as_slice() {
+        [free_function_id] => *free_function_id,
+        [] => panic!(
+            "No function marked with `#[{TARGET_FUNCTION_ATTR}]` was found. Mark the tested \
+             function."
+        ),
+        _ => panic!(
+            "Expected a single function marked with `#[{TARGET_FUNCTION_ATTR}]`, found {}.",
+            target_functions.len()
+        ),
     };
     let function_id = FunctionWithBodyId::Free(free_function_id);
     WithStringDiagnostics {
@@ -349,7 +297,7 @@ fn setup_test_function_from_content<'a>(
     }
 }
 
-/// Helper struct for the return value of [setup_test_expr] and [setup_test_block].
+/// Helper struct for the return value of [setup_test_expr].
 pub struct TestExpr<'a> {
     pub module_id: ModuleId<'a>,
     pub function_id: FunctionWithBodyId<'a>,
@@ -368,10 +316,17 @@ pub fn setup_test_expr<'a>(
     function_body: &str,
     crate_settings: Option<&str>,
 ) -> WithStringDiagnostics<TestExpr<'a>> {
-    let function_code = format!("fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
+    // The marker shares the wrapper's first line so the spans of `expr_code` do not shift.
+    let function_code = format!(
+        "#[{TARGET_FUNCTION_ATTR}] fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}"
+    );
+    let content = if module_code.is_empty() {
+        function_code
+    } else {
+        format!("{module_code}\n{function_code}")
+    };
     let (test_function, diagnostics) =
-        setup_test_function_ex(db, &function_code, "test_func", module_code, crate_settings, None)
-            .split();
+        setup_test_function_from_content(db, &content, crate_settings, None).split();
     let semantic::ExprBlock { statements, .. } = extract_matches!(
         db.expr_semantic(test_function.function_id, test_function.body),
         semantic::Expr::Block
@@ -384,10 +339,7 @@ pub fn setup_test_expr<'a>(
         db.expr_semantic(test_function.function_id, statement_expr.expr),
         semantic::Expr::Block
     );
-    assert!(
-        statements.is_empty(),
-        "expr_code is not a valid expression. Consider using setup_test_block()."
-    );
+    assert!(statements.is_empty(), "expr_code is not a valid expression.");
     WithStringDiagnostics {
         value: TestExpr {
             module_id: test_function.module_id,
@@ -398,18 +350,6 @@ pub fn setup_test_expr<'a>(
         },
         diagnostics,
     }
-}
-
-/// Returns the semantic model of a given block expression.
-/// module_code - extra setup code in the module context.
-/// function_body - extra setup code in the function context.
-pub fn setup_test_block<'a>(
-    db: &'a dyn Database,
-    expr_code: &str,
-    module_code: &str,
-    function_body: &str,
-) -> WithStringDiagnostics<TestExpr<'a>> {
-    setup_test_expr(db, &format!("{{ \n{expr_code}\n }}"), module_code, function_body, None)
 }
 
 pub fn test_expr_diagnostics(
@@ -440,21 +380,15 @@ pub fn test_function_diagnostics(
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
 
-    // The reported diagnostics are the recursive module diagnostics, so the target function is
-    // never actually required here. In the new format no function has to be resolved at all -
-    // which also allows test blocks that have no function to target.
-    let diagnostics = if inputs.contains_key("cairo_code") && !inputs.contains_key("function_name")
-    {
-        setup_test_module_ex(
-            db,
-            &test_module_code(inputs),
-            inputs.get("crate_settings").map(String::as_str),
-            None,
-        )
-        .get_diagnostics()
-    } else {
-        setup_test_function(db, inputs).get_diagnostics()
-    };
+    // The reported diagnostics are the recursive module diagnostics, so no function has to be
+    // resolved at all - which also allows test blocks that have no function to target.
+    let diagnostics = setup_test_module_ex(
+        db,
+        &test_module_code(inputs),
+        inputs.get("crate_settings").map(String::as_str),
+        None,
+    )
+    .get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
     TestRunnerResult {

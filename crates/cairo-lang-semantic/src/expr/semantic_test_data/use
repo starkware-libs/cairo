@@ -64,9 +64,9 @@ Block(
 
 //! > expected_diagnostics
 warning[E2071]: Unused use.
- --> lib.cairo:6:32
-fn test_func() { use X::{X, Y, Z};
-                               ^
+ --> lib.cairo:6:51
+#[target_function] fn test_func() { use X::{X, Y, Z};
+                                                  ^
 
 //! > ==========================================================================
 
