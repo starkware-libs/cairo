@@ -2990,29 +2990,44 @@ fn foo() -> felt252 {
 
 //! > ==========================================================================
 
-//! > Test a trailing separator absorbed by a repetition (deliberate divergence from rustc).
+//! > Test a trailing separator rejected by a repetition, as rustc does.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
-// The trailing separator is absorbed by the repetition, and the tuple type pins that it does not
-// add an empty match. rustc's `macro_rules!` rejects the equivalent call, and aligning with it is a
-// separate, deliberate decision.
+// A separator only stands between two groups, so the trailing one belongs to no group and is left
+// over - and nothing in the rule can match it. rustc's `macro_rules!` rejects the two-element call
+// with "unexpected end of macro invocation" and the lone-separator call with "no rules expected
+// `,`". The two-element call is the one that changed: it used to be accepted, with the trailing
+// separator absorbed.
 macro m {
     ($($x:ident),*) => { ($($x),*) };
 }
 fn foo() {
-    let long_named_first_argument_of_the_macro_call: felt252 = 1;
-    let long_named_second_argument_of_the_macro_call: felt252 = 2;
-    // The call is spread over several lines on purpose: the formatter strips a trailing separator
-    // from a single-line macro call, which would silently drop what this test pins.
-    let _t: (felt252, felt252) = m!(
-        long_named_first_argument_of_the_macro_call, long_named_second_argument_of_the_macro_call,
-    );
+    let a: felt252 = 1;
+    let b: felt252 = 2;
+    // The `cairofmt::skip` is load-bearing: the formatter strips a trailing comma from a
+    // single-line macro call, which would silently drop what this test pins.
+    #[cairofmt::skip]
+    let _t = m!(a, b,);
+    // A lone separator is not a group either, so it is rejected for the same reason.
+    let _u = m!(,);
+    // Neither rejection is about the call having two elements or none: the same rule accepts these.
+    let _v: (felt252, felt252) = m!(a, b);
+    let _w: () = m!();
 }
 
 //! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:15:14
+    let _t = m!(a, b,);
+             ^^^^^^^^^
+
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:17:14
+    let _u = m!(,);
+             ^^^^^
 
 //! > ==========================================================================
 
@@ -3931,3 +3946,99 @@ error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may o
  --> lib.cairo:6:16
     ($($x:expr)|*) => { 0 $(+ $x)* };
                ^
+
+//! > ==========================================================================
+
+//! > Test a trailing `;` separator rejected by a repetition, as rustc does.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The separator being `;` rather than `,` changes nothing: a trailing one still belongs to no
+// group. rustc's `macro_rules!` rejects the two-element call with "unexpected end of macro
+// invocation" and the lone-separator call with "no rules expected `;`". The two-element call is the
+// one that changed: it used to be accepted, with the trailing separator absorbed.
+macro m {
+    ($($x:ident);*) => { ($($x),*) };
+}
+fn foo() {
+    let a: felt252 = 1;
+    let b: felt252 = 2;
+    // Unlike a trailing comma, a trailing `;` survives the formatter, so no `cairofmt::skip` here.
+    let _t = m!(a; b;);
+    // A lone separator is not a group either, so it is rejected for the same reason.
+    let _u = m!(;);
+    // Neither rejection is about the call having two elements or none: the same rule accepts these.
+    let _v: (felt252, felt252) = m!(a; b);
+    let _w: () = m!();
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:12:14
+    let _t = m!(a; b;);
+             ^^^^^^^^^
+
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:14:14
+    let _u = m!(;);
+             ^^^^^
+
+//! > ==========================================================================
+
+//! > Test which rule a trailing separator picks, across every group count.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// Rule 1 declares the comma as the repetition's separator, so it only ever stands between two
+// groups; rule 2 makes it part of the group body, so every group carries one - which is how rustc
+// spells trailing-separator tolerance. rustc's `macro_rules!` prints `(1, 2, 2, 1)` for these four
+// calls against the equivalent macro. The two trailing-comma calls are what changed: both used to
+// stop at rule 1.
+macro m {
+    ($($x:expr),*) => { 1_u8 };
+
+    ($($x:expr,)*) => { 2_u16 };
+}
+fn foo() {
+    // Each annotation is the assertion: rule 1 yields a `u8` and rule 2 a `u16`, so a call that
+    // picked the other rule would be a type mismatch here. The two `cairofmt::skip`s keep the
+    // formatter from stripping the trailing comma this test is about.
+    let _a: u8 = m!(1, 2);
+    #[cairofmt::skip]
+    let _b: u16 = m!(1, 2,);
+    #[cairofmt::skip]
+    let _c: u16 = m!(1,);
+    let _d: u8 = m!();
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test which rule a trailing `;` separator picks, across every group count.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// The comma case above with `;` as the separator, to pin that the rule choice is driven by the
+// declared separator rather than by the comma being special. rustc's `macro_rules!` prints
+// `(1, 2, 2, 1)` for these four calls against the equivalent macro. The two trailing-`;` calls are
+// what changed: both used to stop at rule 1.
+macro m {
+    ($($x:expr);*) => { 1_u8 };
+
+    ($($x:expr;)*) => { 2_u16 };
+}
+fn foo() {
+    let _a: u8 = m!(1; 2);
+    let _b: u16 = m!(1; 2;);
+    let _c: u16 = m!(1;);
+    let _d: u8 = m!();
+}
+
+//! > expected_diagnostics

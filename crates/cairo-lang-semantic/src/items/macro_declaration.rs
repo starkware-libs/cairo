@@ -1000,6 +1000,23 @@ fn is_macro_rule_match_ex<'db>(
                 loop {
                     let mut inner_ctx = ctx.clone();
                     let mut temp_iter = input_iter.clone();
+                    // A separator only ever stands *between* two groups, so from the second group
+                    // on it has to be consumed before the group - and only together with it. A
+                    // separator that no group follows is not part of the repetition, and is left
+                    // in the input for whatever comes after it to match, exactly as rustc's
+                    // `macro_rules!` does.
+                    if match_count > 0
+                        && let Some(expected_sep) = &expected_separator
+                    {
+                        let Some(ast::TokenTree::Token(token_leaf)) = temp_iter.peek() else {
+                            break;
+                        };
+                        if token_leaf.as_syntax_node().get_text_without_trivia(db) != *expected_sep
+                        {
+                            break;
+                        }
+                        temp_iter.next();
+                    }
                     let Some(true) = is_macro_rule_match_ex(
                         db,
                         elements.clone(),
@@ -1013,18 +1030,6 @@ fn is_macro_rule_match_ex<'db>(
                     *ctx = inner_ctx;
                     *input_iter = temp_iter;
                     match_count += 1;
-                    if let Some(expected_sep) = &expected_separator {
-                        if let Some(ast::TokenTree::Token(token_leaf)) = input_iter.peek() {
-                            let actual = token_leaf.as_syntax_node().get_text_without_trivia(db);
-                            if actual == *expected_sep {
-                                input_iter.next();
-                            } else {
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
                 }
                 ctx.repetition_match_counts.insert(rep_id, match_count);
                 ctx.repetition_operators.insert(rep_id, operator.clone());
