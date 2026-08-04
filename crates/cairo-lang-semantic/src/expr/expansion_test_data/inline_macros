@@ -1402,3 +1402,120 @@ pass!(1 + 2)
 ((1 + 2), 2)
 
 //! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `;`-separated repetition matched and expanded with its separator.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Two groups, so the `;` is both consumed by the matcher between the groups of the call and
+// emitted by the expansion between the groups it writes - and there it is what makes the two
+// assignments two statements rather than a parse error. `rustc` expands the same macro and call to
+// `{ let mut total = 0; total = total + (1 + 2); total = total + 3; total }` and prints `6`.
+#[feature("user_defined_inline_macros")]
+macro totals {
+    ($($x:expr);*) => { { let mut total = 0; $(total = total + $x);*; total } };
+}
+
+//! > expr_code
+totals!(1 + 2; 3)
+
+//! > expanded_code
+{ let mut total = 0; total = total + (1 + 2);total = total + 3; total }
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repetition separated by a token that is neither a comma nor a semicolon.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Nothing in the matcher or the expansion is specific to the two separators a rule is usually
+// written with: `|` is matched and emitted exactly as it is written. The captures are `ident`s
+// because `|` is not one of the tokens an `expr` capture may be followed by. `rustc` expands the
+// same macro and call to `A | B` and prints `3`.
+const A: u8 = 1;
+
+const B: u8 = 2;
+
+#[feature("user_defined_inline_macros")]
+macro bits {
+    ($($x:ident)|*) => { $($x)|* };
+}
+
+//! > expr_code
+bits!(A | B)
+
+//! > expanded_code
+A|B
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a nested repetition whose outer groups a `;` separates.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// This shape is only expressible once a separator may be something other than a comma: the inner
+// repetition juxtaposes its captures, so the outer one needs a separator of its own to tell one
+// group of the call from the next. Two captures per group and two outer groups, so both levels
+// really repeat. `rustc` expands the same macro and call to `((A, B), (C, D))` and prints
+// `((1, 2), (4, 8))`.
+const A: felt252 = 1;
+
+const B: felt252 = 2;
+
+const C: felt252 = 4;
+
+const D: felt252 = 8;
+
+#[feature("user_defined_inline_macros")]
+macro nested {
+    ($($($x:ident)+);*) => { ($(($($x),+)),*) };
+}
+
+//! > expr_code
+nested!(A B; C D)
+
+//! > expanded_code
+((A,B),(C,D))
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `;`-separated repetition matching no input at all.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The empty list matches with no groups, so no separator is either consumed or emitted for it. The
+// two-group list beside it, in the same call, is what shows the rule does declare a separator -
+// alone, an empty list would match a rule that ignores its separator just as well. `rustc` expands
+// the same macro and call to `((), (A, B))` and prints `((), (1, 2))`.
+const A: felt252 = 1;
+
+const B: felt252 = 2;
+
+#[feature("user_defined_inline_macros")]
+macro parts {
+    ([$($x:ident);*] [$($y:ident);*]) => { (($($x),*), ($($y),*)) };
+}
+
+//! > expr_code
+parts!([] [A; B])
+
+//! > expanded_code
+((), (A,B))
+
+//! > diagnostics
