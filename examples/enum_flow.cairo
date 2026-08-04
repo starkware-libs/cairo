@@ -15,6 +15,11 @@ enum MyEnumGeneric<S, T> {
 
 impl MyEnumGenericDrop of Drop<MyEnumGeneric<(), felt252>>;
 
+// The `target_function` attribute marks the function under test for the golden-test framework
+// (see `TARGET_FUNCTION_ATTR` in `cairo_lang_semantic::test_utils`); `allow_attr` keeps this file
+// compiling under plain databases as well (e.g. `cairo-run` and `examples_test`).
+#[allow_attr(target_function)]
+#[target_function]
 fn main() -> felt252 {
     let es0 = MyEnumShort::a(10);
     match_short(es0);

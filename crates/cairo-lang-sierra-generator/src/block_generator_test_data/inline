@@ -3,25 +3,21 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
-fn foo(a: felt252) -> felt252 {
-    if a == 2 {
-        bar(a)
-    } else {
-        a
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
     if a == 0 {
         return 1;
     }
     0
+}
+#[target_function]
+fn foo(a: felt252) -> felt252 {
+    if a == 2 {
+        bar(a)
+    } else {
+        a
+    }
 }
 
 //! > semantic_diagnostics

@@ -3,17 +3,7 @@
 //! > test_runner_name
 test_dummy_program_generator
 
-//! > function_code
-fn foo(a: u32, b: u32, c: bar::Coupon) -> u32 {
-    coupon_refund(c);
-    let b = baz(a, 5);
-    bar(b, b, b)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn bar(x: u32, y: u32, z: u32) -> u32 {
     baz(x + z, y * z)
@@ -29,6 +19,12 @@ fn baz(x: u32, y: u32) -> u32 {
 
 #[allow(extern_outside_corelib)]
 extern fn coupon_refund<T>(c: T) nopanic;
+#[target_function]
+fn foo(a: u32, b: u32, c: bar::Coupon) -> u32 {
+    coupon_refund(c);
+    let b = baz(a, 5);
+    bar(b, b, b)
+}
 
 //! > sierra_code
 type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];

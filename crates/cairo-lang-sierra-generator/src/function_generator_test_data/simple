@@ -3,18 +3,14 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+fn bar(x: felt252, y: felt252, z: felt252) -> felt252 {
+    bar(x, y, z)
+}
+#[target_function]
 fn foo(a: felt252, b: felt252) -> felt252 {
     let b = felt252_add(a, 5);
     bar(b, b, b)
-}
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar(x: felt252, y: felt252, z: felt252) -> felt252 {
-    bar(x, y, z)
 }
 
 //! > semantic_diagnostics

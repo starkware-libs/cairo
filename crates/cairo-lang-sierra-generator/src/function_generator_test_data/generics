@@ -3,18 +3,14 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo() -> @Array<felt252> {
-    span_from_tuple(BoxTrait::new(@(10, 20, 30)))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 // Function needs to be a real libfunc for the test
 #[allow(extern_outside_corelib)]
 extern fn span_from_tuple<T, +Copy<T>>(x: Box<@T>) -> @Array<felt252> nopanic;
+#[target_function]
+fn foo() -> @Array<felt252> {
+    span_from_tuple(BoxTrait::new(@(10, 20, 30)))
+}
 
 //! > semantic_diagnostics
 
@@ -36,7 +32,10 @@ return([1])
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+#[phantom]
+enum Ph {}
+#[target_function]
 fn foo(x: Option<Ph>) -> felt252 {
     match x {
         Option::Some(p) => match p {},
@@ -44,21 +43,14 @@ fn foo(x: Option<Ph>) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-#[phantom]
-enum Ph {}
-
 //! > semantic_diagnostics
 error[E2019]: Phantom types cannot be instantiated.
- --> lib.cairo:3:8
+ --> lib.cairo:4:8
 fn foo(x: Option<Ph>) -> felt252 {
        ^^^^^^^^^^^^^
 
 error[E2019]: Phantom types cannot be instantiated.
- --> lib.cairo:5:34
+ --> lib.cairo:6:34
         Option::Some(p) => match p {},
                                  ^
 
@@ -76,7 +68,15 @@ None
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+#[phantom]
+enum Ph {}
+
+#[inline(never)]
+fn identity<T>(t: T) -> T {
+    t
+}
+#[target_function]
 fn foo() -> felt252 {
     let x: Option<(Ph,)> = identity(None);
     match x {
@@ -88,31 +88,19 @@ fn foo() -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
-//! > module_code
-#[phantom]
-enum Ph {}
-
-#[inline(never)]
-fn identity<T>(t: T) -> T {
-    t
-}
-
 //! > semantic_diagnostics
 error[E2019]: Phantom types cannot be instantiated.
- --> lib.cairo:9:37
+ --> lib.cairo:10:37
     let x: Option<(Ph,)> = identity(None);
                                     ^^^^
 
 error[E2019]: Phantom types cannot be instantiated.
- --> lib.cairo:12:24
+ --> lib.cairo:13:24
             let (p,) = t;
                        ^
 
 error[E2019]: Phantom types cannot be instantiated.
- --> lib.cairo:13:19
+ --> lib.cairo:14:19
             match p {}
                   ^
 
@@ -130,15 +118,7 @@ None
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
-fn foo() -> felt252 {
-    bar::<Ph>()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum Ph {}
 
@@ -160,6 +140,10 @@ fn bar<Ph>() -> felt252 {
 
 #[allow(extern_outside_corelib)]
 extern fn drop_ph<Ph>(ph: Ph) nopanic;
+#[target_function]
+fn foo() -> felt252 {
+    bar::<Ph>()
+}
 
 //! > semantic_diagnostics
 
