@@ -17,8 +17,6 @@ fn foo(a: felt252, b: felt252) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 disable_ap_tracking() -> ()
@@ -131,8 +129,6 @@ fn foo(my_enum: MyEnum) -> u8 {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
@@ -951,8 +947,6 @@ test_sierra_locations
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::main::0:
 const_as_immediate<Const<felt252, 300>>() -> ([0])
@@ -987,8 +981,6 @@ test_sierra_locations
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::main::0:
@@ -1058,8 +1050,6 @@ test_sierra_locations
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::test_pedersen::0:
@@ -1219,8 +1209,6 @@ fn foo() {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
@@ -2271,8 +2259,6 @@ fn some_array_checks() {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::some_array_checks::0:

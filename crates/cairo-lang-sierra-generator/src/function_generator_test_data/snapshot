@@ -25,8 +25,6 @@ fn foo(ref arr: Array<felt252>) {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 alloc_local<Array<felt252>>() -> ([2])
@@ -67,8 +65,6 @@ fn foo(x: @u32) {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:

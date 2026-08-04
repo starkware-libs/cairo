@@ -14,8 +14,6 @@ fn foo(a: Box<u256>) -> u128 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 unbox<core::integer::u256>([0]) -> ([1])
@@ -41,8 +39,6 @@ fn foo(a: Box<u256>) -> Box<u128> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:

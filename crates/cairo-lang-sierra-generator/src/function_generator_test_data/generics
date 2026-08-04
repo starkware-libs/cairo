@@ -16,8 +16,6 @@ fn foo() -> @Array<felt252> {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 const_as_box<Const<Tuple<felt252, felt252, felt252>, Const<felt252, 10>, Const<felt252, 20>, Const<felt252, 30>>, 0>() -> ([0])
@@ -55,8 +53,6 @@ error[E2019]: Phantom types cannot be instantiated.
                                  ^
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 None
@@ -106,8 +102,6 @@ error[E2019]: Phantom types cannot be instantiated.
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 None
 
@@ -148,8 +142,6 @@ fn foo() -> felt252 {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:

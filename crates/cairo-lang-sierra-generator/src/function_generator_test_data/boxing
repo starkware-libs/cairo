@@ -18,8 +18,6 @@ fn foo(a: MyStruct) -> Box<MyStruct> {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 local_into_box<test::MyStruct>([0]) -> ([1])
@@ -47,8 +45,6 @@ fn foo(a: SmallStruct) -> Box<SmallStruct> {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 into_box<test::SmallStruct>([0]) -> ([1])
@@ -75,8 +71,6 @@ fn foo(a: MyStruct) -> Box<Box<MyStruct>> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
@@ -114,8 +108,6 @@ fn foo() -> Box<MyStruct> {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 alloc_local<test::MyStruct>() -> ([1])
@@ -149,8 +141,6 @@ fn foo(a: MyStruct) -> Box<@MyStruct> {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 snapshot_take<test::MyStruct>([0]) -> ([1], [2])
@@ -181,8 +171,6 @@ fn foo(x: felt252) -> Box<MyStruct> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
@@ -222,8 +210,6 @@ fn foo(s: Wrapper) -> Box<Inner> {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 struct_deconstruct<test::Wrapper>([0]) -> ([1])
@@ -260,8 +246,6 @@ fn foo(s: Outer) -> Box<Inner> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:

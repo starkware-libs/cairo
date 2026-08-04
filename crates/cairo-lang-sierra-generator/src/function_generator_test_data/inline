@@ -24,8 +24,6 @@ fn foo(a: felt252) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 const_as_immediate<Const<felt252, 2>>() -> ([1])

@@ -19,8 +19,6 @@ fn foo(x: felt252) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }
 branch_align() -> ()
@@ -76,8 +74,6 @@ fn foo(x: felt252) -> felt252 {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 dup<felt252>([0]) -> ([0], [1])
@@ -135,8 +131,6 @@ fn foo(opt: Option<@felt252>) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 enum_match<core::option::Option::<@core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
 branch_align() -> ()
@@ -190,8 +184,6 @@ fn foo(mut a: Array<u32>) {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 array_pop_front<u32>([0]) { fallthrough([1], [2]) label_test::foo::0([3]) }
@@ -288,8 +280,6 @@ fn foo(x: SingleVariant) -> felt252 {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 enum_match<test::SingleVariant>([0]) -> ([1])

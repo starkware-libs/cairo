@@ -21,8 +21,6 @@ fn foo() -> () {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 disable_ap_tracking() -> ()

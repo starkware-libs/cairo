@@ -16,8 +16,6 @@ fn foo(a: felt252) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 alloc_local<felt252>() -> ([2])
@@ -75,8 +73,6 @@ fn foo(b: bool) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 alloc_local<felt252>() -> ([2])
@@ -123,8 +119,6 @@ fn foo(x: felt252) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 alloc_local<felt252>() -> ([2])
@@ -165,8 +159,6 @@ fn foo() -> felt252 {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
@@ -212,8 +204,6 @@ fn foo(strct: MyStruct) -> felt252 {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
@@ -270,8 +260,6 @@ fn foo() -> felt252 {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
@@ -334,8 +322,6 @@ fn foo(a: felt252, b: felt252) -> felt252 {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:

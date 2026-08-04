@@ -18,8 +18,6 @@ fn foo() -> (felt252, felt252, felt252, u128, u128) {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 const_as_immediate<Const<felt252, 5>>() -> ([0])
 const_as_immediate<Const<felt252, 6>>() -> ([1])

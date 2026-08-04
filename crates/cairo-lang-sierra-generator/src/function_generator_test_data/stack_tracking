@@ -21,8 +21,6 @@ fn foo() {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 function_call<user@test::get_val>() -> ([0])
@@ -61,8 +59,6 @@ fn foo() -> (felt252, felt252) {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 function_call<user@test::get_val>() -> ([0])
@@ -96,8 +92,6 @@ fn foo() {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
