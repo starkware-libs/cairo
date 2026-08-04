@@ -1020,6 +1020,61 @@ let expanded = m!(A and B);
 
 //! > ==========================================================================
 
+//! > Test a trailing separator picking the rule that asks for it.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The two rules differ only in where the comma sits: rule 1 declares it as the repetition's
+// separator, so it only ever stands between two groups, while rule 2 makes it part of the group's
+// own body, so every group carries one - which is how rustc spells trailing-separator tolerance.
+// A call with a trailing comma therefore falls through rule 1 to rule 2, and one without it stops
+// at rule 1. This call used to stop at rule 1 and expand to `1`. rustc's `macro_rules!` picks rule
+// 2 for it as well, printing `2`.
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($($x:expr),*) => { 1 };
+
+    ($($x:expr,)*) => { 2 };
+}
+
+//! > expr_code
+let expanded = m!(1, 2,);
+
+//! > expanded_code
+expanded: 2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a trailing `;` separator picking the rule that asks for it.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The comma case above with `;` as the separator, to pin that the rule choice is driven by the
+// declared separator rather than by the comma being special. This call used to stop at rule 1 and
+// expand to `1`. rustc's `macro_rules!` picks rule 2 for it as well, printing `2`.
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($($x:expr);*) => { 1 };
+
+    ($($x:expr;)*) => { 2 };
+}
+
+//! > expr_code
+let expanded = m!(1; 2;);
+
+//! > expanded_code
+expanded: 2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
 //! > Test expansion of panic macro
 
 //! > test_runner_name
