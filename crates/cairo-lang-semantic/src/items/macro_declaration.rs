@@ -247,21 +247,17 @@ fn check_placeholder_name<'db>(
     ))
 }
 
-/// Returns the separator token of the given repetition, if it has a supported one.
+/// Returns the separator token of the given repetition, if it has one.
 ///
-/// The grammar allows any token in the separator slot, but only a comma is currently supported.
-/// Any other token is treated as if no separator was given.
-// TODO(Dean): Add support for more kinds of separators.
+/// Any single token may separate the groups of a repetition; it is matched in a call and emitted in
+/// an expansion exactly as it is written.
 fn repetition_separator<'db>(
     db: &'db dyn Database,
     repetition: &ast::MacroRepetition<'db>,
-) -> Option<ast::TerminalComma<'db>> {
+) -> Option<SyntaxNode<'db>> {
     match repetition.separator(db) {
         ast::OptionMacroRepetitionSeparator::MacroRepetitionSeparator(separator) => {
-            match separator.token(db) {
-                ast::TokenNode::TerminalComma(comma) => Some(comma),
-                _ => None,
-            }
+            Some(separator.token(db).as_syntax_node())
         }
         ast::OptionMacroRepetitionSeparator::Empty(_) => None,
     }
@@ -283,7 +279,7 @@ fn check_repetition_separator<'db>(
         return Ok(());
     }
     Err(diagnostics.report(
-        separator.stable_ptr(db).untyped(),
+        separator.stable_ptr(db),
         SemanticDiagnosticKind::MacroRepetitionSeparatorWithZeroOrOne,
     ))
 }
@@ -421,7 +417,7 @@ fn check_expr_follow_set<'db>(
                 // after it, or by whatever comes after the repetition itself.
                 let mut body_outer = after();
                 if let Some(separator) = repetition_separator(db, repetition) {
-                    body_outer.push(Follower::new(db, separator.as_syntax_node()));
+                    body_outer.push(Follower::new(db, separator));
                 }
                 res = res.and(check_expr_follow_set(
                     db,
@@ -990,7 +986,7 @@ fn is_macro_rule_match_ex<'db>(
                 let elements = repetition.elements(db);
                 let operator = repetition.operator(db);
                 let expected_separator = repetition_separator(db, &repetition)
-                    .map(|sep| sep.as_syntax_node().get_text_without_trivia(db));
+                    .map(|sep| sep.get_text_without_trivia(db));
                 let mut match_count = 0;
                 loop {
                     let mut inner_ctx = ctx.clone();
@@ -1257,7 +1253,19 @@ impl<'db> ExpansionContext<'db, '_> {
             if index + 1 < group_count
                 && let Some(sep) = repetition_separator(db, repetition)
             {
-                self.res_buffer.push_str(sep.as_syntax_node().get_text(db));
+                // The separator's text carries its trailing trivia but not its leading trivia -
+                // that sits on the repetition's closing `)`, which is not emitted. An identifier
+                // or keyword separator would then lex together with the text before or after it,
+                // so a space is inserted wherever the adjacent characters would form one token.
+                let glues = |c: Option<char>| c.is_some_and(|c| c.is_alphanumeric() || c == '_');
+                let sep_text = sep.get_text(db);
+                if glues(self.res_buffer.chars().next_back()) && glues(sep_text.chars().next()) {
+                    self.res_buffer.push(' ');
+                }
+                self.res_buffer.push_str(sep_text);
+                if glues(self.res_buffer.chars().next_back()) {
+                    self.res_buffer.push(' ');
+                }
             }
         }
         Ok(())
