@@ -1083,3 +1083,143 @@ let expanded = totals!(1 + 2; 3);
 expanded: { let mut total = 0; total = total + (1 + 2);total = total + 3; total }
 
 //! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a repetition separated by a token that is neither a comma nor a semicolon.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The captures are `ident`s, as `|` is not in an `expr` capture's follow set.
+const A: u8 = 1;
+
+const B: u8 = 2;
+
+#[feature("user_defined_inline_macros")]
+macro bits {
+    ($($x:ident)|*) => { $($x)|* };
+}
+
+//! > expr_code
+let expanded = bits!(A | B);
+
+//! > expanded_code
+expanded: A|B
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a nested repetition whose outer groups a `;` separates.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The inner repetition juxtaposes its captures, so only a non-comma outer separator tells the
+// groups apart.
+const A: felt252 = 1;
+
+const B: felt252 = 2;
+
+const C: felt252 = 4;
+
+const D: felt252 = 8;
+
+#[feature("user_defined_inline_macros")]
+macro nested {
+    ($($($x:ident)+);*) => { ($(($($x),+)),*) };
+}
+
+//! > expr_code
+let expanded = nested!(A B; C D);
+
+//! > expanded_code
+expanded: ((A,B),(C,D))
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `;`-separated repetition matching no input at all.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// No separator is consumed or emitted for the empty list.
+const A: felt252 = 1;
+
+const B: felt252 = 2;
+
+#[feature("user_defined_inline_macros")]
+macro parts {
+    ([$($x:ident);*] [$($y:ident);*]) => { (($($x),*), ($($y),*)) };
+}
+
+//! > expr_code
+let expanded = parts!([] [A; B]);
+
+//! > expanded_code
+expanded: ((), (A,B))
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion joining groups with an identifier separator.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The spacing the rule wrote around `and` keeps it apart from the captures; the plugin diagnostic
+// is `array!` failing to parse `A and B`, reported at the call it is mapped to.
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($($x:ident) and *) => { array![$($x) and *] };
+}
+const A: felt252 = 1;
+const B: felt252 = 2;
+
+//! > expr_code
+let expanded = m!(A and B);
+
+//! > expanded_code
+expanded: array![A and B]
+
+//! > diagnostics
+error[E2200]: Plugin diagnostic: Macro cannot be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:10:16
+let expanded = m!(A and B);
+               ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an unspaced word separator kept apart from the captures in the expansion.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// `$($x)and*` wrote no trivia around the separator, so spaces keep the three tokens separate.
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($($x:ident)and*) => { array![$($x)and*] };
+}
+const X: felt252 = 1;
+const Y: felt252 = 2;
+
+//! > expr_code
+let expanded = m!(X and Y);
+
+//! > expanded_code
+expanded: array![X and Y]
+
+//! > diagnostics
+error[E2200]: Plugin diagnostic: Macro cannot be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:9:16
+let expanded = m!(X and Y);
+               ^^^^^^^^^^^
