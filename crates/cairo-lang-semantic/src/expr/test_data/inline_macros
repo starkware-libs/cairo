@@ -4078,3 +4078,77 @@ fn foo() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `+` expansion repetition over zero groups (rejected).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($x:ident),*) => { $($x + )+ 0 };
+}
+fn foo() -> felt252 {
+    m!()
+}
+
+//! > expected_diagnostics
+error[E2210]: A `+` expansion block of the matched macro rule must repeat at least once, but this call matched zero groups.
+ --> lib.cairo:5:5
+    m!()
+    ^^^^
+
+//! > ==========================================================================
+
+//! > Test a `+` expansion repetition over some groups (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($($x:ident),*) => { $($x + )+ 0 };
+}
+fn foo() -> felt252 {
+    let a = 1;
+    let b = 2;
+    m!(a, b)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `*` expansion repetition over zero groups (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($($x:ident),*) => { $($x + )* 0 };
+}
+fn foo() -> felt252 {
+    m!()
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `?` expansion repetition over zero groups (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($($x:ident)?) => { $($x + )? 0 };
+}
+fn foo() -> felt252 {
+    m!()
+}
+
+//! > expected_diagnostics
