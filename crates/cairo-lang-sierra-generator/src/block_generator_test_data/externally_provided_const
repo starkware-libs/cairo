@@ -1,0 +1,33 @@
+//! > Test that a call to `__externally_provided_const__` becomes a const_as_immediate.
+
+//! > test_runner_name
+block_generator_test
+
+//! > function_code
+extern fn __externally_provided_const__() -> felt252 nopanic;
+
+fn foo() -> felt252 {
+    __externally_provided_const__()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+const_as_immediate<Const<felt252, 7777>>() -> ([0])
+PushValues([0]: felt252) -> ([0])
+return([0])
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- test::__externally_provided_const__()
+End:
+  Return(v0)

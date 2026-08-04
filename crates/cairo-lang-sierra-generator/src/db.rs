@@ -7,12 +7,13 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use salsa::plumbing::FromId;
-use salsa::{Database, Id};
+use salsa::{Database, Id, Setter};
 
 use crate::program_generator::{self, SierraProgramWithDebug};
 use crate::replace_ids::SierraIdReplacer;
@@ -31,6 +32,39 @@ pub enum SierraGeneratorTypeLongId<'db> {
     /// This is a long id of a phantom type.
     /// Phantom types have a one to one mapping from the semantic type to the Sierra type.
     Phantom(semantic::TypeId<'db>),
+}
+
+/// The reserved name of the extern function whose calls are replaced, at the Sierra generation
+/// stage, by a constant value supplied by the installed [`ExternalConstProvider`]. It may be
+/// declared anywhere; it is recognized solely by this name and never reaches Sierra.
+pub const EXTERNALLY_PROVIDED_CONST: &str = "__externally_provided_const__";
+
+/// A callback supplying the constant value for a call to the reserved
+/// `__externally_provided_const__` extern function.
+///
+/// It is given the full path of the (concrete) extern function being called and its declared
+/// return type, and returns the [`ConstValueId`] that the call should be replaced with at the
+/// Sierra generation stage. The provider is responsible for deciding what happens when no value is
+/// available for the given path (e.g. returning an error). The returned value's type is validated
+/// against the declared return type by the caller.
+///
+/// Installed on the database by its constructor (e.g. by the build driver); it is not set by
+/// default.
+pub type ExternalConstProvider = Arc<
+    dyn for<'db> Fn(&'db dyn Database, &str, semantic::TypeId<'db>) -> Maybe<ConstValueId<'db>>
+        + Send
+        + Sync,
+>;
+
+#[salsa::input]
+pub struct SierraGenGroupInput {
+    #[returns(ref)]
+    pub external_const_provider: Option<ExternalConstProvider>,
+}
+
+#[salsa::tracked]
+pub fn sierra_gen_group_input(db: &dyn Database) -> SierraGenGroupInput {
+    SierraGenGroupInput::new(db, None)
 }
 
 /// Wrapper for the concrete libfunc long id, providing a unique id for each libfunc.
@@ -271,6 +305,20 @@ pub trait SierraGenGroup: Database {
     ) -> Maybe<&'db SierraProgramWithDebug<'db>> {
         program_generator::get_sierra_program(self.as_dyn_database(), (), requested_crate_ids)
             .maybe_as_ref()
+    }
+
+    /// Returns the installed [`ExternalConstProvider`], if any.
+    fn external_const_provider(&self) -> Option<ExternalConstProvider> {
+        sierra_gen_group_input(self.as_dyn_database())
+            .external_const_provider(self.as_dyn_database())
+            .clone()
+    }
+
+    /// Installs the [`ExternalConstProvider`] used to resolve calls to the reserved
+    /// `__externally_provided_const__` extern function.
+    fn set_external_const_provider(&mut self, provider: Option<ExternalConstProvider>) {
+        let input = sierra_gen_group_input(self.as_dyn_database());
+        input.set_external_const_provider(self).to(provider);
     }
 }
 impl<T: Database + ?Sized> SierraGenGroup for T {}
