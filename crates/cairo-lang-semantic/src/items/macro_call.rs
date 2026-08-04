@@ -165,7 +165,8 @@ fn priv_macro_call_data<'db>(
     let expanded_code = match expand_macro_rule(db, rule, &capture_trees) {
         Ok(expanded_code) => expanded_code,
         Err(err) => {
-            let diag_added = err.report(&mut diagnostics);
+            let diag_added =
+                err.report(&mut diagnostics, macro_call_syntax.stable_ptr(db).untyped());
             return Ok(MacroCallData {
                 macro_call_module: Err(diag_added),
                 diagnostics: diagnostics.build(),
