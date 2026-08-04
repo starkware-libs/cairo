@@ -24,8 +24,6 @@ fn foo(a: felt252) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > lowering_flat
 Parameters: v0: core::felt252
 blk0 (root):

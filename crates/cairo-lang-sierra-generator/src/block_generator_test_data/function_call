@@ -21,8 +21,6 @@ fn bar(a: felt252, b: felt252, ref z: MyStruct) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > lowering_flat
 Parameters: v0: test::MyStruct
 blk0 (root):
@@ -77,8 +75,6 @@ fn foo() -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 const_as_immediate<Const<felt252, 7>>() -> ([0])
 PushValues([0]: felt252, [0]: felt252) -> ([1]*, [2]*)
@@ -123,8 +119,6 @@ fn foo() -> felt252 {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 const_as_immediate<Const<felt252, 3>>() -> ([0])

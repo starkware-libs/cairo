@@ -16,8 +16,6 @@ fn foo(x: felt252) -> felt252 {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }
 branch_align() -> ()

@@ -19,8 +19,6 @@ fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 array_pop_front<felt252>([0]) { fallthrough([1], [2]) label_test::serialize_array_felt_helper::0([3]) }
 branch_align() -> ()

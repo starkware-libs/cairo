@@ -59,7 +59,6 @@ fn block_generator_test(
             return TestRunnerResult::success(OrderedHashMap::from([
                 ("semantic_diagnostics".into(), semantic_diagnostics),
                 ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
-                ("sierra_gen_diagnostics".into(), "".into()),
                 ("sierra_code".into(), "".into()),
             ]));
         }

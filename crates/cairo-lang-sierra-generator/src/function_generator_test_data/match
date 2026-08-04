@@ -21,8 +21,6 @@ fn foo(a: felt252) {
 
 //! > lowering_diagnostics
 
-//! > sierra_gen_diagnostics
-
 //! > sierra_code
 label_test::foo::0:
 dup<felt252>([0]) -> ([0], [1])
