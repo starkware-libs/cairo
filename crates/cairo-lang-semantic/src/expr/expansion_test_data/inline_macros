@@ -358,29 +358,38 @@ empty_call: 2
 
 //! > ==========================================================================
 
-//! > Test an expansion repetition whose operator differs from the pattern's (valid).
+//! > Test an expansion repetition whose operator differs from the pattern's, within its count.
 
 //! > test_runner_name
-test_expand_expr(expect_diagnostics: false)
+test_expand_expr(expect_diagnostics: true)
 
 //! > module_code
-// The operator of an expansion repetition is ignored: the block is expanded once per group the
-// captures hold, so a `?` block over a `*` pattern still emits both captures. The block is not the
-// first element of the expansion.
+// The operator of an expansion repetition does not have to match the pattern's - the block is
+// expanded once per group the captures hold - but its own count promise is enforced: a `?` block
+// over a `*` pattern expands as long as the call matches at most one group, and is rejected past
+// that. `rustc` rejects the rule itself ("meta-variable repeats with different Kleene operator"),
+// so every call of the last kind fails there too. The block is not the first element of the
+// expansion.
 #[feature("user_defined_inline_macros")]
-macro ignored_op {
+macro mixed_op {
     ($($x:expr),*) => { (0, $($x,)?) };
 }
 
 //! > expr_code
-let some_captures = ignored_op!(1, 2);
-let no_captures = ignored_op!();
+let no_captures = mixed_op!();
+let one_capture = mixed_op!(1);
+let two_captures = mixed_op!(1, 2);
 
 //! > expanded_code
-some_captures: (0, 1,2,) 
-no_captures: (0, )
+no_captures: (0, ) 
+one_capture: (0, 1,) 
+two_captures: mixed_op!(1, 2)
 
 //! > diagnostics
+error[E2210]: A `?` expansion block of the matched macro rule may repeat at most once, but this call matched more than one group.
+ --> lib.cairo:14:20
+let two_captures = mixed_op!(1, 2);
+                   ^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
