@@ -211,22 +211,30 @@ mod repetition_macro_matcher {
         ($($x:ident) *) => { 444 };
     }
 
+    // A separator only ever stands between two groups, so a trailing one is not part of the
+    // repetition and the calls above reject it - as rustc's `macro_rules!` does. A macro that wants
+    // to accept a trailing separator asks for it, and `$(,)?` is how rustc spells "an optional
+    // trailing comma".
+    macro matcher_trailing_comma {
+        ($($x:expr),* $(,)?) => { 555 };
+    }
+
     #[test]
     fn repetition_macro_matcher() {
         assert_eq!(matcher_plus!(1), 111);
         assert_eq!(matcher_plus!(1, 2), 111);
-        #[cairofmt::skip]
-        assert_eq!(matcher_plus!(1, 2,), 111);
-        #[cairofmt::skip]
-        assert_eq!(matcher_plus!(1,), 111);
 
         assert_eq!(matcher_star!(), 222);
         assert_eq!(matcher_star!(3), 222);
         assert_eq!(matcher_star!(4, 5), 222);
+
+        assert_eq!(matcher_trailing_comma!(), 555);
+        assert_eq!(matcher_trailing_comma!(1), 555);
+        assert_eq!(matcher_trailing_comma!(4, 5), 555);
         #[cairofmt::skip]
-        assert_eq!(matcher_star!(3,), 222);
+        assert_eq!(matcher_trailing_comma!(3,), 555);
         #[cairofmt::skip]
-        assert_eq!(matcher_star!(4, 5,), 222);
+        assert_eq!(matcher_trailing_comma!(4, 5,), 555);
 
         assert_eq!(matcher_optional!(), 333);
         assert_eq!(matcher_optional!(9), 333);
