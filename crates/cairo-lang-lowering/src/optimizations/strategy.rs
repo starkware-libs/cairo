@@ -242,6 +242,9 @@ pub fn final_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationSt
             ])
         }
         Optimizations::Disabled => OptimizationStrategy(vec![
+            // This phase preserves the gas invariant at control-flow convergence points. It is
+            // required for correctness even when optional optimizations are disabled.
+            OptimizationPhase::GasRedeposit,
             OptimizationPhase::LowerImplicits,
             OptimizationPhase::ReorganizeBlocks,
         ]),
