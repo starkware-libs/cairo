@@ -855,7 +855,7 @@ macro pair {
 pair!(1 + 2, 3 * 4)
 
 //! > expanded_code
-(1 + 2, 3 * 4)
+((1 + 2), (3 * 4))
 
 //! > diagnostics
 
@@ -878,7 +878,7 @@ macro pair {
 pair!((1 + 2) * 3, 4)
 
 //! > expanded_code
-((1 + 2) * 3, 4)
+(((1 + 2) * 3), 4)
 
 //! > diagnostics
 
@@ -928,8 +928,8 @@ pair!(1 + // c
 2, 3)
 
 //! > expanded_code
-(1 + // c
-2, 3)
+((1 + // c
+2), 3)
 
 //! > diagnostics
 
@@ -1234,5 +1234,171 @@ pair!(1 , 2)
 
 //! > expanded_code
 (1, 2)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expression capture parenthesized against the operator the expansion writes before it.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A capture is spliced into the expansion as text, so the operators the rule wrote around it would
+// otherwise bind into it: `0 - 1 + 2` is `(0 - 1) + 2`, which is `1`. Parentheses restore the
+// atomicity `rustc` gets from an `expr` fragment being a single AST node - it expands the same
+// macro and call to `0 - (1 + 2)` and prints `-3`.
+#[feature("user_defined_inline_macros")]
+macro neg {
+    ($x:expr) => { 0 - $x };
+}
+
+//! > expr_code
+neg!(1 + 2)
+
+//! > expanded_code
+0 - (1 + 2)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test two expression captures parenthesized against an operator between them.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Every `expr` capture is parenthesized, so the rule's `*` binds the two captured sums rather than
+// their nearest operands: `1 + 2 * 3 + 4` would be `11`. `rustc` expands the same macro and call to
+// `(1 + 2) * (3 + 4)` and prints `21`.
+#[feature("user_defined_inline_macros")]
+macro mul {
+    ($a:expr, $b:expr) => { $a * $b };
+}
+
+//! > expr_code
+mul!(1 + 2, 3 + 4)
+
+//! > expanded_code
+(1 + 2) * (3 + 4)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test every group of a nested expansion block parenthesizing its own captures.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Two groups at each of the two repetition levels, so the parentheses have to be emitted per
+// capture rather than once per expansion, and the `+` of the inner block cannot reach into a
+// captured sum or product. `rustc` expands the same macro and call to
+// `((0 + (1 + 2) + 3), (0 + 4 + (5 * 6)))` and prints `(6, 34)`.
+#[feature("user_defined_inline_macros")]
+macro dot {
+    ($([$($x:expr),*]),*) => { ($((0 $(+ $x)*)),*) };
+}
+
+//! > expr_code
+dot!([1 + 2, 3], [4, 5 * 6])
+
+//! > expanded_code
+((0 + (1 + 2)+ 3),(0 + 4+ (5 * 6)))
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test identifier captures spliced into a path and a callee, gaining no parentheses.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Only an `expr` capture is parenthesized. An `ident` capture stands for a name, and a name is
+// used in positions - here a path segment and the callee of a call - that a parenthesized
+// expression does not even parse in, so parenthesizing every capture would break this expansion.
+// `rustc` prints 16 for the equivalent macro and call.
+mod holder {
+    pub const VALUE: felt252 = 7;
+}
+
+fn nine() -> felt252 {
+    9
+}
+
+#[feature("user_defined_inline_macros")]
+macro named {
+    ($m:ident, $f:ident) => { $m::VALUE + $f() };
+}
+
+//! > expr_code
+named!(holder, nine)
+
+//! > expanded_code
+holder::VALUE + nine()
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expression capture that is a bare path, which is spliced without parentheses.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A bare path has no top-level operator for the expansion's operators to bind into, so the
+// parentheses would change nothing about how it parses - and it is the one expression shape that
+// reaches the non-expression positions a rule can splice a capture into. Cairo has no `path`
+// placeholder kind, so `expr` is how a rule captures the path of a `use` item, and `use (a::bar);`
+// does not parse. `rustc` prints 12 for the equivalent macro and call, and rejects the `use` rule
+// outright rather than supporting the exception.
+mod holder {
+    pub const VALUE: felt252 = 7;
+}
+
+#[feature("user_defined_inline_macros")]
+macro plus_five {
+    ($x:expr) => { $x + 5 };
+}
+
+//! > expr_code
+plus_five!(holder::VALUE)
+
+//! > expanded_code
+holder::VALUE + 5
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expression capture passed on to another macro call, parenthesized once per splice.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The rule matching the one-argument call writes the capture into a call of the two-argument rule,
+// which captures it back - parentheses and all - so a value is wrapped once per macro it travels
+// through, and the code mapping of each wrapping has to cover its parentheses for the inner match
+// to find the outer one. `rustc` expands the same macros and call to `((1 + 2), 2)` and prints
+// `(3, 2)`.
+#[feature("user_defined_inline_macros")]
+macro pass {
+    ($x:expr, $y:expr) => { ($x, $y) };
+
+    ($x:expr) => { $defsite::pass!($x, 2) };
+}
+
+//! > expr_code
+pass!(1 + 2)
+
+//! > expanded_code
+((1 + 2), 2)
 
 //! > diagnostics
