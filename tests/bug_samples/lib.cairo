@@ -71,6 +71,7 @@ mod issue8105;
 mod issue9887;
 mod loop_break_in_match;
 mod loop_only_change;
+mod macro_expr_capture_grouping;
 mod merge_const_member;
 mod partial_param_local;
 mod revoked_locals;
