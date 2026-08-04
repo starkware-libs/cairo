@@ -3816,3 +3816,37 @@ error[E2158]: No matching rule found in inline macro `m`.
  --> lib.cairo:11:5
     m!(a, _, b);
     ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an atomic expr capture spliced into a type position (not parenthesized).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($t:expr) => { let x: $t = (1_u8, 2_u8); x };
+}
+fn foo() -> (u8, u8) {
+    m!((u8, u8))
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a snapshot-type expr capture spliced into a type position (not parenthesized).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($t:expr) => { let x: $t = @1; x };
+}
+fn foo() -> @felt252 {
+    m!(@felt252)
+}
+
+//! > expected_diagnostics
