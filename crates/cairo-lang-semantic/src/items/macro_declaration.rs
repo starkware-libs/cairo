@@ -1066,6 +1066,17 @@ pub struct MacroExpansionResult {
 }
 
 /// The reason the expansion of a macro rule could not be performed.
+///
+/// No user-writable program currently reaches any of these variants: expansion only runs on
+/// rules that
+/// have passed the declaration-time checks, and each failure below is foreclosed by one of them -
+/// [`SemanticDiagnosticKind::UndefinedMacroPlaceholder`],
+/// [`SemanticDiagnosticKind::MacroPlaceholderRepDepthMismatch`],
+/// [`SemanticDiagnosticKind::MacroPlaceholderRepDriverMismatch`],
+/// [`SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder`] and
+/// [`SemanticDiagnosticKind::DuplicateMacroPlaceholder`] (see the notes at the construction
+/// sites). The variants are kept as a backstop, so that a rule a future matcher or checker change
+/// lets through fails with a diagnostic instead of expanding to something arbitrary.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MacroExpansionFailure<'db> {
     /// No placeholder of a `$( ... )` block in the expansion repeats at the block's depth, so the
@@ -1220,7 +1231,10 @@ impl<'db> ExpansionContext<'db, '_> {
         else {
             // Either the placeholder is not one of the pattern's - rejected at declaration time by
             // `UndefinedMacroPlaceholder` - or its captures are nested deeper than the blocks it is
-            // used in, rejected there by `MacroPlaceholderRepDepthMismatch`.
+            // used in, rejected there by `MacroPlaceholderRepDepthMismatch`. An out-of-range group
+            // index cannot land here: every index was produced by `group_count` on an enclosing
+            // block, which scanned this placeholder's tree (the placeholder is a descendant of
+            // that block) before descending into it.
             return Err(MacroExpansionError {
                 stable_ptr: param.stable_ptr(db).untyped(),
                 failure: MacroExpansionFailure::MissingCapture(name),
