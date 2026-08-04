@@ -560,11 +560,11 @@ let comment_after = pair!(1 // c
 let call_spacing = pair!(1 , 2);
 
 //! > expanded_code
-two_multi_token: (1 + 2, 3 * 4) 
-parenthesized_subtree: ((1 + 2) * 3, 4) 
+two_multi_token: ((1 + 2), (3 * 4)) 
+parenthesized_subtree: (((1 + 2) * 3), 4) 
 comment_before: (1, 2) 
-comment_inside: (1 + // c
-2, 3) 
+comment_inside: ((1 + // c
+2), 3) 
 comment_after: (1, 2) 
 call_spacing: (1, 2)
 
@@ -826,5 +826,237 @@ expanded:         {
 
     total
 }
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test a struct constructor capture parenthesized against a match scrutinee.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A match scrutinee forbids a bare `{`, so an unwrapped struct constructor would end at its path.
+struct S {
+    a: felt252,
+}
+
+#[feature("user_defined_inline_macros")]
+macro seven {
+    ($x:expr) => { match $x { _ => 7 } };
+}
+
+//! > expr_code
+let expanded = seven!(S { a: 1 });
+
+//! > expanded_code
+expanded: match (S { a: 1 }) { _ => 7 }
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test `@` and `&` captures spliced without parentheses.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// `@` and `&` form types as well as expressions, and a type must reach a type-position splice bare.
+#[feature("user_defined_inline_macros")]
+macro keep {
+    ($x:expr) => { $x };
+}
+
+//! > expr_code
+let snapshot = keep!(@1);
+let reference = keep!(&1);
+
+//! > expanded_code
+snapshot: @1 
+reference: &1
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test unary and closure captures parenthesized against a postfix operator.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+macro call {
+    ($x:expr) => { $x.foo() };
+}
+
+//! > expr_code
+let negated = call!(-a);
+let closure = call!(|x| x);
+
+//! > expanded_code
+negated: (-a).foo() 
+closure: (|x| x).foo()
+
+//! > diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:5:21
+let negated = call!(-a);
+                    ^
+
+error[E0002]: Method `foo` not found on type `?0`. Did you import the correct trait and impl?
+ --> lib.cairo:5:15
+let negated = call!(-a);
+              ^^^^^^^^^
+
+error[E0002]: Method `foo` not found on type `test::test_func::{call@151}::{closure#0}`. Did you import the correct trait and impl?
+ --> lib.cairo:6:15
+let closure = call!(|x| x);
+              ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an expression capture parenthesized against the operator the expansion writes before it.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Spliced as text, `0 - 1 + 2` would be `(0 - 1) + 2`; rustc's `expr` fragment is a single node.
+#[feature("user_defined_inline_macros")]
+macro neg {
+    ($x:expr) => { 0 - $x };
+}
+
+//! > expr_code
+let expanded = neg!(1 + 2);
+
+//! > expanded_code
+expanded: 0 - (1 + 2)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test two expression captures parenthesized against an operator between them.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro mul {
+    ($a:expr, $b:expr) => { $a * $b };
+}
+
+//! > expr_code
+let expanded = mul!(1 + 2, 3 + 4);
+
+//! > expanded_code
+expanded: (1 + 2) * (3 + 4)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test every group of a nested expansion block parenthesizing its own captures.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+#[feature("user_defined_inline_macros")]
+macro dot {
+    ($([$($x:expr),*]),*) => { ($((0 $(+ $x)*)),*) };
+}
+
+//! > expr_code
+let expanded = dot!([1 + 2, 3], [4, 5 * 6]);
+
+//! > expanded_code
+expanded: ((0 + (1 + 2)+ 3),(0 + 4+ (5 * 6)))
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test identifier captures spliced into a path and a callee, gaining no parentheses.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A name is used in positions - a path segment, a callee - where parentheses do not parse.
+mod holder {
+    pub const VALUE: felt252 = 7;
+}
+
+fn nine() -> felt252 {
+    9
+}
+
+#[feature("user_defined_inline_macros")]
+macro named {
+    ($m:ident, $f:ident) => { $m::VALUE + $f() };
+}
+
+//! > expr_code
+let expanded = named!(holder, nine);
+
+//! > expanded_code
+expanded: holder::VALUE + nine()
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expression capture that is a bare path, which is spliced without parentheses.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Cairo has no `path` placeholder kind, so `expr` is how a rule captures the path of a `use` item,
+// and `use (a::bar);` does not parse. rustc rejects the `use` rule instead.
+mod holder {
+    pub const VALUE: felt252 = 7;
+}
+
+#[feature("user_defined_inline_macros")]
+macro plus_five {
+    ($x:expr) => { $x + 5 };
+}
+
+//! > expr_code
+let expanded = plus_five!(holder::VALUE);
+
+//! > expanded_code
+expanded: holder::VALUE + 5
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expression capture passed on to another macro call.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The inner call captures `(1 + 2)` back as an atom, so two splices wrap once; the code mapping
+// must cover the parentheses for the inner match to find the outer one.
+#[feature("user_defined_inline_macros")]
+macro pass {
+    ($x:expr, $y:expr) => { ($x, $y) };
+
+    ($x:expr) => { $defsite::pass!($x, 2) };
+}
+
+//! > expr_code
+let expanded = pass!(1 + 2);
+
+//! > expanded_code
+expanded: ((1 + 2), 2)
 
 //! > diagnostics
