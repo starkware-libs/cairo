@@ -354,7 +354,7 @@ impl<'db> HirDisplay<'db> for StructId<'db> {
 impl<'db> HirDisplay<'db> for FreeFunctionId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
         let free_function_full_signature = Self::retrieve_signature_data(f.db, *self)?;
-        write_function_signature(f, free_function_full_signature, "".to_string())?;
+        write_function_signature(f, free_function_full_signature, "")?;
         f.format();
         Ok(())
     }
@@ -421,7 +421,7 @@ impl<'db> HirDisplay<'db> for ImplConstantDefId<'db> {
 impl<'db> HirDisplay<'db> for TraitFunctionId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
         let trait_function_full_signature = Self::retrieve_signature_data(f.db, *self)?;
-        write_function_signature(f, trait_function_full_signature, "".to_string())?;
+        write_function_signature(f, trait_function_full_signature, "")?;
         f.format();
         Ok(())
     }
@@ -430,7 +430,7 @@ impl<'db> HirDisplay<'db> for TraitFunctionId<'db> {
 impl<'db> HirDisplay<'db> for ImplFunctionId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
         let impl_function_full_signature = Self::retrieve_signature_data(f.db, *self)?;
-        write_function_signature(f, impl_function_full_signature, "".to_string())?;
+        write_function_signature(f, impl_function_full_signature, "")?;
         f.format();
         Ok(())
     }
@@ -570,7 +570,7 @@ impl<'db> HirDisplay<'db> for ExternFunctionId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
         let extern_function_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         let signature = f.db.extern_function_signature(*self)?;
-        write_function_signature(f, extern_function_full_signature, "extern ".to_string())?;
+        write_function_signature(f, extern_function_full_signature, "extern ")?;
         if !signature.implicits.is_empty() {
             f.write_str(" implicits(")?;
             let mut count = signature.implicits.len();
@@ -633,7 +633,7 @@ fn is_the_same_root(path1: &str, path2: &str) -> bool {
 fn write_function_signature<'db>(
     f: &mut HirFormatter<'db>,
     documentable_signature: DocumentableItemSignatureData<'db>,
-    syntactic_kind: String,
+    syntactic_kind: &str,
 ) -> Result<(), SignatureError> {
     let resolver_generic_params = match documentable_signature.resolver_generic_params {
         Some(params) => format_resolver_generic_params(f.db, params),
@@ -642,11 +642,9 @@ fn write_function_signature<'db>(
 
     write!(
         f,
-        "{}{}fn {}{}",
+        "{}{syntactic_kind}fn {}{resolver_generic_params}",
         get_syntactic_visibility(&documentable_signature.visibility),
-        syntactic_kind,
         documentable_signature.name.long(f.db),
-        resolver_generic_params,
     )?;
     if let Some(generic_args) = documentable_signature.generic_args {
         write_generic_args(generic_args, f)?;
