@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785892933543,
+  "lastUpdate": 1785893091232,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -18201,6 +18201,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "ls_reexec/structural edit (end)",
             "value": 1922,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "d986225cb3f3344c429e74d38224e1e847bb6663",
+          "message": "refactor(semantic): Fixed some todo's and refactored fn testing. (#10319)",
+          "timestamp": "2026-08-04T13:42:22Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/d986225cb3f3344c429e74d38224e1e847bb6663"
+        },
+        "date": 1785893091053,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2925,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1522,
             "unit": "queries"
           },
           {
