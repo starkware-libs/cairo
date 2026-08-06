@@ -1,0 +1,74 @@
+//! > Per-stage signature of a panicking function.
+
+//! > test_runner_name
+test_per_stage_signature
+
+//! > cairo_code
+#[target_function]
+fn foo(ref a: u32, b: u32) -> u32 {
+    a = a + b;
+    a
+}
+
+//! > monomorphized
+(a: u32, b: u32) -> u32 refs(u32)
+
+//! > pre_optimizations
+(a: u32, b: u32) -> PanicResult::<(u32, u32)>
+
+//! > post_baseline
+(a: u32, b: u32) -> PanicResult::<(u32, u32)>
+
+//! > final
+(RangeCheck, a: u32, b: u32) -> PanicResult::<(u32, u32)> refs(RangeCheck)
+
+//! > ==========================================================================
+
+//! > Per-stage signature of a nopanic function, where the extra returns survive panic lowering.
+
+//! > test_runner_name
+test_per_stage_signature
+
+//! > cairo_code
+#[target_function]
+fn foo(ref a: felt252, b: felt252) -> felt252 nopanic {
+    a = core::pedersen::pedersen(a, b);
+    b
+}
+
+//! > monomorphized
+(a: felt252, b: felt252) -> felt252 refs(felt252)
+
+//! > pre_optimizations
+(a: felt252, b: felt252) -> felt252 refs(felt252)
+
+//! > post_baseline
+(a: felt252, b: felt252) -> felt252 refs(felt252)
+
+//! > final
+(Pedersen, a: felt252, b: felt252) -> felt252 refs(Pedersen, felt252)
+
+//! > ==========================================================================
+
+//! > Per-stage signature of a function with explicitly declared implicits.
+
+//! > test_runner_name
+test_per_stage_signature
+
+//! > cairo_code
+#[target_function]
+fn foo(a: felt252) -> felt252 implicits(core::pedersen::Pedersen) nopanic {
+    a
+}
+
+//! > monomorphized
+(a: felt252) -> felt252
+
+//! > pre_optimizations
+(a: felt252) -> felt252
+
+//! > post_baseline
+(a: felt252) -> felt252
+
+//! > final
+(Pedersen, a: felt252) -> felt252 refs(Pedersen)
