@@ -23,10 +23,10 @@ use semantic::items::functions::GenericFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
 
-use crate::Location;
 use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
 use crate::specialization::SpecializationArg;
+use crate::{Location, LoweringStage};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum FunctionWithBodyLongId<'db> {
@@ -65,6 +65,11 @@ impl<'db> FunctionWithBodyId<'db> {
     ) -> cairo_lang_defs::ids::FunctionWithBodyId<'db> {
         self.long(db).base_semantic_function(db)
     }
+    /// Returns the signature of the generic, pre-monomorphization function.
+    ///
+    /// [`LoweringStage`] deliberately does not apply here: the staged lowerings all run on
+    /// concrete (monomorphized) functions, so the only lowering this id has is
+    /// `function_with_body_lowering`.
     pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
         Ok(db.function_with_body_lowering(*self)?.signature.clone())
     }
@@ -202,7 +207,12 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn full_path(&self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
+    /// Returns the signature of the function as it is at the given [`LoweringStage`].
+    pub fn signature(&self, db: &'db dyn Database, stage: LoweringStage) -> Maybe<Signature<'db>> {
+        if stage != LoweringStage::Monomorphized {
+            return Ok(db.lowered_body(*self, stage)?.signature.clone());
+        }
+        // The `Monomorphized` signature is derived from the semantic one, to prevent cycles.
         match self.generic_or_specialized(db) {
             GenericOrSpecialized::Generic(id) => {
                 let generic_signature = id.signature(db)?;
@@ -297,15 +307,21 @@ impl<'db> FunctionLongId<'db> {
             }
         }))
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        match self {
-            FunctionLongId::Semantic(semantic) => Ok(EnrichedSemanticSignature::from_semantic(
+    /// Returns the signature of the function as it is at the given [`LoweringStage`].
+    pub fn signature(&self, db: &'db dyn Database, stage: LoweringStage) -> Maybe<Signature<'db>> {
+        if let Some(body) = self.body(db)? {
+            body.signature(db, stage)
+        } else if let FunctionLongId::Semantic(semantic) = self {
+            Ok(EnrichedSemanticSignature::from_semantic(
                 db,
                 db.concrete_function_signature(*semantic)?,
             )
-            .into()),
-            FunctionLongId::Generated(generated) => generated.body(db).signature(db),
-            FunctionLongId::Specialized(specialized) => specialized.long(db).signature(db),
+            .into())
+        } else {
+            unreachable!(
+                "Generated and specialized functions always have a body: {}",
+                self.full_path(db)
+            );
         }
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
@@ -326,8 +342,8 @@ impl<'db> FunctionId<'db> {
     pub fn body(&self, db: &'db dyn Database) -> Maybe<Option<ConcreteFunctionWithBodyId<'db>>> {
         self.long(db).body(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        self.long(db).signature(db)
+    pub fn signature(&self, db: &'db dyn Database, stage: LoweringStage) -> Maybe<Signature<'db>> {
+        self.long(db).signature(db, stage)
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
@@ -458,8 +474,9 @@ impl<'db> SpecializedFunction<'db> {
         format!("{:?}", self.debug(db))
     }
 
+    /// Returns the `Monomorphized` signature of the specialized function.
     pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        let mut base_sign = self.base.signature(db)?;
+        let mut base_sign = self.base.signature(db, LoweringStage::Monomorphized)?;
 
         let mut params = vec![];
         let mut stack = vec![];

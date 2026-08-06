@@ -6,9 +6,9 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
-use cairo_lang_lowering::BlockId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::LocationId;
+use cairo_lang_lowering::{BlockId, LoweringStage};
 use cairo_lang_semantic::TypeLongId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -418,7 +418,7 @@ fn generate_externally_provided_const_code<'db>(
     // The concrete return type of the call - substituted for a generic declaration, and the shape
     // the call's outputs were expanded from. A tuple - including the unit type - is expanded into
     // an output per member, which no single constant can fill.
-    let return_type = statement.function.signature(db)?.return_type;
+    let return_type = statement.function.signature(db, LoweringStage::Monomorphized)?.return_type;
     assert!(
         !matches!(return_type.long(db), TypeLongId::Tuple(_)),
         "`{EXTERNALLY_PROVIDED_CONST}` must not return a tuple: {:?}",

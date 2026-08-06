@@ -17,7 +17,9 @@ use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics, LoweringDiagnosticsBuilder};
 use crate::ids::{FunctionId, LocationId, SemanticFunctionIdEx};
-use crate::{BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
+use crate::{
+    BlockId, Lowered, LoweringStage, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
+};
 
 pub mod demand;
 
@@ -178,7 +180,8 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
         info.variables_introduced(self, stmt.outputs(), (None, block_id));
         match stmt {
             Statement::Call(stmt) => {
-                if let Ok(signature) = stmt.function.signature(self.db)
+                if let Ok(signature) =
+                    stmt.function.signature(self.db, LoweringStage::Monomorphized)
                     && signature.panicable
                 {
                     // Be prepared to panic here.
