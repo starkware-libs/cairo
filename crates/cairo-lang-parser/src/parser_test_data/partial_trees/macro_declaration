@@ -303,7 +303,7 @@ error[E1031]: Missing macro repetition operator. Expected `?`, `+`, or `*` after
     │       │       │   │       │           └── kind (kind: ParamExpr)
     │       │       │   │       │               └── expr (kind: TokenIdentifier): 'expr'
     │       │       │   │       ├── rparen (kind: TokenRParen): ')'
-    │       │       │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
+    │       │       │   │       ├── separator (kind: OptionMacroRepetitionSeparatorEmpty) []
     │       │       │   │       └── operator: Missing []
     │       │       │   └── rparen (kind: TokenRParen): ')'
     │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
@@ -319,7 +319,7 @@ error[E1031]: Missing macro repetition operator. Expected `?`, `+`, or `*` after
     │       │       │   │       │       ├── name (kind: TokenIdentifier): 'x'
     │       │       │   │       │       └── kind (kind: OptionParamKindEmpty) []
     │       │       │   │       ├── rparen (kind: TokenRParen): ')'
-    │       │       │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
+    │       │       │   │       ├── separator (kind: OptionMacroRepetitionSeparatorEmpty) []
     │       │       │   │       └── operator (kind: TokenMul): '*'
     │       │       │   └── rbrace (kind: TokenRBrace): '}'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
@@ -374,7 +374,8 @@ error[E1031]: Missing macro repetition operator. Expected `?`, `+`, or `*` after
     │       │       │   │       │           └── kind (kind: ParamExpr)
     │       │       │   │       │               └── expr (kind: TokenIdentifier): 'expr'
     │       │       │   │       ├── rparen (kind: TokenRParen): ')'
-    │       │       │   │       ├── separator (kind: TokenComma): ','
+    │       │       │   │       ├── separator (kind: MacroRepetitionSeparator)
+    │       │       │   │       │   └── token (kind: TokenComma): ','
     │       │       │   │       └── operator (kind: TokenMul): '*'
     │       │       │   └── rparen (kind: TokenRParen): ')'
     │       │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
@@ -390,7 +391,7 @@ error[E1031]: Missing macro repetition operator. Expected `?`, `+`, or `*` after
     │       │       │   │       │       ├── name (kind: TokenIdentifier): 'x'
     │       │       │   │       │       └── kind (kind: OptionParamKindEmpty) []
     │       │       │   │       ├── rparen (kind: TokenRParen): ')'
-    │       │       │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
+    │       │       │   │       ├── separator (kind: OptionMacroRepetitionSeparatorEmpty) []
     │       │       │   │       └── operator: Missing []
     │       │       │   └── rbrace (kind: TokenRBrace): '}'
     │       │       └── semicolon (kind: TokenSemicolon): ';'

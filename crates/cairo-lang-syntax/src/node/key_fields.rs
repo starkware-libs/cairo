@@ -204,6 +204,8 @@ pub fn key_fields_range(kind: SyntaxKind) -> core::ops::Range<usize> {
         SyntaxKind::OptionParamKindEmpty => 0..0,
         SyntaxKind::MacroParam => 0..0,
         SyntaxKind::MacroRepetition => 0..0,
+        SyntaxKind::MacroRepetitionSeparator => 0..0,
+        SyntaxKind::OptionMacroRepetitionSeparatorEmpty => 0..0,
         SyntaxKind::OptionTerminalCommaEmpty => 0..0,
         SyntaxKind::MacroRepetitionOperatorMissing => 0..0,
         SyntaxKind::ParamIdent => 0..0,
