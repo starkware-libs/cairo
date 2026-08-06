@@ -2399,8 +2399,11 @@ error[E2198]: Macro placeholder 'x' requires 1 repetition level(s) in the expans
 test_function_diagnostics(expect_diagnostics: false)
 
 //! > cairo_code
+// The `+` in every group is what makes the expansion an expression: this rule is about the
+// placeholder's repetition level being accepted, and juxtaposing the captures instead only parsed
+// while `$($x)*` emitted `123` - one literal glued out of three captures, and now `(1)(2)(3)`.
 macro m {
-    ($($x:expr),*) => { $($x)* };
+    ($($x:expr),*) => { 0 $(+ $x)* };
 }
 fn foo() {
     m!(1, 2, 3);
@@ -3767,3 +3770,37 @@ error[E2158]: No matching rule found in inline macro `m`.
  --> lib.cairo:9:5
     m!(a, _, b);
     ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an atomic expr capture spliced into a type position (not parenthesized).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($t:expr) => { let x: $t = (1_u8, 2_u8); x };
+}
+fn foo() -> (u8, u8) {
+    m!((u8, u8))
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a snapshot-type expr capture spliced into a type position (not parenthesized).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($t:expr) => { let x: $t = @1; x };
+}
+fn foo() -> @felt252 {
+    m!(@felt252)
+}
+
+//! > expected_diagnostics
