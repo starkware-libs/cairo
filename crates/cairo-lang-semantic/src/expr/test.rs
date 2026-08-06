@@ -12,8 +12,8 @@ use crate::expr::fmt::ExprFormatter;
 use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::semantic;
 use crate::test_utils::{
-    SemanticDatabaseForTesting, setup_test_expr, setup_test_function_from_content,
-    test_function_diagnostics,
+    SemanticDatabaseForTesting, setup_test_expr, setup_test_exprs,
+    setup_test_function_from_content, test_function_diagnostics,
 };
 
 cairo_lang_test_utils::test_file_test!(
@@ -99,14 +99,14 @@ cairo_lang_test_utils::test_file_test!(
     ["expect_diagnostics"]
 );
 
-/// Tests the syntactic expansion of a given expression. Can be use to test the expansion of inline
-/// macros.
+/// Tests the syntactic expansion of the given expressions, each provided as a
+/// `let <name> = <expr>;` statement. Can be used to test the expansion of inline macros.
 fn test_expand_expr(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
-    let (test_expr, diagnostics) = setup_test_expr(
+    let (test_exprs, diagnostics) = setup_test_exprs(
         db,
         inputs["expr_code"].as_str(),
         inputs.get("module_code").map_or("", String::as_str),
@@ -115,12 +115,19 @@ fn test_expand_expr(
     )
     .split();
     let sdb: &dyn Database = db;
-    let expr = sdb.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
-    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db);
-    let expanded_code = expanded_code.replace("\n        ", "\n");
+    let expanded_code = test_exprs
+        .named_exprs
+        .iter()
+        .map(|(name, expr_id)| {
+            let expr = sdb.expr_semantic(test_exprs.function_id, *expr_id);
+            let text = expr.stable_ptr().0.lookup(db).get_text(db).replace("\n        ", "\n");
+            format!("{}: {text}", name.long(db))
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
     TestRunnerResult {
         outputs: OrderedHashMap::from([
             ("expanded_code".into(), expanded_code),

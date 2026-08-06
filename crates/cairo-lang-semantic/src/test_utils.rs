@@ -316,9 +316,81 @@ pub fn setup_test_expr<'a>(
     function_body: &str,
     crate_settings: Option<&str>,
 ) -> WithStringDiagnostics<TestExpr<'a>> {
-    // The marker shares the wrapper's first line so the spans of `expr_code` do not shift.
+    let ((test_function, statements, tail), diagnostics) =
+        setup_test_code_block(db, expr_code, module_code, function_body, crate_settings, false)
+            .split();
+    assert!(statements.is_empty(), "expr_code is not a valid expression.");
+    WithStringDiagnostics {
+        value: TestExpr {
+            module_id: test_function.module_id,
+            function_id: test_function.function_id,
+            signature: test_function.signature,
+            body: test_function.body,
+            expr_id: tail.unwrap(),
+        },
+        diagnostics,
+    }
+}
+
+/// Helper struct for the return value of [setup_test_exprs].
+pub struct TestExprs<'a> {
+    pub function_id: FunctionWithBodyId<'a>,
+    /// The tested expressions, each with the name it was bound to.
+    pub named_exprs: Vec<(SmolStrId<'a>, semantic::ExprId)>,
+}
+
+/// Returns the semantic model of the given expressions, each provided as a
+/// `let <name> = <expr>;` statement, paired with its name.
+/// module_code - extra setup code in the module context.
+/// function_body - extra setup code in the function context.
+pub fn setup_test_exprs<'a>(
+    db: &'a dyn Database,
+    exprs_code: &str,
+    module_code: &str,
+    function_body: &str,
+    crate_settings: Option<&str>,
+) -> WithStringDiagnostics<TestExprs<'a>> {
+    let ((test_function, statements, tail), diagnostics) =
+        setup_test_code_block(db, exprs_code, module_code, function_body, crate_settings, true)
+            .split();
+    const EXPECTATION: &str = "exprs_code must consist of `let <name> = <expr>;` statements.";
+    assert!(tail.is_none(), "{EXPECTATION}");
+    let function_id = test_function.function_id;
+    let named_exprs = statements
+        .iter()
+        .map(|statement| {
+            let statement_let = extract_matches!(
+                db.statement_semantic(function_id, *statement),
+                semantic::Statement::Let,
+                "{EXPECTATION}"
+            );
+            let pattern = extract_matches!(
+                db.pattern_semantic(function_id, statement_let.pattern),
+                semantic::Pattern::Variable,
+                "{EXPECTATION}"
+            );
+            (pattern.name, statement_let.expr)
+        })
+        .collect();
+    WithStringDiagnostics { value: TestExprs { function_id, named_exprs }, diagnostics }
+}
+
+/// Returns the test function created by wrapping the given `code` in a block within a test
+/// function, together with the statements and tail of that block.
+fn setup_test_code_block<'a>(
+    db: &'a dyn Database,
+    code: &str,
+    module_code: &str,
+    function_body: &str,
+    crate_settings: Option<&str>,
+    allow_unused_variables: bool,
+) -> WithStringDiagnostics<(TestFunction<'a>, Vec<semantic::StatementId>, Option<semantic::ExprId>)>
+{
+    let allow_attr = if allow_unused_variables { "#[allow(unused_variables)] " } else { "" };
+    // The attributes share the wrapper's first line so the spans of `code` do not shift.
     let function_code = format!(
-        "#[{TARGET_FUNCTION_ATTR}] fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}"
+        "{allow_attr}#[{TARGET_FUNCTION_ATTR}] fn test_func() {{ {function_body} {{\n{code}\n}}; \
+         }}"
     );
     let content = if module_code.is_empty() {
         function_code
@@ -339,17 +411,7 @@ pub fn setup_test_expr<'a>(
         db.expr_semantic(test_function.function_id, statement_expr.expr),
         semantic::Expr::Block
     );
-    assert!(statements.is_empty(), "expr_code is not a valid expression.");
-    WithStringDiagnostics {
-        value: TestExpr {
-            module_id: test_function.module_id,
-            function_id: test_function.function_id,
-            signature: test_function.signature,
-            body: test_function.body,
-            expr_id: tail.unwrap(),
-        },
-        diagnostics,
-    }
+    WithStringDiagnostics { value: (test_function, statements, tail), diagnostics }
 }
 
 pub fn test_expr_diagnostics(
