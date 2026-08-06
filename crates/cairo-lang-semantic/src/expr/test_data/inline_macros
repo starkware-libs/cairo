@@ -3804,3 +3804,45 @@ fn foo() -> @felt252 {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `?` repetition declaring a non-comma separator (rejected).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($x:ident);?) => { 0 };
+}
+fn foo() -> felt252 {
+    m!(a)
+}
+
+//! > expected_diagnostics
+error[E2206]: The `?` macro repetition operator does not take a separator.
+ --> lib.cairo:2:17
+    ($($x:ident);?) => { 0 };
+                ^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder whose repetition declares a separator outside its follow set.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($x:expr).*) => { 0 };
+}
+fn foo() -> felt252 {
+    m!(1)
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `.`.
+ --> lib.cairo:2:16
+    ($($x:expr).*) => { 0 };
+               ^
