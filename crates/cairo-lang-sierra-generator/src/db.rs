@@ -6,6 +6,7 @@ use cairo_lang_diagnostics::{Maybe, MaybeAsRef};
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::{CrateId, Tracked};
 use cairo_lang_lowering as lowering;
+use cairo_lang_lowering::LoweringStage;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_semantic as semantic;
@@ -421,7 +422,9 @@ fn get_function_signature(
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
     let lowered_function_id = db.lookup_sierra_function(&function_id);
-    let signature = lowered_function_id.signature(db)?;
+    // TODO(orizi): Read the exact `Final` signature instead of re-deriving the implicits and the
+    // panic wrapping below.
+    let signature = lowered_function_id.signature(db, LoweringStage::Monomorphized)?;
 
     let implicits = db
         .function_implicits(lowered_function_id)?
