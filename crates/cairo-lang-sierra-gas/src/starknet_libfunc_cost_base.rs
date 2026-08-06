@@ -43,6 +43,8 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarknetConcreteLibfunc) -> Vec<Cons
         | StarknetConcreteLibfunc::GetExecutionInfoV2(_)
         | StarknetConcreteLibfunc::GetExecutionInfoV3(_) => syscall_cost(0),
         StarknetConcreteLibfunc::Deploy(_) => syscall_cost(5),
+        // Provisional: same bucket as `Deploy` until a measured profile lands (sequencer-side).
+        StarknetConcreteLibfunc::DeployV2(_) => syscall_cost(5),
         StarknetConcreteLibfunc::Keccak(_) => syscall_cost(2),
         StarknetConcreteLibfunc::Sha256ProcessBlock(_) => syscall_cost(2),
         StarknetConcreteLibfunc::Sha256StateHandleInit(_) => vec![steps(0)],
