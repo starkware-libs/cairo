@@ -26,7 +26,7 @@ use salsa::Database;
 
 use crate::documentable_item::DocumentableItemId;
 use crate::helpers::{
-    extract_and_format, format_resolver_generic_params, get_generic_params,
+    format_generic_arg, format_resolver_generic_params, format_type, get_generic_params,
     get_struct_attributes_syntax, get_syntactic_evaluation, get_syntactic_visibility, resolve_type,
 };
 use crate::location_links::{LocationLink, format_signature};
@@ -151,7 +151,6 @@ impl<'db> HirFormatter<'db> {
         full_path: &String,
     ) -> Result<(), SignatureError> {
         self.write_str(prefix.unwrap_or_default())?;
-        let formatted_element_type = element_type.format(self.db);
 
         if let TypeLongId::Tuple(vec_types) = element_type.long(self.db) {
             self.write_str("(")?;
@@ -160,22 +159,15 @@ impl<'db> HirFormatter<'db> {
                 self.write_type(None, *t, if count == 1 { None } else { Some(", ") }, full_path)?;
                 count -= 1;
             }
-            self.write_str(")")?;
-        } else if is_the_same_root(full_path, &formatted_element_type) {
-            let documentable_id = resolve_type(self.db, element_type);
-            match documentable_id {
-                Some(documentable_id) => {
-                    let start_offset = self.buf.len();
-                    self.write_str(&extract_and_format(&formatted_element_type))?;
-                    let end_offset = self.buf.len();
-                    self.add_location_link(start_offset, end_offset, documentable_id);
-                }
-                None => {
-                    self.write_str(&extract_and_format(&formatted_element_type))?;
-                }
+            if vec_types.len() == 1 {
+                self.write_str(",")?;
             }
+            self.write_str(")")?;
         } else {
-            self.write_str(&extract_and_format(&formatted_element_type))?;
+            let documentable_id = is_the_same_root(full_path, &element_type.format(self.db))
+                .then(|| resolve_type(self.db, element_type))
+                .flatten();
+            self.write_link(&format_type(self.db, element_type), documentable_id)?;
         }
         self.hir_write(postfix.unwrap_or_default())
     }
@@ -184,19 +176,15 @@ impl<'db> HirFormatter<'db> {
     /// buf.
     fn write_link(
         &mut self,
-        name: String,
+        name: &str,
         documentable_id: Option<DocumentableItemId<'db>>,
     ) -> fmt::Result {
-        match documentable_id {
-            Some(documentable_id) => {
-                let start_offset = self.buf.len();
-                self.write_str(&name)?;
-                let end_offset = self.buf.len();
-                self.add_location_link(start_offset, end_offset, documentable_id);
-                Ok(())
-            }
-            None => self.write_str(&extract_and_format(&name)),
+        let start_offset = self.buf.len();
+        self.write_str(name)?;
+        if let Some(documentable_id) = documentable_id {
+            self.add_location_link(start_offset, self.buf.len(), documentable_id);
         }
+        Ok(())
     }
 
     /// Applies extra formatting to item signature.
@@ -464,7 +452,7 @@ impl<'db> HirDisplay<'db> for TraitConstantId<'db> {
             f,
             "const {}: {};",
             trait_const_full_signature.name.long(f.db),
-            extract_and_format(&return_type.format(f.db)),
+            format_type(f.db, return_type),
         )?;
 
         f.format();
@@ -578,7 +566,7 @@ impl<'db> HirDisplay<'db> for ExternFunctionId<'db> {
                 write!(
                     f,
                     "{}{}",
-                    extract_and_format(&type_id.format(f.db)),
+                    format_type(f.db, *type_id),
                     if count == 1 { ")".to_string() } else { ", ".to_string() }
                 )?;
                 count -= 1;
@@ -709,7 +697,7 @@ fn write_generic_args<'db>(
     }
     for arg in &generic_args {
         let documentable_id = resolve_generic_arg(*arg, f.db);
-        let _ = f.write_link(extract_and_format(&arg.format(f.db)), documentable_id);
+        let _ = f.write_link(&format_generic_arg(f.db, *arg), documentable_id);
         let _ = f.write_str(if count == 1 { ">" } else { ", " });
         count -= 1;
     }
