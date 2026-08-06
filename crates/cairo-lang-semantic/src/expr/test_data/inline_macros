@@ -2319,7 +2319,7 @@ error[E2156]: Inline macro `not::a::path::format` not found.
 
 //! > ==========================================================================
 
-//! > Test macro with empty inner repetition body (would loop infinitely without no-progress guard).
+//! > Test macro with a repetition body matching nothing (would loop infinitely without no-progress guard).
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -2333,8 +2333,11 @@ coupons = false
 user_defined_inline_macros = true
 
 //! > cairo_code
+// A literally empty body is rejected at declaration time (E2207), so the guard is pinned with the
+// next best thing: an outer repetition whose body is non-empty but whose only element can itself
+// match nothing.
 macro test_macro {
-    ($()*) => { 1 };
+    ($($($x:ident)*)*) => { 1 };
 }
 fn foo() {
     test_macro!();
@@ -2523,6 +2526,11 @@ error[E1008]: Missing tokens. Expected a macro rule parameter kind.
  --> lib.cairo:3:9
     ($x:literal) => { 5_u32 };
         ^
+
+error[E2208]: This macro rule's pattern could not be parsed.
+ --> lib.cairo:3:5
+    ($x:literal) => { 5_u32 };
+    ^^^^^^^^^^^^
 
 error[E2158]: No matching rule found in inline macro `mymac`.
  --> lib.cairo:6:5
@@ -3259,7 +3267,298 @@ error[E1001]: Missing token ']'.
     ([$x:ident) => { 1 };
               ^
 
+error[E2208]: This macro rule's pattern could not be parsed.
+ --> lib.cairo:4:5
+    ([$x:ident) => { 1 };
+    ^^^^^^^^^^^
+
 error[E2158]: No matching rule found in inline macro `unclosed`.
  --> lib.cairo:7:5
     unclosed!([a])
     ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a pattern capturing into the name `$defsite`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// `$defsite` and `$callsite` name resolver modifiers in an expansion, so a capture into one of them
+// can never be read back and the pattern element is dead. rustc's `macro_rules!` diverges here: it
+// takes its own reserved `$crate` in a pattern as a literal token to match, so
+// `macro_rules! m { ($crate:ident) => { 0 }; }` invoked as `m!(x)` fails only at the call, with
+// "error: no rules expected `x`" and "note: while trying to match reserved identifier `$crate`".
+macro pick {
+    ($first:ident, $defsite:ident) => { $first };
+}
+fn foo(a: felt252) -> felt252 {
+    pick!(a, b)
+}
+
+//! > expected_diagnostics
+error[E2205]: A macro placeholder may not be named after the resolver modifier `$defsite`.
+ --> lib.cairo:7:20
+    ($first:ident, $defsite:ident) => { $first };
+                   ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a pattern capturing into the name `$callsite`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro second {
+    ($callsite:ident, $last:ident) => { $last };
+}
+fn foo(a: felt252) -> felt252 {
+    second!(b, a)
+}
+
+//! > expected_diagnostics
+error[E2205]: A macro placeholder may not be named after the resolver modifier `$callsite`.
+ --> lib.cairo:2:6
+    ($callsite:ident, $last:ident) => { $last };
+     ^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a pattern capturing into a name merely resembling `$defsite` (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// Only the exact names are rejected, and using `$defsite` in the expansion - its only meaningful
+// position - stays valid.
+fn identity(x: felt252) -> felt252 {
+    x
+}
+macro ok {
+    ($callsite_x:ident) => { $defsite::identity($callsite_x) };
+}
+fn foo(x: felt252) -> felt252 {
+    ok!(x)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `?` pattern repetition taking a separator.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// A separator only ever appears between two groups, and `?` allows at most one - so the separator
+// can never be matched. rustc's `macro_rules!` rejects the equivalent pattern with
+// "error: the `?` macro repetition operator does not take a separator".
+macro opt_pair {
+    ($($x:expr, $y:expr),?) => { ($($x, $y)?) };
+}
+fn foo() -> (felt252, felt252) {
+    opt_pair!(1, 2)
+}
+
+//! > expected_diagnostics
+error[E2206]: The `?` macro repetition operator does not take a separator.
+ --> lib.cairo:5:25
+    ($($x:expr, $y:expr),?) => { ($($x, $y)?) };
+                        ^
+
+//! > ==========================================================================
+
+//! > Test a `?` pattern repetition taking a separator, after a valid repetition.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro head_then_opt {
+    ($($g:expr, $h:expr),* ; $($x:expr, $y:expr),?) => { ($($x, $y)?) };
+}
+fn foo() -> (felt252, felt252) {
+    head_then_opt!(1, 2; 3, 4)
+}
+
+//! > expected_diagnostics
+error[E2206]: The `?` macro repetition operator does not take a separator.
+ --> lib.cairo:2:49
+    ($($g:expr, $h:expr),* ; $($x:expr, $y:expr),?) => { ($($x, $y)?) };
+                                                ^
+
+//! > ==========================================================================
+
+//! > Test a `?` expansion repetition taking a separator.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// rustc rejects a separator on a `?` block of the expansion too: it reports the same
+// "error: the `?` macro repetition operator does not take a separator" for
+// `macro_rules! m { ($($x:expr)?) => { ($($x),?) }; }`.
+macro opt_expansion {
+    ($($x:expr, $y:expr)?) => { ($($x, $y),?) };
+}
+fn foo() -> (felt252, felt252) {
+    opt_expansion!(1, 2)
+}
+
+//! > expected_diagnostics
+error[E2206]: The `?` macro repetition operator does not take a separator.
+ --> lib.cairo:5:43
+    ($($x:expr, $y:expr)?) => { ($($x, $y),?) };
+                                          ^
+
+//! > ==========================================================================
+
+//! > Test a separator on a `*` repetition and a separator-free `?` repetition (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro seps_ok {
+    ($($x:expr, $y:expr),* ; $($z:expr)?) => { ($($x, $y),*, $($z)?) };
+}
+fn foo() -> (felt252, felt252, felt252) {
+    seps_ok!(1, 2; 3)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test an empty pattern repetition body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// A repetition with nothing to match consumes no input, so it matches zero times whatever the call
+// is - the block is dead. rustc's `macro_rules!` rejects the equivalent pattern with
+// "error: repetition matches empty token tree"; its rule is broader, covering every body that *can*
+// match the empty token tree, while only a literally empty one is rejected here.
+macro empty_rep {
+    ($()*) => { 1 };
+}
+fn foo() -> felt252 {
+    empty_rep!()
+}
+
+//! > expected_diagnostics
+error[E2207]: Macro repetition block is empty, so it matches nothing.
+ --> lib.cairo:6:6
+    ($()*) => { 1 };
+     ^^^^
+
+//! > ==========================================================================
+
+//! > Test an empty pattern repetition body that is not the pattern's first element.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro around {
+    ($a:ident $()* $b:ident) => { ($a, $b) };
+}
+fn foo(a: felt252, b: felt252) -> (felt252, felt252) {
+    around!(a b)
+}
+
+//! > expected_diagnostics
+error[E2207]: Macro repetition block is empty, so it matches nothing.
+ --> lib.cairo:2:15
+    ($a:ident $()* $b:ident) => { ($a, $b) };
+              ^^^^
+
+//! > ==========================================================================
+
+//! > Test a pattern repetition whose body is a single token (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro semis {
+    ($a:ident $(;)* $b:ident) => { ($a, $b) };
+}
+fn foo(a: felt252, b: felt252) -> (felt252, felt252) {
+    semis!(a;; b)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a rule whose pattern has a parse error, alongside a valid rule.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The first rule is the one the call is written for, but its pattern cannot be matched - without a
+// diagnostic of its own the call fails with a bare "no matching rule", pointing at the call rather
+// than at the typo.
+macro pair {
+    ($x:iden ; $y:ident) => { $x };
+    ($x:ident, $y:ident) => { $y };
+}
+fn foo(a: felt252, b: felt252) -> felt252 {
+    pair!(a; b)
+}
+
+//! > expected_diagnostics
+error[E1008]: Missing tokens. Expected a macro rule parameter kind.
+ --> lib.cairo:5:9
+    ($x:iden ; $y:ident) => { $x };
+        ^
+
+error[E2208]: This macro rule's pattern could not be parsed.
+ --> lib.cairo:5:5
+    ($x:iden ; $y:ident) => { $x };
+    ^^^^^^^^^^^^^^^^^^^^
+
+error[E2158]: No matching rule found in inline macro `pair`.
+ --> lib.cairo:9:5
+    pair!(a; b)
+    ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a rule whose pattern repetition is missing its operator.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The most common half-typed pattern: the parser reports the missing operator and leaves a missing
+// node behind, which drops the rule - so it is reported as unusable as well.
+macro no_op {
+    ($($x:ident)) => { 1 };
+}
+fn foo(a: felt252) -> felt252 {
+    no_op!(a)
+}
+
+//! > expected_diagnostics
+error[E1031]: Missing macro repetition operator. Expected `?`, `+`, or `*` after `$(...)`.
+ --> lib.cairo:4:17
+    ($($x:ident)) => { 1 };
+                ^
+
+error[E2208]: This macro rule's pattern could not be parsed.
+ --> lib.cairo:4:5
+    ($($x:ident)) => { 1 };
+    ^^^^^^^^^^^^^
+
+error[E2158]: No matching rule found in inline macro `no_op`.
+ --> lib.cairo:7:5
+    no_op!(a)
+    ^^^^^^^^^

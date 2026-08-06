@@ -188,6 +188,104 @@ impl<'db> MatcherContext<'db> {
     }
 }
 
+/// Reports the well-formedness defects of `elements`, the elements of a macro rule's pattern,
+/// including the ones nested in its repetitions and subtrees.
+///
+/// `Err` if any was reported, for the caller to mark the rule with - a defective element makes the
+/// rule's meaning unclear, so it must not expand.
+fn check_pattern_elements<'db>(
+    db: &'db dyn Database,
+    elements: impl IntoIterator<Item = ast::MacroElement<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+) -> Maybe<()> {
+    let mut res = Ok(());
+    for element in elements {
+        match element {
+            ast::MacroElement::Param(param) => {
+                res = res.and(check_placeholder_name(db, &param, diagnostics));
+            }
+            ast::MacroElement::Repetition(repetition) => {
+                res = res
+                    .and(check_repetition_separator(db, &repetition, diagnostics))
+                    .and(check_repetition_body(db, &repetition, diagnostics))
+                    .and(check_pattern_elements(
+                        db,
+                        repetition.elements(db).elements(db),
+                        diagnostics,
+                    ));
+            }
+            ast::MacroElement::Subtree(subtree) => {
+                res = res.and(check_pattern_elements(
+                    db,
+                    get_macro_elements(db, subtree.subtree(db)).elements(db),
+                    diagnostics,
+                ));
+            }
+            ast::MacroElement::Token(_) => {}
+        }
+    }
+    res
+}
+
+/// Reports `param`, a placeholder of a macro rule's pattern, if it is named after one of the
+/// `$defsite` / `$callsite` resolver modifiers.
+///
+/// Such a name is not a placeholder in an expansion - see [`extract_placeholder`] - so nothing can
+/// ever read the value it captures.
+fn check_placeholder_name<'db>(
+    db: &'db dyn Database,
+    param: &MacroParam<'db>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+) -> Maybe<()> {
+    if extract_placeholder(db, param).is_some() {
+        return Ok(());
+    }
+    let name = param.name(db).as_syntax_node().get_text_without_trivia(db);
+    Err(diagnostics.report(
+        param.stable_ptr(db).untyped(),
+        SemanticDiagnosticKind::MacroPlaceholderNamedAfterResolverModifier(name),
+    ))
+}
+
+/// Reports `repetition`, a `$()` block of a macro rule, if it takes a separator while allowing at
+/// most one group.
+///
+/// A separator only ever appears between two consecutive groups, so a `?` block can never have one.
+fn check_repetition_separator<'db>(
+    db: &'db dyn Database,
+    repetition: &ast::MacroRepetition<'db>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+) -> Maybe<()> {
+    let ast::OptionTerminalComma::TerminalComma(separator) = repetition.separator(db) else {
+        return Ok(());
+    };
+    if !matches!(repetition.operator(db), ast::MacroRepetitionOperator::ZeroOrOne(_)) {
+        return Ok(());
+    }
+    Err(diagnostics.report(
+        separator.stable_ptr(db).untyped(),
+        SemanticDiagnosticKind::MacroRepetitionSeparatorWithZeroOrOne,
+    ))
+}
+
+/// Reports `repetition`, a `$()` block of a macro rule's pattern, if its body is empty.
+///
+/// Such a block consumes no input, so it matches zero times against every call - whatever its
+/// operator, it contributes nothing to the pattern.
+fn check_repetition_body<'db>(
+    db: &'db dyn Database,
+    repetition: &ast::MacroRepetition<'db>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+) -> Maybe<()> {
+    if repetition.elements(db).elements(db).len() != 0 {
+        return Ok(());
+    }
+    Err(diagnostics.report(
+        repetition.stable_ptr(db).untyped(),
+        SemanticDiagnosticKind::MacroRepetitionWithEmptyBody,
+    ))
+}
+
 /// Collects the names of all the placeholders in the given pattern elements, including the ones
 /// nested in inner repetitions and subtrees.
 fn collect_pattern_placeholder_names<'db>(
@@ -299,11 +397,16 @@ fn priv_macro_declaration_data<'db>(
                 rule_err = Err(diagnostics
                     .report(*ptr, SemanticDiagnosticKind::DuplicateMacroPlaceholder(*name)));
             }
+            rule_err = rule_err.and(check_pattern_elements(
+                db,
+                pattern_elements.elements(db),
+                &mut diagnostics,
+            ));
         }
         // The expansion is checked against the nesting depth every placeholder is captured at,
         // which a reused name leaves ambiguous - checking it then reports the ambiguity as
         // a defect of the expansion, which it is not.
-        if rule_err.is_ok() {
+        if placeholders.reused_names.is_empty() {
             let mut ctx = ExpansionCheckCtx {
                 db,
                 known_path: &[],
@@ -314,10 +417,17 @@ fn priv_macro_declaration_data<'db>(
                 in_non_repeating_block: false,
             };
             ctx.check_node(expansion.as_syntax_node());
-            rule_err = ctx.rule_err;
+            rule_err = rule_err.and(ctx.rule_err);
         }
-        // Skipping expanding an inline macro if it had a parser error.
         if !pattern_is_parsed {
+            // The pattern cannot be matched as written, so the rule is dropped - keeping it would
+            // let it match on the strength of the nodes that did parse, shadowing the rules after
+            // it. It is reported so that a call written for it points at the parse error rather
+            // than failing with a bare "no matching rule".
+            diagnostics.report(
+                pattern.stable_ptr(db).untyped(),
+                SemanticDiagnosticKind::MacroRuleWithUnparsablePattern,
+            );
             continue;
         }
         rules.push(MacroRuleData { pattern, expansion, err: rule_err });
@@ -456,11 +566,12 @@ struct ExpansionCheckCtx<'db, 'a> {
 impl<'db> ExpansionCheckCtx<'db, '_> {
     /// Validates placeholder usage by recursively traversing `node`.
     ///
-    /// Three kinds of errors are reported:
+    /// Four kinds of errors are reported:
     /// * Depth mismatch: placeholder used at fewer expansion levels than its pattern depth.
     /// * Context mismatch: placeholder from a different repetition than the driving one.
     /// * Non-repeating block: a `$()` block holding no placeholder that repeats at its depth, so
     ///   there is nothing to drive it.
+    /// * Separator on a `?` block: see [`check_repetition_separator`].
     fn check_node(&mut self, node: SyntaxNode<'db>) {
         let db = self.db;
         if let Some(param) = MacroParam::cast(db, node) {
@@ -500,6 +611,8 @@ impl<'db> ExpansionCheckCtx<'db, '_> {
         }
 
         if let Some(repetition) = ast::MacroRepetition::cast(db, node) {
+            self.rule_err =
+                self.rule_err.and(check_repetition_separator(db, &repetition, self.diagnostics));
             let outer_in_non_repeating_block = self.in_non_repeating_block;
             if !outer_in_non_repeating_block
                 && !has_driving_placeholder(db, node, self.placeholder_paths, self.curr_rep_depth)
