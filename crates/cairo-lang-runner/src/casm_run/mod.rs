@@ -5,9 +5,6 @@ use std::ops::{Shl, Sub};
 use std::sync::Arc;
 use std::vec::IntoIter;
 
-use ark_ff::{BigInteger, PrimeField};
-use ark_secp256k1 as secp256k1;
-use ark_secp256r1 as secp256r1;
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, ExternalHint, Hint, StarknetHint};
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
@@ -40,6 +37,14 @@ use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use itertools::Itertools;
+use lambdaworks_math::cyclic_group::IsGroup;
+use lambdaworks_math::elliptic_curve::short_weierstrass::curves::secp256k1::curve::Secp256k1Curve;
+use lambdaworks_math::elliptic_curve::short_weierstrass::curves::secp256r1::curve::Secp256r1Curve;
+use lambdaworks_math::elliptic_curve::short_weierstrass::point::ShortWeierstrassProjectivePoint;
+use lambdaworks_math::elliptic_curve::short_weierstrass::traits::IsShortWeierstrass;
+use lambdaworks_math::field::element::FieldElement;
+use lambdaworks_math::field::traits::{IsField, IsPrimeField};
+use lambdaworks_math::unsigned_integer::element::U256;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
 use num_traits::{Signed, ToPrimitive, Zero};
@@ -75,7 +80,7 @@ pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
 struct Secp256k1ExecutionScope {
     /// All elliptic curve points provided by the secp256k1 syscalls.
     /// The id of a point is the index in the vector.
-    ec_points: Vec<secp256k1::Affine>,
+    ec_points: Vec<ShortWeierstrassProjectivePoint<Secp256k1Curve>>,
 }
 
 /// Helper object to allocate and track Secp256r1 elliptic curve points.
@@ -83,7 +88,7 @@ struct Secp256k1ExecutionScope {
 struct Secp256r1ExecutionScope {
     /// All elliptic curve points provided by the secp256r1 syscalls.
     /// The id of a point is the index in the vector.
-    ec_points: Vec<secp256r1::Affine>,
+    ec_points: Vec<ShortWeierstrassProjectivePoint<Secp256r1Curve>>,
 }
 
 /// HintProcessor for Cairo compiler hints.
@@ -1505,25 +1510,7 @@ fn secp256k1_new(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_NEW);
-    let modulus = <secp256k1::Fq as PrimeField>::MODULUS.into();
-    if x >= modulus || y >= modulus {
-        fail_syscall!(b"Coordinates out of range");
-    }
-    let p = if x.is_zero() && y.is_zero() {
-        secp256k1::Affine::identity()
-    } else {
-        secp256k1::Affine::new_unchecked(x.into(), y.into())
-    };
-    Ok(SyscallResult::Success(
-        if !(p.is_on_curve() && p.is_in_correct_subgroup_assuming_on_curve()) {
-            vec![1.into(), 0.into()]
-        } else {
-            let ec = get_secp256k1_exec_scope(exec_scopes)?;
-            let id = ec.ec_points.len();
-            ec.ec_points.push(p);
-            vec![0.into(), id.into()]
-        },
-    ))
+    secp_new(x, y, &mut get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256k1_add_syscall` syscall.
@@ -1534,13 +1521,7 @@ fn secp256k1_add(
     p1_id: usize,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_ADD);
-    let ec = get_secp256k1_exec_scope(exec_scopes)?;
-    let p0 = &ec.ec_points[p0_id];
-    let p1 = &ec.ec_points[p1_id];
-    let sum = *p0 + *p1;
-    let id = ec.ec_points.len();
-    ec.ec_points.push(sum.into());
-    Ok(SyscallResult::Success(vec![id.into()]))
+    secp_add(p0_id, p1_id, &mut get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256k1_mul_syscall` syscall.
@@ -1551,13 +1532,7 @@ fn secp256k1_mul(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_MUL);
-
-    let ec = get_secp256k1_exec_scope(exec_scopes)?;
-    let p = &ec.ec_points[p_id];
-    let product = *p * secp256k1::Fr::from(scalar);
-    let id = ec.ec_points.len();
-    ec.ec_points.push(product.into());
-    Ok(SyscallResult::Success(vec![id.into()]))
+    secp_mul(p_id, scalar, &mut get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256k1_get_point_from_x_syscall` syscall.
@@ -1568,25 +1543,7 @@ fn secp256k1_get_point_from_x(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_GET_POINT_FROM_X);
-    if x >= <secp256k1::Fq as PrimeField>::MODULUS.into() {
-        fail_syscall!(b"Coordinates out of range");
-    }
-    let x = x.into();
-    let maybe_p = secp256k1::Affine::get_ys_from_x_unchecked(x)
-        .map(
-            |(smaller, greater)|
-            // Return the correct y coordinate based on the parity.
-            if smaller.into_bigint().is_odd() == y_parity { smaller } else { greater },
-        )
-        .map(|y| secp256k1::Affine::new_unchecked(x, y))
-        .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
-    let Some(p) = maybe_p else {
-        return Ok(SyscallResult::Success(vec![1.into(), 0.into()]));
-    };
-    let ec = get_secp256k1_exec_scope(exec_scopes)?;
-    let id = ec.ec_points.len();
-    ec.ec_points.push(p);
-    Ok(SyscallResult::Success(vec![0.into(), id.into()]))
+    secp_get_point_from_x(x, y_parity, &mut get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256k1_get_xy_syscall` syscall.
@@ -1596,17 +1553,7 @@ fn secp256k1_get_xy(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_GET_XY);
-    let ec = get_secp256k1_exec_scope(exec_scopes)?;
-    let p = &ec.ec_points[p_id];
-    let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
-    let (x1, x0) = BigUint::from(p.x).div_rem(&pow_2_128);
-    let (y1, y0) = BigUint::from(p.y).div_rem(&pow_2_128);
-    Ok(SyscallResult::Success(vec![
-        Felt252::from(x0).into(),
-        Felt252::from(x1).into(),
-        Felt252::from(y0).into(),
-        Felt252::from(y1).into(),
-    ]))
+    secp_get_xy(p_id, &get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Returns the `Secp256k1ExecScope` managing the different active points.
@@ -1632,25 +1579,7 @@ fn secp256r1_new(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_NEW);
-    let modulus = <secp256r1::Fq as PrimeField>::MODULUS.into();
-    if x >= modulus || y >= modulus {
-        fail_syscall!(b"Coordinates out of range");
-    }
-    let p = if x.is_zero() && y.is_zero() {
-        secp256r1::Affine::identity()
-    } else {
-        secp256r1::Affine::new_unchecked(x.into(), y.into())
-    };
-    Ok(SyscallResult::Success(
-        if !(p.is_on_curve() && p.is_in_correct_subgroup_assuming_on_curve()) {
-            vec![1.into(), 0.into()]
-        } else {
-            let ec = get_secp256r1_exec_scope(exec_scopes)?;
-            let id = ec.ec_points.len();
-            ec.ec_points.push(p);
-            vec![0.into(), id.into()]
-        },
-    ))
+    secp_new(x, y, &mut get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256r1_add_syscall` syscall.
@@ -1661,13 +1590,7 @@ fn secp256r1_add(
     p1_id: usize,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_ADD);
-    let ec = get_secp256r1_exec_scope(exec_scopes)?;
-    let p0 = &ec.ec_points[p0_id];
-    let p1 = &ec.ec_points[p1_id];
-    let sum = *p0 + *p1;
-    let id = ec.ec_points.len();
-    ec.ec_points.push(sum.into());
-    Ok(SyscallResult::Success(vec![id.into()]))
+    secp_add(p0_id, p1_id, &mut get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256r1_mul_syscall` syscall.
@@ -1678,13 +1601,7 @@ fn secp256r1_mul(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_MUL);
-
-    let ec = get_secp256r1_exec_scope(exec_scopes)?;
-    let p = &ec.ec_points[p_id];
-    let product = *p * secp256r1::Fr::from(scalar);
-    let id = ec.ec_points.len();
-    ec.ec_points.push(product.into());
-    Ok(SyscallResult::Success(vec![id.into()]))
+    secp_mul(p_id, scalar, &mut get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256r1_get_point_from_x_syscall` syscall.
@@ -1695,25 +1612,7 @@ fn secp256r1_get_point_from_x(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_GET_POINT_FROM_X);
-    if x >= <secp256r1::Fq as PrimeField>::MODULUS.into() {
-        fail_syscall!(b"Coordinates out of range");
-    }
-    let x = x.into();
-    let maybe_p = secp256r1::Affine::get_ys_from_x_unchecked(x)
-        .map(
-            |(smaller, greater)|
-            // Return the correct y coordinate based on the parity.
-            if smaller.into_bigint().is_odd() == y_parity { smaller } else { greater },
-        )
-        .map(|y| secp256r1::Affine::new_unchecked(x, y))
-        .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
-    let Some(p) = maybe_p else {
-        return Ok(SyscallResult::Success(vec![1.into(), 0.into()]));
-    };
-    let ec = get_secp256r1_exec_scope(exec_scopes)?;
-    let id = ec.ec_points.len();
-    ec.ec_points.push(p);
-    Ok(SyscallResult::Success(vec![0.into(), id.into()]))
+    secp_get_point_from_x(x, y_parity, &mut get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256r1_get_xy_syscall` syscall.
@@ -1723,17 +1622,7 @@ fn secp256r1_get_xy(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_GET_XY);
-    let ec = get_secp256r1_exec_scope(exec_scopes)?;
-    let p = &ec.ec_points[p_id];
-    let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
-    let (x1, x0) = BigUint::from(p.x).div_rem(&pow_2_128);
-    let (y1, y0) = BigUint::from(p.y).div_rem(&pow_2_128);
-    Ok(SyscallResult::Success(vec![
-        Felt252::from(x0).into(),
-        Felt252::from(x1).into(),
-        Felt252::from(y0).into(),
-        Felt252::from(y1).into(),
-    ]))
+    secp_get_xy(p_id, &get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Returns the `Secp256r1ExecScope` managing the different active points.
@@ -1747,6 +1636,140 @@ fn get_secp256r1_exec_scope(
         exec_scopes.assign_or_update_variable(NAME, Box::<Secp256r1ExecutionScope>::default());
     }
     exec_scopes.get_mut_ref::<Secp256r1ExecutionScope>(NAME)
+}
+
+// --- shared secp logic ---
+
+/// Creates a new point on the curve `C` and adds it to `ec_points`.
+///
+/// Note that both secp curves have cofactor 1, so checking the curve equation is enough to
+/// validate group membership.
+fn secp_new<C>(
+    x: BigUint,
+    y: BigUint,
+    ec_points: &mut Vec<ShortWeierstrassProjectivePoint<C>>,
+) -> Result<SyscallResult, HintError>
+where
+    C: IsShortWeierstrass,
+    C::BaseField: IsPrimeField<RepresentativeType = U256> + IsField<BaseType = U256>,
+{
+    let modulus = u256_to_biguint(&C::BaseField::modulus_minus_one()) + 1u32;
+    if x >= modulus || y >= modulus {
+        fail_syscall!(b"Coordinates out of range");
+    }
+    let maybe_p = if x.is_zero() && y.is_zero() {
+        Some(ShortWeierstrassProjectivePoint::neutral_element())
+    } else {
+        ShortWeierstrassProjectivePoint::new([
+            FieldElement::new(biguint_to_u256(&x)),
+            FieldElement::new(biguint_to_u256(&y)),
+            FieldElement::one(),
+        ])
+        .ok()
+    };
+    Ok(SyscallResult::Success(match maybe_p {
+        Some(p) => {
+            let id = ec_points.len();
+            ec_points.push(p);
+            vec![0.into(), id.into()]
+        }
+        None => vec![1.into(), 0.into()],
+    }))
+}
+
+/// Adds the points at `p0_id` and `p1_id`, and adds the result to `ec_points`.
+fn secp_add<C: IsShortWeierstrass>(
+    p0_id: usize,
+    p1_id: usize,
+    ec_points: &mut Vec<ShortWeierstrassProjectivePoint<C>>,
+) -> Result<SyscallResult, HintError> {
+    let sum = ec_points[p0_id].operate_with(&ec_points[p1_id]);
+    let id = ec_points.len();
+    ec_points.push(sum);
+    Ok(SyscallResult::Success(vec![id.into()]))
+}
+
+/// Multiplies the point at `p_id` by `scalar`, and adds the result to `ec_points`.
+fn secp_mul<C: IsShortWeierstrass>(
+    p_id: usize,
+    scalar: BigUint,
+    ec_points: &mut Vec<ShortWeierstrassProjectivePoint<C>>,
+) -> Result<SyscallResult, HintError> {
+    // No need to reduce the scalar by the curve order, as multiplying by it gives the same point.
+    let product = ec_points[p_id].operate_with_self(biguint_to_u256(&scalar));
+    let id = ec_points.len();
+    ec_points.push(product);
+    Ok(SyscallResult::Success(vec![id.into()]))
+}
+
+/// Finds a point on the curve `C` with the given `x` coordinate and `y` parity, and adds it to
+/// `ec_points`.
+fn secp_get_point_from_x<C>(
+    x: BigUint,
+    y_parity: bool,
+    ec_points: &mut Vec<ShortWeierstrassProjectivePoint<C>>,
+) -> Result<SyscallResult, HintError>
+where
+    C: IsShortWeierstrass,
+    C::BaseField: IsPrimeField<RepresentativeType = U256> + IsField<BaseType = U256>,
+{
+    if x > u256_to_biguint(&C::BaseField::modulus_minus_one()) {
+        fail_syscall!(b"Coordinates out of range");
+    }
+    let x = FieldElement::new(biguint_to_u256(&x));
+    // Solve the curve equation `y^2 = x^3 + ax + b` for `y`.
+    let Some((y0, y1)) = ((x.square() + C::a()) * &x + C::b()).sqrt() else {
+        // No point on the curve with the given `x`.
+        return Ok(SyscallResult::Success(vec![1.into(), 0.into()]));
+    };
+    // The roots are `y` and `modulus - y`, and as the modulus is odd, exactly one of them is odd.
+    let y0_is_odd = y0.representative().limbs[3] & 1 == 1;
+    let y = if y0_is_odd == y_parity { y0 } else { y1 };
+    let p = ShortWeierstrassProjectivePoint::new([x, y, FieldElement::one()]).unwrap();
+    let id = ec_points.len();
+    ec_points.push(p);
+    Ok(SyscallResult::Success(vec![0.into(), id.into()]))
+}
+
+/// Returns the coordinates of the point at `p_id`, as pairs of 128-bit limbs.
+fn secp_get_xy<C>(
+    p_id: usize,
+    ec_points: &[ShortWeierstrassProjectivePoint<C>],
+) -> Result<SyscallResult, HintError>
+where
+    C: IsShortWeierstrass,
+    C::BaseField: IsPrimeField<RepresentativeType = U256> + IsField<BaseType = U256>,
+{
+    let p = &ec_points[p_id];
+    let (x, y) = if p.is_neutral_element() {
+        (BigUint::zero(), BigUint::zero())
+    } else {
+        let p = p.to_affine();
+        (u256_to_biguint(&p.x().representative()), u256_to_biguint(&p.y().representative()))
+    };
+    let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
+    let (x1, x0) = x.div_rem(&pow_2_128);
+    let (y1, y0) = y.div_rem(&pow_2_128);
+    Ok(SyscallResult::Success(vec![
+        Felt252::from(x0).into(),
+        Felt252::from(x1).into(),
+        Felt252::from(y0).into(),
+        Felt252::from(y1).into(),
+    ]))
+}
+
+/// Converts a lambdaworks `U256` to a `BigUint`.
+fn u256_to_biguint(value: &U256) -> BigUint {
+    value.limbs.iter().fold(BigUint::zero(), |acc, limb| (acc << 64) | BigUint::from(*limb))
+}
+
+/// Converts a `BigUint` to a lambdaworks `U256`. Panics if the value does not fit in 256 bits.
+fn biguint_to_u256(value: &BigUint) -> U256 {
+    let mut limbs = [0; 4];
+    for (i, digit) in value.iter_u64_digits().enumerate() {
+        limbs[3 - i] = digit;
+    }
+    U256 { limbs }
 }
 
 // ---

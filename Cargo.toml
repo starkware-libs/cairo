@@ -99,10 +99,6 @@ version = "2.20.0"
 
 [workspace.dependencies]
 anyhow = "1.0.98"
-ark-ff = "0.6.0"
-ark-secp256k1 = "0.6.0"
-ark-secp256r1 = "0.6.0"
-ark-std = "0.6.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
 cairo-lang-primitive-token = "1"
@@ -127,6 +123,7 @@ indoc = "2.0.6"
 itertools = { version = "0.15.0", default-features = false }
 keccak = "0.2.0"
 lalrpop-util = { version = "0.23.1", features = ["lexer"] }
+lambdaworks-math = { version = "0.13.0", default-features = false }
 log = "0.4.27"
 mimalloc = { version = "0.1.48" }
 num-bigint = { version = "0.4.6", default-features = false }
