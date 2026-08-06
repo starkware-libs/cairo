@@ -23,10 +23,10 @@ use semantic::items::functions::GenericFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
 
-use crate::Location;
 use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
 use crate::specialization::SpecializationArg;
+use crate::{Location, LoweringStage};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum FunctionWithBodyLongId<'db> {
@@ -65,6 +65,11 @@ impl<'db> FunctionWithBodyId<'db> {
     ) -> cairo_lang_defs::ids::FunctionWithBodyId<'db> {
         self.long(db).base_semantic_function(db)
     }
+    /// Returns the signature of the generic, pre-monomorphization function.
+    ///
+    /// [`LoweringStage`] deliberately does not apply here: the staged lowerings all run on
+    /// concrete (monomorphized) functions, so the only lowering this id has is
+    /// `function_with_body_lowering`.
     pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
         Ok(db.function_with_body_lowering(*self)?.signature.clone())
     }
@@ -202,7 +207,16 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn full_path(&self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
+    /// Returns the signature of the function as it is at the given [`LoweringStage`].
+    pub fn signature(&self, db: &'db dyn Database, stage: LoweringStage) -> Maybe<Signature<'db>> {
+        if stage != LoweringStage::Monomorphized {
+            return Ok(db.lowered_body(*self, stage)?.signature.clone());
+        }
+        // The `Monomorphized` signature is derived from the semantic one rather than read off
+        // `lowered_body`, which produces the same value (`concretize_lowered` writes exactly
+        // this). Besides being much cheaper, this is what keeps callers that run *while* a body
+        // is being lowered - e.g. `borrow_check`, which runs on the generic body - from cycling
+        // back into the lowering of that same body.
         match self.generic_or_specialized(db) {
             GenericOrSpecialized::Generic(id) => {
                 let generic_signature = id.signature(db)?;
@@ -297,15 +311,33 @@ impl<'db> FunctionLongId<'db> {
             }
         }))
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        match self {
-            FunctionLongId::Semantic(semantic) => Ok(EnrichedSemanticSignature::from_semantic(
+    /// Returns the signature of the function as it is at the given [`LoweringStage`].
+    ///
+    /// For a function without a body (an `extern` function, or a function whose body failed to
+    /// resolve) the semantic signature is the only one there is, and it is stage invariant.
+    pub fn signature(&self, db: &'db dyn Database, stage: LoweringStage) -> Maybe<Signature<'db>> {
+        let semantic_signature = |semantic| {
+            Ok(EnrichedSemanticSignature::from_semantic(
                 db,
-                db.concrete_function_signature(*semantic)?,
+                db.concrete_function_signature(semantic)?,
             )
-            .into()),
-            FunctionLongId::Generated(generated) => generated.body(db).signature(db),
-            FunctionLongId::Specialized(specialized) => specialized.long(db).signature(db),
+            .into())
+        };
+        match self {
+            FunctionLongId::Semantic(semantic) if stage == LoweringStage::Monomorphized => {
+                semantic_signature(*semantic)
+            }
+            FunctionLongId::Semantic(semantic) => match self.body(db)? {
+                Some(body) => body.signature(db, stage),
+                None => semantic_signature(*semantic),
+            },
+            // Note that specialized functions are routed through the concrete id (rather than
+            // through `SpecializedFunction::signature`), so that past `Monomorphized` the
+            // signature is read off the lowered body.
+            FunctionLongId::Generated(_) | FunctionLongId::Specialized(_) => self
+                .body(db)?
+                .expect("Generated and specialized functions always have a body.")
+                .signature(db, stage),
         }
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
@@ -326,8 +358,8 @@ impl<'db> FunctionId<'db> {
     pub fn body(&self, db: &'db dyn Database) -> Maybe<Option<ConcreteFunctionWithBodyId<'db>>> {
         self.long(db).body(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        self.long(db).signature(db)
+    pub fn signature(&self, db: &'db dyn Database, stage: LoweringStage) -> Maybe<Signature<'db>> {
+        self.long(db).signature(db, stage)
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
@@ -458,8 +490,13 @@ impl<'db> SpecializedFunction<'db> {
         format!("{:?}", self.debug(db))
     }
 
+    /// Returns the `Monomorphized` signature of the specialized function.
+    ///
+    /// Only valid at that stage: the `zip_eq` below pairs the base params with the specialization
+    /// args, and later stages prepend implicits to the base params. Past `Monomorphized` the
+    /// signature is read off the specialized function's lowered body instead.
     pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        let mut base_sign = self.base.signature(db)?;
+        let mut base_sign = self.base.signature(db, LoweringStage::Monomorphized)?;
 
         let mut params = vec![];
         let mut stack = vec![];
