@@ -2898,3 +2898,105 @@ fn foo() -> felt252 {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `+` repetition whose non-final group is empty (rejected).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($([$($x:ident),+]),*) => { 0 };
+}
+fn foo() -> felt252 {
+    m!([], [a, b])
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:5:5
+    m!([], [a, b])
+    ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a `*` repetition whose non-final group is empty (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($([$($x:ident),*]),*) => { 0 };
+}
+fn foo() -> felt252 {
+    m!([], [a, b])
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a `?` repetition whose non-final group holds two elements (rejected).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($([$($x:ident)?]),*) => { 0 };
+}
+fn foo() -> felt252 {
+    m!([a b],[c])
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:5:5
+    m!([a b],[c])
+    ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a `*` repetition whose non-final group holds two elements (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($([$($x:ident)*]),*) => { 0 };
+}
+fn foo() -> felt252 {
+    m!([a b],[c])
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a trailing separator absorbed by a repetition (deliberate divergence from rustc).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// The trailing separator is absorbed by the repetition, and the tuple type pins that it does not
+// add an empty match. rustc's `macro_rules!` rejects the equivalent call, and aligning with it is a
+// separate, deliberate decision.
+macro m {
+    ($($x:ident),*) => { ($($x),*) };
+}
+fn foo() {
+    let long_named_first_argument_of_the_macro_call: felt252 = 1;
+    let long_named_second_argument_of_the_macro_call: felt252 = 2;
+    // The call is spread over several lines on purpose: the formatter strips a trailing separator
+    // from a single-line macro call, which would silently drop what this test pins.
+    let _t: (felt252, felt252) = m!(
+        long_named_first_argument_of_the_macro_call, long_named_second_argument_of_the_macro_call,
+    );
+}
+
+//! > expected_diagnostics
