@@ -320,6 +320,19 @@ fn test_signature_per_stage() {
     );
     assert!(final_.implicits.is_empty());
 
+    // The `ids.rs` signature API reports the same, per stage, from both the with-body id and the
+    // callable id.
+    let callable_id = function_id.function_id(db).unwrap();
+    for stage in [
+        LoweringStage::Monomorphized,
+        LoweringStage::PreOptimizations,
+        LoweringStage::PostBaseline,
+        LoweringStage::Final,
+    ] {
+        assert_eq!(function_id.signature(db, stage).unwrap(), sig_of(stage));
+        assert_eq!(callable_id.signature(db, stage).unwrap(), sig_of(stage));
+    }
+
     assert_signature_matches_physical(db, function_id);
 }
 
