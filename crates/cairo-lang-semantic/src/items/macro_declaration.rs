@@ -897,42 +897,16 @@ fn is_macro_rule_match_ex<'db>(
                     PlaceholderKind::Expr => {
                         let peek_token = input_iter.peek().cloned()?;
                         let file_id = peek_token.as_syntax_node().stable_ptr(db).file_id(db);
-                        let expr_node = as_expr_macro_token_tree(input_iter.clone(), file_id, db)?;
-                        let expr_text = expr_node.as_syntax_node().get_text(db);
-                        let expr_length = expr_text.len();
-                        // An empty expression is parsed successfully. However we don't want to
-                        // capture it a valid expr.
-                        if expr_length == 0 {
-                            return None;
-                        }
-
+                        // Advances `input_iter` past the tokens of the captured expression, and
+                        // rejects the rule when the input does not start with one.
+                        let expr_node = as_expr_macro_token_tree(input_iter, file_id, db)?;
                         ctx.record_capture(
                             placeholder_name,
                             CapturedValue {
-                                text: expr_text.to_string(),
+                                text: expr_node.as_syntax_node().get_text(db).to_string(),
                                 stable_ptr: peek_token.stable_ptr(db).untyped(),
                             },
                         );
-                        let expr_length = expr_text.len();
-                        let mut current_length = 0;
-
-                        // TODO(Dean): Use the iterator directly in the parser and advance it while
-                        // parsing the expression, instead of manually tracking the length and
-                        // iterating separately.
-                        for token_tree_leaf in input_iter.by_ref() {
-                            let token_text = match token_tree_leaf {
-                                ast::TokenTree::Token(leaf) => leaf.as_syntax_node(),
-                                ast::TokenTree::Subtree(subtree) => subtree.as_syntax_node(),
-                                ast::TokenTree::Repetition(rep) => rep.as_syntax_node(),
-                                ast::TokenTree::Param(param) => param.as_syntax_node(),
-                                ast::TokenTree::Missing(_) => unreachable!(),
-                            }
-                            .get_text(db);
-                            current_length += token_text.len();
-                            if current_length >= expr_length {
-                                break;
-                            }
-                        }
                         continue;
                     }
                 }
