@@ -3,12 +3,9 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ExternFunctionId, LanguageElementId, TopLevelLanguageElementId};
 use cairo_lang_diagnostics::{Maybe, MaybeAsRef};
-use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::{CrateId, Tracked};
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::LoweringStage;
-use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
@@ -416,49 +413,27 @@ fn get_function_signature(
     _tracked: Tracked,
     function_id: cairo_lang_sierra::ids::FunctionId,
 ) -> Maybe<cairo_lang_sierra::program::FunctionSignature> {
-    // TODO(yuval): add another version of this function that directly received semantic FunctionId.
-    // Call it from function_generators::get_function_code. Take ret_types from the result instead
-    // of only the explicit ret_type. Also use it for params instead of the current logic. Then use
-    // it in the end of program_generator::get_sierra_program instead of calling this function from
-    // there.
     let lowered_function_id = db.lookup_sierra_function(&function_id);
-    // TODO(orizi): Read the exact `Final` signature instead of re-deriving the implicits and the
-    // panic wrapping below.
-    let signature = lowered_function_id.signature(db, LoweringStage::Monomorphized)?;
+    // Only ever reached for functions with a body, so the `Final` signature is exact: the implicits
+    // are already the leading entries of `params`/`extra_rets` (`signature.implicits` is empty),
+    // and `return_type` already carries the panic wrapping, `extra_rets` having been folded into
+    // it.
+    let signature = lowered_function_id.signature(db, LoweringStage::Final)?;
 
-    let implicits = db
-        .function_implicits(lowered_function_id)?
-        .iter()
-        .map(|ty| db.get_concrete_type_id(*ty).cloned())
-        .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
-
-    // TODO(spapini): Handle ret_types in lowering.
-    let mut all_params = implicits.clone();
-    let mut extra_rets = vec![];
+    let mut param_types = vec![];
     for param in &signature.params {
-        let concrete_type_id = db.get_concrete_type_id(param.ty)?;
-        all_params.push(concrete_type_id.clone());
+        param_types.push(db.get_concrete_type_id(param.ty)?.clone());
     }
+    let mut ret_types = vec![];
     for var in &signature.extra_rets {
-        let concrete_type_id = db.get_concrete_type_id(var.ty)?;
-        extra_rets.push(concrete_type_id.clone());
+        ret_types.push(db.get_concrete_type_id(var.ty)?.clone());
+    }
+    // Functions that return the unit type don't have a return type in the signature.
+    if !signature.return_type.is_unit(db) {
+        ret_types.push(db.get_concrete_type_id(signature.return_type)?.clone());
     }
 
-    let mut ret_types = implicits;
-
-    let may_panic = !db.flag_unsafe_panic() && db.function_may_panic(lowered_function_id)?;
-    if may_panic {
-        let panic_info = PanicSignatureInfo::new(db, &signature);
-        ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?.clone());
-    } else {
-        ret_types.extend(extra_rets);
-        // Functions that return the unit type don't have a return type in the signature.
-        if !signature.return_type.is_unit(db) {
-            ret_types.push(db.get_concrete_type_id(signature.return_type)?.clone());
-        }
-    }
-
-    Ok(cairo_lang_sierra::program::FunctionSignature { param_types: all_params, ret_types })
+    Ok(cairo_lang_sierra::program::FunctionSignature { param_types, ret_types })
 }
 
 /// Initializes the [`Database`] database to a proper state.
