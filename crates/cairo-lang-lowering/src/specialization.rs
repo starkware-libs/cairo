@@ -102,9 +102,9 @@ enum SpecializationArgBuildingState<'db, 'a> {
 /// Returns the lowering of a specialized function.
 pub fn specialized_function_lowered<'db>(
     db: &'db dyn Database,
-    specialized: SpecializedFunctionId<'db>,
+    specialized_id: SpecializedFunctionId<'db>,
 ) -> Maybe<Lowered<'db>> {
-    let specialized = specialized.long(db);
+    let specialized = specialized_id.long(db);
     let base = db.lowered_body(specialized.base, LoweringStage::Monomorphized)?;
     let base_semantic = specialized.base.base_semantic_function(db);
 
@@ -309,7 +309,7 @@ pub fn specialized_function_lowered<'db>(
     }));
     block_builder.alloc(Block { statements, end: BlockEnd::Return(ret_usage, location) });
     Ok(Lowered {
-        signature: specialized.signature(db)?,
+        signature: specialized_id.signature(db)?.clone(),
         variables: variables.variables,
         blocks: block_builder.build().unwrap(),
         parameters,

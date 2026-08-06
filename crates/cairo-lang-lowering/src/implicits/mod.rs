@@ -266,7 +266,7 @@ pub fn function_implicits<'db>(
         return db.function_with_body_implicits(body);
     }
     // Reached only for bodyless functions; their declared implicits are stage invariant.
-    Ok(function.signature(db, LoweringStage::Monomorphized)?.declared_implicits)
+    Ok(function.signature(db, LoweringStage::Monomorphized)?.declared_implicits.clone())
 }
 
 /// A trait to add helper methods in [LoweringGroup].
@@ -319,7 +319,9 @@ fn scc_implicits_tracked<'db>(
             function
                 .function_id(db)?
                 .signature(db, LoweringStage::Monomorphized)?
-                .declared_implicits,
+                .declared_implicits
+                .iter()
+                .copied(),
         );
         // For each direct callee, add its implicits.
         let direct_callees =
@@ -336,7 +338,11 @@ fn scc_implicits_tracked<'db>(
                 }
             } else {
                 all_implicits.extend(
-                    direct_callee.signature(db, LoweringStage::Monomorphized)?.declared_implicits,
+                    direct_callee
+                        .signature(db, LoweringStage::Monomorphized)?
+                        .declared_implicits
+                        .iter()
+                        .copied(),
                 );
             }
         }
