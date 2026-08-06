@@ -414,10 +414,9 @@ fn get_function_signature(
     function_id: cairo_lang_sierra::ids::FunctionId,
 ) -> Maybe<cairo_lang_sierra::program::FunctionSignature> {
     let lowered_function_id = db.lookup_sierra_function(&function_id);
-    // Only ever reached for functions with a body, so the `Final` signature is exact: the implicits
-    // are already the leading entries of `params`/`extra_rets` (`signature.implicits` is empty),
-    // and `return_type` already carries the panic wrapping, `extra_rets` having been folded into
-    // it.
+    // Only ever reached for functions with a body, so the `Final` signature is exact - it lists
+    // the physical params and returned values (implicits included, panic wrapping applied, and no
+    // scrubbed trailing unit), so it maps directly to the Sierra signature.
     let signature = lowered_function_id.signature(db, LoweringStage::Final)?;
 
     let mut param_types = vec![];
@@ -425,12 +424,8 @@ fn get_function_signature(
         param_types.push(db.get_concrete_type_id(param.ty)?.clone());
     }
     let mut ret_types = vec![];
-    for ty in &signature.extra_rets {
+    for ty in &signature.return_types {
         ret_types.push(db.get_concrete_type_id(*ty)?.clone());
-    }
-    // Functions that return the unit type don't have a return type in the signature.
-    if !signature.return_type.is_unit(db) {
-        ret_types.push(db.get_concrete_type_id(signature.return_type)?.clone());
     }
 
     Ok(cairo_lang_sierra::program::FunctionSignature { param_types, ret_types })

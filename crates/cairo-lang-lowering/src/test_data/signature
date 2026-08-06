@@ -47,3 +47,28 @@ fn foo(ref a: felt252, b: felt252) -> felt252 nopanic {
 
 //! > final
 (core::pedersen::Pedersen, core::felt252, core::felt252) -> (core::pedersen::Pedersen, core::felt252, core::felt252)
+
+//! > ==========================================================================
+
+//! > Per-stage signature of a unit-returning function, where scrub_units drops the return value.
+
+//! > test_runner_name
+test_per_stage_signature
+
+//! > cairo_code
+#[target_function]
+fn foo(a: felt252) nopanic {
+    let _b = a;
+}
+
+//! > monomorphized
+(core::felt252) -> (())
+
+//! > pre_optimizations
+(core::felt252) -> ()
+
+//! > post_baseline
+(core::felt252) -> ()
+
+//! > final
+(core::felt252) -> ()

@@ -52,4 +52,10 @@ pub fn scrub_units(db: &dyn Database, lowered: &mut Lowered<'_>) {
             }));
         };
     }
+
+    // The trailing unit value was dropped from every `BlockEnd::Return` - drop it from the
+    // signature as well.
+    if lowered.signature.return_types.last() == Some(&unit_ty) {
+        lowered.signature.return_types.pop();
+    }
 }

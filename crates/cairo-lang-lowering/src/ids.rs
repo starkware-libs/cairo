@@ -644,14 +644,13 @@ semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, 
 pub struct Signature<'db> {
     /// Input params.
     pub params: Vec<LoweredParam<'db>>,
-    /// Types of the extra returns, returned before `return_type` - e.g. ref params.
-    pub extra_rets: Vec<semantic::TypeId<'db>>,
-    /// Return type.
-    pub return_type: semantic::TypeId<'db>,
+    /// The types of the returned values, in order - the extra returns (e.g. ref params), followed
+    /// by the return type (when a value of it is physically returned).
+    pub return_types: Vec<semantic::TypeId<'db>>,
     /// Explicit implicit requirements.
     ///
     /// Only meaningful before `LowerImplicits` ran - from `LoweringStage::Final` on the implicits
-    /// appear explicitly in `params` and `extra_rets`, and this is empty.
+    /// appear explicitly in `params` and `return_types`, and this is empty.
     pub implicits: Vec<semantic::TypeId<'db>>,
     /// Panicable.
     #[dont_rewrite]
@@ -671,8 +670,12 @@ impl<'db> From<EnrichedSemanticSignature<'db>> for Signature<'db> {
                 .iter()
                 .map(|param| LoweredParam { ty: param.ty(), stable_ptr: param.stable_ptr() })
                 .collect(),
-            extra_rets: signature.extra_rets.iter().map(|param| param.ty()).collect(),
-            return_type: signature.return_type,
+            return_types: signature
+                .extra_rets
+                .iter()
+                .map(|param| param.ty())
+                .chain([signature.return_type])
+                .collect(),
             implicits: signature.implicits,
             panicable: signature.panicable,
             location: signature.location,

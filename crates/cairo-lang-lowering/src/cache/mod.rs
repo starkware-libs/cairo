@@ -434,10 +434,8 @@ impl LoweredCached {
 struct LoweredSignatureCached {
     /// Function parameters.
     params: Vec<LoweredParamCached>,
-    /// Types of the extra return values.
-    extra_rets: Vec<TypeIdCached>,
-    /// Return type.
-    return_type: TypeIdCached,
+    /// The types of the returned values.
+    return_types: Vec<TypeIdCached>,
     /// Implicit parameters.
     implicits: Vec<TypeIdCached>,
     /// Whether the function is panicable.
@@ -452,13 +450,11 @@ impl LoweredSignatureCached {
                 .iter()
                 .map(|param| LoweredParamCached::new(param, ctx))
                 .collect(),
-            extra_rets: signature
-                .extra_rets
+            return_types: signature
+                .return_types
                 .iter()
                 .map(|ty| TypeIdCached::new(*ty, &mut ctx.semantic_ctx))
                 .collect(),
-
-            return_type: TypeIdCached::new(signature.return_type, &mut ctx.semantic_ctx),
             implicits: signature
                 .implicits
                 .into_iter()
@@ -471,12 +467,11 @@ impl LoweredSignatureCached {
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> Signature<'db> {
         Signature {
             params: self.params.into_iter().map(|var| var.embed(ctx)).collect(),
-            extra_rets: self
-                .extra_rets
+            return_types: self
+                .return_types
                 .into_iter()
                 .map(|ty| ty.get_embedded(&ctx.semantic_loading_data))
                 .collect(),
-            return_type: self.return_type.get_embedded(&ctx.semantic_loading_data),
             implicits: self
                 .implicits
                 .into_iter()

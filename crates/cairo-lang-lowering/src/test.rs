@@ -12,7 +12,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::{Itertools, chain};
+use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
 use crate::db::LoweringGroup;
@@ -241,8 +241,7 @@ fn signature_types(
     signature: &Signature<'_>,
 ) -> (Vec<String>, Vec<String>) {
     let params = signature.params.iter().map(|param| param.ty).collect_vec();
-    let rets = chain!(signature.extra_rets.iter().copied(), [signature.return_type]).collect_vec();
-    (format_types(db, &params), format_types(db, &rets))
+    (format_types(db, &params), format_types(db, &signature.return_types))
 }
 
 fn format_types(db: &dyn salsa::Database, tys: &[semantic::TypeId<'_>]) -> Vec<String> {

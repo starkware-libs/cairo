@@ -77,13 +77,13 @@ pub fn inner_lower_implicits<'db>(
     ctx.lowered.parameters.splice(0..0, implicit_vars.iter().map(|var_usage| var_usage.var_id));
 
     // The implicits are now physically prepended to both the parameters and the returned values,
-    // so they are recorded as ordinary params/extra-rets and the implicits concept is dropped.
+    // so they are recorded as ordinary params/return types and the implicits concept is dropped.
     let stable_ptr = ast::ExprPtr(semantic_function.untyped_stable_ptr(db));
     ctx.lowered
         .signature
         .params
         .splice(0..0, ctx.implicits_tys.iter().map(|ty| LoweredParam { ty: *ty, stable_ptr }));
-    ctx.lowered.signature.extra_rets.splice(0..0, ctx.implicits_tys.iter().copied());
+    ctx.lowered.signature.return_types.splice(0..0, ctx.implicits_tys.iter().copied());
     ctx.lowered.signature.implicits.clear();
 
     Ok(())
