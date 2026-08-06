@@ -27,6 +27,7 @@ use syntax::node::ids::SyntaxStablePtrId;
 use crate::corelib::LiteralError;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
+use crate::items::macro_declaration::MacroExpansionFailure;
 use crate::items::trt::ConcreteTraitTypeId;
 use crate::path::ContextualizePath;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -1202,6 +1203,17 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     name.long(db)
                 )
             }
+            SemanticDiagnosticKind::MacroExpansionFailed(failure) => match failure {
+                MacroExpansionFailure::RepetitionWithoutPlaceholder => {
+                    "Repetition in the macro expansion holds no placeholder, so the number of \
+                     repetitions cannot be determined."
+                        .into()
+                }
+                MacroExpansionFailure::MissingCapture(name) => format!(
+                    "Macro placeholder '{}' has no captured value in this repetition.",
+                    name.long(db)
+                ),
+            },
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
                 "User defined inline macros are disabled in the current crate.".into()
             }
@@ -1481,6 +1493,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => error_code!(E2196),
             SemanticDiagnosticKind::UnsupportedItemInStatement => error_code!(E2197),
             SemanticDiagnosticKind::ExternItemOutsideCorelib => error_code!(E2201),
+            SemanticDiagnosticKind::MacroExpansionFailed(_) => error_code!(E2202),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1902,6 +1915,7 @@ pub enum SemanticDiagnosticKind<'db> {
         actual: usize,
     },
     MacroPlaceholderRepDriverMismatch(SmolStrId<'db>),
+    MacroExpansionFailed(MacroExpansionFailure<'db>),
     UserDefinedInlineMacrosDisabled,
     NonNeverLetElseType,
     OnlyTypeOrConstParamsInNegImpl,
