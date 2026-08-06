@@ -3739,3 +3739,28 @@ fn foo() -> felt252 {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test `_` not matched by an ident placeholder.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// `_` is not an identifier, so an `ident` placeholder does not match it. The first call, which the
+// rule does match, shows the rejection is the `_` and not the repetition itself; in the second call
+// the offending element is not the first.
+macro m {
+    ($($x:ident),*) => { 1 };
+}
+fn foo() {
+    m!(a, b);
+    m!(a, _, b);
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:9:5
+    m!(a, _, b);
+    ^^^^^^^^^^^
