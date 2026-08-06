@@ -12,7 +12,7 @@ use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{self as semantic, GenericArgumentId};
 use cairo_lang_utils::Intern;
-use itertools::{Itertools, chain, zip_eq};
+use itertools::{Itertools, zip_eq};
 use salsa::Database;
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 
@@ -112,8 +112,7 @@ pub fn lower_panics<'db>(
 
     // The blocks now return a single `PanicResult` value, with the previous extra-returns folded
     // into its `Ok` variant - derived from the very `panic_info` that rewrote them.
-    lowered.signature.return_type = ctx.panic_info.actual_return_ty;
-    lowered.signature.extra_rets.clear();
+    lowered.signature.return_types = vec![ctx.panic_info.actual_return_ty];
 
     Ok(())
 }
@@ -217,10 +216,8 @@ pub struct PanicSignatureInfo<'db> {
 }
 impl<'db> PanicSignatureInfo<'db> {
     pub fn new(db: &'db dyn Database, signature: &Signature<'db>) -> Self {
-        let extra_rets = signature.extra_rets.iter().map(|param| param.ty);
-        let original_return_ty = signature.return_type;
-
-        let ok_ret_tys = chain!(extra_rets, [original_return_ty]).collect_vec();
+        let ok_ret_tys = signature.return_types.clone();
+        let original_return_ty = *ok_ret_tys.last().unwrap();
         let ok_ty = semantic::TypeLongId::Tuple(ok_ret_tys.clone()).intern(db);
         let ok_variant = get_core_enum_concrete_variant(
             db,

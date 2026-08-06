@@ -8,7 +8,7 @@ use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{TypeSizeInformation, TypesSemantic};
 use cairo_lang_semantic::{ConcreteTypeId, ConcreteVariant, GenericArgumentId, TypeId, TypeLongId};
 use cairo_lang_utils::extract_matches;
-use itertools::{Itertools, chain, zip_eq};
+use itertools::{Itertools, zip_eq};
 use salsa::Database;
 
 use crate::blocks::BlocksBuilder;
@@ -292,10 +292,12 @@ pub fn specialized_function_lowered<'db>(
         }
     }
 
-    let outputs: Vec<VariableId> =
-        chain!(base.signature.extra_rets.iter().map(|ret| ret.ty), [base.signature.return_type])
-            .map(|ty| variables.new_var(VarRequest { ty, location }))
-            .collect_vec();
+    let outputs: Vec<VariableId> = base
+        .signature
+        .return_types
+        .iter()
+        .map(|ty| variables.new_var(VarRequest { ty: *ty, location }))
+        .collect_vec();
     let mut block_builder = BlocksBuilder::new();
     let ret_usage =
         outputs.iter().map(|var_id| VarUsage { var_id: *var_id, location }).collect_vec();

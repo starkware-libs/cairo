@@ -418,7 +418,12 @@ fn generate_externally_provided_const_code<'db>(
     // The concrete return type of the call - substituted for a generic declaration, and the shape
     // the call's outputs were expanded from. A tuple - including the unit type - is expanded into
     // an output per member, which no single constant can fill.
-    let return_type = statement.function.signature(db, LoweringStage::Monomorphized)?.return_type;
+    let return_type = *statement
+        .function
+        .signature(db, LoweringStage::Monomorphized)?
+        .return_types
+        .last()
+        .unwrap();
     assert!(
         !matches!(return_type.long(db), TypeLongId::Tuple(_)),
         "`{EXTERNALLY_PROVIDED_CONST}` must not return a tuple: {:?}",

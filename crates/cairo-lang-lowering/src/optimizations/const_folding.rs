@@ -1101,8 +1101,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         ty_info.dec?
                     };
                     // A corelib `inc`/`dec` function - bodyless, so the stage is immaterial.
-                    let enum_ty =
-                        function.signature(db, LoweringStage::Monomorphized).ok()?.return_type;
+                    let enum_ty = *function
+                        .signature(db, LoweringStage::Monomorphized)
+                        .ok()?
+                        .return_types
+                        .last()
+                        .unwrap();
                     let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
                         enum_ty.long(db)
                     else {

@@ -14,7 +14,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::{Itertools, chain};
+use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
 use crate::db::LoweringGroup;
@@ -243,9 +243,7 @@ fn signature_types(
     signature: &Signature<'_>,
 ) -> (Vec<String>, Vec<String>) {
     let params = signature.params.iter().map(|param| param.ty).collect_vec();
-    let rets = chain!(signature.extra_rets.iter().map(|ret| ret.ty), [signature.return_type])
-        .collect_vec();
-    (format_types(db, &params), format_types(db, &rets))
+    (format_types(db, &params), format_types(db, &signature.return_types))
 }
 
 fn format_types(db: &dyn salsa::Database, tys: &[semantic::TypeId<'_>]) -> Vec<String> {
@@ -372,6 +370,44 @@ fn test_signature_per_stage_nopanic() {
         )
     );
     assert!(sig_of(LoweringStage::Final).implicits.is_empty());
+
+    assert_signature_matches_physical(db, function_id);
+}
+
+/// Same as [test_signature_per_stage], for a unit-returning non-panicking function - the case
+/// where `scrub_units` drops the trailing unit return value, leaving an empty return list.
+#[test]
+fn test_signature_per_stage_unit_return() {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let test_function = setup_test_function_from_content(
+        db,
+        indoc::indoc! {"
+            #[target_function]
+            fn foo(a: felt252) nopanic {
+                let _b = a;
+            }
+        "},
+        None,
+        None,
+    )
+    .unwrap();
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+
+    let sig_of = |stage| db.lowered_body(function_id, stage).unwrap().signature.clone();
+
+    // At `Monomorphized` the unit return value is still physically returned.
+    assert_eq!(
+        signature_types(db, &sig_of(LoweringStage::Monomorphized)),
+        (vec!["core::felt252".into()], vec!["()".into()])
+    );
+
+    // `scrub_units` drops the trailing unit return value - and its signature entry with it.
+    for stage in
+        [LoweringStage::PreOptimizations, LoweringStage::PostBaseline, LoweringStage::Final]
+    {
+        assert_eq!(signature_types(db, &sig_of(stage)), (vec!["core::felt252".into()], vec![]));
+    }
 
     assert_signature_matches_physical(db, function_id);
 }
