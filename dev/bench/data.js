@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785976826080,
+  "lastUpdate": 1785977275697,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -17299,6 +17299,128 @@ window.BENCHMARK_DATA = {
           {
             "name": "cairo-to-sierra-total_bytes/nested_loops",
             "value": 355259556,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "2e69c0699d64d4ca6fc813c2597fc5e89eb6b56d",
+          "message": "feature(sierra-gen): Added support for injecting constant values externally, via plugins. (#10274)\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+          "timestamp": "2026-08-05T11:11:29Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/2e69c0699d64d4ca6fc813c2597fc5e89eb6b56d"
+        },
+        "date": 1785977275582,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "cairo-to-testing-max_bytes/fib",
+            "value": 94231313,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-testing-total_bytes/fib",
+            "value": 236996217,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/corelib",
+            "value": 294824656,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/corelib",
+            "value": 809525949,
+            "unit": "bytes"
+          },
+          {
+            "name": "sierra-to-casm-max_bytes/corelib",
+            "value": 12023815,
+            "unit": "bytes"
+          },
+          {
+            "name": "sierra-to-casm-total_bytes/corelib",
+            "value": 42684488,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/cairo_level_tests",
+            "value": 552040167,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/cairo_level_tests",
+            "value": 1916411809,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/staking",
+            "value": 1331643396,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/staking",
+            "value": 9498936373,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/big_array",
+            "value": 656045499,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/big_array",
+            "value": 1312205749,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/large_struct",
+            "value": 103288636,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/large_struct",
+            "value": 252168854,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/wide_enum",
+            "value": 84598129,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/wide_enum",
+            "value": 209449400,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/deep_nesting",
+            "value": 84102684,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/deep_nesting",
+            "value": 165185759,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/nested_loops",
+            "value": 104050733,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/nested_loops",
+            "value": 355283624,
             "unit": "bytes"
           }
         ]
