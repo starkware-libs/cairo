@@ -145,6 +145,9 @@ pub struct Lowered<'db> {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<'db, LoweringDiagnostic<'db>>,
     /// Function signature.
+    /// Note that `signature.params` holds only the explicit parameters - unlike `parameters`,
+    /// which is the actual parameter list of the function and includes the implicits once the
+    /// `LowerImplicits` phase has run.
     pub signature: Signature<'db>,
     /// Arena of allocated lowered variables.
     /// SAFETY: `id_arena::Arena` is a foreign type, so this cannot be derived; the arena holds
