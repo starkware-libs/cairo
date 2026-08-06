@@ -57,7 +57,7 @@ pub fn gas_redeposit<'db>(
     // type, from which the `PanicResult` variants are not recoverable.
     let panic_sig = PanicSignatureInfo::new(
         db,
-        &function_id.signature(db, LoweringStage::Monomorphized).unwrap(),
+        function_id.signature(db, LoweringStage::Monomorphized).unwrap(),
     );
     if panic_sig.always_panic {
         return;

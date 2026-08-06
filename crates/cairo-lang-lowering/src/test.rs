@@ -317,8 +317,8 @@ fn test_per_stage_signature(
     ] {
         let lowered = db.lowered_body(function_id, stage).unwrap();
         assert_signature_matches_lowered(lowered, stage);
-        assert_eq!(function_id.signature(db, stage).unwrap(), lowered.signature);
-        assert_eq!(callable_id.signature(db, stage).unwrap(), lowered.signature);
+        assert_eq!(function_id.signature(db, stage).unwrap(), &lowered.signature);
+        assert_eq!(callable_id.signature(db, stage).unwrap(), &lowered.signature);
         outputs
             .insert(tag.into(), format_signature(db, &lowered.signature, test_function.module_id));
     }
