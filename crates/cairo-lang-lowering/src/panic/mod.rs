@@ -71,7 +71,7 @@ pub fn lower_panics<'db>(
 
     let signature = function_id.signature(db, LoweringStage::Monomorphized)?;
     // TODO(orizi): Validate all signature types are fully concrete at this point.
-    let panic_info = PanicSignatureInfo::new(db, &signature);
+    let panic_info = PanicSignatureInfo::new(db, signature);
     let variables = VariableAllocator::new(
         db,
         function_id.base_semantic_function(db).function_with_body_id(db),
@@ -309,7 +309,7 @@ impl<'db> PanicBlockLoweringContext<'db> {
 
         // Get callee info.
         let callee_signature = call.function.signature(self.db(), LoweringStage::Monomorphized)?;
-        let callee_info = PanicSignatureInfo::new(self.db(), &callee_signature);
+        let callee_info = PanicSignatureInfo::new(self.db(), callee_signature);
         if callee_info.always_panic {
             // The panic value, which is actually of type (Panics, Array<felt252>).
             let panic_result_var = self.new_var(callee_info.actual_return_ty, location);
