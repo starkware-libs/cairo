@@ -12,14 +12,14 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use pretty_assertions::assert_eq;
 
-use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
-use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
+use crate::ids::{ConcreteFunctionWithBodyId, LocationId, Signature};
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
+use crate::{BlockEnd, Lowered, LoweringStage};
 
 cairo_lang_test_utils::test_file_test!(
     lowering,
@@ -216,4 +216,82 @@ fn test_sizes() {
         let expected_size = alias_expected_size[alias_name];
         assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db));
     }
+}
+
+/// Returns the types of the physical parameters and of the physically returned values of
+/// `lowered`.
+fn physical_types(db: &dyn salsa::Database, lowered: &Lowered<'_>) -> (Vec<String>, Vec<String>) {
+    let ty_of = |var_id| lowered.variables[var_id].ty;
+    let params = lowered.parameters.iter().map(|param| ty_of(*param)).collect_vec();
+    let mut all_rets = lowered.blocks.iter().filter_map(|(_, block)| match &block.end {
+        BlockEnd::Return(vars, _) => Some(vars.iter().map(|var| ty_of(var.var_id)).collect_vec()),
+        _ => None,
+    });
+    let rets = all_rets.next().expect("Expected at least one returning block.");
+    assert!(
+        all_rets.all(|other| other == rets),
+        "Returning blocks disagree on the returned types."
+    );
+    (format_types(db, &params), format_types(db, &rets))
+}
+
+/// Returns the types of the parameters and of the returned values as described by `signature`.
+fn signature_types(
+    db: &dyn salsa::Database,
+    signature: &Signature<'_>,
+) -> (Vec<String>, Vec<String>) {
+    let params = signature.params.iter().map(|param| param.ty).collect_vec();
+    let rets = chain!(signature.extra_rets.iter().copied(), [signature.return_type]).collect_vec();
+    (format_types(db, &params), format_types(db, &rets))
+}
+
+fn format_types(db: &dyn salsa::Database, tys: &[semantic::TypeId<'_>]) -> Vec<String> {
+    tys.iter().map(|ty| ty.format(db)).collect_vec()
+}
+
+cairo_lang_test_utils::test_file_test!(
+    per_stage_signature,
+    "src/test_data",
+    {
+        signature: "signature",
+    },
+    test_per_stage_signature,
+    []
+);
+
+/// Prints the stored signature at each [LoweringStage], and cross-checks it against the physical
+/// shape of the lowering at that stage.
+fn test_per_stage_signature(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
+    assert_eq!(semantic_diagnostics, "");
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+
+    let mut outputs = OrderedHashMap::default();
+    for (tag, stage) in [
+        ("monomorphized", LoweringStage::Monomorphized),
+        ("pre_optimizations", LoweringStage::PreOptimizations),
+        ("post_baseline", LoweringStage::PostBaseline),
+        ("final", LoweringStage::Final),
+    ] {
+        let lowered = db.lowered_body(function_id, stage).unwrap();
+        let (params, rets) = signature_types(db, &lowered.signature);
+        assert_eq!(
+            (params.clone(), rets.clone()),
+            physical_types(db, lowered),
+            "Signature does not match the physical lowering at {stage:?}."
+        );
+        let mut formatted =
+            format!("({}) -> ({})", params.iter().join(", "), rets.iter().join(", "));
+        if !lowered.signature.implicits.is_empty() {
+            let implicits = format_types(db, &lowered.signature.implicits);
+            formatted += &format!("\nimplicits: {}", implicits.iter().join(", "));
+        }
+        outputs.insert(tag.into(), formatted);
+    }
+    TestRunnerResult::success(outputs)
 }
