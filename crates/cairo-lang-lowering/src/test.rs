@@ -271,6 +271,10 @@ fn test_per_stage_signature(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
+    // The `ids.rs` signature API must report the stored signature, per stage, from both the
+    // with-body id and the callable id.
+    let callable_id = function_id.function_id(db).unwrap();
+
     let mut outputs = OrderedHashMap::default();
     for (tag, stage) in [
         ("monomorphized", LoweringStage::Monomorphized),
@@ -285,6 +289,8 @@ fn test_per_stage_signature(
             physical_types(db, lowered),
             "Signature does not match the physical lowering at {stage:?}."
         );
+        assert_eq!(function_id.signature(db, stage).unwrap(), lowered.signature);
+        assert_eq!(callable_id.signature(db, stage).unwrap(), lowered.signature);
         let mut formatted =
             format!("({}) -> ({})", params.iter().join(", "), rets.iter().join(", "));
         if !lowered.signature.implicits.is_empty() {

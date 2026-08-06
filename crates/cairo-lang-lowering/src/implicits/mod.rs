@@ -265,7 +265,8 @@ pub fn function_implicits<'db>(
     if let Some(body) = function.body(db)? {
         return db.function_with_body_implicits(body);
     }
-    Ok(function.signature(db)?.implicits)
+    // Reached only for bodyless functions; their declared implicits are stage invariant.
+    Ok(function.signature(db, LoweringStage::Monomorphized)?.implicits)
 }
 
 /// A trait to add helper methods in [LoweringGroup].
@@ -311,7 +312,12 @@ fn scc_implicits_tracked<'db>(
     let mut all_implicits = OrderedHashSet::<_>::default();
     for function in scc_functions {
         // Add the function's explicit implicits.
-        all_implicits.extend(function.function_id(db)?.signature(db)?.implicits);
+        // The SCC is walked at `PostBaseline`, but `signature.implicits` holds the declared
+        // implicits identically at every stage up to `Final` (where this pass clears them), so
+        // the cheap `Monomorphized` signature is used to avoid a `lowered_body` edge per member.
+        all_implicits.extend(
+            function.function_id(db)?.signature(db, LoweringStage::Monomorphized)?.implicits,
+        );
         // For each direct callee, add its implicits.
         let direct_callees =
             db.lowered_direct_callees(function, DependencyType::Call, LoweringStage::PostBaseline)?;
@@ -326,7 +332,8 @@ fn scc_implicits_tracked<'db>(
                     all_implicits.extend(scc_implicits(db, callee_scc)?);
                 }
             } else {
-                all_implicits.extend(direct_callee.signature(db)?.implicits);
+                all_implicits
+                    .extend(direct_callee.signature(db, LoweringStage::Monomorphized)?.implicits);
             }
         }
     }
