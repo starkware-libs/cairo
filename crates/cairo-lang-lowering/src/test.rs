@@ -5,21 +5,23 @@ use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
-use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function, setup_test_module};
+use cairo_lang_semantic::test_utils::{
+    setup_test_expr, setup_test_function, setup_test_function_from_content, setup_test_module,
+};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use pretty_assertions::assert_eq;
 
-use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
-use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
+use crate::ids::{ConcreteFunctionWithBodyId, LocationId, Signature};
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
+use crate::{BlockEnd, Lowered, LoweringStage};
 
 cairo_lang_test_utils::test_file_test!(
     lowering,
@@ -215,5 +217,169 @@ fn test_sizes() {
         let alias_name = alias.name(db).text(db).long(db).as_str();
         let expected_size = alias_expected_size[alias_name];
         assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db));
+    }
+}
+
+/// Returns the types of the physical parameters and of the physically returned values of
+/// `lowered`.
+fn physical_types(db: &dyn salsa::Database, lowered: &Lowered<'_>) -> (Vec<String>, Vec<String>) {
+    let ty_of = |var_id| lowered.variables[var_id].ty;
+    let params = lowered.parameters.iter().map(|param| ty_of(*param)).collect_vec();
+    let mut all_rets = lowered.blocks.iter().filter_map(|(_, block)| match &block.end {
+        BlockEnd::Return(vars, _) => Some(vars.iter().map(|var| ty_of(var.var_id)).collect_vec()),
+        _ => None,
+    });
+    let rets = all_rets.next().expect("Expected at least one returning block.");
+    assert!(
+        all_rets.all(|other| other == rets),
+        "Returning blocks disagree on the returned types."
+    );
+    (format_types(db, &params), format_types(db, &rets))
+}
+
+/// Returns the types of the parameters and of the returned values as described by `signature`.
+fn signature_types(
+    db: &dyn salsa::Database,
+    signature: &Signature<'_>,
+) -> (Vec<String>, Vec<String>) {
+    let params = signature.params.iter().map(|param| param.ty).collect_vec();
+    let rets = chain!(signature.extra_rets.iter().map(|ret| ret.ty), [signature.return_type])
+        .collect_vec();
+    (format_types(db, &params), format_types(db, &rets))
+}
+
+fn format_types(db: &dyn salsa::Database, tys: &[semantic::TypeId<'_>]) -> Vec<String> {
+    tys.iter().map(|ty| ty.format(db)).collect_vec()
+}
+
+/// Pins the per-stage signature of a panicking function, and cross-checks each stage's signature
+/// against the physical shape of the lowering at that stage.
+#[test]
+fn test_signature_per_stage() {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let test_function = setup_test_function_from_content(
+        db,
+        indoc::indoc! {"
+            #[target_function]
+            fn foo(ref a: u32, b: u32) -> u32 {
+                a = a + b;
+                a
+            }
+        "},
+        None,
+        None,
+    )
+    .unwrap();
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+
+    let sig_of = |stage| db.lowered_body(function_id, stage).unwrap().signature.clone();
+    let monomorphized = sig_of(LoweringStage::Monomorphized);
+    let pre_optimizations = sig_of(LoweringStage::PreOptimizations);
+    let post_baseline = sig_of(LoweringStage::PostBaseline);
+    let final_ = sig_of(LoweringStage::Final);
+
+    // `a` is a `ref` param, so it is both a param and an extra return.
+    assert_eq!(
+        signature_types(db, &monomorphized),
+        (
+            vec!["core::integer::u32".into(), "core::integer::u32".into()],
+            vec!["core::integer::u32".into(), "core::integer::u32".into()]
+        )
+    );
+    assert!(monomorphized.implicits.is_empty());
+
+    // `lower_panics` folds the extra returns and the return type into a single `PanicResult`.
+    assert_eq!(
+        signature_types(db, &pre_optimizations),
+        (
+            vec!["core::integer::u32".into(), "core::integer::u32".into()],
+            vec!["core::panics::PanicResult::<(core::integer::u32, core::integer::u32)>".into()]
+        )
+    );
+    assert_eq!(pre_optimizations.params, monomorphized.params);
+
+    // The baseline strategy is signature-neutral.
+    assert_eq!(post_baseline, pre_optimizations);
+
+    // `lower_implicits` prepends the implicits to both the params and the returned values, and
+    // drops the implicits concept.
+    assert_eq!(
+        signature_types(db, &final_),
+        (
+            vec![
+                "core::RangeCheck".into(),
+                "core::integer::u32".into(),
+                "core::integer::u32".into()
+            ],
+            vec![
+                "core::RangeCheck".into(),
+                "core::panics::PanicResult::<(core::integer::u32, core::integer::u32)>".into()
+            ]
+        )
+    );
+    assert!(final_.implicits.is_empty());
+
+    assert_signature_matches_physical(db, function_id);
+}
+
+/// Same as [test_signature_per_stage], for a `nopanic` function - the case where `extra_rets`
+/// survives into `lower_implicits`, so the implicits are prepended to a non-empty return list.
+#[test]
+fn test_signature_per_stage_nopanic() {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let test_function = setup_test_function_from_content(
+        db,
+        indoc::indoc! {"
+            #[target_function]
+            fn foo(ref a: felt252, b: felt252) -> felt252 nopanic {
+                a = core::pedersen::pedersen(a, b);
+                b
+            }
+        "},
+        None,
+        None,
+    )
+    .unwrap();
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+
+    let sig_of = |stage| db.lowered_body(function_id, stage).unwrap().signature.clone();
+
+    // `lower_panics` is a no-op here, so the signature is unchanged up to `PostBaseline`.
+    assert_eq!(sig_of(LoweringStage::PreOptimizations), sig_of(LoweringStage::Monomorphized));
+    assert_eq!(sig_of(LoweringStage::PostBaseline), sig_of(LoweringStage::Monomorphized));
+
+    // The implicits are prepended in front of the surviving `ref`-param extra return.
+    assert_eq!(
+        signature_types(db, &sig_of(LoweringStage::Final)),
+        (
+            vec!["core::pedersen::Pedersen".into(), "core::felt252".into(), "core::felt252".into()],
+            vec!["core::pedersen::Pedersen".into(), "core::felt252".into(), "core::felt252".into()]
+        )
+    );
+    assert!(sig_of(LoweringStage::Final).implicits.is_empty());
+
+    assert_signature_matches_physical(db, function_id);
+}
+
+/// Asserts that the stored signature describes the physical parameters and returned values at
+/// every [LoweringStage].
+fn assert_signature_matches_physical(
+    db: &LoweringDatabaseForTesting,
+    function_id: ConcreteFunctionWithBodyId<'_>,
+) {
+    for stage in [
+        LoweringStage::Monomorphized,
+        LoweringStage::PreOptimizations,
+        LoweringStage::PostBaseline,
+        LoweringStage::Final,
+    ] {
+        let lowered = db.lowered_body(function_id, stage).unwrap();
+        assert_eq!(
+            signature_types(db, &lowered.signature),
+            physical_types(db, lowered),
+            "Signature does not match the physical lowering at {stage:?}."
+        );
     }
 }

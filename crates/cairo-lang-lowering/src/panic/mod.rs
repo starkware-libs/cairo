@@ -108,6 +108,11 @@ pub fn lower_panics<'db>(
     lowered.variables = ctx.variables.variables;
     lowered.blocks = ctx.flat_blocks.build().unwrap();
 
+    // The blocks now return a single `PanicResult` value, with the previous extra-returns folded
+    // into its `Ok` variant - derived from the very `panic_info` that rewrote them.
+    lowered.signature.return_type = ctx.panic_info.actual_return_ty;
+    lowered.signature.extra_rets.clear();
+
     Ok(())
 }
 
@@ -210,7 +215,7 @@ pub struct PanicSignatureInfo<'db> {
 }
 impl<'db> PanicSignatureInfo<'db> {
     pub fn new(db: &'db dyn Database, signature: &Signature<'db>) -> Self {
-        let extra_rets = signature.extra_rets.iter().map(|param| param.ty());
+        let extra_rets = signature.extra_rets.iter().map(|param| param.ty);
         let original_return_ty = signature.return_type;
 
         let ok_ret_tys = chain!(extra_rets, [original_return_ty]).collect_vec();

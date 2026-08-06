@@ -607,11 +607,14 @@ semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, 
 pub struct Signature<'db> {
     /// Input params.
     pub params: Vec<LoweredParam<'db>>, // Vec<semantic::ExprVarMemberPath<'db>>,
-    /// Extra returns - e.g. ref params.
-    pub extra_rets: Vec<semantic::ExprVarMemberPath<'db>>,
+    /// Extra returns, returned before `return_type` - e.g. ref params.
+    pub extra_rets: Vec<LoweredParam<'db>>,
     /// Return type.
     pub return_type: semantic::TypeId<'db>,
     /// Explicit implicit requirements.
+    ///
+    /// Only meaningful before `LowerImplicits` ran - from `LoweringStage::Final` on the implicits
+    /// appear explicitly in `params` and `extra_rets`, and this is empty.
     pub implicits: Vec<semantic::TypeId<'db>>,
     /// Panicable.
     #[dont_rewrite]
@@ -631,7 +634,11 @@ impl<'db> From<EnrichedSemanticSignature<'db>> for Signature<'db> {
                 .iter()
                 .map(|param| LoweredParam { ty: param.ty(), stable_ptr: param.stable_ptr() })
                 .collect(),
-            extra_rets: signature.extra_rets,
+            extra_rets: signature
+                .extra_rets
+                .iter()
+                .map(|param| LoweredParam { ty: param.ty(), stable_ptr: param.stable_ptr() })
+                .collect(),
             return_type: signature.return_type,
             implicits: signature.implicits,
             panicable: signature.panicable,

@@ -19,8 +19,8 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::cache::{
-    ConcreteEnumCached, ConcreteVariantCached, ConstValueIdCached, ExprVarMemberPathCached,
-    ImplIdCached, MatchArmSelectorCached, SEMANTIC_CACHE_SECTION, SemanticCacheLoadingData,
+    ConcreteEnumCached, ConcreteVariantCached, ConstValueIdCached, ImplIdCached,
+    MatchArmSelectorCached, SEMANTIC_CACHE_SECTION, SemanticCacheLoadingData,
     SemanticCacheSavingContext, SemanticCacheSavingData, SemanticConcreteFunctionWithBodyCached,
     SemanticFunctionIdCached, TypeIdCached, generate_crate_def_cache,
     generate_crate_semantic_cache,
@@ -435,7 +435,7 @@ struct LoweredSignatureCached {
     /// Function parameters.
     params: Vec<LoweredParamCached>,
     /// Extra return values.
-    extra_rets: Vec<ExprVarMemberPathCached>,
+    extra_rets: Vec<LoweredParamCached>,
     /// Return type.
     return_type: TypeIdCached,
     /// Implicit parameters.
@@ -454,8 +454,8 @@ impl LoweredSignatureCached {
                 .collect(),
             extra_rets: signature
                 .extra_rets
-                .into_iter()
-                .map(|var| ExprVarMemberPathCached::new(var, &mut ctx.semantic_ctx))
+                .iter()
+                .map(|param| LoweredParamCached::new(param, ctx))
                 .collect(),
 
             return_type: TypeIdCached::new(signature.return_type, &mut ctx.semantic_ctx),
@@ -471,11 +471,7 @@ impl LoweredSignatureCached {
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> Signature<'db> {
         Signature {
             params: self.params.into_iter().map(|var| var.embed(ctx)).collect(),
-            extra_rets: self
-                .extra_rets
-                .into_iter()
-                .map(|var| var.get_embedded(&ctx.semantic_loading_data, ctx.db))
-                .collect(),
+            extra_rets: self.extra_rets.into_iter().map(|var| var.embed(ctx)).collect(),
             return_type: self.return_type.get_embedded(&ctx.semantic_loading_data),
             implicits: self
                 .implicits

@@ -293,7 +293,7 @@ pub fn specialized_function_lowered<'db>(
     }
 
     let outputs: Vec<VariableId> =
-        chain!(base.signature.extra_rets.iter().map(|ret| ret.ty()), [base.signature.return_type])
+        chain!(base.signature.extra_rets.iter().map(|ret| ret.ty), [base.signature.return_type])
             .map(|ty| variables.new_var(VarRequest { ty, location }))
             .collect_vec();
     let mut block_builder = BlocksBuilder::new();

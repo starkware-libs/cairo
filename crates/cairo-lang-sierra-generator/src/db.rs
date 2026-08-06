@@ -437,7 +437,7 @@ fn get_function_signature(
         all_params.push(concrete_type_id.clone());
     }
     for var in &signature.extra_rets {
-        let concrete_type_id = db.get_concrete_type_id(var.ty())?;
+        let concrete_type_id = db.get_concrete_type_id(var.ty)?;
         extra_rets.push(concrete_type_id.clone());
     }
 

@@ -479,17 +479,34 @@ fn lowered_body<'db>(
         },
         LoweringStage::PreOptimizations => {
             let mut lowered = db.lowered_body(function, LoweringStage::Monomorphized)?.clone();
+            // Of these, only `lower_panics` is signature-affecting (it rewrites the return side to
+            // a single `PanicResult`), and it updates `lowered.signature` itself.
+            // `add_withdraw_gas` only prepends a gas-withdrawal match to the root block,
+            // `add_destructs` only inserts destruct calls, and `scrub_units` only rewires unit
+            // values - none of them touch `lowered.parameters` or the returned value list, except
+            // for `scrub_units` dropping a trailing unit return value (see below).
             add_withdraw_gas(db, function, &mut lowered)?;
             lower_panics(db, function, &mut lowered)?;
             add_destructs(db, function, &mut lowered);
+            // NOTE: `scrub_units` pops a trailing unit-typed value off `BlockEnd::Return`, which
+            // `Signature` cannot express (there is no "no return value" state). The stored
+            // signature therefore still lists the unit `return_type`, exactly as the Sierra
+            // signature builder assumes.
             scrub_units(db, &mut lowered);
             lowered
         }
+        // No baseline phase mutates `lowered.parameters` or the function's return arity, so the
+        // `PreOptimizations` signature carries over verbatim. `reorganize_blocks` renumbers
+        // parameter variable ids in place, which is signature-neutral.
         LoweringStage::PostBaseline => {
             let mut lowered = db.lowered_body(function, LoweringStage::PreOptimizations)?.clone();
             db.baseline_optimization_strategy().apply(db, function, &mut lowered)?;
             lowered
         }
+        // Of the final phases only `LowerImplicits` is signature-affecting, and `lower_implicits`
+        // updates `lowered.signature` itself. `GasRedeposit` and `EarlyUnsafePanic` only
+        // add/replace statements and block ends, and `TrimUnreachable`/`ReorganizeBlocks`
+        // only drop or renumber blocks.
         LoweringStage::Final => {
             let mut lowered = db.lowered_body(function, LoweringStage::PostBaseline)?.clone();
             db.final_optimization_strategy().apply(db, function, &mut lowered)?;
