@@ -1,0 +1,116 @@
+//! > Per-stage signature of a panicking function.
+
+//! > test_runner_name
+test_per_stage_signature
+
+//! > cairo_code
+#[target_function]
+fn foo(ref a: u32, b: u32) -> u32 {
+    a = a + b;
+    a
+}
+
+//! > monomorphized
+(
+    a: core::integer::u32,
+    b: core::integer::u32,
+) -> core::integer::u32
+refs(core::integer::u32)
+
+//! > pre_optimizations
+(
+    a: core::integer::u32,
+    b: core::integer::u32,
+) -> core::panics::PanicResult::<(core::integer::u32, core::integer::u32)>
+
+//! > post_baseline
+(
+    a: core::integer::u32,
+    b: core::integer::u32,
+) -> core::panics::PanicResult::<(core::integer::u32, core::integer::u32)>
+
+//! > final
+(
+    core::RangeCheck,
+    a: core::integer::u32,
+    b: core::integer::u32,
+) -> core::panics::PanicResult::<(core::integer::u32, core::integer::u32)>
+refs(core::RangeCheck)
+
+//! > ==========================================================================
+
+//! > Per-stage signature of a nopanic function, where the extra returns survive panic lowering.
+
+//! > test_runner_name
+test_per_stage_signature
+
+//! > cairo_code
+#[target_function]
+fn foo(ref a: felt252, b: felt252) -> felt252 nopanic {
+    a = core::pedersen::pedersen(a, b);
+    b
+}
+
+//! > monomorphized
+(
+    a: core::felt252,
+    b: core::felt252,
+) -> core::felt252
+refs(core::felt252)
+
+//! > pre_optimizations
+(
+    a: core::felt252,
+    b: core::felt252,
+) -> core::felt252
+refs(core::felt252)
+
+//! > post_baseline
+(
+    a: core::felt252,
+    b: core::felt252,
+) -> core::felt252
+refs(core::felt252)
+
+//! > final
+(
+    core::pedersen::Pedersen,
+    a: core::felt252,
+    b: core::felt252,
+) -> core::felt252
+refs(core::pedersen::Pedersen, core::felt252)
+
+//! > ==========================================================================
+
+//! > Per-stage signature of a function with explicitly declared implicits.
+
+//! > test_runner_name
+test_per_stage_signature
+
+//! > cairo_code
+#[target_function]
+fn foo(a: felt252) -> felt252 implicits(core::pedersen::Pedersen) nopanic {
+    a
+}
+
+//! > monomorphized
+(
+    a: core::felt252,
+) -> core::felt252
+
+//! > pre_optimizations
+(
+    a: core::felt252,
+) -> core::felt252
+
+//! > post_baseline
+(
+    a: core::felt252,
+) -> core::felt252
+
+//! > final
+(
+    core::pedersen::Pedersen,
+    a: core::felt252,
+) -> core::felt252
+refs(core::pedersen::Pedersen)
