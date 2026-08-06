@@ -3152,3 +3152,114 @@ fn foo() -> felt252 {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a lone rule whose subtree delimiter differs from the call's.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The delimiter of a pattern subtree is part of the pattern, so a parenthesized call does not
+// match a bracketed rule; with no other rule to try, the call has no matching rule.
+macro wrong_delim {
+    ([$x:ident]) => { 1 };
+}
+fn foo() -> felt252 {
+    wrong_delim!((a))
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `wrong_delim`.
+ --> lib.cairo:7:5
+    wrong_delim!((a))
+    ^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a lone rule whose subtree delimiter matches the call's (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro wrong_delim {
+    ([$x:ident]) => { 1 };
+}
+fn foo() -> felt252 {
+    wrong_delim!([a])
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a nested pattern subtree whose delimiter differs from the call's.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The inner subtree of the pattern is bracketed, while the one of the call is parenthesized.
+macro nested {
+    ($([$($a:ident, $b:ident),*]),*) => { 1 };
+}
+fn foo() -> felt252 {
+    nested!((x, y, z, w), (p, q, r, s))
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `nested`.
+ --> lib.cairo:6:5
+    nested!((x, y, z, w), (p, q, r, s))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an empty pattern subtree whose delimiter differs from the call's.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro empty {
+    ([]) => { 1 };
+}
+fn foo() -> felt252 {
+    empty!({})
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `empty`.
+ --> lib.cairo:5:5
+    empty!({})
+    ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a pattern subtree whose opening and closing delimiters are of different kinds.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The parser reports the inconsistency, and a rule with a parse error is never matched - so the
+// delimiter kinds of a pattern subtree need no validation of their own at declaration time.
+macro unclosed {
+    ([$x:ident) => { 1 };
+}
+fn foo() -> felt252 {
+    unclosed!([a])
+}
+
+//! > expected_diagnostics
+error[E1001]: Missing token ']'.
+ --> lib.cairo:4:15
+    ([$x:ident) => { 1 };
+              ^
+
+error[E2158]: No matching rule found in inline macro `unclosed`.
+ --> lib.cairo:7:5
+    unclosed!([a])
+    ^^^^^^^^^^^^^^
