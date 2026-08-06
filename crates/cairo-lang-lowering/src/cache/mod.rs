@@ -19,8 +19,8 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::cache::{
-    ConcreteEnumCached, ConcreteVariantCached, ConstValueIdCached, ExprVarMemberPathCached,
-    ImplIdCached, MatchArmSelectorCached, SEMANTIC_CACHE_SECTION, SemanticCacheLoadingData,
+    ConcreteEnumCached, ConcreteVariantCached, ConstValueIdCached, ImplIdCached,
+    MatchArmSelectorCached, SEMANTIC_CACHE_SECTION, SemanticCacheLoadingData,
     SemanticCacheSavingContext, SemanticCacheSavingData, SemanticConcreteFunctionWithBodyCached,
     SemanticFunctionIdCached, TypeIdCached, generate_crate_def_cache,
     generate_crate_semantic_cache,
@@ -43,8 +43,7 @@ use thiserror::Error;
 
 use crate::blocks::BlocksBuilder;
 use crate::ids::{
-    FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, LoweredParam,
-    Signature,
+    FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, Signature,
 };
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::objects::{
@@ -433,13 +432,13 @@ impl LoweredCached {
 #[derive(Serialize, Deserialize)]
 struct LoweredSignatureCached {
     /// Function parameters.
-    params: Vec<LoweredParamCached>,
-    /// Extra return values.
-    extra_rets: Vec<ExprVarMemberPathCached>,
+    params: Vec<TypeIdCached>,
+    /// Types of the extra return values.
+    extra_rets: Vec<TypeIdCached>,
     /// Return type.
     return_type: TypeIdCached,
-    /// Implicit parameters.
-    implicits: Vec<TypeIdCached>,
+    /// The declared implicit parameters.
+    declared_implicits: Vec<TypeIdCached>,
     /// Whether the function is panicable.
     panicable: bool,
     location: LocationIdCached,
@@ -450,17 +449,17 @@ impl LoweredSignatureCached {
             params: signature
                 .params
                 .iter()
-                .map(|param| LoweredParamCached::new(param, ctx))
+                .map(|ty| TypeIdCached::new(*ty, &mut ctx.semantic_ctx))
                 .collect(),
             extra_rets: signature
                 .extra_rets
-                .into_iter()
-                .map(|var| ExprVarMemberPathCached::new(var, &mut ctx.semantic_ctx))
+                .iter()
+                .map(|ty| TypeIdCached::new(*ty, &mut ctx.semantic_ctx))
                 .collect(),
 
             return_type: TypeIdCached::new(signature.return_type, &mut ctx.semantic_ctx),
-            implicits: signature
-                .implicits
+            declared_implicits: signature
+                .declared_implicits
                 .into_iter()
                 .map(|ty| TypeIdCached::new(ty, &mut ctx.semantic_ctx))
                 .collect(),
@@ -470,15 +469,19 @@ impl LoweredSignatureCached {
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> Signature<'db> {
         Signature {
-            params: self.params.into_iter().map(|var| var.embed(ctx)).collect(),
+            params: self
+                .params
+                .into_iter()
+                .map(|ty| ty.get_embedded(&ctx.semantic_loading_data))
+                .collect(),
             extra_rets: self
                 .extra_rets
                 .into_iter()
-                .map(|var| var.get_embedded(&ctx.semantic_loading_data, ctx.db))
+                .map(|ty| ty.get_embedded(&ctx.semantic_loading_data))
                 .collect(),
             return_type: self.return_type.get_embedded(&ctx.semantic_loading_data),
-            implicits: self
-                .implicits
+            declared_implicits: self
+                .declared_implicits
                 .into_iter()
                 .map(|ty| ty.get_embedded(&ctx.semantic_loading_data))
                 .collect(),
@@ -488,30 +491,6 @@ impl LoweredSignatureCached {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-struct LoweredParamCached {
-    ty: TypeIdCached,
-    stable_ptr: SyntaxStablePtrIdCached,
-}
-impl LoweredParamCached {
-    fn new<'db>(param: &LoweredParam<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
-        Self {
-            ty: TypeIdCached::new(param.ty, &mut ctx.semantic_ctx),
-            stable_ptr: SyntaxStablePtrIdCached::new(
-                param.stable_ptr.untyped(),
-                &mut ctx.semantic_ctx.defs_ctx,
-            ),
-        }
-    }
-    fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> LoweredParam<'db> {
-        LoweredParam {
-            ty: self.ty.get_embedded(&ctx.semantic_loading_data),
-            stable_ptr: ExprPtr(
-                self.stable_ptr.get_embedded(&ctx.semantic_loading_data.defs_loading_data),
-            ),
-        }
-    }
-}
 #[derive(Serialize, Deserialize)]
 struct VariableCached {
     droppable: Option<ImplIdCached>,

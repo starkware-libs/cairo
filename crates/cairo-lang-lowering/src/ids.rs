@@ -463,34 +463,28 @@ impl<'db> SpecializedFunction<'db> {
 
         let mut params = vec![];
         let mut stack = vec![];
-        for (param, arg) in zip_eq(base_sign.params.iter().rev(), self.args.iter().rev()) {
-            stack.push((param.clone(), arg));
+        for (param_ty, arg) in zip_eq(base_sign.params.iter().rev(), self.args.iter().rev()) {
+            stack.push((*param_ty, arg));
         }
 
-        while let Some((param, arg)) = stack.pop() {
+        while let Some((param_ty, arg)) = stack.pop() {
             match arg {
                 SpecializationArg::Const { .. } => {}
                 SpecializationArg::Snapshot(inner) => {
-                    let desnap_ty = *extract_matches!(param.ty.long(db), TypeLongId::Snapshot);
-                    stack.push((
-                        LoweredParam { ty: desnap_ty, stable_ptr: param.stable_ptr },
-                        inner.as_ref(),
-                    ));
+                    let desnap_ty = *extract_matches!(param_ty.long(db), TypeLongId::Snapshot);
+                    stack.push((desnap_ty, inner.as_ref()));
                 }
                 SpecializationArg::Enum { variant, payload } => {
-                    let lowered_param =
-                        LoweredParam { ty: variant.ty, stable_ptr: param.stable_ptr };
-                    stack.push((lowered_param, payload.as_ref()));
+                    stack.push((variant.ty, payload.as_ref()));
                 }
                 SpecializationArg::Array(ty, values) => {
                     for arg in values.iter().rev() {
-                        let lowered_param = LoweredParam { ty: *ty, stable_ptr: param.stable_ptr };
-                        stack.push((lowered_param, arg));
+                        stack.push((*ty, arg));
                     }
                 }
                 SpecializationArg::Struct(specialization_args) => {
                     // Get element types based on the actual type.
-                    let element_types: Vec<TypeId<'db>> = match param.ty.long(db) {
+                    let element_types: Vec<TypeId<'db>> = match param_ty.long(db) {
                         TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
                             let Ok(members) = db.concrete_struct_members(*concrete_struct) else {
                                 continue;
@@ -506,13 +500,11 @@ impl<'db> SpecializedFunction<'db> {
                     for (elem_ty, arg) in
                         zip_eq(element_types.iter().rev(), specialization_args.iter().rev())
                     {
-                        let lowered_param =
-                            LoweredParam { ty: *elem_ty, stable_ptr: param.stable_ptr };
-                        stack.push((lowered_param, arg));
+                        stack.push((*elem_ty, arg));
                     }
                 }
                 SpecializationArg::NotSpecialized => {
-                    params.push(param.clone());
+                    params.push(param_ty);
                 }
             }
         }
@@ -591,28 +583,21 @@ impl<'db> EnrichedSemanticSignature<'db> {
 }
 semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, EnrichedSemanticSignature<'a>);
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::SalsaValue)]
-#[debug_db(dyn Database)]
-/// Represents a parameter of a lowered function.
-pub struct LoweredParam<'db> {
-    pub ty: semantic::TypeId<'db>,
-    #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr<'db>,
-}
-semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, LoweredParam<'a>);
-
 /// Lowered signature of a function.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Signature<'db> {
-    /// Input params.
-    pub params: Vec<LoweredParam<'db>>, // Vec<semantic::ExprVarMemberPath<'db>>,
-    /// Extra returns - e.g. ref params.
-    pub extra_rets: Vec<semantic::ExprVarMemberPath<'db>>,
+    /// Types of the input params.
+    pub params: Vec<semantic::TypeId<'db>>,
+    /// Types of the extra returns, returned before `return_type` - e.g. ref params.
+    pub extra_rets: Vec<semantic::TypeId<'db>>,
     /// Return type.
     pub return_type: semantic::TypeId<'db>,
-    /// Explicit implicit requirements.
-    pub implicits: Vec<semantic::TypeId<'db>>,
+    /// The implicit requirements declared in the function's signature.
+    ///
+    /// Only meaningful before `LowerImplicits` ran - from `LoweringStage::Final` on the implicits
+    /// appear explicitly in `params` and `extra_rets`, and this is empty.
+    pub declared_implicits: Vec<semantic::TypeId<'db>>,
     /// Panicable.
     #[dont_rewrite]
     pub panicable: bool,
@@ -626,14 +611,10 @@ semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, 
 impl<'db> From<EnrichedSemanticSignature<'db>> for Signature<'db> {
     fn from(signature: EnrichedSemanticSignature<'db>) -> Self {
         Signature {
-            params: signature
-                .params
-                .iter()
-                .map(|param| LoweredParam { ty: param.ty(), stable_ptr: param.stable_ptr() })
-                .collect(),
-            extra_rets: signature.extra_rets,
+            params: signature.params.iter().map(|param| param.ty()).collect(),
+            extra_rets: signature.extra_rets.iter().map(|param| param.ty()).collect(),
             return_type: signature.return_type,
-            implicits: signature.implicits,
+            declared_implicits: signature.implicits,
             panicable: signature.panicable,
             location: signature.location,
         }
