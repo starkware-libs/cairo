@@ -69,7 +69,9 @@ pub fn lower_panics<'db>(
         return Ok(());
     }
 
-    let signature = function_id.signature(db)?;
+    // `lower_panics` transitions `Monomorphized` -> `PreOptimizations`, so its input - and what
+    // `PanicSignatureInfo` wraps - is the `Monomorphized` signature.
+    let signature = function_id.signature(db, LoweringStage::Monomorphized)?;
     // TODO(orizi): Validate all signature types are fully concrete at this point.
     let panic_info = PanicSignatureInfo::new(db, &signature);
     let variables = VariableAllocator::new(
@@ -308,7 +310,10 @@ impl<'db> PanicBlockLoweringContext<'db> {
         let location = call.location.with_auto_generation_note(self.db(), "Panic handling");
 
         // Get callee info.
-        let callee_signature = call.function.signature(self.db())?;
+        // The callee may be in the same SCC as the function being lowered, so its
+        // `PreOptimizations` signature is not available here. `PanicSignatureInfo` derives the
+        // panic wrapping from the pre-panic (`Monomorphized`) signature anyway.
+        let callee_signature = call.function.signature(self.db(), LoweringStage::Monomorphized)?;
         let callee_info = PanicSignatureInfo::new(self.db(), &callee_signature);
         if callee_info.always_panic {
             // The panic value, which is actually of type (Panics, Array<felt252>).
@@ -459,7 +464,8 @@ pub fn function_may_panic<'db>(db: &'db dyn Database, function: FunctionId<'db>)
     if let Some(body) = function.body(db)? {
         return db.function_with_body_may_panic(body);
     }
-    Ok(function.signature(db)?.panicable)
+    // Reached only for bodyless functions; `panicable` is a semantic fact, stage invariant.
+    Ok(function.signature(db, LoweringStage::Monomorphized)?.panicable)
 }
 
 /// A trait to add helper methods in [LoweringGroup].
@@ -516,7 +522,7 @@ fn scc_may_panic_tracked<'db>(
                 if callee_scc.0 != rep && scc_may_panic(db, callee_scc)? {
                     return Ok(true);
                 }
-            } else if direct_callee.signature(db)?.panicable {
+            } else if direct_callee.signature(db, LoweringStage::Monomorphized)?.panicable {
                 return Ok(true);
             }
         }
