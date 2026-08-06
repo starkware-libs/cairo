@@ -1,25 +1,27 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
+use cairo_lang_semantic::path::ContextualizePath;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function, setup_test_module};
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use pretty_assertions::assert_eq;
 
-use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
-use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
+use crate::ids::{ConcreteFunctionWithBodyId, LocationId, Signature};
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
+use crate::{BlockEnd, Lowered, LoweringStage};
 
 cairo_lang_test_utils::test_file_test!(
     lowering,
@@ -216,4 +218,100 @@ fn test_sizes() {
         let expected_size = alias_expected_size[alias_name];
         assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db));
     }
+}
+
+/// Formats `signature` as a single line:
+/// `(name1: ty1, name2: ty2) -> return_type refs(ty1, ty2)`
+///
+/// Params without a name (e.g. prepended implicits) are printed by type only, and the `refs`
+/// clause is omitted when there are no extra returns.
+fn format_signature(
+    db: &dyn salsa::Database,
+    signature: &Signature<'_>,
+    module_id: ModuleId<'_>,
+) -> String {
+    let ty_of = |ty: semantic::TypeId<'_>| ty.contextualized_path(db, module_id);
+    let params = signature
+        .params
+        .iter()
+        .map(|param| {
+            let ty = ty_of(param.ty);
+            let node = param.stable_ptr.0.lookup(db);
+            if node.kind(db) == SyntaxKind::TerminalIdentifier {
+                let name = ast::TerminalIdentifier::from_syntax_node(db, node).text(db).long(db);
+                format!("{name}: {ty}")
+            } else {
+                ty
+            }
+        })
+        .join(", ");
+    let mut res = format!("({params}) -> {}", ty_of(signature.return_type));
+    if !signature.extra_rets.is_empty() {
+        let refs = signature.extra_rets.iter().map(|ty| ty_of(*ty)).join(", ");
+        res += &format!(" refs({refs})");
+    }
+    res
+}
+
+/// Asserts that `signature` describes the parameters and the returned values of the blocks of
+/// `lowered`, at the given stage.
+fn assert_signature_matches_lowered(lowered: &Lowered<'_>, stage: LoweringStage) {
+    let signature = &lowered.signature;
+    let ty_of = |var_id| lowered.variables[var_id].ty;
+    assert_eq!(
+        signature.params.iter().map(|param| param.ty).collect_vec(),
+        lowered.parameters.iter().map(|param| ty_of(*param)).collect_vec(),
+        "Signature params do not match the lowering's parameters at {stage:?}."
+    );
+    let mut all_rets = lowered.blocks.iter().filter_map(|(_, block)| match &block.end {
+        BlockEnd::Return(vars, _) => Some(vars.iter().map(|var| ty_of(var.var_id)).collect_vec()),
+        _ => None,
+    });
+    let rets = all_rets.next().expect("Expected at least one returning block.");
+    assert!(
+        all_rets.all(|other| other == rets),
+        "Returning blocks disagree on the returned types."
+    );
+    assert_eq!(
+        chain!(signature.extra_rets.iter().copied(), [signature.return_type]).collect_vec(),
+        rets,
+        "Signature returns do not match the lowering's returned values at {stage:?}."
+    );
+}
+
+cairo_lang_test_utils::test_file_test!(
+    per_stage_signature,
+    "src/test_data",
+    {
+        signature: "signature",
+    },
+    test_per_stage_signature,
+    []
+);
+
+/// Prints the stored signature at each [LoweringStage], and cross-checks it against the
+/// parameters and returned values of the lowering's blocks at that stage.
+fn test_per_stage_signature(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
+    assert_eq!(semantic_diagnostics, "");
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+
+    let mut outputs = OrderedHashMap::default();
+    for (tag, stage) in [
+        ("monomorphized", LoweringStage::Monomorphized),
+        ("pre_optimizations", LoweringStage::PreOptimizations),
+        ("post_baseline", LoweringStage::PostBaseline),
+        ("final", LoweringStage::Final),
+    ] {
+        let lowered = db.lowered_body(function_id, stage).unwrap();
+        assert_signature_matches_lowered(lowered, stage);
+        outputs
+            .insert(tag.into(), format_signature(db, &lowered.signature, test_function.module_id));
+    }
+    TestRunnerResult::success(outputs)
 }
