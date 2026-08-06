@@ -97,7 +97,7 @@ macro broadcast {
 let expanded = broadcast!(10, 1, 2);
 
 //! > expanded_code
-expanded: (10+ 1,10+ 2)
+expanded: (10 + 1,10 + 2)
 
 //! > diagnostics
 
@@ -398,8 +398,8 @@ let broadcast = bcast!((10, [1, 2]), (20, [3, 4]));
 let empty_non_final_group = bcast!((10, []), (20, [3, 4]));
 
 //! > expanded_code
-broadcast: ((10* 1),(10* 2),(20* 3),(20* 4),) 
-empty_non_final_group: ((20* 3),(20* 4),)
+broadcast: ((10 * 1),(10 * 2),(20 * 3),(20 * 4),) 
+empty_non_final_group: ((20 * 3),(20 * 4),)
 
 //! > diagnostics
 
@@ -423,8 +423,8 @@ let full = sum!([1, 2], [3, 4]);
 let empty_non_final_group = sum!([], [3, 4]);
 
 //! > expanded_code
-full: 1+2+3+4+0 
-empty_non_final_group: 3+4+0
+full: 1 +2 +3 +4 + 0 
+empty_non_final_group: 3 +4 + 0
 
 //! > diagnostics
 
@@ -460,8 +460,7 @@ parenthesized_subtree: ((1 + 2) * 3, 4)
 comment_before: (1, 2) 
 comment_inside: (1 + // c
 2, 3) 
-comment_after: (1 // c
-, 2)
+comment_after: (1, 2)
 
 //! > diagnostics
 
@@ -567,6 +566,146 @@ let expanded = m!(1, (a b));
 
 //! > ==========================================================================
 
+//! > Test two placeholders adjacent in the expansion.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The expansion holds nothing but the two placeholders, so the space the rule puts between them is
+// the only thing keeping their values apart. Dropping it fused them into the single identifier
+// `_x_y`, reported as `Identifier not found` at the call site. `rustc` never fuses them: it rejects
+// the same rule with "macro expansion ignores identifier `_y` and any tokens following", which is
+// the two separate tokens Cairo now emits.
+#[feature("user_defined_inline_macros")]
+macro glue {
+    ($a:ident, $b:ident) => { { $a $b } };
+}
+
+//! > function_body
+let _x = 1_felt252;
+let _y = 2_felt252;
+
+//! > expr_code
+let expanded = glue!(_x, _y);
+
+//! > expanded_code
+expanded: { _x _y }
+
+//! > diagnostics
+error[E2133]: Missing semicolon
+ --> lib.cairo:12:22
+let expanded = glue!(_x, _y);
+                     ^^
+
+//! > ==========================================================================
+
+//! > Test a placeholder followed by a keyword in the expansion.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// `for $i in $arr` puts the space between `$i` and `in` in the rule, so losing it glued the loop
+// variable to the keyword - `for vin array![..]` - and the expansion no longer parsed. `rustc`
+// prints 3 for the equivalent macro and call.
+#[feature("user_defined_inline_macros")]
+macro sum_over {
+    ($i:ident, $arr:expr) => {
+        {
+            let mut total = 0_felt252;
+            for $i in $arr {
+                total = total + $i;
+            };
+            total
+        }
+    };
+}
+
+//! > expr_code
+let expanded = sum_over!(v, array![1_felt252, 2_felt252]);
+
+//! > expanded_code
+expanded:         {
+    let mut total = 0_felt252;
+    for v in array![1_felt252, 2_felt252] {
+        total = total + v;
+    };
+    total
+}
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expansion block whose group ends every placeholder against a keyword.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The same glue inside a `$()` block, so that it has to be avoided once per group rather than once
+// per expansion: both groups of the call keep their loop variable apart from `in`. `rustc` prints 6
+// for the equivalent macro and call.
+#[feature("user_defined_inline_macros")]
+macro sum_each {
+    ($($i:ident in $arr:expr),+) => {
+        {
+            let mut total = 0_felt252;
+            $(
+                for $i in $arr {
+                    total = total + $i;
+                };
+            )+
+            total
+        }
+    };
+}
+
+//! > expr_code
+let expanded = sum_each!(a in array![1_felt252, 2_felt252], b in array![3_felt252]);
+
+//! > expanded_code
+expanded:         {
+    let mut total = 0_felt252;
+        for a in array![1_felt252, 2_felt252] {
+            total = total + a;
+        };
+        for b in array![3_felt252] {
+            total = total + b;
+        };
+
+    total
+}
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test that the spacing of the call does not reach the expansion.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// A placeholder captures the expression the call wrote, not the trivia around it: the expansion is
+// spaced by the rule's own trivia, so it reads the same however the call is spelled. `rustc` prints
+// (1, 2) for the equivalent macro and call.
+#[feature("user_defined_inline_macros")]
+macro pair {
+    ($a:expr, $b:expr) => { ($a, $b) };
+}
+
+//! > expr_code
+let expanded = pair!(1 , 2);
+
+//! > expanded_code
+expanded: (1, 2)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
 //! > Test expansion of panic macro
 
 //! > test_runner_name
@@ -626,7 +765,7 @@ let literal_token_between_captures = keep_plus!(x + y);
 
 //! > expanded_code
 plus_as_literal_token: 7 
-literal_token_between_captures: x+ y
+literal_token_between_captures: x + y
 
 //! > diagnostics
 

@@ -3710,8 +3710,11 @@ test_function_diagnostics(expect_diagnostics: false)
 // by the `]` closing its subtree - which bounds it just as the end of the pattern would - or by the
 // end of the pattern. Two groups per repetition level, so every level really repeats.
 // rustc's `macro_rules!` accepts the equivalent pattern.
+// The `+` in every group is what makes the expansion an expression: this rule is about the pattern
+// being accepted, and juxtaposing the captures instead only parsed while the expansion glued the
+// digits of the values it emitted into one literal.
 macro grid {
-    ($($x:expr),* ; $([$($y:expr),*]),*) => { $($x)* $($($y)*)* };
+    ($($x:expr),* ; $([$($y:expr),*]),*) => { 0 $(+ $x)* $($(+ $y)*)* };
 }
 fn foo() -> felt252 {
     grid!(1, 2;[3, 4],[5, 6])
