@@ -3562,3 +3562,180 @@ error[E2158]: No matching rule found in inline macro `no_op`.
  --> lib.cairo:7:5
     no_op!(a)
     ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder that the pattern follows with a token.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// An `expr` placeholder captures the longest expression the call starts with, so the `2` after it
+// is only ever reached when the expression cannot extend over it - `add_two!(base 1 2)` captures
+// `1 2` as one expression instead and the rule does not match at all. The placeholder is not the
+// first element, to pin that the check finds it wherever it sits.
+// rustc's `macro_rules!` rejects the equivalent pattern with
+// `error: $x:expr is followed by 2, which is not allowed for expr fragments`,
+// noting `allowed there are: =>, , or ;`.
+macro add_two {
+    (base $x:expr 2) => { $x + 2 };
+}
+fn foo() -> felt252 {
+    add_two!(base 1 2)
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `2`.
+ --> lib.cairo:9:19
+    (base $x:expr 2) => { $x + 2 };
+                  ^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder that the pattern follows with another placeholder.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// Nothing separates the two placeholders, so the first swallows every token the second was meant to
+// capture.
+// rustc's `macro_rules!` rejects the equivalent pattern with
+// `error: $x:expr is followed by $y:expr, which is not allowed for expr fragments`.
+macro pair {
+    ($x:expr $y:expr) => { $x + $y };
+}
+fn foo() -> felt252 {
+    pair!(1 2)
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `$y:expr`.
+ --> lib.cairo:6:14
+    ($x:expr $y:expr) => { $x + $y };
+             ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder whose followers are reached across an optional repetition.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The `?` block may match zero times, so both the token it opens with and the subtree after it can
+// follow the placeholder - each is reported on its own.
+// rustc's `macro_rules!` rejects the equivalent pattern with two errors,
+// `error: $x:expr may be followed by a, which is not allowed for expr fragments` and
+// `error: $x:expr may be followed by [, which is not allowed for expr fragments`.
+macro opt {
+    ($x:expr $(a)? [b]) => { $x };
+}
+fn foo() -> felt252 {
+    opt!(1 a[b])
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `a`.
+ --> lib.cairo:7:16
+    ($x:expr $(a)? [b]) => { $x };
+               ^
+
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `[`.
+ --> lib.cairo:7:20
+    ($x:expr $(a)? [b]) => { $x };
+                   ^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder in a repetition that the pattern follows with a placeholder.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The last group's placeholder is followed by whatever comes after the whole repetition, not only
+// by the separator - so the `$y:ident` after the block reaches it.
+// rustc's `macro_rules!` rejects the equivalent pattern with
+// `error: $x:expr may be followed by $y:ident, which is not allowed for expr fragments`.
+macro sum {
+    ($($x:expr),* $y:ident) => { $y };
+}
+fn foo(q: felt252) -> felt252 {
+    sum!(1, 2 q)
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `$y:ident`.
+ --> lib.cairo:6:19
+    ($($x:expr),* $y:ident) => { $y };
+                  ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test the tokens an expr placeholder may be followed by (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// `,`, `;` and `=>` cannot continue an expression, so each of them ends the placeholder's capture
+// where the pattern says it does; so does the pattern running out.
+// rustc's `macro_rules!` accepts all four equivalent patterns.
+macro allowed {
+    ($x:expr, $a:ident) => { $x + $a };
+
+    ($x:expr; $a:ident) => { $x + $a };
+
+    ($x:expr => $a:ident) => { $x + $a };
+
+    ($x:expr) => { $x };
+}
+fn foo(q: felt252) -> felt252 {
+    allowed!(1, q) + allowed!(1; q) + allowed!(1 => q) + allowed!(1)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test expr placeholders in nested repetitions with separators (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// Every placeholder here is followed only by its own separator, by the `;` after the first block,
+// by the `]` closing its subtree - which bounds it just as the end of the pattern would - or by the
+// end of the pattern. Two groups per repetition level, so every level really repeats.
+// rustc's `macro_rules!` accepts the equivalent pattern.
+macro grid {
+    ($($x:expr),* ; $([$($y:expr),*]),*) => { $($x)* $($($y)*)* };
+}
+fn foo() -> felt252 {
+    grid!(1, 2;[3, 4],[5, 6])
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a separator-less repetition of a lone expr placeholder (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// The follow set is not wrapped around the repetition: the placeholder of one group is not treated
+// as following the placeholder of the group before it, so this pattern is accepted even though the
+// groups are told apart only by where the expression parser stops.
+// rustc's `macro_rules!` accepts the equivalent pattern too, which is what this pins.
+macro juxtaposed {
+    ($($x:expr)*) => { 0 $(+ $x)* };
+}
+fn foo() -> felt252 {
+    juxtaposed!(1 2)
+}
+
+//! > expected_diagnostics

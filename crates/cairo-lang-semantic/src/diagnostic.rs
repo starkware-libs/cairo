@@ -1227,6 +1227,14 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::MacroRepetitionWithEmptyBody => {
                 "Macro repetition block is empty, so it matches nothing.".into()
             }
+            SemanticDiagnosticKind::MacroExprPlaceholderFollower { name, follower } => {
+                format!(
+                    "Macro placeholder '{}' captures an expression, so the pattern may only \
+                     follow it with `,`, `;` or `=>` - not with `{}`.",
+                    name.long(db),
+                    follower.long(db)
+                )
+            }
             SemanticDiagnosticKind::MacroRuleWithUnparsablePattern => {
                 "This macro rule's pattern could not be parsed.".into()
             }
@@ -1536,6 +1544,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::MacroRepetitionSeparatorWithZeroOrOne => error_code!(E2206),
             SemanticDiagnosticKind::MacroRepetitionWithEmptyBody => error_code!(E2207),
             SemanticDiagnosticKind::MacroRuleWithUnparsablePattern => error_code!(E2208),
+            SemanticDiagnosticKind::MacroExprPlaceholderFollower { .. } => error_code!(E2209),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1962,6 +1971,10 @@ pub enum SemanticDiagnosticKind<'db> {
     MacroPlaceholderNamedAfterResolverModifier(SmolStrId<'db>),
     MacroRepetitionSeparatorWithZeroOrOne,
     MacroRepetitionWithEmptyBody,
+    MacroExprPlaceholderFollower {
+        name: SmolStrId<'db>,
+        follower: SmolStrId<'db>,
+    },
     MacroRuleWithUnparsablePattern,
     MacroExpansionFailed(MacroExpansionFailure<'db>),
     UserDefinedInlineMacrosDisabled,
