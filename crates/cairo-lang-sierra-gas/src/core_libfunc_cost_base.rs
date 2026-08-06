@@ -555,10 +555,12 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(0).into()]
             }
             BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
-                let steps = 2
+                let u128_bound = BigInt::one().shl(128);
+                let range_checks = if libfunc.range.size() == u128_bound { 1 } else { 2 };
+                let steps = range_checks
                     + if libfunc.range.lower.is_zero() { 0 } else { 1 }
-                    + if &libfunc.range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
-                vec![ConstCost { steps, holes: 0, range_checks: 2, range_checks96: 0 }.into()]
+                    + if libfunc.range.upper == u128_bound { 0 } else { 1 };
+                vec![ConstCost { steps, holes: 0, range_checks, range_checks96: 0 }.into()]
             }
             BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => {
                 vec![ConstCost::steps(7).into()]
