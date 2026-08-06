@@ -2681,7 +2681,7 @@ error[E2313]: Trait `test::MyTrait` has multiple implementations, in: `test::mak
 
 //! > ==========================================================================
 
-//! > Test item-position macro call whose expansion repeats a placeholder-free block.
+//! > Test placeholder-free repetition in an expansion, with an item-position call.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -2695,14 +2695,14 @@ m!();
 fn foo() {}
 
 //! > expected_diagnostics
-error[E2202]: Repetition in the macro expansion holds no placeholder, so the number of repetitions cannot be determined.
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
  --> lib.cairo:2:13
     () => { $(foo)* };
             ^^^^^^^
 
 //! > ==========================================================================
 
-//! > Test expression-position macro call whose expansion repeats a placeholder-free block.
+//! > Test placeholder-free repetition in an expansion, with an expression-position call.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -2716,7 +2716,7 @@ fn foo() -> felt252 {
 }
 
 //! > expected_diagnostics
-error[E2202]: Repetition in the macro expansion holds no placeholder, so the number of repetitions cannot be determined.
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
  --> lib.cairo:2:13
     () => { $(foo)* 0 };
             ^^^^^^^
@@ -2777,7 +2777,124 @@ helpers::m!();
 fn foo() {}
 
 //! > expected_diagnostics
-error[E2202]: Repetition in the macro expansion holds no placeholder, so the number of repetitions cannot be determined.
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
  --> lib.cairo:3:17
         () => { $(foo)* };
                 ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test placeholder-free repetition that is not the first element of the expansion.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($name:ident),*) => {
+        $(fn $name() {})*
+        $(fn extra() {})*
+    };
+}
+
+m!(first, second);
+fn foo() {}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:4:9
+        $(fn extra() {})*
+        ^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test repetition over a placeholder that does not repeat in the pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($base:ident, $($x:ident),*) => { $($base)* };
+}
+fn foo() {
+    m!(base, one, two);
+}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:2:39
+    ($base:ident, $($x:ident),*) => { $($base)* };
+                                      ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test expansion nested one level deeper than the placeholder repeats.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($x:expr),*) => { $($($x),*),* };
+}
+fn foo() {
+    m!(1, 2);
+}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:2:27
+    ($($x:expr),*) => { $($($x),*),* };
+                          ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test broadcasting a non-repeating placeholder over a repeating one (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($base:expr, $($x:expr),*) => { array![$($base + $x),*] };
+}
+fn foo() {
+    let _arr = m!(10, 1, 2);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion nesting matching the pattern nesting (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($([$($x:expr),*]),*) => { array![$(array![$($x),*]),*] };
+}
+fn foo() {
+    let _arr = m!([1, 2], [3, 4]);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test zero-match call of a rule whose expansion repeats (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($($x:expr),*) => { 0 $(+ $x)* };
+}
+fn foo() -> felt252 {
+    m!() + m!(1, 2)
+}
+
+//! > expected_diagnostics
