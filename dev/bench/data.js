@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785977624965,
+  "lastUpdate": 1785977724545,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -18491,6 +18491,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/d986225cb3f3344c429e74d38224e1e847bb6663"
         },
         "date": 1785893091053,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2925,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1522,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "2e69c0699d64d4ca6fc813c2597fc5e89eb6b56d",
+          "message": "feature(sierra-gen): Added support for injecting constant values externally, via plugins. (#10274)\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+          "timestamp": "2026-08-05T11:11:29Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/2e69c0699d64d4ca6fc813c2597fc5e89eb6b56d"
+        },
+        "date": 1785977724433,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
