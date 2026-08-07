@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786068380877,
+  "lastUpdate": 1786068531251,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -18791,6 +18791,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/2e69c0699d64d4ca6fc813c2597fc5e89eb6b56d"
         },
         "date": 1785977724433,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2925,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1522,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "e0e28d43c4a135457b44287e975f1c07a6cbc2cd",
+          "message": "(refactor): support multiple named expansion instances per inline-macro expansion test (#10321)\n\nCo-authored-by: Claude Fable 5 <noreply@anthropic.com>",
+          "timestamp": "2026-08-06T11:06:40Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/e0e28d43c4a135457b44287e975f1c07a6cbc2cd"
+        },
+        "date": 1786068531117,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
