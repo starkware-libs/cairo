@@ -1483,7 +1483,7 @@ Missing(
 )
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::integer::i64", found: "core::integer::u32".
+error[E2041]: Unexpected argument type. Expected: "i64", found: "u32".
  --> lib.cairo:2:13
 Some::<i64>(3_u32)
             ^^^^^

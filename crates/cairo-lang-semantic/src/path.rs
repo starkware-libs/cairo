@@ -96,14 +96,23 @@ pub enum ItemAccessKind<'db> {
 /// * `context_module` - The module from which we want to access the item
 ///
 /// # Returns
-/// The shortest valid path to the item.
+/// The shortest valid path to the item, or `None` if the item has no valid path in the context.
 fn get_contextualized_path<'db>(
     db: &'db dyn Database,
     item: ImportableId<'db>,
     context_module: ModuleId<'db>,
-) -> Maybe<ItemAccessInfo<'db>> {
+) -> Maybe<Option<ItemAccessInfo<'db>>> {
+    // A crate has no parent to shorten the path through - it is always accessed by its name.
+    if let ImportableId::Crate(crate_id) = item {
+        return Ok(Some(ItemAccessInfo::new(
+            ItemAccessKind::FullPath(crate_id),
+            vec![],
+            item.name(db),
+        )));
+    }
+
     if let Some(access_info) = check_prelude(db, item, context_module)? {
-        return Ok(access_info);
+        return Ok(Some(access_info));
     }
 
     let mut resolver = Resolver::new(db, context_module, InferenceId::NoContext);
@@ -115,7 +124,14 @@ fn get_contextualized_path<'db>(
         && let Ok::<ImportableId<'_>, _>(found_item) = info.item_id.try_into()
         && found_item == item
     {
-        return Ok(ItemAccessInfo::new(ItemAccessKind::DirectInModule, vec![], item_name));
+        return Ok(Some(ItemAccessInfo::new(ItemAccessKind::DirectInModule, vec![], item_name)));
+    }
+
+    // An item inside a macro expansion cannot be named through its ancestors, as `ancestors`
+    // skips the expansion modules - distinct expansions would render identically. Such items
+    // keep their full path, which includes the expansion module segments.
+    if is_in_macro_expansion(db, item) {
+        return Ok(None);
     }
 
     let (owning_crate, path_items) = ancestors(db, item);
@@ -126,22 +142,22 @@ fn get_contextualized_path<'db>(
             && let Ok::<ImportableId<'_>, _>(found_item) = info.item_id.try_into()
             && found_item == *ancestor
         {
-            return Ok(ItemAccessInfo::new(
+            return Ok(Some(ItemAccessInfo::new(
                 ItemAccessKind::DirectInModule,
                 path_items[..i + 1].iter().copied().collect_vec(),
                 item_name,
-            ));
+            )));
         }
 
         // Check if the ancestor is in the prelude.
         if let Some(access_info) = check_prelude(db, *ancestor, context_module)? {
             let mut res_path_segments = path_items[..i + 1].iter().copied().collect_vec();
             res_path_segments.extend(access_info.path_segments);
-            return Ok(ItemAccessInfo::new(
+            return Ok(Some(ItemAccessInfo::new(
                 ItemAccessKind::ViaPrelude,
                 res_path_segments,
                 item_name,
-            ));
+            )));
         }
     }
 
@@ -150,10 +166,24 @@ fn get_contextualized_path<'db>(
         // crate root.
         let mut path_items = path_items;
         path_items.pop();
-        return Ok(ItemAccessInfo::new(ItemAccessKind::ViaCrate, path_items, item_name));
+        return Ok(Some(ItemAccessInfo::new(ItemAccessKind::ViaCrate, path_items, item_name)));
     }
 
-    Ok(ItemAccessInfo::new(ItemAccessKind::FullPath(owning_crate), path_items, item_name))
+    Ok(Some(ItemAccessInfo::new(ItemAccessKind::FullPath(owning_crate), path_items, item_name)))
+}
+
+/// Checks if the item is defined inside a macro expansion module.
+fn is_in_macro_expansion<'db>(db: &'db dyn Database, item: ImportableId<'db>) -> bool {
+    let Some(mut module_id) = item.parent_module(db) else {
+        return false;
+    };
+    loop {
+        match module_id {
+            ModuleId::CrateRoot(_) => return false,
+            ModuleId::Submodule(id) => module_id = id.parent_module(db),
+            ModuleId::MacroCall { .. } => return true,
+        }
+    }
 }
 
 /// Check if the given item is in the prelude module.
@@ -274,7 +304,7 @@ fn contextualized_path_query<'db>(
     _tracked: Tracked,
     item: ImportableId<'db>,
     context_module: ModuleId<'db>,
-) -> Maybe<ItemAccessInfo<'db>> {
+) -> Maybe<Option<ItemAccessInfo<'db>>> {
     let info = get_contextualized_path(db, item, context_module);
     trace!(?item, ?context_module, ?info);
     info
@@ -295,7 +325,7 @@ where
     T: TopLevelLanguageElementId<'db>,
 {
     fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
-        if let Ok(info) = contextualized_path_query(db, (), self.into(), context_module) {
+        if let Ok(Some(info)) = contextualized_path_query(db, (), self.into(), context_module) {
             info.path(db)
         } else {
             self.full_path(db)
@@ -319,7 +349,7 @@ impl<'db> IntoImportableMarker<'db> for &MacroDeclarationId<'db> {}
 
 impl<'db> ContextualizePath<'db> for CrateId<'db> {
     fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
-        if let Ok(info) = contextualized_path_query(db, (), self.into(), context_module) {
+        if let Ok(Some(info)) = contextualized_path_query(db, (), self.into(), context_module) {
             info.path(db)
         } else {
             self.long(db).name().long(db).to_string()
@@ -342,7 +372,7 @@ impl<'db> ContextualizePath<'db> for ModuleId<'db> {
 impl<'db> ContextualizePath<'db> for ModuleItemId<'db> {
     fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
         if let Ok(item) = (*self).try_into()
-            && let Ok(info) = contextualized_path_query(db, (), item, context_module)
+            && let Ok(Some(info)) = contextualized_path_query(db, (), item, context_module)
         {
             info.path(db)
         } else {

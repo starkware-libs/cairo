@@ -233,7 +233,7 @@ error[E2200]: Plugin diagnostic: Macro `array` does not support this bracket typ
     let _x = array!(0);
                    ^
 
-error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "u8".
  --> lib.cairo:3:32
     let _x = array![0_felt252, 1_u8];
                                ^^^^
@@ -1255,7 +1255,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u16".
+error[E2041]: Unexpected argument type. Expected: "u8", found: "u16".
  --> lib.cairo:7:21
     add_nums!(1_u8, 2_u16);
                     ^^^^^
@@ -1837,7 +1837,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Mismatched types. The type `core::felt252` cannot be created from a string literal.
+error[E2311]: Mismatched types. The type `felt252` cannot be created from a string literal.
  --> lib.cairo:8:1
 macro_item_level!();
 ^^^^^^^^^^^^^^^^^^^^
@@ -2645,7 +2645,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2313]: Trait `test::MyTrait` has multiple implementations, in: `test::make_impl!_#156::ConflictImpl`, `test::make_impl!_#171::ConflictImpl`
+error[E2313]: Trait `MyTrait` has multiple implementations, in: `test::make_impl!_#156::ConflictImpl`, `test::make_impl!_#171::ConflictImpl`
  --> lib.cairo:16:14
     MyTrait::foo();
              ^^^
@@ -2679,7 +2679,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2313]: Trait `test::MyTrait` has multiple implementations, in: `test::make_impl!_#204::ConflictImpl`, `test::make_impl!_#228::ConflictImpl`
+error[E2313]: Trait `MyTrait` has multiple implementations, in: `test::make_impl!_#204::ConflictImpl`, `test::make_impl!_#228::ConflictImpl`
  --> lib.cairo:18:14
     MyTrait::foo();
              ^^^

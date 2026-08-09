@@ -97,12 +97,12 @@ fn foo() -> Result<felt252, u128> {
 }
 
 //! > expected_diagnostics
-error[E2062]: Return type "core::result::Result::<core::felt252, core::integer::u128>" does not wrap error "core::felt252"
+error[E2062]: Return type "Result::<felt252, u128>" does not wrap error "felt252"
  --> lib.cairo:5:5
     with_other_err()?;
     ^^^^^^^^^^^^^^^^^
 
-error[E2042]: Unexpected return type. Expected: "core::result::Result::<core::felt252, core::integer::u128>", found: "core::result::Result::<core::felt252, core::felt252>".
+error[E2042]: Unexpected return type. Expected: "Result::<felt252, u128>", found: "Result::<felt252, felt252>".
  --> lib.cairo:6:5
     Result::<felt252, felt252>::Ok((0))
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -121,7 +121,7 @@ fn foo() -> Option<felt252> {
 }
 
 //! > expected_diagnostics
-error[E2063]: Type "core::integer::u32" cannot error propagate
+error[E2063]: Type "u32" cannot error propagate
  --> lib.cairo:2:5
     6_u32?;
     ^^^^^^

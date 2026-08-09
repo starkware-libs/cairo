@@ -16,7 +16,7 @@ fn foo(a: A<felt252>) -> A<A<felt252>> {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
+error[E2041]: Unexpected argument type. Expected: "A::<A::<bool>>", found: "A::<A::<felt252>>".
  --> lib.cairo:8:28
     let _bad: A<A<bool>> = res;
                            ^^^
@@ -257,7 +257,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
+error[E2041]: Unexpected argument type. Expected: "MyStruct::<felt252, u8>", found: "MyStruct::<u16, u32>".
  --> lib.cairo:9:9
     x = bar::<u16, u32>();
         ^^^^^^^^^^^^^^^^^
@@ -514,12 +514,12 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "test::S::<-1>", found: "test::S::<11>".
+error[E2041]: Unexpected argument type. Expected: "S::<-1>", found: "S::<11>".
  --> lib.cairo:12:28
     let _s: S<{ 1 - 2 }> = bar();
                            ^^^^^
 
-error[E2041]: Unexpected argument type. Expected: "test::S::<107>", found: "test::S::<11>".
+error[E2041]: Unexpected argument type. Expected: "crate::S::<107>", found: "crate::S::<11>".
  --> lib.cairo:8:46
         let _x: super::S<{ super::K + 9 }> = super::bar();
                                              ^^^^^^^^^^^^
@@ -560,7 +560,7 @@ fn foo() -> S<1> {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "test::S::<1>", found: "test::S::<N>".
+error[E2042]: Unexpected return type. Expected: "S::<1>", found: "S::<N>".
  --> lib.cairo:2:5
     S::<N> { field: 1 }
     ^^^^^^^^^^^^^^^^^^^
@@ -588,7 +588,7 @@ fn foo() -> MyStruct<1> {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<2>", found: "test::MyStruct::<1>".
+error[E2041]: Unexpected argument type. Expected: "MyStruct::<2>", found: "MyStruct::<1>".
  --> lib.cairo:11:10
     bar2(s);
          ^

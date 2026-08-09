@@ -12,7 +12,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::i32", found: "core::integer::u32".
+error[E2042]: Unexpected return type. Expected: "i32", found: "u32".
  --> lib.cairo:2:11
     || -> i32 {
           ^^^
@@ -50,7 +50,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::integer::i32", found: "core::integer::u32".
+error[E2041]: Unexpected argument type. Expected: "i32", found: "u32".
  --> lib.cairo:3:22
         let d: i32 = a;
                      ^
@@ -71,7 +71,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:19: 2:21}".
+error[E2041]: Unexpected argument type. Expected: "i32", found: "{closure@lib.cairo:2:19: 2:21}".
  --> lib.cairo:2:19-5:5
       let _x: i32 = || {
  ___________________^
@@ -101,7 +101,7 @@ error[E2182]: Closures are not allowed in this context.
 | };
 |_^
 
-error[E2302]: Type mismatch: `{closure@lib.cairo:1:17: 1:19}` and `core::integer::i32`.
+error[E2302]: Type mismatch: `{closure@lib.cairo:1:17: 1:19}` and `i32`.
  --> lib.cairo:1:17-4:1
   const _x: i32 = || {
  _________________^
@@ -133,7 +133,7 @@ error[E2182]: Closures are not allowed in this context.
 |     } }>();
 |_____^
 
-error[E2302]: Type mismatch: `{closure@lib.cairo:3:13: 3:15}` and `core::integer::u32`.
+error[E2302]: Type mismatch: `{closure@lib.cairo:3:13: 3:15}` and `u32`.
  --> lib.cairo:3:11-5:7
       bar::<{ || -> u32 {
  ___________^
@@ -204,7 +204,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::ops::function::FnOnce::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>.
+error[E2311]: Trait has no implementation in context: core::ops::function::FnOnce::<{closure@lib.cairo:5:13: 5:16}, (u32,)>.
  --> lib.cairo:10:23
     let _k: felt252 = bar(c);
                       ^^^
@@ -230,7 +230,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2308]: `core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,), core::traits::DestructFromDrop::<{closure@lib.cairo:5:13: 5:16}, Generated core::traits::Drop::<{closure@lib.cairo:5:13: 5:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>>::Output` type mismatch: `core::integer::u128` and `core::felt252`.
+error[E2308]: `core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:13: 5:16}, (u32,), traits::DestructFromDrop::<{closure@lib.cairo:5:13: 5:16}, Generated core::traits::Drop::<{closure@lib.cairo:5:13: 5:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>>::Output` type mismatch: `u128` and `felt252`.
  --> lib.cairo:9:39
     let _f: u128 = core::ops::FnOnce::call(c, (2,));
                                       ^^^^
@@ -268,7 +268,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::traits::Into::<core::integer::u256, core::integer::u32>.
+error[E2311]: Trait has no implementation in context: Into::<u256, u32>.
  --> lib.cairo:3:22
         a.into() + b.into() + c.into()
                      ^^^^
@@ -319,12 +319,12 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<core::felt252, ()>.
+error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<felt252, ()>.
  --> lib.cairo:7:19
     let _x: u32 = bar();
                   ^^^^^
 
-error[E2311]: Trait has no implementation in context: core::traits::Into::<core::integer::u32, core::integer::u16>.
+error[E2311]: Trait has no implementation in context: Into::<u32, u16>.
  --> lib.cairo:12:11
         a.into()
           ^^^^
@@ -348,7 +348,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<{closure@lib.cairo:5:15: 5:27}, (core::felt252,)>.
+error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<{closure@lib.cairo:5:15: 5:27}, (felt252,)>.
  --> lib.cairo:8:19
     let _f: u32 = bar(2);
                   ^^^^^^
@@ -561,8 +561,8 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2138]: Call expression requires a function, found `core::integer::u32`.
-Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<core::integer::u32, ?4>.
+error[E2138]: Call expression requires a function, found `u32`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u32, ?4>.
  --> lib.cairo:4:5
     x()
     ^^^
@@ -690,7 +690,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2302]: Type mismatch: `()` and `(core::integer::i32,)`.
+error[E2302]: Type mismatch: `()` and `(i32,)`.
  --> lib.cairo:5:15
     call_with(|| {})
               ^^^^^

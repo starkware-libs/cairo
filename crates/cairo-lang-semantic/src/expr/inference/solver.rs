@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{GenericParamId, LanguageElementId};
+use cairo_lang_defs::ids::{GenericParamId, LanguageElementId, ModuleId};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::Entry;
@@ -24,6 +24,7 @@ use crate::items::imp::{
     find_closure_generated_candidate, find_integer_literal_generated_candidate,
 };
 use crate::items::trt::TraitSemantic;
+use crate::path::ContextualizePath;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ImplTypeById, ImplTypeId};
 use crate::{
@@ -56,28 +57,34 @@ pub enum Ambiguity<'db> {
 }
 
 impl<'db> Ambiguity<'db> {
-    pub fn format(&self, db: &dyn Database) -> String {
+    pub fn format(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
         match self {
             Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
-                let impls = impls
-                    .iter()
-                    .format_with(", ", |imp, f| f(&format_args!("`{}`", imp.format(db))));
+                let impls = impls.iter().format_with(", ", |imp, f| {
+                    f(&format_args!("`{}`", imp.contextualized_path(db, context_module)))
+                });
                 format!(
-                    "Trait `{:?}` has multiple implementations, in: {impls}",
-                    concrete_trait_id.debug(db)
+                    "Trait `{}` has multiple implementations, in: {impls}",
+                    concrete_trait_id.contextualized_path(db, context_module)
                 )
             }
             Ambiguity::FreeVariable { impl_id, var: _ } => {
-                format!("Candidate impl {:?} has an unused generic parameter.", impl_id.debug(db),)
+                format!(
+                    "Candidate impl {} has an unused generic parameter.",
+                    impl_id.contextualized_path(db, context_module),
+                )
             }
             Ambiguity::WillNotInfer(concrete_trait_id) => {
                 format!(
-                    "Cannot infer trait {:?}. First generic argument must be known.",
-                    concrete_trait_id.debug(db)
+                    "Cannot infer trait {}. First generic argument must be known.",
+                    concrete_trait_id.contextualized_path(db, context_module)
                 )
             }
             Ambiguity::NegativeImplWithUnsupportedExtractedArgs(garg) => {
-                format!("Negative impl has an unsupported generic argument {:?}.", garg.debug(db),)
+                format!(
+                    "Negative impl has an unsupported generic argument {}.",
+                    garg.contextualized_path(db, context_module),
+                )
             }
             Ambiguity::NegativeImplWithUnsupportedGenericParam(gparam) => {
                 format!("Negative impl has an unsupported generic argument {:?}.", gparam.debug(db),)

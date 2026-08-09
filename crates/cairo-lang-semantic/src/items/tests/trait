@@ -121,7 +121,7 @@ error[E2029]: The number of parameters in the impl function `MyImpl2::param_test
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2031]: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::u128`, actual: `core::felt252`.
+error[E2031]: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `u128`, actual: `felt252`.
  --> lib.cairo:28:22
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                      ^^^^^^^
@@ -136,7 +136,7 @@ error[E2113]: The signature of function `param_test` is incompatible with trait 
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2042]: Unexpected return type. Expected: "core::integer::u128", found: "()".
+error[E2042]: Unexpected return type. Expected: "u128", found: "()".
  --> lib.cairo:28:63-30:5
       fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
  _______________________________________________________________^
@@ -149,7 +149,7 @@ error[E2035]: Parameter of impl function MyImpl2::no_ret_ty is incompatible with
     fn no_ret_ty(ref a: u128) {
                  ^^^
 
-error[E2045]: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `core::felt252`, actual: `()`.
+error[E2045]: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `felt252`, actual: `()`.
  --> lib.cairo:32:31
     fn no_ret_ty(ref a: u128) {
                               ^
@@ -238,32 +238,32 @@ impl T2Copy of Copy<(felt252, NonCopy)>;
 impl T2Drop of Drop<(felt252, NonCopy)>;
 
 //! > expected_diagnostics
-error[E2110]: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
+error[E2110]: Invalid copy trait implementation, Trait has no implementation in context: Copy::<NonCopy>.
  --> lib.cairo:20:1
 impl CCopy of Copy<C>;
 ^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2111]: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
+error[E2111]: Invalid drop trait implementation, Trait has no implementation in context: Drop::<NonCopy>.
  --> lib.cairo:21:1
 impl CDrop of Drop<C>;
 ^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2110]: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
+error[E2110]: Invalid copy trait implementation, Trait has no implementation in context: Copy::<NonCopy>.
  --> lib.cairo:22:1
 impl DCopy of Copy<D>;
 ^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2111]: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
+error[E2111]: Invalid drop trait implementation, Trait has no implementation in context: Drop::<NonCopy>.
  --> lib.cairo:23:1
 impl DDrop of Drop<D>;
 ^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2110]: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
+error[E2110]: Invalid copy trait implementation, Trait has no implementation in context: Copy::<NonCopy>.
  --> lib.cairo:28:1
 impl T2Copy of Copy<(felt252, NonCopy)>;
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2111]: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
+error[E2111]: Invalid drop trait implementation, Trait has no implementation in context: Drop::<NonCopy>.
  --> lib.cairo:29:1
 impl T2Drop of Drop<(felt252, NonCopy)>;
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -336,7 +336,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::MyTrait.
+error[E2311]: Trait has no implementation in context: MyTrait.
  --> lib.cairo:5:14
     MyTrait::foo()
              ^^^
@@ -363,7 +363,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2313]: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl1`, `test::MyImpl2`
+error[E2313]: Trait `MyTrait` has multiple implementations, in: `MyImpl1`, `MyImpl2`
  --> lib.cairo:11:14
     MyTrait::foo()
              ^^^
@@ -419,7 +419,7 @@ Could not find implementation of trait `test::OtherTrait`
 impl MyImpl of MyTrait;
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: test::OtherTrait.
+error[E2311]: Trait has no implementation in context: OtherTrait.
  --> lib.cairo:9:1
 impl MyImpl of MyTrait;
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -469,7 +469,7 @@ Could not find implementation of trait `test::OtherTrait`
 | }
 |_^
 
-error[E2311]: Trait has no implementation in context: test::OtherTrait.
+error[E2311]: Trait has no implementation in context: OtherTrait.
  --> lib.cairo:16:1-21:1
   impl MyImpl of MyTrait {
  _^
@@ -533,7 +533,7 @@ impl Felt252Identity of Identity<felt252> {
 }
 
 //! > expected_diagnostics
-error[E2031]: Parameter type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `core::felt252`, actual: `core::integer::u128`.
+error[E2031]: Parameter type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `felt252`, actual: `u128`.
  --> lib.cairo:6:15
     fn foo(a: u128) {}
               ^^^^
@@ -559,7 +559,7 @@ impl Felt252Identity of Identity<felt252> {
 }
 
 //! > expected_diagnostics
-error[E2045]: Return type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `core::felt252`, actual: `core::integer::u128`.
+error[E2045]: Return type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `felt252`, actual: `u128`.
  --> lib.cairo:6:17
     fn foo() -> u128 {
                 ^^^^
@@ -599,7 +599,7 @@ impl Felt252Identity of Identity<felt252> {
 }
 
 //! > expected_diagnostics
-error[E2031]: Parameter type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `T`, actual: `core::felt252`.
+error[E2031]: Parameter type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `T`, actual: `felt252`.
  --> lib.cairo:6:18
     fn foo<T>(a: felt252) {}
                  ^^^^^^^
@@ -857,7 +857,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+error[E2042]: Unexpected return type. Expected: "u32", found: "u16".
  --> lib.cairo:7:9
         Self::foo2()
         ^^^^^^^^^^^^
@@ -907,17 +907,17 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error[E2031]: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+error[E2031]: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `u16`, actual: `u32`.
  --> lib.cairo:5:15
     fn foo(x: u32, y: u32) -> u32 {
               ^^^
 
-error[E2031]: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+error[E2031]: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `u16`, actual: `u32`.
  --> lib.cairo:5:23
     fn foo(x: u32, y: u32) -> u32 {
                       ^^^
 
-error[E2045]: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+error[E2045]: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `u16`, actual: `u32`.
  --> lib.cairo:5:31
     fn foo(x: u32, y: u32) -> u32 {
                               ^^^
@@ -953,7 +953,7 @@ Could not find implementation of trait `core::iter::traits::iterator::Iterator::
 | }
 |_^
 
-error[E2311]: Trait has no implementation in context: core::iter::traits::iterator::Iterator::<test::FooIter>.
+error[E2311]: Trait has no implementation in context: Iterator::<FooIter>.
  --> lib.cairo:5:1-12:1
   #[feature("collections-into-iter")]
  _^
@@ -1177,7 +1177,7 @@ fn foo() -> felt252 {
 }
 
 //! > expected_diagnostics
-error[E2031]: Parameter type of impl function `I::foo` is incompatible with `Tr::foo`. Expected: `T`, actual: `core::integer::i32`.
+error[E2031]: Parameter type of impl function `I::foo` is incompatible with `Tr::foo`. Expected: `T`, actual: `i32`.
  --> lib.cairo:6:15
     fn foo<T, const C: i32>() {}
               ^^^^^^^^^^^^
