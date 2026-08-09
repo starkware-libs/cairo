@@ -641,12 +641,12 @@ negative_impls = false
 associated_item_constraints = true
 
 //! > expected_diagnostics
-error[E2189]: associated type `Bogus1` not found for `MyTrait`
+error[E2189]: associated type `Bogus1` not found for `MyTrait::<T>`
  --> lib.cairo:5:23
 fn bar<T, +MyTrait<T>[Bogus1: u8, Bogus2: u16]>() {}
                       ^^^^^^^^^^
 
-error[E2189]: associated type `Bogus2` not found for `MyTrait`
+error[E2189]: associated type `Bogus2` not found for `MyTrait::<T>`
  --> lib.cairo:5:35
 fn bar<T, +MyTrait<T>[Bogus1: u8, Bogus2: u16]>() {}
                                   ^^^^^^^^^^^
