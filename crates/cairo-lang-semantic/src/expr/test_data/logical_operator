@@ -9,17 +9,17 @@ fn foo(a: u128, b: u128, c: u128) -> bool {
 }
 
 //! > expected_diagnostics
-error[E2039]: Expected type "core::bool", found: "core::integer::u128".
+error[E2039]: Expected type "bool", found: "u128".
  --> lib.cairo:2:5
     a && b || c
     ^
 
-error[E2039]: Expected type "core::bool", found: "core::integer::u128".
+error[E2039]: Expected type "bool", found: "u128".
  --> lib.cairo:2:10
     a && b || c
          ^
 
-error[E2039]: Expected type "core::bool", found: "core::integer::u128".
+error[E2039]: Expected type "bool", found: "u128".
  --> lib.cairo:2:15
     a && b || c
               ^
@@ -40,12 +40,12 @@ fn foo(a: bool, b: bool, c: bool) -> bool {
 }
 
 //! > expected_diagnostics
-error[E2039]: Expected type "core::bool", found: "S".
+error[E2039]: Expected type "bool", found: "S".
  --> lib.cairo:2:5
     a && Default::default() || c
     ^
 
-error[E2039]: Expected type "core::bool", found: "T".
+error[E2039]: Expected type "bool", found: "T".
  --> lib.cairo:2:32
     a && Default::default() || c
                                ^

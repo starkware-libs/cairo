@@ -280,8 +280,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     function_name,
                     trait_id.name(db).long(db),
                     function_name,
-                    expected_ty.format(db),
-                    actual_ty.format(db)
+                    expected_ty.contextualized_path(db, self.context_module),
+                    actual_ty.contextualized_path(db, self.context_module)
                 )
             }
             SemanticDiagnosticKind::VariantCtorNotImmutable => {
@@ -342,8 +342,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
                 format!(
                     r#"Expected type "{}", found: "{}"."#,
-                    expected_ty.format(db),
-                    actual_ty.format(db)
+                    expected_ty.contextualized_path(db, self.context_module),
+                    actual_ty.contextualized_path(db, self.context_module)
                 )
             }
             SemanticDiagnosticKind::InconsistentBinding => "variable is bound inconsistently \
@@ -353,8 +353,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 let diagnostic_prefix = format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
-                    expected_ty.format(db),
-                    actual_ty.format(db)
+                    expected_ty.contextualized_path(db, self.context_module),
+                    actual_ty.contextualized_path(db, self.context_module)
                 );
                 if (expected_ty.is_fully_concrete(db) && actual_ty.is_fully_concrete(db))
                     || peel_snapshots(db, *expected_ty).0 == peel_snapshots(db, *actual_ty).0
@@ -371,15 +371,15 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::WrongReturnType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected return type. Expected: "{}", found: "{}"."#,
-                    expected_ty.format(db),
-                    actual_ty.format(db)
+                    expected_ty.contextualized_path(db, self.context_module),
+                    actual_ty.contextualized_path(db, self.context_module)
                 )
             }
             SemanticDiagnosticKind::WrongExprType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected expression type. Expected: "{}", found: "{}"."#,
-                    expected_ty.format(db),
-                    actual_ty.format(db)
+                    expected_ty.contextualized_path(db, self.context_module),
+                    actual_ty.contextualized_path(db, self.context_module)
                 )
             }
             SemanticDiagnosticKind::WrongNumberOfGenericParamsForImplFunction {
@@ -406,8 +406,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     function_name,
                     trait_id.name(db).long(db),
                     function_name,
-                    expected_ty.format(db),
-                    actual_ty.format(db)
+                    expected_ty.contextualized_path(db, self.context_module),
+                    actual_ty.contextualized_path(db, self.context_module)
                 )
             }
             SemanticDiagnosticKind::WrongGenericParamTraitForImplFunction {
@@ -481,10 +481,16 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 )
             }
             SemanticDiagnosticKind::InfiniteSizeType(ty) => {
-                format!(r#"Recursive type "{}" has infinite size."#, ty.format(db))
+                format!(
+                    r#"Recursive type "{}" has infinite size."#,
+                    ty.contextualized_path(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::ArrayOfZeroSizedElements(ty) => {
-                format!(r#"Cannot have array of type "{}" that is zero sized."#, ty.format(db))
+                format!(
+                    r#"Cannot have array of type "{}" that is zero sized."#,
+                    ty.contextualized_path(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
@@ -499,7 +505,10 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 )
             }
             SemanticDiagnosticKind::ConditionNotBool(condition_ty) => {
-                format!(r#"Condition has type "{}", expected bool."#, condition_ty.format(db))
+                format!(
+                    r#"Condition has type "{}", expected bool."#,
+                    condition_ty.contextualized_path(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::IncompatibleArms {
                 multi_arm_expr_kind: incompatibility_kind,
@@ -511,10 +520,17 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     MultiArmExprKind::If => "If blocks have incompatible types",
                     MultiArmExprKind::Loop => "Loop has incompatible return types",
                 };
-                format!(r#"{prefix}: "{}" and "{}""#, first_ty.format(db), different_ty.format(db))
+                format!(
+                    r#"{prefix}: "{}" and "{}""#,
+                    first_ty.contextualized_path(db, self.context_module),
+                    different_ty.contextualized_path(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
-                format!(r#"Type "{}" has no members."#, ty.format(db))
+                format!(
+                    r#"Type "{}" has no members."#,
+                    ty.contextualized_path(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::NoSuchStructMember { struct_id, member_name } => {
                 format!(
@@ -524,7 +540,11 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 )
             }
             SemanticDiagnosticKind::NoSuchTypeMember { ty, member_name } => {
-                format!(r#"Type "{}" has no member "{}""#, ty.format(db), member_name.long(db))
+                format!(
+                    r#"Type "{}" has no member "{}""#,
+                    ty.contextualized_path(db, self.context_module),
+                    member_name.long(db)
+                )
             }
             SemanticDiagnosticKind::MemberNotVisible(member_name) => {
                 format!(r#"Member "{}" is not visible in this context."#, member_name.long(db))
@@ -542,15 +562,21 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::IncompatibleErrorPropagateType { return_ty, err_ty } => {
                 format!(
                     r#"Return type "{}" does not wrap error "{}""#,
-                    return_ty.format(db),
-                    err_ty.format(db)
+                    return_ty.contextualized_path(db, self.context_module),
+                    err_ty.contextualized_path(db, self.context_module)
                 )
             }
             SemanticDiagnosticKind::ErrorPropagateOnNonErrorType(ty) => {
-                format!(r#"Type "{}" cannot error propagate"#, ty.format(db))
+                format!(
+                    r#"Type "{}" cannot error propagate"#,
+                    ty.contextualized_path(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::UnhandledMustUseType(ty) => {
-                format!(r#"Unhandled `#[must_use]` type `{}`"#, ty.format(db))
+                format!(
+                    r#"Unhandled `#[must_use]` type `{}`"#,
+                    ty.contextualized_path(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::UnhandledMustUseFunction => {
                 "Unhandled `#[must_use]` function.".into()
@@ -696,7 +722,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 // Several distinct items may share the name when reached through global uses; in
                 // that case no single item can be pointed at, so it is reported without a name.
                 let item = match item_id {
-                    Some(item_id) => format!("Item `{}`", item_id.full_path(db)),
+                    Some(item_id) => {
+                        format!("Item `{}`", item_id.contextualized_path(db, self.context_module))
+                    }
                     None => "Item".to_string(),
                 };
                 format!(
@@ -704,12 +732,18 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     if containing_modules.is_empty() {
                         "".to_string()
                     } else if let [module_id] = &containing_modules[..] {
-                        format!(" through module `{}`", module_id.full_path(db))
+                        format!(
+                            " through module `{}`",
+                            module_id.contextualized_path(db, self.context_module)
+                        )
                     } else {
                         format!(
                             " through any of the modules: {}",
                             containing_modules.iter().format_with(", ", |module_id, f| {
-                                f(&format_args!("`{}`", module_id.full_path(db)))
+                                f(&format_args!(
+                                    "`{}`",
+                                    module_id.contextualized_path(db, self.context_module)
+                                ))
                             })
                         )
                     }
@@ -721,7 +755,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::BadPatternForInputType(ty) => {
                 format!(
                     "Mismatched types: pattern cannot match against type \"{}\".",
-                    ty.format(db),
+                    ty.contextualized_path(db, self.context_module),
                 )
             }
             SemanticDiagnosticKind::WrongNumberOfTupleElements { expected, actual } => format!(
@@ -753,10 +787,16 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     .to_string()
             }
             SemanticDiagnosticKind::InvalidCopyTraitImpl(inference_error) => {
-                format!("Invalid copy trait implementation, {}", inference_error.format(db))
+                format!(
+                    "Invalid copy trait implementation, {}",
+                    inference_error.format(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::InvalidDropTraitImpl(inference_error) => {
-                format!("Invalid drop trait implementation, {}", inference_error.format(db))
+                format!(
+                    "Invalid drop trait implementation, {}",
+                    inference_error.format(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::InvalidImplItem(item_kw) => {
                 format!("`{}` is not allowed inside impl.", item_kw.long(db))
@@ -857,28 +897,33 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     actual_trt.debug(db),
                 )
             }
-            SemanticDiagnosticKind::InternalInferenceError(err) => err.format(db),
+            SemanticDiagnosticKind::InternalInferenceError(err) => {
+                err.format(db, self.context_module)
+            }
             SemanticDiagnosticKind::DerefNonRef { ty } => {
-                format!("Type `{}` cannot be dereferenced", ty.format(db))
+                format!(
+                    "Type `{}` cannot be dereferenced",
+                    ty.contextualized_path(db, self.context_module)
+                )
             }
             SemanticDiagnosticKind::NoImplementationOfIndexOperator { ty, inference_errors } => {
                 if inference_errors.is_empty() {
                     format!(
                         "Type `{}` does not implement the `Index` trait nor the `IndexView` trait.",
-                        ty.format(db)
+                        ty.contextualized_path(db, self.context_module)
                     )
                 } else {
                     format!(
                         "Type `{}` could not be indexed.\n{}",
-                        ty.format(db),
-                        inference_errors.format(db)
+                        ty.contextualized_path(db, self.context_module),
+                        inference_errors.format(db, self.context_module)
                     )
                 }
             }
             SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(ty) => {
                 format!(
                     r#"Type "{}" implements both the "Index" trait and the "IndexView" trait."#,
-                    ty.format(db)
+                    ty.contextualized_path(db, self.context_module)
                 )
             }
             SemanticDiagnosticKind::UnsupportedInlineArguments => {
@@ -904,8 +949,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     return format!(
                         "Method `{}` could not be called on type `{}`.\n{}",
                         method_name.long(db),
-                        ty.format(db),
-                        inference_errors.format(db)
+                        ty.contextualized_path(db, self.context_module),
+                        inference_errors.format(db, self.context_module)
                     );
                 }
                 if !relevant_traits.is_empty() {
@@ -917,14 +962,14 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                         "Method `{}` not found on type `{}`. Consider importing one of the \
                          following traits: {suggestions}.",
                         method_name.long(db),
-                        ty.format(db),
+                        ty.contextualized_path(db, self.context_module),
                     )
                 } else {
                     format!(
                         "Method `{}` not found on type `{}`. Did you import the correct trait and \
                          impl?",
                         method_name.long(db),
-                        ty.format(db)
+                        ty.contextualized_path(db, self.context_module)
                     )
                 }
             }
@@ -1078,32 +1123,35 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                         "Implementation of trait `{}` not found on type `{}`. Did you import the \
                          correct trait and impl?",
                         trait_name.long(db),
-                        ty.format(db)
+                        ty.contextualized_path(db, self.context_module)
                     )
                 } else {
                     format!(
                         "Could not find implementation of trait `{}` on type `{}`.\n{}",
                         trait_name.long(db),
-                        ty.format(db),
-                        inference_errors.format(db)
+                        ty.contextualized_path(db, self.context_module),
+                        inference_errors.format(db, self.context_module)
                     )
                 }
             }
             SemanticDiagnosticKind::CallExpressionRequiresFunction { ty, inference_errors } => {
                 if inference_errors.is_empty() {
-                    format!("Call expression requires a function, found `{}`.", ty.format(db))
+                    format!(
+                        "Call expression requires a function, found `{}`.",
+                        ty.contextualized_path(db, self.context_module)
+                    )
                 } else {
                     format!(
                         "Call expression requires a function, found `{}`.\n{}",
-                        ty.format(db),
-                        inference_errors.format(db)
+                        ty.contextualized_path(db, self.context_module),
+                        inference_errors.format(db, self.context_module)
                     )
                 }
             }
             SemanticDiagnosticKind::CompilerTraitReImplementation { trait_id } => {
                 format!(
                     "Trait `{}` should not be implemented outside of the corelib.",
-                    trait_id.full_path(db)
+                    trait_id.contextualized_path(db, self.context_module)
                 )
             }
             SemanticDiagnosticKind::ClosureInGlobalScope => {
@@ -1126,7 +1174,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 format!(
                     "'{}' implementation must be defined in the same module as either the type \
                      being dereferenced or the trait itself",
-                    trait_id.name(db).long(db)
+                    trait_id.contextualized_path(db, self.context_module)
                 )
             }
             SemanticDiagnosticKind::MutableCapturedVariable => {
@@ -1988,14 +2036,14 @@ impl<'db> TraitInferenceErrors<'db> {
         self.traits_and_errors.is_empty()
     }
     /// Format the list of errors.
-    fn format(&self, db: &dyn Database) -> String {
+    fn format(&self, db: &dyn Database, context_module: ModuleId<'_>) -> String {
         self.traits_and_errors
             .iter()
             .map(|(trait_function_id, inference_error)| {
                 format!(
                     "Candidate `{}` inference failed with: {}",
-                    trait_function_id.full_path(db),
-                    inference_error.format(db)
+                    trait_function_id.contextualized_path(db, context_module),
+                    inference_error.format(db, context_module)
                 )
             })
             .join("\n")

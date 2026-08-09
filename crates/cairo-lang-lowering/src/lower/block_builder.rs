@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId};
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
@@ -163,16 +163,21 @@ impl<'db> BlockBuilder<'db> {
                 inference_error,
                 last_use_location,
             })) => {
+                let db = ctx.db;
                 // If the variable was already moved, report an error.
-                let diag_location = location
-                    .long(ctx.db)
-                    .clone()
-                    .add_note_with_location(
-                        ctx.db,
-                        "variable was previously used here",
-                        last_use_location,
-                    )
-                    .with_note(DiagnosticNote::text_only(inference_error.format(ctx.db)));
+                let diag_location =
+                    location
+                        .long(db)
+                        .clone()
+                        .add_note_with_location(
+                            db,
+                            "variable was previously used here",
+                            last_use_location,
+                        )
+                        .with_note(DiagnosticNote::text_only(inference_error.format(
+                            db,
+                            ctx.function_id.base_semantic_function(db).parent_module(db),
+                        )));
                 ctx.diagnostics.report_by_location(
                     diag_location,
                     LoweringDiagnosticKind::VariableMoved { inference_error },

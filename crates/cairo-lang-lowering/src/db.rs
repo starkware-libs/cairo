@@ -455,7 +455,13 @@ fn borrow_check_tracked<'db>(
     function_id: ids::FunctionWithBodyId<'db>,
 ) -> Maybe<BorrowCheckResult<'db>> {
     let lowered = db.function_with_body_lowering(function_id)?;
-    Ok(borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, lowered))
+    let context_module = function_id.base_semantic_function(db).parent_module(db);
+    Ok(borrow_check(
+        db,
+        context_module,
+        function_id.to_concrete(db)?.is_panic_destruct_fn(db)?,
+        lowered,
+    ))
 }
 
 #[salsa::tracked(returns(ref))]
@@ -664,15 +670,22 @@ fn function_with_body_lowering_diagnostics<'db>(
         if db.flag_add_withdraw_gas()
             && matches!(db.in_cycle(function_id, DependencyType::Cost), Ok(true))
         {
-            let location =
-                Location::new(function_id.base_semantic_function(db).stable_location(db));
+            let base_semantic_function = function_id.base_semantic_function(db);
+            let location = Location::new(base_semantic_function.stable_location(db));
             if !lowered.signature.panicable {
                 diagnostics.add(LoweringDiagnostic {
                     location: location.clone(),
                     kind: LoweringDiagnosticKind::NoPanicFunctionCycle,
                 });
             }
-            borrow_check_possible_withdraw_gas(db, location.intern(db), lowered, &mut diagnostics)
+            let context_module = base_semantic_function.parent_module(db);
+            borrow_check_possible_withdraw_gas(
+                db,
+                context_module,
+                location.intern(db),
+                lowered,
+                &mut diagnostics,
+            )
         }
     }
 

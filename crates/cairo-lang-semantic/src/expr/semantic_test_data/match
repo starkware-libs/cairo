@@ -409,7 +409,7 @@ match a {
 }
 
 //! > expected_diagnostics
-error[E2056]: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
+error[E2056]: Match arms have incompatible types: "u32" and "u16"
  --> lib.cairo:8:18
     MyEnum::B => 3_u16,
                  ^^^^^
@@ -483,7 +483,7 @@ match a {
 }
 
 //! > expected_diagnostics
-error[E2056]: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
+error[E2056]: Match arms have incompatible types: "u32" and "u16"
  --> lib.cairo:8:18
     MyEnum::B => 3 + 3_u16,
                  ^^^^^^^^^
@@ -782,7 +782,7 @@ error[E2048]: Missing variable in pattern.
     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
                    ^^^^^^^^^^^^^^^^^
 
-error[E2056]: Match arms have incompatible types: "core::felt252" and "core::integer::u8"
+error[E2056]: Match arms have incompatible types: "felt252" and "u8"
  --> lib.cairo:15:60
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
                                                            ^^^^^
@@ -959,7 +959,7 @@ Match(
 )
 
 //! > expected_diagnostics
-error[E2039]: Expected type "core::integer::u32", found: "core::integer::u8".
+error[E2039]: Expected type "u32", found: "u8".
  --> lib.cairo:15:40
     MyEnum::C((x, _, _)) | MyEnum::D(P{x, y: _, z: _ }) => x,
                                        ^

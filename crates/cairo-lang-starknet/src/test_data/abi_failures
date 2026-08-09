@@ -28,7 +28,7 @@ warning[E2200]: Plugin diagnostic: Failed to generate ABI: Event type must deriv
         A: super::A,
         ^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: core::starknet::event::Event::<test::A>.
+error[E2311]: Trait has no implementation in context: starknet::event::Event::<crate::A>.
  --> lib.cairo:10:20
     #[derive(Drop, starknet::Event)]
                    ^^^^^^^^^^^^^^^

@@ -132,7 +132,7 @@ note: variable was previously used here:
   --> lib.cairo:11:15
         use_s(a)
               ^
-note: Trait has no implementation in context: core::traits::Copy::<test::S>.
+note: Trait has no implementation in context: Copy::<S>.
 
 //! > lowering
 Parameters: v0: test::S
