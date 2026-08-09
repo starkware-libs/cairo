@@ -26,7 +26,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "test::MyEnum".
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "MyEnum".
  --> lib.cairo:11:33
     let MyEnum::A(x): felt252 = MyEnum::A(7) else {
                                 ^^^^^^^^^^^^

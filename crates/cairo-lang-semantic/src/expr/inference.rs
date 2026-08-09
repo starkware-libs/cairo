@@ -11,7 +11,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericKind,
     GenericParamId, GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LocalVarId,
-    LookupItemId, MacroCallId, MemberId, NamedLanguageElementId, ParamId, StructId,
+    LookupItemId, MacroCallId, MemberId, ModuleId, NamedLanguageElementId, ParamId, StructId,
     TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, skip_diagnostic};
@@ -51,6 +51,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
     ConcreteTraitTypeLongId,
 };
+use crate::path::ContextualizePath;
 use crate::substitution::{GenericSubstitution, HasDb, RewriteResult, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
@@ -247,18 +248,30 @@ pub enum InferenceError<'db> {
     InvalidLiteralType(TypeId<'db>),
 }
 impl<'db> InferenceError<'db> {
-    pub fn format(&self, db: &dyn Database) -> String {
+    pub fn format(&self, db: &dyn Database, context_module: ModuleId<'db>) -> String {
         match self {
             InferenceError::Reported(_) => "Inference error occurred.".into(),
             InferenceError::Cycle(_var) => "Inference cycle detected".into(),
             InferenceError::TypeKindMismatch { ty0, ty1 } => {
-                format!("Type mismatch: `{:?}` and `{:?}`.", ty0.debug(db), ty1.debug(db))
+                format!(
+                    "Type mismatch: `{}` and `{}`.",
+                    ty0.contextualized_path(db, context_module),
+                    ty1.contextualized_path(db, context_module)
+                )
             }
             InferenceError::ConstKindMismatch { const0, const1 } => {
-                format!("Const mismatch: `{:?}` and `{:?}`.", const0.debug(db), const1.debug(db))
+                format!(
+                    "Const mismatch: `{}` and `{}`.",
+                    const0.contextualized_path(db, context_module),
+                    const1.contextualized_path(db, context_module)
+                )
             }
             InferenceError::ImplKindMismatch { impl0, impl1 } => {
-                format!("Impl mismatch: `{:?}` and `{:?}`.", impl0.debug(db), impl1.debug(db))
+                format!(
+                    "Impl mismatch: `{}` and `{}`.",
+                    impl0.contextualized_path(db, context_module),
+                    impl1.contextualized_path(db, context_module)
+                )
             }
             InferenceError::NegativeImplKindMismatch { impl0, impl1 } => {
                 format!(
@@ -275,7 +288,11 @@ impl<'db> InferenceError<'db> {
                 )
             }
             InferenceError::TraitMismatch { trt0, trt1 } => {
-                format!("Trait mismatch: `{:?}` and `{:?}`.", trt0.debug(db), trt1.debug(db))
+                format!(
+                    "Trait mismatch: `{}` and `{}`.",
+                    trt0.contextualized_path(db, context_module),
+                    trt1.contextualized_path(db, context_module)
+                )
             }
             InferenceError::ConstNotInferred => "Failed to infer constant.".into(),
             InferenceError::NoImplsFound(concrete_trait_id) => {
@@ -285,38 +302,47 @@ impl<'db> InferenceError<'db> {
                         GenericArgumentId::Type
                     );
                     return format!(
-                        "Mismatched types. The type `{:?}` cannot be created from a string \
-                         literal.",
-                        generic_type.debug(db)
+                        "Mismatched types. The type `{}` cannot be created from a string literal.",
+                        generic_type.contextualized_path(db, context_module)
                     );
                 }
                 format!(
-                    "Trait has no implementation in context: {:?}.",
-                    concrete_trait_id.debug(db)
+                    "Trait has no implementation in context: {}.",
+                    concrete_trait_id.contextualized_path(db, context_module)
                 )
             }
             InferenceError::NoNegativeImplsFound(concrete_trait_id) => {
-                format!("Trait has implementation in context: {:?}.", concrete_trait_id.debug(db))
+                format!(
+                    "Trait has implementation in context: {}.",
+                    concrete_trait_id.contextualized_path(db, context_module)
+                )
             }
             InferenceError::Ambiguity(ambiguity) => ambiguity.format(db),
             InferenceError::TypeNotInferred(ty) => {
-                format!("Type annotations needed. Failed to infer {:?}.", ty.debug(db))
+                format!(
+                    "Type annotations needed. Failed to infer {}.",
+                    ty.contextualized_path(db, context_module)
+                )
             }
             InferenceError::GenericFunctionMismatch { func0, func1 } => {
-                format!("Function mismatch: `{}` and `{}`.", func0.format(db), func1.format(db))
+                format!(
+                    "Function mismatch: `{}` and `{}`.",
+                    func0.contextualized_path(db, context_module),
+                    func1.contextualized_path(db, context_module)
+                )
             }
             InferenceError::ImplTypeMismatch { impl_id, trait_type_id, ty0, ty1 } => {
                 format!(
-                    "`{}::{}` type mismatch: `{:?}` and `{:?}`.",
+                    "`{}::{}` type mismatch: `{}` and `{}`.",
                     impl_id.format(db),
                     trait_type_id.name(db).long(db),
-                    ty0.debug(db),
-                    ty1.debug(db)
+                    ty0.contextualized_path(db, context_module),
+                    ty1.contextualized_path(db, context_module)
                 )
             }
             InferenceError::InvalidLiteralType(ty) => format!(
-                "Mismatched types. The type `{:?}` cannot be created from a numeric literal.",
-                ty.debug(db),
+                "Mismatched types. The type `{}` cannot be created from a numeric literal.",
+                ty.contextualized_path(db, context_module),
             ),
         }
     }

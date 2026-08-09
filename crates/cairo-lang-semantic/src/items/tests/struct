@@ -35,22 +35,22 @@ struct C {
 }
 
 //! > expected_diagnostics
-error[E2052]: Recursive type "test::A" has infinite size.
+error[E2052]: Recursive type "A" has infinite size.
  --> lib.cairo:2:5
     member: A,
     ^^^^^^^^^
 
-error[E2052]: Recursive type "test::C" has infinite size.
+error[E2052]: Recursive type "C" has infinite size.
  --> lib.cairo:6:5
     member: C,
     ^^^^^^^^^
 
-error[E2052]: Recursive type "test::A" has infinite size.
+error[E2052]: Recursive type "A" has infinite size.
  --> lib.cairo:7:5
     member2: A,
     ^^^^^^^^^^
 
-error[E2052]: Recursive type "test::B" has infinite size.
+error[E2052]: Recursive type "B" has infinite size.
  --> lib.cairo:11:5
     member: B,
     ^^^^^^^^^
@@ -71,7 +71,7 @@ fn foo(a: A) -> A {
 }
 
 //! > expected_diagnostics
-error[E2052]: Recursive type "test::A" has infinite size.
+error[E2052]: Recursive type "A" has infinite size.
  --> lib.cairo:2:5
     member: A,
     ^^^^^^^^^

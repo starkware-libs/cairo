@@ -52,7 +52,7 @@ fn foo(a: u8) -> u8 {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::MyTrait::<T>.
+error[E2311]: Trait has no implementation in context: MyTrait::<T>.
  --> lib.cairo:11:14
     MyTrait::f(t)
              ^
@@ -83,7 +83,7 @@ fn foo() -> u32 {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::MyTrait2::<core::integer::u32>.
+error[E2311]: Trait has no implementation in context: MyTrait2::<u32>.
  --> lib.cairo:15:15
     MyTrait2::foo(5_u32)
               ^^^
@@ -114,7 +114,7 @@ fn foo() -> u32 {
 }
 
 //! > expected_diagnostics
-error[E2312]: Trait has implementation in context: test::MyTrait::<core::integer::u32>.
+error[E2312]: Trait has implementation in context: MyTrait::<u32>.
  --> lib.cairo:15:5
     I2::foo(5_u32)
     ^^
@@ -193,7 +193,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::Trait3.
+error[E2311]: Trait has no implementation in context: Trait3.
  --> lib.cairo:24:13
     Trait3::bar();
             ^^^
@@ -363,7 +363,7 @@ error[E0006]: Trait not found.
 impl BlanketNonCopy<T, -MissomgTrait<T>> of MyTrait<T> {
                         ^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: test::MyTrait::<core::felt252>.
+error[E2311]: Trait has no implementation in context: MyTrait::<felt252>.
  --> lib.cairo:11:25
     MyTrait::<felt252>::f()
                         ^
@@ -395,7 +395,7 @@ error[E0006]: Trait not found.
 impl BlanketNonCopy<T, +MissingTrait<T>> of MyTrait<T> {
                         ^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: test::MyTrait::<core::felt252>.
+error[E2311]: Trait has no implementation in context: MyTrait::<felt252>.
  --> lib.cairo:11:25
     MyTrait::<felt252>::f()
                         ^
