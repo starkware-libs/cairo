@@ -724,22 +724,23 @@ impl<'db> From<&MacroDeclarationId<'db>> for ImportableId<'db> {
     }
 }
 
-impl<'db> From<ModuleItemId<'db>> for Option<ImportableId<'db>> {
-    fn from(module_item_id: ModuleItemId<'db>) -> Self {
+impl<'db> TryFrom<ModuleItemId<'db>> for ImportableId<'db> {
+    type Error = ();
+    fn try_from(module_item_id: ModuleItemId<'db>) -> Result<Self, Self::Error> {
         match module_item_id {
-            ModuleItemId::Constant(id) => Some(ImportableId::Constant(id)),
-            ModuleItemId::Submodule(id) => Some(ImportableId::Submodule(id)),
-            ModuleItemId::FreeFunction(id) => Some(ImportableId::FreeFunction(id)),
-            ModuleItemId::Struct(id) => Some(ImportableId::Struct(id)),
-            ModuleItemId::Enum(id) => Some(ImportableId::Enum(id)),
-            ModuleItemId::TypeAlias(id) => Some(ImportableId::TypeAlias(id)),
-            ModuleItemId::ImplAlias(id) => Some(ImportableId::ImplAlias(id)),
-            ModuleItemId::Trait(id) => Some(ImportableId::Trait(id)),
-            ModuleItemId::Impl(id) => Some(ImportableId::Impl(id)),
-            ModuleItemId::ExternType(id) => Some(ImportableId::ExternType(id)),
-            ModuleItemId::ExternFunction(id) => Some(ImportableId::ExternFunction(id)),
-            ModuleItemId::MacroDeclaration(id) => Some(ImportableId::MacroDeclaration(id)),
-            ModuleItemId::Use(_) => None,
+            ModuleItemId::Constant(id) => Ok(ImportableId::Constant(id)),
+            ModuleItemId::Submodule(id) => Ok(ImportableId::Submodule(id)),
+            ModuleItemId::FreeFunction(id) => Ok(ImportableId::FreeFunction(id)),
+            ModuleItemId::Struct(id) => Ok(ImportableId::Struct(id)),
+            ModuleItemId::Enum(id) => Ok(ImportableId::Enum(id)),
+            ModuleItemId::TypeAlias(id) => Ok(ImportableId::TypeAlias(id)),
+            ModuleItemId::ImplAlias(id) => Ok(ImportableId::ImplAlias(id)),
+            ModuleItemId::Trait(id) => Ok(ImportableId::Trait(id)),
+            ModuleItemId::Impl(id) => Ok(ImportableId::Impl(id)),
+            ModuleItemId::ExternType(id) => Ok(ImportableId::ExternType(id)),
+            ModuleItemId::ExternFunction(id) => Ok(ImportableId::ExternFunction(id)),
+            ModuleItemId::MacroDeclaration(id) => Ok(ImportableId::MacroDeclaration(id)),
+            ModuleItemId::Use(_) => Err(()),
         }
     }
 }
