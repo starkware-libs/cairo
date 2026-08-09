@@ -405,3 +405,227 @@ impl<'db> ContextualizePath<'db> for crate::ConcreteTraitId<'db> {
         self.trait_id(db).contextualized_path(db, context_module)
     }
 }
+
+impl<'db> ContextualizePath<'db> for GenericTypeId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        match self {
+            GenericTypeId::Struct(id) => id.contextualized_path(db, context_module),
+            GenericTypeId::Enum(id) => id.contextualized_path(db, context_module),
+            GenericTypeId::Extern(id) => id.contextualized_path(db, context_module),
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::ConcreteTypeId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        let path = self.generic_type(db).contextualized_path(db, context_module)?;
+        let generic_args = self.generic_args(db);
+        Ok(if generic_args.is_empty() {
+            path
+        } else {
+            let args = generic_args
+                .iter()
+                .map(|arg| arg.contextualized_path(db, context_module))
+                .collect::<Maybe<Vec<_>>>()?
+                .join(", ");
+            format!("{path}::<{args}>")
+        })
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::TypeId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        self.long(db).contextualized_path(db, context_module)
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::TypeLongId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        Ok(match self {
+            crate::TypeLongId::Concrete(concrete) => {
+                concrete.contextualized_path(db, context_module)?
+            }
+            crate::TypeLongId::Tuple(inner_types) => {
+                let inner = inner_types
+                    .iter()
+                    .map(|ty| ty.contextualized_path(db, context_module))
+                    .collect::<Maybe<Vec<_>>>()?;
+                if let [single] = inner.as_slice() {
+                    format!("({single},)")
+                } else {
+                    format!("({})", inner.join(", "))
+                }
+            }
+            crate::TypeLongId::Snapshot(ty) => {
+                format!("@{}", ty.contextualized_path(db, context_module)?)
+            }
+            crate::TypeLongId::FixedSizeArray { type_id, size } => {
+                format!(
+                    "[{}; {}]",
+                    type_id.contextualized_path(db, context_module)?,
+                    size.contextualized_path(db, context_module)?
+                )
+            }
+            crate::TypeLongId::Coupon(function_id) => {
+                format!("{}::Coupon", function_id.contextualized_path(db, context_module)?)
+            }
+            _ => self.format(db),
+        })
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::GenericArgumentId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        match self {
+            crate::GenericArgumentId::Type(ty) => ty.contextualized_path(db, context_module),
+            crate::GenericArgumentId::Constant(value) => {
+                value.contextualized_path(db, context_module)
+            }
+            crate::GenericArgumentId::Impl(imp) => imp.contextualized_path(db, context_module),
+            crate::GenericArgumentId::NegImpl(_) => Ok(self.format(db)),
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::constant::ConstValueId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        use crate::items::constant::ConstValue;
+        Ok(match self.long(db) {
+            ConstValue::Int(value, _) => value.to_string(),
+            ConstValue::Enum(variant, payload) => format!(
+                "{}({})",
+                variant.id.contextualized_path(db, context_module)?,
+                payload.contextualized_path(db, context_module)?
+            ),
+            ConstValue::NonZero(inner) => inner.contextualized_path(db, context_module)?,
+            ConstValue::Generic(param) => {
+                param.name(db).map(|name| name.to_string(db)).unwrap_or_else(|| self.format(db))
+            }
+            // Inferred, missing, and compound values keep the plain formatting.
+            ConstValue::Struct(..)
+            | ConstValue::ImplConstant(_)
+            | ConstValue::Var(..)
+            | ConstValue::Missing(_) => self.format(db),
+        })
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::imp::ImplId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        use crate::items::imp::ImplLongId;
+        Ok(match self.long(db) {
+            ImplLongId::Concrete(concrete_impl) => {
+                let long = concrete_impl.long(db);
+                let path = long.impl_def_id.contextualized_path(db, context_module)?;
+                if long.generic_args.is_empty() {
+                    path
+                } else {
+                    let args = long
+                        .generic_args
+                        .iter()
+                        .map(|arg| arg.contextualized_path(db, context_module))
+                        .collect::<Maybe<Vec<_>>>()?
+                        .join(", ");
+                    format!("{path}::<{args}>")
+                }
+            }
+            ImplLongId::GenericParameter(param) => {
+                param.name(db).map(|name| name.to_string(db)).unwrap_or_else(|| self.format(db))
+            }
+            ImplLongId::SelfImpl(concrete_trait) => {
+                concrete_trait.contextualized_path(db, context_module)?
+            }
+            // Inferred and generated impls keep the plain formatting.
+            ImplLongId::ImplVar(_) | ImplLongId::ImplImpl(_) | ImplLongId::GeneratedImpl(_) => {
+                self.format(db)
+            }
+        })
+    }
+}
+
+impl<'db> ContextualizePath<'db> for GenericFunctionId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        match self {
+            GenericFunctionId::Free(id) => id.contextualized_path(db, context_module),
+            GenericFunctionId::Extern(id) => id.contextualized_path(db, context_module),
+            GenericFunctionId::Impl(id) => Ok(format!(
+                "{}::{}",
+                id.impl_id.contextualized_path(db, context_module)?,
+                id.function.name(db).long(db)
+            )),
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::functions::ConcreteFunction<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        let path = self.generic_function.contextualized_path(db, context_module)?;
+        Ok(if self.generic_args.is_empty() {
+            path
+        } else {
+            let args = self
+                .generic_args
+                .iter()
+                .map(|arg| arg.contextualized_path(db, context_module))
+                .collect::<Maybe<Vec<_>>>()?
+                .join(", ");
+            format!("{path}::<{args}>")
+        })
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::FunctionId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        self.long(db).function.contextualized_path(db, context_module)
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::functions::ConcreteFunctionWithBodyId<'db> {
+    fn contextualized_path(
+        &self,
+        db: &'db dyn Database,
+        context_module: ModuleId<'db>,
+    ) -> Maybe<String> {
+        self.function_id(db)?.contextualized_path(db, context_module)
+    }
+}
