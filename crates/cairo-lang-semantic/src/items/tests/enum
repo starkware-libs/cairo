@@ -28,7 +28,7 @@ enum A {
 }
 
 //! > expected_diagnostics
-error[E2052]: Recursive type "test::A" has infinite size.
+error[E2052]: Recursive type "A" has infinite size.
  --> lib.cairo:2:5
     Variant: A,
     ^^^^^^^^^^

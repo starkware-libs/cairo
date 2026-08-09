@@ -369,7 +369,7 @@ fn foo(mut data: Span<felt252>) -> u128 {
 }
 
 //! > semantic_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
+error[E2042]: Unexpected return type. Expected: "u128", found: "Option::<u128>".
  --> lib.cairo:3:5
     serde::Serde::<u128>::deserialize(ref data)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

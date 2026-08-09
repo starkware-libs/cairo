@@ -15,7 +15,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2056]: Loop has incompatible return types: "core::bool" and "{numeric}"
+error[E2056]: Loop has incompatible return types: "bool" and "{numeric}"
  --> lib.cairo:6:19
             break 0;
                   ^
@@ -39,12 +39,12 @@ fn foo(x: Option<()>) {
 }
 
 //! > expected_diagnostics
-error[E2056]: Loop has incompatible return types: "core::bool" and "{numeric}"
+error[E2056]: Loop has incompatible return types: "bool" and "{numeric}"
  --> lib.cairo:6:19
             break 0;
                   ^
 
-error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
+error[E2042]: Unexpected return type. Expected: "()", found: "bool".
  --> lib.cairo:2:5-8:5
       loop {
  _____^
@@ -117,7 +117,7 @@ fn foo() -> bool {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
+error[E2042]: Unexpected return type. Expected: "bool", found: "()".
  --> lib.cairo:2:11
     return;
           ^
@@ -151,7 +151,7 @@ fn foo() -> bool {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
+error[E2042]: Unexpected return type. Expected: "bool", found: "()".
  --> lib.cairo:3:15
         return;
               ^
@@ -171,7 +171,7 @@ fn foo() -> bool {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
+error[E2042]: Unexpected return type. Expected: "bool", found: "()".
  --> lib.cairo:2:5-4:5
       loop {
  _____^
@@ -310,7 +310,7 @@ fn foo(a: u32) -> Option<bool> {
 }
 
 //! > expected_diagnostics
-error[E2056]: Loop has incompatible return types: "core::never" and "()"
+error[E2056]: Loop has incompatible return types: "never" and "()"
  --> lib.cairo:6:14
         break;
              ^

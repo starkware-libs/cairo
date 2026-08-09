@@ -75,7 +75,7 @@ error[E3003]: Cannot desnap a non copyable type.
  --> lib.cairo:3:16
     let f = || *(@a);
                ^^^^^
-note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
+note: Trait has no implementation in context: Copy::<Array::<felt252>>.
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
@@ -105,7 +105,7 @@ error[E3003]: Cannot desnap a non copyable type.
  --> lib.cairo:6:9
         *(@a)
         ^^^^^
-note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
+note: Trait has no implementation in context: Copy::<Array::<felt252>>.
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>

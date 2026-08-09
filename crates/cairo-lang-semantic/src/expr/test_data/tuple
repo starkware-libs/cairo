@@ -23,7 +23,7 @@ fn foo(t: (felt252, u8)) -> felt252 {
 }
 
 //! > expected_diagnostics
-error[E0007]: Type "(core::felt252, core::integer::u8)" has no member "5"
+error[E0007]: Type "(felt252, u8)" has no member "5"
  --> lib.cairo:2:7
     t.5
       ^
@@ -41,7 +41,7 @@ fn foo(x: felt252) -> felt252 {
 }
 
 //! > expected_diagnostics
-error[E0007]: Type "core::felt252" has no member "0"
+error[E0007]: Type "felt252" has no member "0"
  --> lib.cairo:2:7
     x.0
       ^
@@ -95,7 +95,7 @@ fn foo(t: (felt252, u8)) -> (felt252, felt252) {
 }
 
 //! > expected_diagnostics
-error[E0007]: Type "(core::felt252, core::integer::u8)" has no member "00"
+error[E0007]: Type "(felt252, u8)" has no member "00"
  --> lib.cairo:2:8
     (t.00, t.0x1)
        ^^

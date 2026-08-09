@@ -43,12 +43,12 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[{numeric}; 3]".
+error[E2041]: Unexpected argument type. Expected: "[u32; 2]", found: "[{numeric}; 3]".
  --> lib.cairo:2:24
     let _x: [u32; 2] = [1, 2, 3];
                        ^^^^^^^^^
 
-error[E2041]: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[{numeric}; 3]".
+error[E2041]: Unexpected argument type. Expected: "[u32; 2]", found: "[{numeric}; 3]".
  --> lib.cairo:3:24
     let _x: [u32; 2] = [1; 3];
                        ^^^^^^
@@ -85,7 +85,7 @@ error[E2173]: Fixed size array with defined size must have exactly one value.
     let _x: [u32; 2] = [1, 2; 2];
                        ^^^^^^^^^
 
-error[E2041]: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?7; 0]".
+error[E2041]: Unexpected argument type. Expected: "[u32; 2]", found: "[?7; 0]".
  --> lib.cairo:5:24
     let _x: [u32; 2] = [];
                        ^^
@@ -164,17 +164,17 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[core::integer::u16; 2]".
+error[E2041]: Unexpected argument type. Expected: "[u32; 2]", found: "[u16; 2]".
  --> lib.cairo:3:24
     let _x: [u32; 2] = [1, 2_u16];
                        ^^^^^^^^^^
 
-error[E2041]: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
+error[E2041]: Unexpected argument type. Expected: "u32", found: "u16".
  --> lib.cairo:4:22
     let _x = [1_u32, 2_u16];
                      ^^^^^
 
-error[E2041]: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[core::bool; 2]".
+error[E2041]: Unexpected argument type. Expected: "[u32; 2]", found: "[bool; 2]".
  --> lib.cairo:5:24
     let _x: [u32; 2] = [true, false];
                        ^^^^^^^^^^^^^
@@ -278,7 +278,7 @@ fn f() -> [felt252; for _ in 0..1_u32 {}] {
 }
 
 //! > expected_diagnostics
-error[E2302]: Type mismatch: `()` and `core::integer::u32`.
+error[E2302]: Type mismatch: `()` and `u32`.
  --> lib.cairo:1:21
 fn f() -> [felt252; for _ in 0..1_u32 {}] {
                     ^^^^^^^^^^^^^^^^^^^^

@@ -200,12 +200,12 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error[E2031]: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+error[E2031]: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `u16`, actual: `u32`.
  --> lib.cairo:20:16
     fn bar1(x: u32) {}
                ^^^
 
-error[E2045]: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+error[E2045]: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `u16`, actual: `u32`.
  --> lib.cairo:21:18
     fn bar2() -> u32 {
                  ^^^
@@ -249,12 +249,12 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::AnotherTrait0.
+error[E2311]: Trait has no implementation in context: AnotherTrait0.
  --> lib.cairo:25:31
     fn bar1(x: AnotherTrait0::Impl::InputType);
                               ^^^^
 
-error[E2311]: Trait has no implementation in context: test::AnotherTrait0.
+error[E2311]: Trait has no implementation in context: AnotherTrait0.
  --> lib.cairo:26:33
     fn bar2() -> AnotherTrait0::Impl::InputType;
                                 ^^^^
@@ -334,17 +334,17 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error[E2045]: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+error[E2045]: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `u32`, actual: `u16`.
  --> lib.cairo:18:18
     fn foo1() -> AnotherTrait::Impl::InputType {
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2042]: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
+error[E2042]: Unexpected return type. Expected: "u16", found: "u32".
  --> lib.cairo:19:9
         3_u32
         ^^^^^
 
-error[E2031]: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+error[E2031]: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `u32`, actual: `u16`.
  --> lib.cairo:21:16
     fn foo2(x: AnotherTrait::Impl::InputType) {}
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -446,7 +446,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
+error[E2042]: Unexpected return type. Expected: "u16", found: "u32".
  --> lib.cairo:15:9
         3_u32
         ^^^^^
@@ -564,7 +564,7 @@ fn complex(
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u16>; 3], (@core::integer::u16, core::integer::u16)>>)".
+error[E2042]: Unexpected return type. Expected: "@(u32, Option::<@Result::<[Option::<u32>; 3], (@u32, u32)>>)", found: "@(u16, Option::<@Result::<[Option::<u16>; 3], (@u16, u16)>>)".
  --> lib.cairo:45:5
     x
     ^
@@ -626,7 +626,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+error[E2042]: Unexpected return type. Expected: "u32", found: "u16".
  --> lib.cairo:16:9
         x
         ^
@@ -982,12 +982,12 @@ Could not find implementation of trait `test::OtherTrait`
 impl MyImpl of MyTrait {}
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: test::OtherTrait.
+error[E2311]: Trait has no implementation in context: OtherTrait.
  --> lib.cairo:7:1
 impl MyImpl of MyTrait {}
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: test::MyTrait.
+error[E2311]: Trait has no implementation in context: MyTrait.
  --> lib.cairo:8:10-10:1
   fn foo() {
  __________^
@@ -1177,7 +1177,7 @@ Could not find implementation of trait `test::Inner::<core::integer::u32>`
 | }
 |_^
 
-error[E2311]: Trait has no implementation in context: test::Inner::<core::integer::u32>.
+error[E2311]: Trait has no implementation in context: Inner::<u32>.
  --> lib.cairo:24:1-29:1
   impl OuterU32 of Outer<u32> {
  _^
@@ -1185,7 +1185,7 @@ error[E2311]: Trait has no implementation in context: test::Inner::<core::intege
 | }
 |_^
 
-error[E2311]: Trait has no implementation in context: core::metaprogramming::TypeEqual::<core::integer::u32, test::OuterU32::InnerImpl::Item>.
+error[E2311]: Trait has no implementation in context: core::metaprogramming::TypeEqual::<u32, OuterU32::InnerImpl::Item>.
  --> lib.cairo:31:11
     1_u64.foo(1_u32);
           ^^^
@@ -1237,7 +1237,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2308]: `test::Outer::<core::integer::u64>::Impl::InnerMost` type mismatch: `core::integer::u128` and `test::Outer::<core::integer::u64>::Impl::InnerMost`.
+error[E2308]: `Outer::<u64>::Impl::InnerMost` type mismatch: `u128` and `Outer::<u64>::Impl::InnerMost`.
  --> lib.cairo:36:5
     extra_into_inner(Outer::into_inner(1_u32));
     ^^^^^^^^^^^^^^^^

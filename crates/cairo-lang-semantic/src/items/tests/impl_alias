@@ -99,7 +99,7 @@ fn foo(x: Option<Box<usize>>) -> usize {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::MyTrait::<core::option::Option::<core::box::Box::<core::integer::u32>>>.
+error[E2311]: Trait has no implementation in context: MyTrait::<Option::<Box::<u32>>>.
  --> lib.cairo:15:14
     MyTrait::foo(x)
              ^^^

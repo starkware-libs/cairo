@@ -102,6 +102,11 @@ fn get_contextualized_path<'db>(
     item: ImportableId<'db>,
     context_module: ModuleId<'db>,
 ) -> Maybe<ItemAccessInfo<'db>> {
+    // A crate has no parent to shorten the path through - it is always accessed by its name.
+    if let ImportableId::Crate(crate_id) = item {
+        return Ok(ItemAccessInfo::new(ItemAccessKind::FullPath(crate_id), vec![], item.name(db)));
+    }
+
     if let Some(access_info) = check_prelude(db, item, context_module)? {
         return Ok(access_info);
     }
