@@ -23,7 +23,7 @@ fn foo(d: bool) {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "core::bool".
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "bool".
  --> lib.cairo:8:19
     bar(0, 1, 2, :d, e: 0);
                   ^
@@ -151,18 +151,18 @@ error[E0006]: Function not found.
     bar(0);
     ^^^
 
-error[E2315]: Mismatched types. The type `test::MyStruct` cannot be created from a numeric literal.
+error[E2315]: Mismatched types. The type `MyStruct` cannot be created from a numeric literal.
  --> lib.cairo:13:9
     d + 0;
         ^
 
-error[E0002]: Method `bar` not found on type `test::MyStruct`. Did you import the correct trait and impl?
+error[E0002]: Method `bar` not found on type `MyStruct`. Did you import the correct trait and impl?
  --> lib.cairo:15:7
     d.bar();
       ^^^
 
-error[E0002]: Method `baz` could not be called on type `test::MyStruct`.
-Candidate `test::MyTrait::baz` inference failed with: Trait has no implementation in context: test::MyTrait::<test::MyStruct>.
+error[E0002]: Method `baz` could not be called on type `MyStruct`.
+Candidate `MyTrait::baz` inference failed with: Trait has no implementation in context: MyTrait::<MyStruct>.
  --> lib.cairo:16:7
     d.baz();
       ^^^
@@ -180,7 +180,7 @@ fn foo() -> () {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "()", found: "core::integer::u8".
+error[E2042]: Unexpected return type. Expected: "()", found: "u8".
  --> lib.cairo:2:5
     4_u8
     ^^^^
@@ -196,7 +196,7 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() -> u8 {}
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "()".
+error[E2042]: Unexpected return type. Expected: "u8", found: "()".
  --> lib.cairo:1:16
 fn foo() -> u8 {}
                ^^
@@ -217,7 +217,7 @@ trait MyTrait {
 fn foo() -> () {}
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
+error[E2042]: Unexpected return type. Expected: "u8", found: "u16".
  --> lib.cairo:3:9
         1_u16
         ^^^^^
@@ -242,7 +242,7 @@ impl MyImpl of MyTrait {
 fn foo() -> () {}
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
+error[E2042]: Unexpected return type. Expected: "u8", found: "u16".
  --> lib.cairo:7:9
         1_u16
         ^^^^^
@@ -262,7 +262,7 @@ fn foo() -> () {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
+error[E2042]: Unexpected return type. Expected: "u8", found: "u16".
  --> lib.cairo:2:11
     || -> u8 {
           ^^

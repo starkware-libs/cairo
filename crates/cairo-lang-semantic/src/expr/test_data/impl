@@ -37,7 +37,7 @@ error[E0006]: Type not found.
     fn foo(x: T, y: u8, z: u16) -> T {}
                                    ^
 
-error[E2031]: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u8`, actual: `core::integer::u16`.
+error[E2031]: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `u8`, actual: `u16`.
  --> lib.cairo:7:28
     fn foo(x: T, y: u8, z: u16) -> T {}
                            ^^^
@@ -92,12 +92,12 @@ error[E2014]: Impl item const `MyImpl::AsType` is not a member of trait `MyTrait
     const AsType: felt252 = 5;
     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: test::MyTrait.
+error[E2311]: Trait has no implementation in context: MyTrait.
  --> lib.cairo:22:1
 fn foo() -> MyImpl::AsType {
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2042]: Unexpected return type. Expected: "test::MyImpl::AsType", found: "core::felt252".
+error[E2042]: Unexpected return type. Expected: "MyImpl::AsType", found: "felt252".
  --> lib.cairo:24:5
     MyImpl::AsImpl::method(0)
     ^^^^^^^^^^^^^^^^^^^^^^^^^

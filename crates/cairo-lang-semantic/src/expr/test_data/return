@@ -54,7 +54,7 @@ test_function_diagnostics(expect_diagnostics: true)
 fn foo() -> felt252 {}
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::felt252", found: "()".
+error[E2042]: Unexpected return type. Expected: "felt252", found: "()".
  --> lib.cairo:1:21
 fn foo() -> felt252 {}
                     ^^

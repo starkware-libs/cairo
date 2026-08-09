@@ -169,7 +169,7 @@ fn foo(s: (felt252, felt252, felt252)) {
 }
 
 //! > expected_diagnostics
-error[E2103]: Mismatched types: pattern cannot match against type "(core::felt252, core::felt252, core::felt252)".
+error[E2103]: Mismatched types: pattern cannot match against type "(felt252, felt252, felt252)".
  --> lib.cairo:2:9
     let [_a, _b, _c] = s;
         ^^^^^^^^^^^^
@@ -187,7 +187,7 @@ fn foo(s: [felt252; 3]) {
 }
 
 //! > expected_diagnostics
-error[E2103]: Mismatched types: pattern cannot match against type "[core::felt252; 3]".
+error[E2103]: Mismatched types: pattern cannot match against type "[felt252; 3]".
  --> lib.cairo:2:9
     let (_a, _b, _c) = s;
         ^^^^^^^^^^^^
@@ -208,7 +208,7 @@ fn foo(s: [felt252; 3]) {
 }
 
 //! > expected_diagnostics
-error[E2056]: If blocks have incompatible types: "()" and "(core::array::Array::<({numeric}, {numeric}, {numeric})>,)"
+error[E2056]: If blocks have incompatible types: "()" and "(Array::<({numeric}, {numeric}, {numeric})>,)"
  --> lib.cairo:2:25-4:5
       let (unresolved,) = if true {} else {
  _________________________^
@@ -303,7 +303,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::array::ToSpanTrait::<core::array::Array::<core::integer::u8>, core::integer::u16>.
+error[E2311]: Trait has no implementation in context: ToSpanTrait::<Array::<u8>, u16>.
  --> lib.cairo:4:13
     match a.span() {
             ^^^^
@@ -324,7 +324,7 @@ fn foo(s: MyStruct<u8>) {
 }
 
 //! > expected_diagnostics
-error[E2103]: Mismatched types: pattern cannot match against type "test::MyStruct::<core::integer::u8>".
+error[E2103]: Mismatched types: pattern cannot match against type "MyStruct::<u8>".
  --> lib.cairo:5:9
     let [_x, _y] = s;
         ^^^^^^^^
@@ -346,7 +346,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2103]: Mismatched types: pattern cannot match against type "core::array::Array::<core::integer::u8>".
+error[E2103]: Mismatched types: pattern cannot match against type "Array::<u8>".
  --> lib.cairo:4:9
         [_x, _y, _z] => {},
         ^^^^^^^^^^^^
@@ -387,12 +387,12 @@ fn foo(s: Span<u32>) -> u32 {
 }
 
 //! > expected_diagnostics
-error[E2315]: Mismatched types. The type `core::array::Span::<core::integer::u32>` cannot be created from a numeric literal.
+error[E2315]: Mismatched types. The type `Span::<u32>` cannot be created from a numeric literal.
  --> lib.cairo:4:9
         5 => 0,
         ^
 
-error[E2103]: Mismatched types: pattern cannot match against type "core::array::Span::<core::integer::u32>".
+error[E2103]: Mismatched types: pattern cannot match against type "Span::<u32>".
  --> lib.cairo:5:9
         (a, b) => *a + *b,
         ^^^^^^
@@ -407,7 +407,7 @@ error[E2135]: Type `<missing>` cannot be dereferenced
         (a, b) => *a + *b,
                        ^
 
-error[E2103]: Mismatched types: pattern cannot match against type "core::array::Span::<core::integer::u32>".
+error[E2103]: Mismatched types: pattern cannot match against type "Span::<u32>".
  --> lib.cairo:6:9
         Some(a) => *a,
         ^^^^^^^

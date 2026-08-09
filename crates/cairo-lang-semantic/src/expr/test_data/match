@@ -21,7 +21,7 @@ fn foo(b: A) -> felt252 {
 }
 
 //! > expected_diagnostics
-error[E2315]: Mismatched types. The type `test::A` cannot be created from a numeric literal.
+error[E2315]: Mismatched types. The type `A` cannot be created from a numeric literal.
  --> lib.cairo:9:10
         (7, 1) => { x },
          ^
@@ -61,7 +61,7 @@ fn foo(a: bool) -> felt252 {
 }
 
 //! > expected_diagnostics
-error[E2315]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+error[E2315]: Mismatched types. The type `bool` cannot be created from a numeric literal.
  --> lib.cairo:6:15
     match a + 1 {
               ^
@@ -96,7 +96,7 @@ fn foo(a: felt252, b: bool) -> felt252 {
 }
 
 //! > expected_diagnostics
-error[E2056]: Match arms have incompatible types: "core::felt252" and "core::bool"
+error[E2056]: Match arms have incompatible types: "felt252" and "bool"
  --> lib.cairo:8:14
         _ => b,
              ^
@@ -147,12 +147,12 @@ fn foo(x: Option<()>) {
 }
 
 //! > expected_diagnostics
-error[E2056]: Match arms have incompatible types: "core::bool" and "{numeric}"
+error[E2056]: Match arms have incompatible types: "bool" and "{numeric}"
  --> lib.cairo:4:17
         None => 0,
                 ^
 
-error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
+error[E2042]: Unexpected return type. Expected: "()", found: "bool".
  --> lib.cairo:3:20
         Some(_) => true,
                    ^^^^
@@ -217,7 +217,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
+error[E2041]: Unexpected argument type. Expected: "MyEnum::<u32>", found: "MyEnum::<felt252>".
  --> lib.cairo:11:9
     bar(a);
         ^
@@ -402,7 +402,7 @@ fn foo() -> u32 {
 }
 
 //! > expected_diagnostics
-error[E2302]: Type mismatch: `core::option::Option::<core::integer::u32>` and `core::option::Option::<core::integer::u8>`.
+error[E2302]: Type mismatch: `Option::<u32>` and `Option::<u8>`.
  --> lib.cairo:5:9
         None::<u8> => 6,
         ^^^^^^^^^^
@@ -423,7 +423,7 @@ fn foo(x: Result<Option<u8>, felt252>) {
 }
 
 //! > expected_diagnostics
-error[E2039]: Expected type "core::integer::u8", found: "core::felt252".
+error[E2039]: Expected type "u8", found: "felt252".
  --> lib.cairo:3:27
         Ok(Some(x)) | Err(x) => x,
                           ^
@@ -473,7 +473,7 @@ fn bar(x: felt252) {
 }
 
 //! > expected_diagnostics
-error[E2039]: Expected type "T", found: "core::felt252".
+error[E2039]: Expected type "T", found: "felt252".
  --> lib.cairo:3:27
         Ok(Some(x)) | Err(x) => x,
                           ^

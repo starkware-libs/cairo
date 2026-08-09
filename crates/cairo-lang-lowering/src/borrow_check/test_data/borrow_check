@@ -101,7 +101,7 @@ note: variable was previously used here:
   --> lib.cairo:16:20
         use_a_drop(y);
                    ^
-note: Trait has no implementation in context: core::traits::Copy::<test::ADrop>.
+note: Trait has no implementation in context: Copy::<ADrop>.
 
 error[E3002]: Variable not dropped.
  --> lib.cairo:13:8
@@ -114,8 +114,8 @@ note: the variable needs to be dropped due to the divergence here:
 | ...
 |     } else {}
 |_____________^
-note: Trait has no implementation in context: core::traits::Drop::<test::ACopy>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
+note: Trait has no implementation in context: Drop::<ACopy>.
+note: Trait has no implementation in context: Destruct::<ACopy>.
 
 //! > lowering
 Parameters: v0: test::ACopy, v1: test::ADrop
@@ -277,9 +277,9 @@ note: the variable needs to be dropped due to the potential panic here:
   --> lib.cairo:4:5
     1 + 1;
     ^^^^^
-note: Trait has no implementation in context: core::traits::Drop::<test::A>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::A>.
-note: Trait has no implementation in context: core::traits::PanicDestruct::<test::A>.
+note: Trait has no implementation in context: Drop::<A>.
+note: Trait has no implementation in context: Destruct::<A>.
+note: Trait has no implementation in context: PanicDestruct::<A>.
 
 //! > lowering
 Parameters: v0: test::A
@@ -328,7 +328,7 @@ note: variable was previously used here:
   --> lib.cairo:10:20
         use_a_drop(y);
                    ^
-note: Trait has no implementation in context: core::traits::Copy::<test::ADrop>.
+note: Trait has no implementation in context: Copy::<ADrop>.
 
 //! > lowering
 Parameters: v0: test::ADrop, v1: test::ADrop
@@ -386,7 +386,7 @@ note: variable was previously used here:
   --> lib.cairo:4:17
     let mut b = arr;
                 ^^^
-note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
+note: Trait has no implementation in context: Copy::<Array::<felt252>>.
 
 //! > lowering
 Parameters:
@@ -435,7 +435,7 @@ note: variable was previously used here:
   --> lib.cairo:11:18
     use_non_copy(x);
                  ^
-note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
+note: Trait has no implementation in context: Copy::<NonCopy>.
 
 //! > lowering
 Parameters: v0: test::NonCopy
@@ -502,7 +502,7 @@ note: variable was previously used here:
   --> lib.cairo:14:18
     use_non_copy(x.b);
                  ^^^
-note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
+note: Trait has no implementation in context: Copy::<NonCopy>.
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -548,7 +548,7 @@ note: variable was previously used here:
   --> lib.cairo:11:16
     invalidate(s1.a);
                ^^^^
-note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
+note: Trait has no implementation in context: Copy::<Array::<felt252>>.
 
 error[E3001]: Variable was previously moved.
  --> lib.cairo:10:30
@@ -558,7 +558,7 @@ note: variable was previously used here:
   --> lib.cairo:12:16
     invalidate(s2.a);
                ^^^^
-note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
+note: Trait has no implementation in context: Copy::<Array::<felt252>>.
 
 //! > lowering
 Parameters: v0: test::MyStruct, v1: test::MyStruct
@@ -609,7 +609,7 @@ note: variable was previously used here:
   --> lib.cairo:13:20
         invalidate(self.a);
                    ^^^^^^
-note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
+note: Trait has no implementation in context: Copy::<Array::<felt252>>.
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -742,9 +742,9 @@ note: the variable needs to be dropped due to the potential panic here:
   --> lib.cairo:14:5
     x.a += 1;
     ^^^^^^^^
-note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>.
-note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>.
+note: Trait has no implementation in context: Drop::<NonCopy>.
+note: Trait has no implementation in context: Destruct::<NonCopy>.
+note: Trait has no implementation in context: PanicDestruct::<NonCopy>.
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -852,9 +852,9 @@ note: the variable needs to be dropped due to the potential panic here:
   --> lib.cairo:12:9
         x.a += 1;
         ^^^^^^^^
-note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>.
-note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>.
+note: Trait has no implementation in context: Drop::<NonCopy>.
+note: Trait has no implementation in context: Destruct::<NonCopy>.
+note: Trait has no implementation in context: PanicDestruct::<NonCopy>.
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -906,7 +906,7 @@ note: variable was previously used here:
   --> lib.cairo:13:13
     consume(x.b);
             ^^^
-note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
+note: Trait has no implementation in context: Copy::<NonCopy>.
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -981,9 +981,9 @@ note: the variable needs to be dropped due to the potential panic here:
 | }
 |_^
 note: this error originates in auto-generated withdraw_gas logic.
-note: Trait has no implementation in context: core::traits::Drop::<test::NonDrop>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::NonDrop>.
-note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonDrop>.
+note: Trait has no implementation in context: Drop::<NonDrop>.
+note: Trait has no implementation in context: Destruct::<NonDrop>.
+note: Trait has no implementation in context: PanicDestruct::<NonDrop>.
 
 //! > ==========================================================================
 
@@ -1076,7 +1076,7 @@ note: variable was previously used here:
   --> lib.cairo:11:15
         use_x(x); // First use.
               ^
-note: Trait has no implementation in context: core::traits::Copy::<test::Wrapper>.
+note: Trait has no implementation in context: Copy::<Wrapper>.
 
 error[E3002]: Variable not dropped.
  --> lib.cairo:9:8
@@ -1089,8 +1089,8 @@ note: the variable needs to be dropped due to the divergence here:
 |         use_x(x); // First use.
 |     }
 |_____^
-note: Trait has no implementation in context: core::traits::Drop::<test::Wrapper>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::Wrapper>.
+note: Trait has no implementation in context: Drop::<Wrapper>.
+note: Trait has no implementation in context: Destruct::<Wrapper>.
 
 //! > lowering
 Parameters: v0: test::Wrapper
@@ -1156,8 +1156,8 @@ error[E3002]: Variable not dropped.
  --> lib.cairo:11:9
     let x = Wrapper { inner: 5 };
         ^
-note: Trait has no implementation in context: core::traits::Drop::<test::Wrapper>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::Wrapper>.
+note: Trait has no implementation in context: Drop::<Wrapper>.
+note: Trait has no implementation in context: Destruct::<Wrapper>.
 
 //! > lowering
 Parameters:
@@ -1230,8 +1230,8 @@ error[E3002]: Variable not dropped.
  --> lib.cairo:14:8
 fn foo(o: Outer) {
        ^
-note: Trait has no implementation in context: core::traits::Drop::<test::Outer>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::Outer>.
+note: Trait has no implementation in context: Drop::<Outer>.
+note: Trait has no implementation in context: Destruct::<Outer>.
 
 //! > lowering
 Parameters: v0: test::Outer
@@ -1404,7 +1404,7 @@ note: variable was previously used here:
   --> lib.cairo:22:13
     consume(outer.b);
             ^^^^^^^
-note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
+note: Trait has no implementation in context: Copy::<NonCopy>.
 
 //! > lowering
 Parameters: v0: test::Outer
@@ -1463,8 +1463,8 @@ error[E3002]: Variable not dropped.
  --> lib.cairo:16:12
 fn foo(mut o: Outer) {
            ^
-note: Trait has no implementation in context: core::traits::Drop::<test::Outer>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::Outer>.
+note: Trait has no implementation in context: Drop::<Outer>.
+note: Trait has no implementation in context: Destruct::<Outer>.
 
 //! > lowering
 Parameters: v0: test::Outer

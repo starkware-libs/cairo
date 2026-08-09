@@ -58,7 +58,7 @@ fn __executable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt25
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::serde::Serde::<test::NoSerde>.
+error[E2311]: Trait has no implementation in context: Serde::<NoSerde>.
  --> lib.cairo:2:9
 fn main(a: NoSerde, b: felt252) -> felt252 {
         ^^^^^^^^^^
@@ -104,7 +104,7 @@ fn __executable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt25
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::serde::Serde::<test::NoSerde>.
+error[E2311]: Trait has no implementation in context: Serde::<NoSerde>.
  --> lib.cairo:2:33
 fn main(a: felt252, b: felt252) -> NoSerde {
                                 ^^^^^^^^^^
