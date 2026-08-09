@@ -412,7 +412,7 @@ fn foo() {
 }
 
 //! > semantic_diagnostics
-error[E2302]: Type mismatch: `core::felt252` and `core::integer::u8`.
+error[E2302]: Type mismatch: `felt252` and `u8`.
  --> lib.cairo:5:9
         1_felt252 | 2_u8 => 8,
         ^^^^^^^^^

@@ -112,7 +112,7 @@ note: variable was previously used here:
   --> lib.cairo:4:21
     bar(__coupon__: x);
                     ^
-note: Trait has no implementation in context: core::traits::Copy::<test::bar::Coupon>.
+note: Trait has no implementation in context: Copy::<bar::Coupon>.
 
 //! > lowering_flat
 <Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>

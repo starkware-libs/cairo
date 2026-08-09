@@ -494,7 +494,7 @@ FunctionCall(
 )
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::traits::BitAnd::<core::box::Box::<@core::integer::u32>>.
+error[E2311]: Trait has no implementation in context: BitAnd::<Box::<@u32>>.
  --> lib.cairo:3:1
 a & &b
 ^^^^^^

@@ -105,7 +105,7 @@ mod module {
 //! > function_body
 
 //! > expected_diagnostics
-error[E0002]: Method `foo` not found on type `test::A`. Consider importing one of the following traits: `module::Trt1`.
+error[E0002]: Method `foo` not found on type `A`. Consider importing one of the following traits: `module::Trt1`.
  --> lib.cairo:18:14
     struct_a.foo()
              ^^^
@@ -140,7 +140,7 @@ mod b {
 let a = A {a: 0};
 
 //! > expected_diagnostics
-error[E0002]: Method `foo` not found on type `test::A`. Consider importing one of the following traits: `b::Trt1`, `b::Trt2`.
+error[E0002]: Method `foo` not found on type `A`. Consider importing one of the following traits: `b::Trt1`, `b::Trt2`.
  --> lib.cairo:16:3
 a.foo()
   ^^^
@@ -158,7 +158,7 @@ test_expr_diagnostics(expect_diagnostics: true)
 //! > function_body
 
 //! > expected_diagnostics
-error[E0002]: Method `sqrt` not found on type `core::integer::u32`. Consider importing one of the following traits: `core::num::traits::Sqrt`.
+error[E0002]: Method `sqrt` not found on type `u32`. Consider importing one of the following traits: `core::num::traits::Sqrt`.
  --> lib.cairo:2:7
 9_u32.sqrt()
       ^^^^
@@ -205,22 +205,22 @@ pub mod a {
 //! > function_body
 
 //! > expected_diagnostics
-error[E0002]: Method `foo` not found on type `core::integer::u32`. Consider importing one of the following traits: `a::b::Trt`.
+error[E0002]: Method `foo` not found on type `u32`. Consider importing one of the following traits: `a::b::Trt`.
  --> lib.cairo:29:7
 1_u32.foo()
       ^^^
 
-error[E0002]: Method `foo` not found on type `core::integer::u32`. Consider importing one of the following traits: `super::b::Trt`.
+error[E0002]: Method `foo` not found on type `u32`. Consider importing one of the following traits: `super::b::Trt`.
  --> lib.cairo:14:19
             2_u32.foo();
                   ^^^
 
-error[E0002]: Method `foo` not found on type `core::integer::u32`. Consider importing one of the following traits: `crate::a::b::Trt`.
+error[E0002]: Method `foo` not found on type `u32`. Consider importing one of the following traits: `crate::a::b::Trt`.
  --> lib.cairo:18:23
                 3_u32.foo();
                       ^^^
 
-error[E0002]: Method `foo` not found on type `core::integer::u32`. Consider importing one of the following traits: `crate::a::b::Trt`.
+error[E0002]: Method `foo` not found on type `u32`. Consider importing one of the following traits: `crate::a::b::Trt`.
  --> lib.cairo:22:27
                     4_u32.foo();
                           ^^^

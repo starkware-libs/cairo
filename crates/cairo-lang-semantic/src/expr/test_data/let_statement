@@ -107,7 +107,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "()", found: "core::felt252".
+error[E2041]: Unexpected argument type. Expected: "()", found: "felt252".
  --> lib.cairo:2:18
     let _a: () = 3_felt252;
                  ^^^^^^^^^

@@ -4086,7 +4086,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-warning[E2200]: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<T>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
+warning[E2200]: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: starknet::storage::ValidStorageTypeTrait::<T>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
  --> lib.cairo:61:12
     value: T,
            ^
