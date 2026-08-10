@@ -198,7 +198,7 @@ fn handle_block<'db>(
     Ok(ctx)
 }
 
-pub struct PanicSignatureInfo<'db> {
+struct PanicSignatureInfo<'db> {
     /// The types of all the variables returned on OK: Reference variables and the original result.
     ok_ret_tys: Vec<TypeId<'db>>,
     /// The type of the Ok() variant.
@@ -206,12 +206,12 @@ pub struct PanicSignatureInfo<'db> {
     /// The Ok() variant.
     ok_variant: ConcreteVariant<'db>,
     /// The Err() variant.
-    pub err_variant: ConcreteVariant<'db>,
+    err_variant: ConcreteVariant<'db>,
     /// The PanicResult concrete type - the new return type of the function.
-    pub actual_return_ty: TypeId<'db>,
+    actual_return_ty: TypeId<'db>,
     /// Does the function always panic.
     /// Note that if it does - the function returned type is always `(Panic, Array<felt252>)`.
-    pub always_panic: bool,
+    always_panic: bool,
 }
 impl<'db> PanicSignatureInfo<'db> {
     pub fn new(db: &'db dyn Database, signature: &Signature<'db>) -> Self {
