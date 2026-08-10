@@ -1100,7 +1100,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     } else {
                         ty_info.dec?
                     };
-                    let enum_ty = function.signature(db).ok()?.return_type;
+                    let enum_ty =
+                        function.signature(db, LoweringStage::Monomorphized).ok()?.return_type;
                     let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
                         enum_ty.long(db)
                     else {
@@ -1108,7 +1109,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     };
                     let result = self.variables.alloc(Variable::with_default_context(
                         db,
-                        function.signature(db).unwrap().return_type,
+                        enum_ty,
                         info.location,
                     ));
                     statements.push(Statement::Call(StatementCall {

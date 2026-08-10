@@ -14,8 +14,8 @@ use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::implicits::FunctionImplicitsTrait;
 use crate::panic::PanicSignatureInfo;
 use crate::{
-    BlockEnd, BlockId, Lowered, Statement, StatementCall, StatementEnumConstruct, VarUsage,
-    VariableId,
+    BlockEnd, BlockId, Lowered, LoweringStage, Statement, StatementCall, StatementEnumConstruct,
+    VarUsage, VariableId,
 };
 
 /// Adds redeposit gas actions.
@@ -52,7 +52,10 @@ pub fn gas_redeposit<'db>(
         "`GasRedeposit` stage must be called before `LowerImplicits` stage"
     );
 
-    let panic_sig = PanicSignatureInfo::new(db, &function_id.signature(db).unwrap());
+    let panic_sig = PanicSignatureInfo::new(
+        db,
+        &function_id.signature(db, LoweringStage::Monomorphized).unwrap(),
+    );
     if panic_sig.always_panic {
         return;
     }
