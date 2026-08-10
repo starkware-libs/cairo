@@ -84,7 +84,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "Array::<felt252>".
  --> lib.cairo:2:29
     let mut _arr: felt252 = array::array_new::<felt252>();
                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -116,7 +116,7 @@ fn foo() -> never {
 }
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::never", found: "core::felt252".
+error[E2042]: Unexpected return type. Expected: "never", found: "felt252".
  --> lib.cairo:2:5
     5_felt252
     ^^^^^^^^^
@@ -177,7 +177,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::MyTrait::<core::bool>.
+error[E2311]: Trait has no implementation in context: MyTrait::<bool>.
  --> lib.cairo:17:14
     MyTrait::foo(true);
              ^^^
@@ -211,7 +211,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2313]: Trait `test::MyTrait::<core::felt252>` has multiple implementations, in: `test::MyImpl1`, `test::MyImpl2`
+error[E2313]: Trait `MyTrait::<felt252>` has multiple implementations, in: `MyImpl1`, `MyImpl2`
  --> lib.cairo:17:14
     MyTrait::foo(5);
              ^^^
@@ -273,7 +273,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2313]: Trait `test::MyTrait::<core::option::Option::<?0>>` has multiple implementations, in: `test::MyImpl3`, `test::MyImpl4`
+error[E2313]: Trait `MyTrait::<Option::<?0>>` has multiple implementations, in: `MyImpl3`, `MyImpl4`
  --> lib.cairo:17:14
     MyTrait::foo(None);
              ^^^
@@ -378,7 +378,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::MyTrait::<core::bool>.
+error[E2311]: Trait has no implementation in context: MyTrait::<bool>.
  --> lib.cairo:19:5
     bar(true);
     ^^^
@@ -597,7 +597,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2313]: Trait `test::MyTrait::<T>` has multiple implementations, in: `+MyTrait<T>`, `test::MyIpls::<T, +Drop<T>>`
+error[E2313]: Trait `MyTrait::<T>` has multiple implementations, in: `+MyTrait<T>`, `MyIpls::<T, +Drop<T>>`
  --> lib.cairo:12:5
     baz(a)
     ^^^
@@ -618,7 +618,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "@?2", found: "core::integer::u32".
+error[E2041]: Unexpected argument type. Expected: "@?2", found: "u32".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:5:24

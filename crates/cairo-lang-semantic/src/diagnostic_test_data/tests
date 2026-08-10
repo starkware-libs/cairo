@@ -328,7 +328,7 @@ test_expr_diagnostics(expect_diagnostics: warnings_only)
 //! > function_body
 
 //! > expected_diagnostics
-warning[E2064]: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
+warning[E2064]: Unhandled `#[must_use]` type `Option::<felt252>`
  --> lib.cairo:3:3
   Option::<felt252>::None;
   ^^^^^^^^^^^^^^^^^^^^^^^
@@ -348,7 +348,7 @@ test_expr_diagnostics(expect_diagnostics: warnings_only)
 //! > function_body
 
 //! > expected_diagnostics
-warning[E2064]: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, core::felt252>`
+warning[E2064]: Unhandled `#[must_use]` type `Result::<felt252, felt252>`
  --> lib.cairo:3:3
   Result::<felt252, felt252>::Err(4);
   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1087,10 +1087,36 @@ INACCESSIBLE
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::INACCESSIBLE` is not visible in this context through module `test::a`.
+error[E2099]: Item `a::INACCESSIBLE` is not visible in this context through module `a`.
  --> lib.cairo:6:1
 INACCESSIBLE
 ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Testing use star inaccessible item through a crate root
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+use core::*;
+
+//! > function_body
+
+//! > expr_code
+felt_252::Felt252One
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error[E2099]: Item `core::felt_252` is not visible in this context through module `core`.
+ --> lib.cairo:3:1
+felt_252::Felt252One
+^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1118,7 +1144,7 @@ inaccessible::C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::inaccessible` is not visible in this context through module `test::a`.
+error[E2099]: Item `a::inaccessible` is not visible in this context through module `a`.
  --> lib.cairo:8:1
 inaccessible::C
 ^^^^^^^^^^^^
@@ -1155,12 +1181,12 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+error[E2099]: Item `a::b::C` is not visible in this context through module `a::b`.
  --> lib.cairo:14:1
 C
 ^
 
-error[E2099]: Item `test::a::b` is not visible in this context.
+error[E2099]: Item `crate::a::b` is not visible in this context.
  --> lib.cairo:9:30
         use super::super::a::b::*;
                              ^
@@ -1197,7 +1223,7 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+error[E2099]: Item `a::b::C` is not visible in this context through module `a::b`.
  --> lib.cairo:14:1
 C
 ^
@@ -1240,7 +1266,7 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+error[E2099]: Item `a::b::C` is not visible in this context through module `a::b`.
  --> lib.cairo:20:1
 C
 ^
@@ -1283,7 +1309,7 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::b` is not visible in this context.
+error[E2099]: Item `crate::a::b` is not visible in this context.
  --> lib.cairo:9:34
         pub use super::super::a::b::*;
                                  ^
@@ -1470,7 +1496,7 @@ impl SDictValue of Felt252DictValue<S> {
 //! > function_body
 
 //! > expected_diagnostics
-error[E2181]: Trait `core::traits::Felt252DictValue` should not be implemented outside of the corelib.
+error[E2181]: Trait `Felt252DictValue` should not be implemented outside of the corelib.
  --> lib.cairo:3:20
 impl SDictValue of Felt252DictValue<S> {
                    ^^^^^^^^^^^^^^^^^^^
@@ -1496,12 +1522,12 @@ impl SStringLiteral of StringLiteral<S> {}
 //! > function_body
 
 //! > expected_diagnostics
-error[E2181]: Trait `core::integer::NumericLiteral` should not be implemented outside of the corelib.
+error[E2181]: Trait `NumericLiteral` should not be implemented outside of the corelib.
  --> lib.cairo:3:25
 impl SNumericLiteral of NumericLiteral<S> {}
                         ^^^^^^^^^^^^^^^^^
 
-error[E2181]: Trait `core::string::StringLiteral` should not be implemented outside of the corelib.
+error[E2181]: Trait `StringLiteral` should not be implemented outside of the corelib.
  --> lib.cairo:5:24
 impl SStringLiteral of StringLiteral<S> {}
                        ^^^^^^^^^^^^^^^^
@@ -1526,7 +1552,7 @@ struct S {
 //! > function_body
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::integer::u8", found: "@{numeric}".
+error[E2041]: Unexpected argument type. Expected: "u8", found: "@{numeric}".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:6:12
@@ -1663,7 +1689,7 @@ AMBIGUOUS
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item is not visible in this context through any of the modules: `test::a`, `test::b`.
+error[E2099]: Item is not visible in this context through any of the modules: `a`, `b`.
  --> lib.cairo:11:1
 AMBIGUOUS
 ^^^^^^^^^

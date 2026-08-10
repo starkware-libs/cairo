@@ -21,7 +21,7 @@ fn foo(a: A) -> A {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "()", found: "core::felt252".
+error[E2041]: Unexpected argument type. Expected: "()", found: "felt252".
  --> lib.cairo:8:12
         b: 1_felt252,
            ^^^^^^^^^
@@ -67,7 +67,7 @@ fn foo(a: A) {
 }
 
 //! > expected_diagnostics
-error[E0007]: Type "test::A" has no member "f"
+error[E0007]: Type "A" has no member "f"
  --> lib.cairo:7:7
     a.f;
       ^
@@ -77,12 +77,12 @@ error[E2085]: Invalid member expression.
     a.a::b;
       ^^^^
 
-error[E0007]: Type "test::A" has no member "4"
+error[E0007]: Type "A" has no member "4"
  --> lib.cairo:9:7
     a.4.4;
       ^
 
-error[E0007]: Type "core::felt252" has no member "a"
+error[E0007]: Type "felt252" has no member "a"
  --> lib.cairo:10:15
     5_felt252.a;
               ^

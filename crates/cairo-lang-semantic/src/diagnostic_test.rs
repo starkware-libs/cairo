@@ -167,12 +167,12 @@ fn test_inline_module_diagnostics() {
     assert_eq!(
         get_crate_semantic_diagnostics(db, crate_id).format(db),
         indoc! {r#"
-            error[E2042]: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
+            error[E2042]: Unexpected return type. Expected: "u128", found: "felt252".
              --> lib.cairo:4:16
                     return 5_felt252;
                            ^^^^^^^^^
 
-            error[E2042]: Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
+            error[E2042]: Unexpected return type. Expected: "NewType", found: "felt252".
              --> lib.cairo:4:16
                     return 5_felt252;
                            ^^^^^^^^^
@@ -212,12 +212,12 @@ fn test_inline_inline_module_diagnostics() {
 
     assert_eq!(
         get_crate_semantic_diagnostics(db, crate_id).format(db),
-        indoc! {r#"error[E2042]: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
+        indoc! {r#"error[E2042]: Unexpected return type. Expected: "u128", found: "felt252".
              --> lib.cairo:3:16
                     return 1_felt252;
                            ^^^^^^^^^
 
-            error[E2042]: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
+            error[E2042]: Unexpected return type. Expected: "u128", found: "felt252".
              --> lib.cairo:9:20
                         return 2_felt252;
                                ^^^^^^^^^
