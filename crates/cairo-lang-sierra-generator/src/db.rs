@@ -432,12 +432,12 @@ fn get_function_signature(
     // TODO(spapini): Handle ret_types in lowering.
     let mut all_params = implicits.clone();
     let mut extra_rets = vec![];
-    for param in &signature.params {
-        let concrete_type_id = db.get_concrete_type_id(param.ty)?;
+    for ty in &signature.params {
+        let concrete_type_id = db.get_concrete_type_id(*ty)?;
         all_params.push(concrete_type_id.clone());
     }
-    for var in &signature.extra_rets {
-        let concrete_type_id = db.get_concrete_type_id(var.ty())?;
+    for ty in &signature.extra_rets {
+        let concrete_type_id = db.get_concrete_type_id(*ty)?;
         extra_rets.push(concrete_type_id.clone());
     }
 
