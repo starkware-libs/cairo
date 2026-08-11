@@ -370,7 +370,7 @@ pub trait DefsGroup: Database {
     /// Specifically if this is a macro call, it returns the module that the macro call was called
     /// from, including recursive calls.
     fn module_perceived_module<'db>(&'db self, module_id: ModuleId<'db>) -> ModuleId<'db> {
-        module_perceived_module_helper(self.as_dyn_database(), (), module_id)
+        module_perceived_module_helper(self.as_dyn_database(), module_id)
     }
 }
 
@@ -1936,10 +1936,8 @@ fn module_ancestors_helper<'db>(
     }
 }
 
-#[salsa::tracked(returns(copy))]
 fn module_perceived_module_helper<'db>(
     db: &'db dyn Database,
-    _tracked: Tracked,
     mut module_id: ModuleId<'db>,
 ) -> ModuleId<'db> {
     while let ModuleId::MacroCall { id, .. } = module_id {
