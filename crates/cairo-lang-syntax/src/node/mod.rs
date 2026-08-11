@@ -5,6 +5,7 @@ use cairo_lang_filesystem::ids::{FileId, SmolStrId};
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize};
 use cairo_lang_utils::require;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use salsa::Database;
 use salsa::plumbing::AsId;
 
@@ -89,6 +90,15 @@ fn absolute_offset<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> Tex
             .add_width(data.offset_in_parent(db) - TextOffset::START),
         None => data.offset_in_parent(db),
     }
+}
+
+/// The eagerly-materialized children of all non-terminal nodes of one syntax tree, stored flat:
+/// one contiguous nodes vector plus per-node (start, len) ranges, avoiding a heap allocation per
+/// node.
+#[derive(Debug, Default, PartialEq, Eq, salsa::SalsaValue)]
+struct RedTree<'db> {
+    nodes: Vec<SyntaxNode<'db>>,
+    ranges: UnorderedHashMap<SyntaxNodeData<'db>, (u32, u32)>,
 }
 
 impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
@@ -348,12 +358,37 @@ impl<'a> SyntaxNode<'a> {
 
     /// Gets the children syntax nodes of the current node.
     pub fn get_children(&self, db: &'a dyn Database) -> &'a [SyntaxNode<'a>] {
-        /// Keyed on the tracked [`SyntaxNodeData`] struct rather than the full [`SyntaxNode`]
-        /// wrapper, so the memo is attached to the tracked struct instead of interning a key
-        /// tuple per call. The wrapper's other fields are caches derived from `data`, so they
-        /// are reconstructed here.
+        /// The children of every non-terminal node in the tree rooted at `root`, materialized
+        /// eagerly in one query. A single memo per tree replaces a full salsa query (key lookup,
+        /// sync-table claim, memo insert, dependency edge) per node, which dominated compilation
+        /// profiles. Terminal subtrees (token + trivia, ~4/5 of all nodes) are rarely visited, so
+        /// they stay lazy - served by the per-node [`node_children`] fallback.
         #[salsa::tracked(returns(ref))]
-        fn query<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> Vec<SyntaxNode<'db>> {
+        fn red_tree<'db>(db: &'db dyn Database, root: SyntaxNodeData<'db>) -> RedTree<'db> {
+            let kind = root.green(db).long(db).kind;
+            let root_node = SyntaxNode { data: root, parent: None, kind, parent_kind: None };
+            let mut res = RedTree::default();
+            let mut stack = vec![root_node];
+            while let Some(node) = stack.pop() {
+                if node.kind.is_terminal() {
+                    continue;
+                }
+                let children = node.get_children_impl(db);
+                let start = res.nodes.len();
+                res.nodes.extend_from_slice(&children);
+                res.ranges.insert(node.data, (start as u32, children.len() as u32));
+                stack.extend(children);
+            }
+            res
+        }
+        /// Lazy per-node fallback for nodes the arena does not cover (terminals and their
+        /// descendants). Keyed on the tracked [`SyntaxNodeData`] struct, so the memo is attached
+        /// to it; the wrapper's other fields are caches derived from `data`.
+        #[salsa::tracked(returns(ref))]
+        fn node_children<'db>(
+            db: &'db dyn Database,
+            data: SyntaxNodeData<'db>,
+        ) -> Vec<SyntaxNode<'db>> {
             let (parent, parent_kind) = match data.id(db) {
                 SyntaxNodeId::Child { parent, .. } => (Some(parent.data), Some(parent.kind)),
                 SyntaxNodeId::Root(_) => (None, None),
@@ -361,7 +396,18 @@ impl<'a> SyntaxNode<'a> {
             let kind = data.green(db).long(db).kind;
             SyntaxNode { data, parent, kind, parent_kind }.get_children_impl(db)
         }
-        query(db, self.data)
+        // Find the tree root by walking the parent chain: O(depth) cheap field reads, avoiding
+        // both a per-node root cache (which would grow every stored SyntaxNode) and a per-node
+        // salsa query.
+        let mut root = self.data;
+        while let SyntaxNodeId::Child { parent, .. } = root.id(db) {
+            root = parent.data;
+        }
+        let tree = red_tree(db, root);
+        match tree.ranges.get(&self.data) {
+            Some(&(start, len)) => &tree.nodes[start as usize..(start + len) as usize],
+            None => node_children(db, self.data).as_slice(),
+        }
     }
 
     /// Implementation of [SyntaxNode::get_children].
