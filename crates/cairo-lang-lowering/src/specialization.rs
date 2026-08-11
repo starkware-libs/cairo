@@ -7,7 +7,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{TypeSizeInformation, TypesSemantic};
 use cairo_lang_semantic::{ConcreteTypeId, ConcreteVariant, GenericArgumentId, TypeId, TypeLongId};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{Intern, extract_matches};
 use itertools::{Itertools, chain, zip_eq};
 use salsa::Database;
 
@@ -102,9 +102,9 @@ enum SpecializationArgBuildingState<'db, 'a> {
 /// Returns the lowering of a specialized function.
 pub fn specialized_function_lowered<'db>(
     db: &'db dyn Database,
-    specialized: SpecializedFunctionId<'db>,
+    specialized_id: SpecializedFunctionId<'db>,
 ) -> Maybe<Lowered<'db>> {
-    let specialized = specialized.long(db);
+    let specialized = specialized_id.long(db);
     let base = db.lowered_body(specialized.base, LoweringStage::Monomorphized)?;
     let base_semantic = specialized.base.base_semantic_function(db);
 
@@ -308,8 +308,9 @@ pub fn specialized_function_lowered<'db>(
         is_specialization_base_call: true,
     }));
     block_builder.alloc(Block { statements, end: BlockEnd::Return(ret_usage, location) });
+    let concrete_id = ids::ConcreteFunctionWithBodyLongId::Specialized(specialized_id).intern(db);
     Ok(Lowered {
-        signature: specialized.signature(db)?,
+        signature: concrete_id.signature(db, LoweringStage::Monomorphized)?.clone(),
         variables: variables.variables,
         blocks: block_builder.build().unwrap(),
         parameters,

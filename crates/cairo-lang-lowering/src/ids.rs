@@ -1,16 +1,18 @@
+use std::iter::repeat;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::{
     NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
 };
-use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe, MaybeAsRef};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::functions::{FunctionsSemantic, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::items::structure::StructSemantic;
-use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
+use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
@@ -70,8 +72,8 @@ impl<'db> FunctionWithBodyId<'db> {
     /// [`LoweringStage`] deliberately does not apply here: the staged lowerings all run on
     /// concrete (monomorphized) functions, so the only lowering this id has is
     /// `function_with_body_lowering`.
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        Ok(db.function_with_body_lowering(*self)?.signature.clone())
+    pub fn signature(&self, db: &'db dyn Database) -> Maybe<&'db Signature<'db>> {
+        Ok(&db.function_with_body_lowering(*self)?.signature)
     }
     pub fn to_concrete(&self, db: &'db dyn Database) -> Maybe<ConcreteFunctionWithBodyId<'db>> {
         Ok(self.long(db).to_concrete(db)?.intern(db))
@@ -208,17 +210,22 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
         self.long(db).full_path(db)
     }
     /// Returns the signature of the function as it is at the given [`LoweringStage`].
-    pub fn signature(&self, db: &'db dyn Database, stage: LoweringStage) -> Maybe<Signature<'db>> {
+    pub fn signature(
+        &self,
+        db: &'db dyn Database,
+        stage: LoweringStage,
+    ) -> Maybe<&'db Signature<'db>> {
         if stage != LoweringStage::Monomorphized {
-            return Ok(db.lowered_body(*self, stage)?.signature.clone());
+            return Ok(&db.lowered_body(*self, stage)?.signature);
         }
         // The `Monomorphized` signature is derived from the semantic one, to prevent cycles.
+        monomorphized_signature(db, *self).maybe_as_ref()
+    }
+    /// Returns the generic function if `self` is not a specialized function.
+    pub fn generic(&self, db: &'db dyn Database) -> Option<FunctionWithBodyId<'db>> {
         match self.generic_or_specialized(db) {
-            GenericOrSpecialized::Generic(id) => {
-                let generic_signature = id.signature(db)?;
-                self.substitution(db)?.substitute(db, generic_signature)
-            }
-            GenericOrSpecialized::Specialized(specialized) => specialized.long(db).signature(db),
+            GenericOrSpecialized::Generic(id) => Some(id),
+            GenericOrSpecialized::Specialized(_) => None,
         }
     }
     pub fn from_no_generics_free(
@@ -246,6 +253,69 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
                 specialized_function.long(db).base.stable_location(db)?
             }
         })
+    }
+}
+
+/// The `Monomorphized` signature of a concrete function: for a generic function, the generic
+/// signature with the function's substitution applied; for a specialized function, computed from
+/// its base signature and specialization args.
+#[salsa::tracked(returns(ref))]
+fn monomorphized_signature<'db>(
+    db: &'db dyn Database,
+    function: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<Signature<'db>> {
+    match function.generic_or_specialized(db) {
+        GenericOrSpecialized::Generic(id) => {
+            let generic_signature = id.signature(db)?.clone();
+            function.substitution(db)?.substitute(db, generic_signature)
+        }
+        GenericOrSpecialized::Specialized(specialized) => {
+            let function = specialized.long(db);
+            let mut base_sign = function.base.signature(db, LoweringStage::Monomorphized)?.clone();
+
+            let mut params = vec![];
+            let mut stack: Vec<_> =
+                zip_eq(base_sign.params.into_iter().rev(), function.args.iter().rev()).collect();
+
+            while let Some((param_ty, arg)) = stack.pop() {
+                match arg {
+                    SpecializationArg::Const { .. } => {}
+                    SpecializationArg::Snapshot(inner) => {
+                        let desnap_ty = *extract_matches!(param_ty.long(db), TypeLongId::Snapshot);
+                        stack.push((desnap_ty, inner.as_ref()));
+                    }
+                    SpecializationArg::Enum { variant, payload } => {
+                        stack.push((variant.ty, payload.as_ref()));
+                    }
+                    SpecializationArg::Array(ty, values) => {
+                        stack.extend(repeat(*ty).zip(values.iter().rev()));
+                    }
+                    SpecializationArg::Struct(args) => match param_ty.long(db) {
+                        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
+                            let Ok(members) = db.concrete_struct_members(*concrete_struct) else {
+                                continue;
+                            };
+                            let tys = members.values().map(|m| m.ty);
+                            stack.extend(zip_eq(tys.rev(), args.iter().rev()));
+                        }
+                        TypeLongId::Tuple(tys) => {
+                            stack.extend(zip_eq(tys.iter().rev().copied(), args.iter().rev()));
+                        }
+                        TypeLongId::FixedSizeArray { type_id, .. } => {
+                            stack.extend(repeat(*type_id).zip(args.iter().rev()));
+                        }
+                        _ => unreachable!("Expected a struct, tuple, or fixed-size array type"),
+                    },
+                    SpecializationArg::NotSpecialized => {
+                        params.push(param_ty);
+                    }
+                }
+            }
+
+            base_sign.params = params;
+
+            Ok(base_sign)
+        }
     }
 }
 
@@ -308,15 +378,15 @@ impl<'db> FunctionLongId<'db> {
         }))
     }
     /// Returns the signature of the function as it is at the given [`LoweringStage`].
-    pub fn signature(&self, db: &'db dyn Database, stage: LoweringStage) -> Maybe<Signature<'db>> {
+    pub fn signature(
+        &self,
+        db: &'db dyn Database,
+        stage: LoweringStage,
+    ) -> Maybe<&'db Signature<'db>> {
         if let Some(body) = self.body(db)? {
             body.signature(db, stage)
         } else if let FunctionLongId::Semantic(semantic) = self {
-            Ok(EnrichedSemanticSignature::from_semantic(
-                db,
-                db.concrete_function_signature(*semantic)?,
-            )
-            .into())
+            semantic_function_signature(db, *semantic).maybe_as_ref()
         } else {
             unreachable!(
                 "Generated and specialized functions always have a body: {}",
@@ -338,11 +408,26 @@ impl<'db> FunctionLongId<'db> {
         }
     }
 }
+
+/// The stage-invariant signature of a bodyless (e.g. `extern`) semantic function, converted to
+/// the lowered [`Signature`] representation.
+#[salsa::tracked(returns(ref))]
+fn semantic_function_signature<'db>(
+    db: &'db dyn Database,
+    function: semantic::FunctionId<'db>,
+) -> Maybe<Signature<'db>> {
+    Ok(EnrichedSemanticSignature::from_semantic(db, db.concrete_function_signature(function)?)
+        .into())
+}
 impl<'db> FunctionId<'db> {
     pub fn body(&self, db: &'db dyn Database) -> Maybe<Option<ConcreteFunctionWithBodyId<'db>>> {
         self.long(db).body(db)
     }
-    pub fn signature(&self, db: &'db dyn Database, stage: LoweringStage) -> Maybe<Signature<'db>> {
+    pub fn signature(
+        &self,
+        db: &'db dyn Database,
+        stage: LoweringStage,
+    ) -> Maybe<&'db Signature<'db>> {
         self.long(db).signature(db, stage)
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
@@ -473,64 +558,8 @@ impl<'db> SpecializedFunction<'db> {
     pub fn full_path(&self, db: &dyn Database) -> String {
         format!("{:?}", self.debug(db))
     }
-
-    /// Returns the `Monomorphized` signature of the specialized function.
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        let mut base_sign = self.base.signature(db, LoweringStage::Monomorphized)?;
-
-        let mut params = vec![];
-        let mut stack = vec![];
-        for (param_ty, arg) in zip_eq(base_sign.params.iter().rev(), self.args.iter().rev()) {
-            stack.push((*param_ty, arg));
-        }
-
-        while let Some((param_ty, arg)) = stack.pop() {
-            match arg {
-                SpecializationArg::Const { .. } => {}
-                SpecializationArg::Snapshot(inner) => {
-                    let desnap_ty = *extract_matches!(param_ty.long(db), TypeLongId::Snapshot);
-                    stack.push((desnap_ty, inner.as_ref()));
-                }
-                SpecializationArg::Enum { variant, payload } => {
-                    stack.push((variant.ty, payload.as_ref()));
-                }
-                SpecializationArg::Array(ty, values) => {
-                    for arg in values.iter().rev() {
-                        stack.push((*ty, arg));
-                    }
-                }
-                SpecializationArg::Struct(specialization_args) => {
-                    // Get element types based on the actual type.
-                    let element_types: Vec<TypeId<'db>> = match param_ty.long(db) {
-                        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
-                            let Ok(members) = db.concrete_struct_members(*concrete_struct) else {
-                                continue;
-                            };
-                            members.values().map(|member| member.ty).collect()
-                        }
-                        TypeLongId::Tuple(element_types) => element_types.clone(),
-                        TypeLongId::FixedSizeArray { type_id, .. } => {
-                            vec![*type_id; specialization_args.len()]
-                        }
-                        _ => unreachable!("Expected a struct, tuple, or fixed-size array type"),
-                    };
-                    for (elem_ty, arg) in
-                        zip_eq(element_types.iter().rev(), specialization_args.iter().rev())
-                    {
-                        stack.push((*elem_ty, arg));
-                    }
-                }
-                SpecializationArg::NotSpecialized => {
-                    params.push(param_ty);
-                }
-            }
-        }
-
-        base_sign.params = params;
-
-        Ok(base_sign)
-    }
 }
+
 impl<'a> DebugWithDb<'a> for SpecializedFunction<'a> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
