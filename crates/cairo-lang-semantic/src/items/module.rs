@@ -152,14 +152,9 @@ pub fn module_item_by_name<'db>(
     Ok(module_data.items.get(&name).map(|info| info.item_id))
 }
 
-fn module_item_by_name_tracked<'db>(
-    db: &'db dyn Database,
-    module_id: ModuleId<'db>,
-    name: SmolStrId<'db>,
-) -> Maybe<Option<ModuleItemId<'db>>> {
-    module_item_by_name_helper(db, (), module_id, name)
-}
-
+/// Tracked (rather than a direct read of [`priv_module_semantic_data`]) on purpose: the readers
+/// are large queries (path resolution inside body semantics), and the per-(module, name) memo
+/// keeps them backdated when an unrelated item in the module changes.
 #[salsa::tracked(returns(copy))]
 fn module_item_by_name_helper<'db>(
     db: &'db dyn Database,
@@ -180,14 +175,7 @@ pub fn module_item_info_by_name<'db>(
     Ok(module_data.items.get(&name).cloned())
 }
 
-fn module_item_info_by_name_tracked<'db>(
-    db: &'db dyn Database,
-    module_id: ModuleId<'db>,
-    name: SmolStrId<'db>,
-) -> Maybe<Option<ModuleItemInfo<'db>>> {
-    module_item_info_by_name_helper(db, (), module_id, name)
-}
-
+/// Tracked for the same backdating reason as [`module_item_by_name_helper`].
 #[salsa::tracked(returns(clone))]
 fn module_item_info_by_name_helper<'db>(
     db: &'db dyn Database,
@@ -373,7 +361,7 @@ pub trait ModuleSemantic<'db>: Database {
         module_id: ModuleId<'db>,
         name: SmolStrId<'db>,
     ) -> Maybe<Option<ModuleItemId<'db>>> {
-        module_item_by_name_tracked(self.as_dyn_database(), module_id, name)
+        module_item_by_name_helper(self.as_dyn_database(), (), module_id, name)
     }
     /// Returns [Maybe::Err] if the module was not properly resolved.
     /// Returns [Maybe::Ok(None)] if the item does not exist.
@@ -383,7 +371,7 @@ pub trait ModuleSemantic<'db>: Database {
 
         name: SmolStrId<'db>,
     ) -> Maybe<Option<ModuleItemInfo<'db>>> {
-        module_item_info_by_name_tracked(self.as_dyn_database(), module_id, name)
+        module_item_info_by_name_helper(self.as_dyn_database(), (), module_id, name)
     }
     /// Returns all the items used within the module.
     fn module_all_used_uses(
