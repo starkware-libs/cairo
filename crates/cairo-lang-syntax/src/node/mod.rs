@@ -12,7 +12,6 @@ use self::ast::TriviaGreen;
 use self::green::GreenNode;
 use self::ids::{GreenId, SyntaxStablePtrId};
 use self::kind::SyntaxKind;
-use crate::node::db::SyntaxGroup;
 use crate::node::iter::{Preorder, WalkEvent};
 
 pub mod ast;
@@ -90,6 +89,20 @@ fn absolute_offset<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> Tex
             .add_width(data.offset_in_parent(db) - TextOffset::START),
         None => data.offset_in_parent(db),
     }
+}
+
+/// Query backing [`SyntaxNode::get_children`]. Keyed on the tracked [`SyntaxNodeData`] struct
+/// rather than the full [`SyntaxNode`] wrapper, so the memo is attached to the tracked struct
+/// instead of interning a key tuple per call. The wrapper's other fields are caches derived from
+/// `data`, so they are reconstructed here.
+#[salsa::tracked(returns(ref))]
+fn node_children<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> Vec<SyntaxNode<'db>> {
+    let (parent, parent_kind) = match data.id(db) {
+        SyntaxNodeId::Child { parent, .. } => (Some(parent.data), Some(parent.kind)),
+        SyntaxNodeId::Root(_) => (None, None),
+    };
+    let kind = data.green(db).long(db).kind;
+    SyntaxNode { data, parent, kind, parent_kind }.get_children_impl(db)
 }
 
 impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
@@ -349,7 +362,7 @@ impl<'a> SyntaxNode<'a> {
 
     /// Gets the children syntax nodes of the current node.
     pub fn get_children(&self, db: &'a dyn Database) -> &'a [SyntaxNode<'a>] {
-        db.get_children(*self)
+        node_children(db, self.data)
     }
 
     /// Implementation of [SyntaxNode::get_children].
