@@ -15,6 +15,7 @@ use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError}
 use cairo_lang_sierra_type_size::{ProgramRegistryInfo, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::DosResistantHasher;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use compute_costs::PostCostTypeEx;
 use core_libfunc_cost_base::InvocationCostInfoProvider;
@@ -251,7 +252,7 @@ fn calc_gas_info_inner<
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
 ) -> Result<GasInfo, CostError> {
     let mut equations = generate_equations::generate_equations(program, get_cost)?;
-    let non_set_cost_func_entry_points: UnorderedHashSet<_> = program
+    let non_set_cost_func_entry_points: UnorderedHashSet<_, DosResistantHasher> = program
         .funcs
         .iter()
         .filter(|f| !function_set_costs.contains_key(&f.id))

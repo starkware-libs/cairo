@@ -1,7 +1,7 @@
 use std::ops::Shl;
 use std::sync::LazyLock;
 
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{DosResistantHasher, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, require};
 use itertools::Itertools;
@@ -1120,9 +1120,10 @@ fn parse_circuit_inputs<'a>(
         .map(|generic_arg| extract_matches!(generic_arg, GenericArg::Type).clone())
         .collect();
 
-    let mut inputs: UnorderedHashMap<usize, ConcreteTypeId> = Default::default();
+    let mut inputs: UnorderedHashMap<usize, ConcreteTypeId, DosResistantHasher> =
+        Default::default();
 
-    let mut visited = UnorderedHashSet::<_>::default();
+    let mut visited = UnorderedHashSet::<_, DosResistantHasher>::default();
 
     while let Some(ty) = stack.pop() {
         if !visited.insert(ty.clone()) {
@@ -1147,7 +1148,8 @@ fn parse_circuit_inputs<'a>(
         }
     }
 
-    let mut reduced_inputs: UnorderedHashMap<ConcreteTypeId, usize> = Default::default();
+    let mut reduced_inputs: UnorderedHashMap<ConcreteTypeId, usize, DosResistantHasher> =
+        Default::default();
     let n_inputs = inputs.len();
 
     // The reduced_inputs start at `1 + n_inputs` since we need to reserve slot 0 for the constant
@@ -1186,7 +1188,8 @@ pub struct CircuitInfo {
 
     /// Maps a concrete type to its offset (measured in number of elements) in the values array.
     /// The values mapping does not include the constant input `1` which is stored at offset `0`.
-    pub values: UnorderedHashMap<ConcreteTypeId, usize>,
+    /// DoS-resistant hasher, as the keys derive from an untrusted Sierra program.
+    pub values: UnorderedHashMap<ConcreteTypeId, usize, DosResistantHasher>,
     /// The offsets for the add gates. This includes AddModGate and SubModGate.
     pub add_offsets: Vec<GateOffsets>,
     /// The offsets for the mul gates. This includes MulModGate, InverseGate, and input reductions.
@@ -1208,7 +1211,7 @@ impl CircuitInfo {
 
 struct ParsedInputs {
     /// Maps a concrete input type to its offset in the values array.
-    reduced_inputs: UnorderedHashMap<ConcreteTypeId, usize>,
+    reduced_inputs: UnorderedHashMap<ConcreteTypeId, usize, DosResistantHasher>,
     /// The offsets for the mul gates that are used to reduce the inputs.
     mul_offsets: Vec<GateOffsets>,
 }

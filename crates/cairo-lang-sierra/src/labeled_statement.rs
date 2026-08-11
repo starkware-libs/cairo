@@ -1,5 +1,5 @@
 use cairo_lang_utils::try_extract_matches;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{DosResistantHasher, UnorderedHashMap};
 
 use crate::program::{
     Function, GenBranchInfo, GenBranchTarget, GenFunction, GenInvocation, GenStatement, Statement,
@@ -56,7 +56,8 @@ pub fn finalize_prestatements(
     funcs: Vec<GenFunction<StatementId>>,
 ) -> (Vec<Statement>, Vec<Function>) {
     let mut statement_count = 0;
-    let mut label_to_statement: UnorderedHashMap<String, StatementIdx> = Default::default();
+    let mut label_to_statement: UnorderedHashMap<String, StatementIdx, DosResistantHasher> =
+        Default::default();
     for statement in &statements {
         if let PreStatement::Label(label) = statement {
             assert!(

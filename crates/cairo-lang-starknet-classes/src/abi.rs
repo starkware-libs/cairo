@@ -1,5 +1,5 @@
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{DosResistantHasher, UnorderedHashMap};
 use serde::{Deserialize, Serialize};
 
 /// Contract ABI.
@@ -24,7 +24,7 @@ impl Contract {
         expected_l1_handler_count: usize,
         expected_constructor_count: usize,
     ) {
-        let trait_fn_count: UnorderedHashMap<_, _> = self
+        let trait_fn_count: UnorderedHashMap<_, _, DosResistantHasher> = self
             .items
             .iter()
             .filter_map(|item| {

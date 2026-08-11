@@ -22,7 +22,6 @@ pub use std::collections::hash_map::Entry;
 #[cfg(feature = "std")]
 use std::collections::hash_map::OccupiedEntry;
 #[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
 #[cfg(feature = "std")]
 use std::vec;
 
@@ -32,10 +31,22 @@ use hashbrown::HashMap;
 pub use hashbrown::hash_map::Entry;
 use itertools::Itertools;
 
-#[cfg(feature = "std")]
-type BHImpl = RandomState;
-#[cfg(not(feature = "std"))]
+// hashbrown's default hasher (foldhash) rather than std's SipHash: the map forbids iteration, so
+// determinism is unaffected, and these maps sit on hot compiler paths where hashing shows up in
+// profiles.
 type BHImpl = hashbrown::DefaultHashBuilder;
+
+/// A DoS-resistant build-hasher (SipHash-based), for containers whose keys derive from untrusted
+/// input - e.g. anything read from a Sierra program submitted to a sequencer. The crate-default
+/// hasher of [`UnorderedHashMap`]/[`UnorderedHashSet`](crate::unordered_hash_set::UnorderedHashSet)
+/// is faster, but only minimally
+/// DoS-resistant (its per-instance seed is not cryptographic), so adversarially-keyed containers
+/// should pin this hasher instead.
+#[cfg(feature = "std")]
+pub type DosResistantHasher = std::collections::hash_map::RandomState;
+/// Best-effort fallback when no OS randomness is available.
+#[cfg(not(feature = "std"))]
+pub type DosResistantHasher = hashbrown::DefaultHashBuilder;
 
 /// A hash map that does not care about the order of insertion.
 ///

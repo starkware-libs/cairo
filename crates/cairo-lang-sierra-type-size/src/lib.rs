@@ -4,9 +4,10 @@ use cairo_lang_sierra::extensions::starknet::StarknetTypeConcrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_map::{DosResistantHasher, UnorderedHashMap};
 
-pub type TypeSizeMap = UnorderedHashMap<ConcreteTypeId, i16>;
+/// DoS-resistant hasher, as the keys derive from an untrusted Sierra program.
+pub type TypeSizeMap = UnorderedHashMap<ConcreteTypeId, i16, DosResistantHasher>;
 
 /// A wrapper that combines a program registry with its corresponding type size map.
 /// This is commonly used together throughout the codebase.
