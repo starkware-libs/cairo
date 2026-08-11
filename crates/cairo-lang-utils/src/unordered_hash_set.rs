@@ -11,8 +11,6 @@ use core::hash::{BuildHasher, Hash};
 use core::ops::Sub;
 #[cfg(feature = "std")]
 use std::collections::HashSet;
-#[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::HashSet;
@@ -21,10 +19,8 @@ use hashbrown::HashSet;
 ///
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
 /// For an iterable version see [OrderedHashSet](crate::ordered_hash_set::OrderedHashSet).
-#[cfg(feature = "std")]
-#[derive(Clone, Debug)]
-pub struct UnorderedHashSet<Key, BH = RandomState>(HashSet<Key, BH>);
-#[cfg(not(feature = "std"))]
+/// Uses hashbrown's default hasher (foldhash) rather than std's SipHash: the set forbids
+/// iteration, so determinism is unaffected, and it sits on hot compiler paths.
 #[derive(Clone, Debug)]
 pub struct UnorderedHashSet<Key, BH = hashbrown::DefaultHashBuilder>(HashSet<Key, BH>);
 
@@ -79,14 +75,6 @@ impl<Key, BH> UnorderedHashSet<Key, BH> {
     }
 }
 
-#[cfg(feature = "std")]
-impl<Key: Hash + Eq> UnorderedHashSet<Key> {
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self(HashSet::with_capacity(capacity))
-    }
-}
-
-#[cfg(not(feature = "std"))]
 impl<Key: Hash + Eq> UnorderedHashSet<Key> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self(HashSet::with_capacity_and_hasher(capacity, Default::default()))

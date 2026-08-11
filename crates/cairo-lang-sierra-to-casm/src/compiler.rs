@@ -1,3 +1,4 @@
+use std::collections::hash_map::RandomState;
 use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
@@ -336,7 +337,10 @@ pub struct ConstSegment {
     /// The values in the segment.
     pub values: Vec<BigInt>,
     /// The offset of each const within the segment.
-    pub const_offset: UnorderedHashMap<ConcreteTypeId, usize>,
+    /// Pinned to the DoS-resistant `RandomState` (SipHash) rather than the crate-default fast
+    /// hasher: the `ConcreteTypeId` keys derive from an untrusted Sierra program, so a weak hasher
+    /// would let an attacker craft colliding type ids to force quadratic behavior.
+    pub const_offset: UnorderedHashMap<ConcreteTypeId, usize, RandomState>,
     /// The offset of the segment relative to the end of the code segment.
     pub segment_offset: usize,
 }
@@ -452,7 +456,7 @@ pub fn compile(
         Vec::with_capacity(program.statements.len());
 
     validate_metadata(program, &program_info.registry, metadata)?;
-    let mut backwards_jump_indices = UnorderedHashSet::<_>::default();
+    let mut backwards_jump_indices = UnorderedHashSet::<_, RandomState>::default();
     for (statement_id, statement) in program.statements.iter().enumerate() {
         if let Statement::Invocation(invocation) = statement {
             for branch in &invocation.branches {

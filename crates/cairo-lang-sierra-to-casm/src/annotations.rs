@@ -1,3 +1,5 @@
+use std::collections::hash_map::RandomState;
+
 use cairo_lang_casm::ap_change::{ApChangeError, ApplyApChange};
 use cairo_lang_sierra::edit_state::EditState;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, VarId};
@@ -147,10 +149,16 @@ pub struct ProgramAnnotations {
     /// Optional per statement annotation.
     per_statement_annotations: Vec<Option<StatementAnnotations>>,
     /// The indices of the statements that are the targets of backwards jumps.
-    backwards_jump_indices: UnorderedHashSet<StatementIdx>,
+    /// Pinned to the DoS-resistant `RandomState` (SipHash) rather than the crate-default fast
+    /// hasher: the keys derive from an untrusted Sierra program, so a weak hasher would let an
+    /// attacker craft colliding statement indices to force quadratic behavior.
+    backwards_jump_indices: UnorderedHashSet<StatementIdx, RandomState>,
 }
 impl ProgramAnnotations {
-    fn new(n_statements: usize, backwards_jump_indices: UnorderedHashSet<StatementIdx>) -> Self {
+    fn new(
+        n_statements: usize,
+        backwards_jump_indices: UnorderedHashSet<StatementIdx, RandomState>,
+    ) -> Self {
         ProgramAnnotations {
             per_statement_annotations: vec![None; n_statements],
             backwards_jump_indices,
@@ -161,7 +169,7 @@ impl ProgramAnnotations {
     /// and metadata for the program.
     pub fn create(
         n_statements: usize,
-        backwards_jump_indices: UnorderedHashSet<StatementIdx>,
+        backwards_jump_indices: UnorderedHashSet<StatementIdx, RandomState>,
         functions: &[Function],
         metadata: &Metadata,
         gas_usage_check: bool,

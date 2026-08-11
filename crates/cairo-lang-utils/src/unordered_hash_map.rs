@@ -22,7 +22,6 @@ pub use std::collections::hash_map::Entry;
 #[cfg(feature = "std")]
 use std::collections::hash_map::OccupiedEntry;
 #[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
 #[cfg(feature = "std")]
 use std::vec;
 
@@ -32,9 +31,9 @@ use hashbrown::HashMap;
 pub use hashbrown::hash_map::Entry;
 use itertools::Itertools;
 
-#[cfg(feature = "std")]
-type BHImpl = RandomState;
-#[cfg(not(feature = "std"))]
+// hashbrown's default hasher (foldhash) rather than std's SipHash: the map forbids iteration, so
+// determinism is unaffected, and these maps sit on hot compiler paths where hashing shows up in
+// profiles.
 type BHImpl = hashbrown::DefaultHashBuilder;
 
 /// A hash map that does not care about the order of insertion.
