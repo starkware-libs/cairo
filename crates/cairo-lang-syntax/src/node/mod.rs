@@ -98,7 +98,7 @@ fn absolute_offset<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> Tex
 #[derive(Debug, Default, PartialEq, Eq, salsa::SalsaValue)]
 struct RedTree<'db> {
     nodes: Vec<SyntaxNode<'db>>,
-    ranges: UnorderedHashMap<SyntaxNodeData<'db>, (u32, u32)>,
+    ranges: UnorderedHashMap<SyntaxNodeData<'db>, std::ops::Range<u32>>,
 }
 
 impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
@@ -118,7 +118,7 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
 /// tracked functions to ensure uniqueness of SyntaxNodes.
 /// The canonical tree of a file comes from `db.file_syntax(file_id)` (created via
 /// [`SyntaxNode::new_canonical_root`]); standalone trees use [`SyntaxNode::new_detached_root`].
-#[derive(Clone, Copy, PartialEq, Eq, Hash, salsa::SalsaValue, HeapSize)]
+#[derive(Clone, Copy, salsa::SalsaValue, HeapSize)]
 pub struct SyntaxNode<'a> {
     data: SyntaxNodeData<'a>,
     /// The data of the root of the tree this node belongs to (itself for a root). Keys the
@@ -132,6 +132,21 @@ pub struct SyntaxNode<'a> {
     kind: SyntaxKind,
     /// Cached parent kind to avoid database lookups. None for root nodes.
     parent_kind: Option<SyntaxKind>,
+}
+
+/// Equality and hashing consider only `data`: the other fields are caches fully derived from it
+/// at every construction site, and `data` is embedded (via parents and stable pointers) in the
+/// identity of practically every semantic object, so this is on very hot paths.
+impl PartialEq for SyntaxNode<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
+}
+impl Eq for SyntaxNode<'_> {}
+impl Hash for SyntaxNode<'_> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.data.hash(state);
+    }
 }
 
 impl<'db> std::fmt::Debug for SyntaxNode<'db> {
@@ -375,16 +390,23 @@ impl<'a> SyntaxNode<'a> {
             let kind = root.green(db).long(db).kind;
             let root_node = SyntaxNode { data: root, root, parent: None, kind, parent_kind: None };
             let mut res = RedTree::default();
+            // Depth-first with an explicit work stack (tree depth is unbounded - e.g. long
+            // left-associative expression chains - so recursion could overflow the call stack).
+            // Each node's children are appended to the flat vector directly (contiguously,
+            // keeping ranges valid, with no intermediate buffers); pushing them in reverse keeps
+            // the vector in preorder, so a subtree occupies a contiguous region and tree-shaped
+            // consumers stay local. A running-process-index (breadth-first) variant measured
+            // ~3% slower on corelib diagnostics, as each descent then jumps a level apart.
             let mut stack = vec![root_node];
             while let Some(node) = stack.pop() {
                 if node.kind.is_terminal() {
                     continue;
                 }
-                let children = node.get_children_impl(db);
                 let start = res.nodes.len();
-                res.nodes.extend_from_slice(&children);
-                res.ranges.insert(node.data, (start as u32, children.len() as u32));
-                stack.extend(children);
+                node.collect_children_into(db, &mut res.nodes);
+                let end = res.nodes.len();
+                res.ranges.insert(node.data, start as u32..end as u32);
+                stack.extend(res.nodes[start..end].iter().rev().copied());
             }
             res
         }
@@ -403,23 +425,25 @@ impl<'a> SyntaxNode<'a> {
                 SyntaxNodeId::Root(_) => (None, None, data),
             };
             let kind = data.green(db).long(db).kind;
-            SyntaxNode { data, root, parent, kind, parent_kind }.get_children_impl(db)
+            let node = SyntaxNode { data, root, parent, kind, parent_kind };
+            let mut res = Vec::with_capacity(node.green_node(db).children().len());
+            node.collect_children_into(db, &mut res);
+            res
         }
         let tree = red_tree(db, self.root);
         match tree.ranges.get(&self.data) {
-            Some(&(start, len)) => &tree.nodes[start as usize..(start + len) as usize],
+            Some(range) => &tree.nodes[range.start as usize..range.end as usize],
             None => node_children(db, self.data).as_slice(),
         }
     }
 
-    /// Implementation of [SyntaxNode::get_children].
-    pub(crate) fn get_children_impl(&self, db: &'a dyn Database) -> Vec<SyntaxNode<'a>> {
+    /// Appends this node's children to `res`.
+    fn collect_children_into(&self, db: &'a dyn Database, res: &mut Vec<SyntaxNode<'a>>) {
         // Children offsets are relative to this node, so seeding from `TextOffset::START` (rather
         // than `self.offset(db)`) keeps `get_children` a pure function of the green tree.
         let mut offset = TextOffset::START;
         let self_green = self.green_node(db);
         let children = self_green.children();
-        let mut res: Vec<SyntaxNode<'_>> = Vec::with_capacity(children.len());
         let mut key_map = Vec::<(_, usize)>::with_capacity(children.len());
         for green_id in children {
             let green = green_id.long(db);
@@ -455,7 +479,6 @@ impl<'a> SyntaxNode<'a> {
 
             offset = offset.add_width(width);
         }
-        res
     }
 
     // Text and span utilities
