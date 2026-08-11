@@ -107,11 +107,11 @@ fn get_contextualized_path<'db>(
         return Ok(ItemAccessInfo::new(ItemAccessKind::FullPath(crate_id), vec![], item.name(db)));
     }
 
-    if let Some(access_info) = check_prelude(db, item, context_module)? {
+    let mut resolver = Resolver::new(db, context_module, InferenceId::NoContext);
+
+    if let Some(access_info) = check_prelude(db, item, context_module, &mut resolver)? {
         return Ok(access_info);
     }
-
-    let mut resolver = Resolver::new(db, context_module, InferenceId::NoContext);
 
     // Try to find the item in the context module (includes use statements, macro expansions,
     // and star uses)
@@ -139,7 +139,7 @@ fn get_contextualized_path<'db>(
         }
 
         // Check if the ancestor is in the prelude.
-        if let Some(access_info) = check_prelude(db, *ancestor, context_module)? {
+        if let Some(access_info) = check_prelude(db, *ancestor, context_module, &mut resolver)? {
             let mut res_path_segments = path_items[..i + 1].iter().copied().collect_vec();
             res_path_segments.extend(access_info.path_segments);
             return Ok(ItemAccessInfo::new(
@@ -161,11 +161,13 @@ fn get_contextualized_path<'db>(
     Ok(ItemAccessInfo::new(ItemAccessKind::FullPath(owning_crate), path_items, item_name))
 }
 
-/// Check if the given item is in the prelude module.
+/// Check if the given item is in the prelude module, and its name is not shadowed by a different
+/// item in the context module.
 fn check_prelude<'db>(
     db: &'db dyn Database,
     item: ImportableId<'db>,
     context_module: ModuleId<'db>,
+    resolver: &mut Resolver<'db>,
 ) -> Maybe<Option<ItemAccessInfo<'db>>> {
     let settings = db
         .crate_config(context_module.owning_crate(db))
@@ -222,6 +224,16 @@ fn check_prelude<'db>(
         };
 
         if is_prelude {
+            // A different item bound to the same name in the context module shadows the prelude
+            // item, making the short name refer to the wrong item.
+            if let Some(info) = resolver.resolve_item_in_module(context_module, item.name(db))
+                && !matches!(
+                    info.item_id.try_into(),
+                    Ok::<ImportableId<'_>, _>(found_item) if found_item == item
+                )
+            {
+                return Ok(None);
+            }
             return Ok(Some(ItemAccessInfo::new(
                 ItemAccessKind::ViaPrelude,
                 vec![],

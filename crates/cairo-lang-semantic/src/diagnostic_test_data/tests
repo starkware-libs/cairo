@@ -1094,6 +1094,34 @@ INACCESSIBLE
 
 //! > ==========================================================================
 
+//! > Testing prelude name shadowed by a local item
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+struct u128 {}
+
+//! > function_body
+
+//! > expr_code
+{
+    let _x: core::integer::u128 = 1_felt252;
+}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error[E2041]: Unexpected argument type. Expected: "core::integer::u128", found: "felt252".
+ --> lib.cairo:4:35
+    let _x: core::integer::u128 = 1_felt252;
+                                  ^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Testing use star inaccessible item through a crate root
 
 //! > test_runner_name
