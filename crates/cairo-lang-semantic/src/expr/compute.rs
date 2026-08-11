@@ -809,7 +809,7 @@ fn expand_inline_macro<'db>(
     let macro_path = syntax.path(db);
     let crate_id = ctx.resolver.owning_crate_id;
     // Skipping expanding an inline macro if it had a parser error.
-    if syntax.as_syntax_node().descendants(db).any(|node| node.kind(db).is_missing()) {
+    if syntax.as_syntax_node().contains_missing(db) {
         return Err(skip_diagnostic());
     }
     // We call the resolver with a new diagnostics, since the diagnostics should not be reported

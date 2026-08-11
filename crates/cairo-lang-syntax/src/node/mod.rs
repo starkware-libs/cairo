@@ -92,6 +92,22 @@ fn absolute_offset<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> Tex
     }
 }
 
+/// Whether the green subtree rooted at `green` contains a node of a missing kind. Walks the green
+/// tree directly - materializing the red tree just for this check would create (and memoize) a
+/// `SyntaxNode` per descendant. Memoized per green id, so identical subtrees are walked once.
+#[salsa::tracked(returns(copy))]
+fn green_subtree_contains_missing<'db>(db: &'db dyn Database, green: GreenId<'db>) -> bool {
+    let mut stack = vec![green];
+    while let Some(green_id) = stack.pop() {
+        let node = green_id.long(db);
+        if node.kind.is_missing() {
+            return true;
+        }
+        stack.extend(node.children().iter().copied());
+    }
+    false
+}
+
 impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
@@ -324,6 +340,12 @@ impl<'a> SyntaxNode<'a> {
     /// Returns the green node of the syntax node.
     pub fn green_node(&self, db: &'a dyn Database) -> &'a GreenNode<'a> {
         self.data.green(db).long(db)
+    }
+
+    /// Returns whether the subtree rooted at this node contains a node of a missing kind, i.e.
+    /// whether it had a parser error.
+    pub fn contains_missing(&self, db: &'a dyn Database) -> bool {
+        green_subtree_contains_missing(db, *self.data.green(db))
     }
 
     /// Returns the span of the syntax node without trivia.

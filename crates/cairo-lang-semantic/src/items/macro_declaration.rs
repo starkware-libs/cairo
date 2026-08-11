@@ -157,7 +157,7 @@ fn priv_macro_declaration_data<'db>(
         };
         ctx.check_node(expansion.as_syntax_node());
         // Skipping expanding an inline macro if it had a parser error.
-        if pattern.as_syntax_node().descendants(db).any(|node| node.kind(db).is_missing()) {
+        if pattern.as_syntax_node().contains_missing(db) {
             continue;
         }
         rules.push(MacroRuleData { pattern, expansion, err: ctx.rule_err });
