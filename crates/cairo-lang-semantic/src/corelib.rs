@@ -450,15 +450,7 @@ pub fn unit_ty<'db>(db: &'db dyn Database) -> TypeId<'db> {
 
 /// Gets the never type ().
 pub fn never_ty<'db>(db: &'db dyn Database) -> TypeId<'db> {
-    let core_module = db.core_module();
-    // This should not fail if the corelib is present.
-    let generic_type = db
-        .module_item_by_name(core_module, SmolStrId::from(db, "never"))
-        .expect("Failed to load core lib.")
-        .and_then(GenericTypeId::option_from)
-        .expect("Type never was not found in core lib.");
-    semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(db, generic_type, vec![]))
-        .intern(db)
+    db.core_info().never
 }
 
 pub enum ErrorPropagationType<'db> {
@@ -1001,6 +993,7 @@ pub fn try_extract_bounded_int_type<'db>(
 pub struct CoreInfo<'db> {
     // Types.
     pub felt252: TypeId<'db>,
+    pub never: TypeId<'db>,
     pub u8: TypeId<'db>,
     pub u16: TypeId<'db>,
     pub u32: TypeId<'db>,
@@ -1156,6 +1149,7 @@ impl<'db> CoreInfo<'db> {
         let fixed_size_array_submodule = core.submodule("fixed_size_array").id;
         Self {
             felt252: core.ty("felt252", vec![]),
+            never: core.ty("never", vec![]),
             u8: integer.ty("u8", vec![]),
             u16: integer.ty("u16", vec![]),
             u32: integer.ty("u32", vec![]),
