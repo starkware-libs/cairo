@@ -54,6 +54,10 @@ name = "compile"
 harness = false
 
 [[bench]]
+name = "profile_target"
+harness = false
+
+[[bench]]
 name = "dhat_compile"
 harness = false
 required-features = ["dhat"]
