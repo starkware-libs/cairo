@@ -29,7 +29,7 @@ use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, compute_expr_semantic};
 use crate::expr::inference::canonic::{CanonicalTrait, ResultNoErrEx};
-use crate::expr::inference::solver::{SemanticSolver, SolutionSet, enrich_lookup_context};
+use crate::expr::inference::solver::{SemanticSolver, SolutionSet, enriched_lookup_context};
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
@@ -1221,9 +1221,7 @@ fn solve_concrete_trait_no_constraints<'db>(
     lookup_context: ImplLookupContextId<'db>,
     id: ConcreteTraitId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
-    let mut lookup_context = lookup_context.long(db).clone();
-    enrich_lookup_context(db, id, &mut lookup_context);
-    let lookup_context = lookup_context.intern(db);
+    let lookup_context = enriched_lookup_context(db, lookup_context, id);
     match db.canonic_trait_solutions(
         CanonicalTrait { id, mappings: Default::default() },
         lookup_context,

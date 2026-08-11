@@ -156,6 +156,20 @@ pub fn canonic_trait_solutions_cycle<'db>(
     Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
 }
 
+/// Returns `lookup_context` enriched for `concrete_trait_id` (see [enrich_lookup_context]),
+/// re-interned. Memoized, as enrichment scans module and crate impls - a pure function of the two
+/// interned ids - and the same (context, trait) pair recurs constantly during solving.
+#[salsa::tracked(returns(copy))]
+pub fn enriched_lookup_context<'db>(
+    db: &'db dyn Database,
+    lookup_context: ImplLookupContextId<'db>,
+    concrete_trait_id: ConcreteTraitId<'db>,
+) -> ImplLookupContextId<'db> {
+    let mut context = lookup_context.long(db).clone();
+    enrich_lookup_context(db, concrete_trait_id, &mut context);
+    context.intern(db)
+}
+
 /// Adds the defining module of the trait and the generic arguments to the lookup context.
 pub fn enrich_lookup_context<'db>(
     db: &'db dyn Database,
@@ -473,11 +487,11 @@ impl<'db> LiteInference<'db> {
                         id: imp_concrete_trait_id,
                         mappings: ImplVarTraitItemMappings::default(),
                     };
-                    let mut inner_context = lookup_context.long(self.db).clone();
-                    enrich_lookup_context(self.db, imp_concrete_trait_id, &mut inner_context);
+                    let inner_context =
+                        enriched_lookup_context(self.db, lookup_context, imp_concrete_trait_id);
                     let Ok(solution) = self.db.canonic_trait_solutions(
                         canonical_trait,
-                        inner_context.intern(self.db),
+                        inner_context,
                         (*impl_type_bounds).clone(),
                     ) else {
                         return Err(super::ErrorSet);

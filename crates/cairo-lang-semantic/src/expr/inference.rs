@@ -25,7 +25,7 @@ use cairo_lang_utils::{Intern, define_short_id, extract_matches};
 use salsa::Database;
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
-use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
+use self::solver::{Ambiguity, SolutionSet, enriched_lookup_context};
 use crate::corelib::{CorelibSemantic, is_valid_literal_type};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -1375,8 +1375,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         let impl_var_trait_item_mappings = self.rewrite(impl_var_trait_item_mappings).no_err();
         // TODO(spapini): This is done twice. Consider doing it only here.
         let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
-        let mut lookup_context = lookup_context_id.long(self.db).clone();
-        enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
+        let lookup_context = enriched_lookup_context(self.db, lookup_context_id, concrete_trait_id);
 
         // Don't try to resolve impls if the first generic param is a variable.
         let generic_args = concrete_trait_id.generic_args(self.db);
@@ -1411,7 +1410,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         // is consistent.
         let solution_set = match self.db.canonic_trait_solutions(
             canonical_trait,
-            lookup_context.intern(self.db),
+            lookup_context,
             (*self.data.impl_type_bounds).clone(),
         ) {
             Ok(solution_set) => solution_set,
