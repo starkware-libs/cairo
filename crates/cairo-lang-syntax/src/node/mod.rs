@@ -12,7 +12,6 @@ use self::ast::TriviaGreen;
 use self::green::GreenNode;
 use self::ids::{GreenId, SyntaxStablePtrId};
 use self::kind::SyntaxKind;
-use crate::node::db::SyntaxGroup;
 use crate::node::iter::{Preorder, WalkEvent};
 
 pub mod ast;
@@ -364,7 +363,20 @@ impl<'a> SyntaxNode<'a> {
 
     /// Gets the children syntax nodes of the current node.
     pub fn get_children(&self, db: &'a dyn Database) -> &'a [SyntaxNode<'a>] {
-        db.get_children(*self)
+        /// Keyed on the tracked [`SyntaxNodeData`] struct rather than the full [`SyntaxNode`]
+        /// wrapper, so the memo is attached to the tracked struct instead of interning a key
+        /// tuple per call. The wrapper's other fields are caches derived from `data`, so they
+        /// are reconstructed here.
+        #[salsa::tracked(returns(ref))]
+        fn query<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> Vec<SyntaxNode<'db>> {
+            let (parent, parent_kind) = match data.id(db) {
+                SyntaxNodeId::Child { parent, .. } => (Some(parent.data), Some(parent.kind)),
+                SyntaxNodeId::Root(_) => (None, None),
+            };
+            let kind = data.green(db).long(db).kind;
+            SyntaxNode { data, parent, kind, parent_kind }.get_children_impl(db)
+        }
+        query(db, self.data)
     }
 
     /// Implementation of [SyntaxNode::get_children].
