@@ -4427,18 +4427,23 @@ pub fn get_binded_expr_by_name<'db>(
     is_callsite_prefixed: bool,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Option<Expr<'db>> {
+    let db = ctx.db;
     let mut maybe_env = Some(&mut *ctx.environment);
-    let mut cur_offset =
-        ExpansionOffset::new(stable_ptr.lookup(ctx.db).as_syntax_node().offset(ctx.db));
+    // Computed lazily, preventing unneeded querying.
+    let mut cur_offset: Option<ExpansionOffset> = None;
     let mut found_callsite_scope = false;
     while let Some(env) = maybe_env {
         // If a variable is from an expanded macro placeholder, we need to look for it in the parent
         // env.
         if let Some(macro_info) = &env.macro_info
-            && let Some(new_offset) = cur_offset.mapped(&macro_info.mappings)
+            && let Some(new_offset) = cur_offset
+                .get_or_insert_with(|| {
+                    ExpansionOffset::new(stable_ptr.lookup(db).as_syntax_node().offset(db))
+                })
+                .mapped(&macro_info.mappings)
         {
             maybe_env = env.parent.as_deref_mut();
-            cur_offset = new_offset;
+            cur_offset = Some(new_offset);
             continue;
         }
         if (!is_callsite_prefixed || found_callsite_scope)
