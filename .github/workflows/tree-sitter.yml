@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up tree-sitter
-        uses: tree-sitter/setup-action/cli@1868a545ffb91bdc221d14a168b5b6d8de4a28b3 # v2
+        uses: tree-sitter/setup-action/cli@49f8c1f20b60102eae8c033bb7c7f6cd056f6086 # v2
       - name: Clone tree-sitter-repo
         run: |-
           git clone https://github.com/starkware-libs/tree-sitter-cairo --single-branch --depth=1 --filter=blob:none
