@@ -2683,3 +2683,24 @@ error[E2313]: Trait `MyTrait` has multiple implementations, in: `test::make_impl
  --> lib.cairo:18:14
     MyTrait::foo();
              ^^^
+
+//! > ==========================================================================
+
+//! > Test an expansion block zipping two sibling pattern repetitions (rejected, deliberately stricter than rustc).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($a:ident),* ; $($b:ident),*) => { $($a + $b + )* 0 };
+}
+fn foo() -> felt252 {
+    m!(x, y; z, w)
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'b' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:49
+    ($($a:ident),* ; $($b:ident),*) => { $($a + $b + )* 0 };
+                                                ^^
