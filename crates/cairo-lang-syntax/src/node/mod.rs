@@ -121,11 +121,11 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
 #[derive(Clone, Copy, salsa::SalsaValue, HeapSize)]
 pub struct SyntaxNode<'a> {
     data: SyntaxNodeData<'a>,
-    /// The data of the root of the tree this node belongs to (itself for a root). Keys the
-    /// per-tree children arena directly - walking the parent chain instead would be O(depth)
-    /// salsa field reads on every `get_children` call. Fully derived from `data`, like the other
-    /// caches below.
-    root: SyntaxNodeData<'a>,
+    /// The data of the root of the arena chunk this node belongs to: the nearest enclosing item
+    /// (child of an item list) or the tree root. Keys the children arena directly - walking the
+    /// parent chain instead would be O(depth) salsa field reads on every `get_children` call.
+    /// Fully derived from `data`, like the other caches below.
+    arena_root: SyntaxNodeData<'a>,
     /// Cached parent data to avoid database lookups. None for root nodes.
     parent: Option<SyntaxNodeData<'a>>,
     /// Cached kind to avoid database lookups.
@@ -259,14 +259,28 @@ pub fn new_syntax_node<'db>(
     id: SyntaxNodeId<'db>,
     kind: SyntaxKind,
 ) -> SyntaxNode<'db> {
-    let (parent, parent_kind, root) = match &id {
+    let (parent, parent_kind, arena_root) = match &id {
         SyntaxNodeId::Child { parent, .. } => {
-            (Some(parent.data), Some(parent.kind), Some(parent.root))
+            // Items open their own arena chunk, so consumers of a file's top-level structure
+            // (e.g. plugin expansion) do not materialize entire item bodies.
+            let arena_root =
+                if is_arena_chunk_root(parent.kind) { None } else { Some(parent.arena_root) };
+            (Some(parent.data), Some(parent.kind), arena_root)
         }
         SyntaxNodeId::Root(_) => (None, None, None),
     };
     let data = SyntaxNodeData::new(db, green, offset_in_parent, id);
-    SyntaxNode { data, root: root.unwrap_or(data), parent, kind, parent_kind }
+    SyntaxNode { data, arena_root: arena_root.unwrap_or(data), parent, kind, parent_kind }
+}
+
+/// Whether children of a node of this kind are roots of their own arena chunks - see
+/// [`SyntaxNode::get_children`]. Items are natural cost boundaries: consumers either scan a
+/// module's top-level structure or dive into one item's subtree.
+fn is_arena_chunk_root(kind: SyntaxKind) -> bool {
+    matches!(
+        kind,
+        SyntaxKind::ModuleItemList | SyntaxKind::TraitItemList | SyntaxKind::ImplItemList
+    )
 }
 
 /// Green-keyed query backing the *detached* root constructors. Keyed by `(file_id, green,
@@ -395,15 +409,22 @@ impl<'a> SyntaxNode<'a> {
 
     /// Gets the children syntax nodes of the current node.
     pub fn get_children(&self, db: &'a dyn Database) -> &'a [SyntaxNode<'a>] {
-        /// The children of every non-terminal node in the tree rooted at `root`, materialized
-        /// eagerly in one query. A single memo per tree replaces a full salsa query (key lookup,
-        /// sync-table claim, memo insert, dependency edge) per node, which dominated compilation
-        /// profiles. Terminal subtrees (token + trivia, ~4/5 of all nodes) are rarely visited, so
-        /// they stay lazy - served by the per-node [`node_children`] fallback.
+        /// The children of every non-terminal node in the arena chunk rooted at `root` (an item
+        /// or a tree root - see [`is_arena_chunk_root`]), materialized eagerly in one query. A
+        /// single memo per chunk replaces a full salsa query (key lookup, sync-table claim, memo
+        /// insert, dependency edge) per node, which dominated compilation profiles. Terminal
+        /// subtrees (token + trivia, ~4/5 of all nodes) are rarely visited, so they stay lazy -
+        /// served by the per-node [`node_children`] fallback.
         #[salsa::tracked(returns(ref))]
         fn red_tree<'db>(db: &'db dyn Database, root: SyntaxNodeData<'db>) -> RedTree<'db> {
+            // Reconstruct the chunk-root node faithfully - chunk roots are usually items, whose
+            // parent caches must be valid in the children stored in the arena.
+            let (parent, parent_kind) = match root.id(db) {
+                SyntaxNodeId::Child { parent, .. } => (Some(parent.data), Some(parent.kind)),
+                SyntaxNodeId::Root(_) => (None, None),
+            };
             let kind = root.green(db).long(db).kind;
-            let root_node = SyntaxNode { data: root, root, parent: None, kind, parent_kind: None };
+            let root_node = SyntaxNode { data: root, arena_root: root, parent, kind, parent_kind };
             let mut res = RedTree::default();
             // DFS is done so subtrees would occupy contiguous regions and tree-shaped consumers
             // stay local.
@@ -416,7 +437,15 @@ impl<'a> SyntaxNode<'a> {
                 node.collect_children_into(db, &mut res.nodes);
                 let end = res.nodes.len();
                 res.ranges.insert(node.data, start as u32..end as u32);
-                stack.extend(res.nodes[start..end].iter().rev().copied());
+                // Nested chunk roots (items) are recorded as children but not descended into -
+                // their subtrees belong to their own chunks.
+                stack.extend(
+                    res.nodes[start..end]
+                        .iter()
+                        .filter(|child| child.arena_root == root)
+                        .rev()
+                        .copied(),
+                );
             }
             res
         }
@@ -428,19 +457,21 @@ impl<'a> SyntaxNode<'a> {
             db: &'db dyn Database,
             data: SyntaxNodeData<'db>,
         ) -> Vec<SyntaxNode<'db>> {
-            let (parent, parent_kind, root) = match data.id(db) {
+            let (parent, parent_kind, arena_root) = match data.id(db) {
                 SyntaxNodeId::Child { parent, .. } => {
-                    (Some(parent.data), Some(parent.kind), parent.root)
+                    let arena_root =
+                        if is_arena_chunk_root(parent.kind) { data } else { parent.arena_root };
+                    (Some(parent.data), Some(parent.kind), arena_root)
                 }
                 SyntaxNodeId::Root(_) => (None, None, data),
             };
             let kind = data.green(db).long(db).kind;
-            let node = SyntaxNode { data, root, parent, kind, parent_kind };
+            let node = SyntaxNode { data, arena_root, parent, kind, parent_kind };
             let mut res = Vec::with_capacity(node.green_node(db).children().len());
             node.collect_children_into(db, &mut res);
             res
         }
-        let tree = red_tree(db, self.root);
+        let tree = red_tree(db, self.arena_root);
         match tree.ranges.get(&self.data) {
             Some(range) => &tree.nodes[range.start as usize..range.end as usize],
             None => node_children(db, self.data).as_slice(),
