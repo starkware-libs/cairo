@@ -4,7 +4,7 @@ mod test;
 
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::SmolStrId;
-use cairo_lang_semantic::{ConcreteVariant, corelib};
+use cairo_lang_semantic::corelib;
 use itertools::Itertools;
 use salsa::Database;
 
@@ -12,7 +12,6 @@ use crate::analysis::core::StatementLocation;
 use crate::analysis::{DataflowAnalyzer, DataflowBackAnalysis, Direction, Edge};
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::implicits::FunctionImplicitsTrait;
-use crate::panic::PanicSignatureInfo;
 use crate::{
     BlockEnd, BlockId, Lowered, LoweringStage, Statement, StatementCall, StatementEnumConstruct,
     VarUsage, VariableId,
@@ -52,14 +51,14 @@ pub fn gas_redeposit<'db>(
         "`GasRedeposit` stage must be called before `LowerImplicits` stage"
     );
 
-    let panic_sig = PanicSignatureInfo::new(
-        db,
-        function_id.signature(db, LoweringStage::Monomorphized).unwrap(),
-    );
-    if panic_sig.always_panic {
+    let original_return_ty =
+        function_id.signature(db, LoweringStage::Monomorphized).unwrap().return_type;
+    // Skip if the function always panics.
+    if original_return_ty == corelib::never_ty(db) {
         return;
     }
-    let mut ctx = GasRedepositContext { err_variant: panic_sig.err_variant, fixes: vec![] };
+    let has_panic_wrapper = original_return_ty != lowered.signature.return_type;
+    let mut ctx = GasRedepositContext { has_panic_wrapper, fixes: vec![] };
     DataflowBackAnalysis::new(lowered, &mut ctx).run();
 
     let redeposit_gas = corelib::get_function_id(
@@ -89,8 +88,8 @@ pub fn gas_redeposit<'db>(
 }
 
 pub struct GasRedepositContext<'db> {
-    /// The panic error variant.
-    pub err_variant: ConcreteVariant<'db>,
+    /// The function returns a panic wrapper result of the original return type.
+    pub has_panic_wrapper: bool,
     /// Locations where we need to insert redeposit_gas.
     pub fixes: Vec<(BlockId, LocationId<'db>)>,
 }
@@ -147,12 +146,13 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for GasRedepositContext<'db> {
             return;
         };
 
-        let Statement::EnumConstruct(StatementEnumConstruct { variant, input: _, output }) = stmt
-        else {
-            return;
-        };
-
-        if *output == var_id && *variant == self.err_variant {
+        // If the function returns a `PanicResult` with with variant `Err` which is index 1, we
+        // don't redeposit, to have smaller code.
+        if self.has_panic_wrapper
+            && let Statement::EnumConstruct(StatementEnumConstruct { variant, output, .. }) = stmt
+            && *output == var_id
+            && variant.idx == 1
+        {
             *info = RedepositState::Unnecessary;
         }
     }
