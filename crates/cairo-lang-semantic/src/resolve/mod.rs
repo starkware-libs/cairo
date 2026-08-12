@@ -1075,11 +1075,16 @@ impl<'db> Resolver<'db> {
         stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Maybe<Vec<GenericArgumentId<'db>>> {
         let mut resolved_args = vec![];
-        let arg_syntax_per_param = self.get_arg_syntax_per_param(
-            diagnostics,
-            &generic_params.iter().map(|generic_param| generic_param.id()).collect_vec(),
-            generic_args_syntax,
-        )?;
+        // In the common inference-driven case no args are spelled out, and the mapping is empty.
+        let arg_syntax_per_param = if generic_args_syntax.is_empty() {
+            Default::default()
+        } else {
+            self.get_arg_syntax_per_param(
+                diagnostics,
+                &generic_params.iter().map(|generic_param| generic_param.id()).collect_vec(),
+                generic_args_syntax,
+            )?
+        };
 
         for generic_param in generic_params {
             let generic_param = substitution.substitute(self.db, generic_param.clone())?;
@@ -1748,21 +1753,25 @@ impl<'db, 'a> Resolution<'db, 'a> {
         let db = resolver.db;
         let placeholder_marker = path.placeholder_marker(db);
 
-        let mut cur_offset =
-            ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
-        let mut segments = path.to_segments(db).into_iter().peekable();
         let mut cur_macro_call_data = resolver.macro_call_data.as_ref();
         let mut path_defining_module = resolver.data.module_id;
         // Climb up the macro call data while the current resolved path is being mapped to an
-        // argument of a macro call.
-        while let Some(macro_call_data) = &cur_macro_call_data {
-            let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings) else {
-                break;
-            };
-            path_defining_module = macro_call_data.callsite_module_id;
-            cur_macro_call_data = macro_call_data.parent_macro_call_data.as_ref();
-            cur_offset = new_offset;
+        // argument of a macro call. The offset is computed only when resolving inside a macro
+        // call, as it recursively resolves the node's absolute position.
+        if cur_macro_call_data.is_some() {
+            let mut cur_offset =
+                ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
+            while let Some(macro_call_data) = &cur_macro_call_data {
+                let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings)
+                else {
+                    break;
+                };
+                path_defining_module = macro_call_data.callsite_module_id;
+                cur_macro_call_data = macro_call_data.parent_macro_call_data.as_ref();
+                cur_offset = new_offset;
+            }
         }
+        let mut segments = path.to_segments(db).into_iter().peekable();
         let macro_call_data = cur_macro_call_data.cloned();
 
         let macro_context_modifier = if let Some(marker) = placeholder_marker {
