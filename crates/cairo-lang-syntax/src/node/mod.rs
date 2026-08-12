@@ -121,11 +121,12 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
 #[derive(Clone, Copy, salsa::SalsaValue, HeapSize)]
 pub struct SyntaxNode<'a> {
     data: SyntaxNodeData<'a>,
-    /// The data of the root of the tree this node belongs to (itself for a root). Keys the
-    /// per-tree children arena directly - walking the parent chain instead would be O(depth)
-    /// salsa field reads on every `get_children` call. Fully derived from `data`, like the other
-    /// caches below.
-    root: SyntaxNodeData<'a>,
+    /// The data of the outermost enclosing expression block, if any - the root of the arena
+    /// chunk this node belongs to. Expression code is consumed densely (body semantics visits
+    /// every node), so it is materialized as one arena per body; everything else (module and item
+    /// structure, which plugin expansion samples shallowly) stays lazily materialized per node.
+    /// Fully derived from `data`, like the other caches below.
+    arena_root: Option<SyntaxNodeData<'a>>,
     /// Cached parent data to avoid database lookups. None for root nodes.
     parent: Option<SyntaxNodeData<'a>>,
     /// Cached kind to avoid database lookups.
@@ -163,6 +164,20 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNode<'db> {
 }
 
 impl<'db> SyntaxNode<'db> {
+    /// Reconstructs the node view from its tracked data - every other field of [`SyntaxNode`] is
+    /// a cache fully derived from it.
+    fn from_data(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> Self {
+        let (parent, parent_kind, inherited_arena_root) = match data.id(db) {
+            SyntaxNodeId::Child { parent, .. } => {
+                (Some(parent.data), Some(parent.kind), parent.arena_root)
+            }
+            SyntaxNodeId::Root(_) => (None, None, None),
+        };
+        let kind = data.green(db).long(db).kind;
+        let arena_root = inherited_arena_root.or((kind == SyntaxKind::ExprBlock).then_some(data));
+        SyntaxNode { data, arena_root, parent, kind, parent_kind }
+    }
+
     /// Gets the absolute offset of this syntax node from the beginning of the file.
     pub fn offset(self, db: &'db dyn Database) -> TextOffset {
         absolute_offset(db, self.data)
@@ -259,14 +274,15 @@ pub fn new_syntax_node<'db>(
     id: SyntaxNodeId<'db>,
     kind: SyntaxKind,
 ) -> SyntaxNode<'db> {
-    let (parent, parent_kind, root) = match &id {
+    let (parent, parent_kind, inherited_arena_root) = match &id {
         SyntaxNodeId::Child { parent, .. } => {
-            (Some(parent.data), Some(parent.kind), Some(parent.root))
+            (Some(parent.data), Some(parent.kind), parent.arena_root)
         }
         SyntaxNodeId::Root(_) => (None, None, None),
     };
     let data = SyntaxNodeData::new(db, green, offset_in_parent, id);
-    SyntaxNode { data, root: root.unwrap_or(data), parent, kind, parent_kind }
+    let arena_root = inherited_arena_root.or((kind == SyntaxKind::ExprBlock).then_some(data));
+    SyntaxNode { data, arena_root, parent, kind, parent_kind }
 }
 
 /// Green-keyed query backing the *detached* root constructors. Keyed by `(file_id, green,
@@ -395,15 +411,15 @@ impl<'a> SyntaxNode<'a> {
 
     /// Gets the children syntax nodes of the current node.
     pub fn get_children(&self, db: &'a dyn Database) -> &'a [SyntaxNode<'a>] {
-        /// The children of every non-terminal node in the tree rooted at `root`, materialized
-        /// eagerly in one query. A single memo per tree replaces a full salsa query (key lookup,
-        /// sync-table claim, memo insert, dependency edge) per node, which dominated compilation
-        /// profiles. Terminal subtrees (token + trivia, ~4/5 of all nodes) are rarely visited, so
-        /// they stay lazy - served by the per-node [`node_children`] fallback.
+        /// The children of every non-terminal node in the expression subtree rooted at `root`
+        /// (an outermost expression block), materialized eagerly in one query. A single memo per
+        /// body replaces a full salsa query (key lookup, sync-table claim, memo insert,
+        /// dependency edge) per node, which dominated compilation profiles. Terminal subtrees
+        /// (token + trivia, ~4/5 of all nodes) are rarely visited, so they stay lazy - served by
+        /// the per-node [`node_children`] fallback.
         #[salsa::tracked(returns(ref))]
         fn red_tree<'db>(db: &'db dyn Database, root: SyntaxNodeData<'db>) -> RedTree<'db> {
-            let kind = root.green(db).long(db).kind;
-            let root_node = SyntaxNode { data: root, root, parent: None, kind, parent_kind: None };
+            let root_node = SyntaxNode::from_data(db, root);
             let mut res = RedTree::default();
             // DFS is done so subtrees would occupy contiguous regions and tree-shaped consumers
             // stay local.
@@ -428,21 +444,19 @@ impl<'a> SyntaxNode<'a> {
             db: &'db dyn Database,
             data: SyntaxNodeData<'db>,
         ) -> Vec<SyntaxNode<'db>> {
-            let (parent, parent_kind, root) = match data.id(db) {
-                SyntaxNodeId::Child { parent, .. } => {
-                    (Some(parent.data), Some(parent.kind), parent.root)
-                }
-                SyntaxNodeId::Root(_) => (None, None, data),
-            };
-            let kind = data.green(db).long(db).kind;
-            let node = SyntaxNode { data, root, parent, kind, parent_kind };
+            let node = SyntaxNode::from_data(db, data);
             let mut res = Vec::with_capacity(node.green_node(db).children().len());
             node.collect_children_into(db, &mut res);
             res
         }
-        let tree = red_tree(db, self.root);
-        match tree.ranges.get(&self.data) {
-            Some(range) => &tree.nodes[range.start as usize..range.end as usize],
+        match self.arena_root {
+            Some(arena_root) => {
+                let tree = red_tree(db, arena_root);
+                match tree.ranges.get(&self.data) {
+                    Some(range) => &tree.nodes[range.start as usize..range.end as usize],
+                    None => node_children(db, self.data).as_slice(),
+                }
+            }
             None => node_children(db, self.data).as_slice(),
         }
     }
