@@ -642,6 +642,7 @@ dependencies = [
  "num-traits",
  "pretty_assertions",
  "salsa",
+ "smol_str",
  "tracing",
  "unescaper",
 ]

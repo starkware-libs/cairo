@@ -9,22 +9,42 @@ use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
     TokenNewline, TokenSingleLineComment, TokenSingleLineDocComment, TokenSingleLineInnerComment,
-    TokenWhitespace, TriviumGreen,
+    TokenWhitespace, Trivia, TriviaGreen, TriviumGreen,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use salsa::Database;
+use smol_str::SmolStr;
 
-#[derive(Clone, PartialEq, Eq, Hash)]
-pub struct Lexer {
+#[derive(Clone, PartialEq, Eq)]
+pub struct Lexer<'a> {
     text: Arc<str>,
     previous_position: TextOffset,
     current_position: TextOffset,
+    /// Cache of pure-whitespace trivia runs, keyed by the run's text: indentation repeats
+    /// constantly within a file, and a hit skips both the per-trivium and the trivia-list
+    /// interning into the global green table. Sound since green ids are immortal.
+    ws_trivia_runs: UnorderedHashMap<SmolStr, CachedTriviaRun<'a>>,
 }
 
-impl Lexer {
+/// A cached pure-whitespace trivia run - see [`Lexer::ws_trivia_runs`].
+#[derive(Clone, PartialEq, Eq)]
+struct CachedTriviaRun<'a> {
+    /// The trivia of the run.
+    elements: Vec<TriviumGreen<'a>>,
+    /// The green id of the trivia list containing exactly `elements`.
+    green: TriviaGreen<'a>,
+}
+
+impl<'a> Lexer<'a> {
     /// Creates a new lexer with the given text.
     pub fn new(text: Arc<str>) -> Self {
-        Self { text, previous_position: TextOffset::START, current_position: TextOffset::START }
+        Self {
+            text,
+            previous_position: TextOffset::START,
+            current_position: TextOffset::START,
+            ws_trivia_runs: Default::default(),
+        }
     }
 
     // Helpers.
@@ -63,7 +83,41 @@ impl Lexer {
     }
 
     // Trivia matchers.
-    fn match_trivia<'a>(&mut self, db: &'a dyn Database, leading: bool) -> Vec<TriviumGreen<'a>> {
+    /// Matches the terminal's leading or trailing trivia. Returns the trivia elements, and the
+    /// green id of the full trivia list when it is a (cached) pure-whitespace run.
+    fn match_trivia(
+        &mut self,
+        db: &'a dyn Database,
+        leading: bool,
+    ) -> (Vec<TriviumGreen<'a>>, Option<TriviaGreen<'a>>) {
+        // Fast path: trivia consisting of a pure whitespace run, served from the text-keyed
+        // cache.
+        let rest = self.current_position.take_from(&self.text);
+        let mut run_len = 0;
+        for c in rest.chars() {
+            match c {
+                ' ' | '\r' | '\t' => run_len += c.len_utf8(),
+                '\n' => {
+                    run_len += 1;
+                    if !leading {
+                        break;
+                    }
+                }
+                _ => break,
+            }
+        }
+        if run_len > 0 && !rest[run_len..].starts_with("//") {
+            let run = SmolStr::from(&rest[..run_len]);
+            self.current_position = self.current_position.add_width(TextWidth::from_str(&run));
+            self.previous_position = self.current_position;
+            let cached = self.ws_trivia_runs.entry(run).or_insert_with_key(|run| {
+                let elements = decompose_whitespace_run(db, run);
+                let green = Trivia::new_green(db, &elements);
+                CachedTriviaRun { elements, green }
+            });
+            return (cached.elements.clone(), Some(cached.green));
+        }
+        // Slow path: comments present.
         let mut res: Vec<TriviumGreen<'a>> = Vec::new();
         while let Some(current) = self.peek() {
             let trivium = match current {
@@ -77,11 +131,11 @@ impl Lexer {
                 break;
             }
         }
-        res
+        (res, None)
     }
 
     /// Assumes the next character is one of [' ', '\r', '\t'].
-    fn match_trivium_whitespace<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
+    fn match_trivium_whitespace(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
         let span = self.consume_text_span();
         let text = span.take(&self.text);
@@ -89,7 +143,7 @@ impl Lexer {
     }
 
     /// Assumes the next character is '\n'.
-    fn match_trivium_newline<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
+    fn match_trivium_newline(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take();
         let span = self.consume_text_span();
         let text = span.take(&self.text);
@@ -97,7 +151,7 @@ impl Lexer {
     }
 
     /// Assumes the next 2 characters are "//".
-    fn match_trivium_single_line_comment<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
+    fn match_trivium_single_line_comment(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         match self.peek_nth(2) {
             // `///` is a doc comment, but `////` (4+ slashes) is a regular comment. This matches
             // `cairo-lang-doc`, which discards a doc comment whose content starts with `/`.
@@ -253,8 +307,8 @@ impl Lexer {
         }
     }
 
-    pub fn match_terminal<'a>(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
-        let leading_trivia = self.match_trivia(db, true);
+    pub fn match_terminal(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
+        let (leading_trivia, leading_trivia_green) = self.match_trivia(db, true);
 
         let kind = if let Some(current) = self.peek() {
             match current {
@@ -317,23 +371,71 @@ impl Lexer {
 
         let span = self.consume_text_span();
         let text = SmolStrId::from(db, span.take(&self.text));
-        let trailing_trivia = self.match_trivia(db, false);
+        let (trailing_trivia, trailing_trivia_green) = self.match_trivia(db, false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
         // TODO(yuval): log(verbose) "consumed text: ..."
-        LexerTerminal { text, kind: terminal_kind, leading_trivia, trailing_trivia }
+        LexerTerminal {
+            text,
+            kind: terminal_kind,
+            leading_trivia,
+            trailing_trivia,
+            leading_trivia_green,
+            trailing_trivia_green,
+        }
     }
 }
 
+/// Decomposes a pure-whitespace run into trivia: maximal non-newline whitespace chunks, and a
+/// trivium per newline - mirroring [`Lexer::match_trivium_whitespace`] /
+/// [`Lexer::match_trivium_newline`].
+fn decompose_whitespace_run<'a>(db: &'a dyn Database, run: &str) -> Vec<TriviumGreen<'a>> {
+    let mut elements: Vec<TriviumGreen<'a>> = vec![];
+    let mut chunk_start = 0;
+    for (i, c) in run.char_indices() {
+        if c == '\n' {
+            if i > chunk_start {
+                elements.push(
+                    TokenWhitespace::new_green(db, SmolStrId::from(db, &run[chunk_start..i]))
+                        .into(),
+                );
+            }
+            elements.push(TokenNewline::new_green(db, SmolStrId::from(db, "\n")).into());
+            chunk_start = i + 1;
+        }
+    }
+    if run.len() > chunk_start {
+        elements
+            .push(TokenWhitespace::new_green(db, SmolStrId::from(db, &run[chunk_start..])).into());
+    }
+    elements
+}
+
 /// Output terminal emitted by the lexer.
-#[derive(Clone, PartialEq, Eq, Debug, salsa::SalsaValue)]
+#[derive(Clone, Debug, salsa::SalsaValue)]
 pub struct LexerTerminal<'a> {
     pub text: SmolStrId<'a>,
     /// The kind of the inner token of this terminal.
     pub kind: SyntaxKind,
     pub leading_trivia: Vec<TriviumGreen<'a>>,
     pub trailing_trivia: Vec<TriviumGreen<'a>>,
+    /// The green id of the full leading trivia list, when cheaply known (a pure-whitespace run).
+    pub leading_trivia_green: Option<TriviaGreen<'a>>,
+    /// The green id of the full trailing trivia list, when cheaply known (a pure-whitespace run).
+    pub trailing_trivia_green: Option<TriviaGreen<'a>>,
 }
+/// The trivia greens are excluded: they are caches of the trivia lists, present only when
+/// cheaply known.
+impl<'a> PartialEq for LexerTerminal<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.text == other.text
+            && self.kind == other.kind
+            && self.leading_trivia == other.leading_trivia
+            && self.trailing_trivia == other.trailing_trivia
+    }
+}
+impl<'a> Eq for LexerTerminal<'a> {}
+
 impl<'a> LexerTerminal<'a> {
     pub fn width(&self, db: &dyn Database) -> TextWidth {
         self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()

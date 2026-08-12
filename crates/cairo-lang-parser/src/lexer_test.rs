@@ -376,13 +376,17 @@ fn test_cases() {
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
-                ]
+                ],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "x"),
                 kind: SyntaxKind::TerminalIdentifier,
                 leading_trivia: vec![],
-                trailing_trivia: vec![]
+                trailing_trivia: vec![],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             },
             LexerTerminal {
                 text: SmolStrId::from(db, ":"),
@@ -390,13 +394,17 @@ fn test_cases() {
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
-                ]
+                ],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "&"),
                 kind: SyntaxKind::TerminalAnd,
                 leading_trivia: vec![],
-                trailing_trivia: vec![]
+                trailing_trivia: vec![],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "T"),
@@ -404,7 +412,9 @@ fn test_cases() {
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
-                ]
+                ],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "="),
@@ -412,7 +422,9 @@ fn test_cases() {
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
-                ]
+                ],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "`"),
@@ -420,13 +432,17 @@ fn test_cases() {
                 leading_trivia: vec![],
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
-                ]
+                ],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             },
             LexerTerminal {
                 text: SmolStrId::from(db, "6"),
                 kind: SyntaxKind::TerminalLiteralNumber,
                 leading_trivia: vec![],
-                trailing_trivia: vec![]
+                trailing_trivia: vec![],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             },
             LexerTerminal {
                 text: SmolStrId::from(db, ";"),
@@ -435,13 +451,17 @@ fn test_cases() {
                 trailing_trivia: vec![
                     TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into(),
                     TokenSingleLineComment::new_green(db, SmolStrId::from(db, "//  5+ 3;")).into()
-                ]
+                ],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             },
             LexerTerminal {
                 text: SmolStrId::from(db, ""),
                 kind: SyntaxKind::TerminalEndOfFile,
                 leading_trivia: vec![],
-                trailing_trivia: vec![]
+                trailing_trivia: vec![],
+                leading_trivia_green: None,
+                trailing_trivia_green: None,
             }
         ]
     );

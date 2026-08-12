@@ -48,7 +48,7 @@ pub struct Parser<'a, 'mt> {
     db: &'a dyn Database,
     file_id: FileId<'a>,
     /// The lexer producing the tokens, pulled lazily into `current_terminals` as parsing advances.
-    lexer: Lexer,
+    lexer: Lexer<'a>,
     /// A small lookahead window of already-lexed, not-yet-consumed terminals, kept filled by
     /// `ensure_next_k_exists`. The front is the next terminal to parse.
     current_terminals: VecDeque<LexerTerminal<'a>>,
@@ -3484,7 +3484,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                     continue;
                 }
                 Ok(element) => {
-                    children.push(element.into());
+                    children.push(ElementOrSeparatorGreen::from(element));
                 }
             };
 
@@ -3497,7 +3497,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 ),
                 Ok(separator) => separator,
             };
-            children.push(separator.into());
+            children.push(ElementOrSeparatorGreen::from(separator));
         }
         children
     }
@@ -3563,6 +3563,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             kind: Second::KIND,
             leading_trivia: vec![],
             trailing_trivia: orig.trailing_trivia,
+            leading_trivia_green: None,
+            trailing_trivia_green: orig.trailing_trivia_green,
         });
         // Pushing the first second, with the leading trivia.
         self.current_terminals.push_front(LexerTerminal {
@@ -3570,6 +3572,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             kind: First::KIND,
             leading_trivia: orig.leading_trivia,
             trailing_trivia: vec![],
+            leading_trivia_green: orig.leading_trivia_green,
+            trailing_trivia_green: None,
         });
     }
 
@@ -3715,19 +3719,29 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         &mut self,
         lexer_terminal: LexerTerminal<'a>,
     ) -> Terminal::Green {
-        let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
+        let LexerTerminal {
+            text,
+            kind: _,
+            leading_trivia,
+            trailing_trivia,
+            leading_trivia_green,
+            trailing_trivia_green,
+        } = lexer_terminal;
         let token = Terminal::TokenType::new_green(self.db, text);
         let mut new_leading_trivia = mem::take(&mut self.pending_trivia);
 
         self.consume_pending_skipped_diagnostics();
 
-        new_leading_trivia.extend(leading_trivia);
-        Terminal::new_green(
-            self.db,
-            Trivia::new_green(self.db, &new_leading_trivia),
-            token,
-            Trivia::new_green(self.db, &trailing_trivia),
-        )
+        let leading = match leading_trivia_green {
+            Some(green) if new_leading_trivia.is_empty() => green,
+            _ => {
+                new_leading_trivia.extend(leading_trivia);
+                Trivia::new_green(self.db, &new_leading_trivia)
+            }
+        };
+        let trailing =
+            trailing_trivia_green.unwrap_or_else(|| Trivia::new_green(self.db, &trailing_trivia));
+        Terminal::new_green(self.db, leading, token, trailing)
     }
 
     /// Adds the pending skipped-tokens diagnostics, merging consecutive similar ones, and reset
@@ -3801,6 +3815,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         // Split the trivia into header doc and the rest.
         let header_doc = {
             let next_mut = self.next_terminal_mut();
+            // The cached full-list green (if any) no longer matches the split list.
+            next_mut.leading_trivia_green = None;
             let leading_trivia = next_mut.leading_trivia.split_off(split_index);
             std::mem::replace(&mut next_mut.leading_trivia, leading_trivia)
         };
@@ -3810,6 +3826,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             kind: SyntaxKind::TerminalEmpty,
             leading_trivia: header_doc,
             trailing_trivia: vec![],
+            leading_trivia_green: None,
+            trailing_trivia_green: None,
         };
         self.offset = self.offset.add_width(empty_lexer_terminal.width(self.db));
 
