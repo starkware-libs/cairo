@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
@@ -268,7 +266,7 @@ fn test_lex_single_token() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     for (kind, text) in terminal_kind_and_text() {
-        let terminals = tokenize_all(db, Arc::from(text));
+        let terminals = tokenize_all(db, text);
         let terminal = &terminals[0];
         // TODO(spapini): Remove calling new_detached_root on non root elements.
         assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
@@ -295,7 +293,7 @@ fn test_lex_double_token() {
             }
             for separator in separators {
                 let text = format!("{text0}{separator}{text1}");
-                let terminals = tokenize_all(db, Arc::from(text.as_str()));
+                let terminals = tokenize_all(db, &text);
                 let terminal = &terminals[0];
                 let token_text = terminal.text(db);
                 assert_eq!(
@@ -344,7 +342,7 @@ fn test_lex_token_with_trivia() {
         for leading_trivia in trivia_texts() {
             for trailing_trivia in trivia_texts() {
                 let text = format!("{leading_trivia}{expected_token_text} {trailing_trivia}");
-                let terminals = tokenize_all(db, Arc::from(text.as_str()));
+                let terminals = tokenize_all(db, &text);
                 let terminal = &terminals[0];
                 let token_text = terminal.text(db);
                 assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
@@ -366,7 +364,7 @@ fn test_lex_token_with_trivia() {
 fn test_cases() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
-    let res = tokenize_all(db, Arc::from("let x: &T = ` 6; //  5+ 3;"));
+    let res = tokenize_all(db, "let x: &T = ` 6; //  5+ 3;");
     assert_eq!(
         res.into_iter().collect::<Vec<_>>(),
         vec![
@@ -454,7 +452,7 @@ fn test_doc_comment_classification() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     let text = "// regular\n/// doc\n//! inner\n//// regular\n///// regular\n";
-    let terminal = tokenize_all(db, Arc::from(text)).into_iter().exactly_one().unwrap();
+    let terminal = tokenize_all(db, text).into_iter().exactly_one().unwrap();
     assert_eq!(
         terminal.leading_trivia.into_iter().map(|t| t.0.long(db).kind).collect_vec(),
         [
@@ -478,7 +476,7 @@ fn test_bad_character() {
     let db = &db_val;
 
     let text = "`";
-    let terminals = tokenize_all(db, Arc::from(text));
+    let terminals = tokenize_all(db, text);
     let terminal = &terminals[0];
     let token_text = terminal.text(db);
     assert_eq!(
@@ -497,7 +495,7 @@ fn test_bad_character() {
 }
 
 /// Tokenizes the entire text and returns a vector of terminals.
-pub fn tokenize_all<'db>(db: &'db dyn Database, text: Arc<str>) -> Vec<LexerTerminal<'db>> {
+pub fn tokenize_all<'db>(db: &'db dyn Database, text: &'db str) -> Vec<LexerTerminal<'db>> {
     let mut lexer = Lexer::new(text);
     let mut result = vec![];
     loop {

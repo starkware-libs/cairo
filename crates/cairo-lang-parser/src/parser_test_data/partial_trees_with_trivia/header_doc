@@ -1,0 +1,82 @@
+//! > Test header doc trivia not aliasing same-width indentation
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: false)
+
+//! > cairo_code
+>>> file: src/parser_test_data/cairo_test_files/header_doc_indent.cairo
+
+//! > top_level_kind
+
+//! > ignored_kinds
+TerminalIdentifier
+FunctionSignature
+ExprBlock
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemModule)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── module_kw (kind: TerminalModule)
+    │       │   ├── leading_trivia (kind: Trivia) []
+    │       │   ├── token (kind: TokenModule): 'mod'
+    │       │   └── trailing_trivia (kind: Trivia)
+    │       │       └── child #0 (kind: TokenWhitespace).
+    │       ├── name (kind: TerminalIdentifier) <ignored>
+    │       └── body (kind: ModuleBody)
+    │           ├── lbrace (kind: TerminalLBrace)
+    │           │   ├── leading_trivia (kind: Trivia)
+    │           │   │   └── child #0 (kind: TokenWhitespace).
+    │           │   ├── token (kind: TokenLBrace): '{'
+    │           │   └── trailing_trivia (kind: Trivia)
+    │           │       └── child #0 (kind: TokenNewline).
+    │           ├── items (kind: ModuleItemList)
+    │           │   ├── child #0 (kind: ItemHeaderDoc)
+    │           │   │   └── empty (kind: TerminalEmpty)
+    │           │   │       ├── leading_trivia (kind: Trivia)
+    │           │   │       │   ├── child #0 (kind: TokenSingleLineComment): '// abc'
+    │           │   │       │   └── child #1 (kind: TokenNewline).
+    │           │   │       ├── token (kind: TokenEmpty): ''
+    │           │   │       └── trailing_trivia (kind: Trivia) []
+    │           │   ├── child #1 (kind: FunctionWithBody)
+    │           │   │   ├── attributes (kind: AttributeList) []
+    │           │   │   ├── visibility (kind: VisibilityDefault) []
+    │           │   │   ├── declaration (kind: FunctionDeclaration)
+    │           │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
+    │           │   │   │   ├── function_kw (kind: TerminalFunction)
+    │           │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │           │   │   │   │   ├── token (kind: TokenFunction): 'fn'
+    │           │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │           │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │           │   │   │   ├── name (kind: TerminalIdentifier) <ignored>
+    │           │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │           │   │   │   └── signature (kind: FunctionSignature) <ignored>
+    │           │   │   └── body (kind: ExprBlock) <ignored>
+    │           │   └── child #2 (kind: FunctionWithBody)
+    │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── visibility (kind: VisibilityDefault) []
+    │           │       ├── declaration (kind: FunctionDeclaration)
+    │           │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
+    │           │       │   ├── function_kw (kind: TerminalFunction)
+    │           │       │   │   ├── leading_trivia (kind: Trivia)
+    │           │       │   │   │   └── child #0 (kind: TokenWhitespace).
+    │           │       │   │   ├── token (kind: TokenFunction): 'fn'
+    │           │       │   │   └── trailing_trivia (kind: Trivia)
+    │           │       │   │       └── child #0 (kind: TokenWhitespace).
+    │           │       │   ├── name (kind: TerminalIdentifier) <ignored>
+    │           │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │           │       │   └── signature (kind: FunctionSignature) <ignored>
+    │           │       └── body (kind: ExprBlock) <ignored>
+    │           └── rbrace (kind: TerminalRBrace)
+    │               ├── leading_trivia (kind: Trivia) []
+    │               ├── token (kind: TokenRBrace): '}'
+    │               └── trailing_trivia (kind: Trivia)
+    │                   └── child #0 (kind: TokenNewline).
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []

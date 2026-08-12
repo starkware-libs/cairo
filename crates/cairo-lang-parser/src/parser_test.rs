@@ -214,6 +214,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/parser_test_data/partial_trees_with_trivia",
     {
         comments: "comments",
+        header_doc: "header_doc",
         path: "path",
         path_compat: "path_compat",
         attribute_errors: "attribute_errors",
