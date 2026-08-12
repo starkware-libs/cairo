@@ -42,12 +42,6 @@ pub fn core_module(db: &dyn Database) -> ModuleId<'_> {
     ModuleId::CrateRoot(core_crate)
 }
 
-/// Query implementation of [CorelibSemantic::core_module].
-#[salsa::tracked(returns(copy))]
-pub fn core_module_tracked(db: &dyn Database) -> ModuleId<'_> {
-    core_module(db)
-}
-
 /// Returns the submodule of `base_module`, named `submodule_name`, if exists.
 pub fn get_submodule<'db>(
     db: &'db dyn Database,
@@ -1280,7 +1274,7 @@ pub trait CorelibSemantic<'db>: Database {
         core_crate_tracked(self.as_dyn_database())
     }
     fn core_module(&'db self) -> ModuleId<'db> {
-        core_module_tracked(self.as_dyn_database())
+        core_module(self.as_dyn_database())
     }
     fn core_info(&'db self) -> Arc<CoreInfo<'db>> {
         core_info_tracked(self.as_dyn_database())
