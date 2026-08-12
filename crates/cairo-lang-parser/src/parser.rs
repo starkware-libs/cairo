@@ -1,6 +1,5 @@
 use std::collections::VecDeque;
 use std::mem;
-use std::sync::Arc;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
@@ -12,6 +11,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, require};
 use salsa::Database;
 use syntax::node::green::{GreenNode, GreenNodeDetails};
@@ -47,8 +47,10 @@ enum MacroParsingContext {
 pub struct Parser<'a, 'mt> {
     db: &'a dyn Database,
     file_id: FileId<'a>,
+    /// The parsed text.
+    text: &'a str,
     /// The lexer producing the tokens, pulled lazily into `current_terminals` as parsing advances.
-    lexer: Lexer,
+    lexer: Lexer<'a>,
     /// A small lookahead window of already-lexed, not-yet-consumed terminals, kept filled by
     /// `ensure_next_k_exists`. The front is the next terminal to parse.
     current_terminals: VecDeque<LexerTerminal<'a>>,
@@ -68,6 +70,11 @@ pub struct Parser<'a, 'mt> {
     pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
     /// An indicator if we are inside a macro rule expansion.
     macro_parsing_context: MacroParsingContext,
+    /// Green ids of already-built trivia lists, keyed by their source text. Only contiguous
+    /// pure-whitespace trivia are cached: they repeat constantly within a file (indentation),
+    /// and a hit skips interning the trivia list into the global green table (hash, shard lock,
+    /// structural equality against a huge map). Sound since green ids are immortal.
+    trivia_greens: UnorderedHashMap<&'a str, TriviaGreen<'a>>,
 }
 
 impl<'a> Parser<'a, '_> {
@@ -168,7 +175,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let mut parser = Parser {
             db,
             file_id,
-            lexer: Lexer::new(Arc::from(text)),
+            text,
+            lexer: Lexer::new(text),
             current_terminals: VecDeque::with_capacity(8),
             eof: false,
             pending_trivia: Vec::new(),
@@ -178,6 +186,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             diagnostics,
             pending_skipped_token_diagnostics: Vec::new(),
             macro_parsing_context: MacroParsingContext::None,
+            trivia_greens: Default::default(),
         };
         parser.ensure_next_k_exists(2);
         parser
@@ -339,8 +348,10 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         // token, which doesn't exist.
         self.offset = self.offset.add_width(self.current_width);
 
-        let eof =
-            self.add_trivia_to_terminal::<TerminalEndOfFile<'_>>(self.next_terminal().clone());
+        let eof = self.add_trivia_to_terminal::<TerminalEndOfFile<'_>>(
+            self.next_terminal().clone(),
+            self.offset,
+        );
         SyntaxFile::new_green(self.db, items, eof)
     }
 
@@ -3710,24 +3721,46 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
-    /// to the given terminal as extra leading trivia.
+    /// to the given terminal as extra leading trivia. `terminal_start` is the offset of
+    /// `lexer_terminal` (including its leading trivia) in the file, keying the trivia cache.
     fn add_trivia_to_terminal<Terminal: syntax::node::Terminal<'a>>(
         &mut self,
         lexer_terminal: LexerTerminal<'a>,
+        terminal_start: TextOffset,
     ) -> Terminal::Green {
         let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
         let token = Terminal::TokenType::new_green(self.db, text);
-        let mut new_leading_trivia = mem::take(&mut self.pending_trivia);
+        let mut pending_trivia = mem::take(&mut self.pending_trivia);
 
         self.consume_pending_skipped_diagnostics();
 
-        new_leading_trivia.extend(leading_trivia);
-        Terminal::new_green(
-            self.db,
-            Trivia::new_green(self.db, &new_leading_trivia),
-            token,
-            Trivia::new_green(self.db, &trailing_trivia),
-        )
+        // Pending trivia is source-contiguous and ends exactly at `terminal_start`.
+        let leading_start = terminal_start.sub_width(trivia_total_width(self.db, &pending_trivia));
+        let leading_trivia = if pending_trivia.is_empty() {
+            leading_trivia
+        } else {
+            pending_trivia.extend(leading_trivia);
+            pending_trivia
+        };
+        let leading = self.trivia_green(&leading_trivia, leading_start);
+        let trailing_start = leading_start
+            .add_width(leading.0.width(self.db))
+            .add_width(TextWidth::from_str(text.long(self.db)));
+        let trailing = self.trivia_green(&trailing_trivia, trailing_start);
+        Terminal::new_green(self.db, leading, token, trailing)
+    }
+
+    /// A cached version of [Trivia::new_green]: `start` is the trivia's start offset, locating
+    /// its text, which keys the cache (for pure-whitespace trivia - see
+    /// [`Parser::trivia_greens`]).
+    fn trivia_green(&mut self, trivia: &[TriviumGreen<'a>], start: TextOffset) -> TriviaGreen<'a> {
+        let end = start.add_width(trivia_total_width(self.db, trivia));
+        let text = TextSpan::new(start, end).take(self.text);
+        if text.bytes().all(|b| b.is_ascii_whitespace()) {
+            *self.trivia_greens.entry(text).or_insert_with(|| Trivia::new_green(self.db, trivia))
+        } else {
+            Trivia::new_green(self.db, trivia)
+        }
     }
 
     /// Adds the pending skipped-tokens diagnostics, merging consecutive similar ones, and reset
@@ -3771,7 +3804,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     pub fn take<Terminal: syntax::node::Terminal<'a>>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
         assert_eq!(token.kind, Terminal::KIND);
-        self.add_trivia_to_terminal::<Terminal>(token)
+        self.add_trivia_to_terminal::<Terminal>(token, self.offset)
     }
 
     /// If the current leading trivia start with non-doc comments, creates a new `ItemHeaderDoc` and
@@ -3811,9 +3844,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             leading_trivia: header_doc,
             trailing_trivia: vec![],
         };
+        let terminal_start = self.offset;
         self.offset = self.offset.add_width(empty_lexer_terminal.width(self.db));
 
-        let empty_terminal = self.add_trivia_to_terminal::<TerminalEmpty<'_>>(empty_lexer_terminal);
+        let empty_terminal =
+            self.add_trivia_to_terminal::<TerminalEmpty<'_>>(empty_lexer_terminal, terminal_start);
         Some(ItemHeaderDoc::new_green(self.db, empty_terminal))
     }
 
