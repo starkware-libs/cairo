@@ -8,6 +8,8 @@ use std::sync::Mutex;
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -204,23 +206,53 @@ pub fn ensure_diagnostics(
     }
 }
 
+/// Expands the module tree under `module_id` in parallel: each module's files (including plugin
+/// expansion, the expensive part of discovery) are computed concurrently across the submodule
+/// fan-out, so the serial walk in `crate_modules` afterwards hits warm memos instead of expanding
+/// every module of the crate on a single thread.
+fn warmup_module_discovery_blocking(db: &dyn CloneableDatabase, module_id: ModuleId<'_>) {
+    let Ok(submodules) = db.module_submodules_ids(module_id) else {
+        return;
+    };
+    submodules.into_par_iter().for_each_with(db.dyn_clone(), |db, submodule_id| {
+        warmup_module_discovery_blocking(db.as_ref(), ModuleId::Submodule(*submodule_id));
+    });
+}
+
 /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
 /// would be faster as the queries were already computed.
 fn warmup_diagnostics_blocking(db: &dyn CloneableDatabase, crates: Vec<CrateInput>) {
-    crates.into_par_iter().for_each_with(db.dyn_clone(), |db, crate_input| {
-        let db = db.as_ref();
-        let crate_id = crate_input.into_crate_long_id(db).intern(db);
-        db.crate_modules(crate_id).into_par_iter().for_each_with(
-            db.dyn_clone(),
-            |db, module_id| {
-                for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
-                    db.file_syntax_diagnostics(file_id);
-                }
-                let _ = db.module_semantic_diagnostics(*module_id);
-                let _ = db.module_lowering_diagnostics(*module_id);
-            },
-        );
-    });
+    // Concurrently discover every crate's module tree - dependency crates' modules are needed
+    // by the checked crates' semantic analysis (e.g. impl lookup scans them), and would
+    // otherwise be expanded serially from within whichever query touches them first.
+    let discovery_db = db.dyn_clone();
+    let warmup_db = db.dyn_clone();
+    rayon::join(
+        move || {
+            let db = discovery_db.as_ref();
+            db.crates().into_par_iter().for_each_with(db.dyn_clone(), |db, crate_id| {
+                warmup_module_discovery_blocking(db.as_ref(), ModuleId::CrateRoot(*crate_id));
+            });
+        },
+        move || {
+            crates.into_par_iter().for_each_with(warmup_db, |db, crate_input| {
+                let db = db.as_ref();
+                let crate_id = crate_input.into_crate_long_id(db).intern(db);
+                db.crate_modules(crate_id).into_par_iter().for_each_with(
+                    db.dyn_clone(),
+                    |db, module_id| {
+                        for file_id in
+                            db.module_files(*module_id).unwrap_or_default().iter().copied()
+                        {
+                            db.file_syntax_diagnostics(file_id);
+                        }
+                        let _ = db.module_semantic_diagnostics(*module_id);
+                        let _ = db.module_lowering_diagnostics(*module_id);
+                    },
+                );
+            });
+        },
+    );
 }
 
 /// Spawns threads to compute the `function_with_body_sierra` query and all dependent queries for
