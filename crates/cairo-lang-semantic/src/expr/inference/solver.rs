@@ -101,7 +101,7 @@ impl<'db> Ambiguity<'db> {
 }
 
 /// Implementation of [SemanticSolver::canonic_trait_solutions].
-/// Assumes the lookup context is already enriched by [enrich_lookup_context].
+/// Assumes the lookup context is already enriched by [ImplLookupContextId::enriched].
 pub fn canonic_trait_solutions<'db>(
     db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
@@ -134,7 +134,7 @@ pub fn canonic_trait_solutions<'db>(
 }
 
 /// Query implementation of [SemanticSolver::canonic_trait_solutions].
-/// Assumes the lookup context is already enriched by [enrich_lookup_context].
+/// Assumes the lookup context is already enriched by [ImplLookupContextId::enriched].
 #[salsa::tracked(returns(clone), cycle_result=canonic_trait_solutions_cycle)]
 pub fn canonic_trait_solutions_tracked<'db>(
     db: &'db dyn Database,
@@ -156,21 +156,36 @@ pub fn canonic_trait_solutions_cycle<'db>(
     Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
 }
 
-/// Adds the defining module of the trait and the generic arguments to the lookup context.
-pub fn enrich_lookup_context<'db>(
-    db: &'db dyn Database,
-    concrete_trait_id: ConcreteTraitId<'db>,
-    lookup_context: &mut ImplLookupContext<'db>,
-) {
-    lookup_context.insert_module(concrete_trait_id.trait_id(db).parent_module(db), db);
-    let generic_args = concrete_trait_id.generic_args(db);
-    // Add the defining module of the generic args to the lookup.
-    for generic_arg in generic_args {
-        if let GenericArgumentId::Type(ty) = generic_arg {
-            enrich_lookup_context_with_ty(db, *ty, lookup_context);
+impl<'db> ImplLookupContextId<'db> {
+    /// Returns this context enriched for `concrete_trait_id`: with the defining modules of the
+    /// trait and its generic arguments added, stripped for the trait. Memoized, as enrichment
+    /// scans module and crate impls - a pure function of the two interned ids - and the same
+    /// (context, trait) pair recurs constantly during solving.
+    pub fn enriched(
+        self,
+        db: &'db dyn Database,
+        concrete_trait_id: ConcreteTraitId<'db>,
+    ) -> ImplLookupContextId<'db> {
+        #[salsa::tracked(returns(copy))]
+        fn query<'db>(
+            db: &'db dyn Database,
+            lookup_context: ImplLookupContextId<'db>,
+            concrete_trait_id: ConcreteTraitId<'db>,
+        ) -> ImplLookupContextId<'db> {
+            let mut context = lookup_context.long(db).clone();
+            let trait_id = concrete_trait_id.trait_id(db);
+            context.insert_module(trait_id.parent_module(db), db);
+            // Add the defining module of the generic args to the lookup.
+            for generic_arg in concrete_trait_id.generic_args(db) {
+                if let GenericArgumentId::Type(ty) = generic_arg {
+                    enrich_lookup_context_with_ty(db, *ty, &mut context);
+                }
+            }
+            context.strip_for_trait_id(db, trait_id);
+            context.intern(db)
         }
+        query(db, self, concrete_trait_id)
     }
-    lookup_context.strip_for_trait_id(db, concrete_trait_id.trait_id(db));
 }
 
 /// Adds the defining module of the type to the lookup context.
@@ -473,11 +488,10 @@ impl<'db> LiteInference<'db> {
                         id: imp_concrete_trait_id,
                         mappings: ImplVarTraitItemMappings::default(),
                     };
-                    let mut inner_context = lookup_context.long(self.db).clone();
-                    enrich_lookup_context(self.db, imp_concrete_trait_id, &mut inner_context);
+                    let inner_context = lookup_context.enriched(self.db, imp_concrete_trait_id);
                     let Ok(solution) = self.db.canonic_trait_solutions(
                         canonical_trait,
-                        inner_context.intern(self.db),
+                        inner_context,
                         (*impl_type_bounds).clone(),
                     ) else {
                         return Err(super::ErrorSet);
