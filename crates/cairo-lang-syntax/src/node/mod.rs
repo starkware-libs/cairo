@@ -326,6 +326,21 @@ impl<'a> SyntaxNode<'a> {
         self.data.green(db).long(db)
     }
 
+    /// Returns whether the subtree rooted at this node contains a node of a missing kind, i.e.
+    /// whether it had a parser error.
+    pub fn contains_missing(&self, db: &'a dyn Database) -> bool {
+        /// Whether the green subtree rooted at `green_id` contains a node of a missing kind.
+        /// Walks the green tree directly - materializing the red tree just for this check would
+        /// create (and memoize) a `SyntaxNode` per descendant. Memoized per green id, so shared
+        /// subtrees are walked once.
+        #[salsa::tracked(returns(copy))]
+        fn query<'db>(db: &'db dyn Database, green_id: GreenId<'db>) -> bool {
+            let node = green_id.long(db);
+            node.kind.is_missing() || node.children().iter().any(|child| query(db, *child))
+        }
+        query(db, *self.data.green(db))
+    }
+
     /// Returns the span of the syntax node without trivia.
     pub fn span_without_trivia(&self, db: &dyn Database) -> TextSpan {
         let green_node = self.green_node(db);
