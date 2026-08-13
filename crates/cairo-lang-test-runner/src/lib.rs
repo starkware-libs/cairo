@@ -75,6 +75,7 @@ impl<'db> TestRunner<'db> {
                 contract_declarations: None,
                 contract_crate_ids: None,
                 executable_crate_ids: None,
+                tests_filter: Some(config.filter.clone()),
                 add_functions_debug_info: false,
                 add_type_names: false,
                 replace_ids: false,
@@ -282,7 +283,8 @@ pub fn filter_test_cases<'db>(
     ignored: bool,
     filter: &str,
 ) -> (TestCompilation<'db>, usize) {
-    let total_tests_count = compiled.metadata.named_tests.len();
+    let total_tests_count =
+        compiled.metadata.named_tests.len() + compiled.metadata.compilation_filtered_out;
     let named_tests = compiled
         .metadata
         .named_tests
@@ -344,11 +346,22 @@ pub fn run_tests(
         metadata:
             TestCompilationMetadata {
                 named_tests,
+                compilation_filtered_out: _,
                 function_set_costs,
                 contracts_info,
                 statements_locations,
             },
     } = compiled;
+    if named_tests.is_empty() {
+        // Nothing to run - skip the Sierra-to-casm compilation of the program altogether.
+        println!("running 0 tests");
+        return Ok(TestsSummary {
+            passed: vec![],
+            failed: vec![],
+            ignored: vec![],
+            failed_run_results: vec![],
+        });
+    }
     let sierra_program = sierra_program_with_debug_info.program;
     let runner = SierraCasmRunner::new(
         sierra_program.clone(),

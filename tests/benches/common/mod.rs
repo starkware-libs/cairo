@@ -241,6 +241,7 @@ pub fn run_cache_to_testing(config: &BenchConfig, cache_bytes: &[u8]) {
     let compiled = compile_test_prepared_db(
         &db,
         TestsCompilationConfig {
+            tests_filter: None,
             starknet: config.starknet,
             contract_declarations: None,
             contract_crate_ids: None,

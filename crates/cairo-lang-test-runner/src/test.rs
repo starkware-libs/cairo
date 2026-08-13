@@ -26,6 +26,7 @@ fn test_compiled_serialization() {
             contract_declarations: None,
             contract_crate_ids: None,
             executable_crate_ids: None,
+            tests_filter: None,
             replace_ids: false,
         },
     )
@@ -251,6 +252,7 @@ fn to_test_compilation<'db>(tests: &[(&str, bool)]) -> TestCompilation<'db> {
             funcs: vec![],
         }),
         metadata: TestCompilationMetadata {
+            compilation_filtered_out: 0,
             named_tests: tests.iter().map(to_named_test).collect(),
             contracts_info: Default::default(),
             function_set_costs: Default::default(),

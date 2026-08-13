@@ -68,6 +68,11 @@ pub struct TestsCompilationConfig<'db> {
     /// If not defined, test crates will be searched.
     pub executable_crate_ids: Option<Vec<CrateId<'db>>>,
 
+    /// Only compiles tests whose fully-qualified name contains this string, matching the
+    /// runner-side test filter. Skips the Sierra generation and Sierra-to-casm work of
+    /// filtered-out tests.
+    pub tests_filter: Option<String>,
+
     /// Adds a mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler)
     /// to [Annotations] in [DebugInfo] in the compiled tests.
     pub add_statements_functions: bool,
@@ -145,12 +150,34 @@ pub fn compile_test_prepared_db<'db>(
         tests_compilation_config.executable_crate_ids.unwrap_or_else(|| test_crate_ids.clone()),
     );
     let all_tests = find_all_tests(db, test_crate_ids);
+    // Compute the tests' full names, and apply the tests filter before any code generation.
+    let total_tests_count = all_tests.len();
+    let named_tests = all_tests
+        .into_iter()
+        .map(|(func_id, test)| {
+            let name = format!(
+                "{:?}",
+                FunctionLongId {
+                    function: ConcreteFunction {
+                        generic_function: GenericFunctionId::Free(func_id),
+                        generic_args: vec![]
+                    }
+                }
+                .debug(db)
+            );
+            (name, func_id, test)
+        })
+        .filter(|(name, _, _)| {
+            tests_compilation_config.tests_filter.as_ref().is_none_or(|f| name.contains(f))
+        })
+        .collect_vec();
+    let compilation_filtered_out = total_tests_count - named_tests.len();
 
     let func_ids = chain!(
         executable_functions.keys().cloned(),
         all_entry_points.iter().cloned(),
         // TODO(maciektr): Remove test entrypoints after migration to executable attr.
-        all_tests.iter().flat_map(|(func_id, _cfg)| {
+        named_tests.iter().flat_map(|(_name, func_id, _cfg)| {
             ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
         })
     )
@@ -205,24 +232,8 @@ pub fn compile_test_prepared_db<'db>(
     }
 
     let executables = collect_executables(db, executable_functions, &sierra_program);
-    let named_tests = all_tests
-        .into_iter()
-        .map(|(func_id, test)| {
-            (
-                format!(
-                    "{:?}",
-                    FunctionLongId {
-                        function: ConcreteFunction {
-                            generic_function: GenericFunctionId::Free(func_id),
-                            generic_args: vec![]
-                        }
-                    }
-                    .debug(db)
-                ),
-                test,
-            )
-        })
-        .collect_vec();
+    let named_tests =
+        named_tests.into_iter().map(|(name, _func_id, test)| (name, test)).collect_vec();
     let contracts_info = get_contracts_info(db, contracts, &replacer)?;
     let sierra_program = ProgramArtifact::stripped(sierra_program).with_debug_info(DebugInfo {
         executables,
@@ -234,6 +245,7 @@ pub fn compile_test_prepared_db<'db>(
         sierra_program,
         metadata: TestCompilationMetadata {
             named_tests,
+            compilation_filtered_out,
             function_set_costs,
             contracts_info,
             statements_locations: Some(debug_info.statements_locations.clone()),
@@ -270,6 +282,10 @@ pub struct TestCompilationMetadata<'db> {
     )]
     pub function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>>,
     pub named_tests: Vec<(String, TestConfig)>,
+    /// The number of tests that were filtered out at compilation time (by
+    /// [`TestsCompilationConfig::tests_filter`]), for reporting.
+    #[serde(default)]
+    pub compilation_filtered_out: usize,
     /// Optional `StatementsLocations` for the compiled tests.
     /// See [StatementsLocations] for more information.
     // TODO(Gil): consider serializing this field once it is stable.
