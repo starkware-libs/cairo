@@ -132,7 +132,7 @@ pub fn default_crate_settings(_db: &dyn Database) -> CrateSettings {
 /// Compiler minor version updates will always support all editions supported by the previous
 /// updates with the same major version. Compiler major version updates may remove support for older
 /// editions. Editions may be added to provide features that are not backwards compatible, while
-/// allowing user to opt-in to them, and be ready for later compiler updates.
+/// allowing users to opt in to them and prepare for later compiler updates.
 #[derive(
     Clone, Copy, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::SalsaValue,
 )]

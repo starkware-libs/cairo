@@ -30,11 +30,11 @@
 //! It is also possible to use the [`Felt252DictTrait::entry`] method to retrieve the last entry
 //! given a certain key.
 //! In this case, the method takes ownership of the dictionary and returns the entry to update.
-//! After that, using the [`Felt252DictEntryTrait::finalize`] allows to create a new entry in the
+//! After that, you can use [`Felt252DictEntryTrait::finalize`] to create a new entry in the
 //! dictionary.
-//! Using `entry` and `finalize` methods can be very useful given that it does not require the type
-//! in the dictionary to be copyable, meaning that we can use non-copyable types like arrays as
-//! dictionary values.
+//! Using the `entry` and `finalize` methods can be very useful, given that they do not require the
+//! type in the dictionary to be copyable, meaning that we can use non-copyable types like arrays
+//! as dictionary values.
 //!
 //! ```
 //! use core::dict::Felt252Dict;
