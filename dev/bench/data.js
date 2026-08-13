@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786583095058,
+  "lastUpdate": 1786583232997,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -20601,6 +20601,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "ls_reexec/structural edit (end)",
             "value": 1522,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "2cd7a83fc03dabeac0e33bc2b9de7caabb9d0fef",
+          "message": "(opt): chunk the red-tree arena at item boundaries (#10341)\n\nCo-authored-by: Claude Fable 5 <noreply@anthropic.com>",
+          "timestamp": "2026-08-12T15:08:27Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/2cd7a83fc03dabeac0e33bc2b9de7caabb9d0fef"
+        },
+        "date": 1786583232815,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
             "unit": "queries"
           },
           {
