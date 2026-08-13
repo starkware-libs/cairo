@@ -314,7 +314,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test non-copy isnt forwarded due to sibling
+//! > Test non-copy isn't forwarded due to sibling
 
 //! > test_runner_name
 test_variable_forwarding
