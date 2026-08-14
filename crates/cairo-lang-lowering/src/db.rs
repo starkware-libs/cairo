@@ -833,6 +833,7 @@ fn type_size<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> usize {
     }
 }
 
+#[salsa::tracked(returns(copy))]
 fn estimate_size<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
