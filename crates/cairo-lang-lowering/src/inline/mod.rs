@@ -102,7 +102,7 @@ pub fn priv_never_inline<'db>(
 }
 
 /// Returns the [InlineConfiguration] of a function.
-fn function_inline_config<'db>(
+pub(crate) fn function_inline_config<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {

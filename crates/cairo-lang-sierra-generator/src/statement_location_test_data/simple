@@ -1264,13 +1264,6 @@ Originating location:
                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayImpl::append_word
 Inlined at:
-      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
- _____^
-| ...
-|     }
-|_____^
-In function: core::byte_array::ByteArrayImpl::append_word
-Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
@@ -1874,13 +1867,6 @@ Originating location:
                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayImpl::append_word
 Inlined at:
-      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
- _____^
-| ...
-|     }
-|_____^
-In function: core::byte_array::ByteArrayImpl::append_word
-Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
@@ -2186,8 +2172,12 @@ Inlined at:
 In function: println_macro::println_macro
 [27]:
 Originating location:
-    const fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
-                                  ^^^^
+            Ok(x) => x,
+               ^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        self.expect('Result::unwrap failed.')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::result::ResultTraitImpl::unwrap
 Inlined at:
       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
@@ -2205,22 +2195,8 @@ Originating location:
 |_____^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
-      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
- _____^
-| ...
-|     }
-|_____^
-In function: core::result::ResultTraitImpl::expect
-Inlined at:
         self.expect('Result::unwrap failed.')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::result::ResultTraitImpl::unwrap
-Inlined at:
-      const fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
- _____^
-|         self.expect('Result::unwrap failed.')
-|     }
-|_____^
 In function: core::result::ResultTraitImpl::unwrap
 Inlined at:
       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
