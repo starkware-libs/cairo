@@ -4,9 +4,9 @@ use core::ops::Sub;
 use indexmap::IndexSet;
 use itertools::zip_eq;
 
-#[cfg(feature = "std")]
-type BHImpl = std::collections::hash_map::RandomState;
-#[cfg(not(feature = "std"))]
+// hashbrown's default hasher (foldhash) rather than std's SipHash. IndexMap/IndexSet iterate in
+// insertion order, so the iteration order -- and thus compilation determinism -- is independent of
+// the hasher.
 type BHImpl = hashbrown::DefaultHashBuilder;
 
 #[derive(Clone, Debug)]

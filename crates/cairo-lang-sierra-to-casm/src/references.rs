@@ -1,3 +1,5 @@
+use std::collections::hash_map::RandomState;
+
 use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::cell_ref;
@@ -23,7 +25,10 @@ pub enum ReferencesError {
     UnknownType(ConcreteTypeId),
 }
 
-pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue>;
+/// The `VarId` keys come from an untrusted Sierra program and an attacker can make thousands of
+/// them live at once, so this uses the DoS-resistant `RandomState` (SipHash) rather than the
+/// crate-default fast hasher, whose weaker collision resistance would allow quadratic blowup.
+pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue, RandomState>;
 
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.

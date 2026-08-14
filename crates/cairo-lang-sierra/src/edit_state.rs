@@ -38,7 +38,7 @@ pub trait EditState<V> {
     ) -> Result<(), EditStateError>;
 }
 
-impl<V> EditState<V> for OrderedHashMap<VarId, V> {
+impl<V, BH: core::hash::BuildHasher> EditState<V> for OrderedHashMap<VarId, V, BH> {
     fn take_vars<'a>(
         &mut self,
         ids: impl ExactSizeIterator<Item = &'a VarId>,
