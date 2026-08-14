@@ -771,6 +771,13 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
 
+        // A call to a function that would be inlined is inlined right after this visit, folding
+        // the constant arguments in place - specialization would only add the cost of estimating
+        // the specialized size.
+        if self.db.priv_should_inline(called_base).ok()? {
+            return None;
+        }
+
         // Do not specialize the call that should be inlined.
         if call_stmt.is_specialization_base_call {
             return None;
