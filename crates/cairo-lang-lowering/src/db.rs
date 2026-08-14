@@ -48,6 +48,7 @@ pub struct LoweringGroupInput {
     #[returns(ref)]
     pub optimizations: Option<Optimizations>,
     /// A configurable function to get estimated size of the function with the given id.
+    /// Must be a pure function of the db - results are memoized.
     #[returns(ref)]
     code_size_estimator: Option<CodeSizeEstimator>,
 }
@@ -833,6 +834,7 @@ fn type_size<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> usize {
     }
 }
 
+#[salsa::tracked(returns(copy))]
 fn estimate_size<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
