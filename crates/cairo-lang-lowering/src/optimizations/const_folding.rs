@@ -442,7 +442,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             BlockEnd::Match { info } => {
                 for arm in info.arms() {
-                    assert!(self.reachability.insert(arm.block_id, Reachability::Any).is_none());
+                    // A match end may be visited again if it was moved to the continuation block
+                    // when a statement appended by a block-end replacement was inlined.
+                    assert!(matches!(
+                        self.reachability.insert(arm.block_id, Reachability::Any),
+                        None | Some(Reachability::Any)
+                    ));
                 }
             }
             BlockEnd::NotSet | BlockEnd::Return(..) | BlockEnd::Panic(..) => {}
