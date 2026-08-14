@@ -247,33 +247,39 @@ fn inner_apply_inlining<'db>(
             let next_block_id = blocks.len();
             let block = &mut blocks[block_id];
 
-            let mut opt_inline_info = None;
-            for (idx, statement) in block.statements.iter_mut().enumerate() {
-                if enable_const_folding {
+            let mut stmt_idx = 0;
+            let mut end_visited = false;
+            let opt_inline_info = loop {
+                let Some(statement) = block.statements.get_mut(stmt_idx) else {
+                    if enable_const_folding && !end_visited {
+                        end_visited = true;
+                        // Skipping the prepended statements, and continuing the scan over the
+                        // statements possibly appended by a block-end replacement.
+                        stmt_idx += const_folding_ctx.visit_block_end(block_id, block);
+                        continue;
+                    }
+                    break None;
+                };
+                if enable_const_folding && !end_visited {
                     const_folding_ctx.visit_statement(statement);
                 }
-                if let Some((call_stmt, called_func)) =
-                    should_inline(db, calling_function_id, statement)?
-                {
-                    opt_inline_info = Some((idx, call_stmt.clone(), called_func));
-                    break;
+                if let Some(inline_info) = should_inline(db, calling_function_id, statement)? {
+                    break Some(inline_info);
                 }
-            }
+                stmt_idx += 1;
+            };
 
-            let Some((call_stmt_idx, call_stmt, called_func)) = opt_inline_info else {
-                if enable_const_folding {
-                    const_folding_ctx.visit_block_end(block_id, block);
-                }
+            let Some((call_stmt, called_func)) = opt_inline_info else {
                 // Nothing to inline in this block, go to the next block.
                 continue;
             };
+            let call_stmt = call_stmt.clone();
 
             let inlined_lowered = db.lowered_body(called_func, LoweringStage::PostBaseline)?;
             inlined_lowered.blocks.has_root()?;
 
             // Drain the statements starting at the call to the inlined function.
-            let remaining_statements =
-                block.statements.drain(call_stmt_idx..).skip(1).collect_vec();
+            let remaining_statements = block.statements.drain(stmt_idx..).skip(1).collect_vec();
 
             // Replace the end of the block with a goto to the root block of the inlined function.
             let orig_block_end = std::mem::replace(

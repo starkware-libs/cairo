@@ -383,8 +383,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     /// - Inserts the accumulated additional statements into the block.
     /// - Converts match endings to goto when applicable.
     /// - Updates self.reachability based on the block's ending.
-    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut Block<'db>) {
+    ///
+    /// Returns the number of statements prepended to the block.
+    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut Block<'db>) -> usize {
         let statements = &mut block.statements;
+        let n_prepended = self.additional_stmts.len();
         statements.splice(0..0, self.additional_stmts.drain(..));
 
         match &mut block.end {
@@ -442,11 +445,17 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             BlockEnd::Match { info } => {
                 for arm in info.arms() {
-                    assert!(self.reachability.insert(arm.block_id, Reachability::Any).is_none());
+                    // A match end may be visited again if it was moved to the continuation block
+                    // when a statement appended by a block-end replacement was inlined.
+                    assert!(matches!(
+                        self.reachability.insert(arm.block_id, Reachability::Any),
+                        None | Some(Reachability::Any)
+                    ));
                 }
             }
             BlockEnd::NotSet | BlockEnd::Return(..) | BlockEnd::Panic(..) => {}
         }
+        n_prepended
     }
 
     /// Handles a statement call.
@@ -1112,14 +1121,18 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         enum_ty,
                         info.location,
                     ));
-                    statements.push(Statement::Call(StatementCall {
+                    let mut call = StatementCall {
                         function,
                         inputs: vec![info.inputs[0]],
                         with_coupon: false,
                         outputs: vec![result],
                         location: info.location,
                         is_specialization_base_call: false,
-                    }));
+                    };
+                    statements.push(match self.try_specialize_call(&mut call) {
+                        Some(specialized) => specialized,
+                        None => Statement::Call(call),
+                    });
                     return Some(BlockEnd::Match {
                         info: MatchInfo::Enum(MatchEnumInfo {
                             concrete_enum_id: *concrete_enum_id,
