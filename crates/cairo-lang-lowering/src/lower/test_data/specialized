@@ -7,6 +7,8 @@ test_specialized_function
 fn bar(keep: bool, x: felt252) {
     if keep {
         bar_ext(x);
+    } else {
+        bar_ext(x);
     }
 }
 
@@ -51,6 +53,8 @@ test_specialized_function
 fn bar(keep: bool, x: Box<felt252>) {
     if keep {
         bar_ext(x);
+    } else {
+        bar_ext(x);
     }
 }
 
@@ -94,6 +98,8 @@ test_specialized_function
 //! > cairo_code
 fn bar(keep: bool, x: Array<felt252>) {
     if keep {
+        bar_ext(x);
+    } else {
         bar_ext(x);
     }
 }
@@ -194,6 +200,8 @@ test_specialized_function
 fn bar(keep: bool, x: Array<felt252>) {
     if keep {
         bar_ext(x);
+    } else {
+        bar_ext(x);
     }
 }
 
@@ -240,6 +248,8 @@ fn bar(
     keep: bool, ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252, z: Box<felt252>,
 ) {
     if keep {
+        bar_ext(ref arr, d, x, y, z);
+    } else {
         bar_ext(ref arr, d, x, y, z);
     }
 }
@@ -304,6 +314,8 @@ struct S6 {
 fn bar(keep: bool, s: S6) {
     if keep {
         bar_ext(s);
+    } else {
+        bar_ext(s);
     }
 }
 
@@ -357,6 +369,8 @@ struct SA1 {
 
 fn bar(keep: bool, s: SA1) {
     if keep {
+        bar_ext(s);
+    } else {
         bar_ext(s);
     }
 }
@@ -417,6 +431,8 @@ struct SA1 {
 
 fn bar(keep: bool, s: SA1) {
     if keep {
+        bar_ext(s);
+    } else {
         bar_ext(s);
     }
 }
@@ -546,6 +562,8 @@ struct S {
 fn bar(keep: bool, s: S) {
     if keep {
         bar_ext(s);
+    } else {
+        bar_ext(s);
     }
 }
 
@@ -674,6 +692,8 @@ enum E {
 fn bar(keep: bool, e: E) {
     if keep {
         bar_ext(e);
+    } else {
+        bar_ext(e);
     }
 }
 
@@ -728,6 +748,8 @@ enum E {
 
 fn bar(keep: bool, e: E) {
     if keep {
+        bar_ext(e);
+    } else {
         bar_ext(e);
     }
 }
@@ -845,6 +867,8 @@ test_specialized_function
 fn bar(keep: bool, t: (felt252, felt252, felt252)) {
     if keep {
         bar_ext(t);
+    } else {
+        bar_ext(t);
     }
 }
 
@@ -892,6 +916,8 @@ test_specialized_function
 fn bar(keep: bool, t: (felt252, felt252, felt252)) {
     if keep {
         bar_ext(t);
+    } else {
+        bar_ext(t);
     }
 }
 
@@ -937,6 +963,8 @@ test_specialized_function
 //! > cairo_code
 fn bar(keep: bool, arr: [felt252; 3]) {
     if keep {
+        bar_ext(arr);
+    } else {
         bar_ext(arr);
     }
 }
@@ -984,6 +1012,8 @@ test_specialized_function
 //! > cairo_code
 fn bar(keep: bool, arr: [felt252; 3]) {
     if keep {
+        bar_ext(arr);
+    } else {
         bar_ext(arr);
     }
 }
@@ -1037,6 +1067,8 @@ struct S {
 fn bar(keep: bool, s: S) {
     if keep {
         bar_ext(s);
+    } else {
+        bar_ext(s);
     }
 }
 
@@ -1089,6 +1121,8 @@ struct S {
 
 fn bar(keep: bool, s: S) {
     if keep {
+        bar_ext(s);
+    } else {
         bar_ext(s);
     }
 }
