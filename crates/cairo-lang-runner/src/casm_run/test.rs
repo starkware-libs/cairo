@@ -243,6 +243,12 @@ fn test_as_cairo_short_string_ex() {
         ),
         None
     );
+
+    // With escape sequence (red color)
+    assert_eq!(
+        as_cairo_short_string_ex(&Felt252::from(0x611b5b316d62_i64), 6),
+        Some("a\x1b[1mb".to_string())
+    );
 }
 
 #[test]
