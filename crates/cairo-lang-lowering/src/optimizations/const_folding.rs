@@ -14,7 +14,9 @@ use cairo_lang_semantic::items::constant::{
     ConstCalcInfo, ConstValue, ConstValueId, ConstantSemantic, TypeRange, canonical_felt252,
     felt252_for_downcast,
 };
-use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
+use cairo_lang_semantic::items::functions::{
+    GenericFunctionId, GenericFunctionWithBodyId, InlineConfiguration,
+};
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{TypeSizeInformation, TypesSemantic};
 use cairo_lang_semantic::{
@@ -741,6 +743,21 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         let caller_base = extract_base(self.caller_function);
 
         if self.db.priv_never_inline(called_base).ok()? {
+            return None;
+        }
+
+        // If the base has no inline configuration and the size heuristic would inline it, the
+        // call is inlined right after the const folding visit of the statement and the constant
+        // arguments are folded in place, so specialization would only add the cost of estimating
+        // the specialized size. Such calls never survive to the standalone const-folding pass,
+        // as the interleaved pass always inlines them. Bases with an explicit inline hint are
+        // excluded, as specialization may replace size-independent inlining with a shared
+        // specialized function.
+        if matches!(
+            crate::inline::function_inline_config(self.db, called_base).ok()?,
+            InlineConfiguration::None
+        ) && self.db.priv_should_inline(called_base).ok()?
+        {
             return None;
         }
 
