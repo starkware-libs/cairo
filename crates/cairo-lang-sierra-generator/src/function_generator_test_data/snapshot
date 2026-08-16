@@ -70,37 +70,37 @@ fn foo(x: @u32) {
 label_test::foo::0:
 rename<u32>([1]) -> ([2])
 dup<u32>([2]) -> ([2], [3])
-store_temp<u32>([3]) -> ([3])
-function_call<user@core::internal::num::u32_inc>([3]) -> ([4])
-enum_match<core::result::Result::<core::integer::u32, core::integer::u32>>([4]) { fallthrough([5]) label_test::foo::1([6]) }
+bounded_int_trim_max<u32>([3]) { fallthrough() label_test::foo::1([4]) }
 branch_align() -> ()
-drop<u32>([5]) -> ()
-const_as_immediate<Const<u32, 2>>() -> ([7])
-store_temp<u32>([7]) -> ([7])
-u32_overflowing_add([0], [2], [7]) { fallthrough([8], [9]) label_test::foo::3([10], [11]) }
-branch_align() -> ()
-drop<u32>([9]) -> ()
-struct_construct<Unit>() -> ([12])
-struct_construct<Tuple<Unit>>([12]) -> ([13])
-enum_init<core::panics::PanicResult::<((),)>, 0>([13]) -> ([14])
-store_temp<RangeCheck>([8]) -> ([8])
-store_temp<core::panics::PanicResult::<((),)>>([14]) -> ([14])
-return([8], [14])
-label_test::foo::3:
-branch_align() -> ()
-drop<u32>([11]) -> ()
-store_temp<RangeCheck>([10]) -> ([15])
-jump() { label_test::foo::5() }
-label_test::foo::4:
+drop<u32>([2]) -> ()
+store_temp<RangeCheck>([0]) -> ([5])
+jump() { label_test::foo::3() }
 label_test::foo::1:
 branch_align() -> ()
-drop<u32>([6]) -> ()
-drop<u32>([2]) -> ()
-store_temp<RangeCheck>([0]) -> ([15])
+const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([6])
+bounded_int_add<BoundedInt<0, 4294967294>, BoundedInt<1, 1>>([4], [6]) -> ([7])
+upcast<BoundedInt<1, 4294967295>, u32>([7]) -> ([8])
+drop<u32>([8]) -> ()
+const_as_immediate<Const<u32, 2>>() -> ([9])
+store_temp<u32>([9]) -> ([9])
+u32_overflowing_add([0], [2], [9]) { fallthrough([10], [11]) label_test::foo::4([12], [13]) }
+branch_align() -> ()
+drop<u32>([11]) -> ()
+struct_construct<Unit>() -> ([14])
+struct_construct<Tuple<Unit>>([14]) -> ([15])
+enum_init<core::panics::PanicResult::<((),)>, 0>([15]) -> ([16])
+store_temp<RangeCheck>([10]) -> ([10])
+store_temp<core::panics::PanicResult::<((),)>>([16]) -> ([16])
+return([10], [16])
+label_test::foo::4:
+branch_align() -> ()
+drop<u32>([13]) -> ()
+store_temp<RangeCheck>([12]) -> ([5])
+label_test::foo::3:
+function_call<user@core::panic_with_const_felt252::<155785504323917466144735657540098748279>>() -> ([17])
+enum_init<core::panics::PanicResult::<((),)>, 1>([17]) -> ([18])
+store_temp<RangeCheck>([5]) -> ([5])
+store_temp<core::panics::PanicResult::<((),)>>([18]) -> ([18])
+return([5], [18])
 label_test::foo::5:
-function_call<user@core::panic_with_const_felt252::<155785504323917466144735657540098748279>>() -> ([16])
-enum_init<core::panics::PanicResult::<((),)>, 1>([16]) -> ([17])
-store_temp<RangeCheck>([15]) -> ([15])
-store_temp<core::panics::PanicResult::<((),)>>([17]) -> ([17])
-return([15], [17])
 label_test::foo::2:

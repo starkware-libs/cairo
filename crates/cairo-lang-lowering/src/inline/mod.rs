@@ -260,10 +260,24 @@ fn inner_apply_inlining<'db>(
                 }
             }
 
-            let Some((call_stmt_idx, call_stmt, called_func)) = opt_inline_info else {
-                if enable_const_folding {
-                    const_folding_ctx.visit_block_end(block_id, block);
+            if opt_inline_info.is_none() && enable_const_folding {
+                let visited_count = block.statements.len();
+                const_folding_ctx.visit_block_end(block_id, block);
+                // The visit may have replaced the block end, appending new statements (e.g.
+                // rewriting a match on `x - 1` into a call to an inc/dec function) - reprocess
+                // the appended statements, similar to the reprocessing of replaced statements.
+                for (idx, statement) in block.statements.iter_mut().enumerate().skip(visited_count)
+                {
+                    if let Some((call_stmt, called_func)) =
+                        should_inline(db, calling_function_id, statement)?
+                    {
+                        opt_inline_info = Some((idx, call_stmt.clone(), called_func));
+                        break;
+                    }
                 }
+            }
+
+            let Some((call_stmt_idx, call_stmt, called_func)) = opt_inline_info else {
                 // Nothing to inline in this block, go to the next block.
                 continue;
             };
