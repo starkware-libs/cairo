@@ -17,6 +17,15 @@ impl SumAddableTypesImpl<A, +Add<A>, impl ZeroA: core::num::traits::Zero<A>> of 
         iter.fold(ZeroA::zero(), |acc, x| acc + x)
     }
 }
+
+impl SumSnapshotAddableTypesImpl<
+    A, +Add<A>, +Copy<A>, +Drop<A>, impl ZeroA: core::num::traits::Zero<A>,
+> of Sum<@A> {
+    fn sum<I, +Iterator<I>[Item: @A], +Destruct<I>, +Destruct<@A>>(mut iter: I) -> @A {
+        @(iter.fold(ZeroA::zero(), |acc: A, x: @A| acc + (*x)))
+    }
+}
+
 /// Trait to represent types that can be created by multiplying elements of an
 /// iterator.
 ///
