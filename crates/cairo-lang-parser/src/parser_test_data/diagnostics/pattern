@@ -5,8 +5,8 @@ get_diagnostics
 
 //! > cairo_code
 fn f() {
-    let ref abc::def = 5;
-    let A { x
+    let x = abc::def;  
+    let A { x } = value;  
     let x = 5;
 }
 
