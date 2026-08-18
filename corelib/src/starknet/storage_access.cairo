@@ -957,7 +957,7 @@ fn inner_write_byte_array(
         index_in_chunk = match core::integer::u8_overflowing_add(index_in_chunk, 1) {
             Ok(x) => x,
             Err(_) => {
-                // After writing 256 `byte31`s `index_in_chunk` will overflow and we move to the
+                // After writing 256 `bytes31`s `index_in_chunk` will overflow and we move to the
                 // next chunk.
                 chunk += 1;
                 chunk_base = inner_byte_array_pointer(address, chunk);
