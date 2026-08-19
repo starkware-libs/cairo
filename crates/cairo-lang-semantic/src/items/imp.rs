@@ -3678,10 +3678,7 @@ fn crate_dependencies<'db>(
     crate_id: CrateId<'db>,
 ) -> OrderedHashSet<CrateId<'db>> {
     let mut crates = [crate_id, db.core_crate()].into_iter().unique().collect_vec();
-    let mut crates_set: OrderedHashSet<CrateId<'db>, _> = OrderedHashSet::<
-        CrateId<'db>,
-        std::collections::hash_map::RandomState,
-    >::from_iter(crates.iter().copied());
+    let mut crates_set = OrderedHashSet::from_iter(crates.iter().copied());
     while let Some(crate_id) = crates.pop() {
         let default_settings = Default::default();
         let settings =
