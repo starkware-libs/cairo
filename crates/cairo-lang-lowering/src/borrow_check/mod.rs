@@ -340,8 +340,7 @@ pub fn borrow_check<'db>(
     BorrowCheckResult { block_extra_calls, diagnostics: diagnostics.build() }
 }
 
-/// Borrow check the params of the function are panic destruct, as this function may have a gas
-/// withdrawal.
+/// Borrow check the function's panic-destructible parameters, as this function may withdraw gas.
 pub fn borrow_check_possible_withdraw_gas<'db>(
     db: &'db dyn Database,
     context_module: ModuleId<'db>,
