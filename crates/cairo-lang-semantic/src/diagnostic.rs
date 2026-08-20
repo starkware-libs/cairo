@@ -27,6 +27,7 @@ use syntax::node::ids::SyntaxStablePtrId;
 use crate::corelib::LiteralError;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
+use crate::items::macro_declaration::MacroExpansionFailure;
 use crate::items::trt::ConcreteTraitTypeId;
 use crate::path::ContextualizePath;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -1212,6 +1213,12 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
                 format!("Undefined macro placeholder: '{}'.", name.long(db))
             }
+            SemanticDiagnosticKind::DuplicateMacroPlaceholder(name) => {
+                format!(
+                    "Macro placeholder '{}' is already captured by this rule's pattern.",
+                    name.long(db)
+                )
+            }
             SemanticDiagnosticKind::MacroPlaceholderRepDepthMismatch { name, required, actual } => {
                 format!(
                     "Macro placeholder '{}' requires {} repetition level(s) in the expansion, but \
@@ -1228,6 +1235,27 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     name.long(db)
                 )
             }
+            SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder => {
+                "Macro expansion block holds no placeholder that repeats at its depth, so the \
+                 number of repetitions cannot be determined."
+                    .into()
+            }
+            SemanticDiagnosticKind::MacroExpansionFailed(failure) => match failure {
+                MacroExpansionFailure::MissingRepetitionDriver => {
+                    "No placeholder of this macro expansion block repeats at its depth, so its \
+                     number of repetitions cannot be determined."
+                        .into()
+                }
+                MacroExpansionFailure::ConflictingRepetitionDrivers => {
+                    "The placeholders of this macro expansion block disagree on the number of \
+                     repetitions."
+                        .into()
+                }
+                MacroExpansionFailure::MissingCapture(name) => format!(
+                    "Macro placeholder '{}' has no captured value in this repetition.",
+                    name.long(db)
+                ),
+            },
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
                 "User defined inline macros are disabled in the current crate.".into()
             }
@@ -1507,6 +1535,11 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => error_code!(E2196),
             SemanticDiagnosticKind::UnsupportedItemInStatement => error_code!(E2197),
             SemanticDiagnosticKind::ExternItemOutsideCorelib => error_code!(E2201),
+            SemanticDiagnosticKind::MacroExpansionFailed(_) => error_code!(E2202),
+            SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder => {
+                error_code!(E2203)
+            }
+            SemanticDiagnosticKind::DuplicateMacroPlaceholder(_) => error_code!(E2204),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1922,12 +1955,15 @@ pub enum SemanticDiagnosticKind<'db> {
     TypeConstraintsSyntaxNotEnabled,
     PatternMissingArgs(ast::ExprPath<'db>),
     UndefinedMacroPlaceholder(SmolStrId<'db>),
+    DuplicateMacroPlaceholder(SmolStrId<'db>),
     MacroPlaceholderRepDepthMismatch {
         name: SmolStrId<'db>,
         required: usize,
         actual: usize,
     },
     MacroPlaceholderRepDriverMismatch(SmolStrId<'db>),
+    MacroRepetitionWithoutRepeatingPlaceholder,
+    MacroExpansionFailed(MacroExpansionFailure<'db>),
     UserDefinedInlineMacrosDisabled,
     NonNeverLetElseType,
     OnlyTypeOrConstParamsInNegImpl,
