@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787187399184,
+  "lastUpdate": 1787187541354,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -22691,6 +22691,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/c974d9012406195b9dfa41107f47e8d581f99ce6"
         },
         "date": 1787100725128,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "cd4136666c61a20d22ac0358b7a8a1b6e8dc54ab",
+          "message": "chore(deps): bump Swatinem/rust-cache from a45951ff880207c249adf57334cf2e9bd81d6e1e to f0d9c3887740aee45f6153b24b3a6b815192ec16 in the github-actions group (#10352)\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-08-19T14:45:22Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/cd4136666c61a20d22ac0358b7a8a1b6e8dc54ab"
+        },
+        "date": 1787187541169,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
