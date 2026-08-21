@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787273738178,
+  "lastUpdate": 1787273883231,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -22991,6 +22991,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/cd4136666c61a20d22ac0358b7a8a1b6e8dc54ab"
         },
         "date": 1787187541169,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "302fe00e141c63e6d662ab6fabe200b8c795b59a",
+          "message": "Updated dep crate versions. (#10351)",
+          "timestamp": "2026-08-20T13:54:53Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/302fe00e141c63e6d662ab6fabe200b8c795b59a"
+        },
+        "date": 1787273883050,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
