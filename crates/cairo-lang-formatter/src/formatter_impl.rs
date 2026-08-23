@@ -932,6 +932,10 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
+    /// Whether the node being formatted came from a macro call's token tree. A trailing
+    /// separator is meaningful to a user-defined macro's matcher - the rules decide whether to
+    /// accept it - so the formatter must not introduce one when breaking the call across lines.
+    in_macro_token_tree: bool,
 }
 impl<'a> FormatterImpl<'a> {
     pub fn new(db: &'a dyn Database, config: FormatterConfig) -> Self {
@@ -942,6 +946,7 @@ impl<'a> FormatterImpl<'a> {
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
             is_last_element_comment: false,
+            in_macro_token_tree: false,
         }
     }
     /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
@@ -971,7 +976,10 @@ impl<'a> FormatterImpl<'a> {
                     wrapped_arg_list.0,
                     Some(syntax_node.offset(self.db)),
                 );
+                let outer_in_macro_token_tree = self.in_macro_token_tree;
+                self.in_macro_token_tree = true;
                 self.format_node(&new_syntax_node);
+                self.in_macro_token_tree = outer_in_macro_token_tree;
                 return;
             }
         }
@@ -1005,7 +1013,7 @@ impl<'a> FormatterImpl<'a> {
             self.line_state.line_buffer.close_sub_builder();
         }
         if let Some(mut trailing_break_point) = node_break_points.trailing() {
-            if self.is_last_element_comment {
+            if self.is_last_element_comment || self.in_macro_token_tree {
                 trailing_break_point.unset_comma_if_broken();
             }
             self.append_break_line_point(Some(trailing_break_point));
