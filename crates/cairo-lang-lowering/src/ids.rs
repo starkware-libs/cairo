@@ -184,11 +184,21 @@ impl<'db> ConcreteFunctionWithBodyLongId<'db> {
         }
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
+        format!("{:?}", self.debug(db))
+    }
+}
+impl<'db> DebugWithDb<'db> for ConcreteFunctionWithBodyLongId<'db> {
+    type Db = dyn Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
-            ConcreteFunctionWithBodyLongId::Semantic(semantic) => semantic.full_path(db),
-            ConcreteFunctionWithBodyLongId::Generated(generated) => generated.full_path(db),
+            ConcreteFunctionWithBodyLongId::Semantic(semantic) => {
+                write!(f, "{:?}", semantic.debug(db))
+            }
+            ConcreteFunctionWithBodyLongId::Generated(generated) => {
+                write!(f, "{:?}", generated.debug(db))
+            }
             ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
-                specialized.long(db).full_path(db)
+                write!(f, "{:?}", specialized.debug(db))
             }
         }
     }
