@@ -573,25 +573,25 @@ fn test_u256_operators() {
     let max_u128: u256 = Bounded::<u128>::MAX.into();
     assert!(
         0x100000000000000000000000000000001
-            + 0x300000000000000000000000000000002 == 0x400000000000000000000000000000003_u256,
+            + 0x300000000000000000000000000000002 == 0x400000000000000000000000000000003_u256
     );
     assert!(
         0x180000000000000000000000000000000
-            + 0x380000000000000000000000000000000 == 0x500000000000000000000000000000000_u256,
+            + 0x380000000000000000000000000000000 == 0x500000000000000000000000000000000_u256
     );
     assert!(
         0x400000000000000000000000000000003
-            - 0x100000000000000000000000000000001 == 0x300000000000000000000000000000002_u256,
+            - 0x100000000000000000000000000000001 == 0x300000000000000000000000000000002_u256
     );
     assert!(
         0x500000000000000000000000000000000
-            - 0x180000000000000000000000000000000 == 0x380000000000000000000000000000000_u256,
+            - 0x180000000000000000000000000000000 == 0x380000000000000000000000000000000_u256
     );
     assert!(0x400000000000000000000000000000003 * 1 == 0x400000000000000000000000000000003_u256);
     assert!(0x400000000000000000000000000000003 * 2 == 0x800000000000000000000000000000006_u256);
     assert!(0x80000000000000000000000000000000 * 2 == 0x100000000000000000000000000000000_u256);
     assert!(
-        max_u128 * max_u128 == 0xfffffffffffffffffffffffffffffffe00000000000000000000000000000001,
+        max_u128 * max_u128 == 0xfffffffffffffffffffffffffffffffe00000000000000000000000000000001
     );
     assert!(max_u128 * 1 == max_u128);
     assert!(1 * max_u128 == max_u128);
@@ -645,20 +645,20 @@ fn test_u256_operators() {
     assert!(0x10000000000000000 % 0x10000000000000000 == 0_u256);
     assert!(
         0x1000000000000000000000000000000000000000000000000
-            / 0x1000000000000000000000000000000000000000000000000 == 1_u256,
+            / 0x1000000000000000000000000000000000000000000000000 == 1_u256
     );
     assert!(
-        0x1000000000000000000000000000000000000000000000000 % 0x1000000000000000000000000000000000000000000000000 == 0_u256,
+        0x1000000000000000000000000000000000000000000000000 % 0x1000000000000000000000000000000000000000000000000 == 0_u256
     );
     assert!(Bounded::<u256>::MAX % 0x100000000 == 0xffffffff);
     assert!(Bounded::<u256>::MAX % 0x10000000000000000 == 0xffffffffffffffff);
     assert!(
         Bounded::<u256>::MAX
-            / 0x10000000000000000000000000000000000000000 == 0xffffffffffffffffffffffff,
+            / 0x10000000000000000000000000000000000000000 == 0xffffffffffffffffffffffff
     );
     assert!(
         Bounded::<u256>::MAX
-            / 0x1000000000000000000000000000000000000000000000000 == 0xffffffffffffffff,
+            / 0x1000000000000000000000000000000000000000000000000 == 0xffffffffffffffff
     );
     assert!(~max_u128 == 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000);
     assert!(~0xffffffffffffffffffffffffffffffff00000000000000000000000000000000 == max_u128);
@@ -695,13 +695,13 @@ fn test_u256_wide_mul() {
     assert!(
         0x1001001001001001001001001001001001001001001001001001_u256
             .wide_mul(
-                0x1000100010001000100010001000100010001000100010001000100010001_u256,
+                0x1000100010001000100010001000100010001000100010001000100010001_u256
             ) == u512 {
                 limb0: 0x33233223222222122112111111011001,
                 limb1: 0x54455445544554454444443443343333,
                 limb2: 0x21222222322332333333433443444444,
-                limb3: 0x1001101111112112,
-            },
+                limb3: 0x1001101111112112
+            }
     );
 }
 
@@ -714,8 +714,8 @@ fn test_u256_wide_square() {
                 limb0: 0x0b00a009008007006005004003002001,
                 limb1: 0xe00f01001101201101000f00e00d00c0,
                 limb2: 0x00400500600700800900a00b00c00d00,
-                limb3: 0x1002003,
-            },
+                limb3: 0x1002003
+            }
     );
     assert!(
         0x1000100010001000100010001000100010001000100010001000100010001_u256
@@ -723,8 +723,8 @@ fn test_u256_wide_square() {
                 limb0: 0x00080007000600050004000300020001,
                 limb1: 0x0010000f000e000d000c000b000a0009,
                 limb2: 0x00080009000a000b000c000d000e000f,
-                limb3: 0x1000200030004000500060007,
-            },
+                limb3: 0x1000200030004000500060007
+            }
     );
 }
 
@@ -743,16 +743,16 @@ fn test_u512_safe_div_rem_by_u256() {
     assert!(u512_safe_div_rem_by_u256(large_num, 1) == (large_num, 0));
     assert!(
         u512_safe_div_rem_by_u256(
-            large_num, 0x33233223222222122112111111011001,
+            large_num, 0x33233223222222122112111111011001
         ) == (
             u512 {
                 limb0: 0x365ec98ac1c2c57afaff780a20a0b2b1,
                 limb1: 0xf3dfa68ede27c4236ef0c6eb66a8e0a2,
                 limb2: 0x501e5b7ba7f4ec12,
-                limb3: 0,
+                limb3: 0
             },
-            0x1e0eb905027d0150d2618bbd71844d50,
-        ),
+            0x1e0eb905027d0150d2618bbd71844d50
+        )
     );
 }
 
@@ -760,7 +760,7 @@ fn test_u512_safe_div_rem_by_u256() {
 fn test_u512_try_into_u256() {
     assert!(
         u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 0 }
-            .try_into() == Some(0x200000000000000000000000000000001_u256),
+            .try_into() == Some(0x200000000000000000000000000000001_u256)
     );
     assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 0 }.try_into() == Option::<u256>::None);
     assert!(u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 4 }.try_into() == Option::<u256>::None);
@@ -790,7 +790,7 @@ fn test_max() {
     assert!(Bounded::<u64>::MAX == 0xffffffffffffffff);
     assert!(Bounded::<u128>::MAX == 0xffffffffffffffffffffffffffffffff);
     assert!(
-        Bounded::<u256>::MAX == 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,
+        Bounded::<u256>::MAX == 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
     );
     assert!(Bounded::<i8>::MAX == 0x7f);
     assert!(Bounded::<i16>::MAX == 0x7fff);
@@ -2187,17 +2187,15 @@ mod bounded_int {
         assert!(div_rem_small_quotient_helper::<U128_MAX, POW_2_124>(dividend) == (MASK4, MASK124));
         let dividend = bi_const::<POW_2_251>();
         assert!(
-            div_rem_small_quotient_helper::<
-                POW_2_251, U128_MAX,
-            >(dividend) == (POW_2_123, POW_2_123),
+            div_rem_small_quotient_helper::<POW_2_251, U128_MAX>(dividend) == (POW_2_123, POW_2_123)
         );
         assert!(
             bounded_int_div_rem_unwrapped::<
-                MaxRootLhs, MaxRootRhs,
+                MaxRootLhs, MaxRootRhs
             >(
                 0x1000000000000000000000000000001000000000000000000000000000000,
-                0x1000000000000000000000000000000,
-            ) == (0x1000000000000000000000000000001, 0),
+                0x1000000000000000000000000000000
+            ) == (0x1000000000000000000000000000001, 0)
         );
     }
 
@@ -2271,7 +2269,7 @@ mod bounded_int {
         assert!(bounded_int::trim_min::<u64>(1) == OptionRev::Some(1));
         assert!(bounded_int::trim_max::<u64>(0xffffffffffffffff) == OptionRev::None);
         assert!(
-            bounded_int::trim_max::<u64>(0xfffffffffffffffe) == OptionRev::Some(0xfffffffffffffffe),
+            bounded_int::trim_max::<u64>(0xfffffffffffffffe) == OptionRev::Some(0xfffffffffffffffe)
         );
         assert!(bounded_int::trim_min::<i64>(-0x8000000000000000) == OptionRev::None);
         assert!(bounded_int::trim_min::<i64>(1) == OptionRev::Some(1));
@@ -2281,21 +2279,21 @@ mod bounded_int {
         assert!(bounded_int::trim_min::<u128>(0) == OptionRev::None);
         assert!(bounded_int::trim_min::<u128>(1) == OptionRev::Some(1));
         assert!(
-            bounded_int::trim_max::<u128>(0xffffffffffffffffffffffffffffffff) == OptionRev::None,
+            bounded_int::trim_max::<u128>(0xffffffffffffffffffffffffffffffff) == OptionRev::None
         );
         assert!(
             bounded_int::trim_max::<
-                u128,
+                u128
             >(
-                0xfffffffffffffffffffffffffffffffe,
-            ) == OptionRev::Some(0xfffffffffffffffffffffffffffffffe),
+                0xfffffffffffffffffffffffffffffffe
+            ) == OptionRev::Some(0xfffffffffffffffffffffffffffffffe)
         );
         assert!(
-            bounded_int::trim_min::<i128>(-0x80000000000000000000000000000000) == OptionRev::None,
+            bounded_int::trim_min::<i128>(-0x80000000000000000000000000000000) == OptionRev::None
         );
         assert!(bounded_int::trim_min::<i128>(1) == OptionRev::Some(1));
         assert!(
-            bounded_int::trim_max::<i128>(0x7fffffffffffffffffffffffffffffff) == OptionRev::None,
+            bounded_int::trim_max::<i128>(0x7fffffffffffffffffffffffffffffff) == OptionRev::None
         );
         assert!(bounded_int::trim_max::<i128>(1) == OptionRev::Some(1));
     }

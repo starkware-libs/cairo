@@ -81,36 +81,36 @@ fn test_events() {
 
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Some(Event::IncrementalEvent(IncrementalEvent { value: 0 })),
+        Some(Event::IncrementalEvent(IncrementalEvent { value: 0 }))
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Some(Event::IncrementalEvent(IncrementalEvent { value: 1 })),
+        Some(Event::IncrementalEvent(IncrementalEvent { value: 1 }))
     );
     assert_eq!(
-        starknet::testing::pop_log(contract_address), Some(Event::StaticEvent(StaticEvent {})),
+        starknet::testing::pop_log(contract_address), Some(Event::StaticEvent(StaticEvent {}))
     );
     assert_eq!(
-        starknet::testing::pop_log(contract_address), Some(Event::StaticEvent(StaticEvent {})),
-    );
-    assert_eq!(
-        starknet::testing::pop_log(contract_address),
-        Some(Event::IncrementalEvent(IncrementalEvent { value: 2 })),
-    );
-    assert_eq!(
-        starknet::testing::pop_log(contract_address), Some(Event::StaticEvent(StaticEvent {})),
+        starknet::testing::pop_log(contract_address), Some(Event::StaticEvent(StaticEvent {}))
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Some(Event::IncrementalEvent(IncrementalEvent { value: 3 })),
+        Some(Event::IncrementalEvent(IncrementalEvent { value: 2 }))
+    );
+    assert_eq!(
+        starknet::testing::pop_log(contract_address), Some(Event::StaticEvent(StaticEvent {}))
     );
     assert_eq!(
         starknet::testing::pop_log(contract_address),
-        Some(Event::FlatEvent(FlatEvent::FlatEvent(StaticEvent {}))),
+        Some(Event::IncrementalEvent(IncrementalEvent { value: 3 }))
+    );
+    assert_eq!(
+        starknet::testing::pop_log(contract_address),
+        Some(Event::FlatEvent(FlatEvent::FlatEvent(StaticEvent {})))
     );
     // Check that `FlatEvent` is flattened and can be deserialized directly.
     assert_eq!(
-        starknet::testing::pop_log(contract_address), Some(FlatEvent::FlatEvent(StaticEvent {})),
+        starknet::testing::pop_log(contract_address), Some(FlatEvent::FlatEvent(StaticEvent {}))
     );
     assert!(starknet::testing::pop_log_raw(contract_address).is_none());
 }

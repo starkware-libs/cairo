@@ -33,14 +33,14 @@ fn test_append_word() {
     assert_eq!(
         ba,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghiABCDEFGHIJKLMNOPQRSTUVWXYZa",
-        "append word filling pending to capacity",
+        "append word filling pending to capacity"
     );
 
     ba.append_word('b', 1);
     assert_eq!(
         ba,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghiABCDEFGHIJKLMNOPQRSTUVWXYZab",
-        "append word starting new pending word",
+        "append word starting new pending word"
     );
 }
 
@@ -53,7 +53,7 @@ fn test_append() {
     assert_eq!(
         ba_32,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$",
-        "append bytearray across new pending word",
+        "append bytearray across new pending word"
     );
 }
 
@@ -67,7 +67,7 @@ fn test_add_eq() {
     assert_eq!(
         ba_32,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$",
-        "add-eq bytearray across new pending word",
+        "add-eq bytearray across new pending word"
     );
 }
 
@@ -81,7 +81,7 @@ fn test_concat() {
     assert_eq!(
         ba,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$",
-        "add-eq bytearray across new pending word",
+        "add-eq bytearray across new pending word"
     );
 }
 
@@ -95,7 +95,7 @@ fn test_add() {
     assert_eq!(
         ba_32,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$",
-        "add-eq bytearray across new pending word",
+        "add-eq bytearray across new pending word"
     );
 }
 
@@ -126,7 +126,7 @@ fn test_concat_first_pending_0() {
     assert_eq!(
         ba_concat,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdeABCDEFGHIJKLMNOPQRSTUVWXYZabcde$",
-        "Error concat with overflow into pending word",
+        "Error concat with overflow into pending word"
     );
 }
 
@@ -141,7 +141,7 @@ fn test_concat_second_pending_0() {
     assert_eq!(
         ba_concat,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcde",
-        "Error concat with overflow into pending word",
+        "Error concat with overflow into pending word"
     );
 }
 
@@ -156,7 +156,7 @@ fn test_concat_split_index_16() {
     assert_eq!(
         ba_concat,
         "ABCDEFGHIJKLMNO$ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef",
-        "Error concat with split index 16",
+        "Error concat with split index 16"
     );
 }
 
@@ -169,7 +169,7 @@ fn test_concat_split_index_lt_16() {
     let ba_concat = ByteArrayTrait::concat(@ba_1, @ba_32);
 
     assert_eq!(
-        ba_concat, "$ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef", "Error concat with split index < 16",
+        ba_concat, "$ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef", "Error concat with split index < 16"
     );
 }
 
@@ -184,7 +184,7 @@ fn test_concat_split_index_gt_16() {
     assert_eq!(
         ba_concat,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabc$ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg",
-        "Error concat with split index > 16",
+        "Error concat with split index > 16"
     );
 }
 
@@ -199,7 +199,7 @@ fn test_concat_pending_sum_up_to_full() {
     assert_eq!(
         ba_concat,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde$ABCDEFGHIJKLMNOPQRSTUVWXYZabcd",
-        "Error concat with pending word sum up to full",
+        "Error concat with pending word sum up to full"
     );
 }
 
@@ -215,7 +215,7 @@ fn test_concat_pending_sum_up_to_more_than_word_16() {
     assert_eq!(
         ba_concat,
         "ABCDEFGHIJKLMNOP$ABCDEFGHIJKLMNOPQRSTUVWXYZabcd",
-        "Error pending word overflowed concat with split index 16",
+        "Error pending word overflowed concat with split index 16"
     );
 }
 
@@ -231,7 +231,7 @@ fn test_concat_pending_sum_up_to_more_than_word_lt16() {
     assert_eq!(
         ba_concat,
         "A$ABCDEFGHIJKLMNOPQRSTUVWXYZabcd",
-        "Error pending word overflowed concat with split index < 16",
+        "Error pending word overflowed concat with split index < 16"
     );
 }
 
@@ -246,7 +246,7 @@ fn test_concat_pending_sum_up_to_more_than_word_gt16() {
     assert_eq!(
         ba_concat,
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabc$ABCDEFGHIJKLMNOPQRSTUVWXYZabc$",
-        "Error pending word overflowed concat with split index > 16",
+        "Error pending word overflowed concat with split index > 16"
     );
 }
 
@@ -468,7 +468,7 @@ fn test_serde() {
         [0, // data len
         0x68656c6c6f, // pending_word
         5 // pending_word_len
-        ].span(),
+        ].span()
     );
 
     let mut serialized = array![];
@@ -482,7 +482,7 @@ fn test_serde() {
             0x63746572732e, // pending_word
             6 // pending_word_len
         ]
-            .span(),
+            .span()
     );
 }
 
@@ -613,7 +613,7 @@ fn test_span_slice_out_of_bounds() {
 
     const MAX_INDEX: usize = Bounded::MAX;
     assert_eq!(
-        span.get(2..4).unwrap().get((MAX_INDEX - 1)..MAX_INDEX), None, "start offset overflow",
+        span.get(2..4).unwrap().get((MAX_INDEX - 1)..MAX_INDEX), None, "start offset overflow"
     );
     assert_eq!(span.get(2..=3).unwrap().get((MAX_INDEX - 1)..MAX_INDEX), None);
     assert_eq!(span.get(2..4).unwrap().get((MAX_INDEX - 1)..=MAX_INDEX), None);
@@ -654,7 +654,7 @@ fn test_span_slice_positions() {
     assert_eq!(ba_64.span()[10..=39].to_byte_array(), "KLMNOPQRSTUVWXYZabcdefghijklmn");
     assert_eq!(
         ba_64.span().get(5..64).map(|s| s.to_byte_array()),
-        Some("FGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"),
+        Some("FGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$")
     );
     assert_eq!(ba_64.span().get(29..=48).map(|s| s.to_byte_array()), Some("defghijklmnopqrstuvw"));
 }
@@ -860,7 +860,7 @@ fn test_byte_span_iterator_slices() {
     let ba_13: ByteArray = "Hello Shmello";
     let span = ba_13.span().get(2..7).unwrap();
     assert_eq!(
-        span.into_iter().collect(), array!['l', 'l', 'o', ' ', 'S'], "slice within remainder word",
+        span.into_iter().collect(), array!['l', 'l', 'o', ' ', 'S'], "slice within remainder word"
     );
 
     // Iterate slice across 2 words (1 data + remainder).
@@ -875,10 +875,9 @@ fn test_byte_span_iterator_slices() {
         span.into_iter().collect(),
         array![
             'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-            'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!',
-            '@',
+            'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!', '@'
         ],
-        "slice across 3 words",
+        "slice across 3 words"
     );
 
     // Test case where data array is exhausted and remainder has exactly 1 byte.

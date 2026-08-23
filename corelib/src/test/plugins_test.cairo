@@ -56,7 +56,7 @@ fn test_derive_serde_struct_with_serialized_field() {
     let mut serialized = output.span();
     assert_eq!(
         Serde::deserialize(ref serialized),
-        Some(StructWithSerializedField { serialized: 3, other: 5 }),
+        Some(StructWithSerializedField { serialized: 3, other: 5 })
     );
     assert(serialized.is_empty(), 'expected empty');
 }

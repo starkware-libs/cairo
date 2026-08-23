@@ -1199,7 +1199,7 @@ mod test_contract {
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
     component!(
-        path: super::test_component, storage: test_component_storage, event: ABC, another: x,
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x
     );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
@@ -1232,7 +1232,7 @@ mod test_contract {
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
     component!(
-        path: super::test_component, storage: test_component_storage, event: ABC, another: x,
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x
     );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
@@ -1452,7 +1452,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: starknet::ClassHash = 0x121a1470e2769fd2e9f4441ff7ab7e2ae96e0f4e0446116a0f29d76df75b33.try_into().unwrap();
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x215c44bbf0e7c3b987e93bf1597778322461e87fd0059894735b0464ce94aff.try_into().unwrap();
 
 
 #[doc(hidden)]
@@ -1565,7 +1565,7 @@ error[E2200]: Plugin diagnostic: Invalid component macro, expected `component!(p
  --> lib.cairo:24:5-26:6
       component!(
  _____^
-|         path: super::test_component, storage: test_component_storage, event: ABC, another: x,
+|         path: super::test_component, storage: test_component_storage, event: ABC, another: x
 |     );
 |______^
 

@@ -180,15 +180,15 @@ fn write_read_byte_arrays() {
     let internal_data_address = starknet::storage_access::storage_base_address_from_felt252(r);
     assert_eq!(
         starknet::Store::read_at_offset(0, internal_data_address, 0),
-        Ok('0123456789abcdef0123456789abcde'_felt252),
+        Ok('0123456789abcdef0123456789abcde'_felt252)
     );
     assert_eq!(
         starknet::Store::read_at_offset(0, internal_data_address, 1),
-        Ok('f0123456789abcdef0123456789abcd'_felt252),
+        Ok('f0123456789abcdef0123456789abcd'_felt252)
     );
     assert_eq!(
         starknet::Store::read_at_offset(0, internal_data_address, 2),
-        Ok('ef0123456789abcdef0123456789abc'_felt252),
+        Ok('ef0123456789abcdef0123456789abc'_felt252)
     );
 }
 

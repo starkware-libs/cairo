@@ -24,8 +24,8 @@ fn test_secp256r1_point_serde() {
             actual_coordinates.at(0),
             actual_coordinates.at(1),
             actual_coordinates.at(2),
-            actual_coordinates.at(3),
-        ),
+            actual_coordinates.at(3)
+        )
     );
 }
 

@@ -481,7 +481,7 @@ fn test_divrem() {
     assert_eq!(DivRem::<u128, u128>::div_rem(123_456, 123_456), (1, 0));
     assert_eq!(
         DivRem::<u128, u128>::div_rem(core::num::traits::Bounded::<u128>::MAX, 10),
-        (34028236692093846346337460743176821145_u128, 5),
+        (34028236692093846346337460743176821145_u128, 5)
     );
     assert_eq!(DivRem::<u256, u256>::div_rem(1000, 33), (30, 10));
     assert_eq!(DivRem::<u256, u128>::div_rem(123, 10), (12, 3));
@@ -496,9 +496,9 @@ fn test_divrem_legacy() {
     assert_eq!(crate::traits::DivRem::div_rem(1_000_000_u64, 1_000), (1_000, 0));
     assert_eq!(
         crate::traits::DivRem::div_rem(
-            Bounded::<u128>::MAX, Bounded::<u128>::MAX.try_into().unwrap(),
+            Bounded::<u128>::MAX, Bounded::<u128>::MAX.try_into().unwrap()
         ),
-        (1, 0),
+        (1, 0)
     );
     assert_eq!(crate::traits::DivRem::div_rem(20, 6), (3_u256, 2_u256));
 }

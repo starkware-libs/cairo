@@ -98,8 +98,8 @@ fn test_redeploy_in_construct() {
     assert!(deploy_syscall(self_caller::TEST_CLASS_HASH, 0, [].span(), false).is_ok());
     assert!(
         deploy_syscall(
-            self_caller::TEST_CLASS_HASH, 0, [].span(), false,
-        ) == Err(array!['CONTRACT_ALREADY_DEPLOYED']),
+            self_caller::TEST_CLASS_HASH, 0, [].span(), false
+        ) == Err(array!['CONTRACT_ALREADY_DEPLOYED'])
     );
 }
 
@@ -108,8 +108,8 @@ fn test_typed_redeploy_default() {
     assert!(self_caller::deploy_for_test(self_caller::TEST_CLASS_HASH, Default::default()).is_ok());
     assert!(
         deploy_syscall(
-            self_caller::TEST_CLASS_HASH, 0, [].span(), false,
-        ) == Err(array!['CONTRACT_ALREADY_DEPLOYED']),
+            self_caller::TEST_CLASS_HASH, 0, [].span(), false
+        ) == Err(array!['CONTRACT_ALREADY_DEPLOYED'])
     );
 }
 
@@ -119,8 +119,8 @@ fn test_typed_redeploy_with_params() {
     assert!(self_caller::deploy_for_test(self_caller::TEST_CLASS_HASH, deployment_params).is_ok());
     assert!(
         deploy_syscall(
-            self_caller::TEST_CLASS_HASH, 42, [].span(), true,
-        ) == Err(array!['CONTRACT_ALREADY_DEPLOYED']),
+            self_caller::TEST_CLASS_HASH, 42, [].span(), true
+        ) == Err(array!['CONTRACT_ALREADY_DEPLOYED'])
     );
 }
 
@@ -145,15 +145,15 @@ fn test_typed_deploy_default_with_complex_args() {
 
     assert!(
         advanced::deploy_for_test(
-            advanced::TEST_CLASS_HASH, Default::default(), arr, one, two, three, four, five, six,
+            advanced::TEST_CLASS_HASH, Default::default(), arr, one, two, three, four, five, six
         )
-            .is_ok(),
+            .is_ok()
     );
 
     assert!(
         deploy_syscall(
-            advanced::TEST_CLASS_HASH, 0, calldata.span(), false,
-        ) == Err(array!['CONTRACT_ALREADY_DEPLOYED']),
+            advanced::TEST_CLASS_HASH, 0, calldata.span(), false
+        ) == Err(array!['CONTRACT_ALREADY_DEPLOYED'])
     );
 }
 

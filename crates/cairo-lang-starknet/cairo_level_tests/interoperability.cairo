@@ -92,7 +92,7 @@ fn test_flow_out_of_gas() {
 fn test_class_hash_not_found() {
     assert_eq!(
         deploy_syscall(5.try_into().unwrap(), 0, [100].span(), false),
-        Err(array!['CLASS_HASH_NOT_FOUND']),
+        Err(array!['CLASS_HASH_NOT_FOUND'])
     );
 }
 

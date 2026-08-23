@@ -107,7 +107,7 @@ fn test_wrapper_valid_args_out_of_gas() {
 fn test_wrapper_array_arg_and_output() {
     assert_eq!(
         test_contract::__external::get_appended_array(serialized(array![2])),
-        serialized(array![2, 1]),
+        serialized(array![2, 1])
     );
 }
 
@@ -145,7 +145,7 @@ fn not_contains_removed() {
 fn read_large_first_value() {
     assert_eq!(
         test_contract::__external::get_large(serialized(0x200000000000000000000000000000001_u256)),
-        serialized(0_u256),
+        serialized(0_u256)
     );
 }
 
@@ -165,7 +165,7 @@ fn write_read_large_value() {
     );
     assert_eq!(
         test_contract::__external::get_large(serialized(0x200000000000000000000000000000001_u256)),
-        serialized(0x400000000000000000000000000000003_u256),
+        serialized(0x400000000000000000000000000000003_u256)
     );
 }
 
@@ -253,12 +253,12 @@ fn test_get_signature() {
 #[test]
 fn test_get_block_hash() {
     assert!(
-        starknet::syscalls::get_block_hash_syscall(1337) == Err(array!['GET_BLOCK_HASH_NOT_SET']),
+        starknet::syscalls::get_block_hash_syscall(1337) == Err(array!['GET_BLOCK_HASH_NOT_SET'])
     );
     starknet::testing::set_block_hash(1337, 'some-value');
     assert!(starknet::syscalls::get_block_hash_syscall(1337) == Ok('some-value'));
     assert!(
-        starknet::syscalls::get_block_hash_syscall(1338) == Err(array!['GET_BLOCK_HASH_NOT_SET']),
+        starknet::syscalls::get_block_hash_syscall(1338) == Err(array!['GET_BLOCK_HASH_NOT_SET'])
     );
 }
 

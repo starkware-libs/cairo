@@ -37,13 +37,13 @@ fn test_poseidon_hash_span() {
     // Test odd number of inputs.
     assert_eq!(
         crate::poseidon::poseidon_hash_span([1, 2, 3].span()),
-        0x2f0d8840bcf3bc629598d8a6cc80cb7c0d9e52d93dab244bbf9cd0dca0ad082,
+        0x2f0d8840bcf3bc629598d8a6cc80cb7c0d9e52d93dab244bbf9cd0dca0ad082
     );
 
     // Test even number of inputs.
     assert_eq!(
         crate::poseidon::poseidon_hash_span([1, 2, 3, 4].span()),
-        0x26e3ad8b876e02bc8a4fc43dad40a8f81a6384083cabffa190bcf40d512ae1d,
+        0x26e3ad8b876e02bc8a4fc43dad40a8f81a6384083cabffa190bcf40d512ae1d
     );
 }
 
@@ -109,11 +109,11 @@ fn test_blake2s() {
     let byte_count = 64_u32;
     assert_eq!(
         to_u256(blake2s_compress(state, byte_count, msg)),
-        0x2ae416e8d875987d552ca6fd49f4c6a211f67aca29762fdd2323d9bc3babc315,
+        0x2ae416e8d875987d552ca6fd49f4c6a211f67aca29762fdd2323d9bc3babc315
     );
     assert_eq!(
         to_u256(blake2s_finalize(state, byte_count, msg)),
-        0x593a50789b4b8567eb33bbea06bec58d3d5532f8879cd2640c714de2e373f3e,
+        0x593a50789b4b8567eb33bbea06bec58d3d5532f8879cd2640c714de2e373f3e
     );
 }
 
@@ -131,7 +131,7 @@ fn test_blake2s_with_abc() {
     let msg = BoxTrait::new(['cba', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     assert_eq!(
         to_u256(blake2s_finalize(state, 3, msg)),
-        0x508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982,
+        0x508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982
     );
 }
 
@@ -147,15 +147,15 @@ fn test_blake2s_split_and_guarantees() {
     );
     assert_eq!(
         to_u256(blake2s_finalize_guarantees(state, 3, msg::from_felt252s('cba', 0))),
-        0x508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982,
+        0x508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982
     );
     assert_eq!(
         to_u256(
             blake2s_finalize_guarantees(
-                state, 32, msg::from_felt252s('\x0543210zyxwvutsrqponmlkjihgfedcba', 0),
-            ),
+                state, 32, msg::from_felt252s('\x0543210zyxwvutsrqponmlkjihgfedcba', 0)
+            )
         ),
-        0x39b7197928a66cd232d8c5b74d02215a21386228e772076eaf544395b5d32c03,
+        0x39b7197928a66cd232d8c5b74d02215a21386228e772076eaf544395b5d32c03
     );
 }
 

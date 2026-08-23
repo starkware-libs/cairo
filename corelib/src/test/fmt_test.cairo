@@ -78,7 +78,7 @@ fn test_format_debug() {
     let span_64 = ba_64.span();
     assert(
         format!(
-            "{span_64:?}",
+            "{span_64:?}"
         ) == "\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@\"",
         'long byte span',
     );
@@ -108,8 +108,8 @@ fn test_format_debug() {
                 felt_value: 6,
                 bool_value: false,
                 byte_array_value: "ByteArray",
-                enum_value: EnumExample::BoolValue(true),
-            },
+                enum_value: EnumExample::BoolValue(true)
+            }
         ) == "StructExample { felt_value: 6, bool_value: false, byte_array_value: \"ByteArray\", enum_value: EnumExample::BoolValue(true) }",
         'bad derive struct formatting',
     );
@@ -154,7 +154,7 @@ fn test_format_hex() {
     assert(format!("{:x}", 42_u128) == "2a", 'bad u128 lower hex formatting');
     assert(
         format!(
-            "{:x}", 295990755083049101712519384020072382191_u128,
+            "{:x}", 295990755083049101712519384020072382191_u128
         ) == "deadbeefdeadbeefdeadbeefdeadbeef",
         'bad u128 lower hex formatting',
     );
@@ -162,7 +162,7 @@ fn test_format_hex() {
     assert(
         format!(
             "{:x}",
-            100720434726375746010458024839911619878118703404436202866098422983289408962287_u256,
+            100720434726375746010458024839911619878118703404436202866098422983289408962287_u256
         ) == "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
         'bad u256 lower hex formatting',
     );

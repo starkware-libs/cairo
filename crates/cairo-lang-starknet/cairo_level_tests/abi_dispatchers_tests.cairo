@@ -116,6 +116,6 @@ fn test_validate_gas_cost() {
         "Unexpected gas_usage:
      call_building: `{call_building_gas_usage}`.
      serialization: `{serialization_gas_usage}`.
-     entry_point: `{entry_point_gas_usage}`.",
+     entry_point: `{entry_point_gas_usage}`."
     );
 }

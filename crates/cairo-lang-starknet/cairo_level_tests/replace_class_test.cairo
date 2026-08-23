@@ -108,6 +108,6 @@ fn test_class_hash_at_syscall() {
 fn test_class_hash_at_syscall_undeployed_contract() {
     assert_eq!(
         get_class_hash_at_syscall('undeployed'.try_into().unwrap()),
-        Ok(core::num::traits::Zero::zero()),
+        Ok(core::num::traits::Zero::zero())
     );
 }
