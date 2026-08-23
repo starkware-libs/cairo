@@ -147,3 +147,12 @@ macro many_elements {
             + 6
     };
 }
+
+fn user_macro_call_no_trailing_separator() {
+    let result = some_user_macro!(first_very_long_argument_name, second_very_long_argument_name, third_very_long_argument_name);
+}
+
+fn user_macro_call_trailing_separator_kept() {
+    let result = some_user_macro!(first_very_long_argument_name, second_very_long_argument_name, third_very_long_argument_name,);
+    let short = some_user_macro!(a, b,);
+}
