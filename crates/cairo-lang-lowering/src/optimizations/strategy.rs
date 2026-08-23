@@ -149,8 +149,8 @@ impl<'db> ApplyOptimization<'db> for [OptimizationPhase<'db>] {
         let fmt = crate::fmt::LoweredFormatter::new(db, &lowered.variables);
         tracing::trace!(
             target: "optimization_dump",
-            "({})\nInitial:\n{:?}",
-            function.full_path(db),
+            "({:?})\nInitial:\n{:?}",
+            function.debug(db),
             lowered.debug(&fmt)
         );
 
@@ -159,8 +159,8 @@ impl<'db> ApplyOptimization<'db> for [OptimizationPhase<'db>] {
             let fmt = crate::fmt::LoweredFormatter::new(db, &lowered.variables);
             tracing::trace!(
                 target: "optimization_dump",
-                "({})\nAfter {phase:?}:\n{:?}",
-                function.full_path(db),
+                "({:?})\nAfter {phase:?}:\n{:?}",
+                function.debug(db),
                 lowered.debug(&fmt)
             );
         }
