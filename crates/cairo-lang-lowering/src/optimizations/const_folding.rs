@@ -310,12 +310,35 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         VarInfo::Const(const_value) => {
                             if let ConstValue::Struct(member_values, _) = const_value.long(self.db)
                             {
-                                for (output, value) in zip_eq(outputs, member_values) {
+                                for (output, value) in zip_eq(&*outputs, member_values) {
                                     self.var_info.insert(
                                         *output,
                                         Rc::new(VarInfo::Const(*value))
                                             .wrap_with_snapshots(n_snapshots),
                                     );
+                                }
+                                // Materialize the members directly, making the input unused if
+                                // this was its last use. Zero-sized members cannot be
+                                // materialized as constants.
+                                if n_snapshots == 0
+                                    && outputs.iter().all(|output| {
+                                        self.db.type_size_info(self.variables[*output].ty)
+                                            == Ok(TypeSizeInformation::Other)
+                                    })
+                                    && let [first_output, rest_outputs @ ..] = &outputs[..]
+                                {
+                                    let first =
+                                        StatementConst::new_flat(member_values[0], *first_output);
+                                    self.additional_stmts.extend(
+                                        zip_eq(rest_outputs, &member_values[1..]).map(
+                                            |(output, value)| {
+                                                Statement::Const(StatementConst::new_flat(
+                                                    *value, *output,
+                                                ))
+                                            },
+                                        ),
+                                    );
+                                    *stmt = Statement::Const(first);
                                 }
                             }
                         }
