@@ -146,7 +146,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for GasRedepositContext<'db> {
             return;
         };
 
-        // If the function returns a `PanicResult` with with variant `Err` which is index 1, we
+        // If the function returns a `PanicResult` with variant `Err` which is index 1, we
         // don't redeposit, to have smaller code.
         if self.has_panic_wrapper
             && let Statement::EnumConstruct(StatementEnumConstruct { variant, output, .. }) = stmt
