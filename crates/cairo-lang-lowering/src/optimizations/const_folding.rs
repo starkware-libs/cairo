@@ -310,12 +310,26 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         VarInfo::Const(const_value) => {
                             if let ConstValue::Struct(member_values, _) = const_value.long(self.db)
                             {
-                                for (output, value) in zip_eq(outputs, member_values) {
+                                for (output, value) in zip_eq(&*outputs, member_values) {
                                     self.var_info.insert(
                                         *output,
                                         Rc::new(VarInfo::Const(*value))
                                             .wrap_with_snapshots(n_snapshots),
                                     );
+                                }
+                                // Materialize the members directly, making the input unused if
+                                // this was its last use.
+                                if n_snapshots == 0 && !outputs.is_empty() {
+                                    let outputs = outputs.clone();
+                                    let member_values = member_values.clone();
+                                    let mut stmts = vec![];
+                                    if zip_eq(&outputs, &member_values).all(|(output, value)| {
+                                        self.materialize_const(*value, *output, &mut stmts)
+                                    }) {
+                                        let first = stmts.remove(0);
+                                        self.additional_stmts.extend(stmts);
+                                        *stmt = first;
+                                    }
                                 }
                             }
                         }
@@ -858,6 +872,38 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             location: call_stmt.location,
             is_specialization_base_call: false,
         }))
+    }
+
+    /// Materializes `value` into `output`, appending the required statements to `stmts`.
+    /// Zero-sized values are materialized by construction. Returns false (possibly after
+    /// appending some statements) if the value cannot be materialized.
+    fn materialize_const(
+        &mut self,
+        value: ConstValueId<'db>,
+        output: VariableId,
+        stmts: &mut Vec<Statement<'db>>,
+    ) -> bool {
+        if self.db.type_size_info(self.variables[output].ty) == Ok(TypeSizeInformation::Other) {
+            stmts.push(Statement::Const(StatementConst::new_flat(value, output)));
+            return true;
+        }
+        let ConstValue::Struct(members, _) = value.long(self.db) else {
+            return false;
+        };
+        let location = self.variables[output].location;
+        let mut inputs = vec![];
+        for member in members.clone() {
+            let Ok(ty) = member.long(self.db).ty(self.db) else {
+                return false;
+            };
+            let var = self.variables.alloc(Variable::with_default_context(self.db, ty, location));
+            if !self.materialize_const(member, var, stmts) {
+                return false;
+            }
+            inputs.push(VarUsage { var_id: var, location });
+        }
+        stmts.push(Statement::StructConstruct(StatementStructConstruct { inputs, output }));
+        true
     }
 
     /// Adds `value` as a const to `var_info` and return a const statement for it.
