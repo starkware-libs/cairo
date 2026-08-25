@@ -1373,10 +1373,10 @@ Final lowering:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::integer::u32) <- 3
-  (v1: test::B) <- struct_construct(v0)
-  () <- test::ex1(v1)
-  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v0)
+  (v0: test::B) <- { 3: core::integer::u32 }
+  () <- test::ex1(v0)
+  (v1: core::integer::u32) <- 3
+  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
   () <- test::ex(v3)
 End:
   Return()
