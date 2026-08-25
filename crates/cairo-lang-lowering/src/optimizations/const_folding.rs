@@ -310,12 +310,36 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         VarInfo::Const(const_value) => {
                             if let ConstValue::Struct(member_values, _) = const_value.long(self.db)
                             {
-                                for (output, value) in zip_eq(outputs, member_values) {
+                                for (output, value) in zip_eq(&*outputs, member_values) {
                                     self.var_info.insert(
                                         *output,
                                         Rc::new(VarInfo::Const(*value))
                                             .wrap_with_snapshots(n_snapshots),
                                     );
+                                }
+                                if n_snapshots == 0
+                                    && self.variables[input.var_id].info.droppable.is_ok()
+                                    && let [rest_outputs @ .., last_output] = &outputs[..]
+                                    && let [rest_values @ .., last_value] = &member_values[..]
+                                {
+                                    let previous_len = self.additional_stmts.len();
+                                    let mut success = true;
+                                    for (output, value) in zip_eq(rest_outputs, rest_values) {
+                                        if let Some(mc) = self.materialize_const(*value, *output) {
+                                            self.additional_stmts.push(mc);
+                                        } else {
+                                            success = false;
+                                            break;
+                                        }
+                                    }
+                                    if success
+                                        && let Some(mc) =
+                                            self.materialize_const(*last_value, *last_output)
+                                    {
+                                        *stmt = mc;
+                                    } else {
+                                        self.additional_stmts.truncate(previous_len);
+                                    }
                                 }
                             }
                         }
@@ -858,6 +882,35 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             location: call_stmt.location,
             is_specialization_base_call: false,
         }))
+    }
+
+    /// Returns a statement materializing `value` into `output`, appending any additionally
+    /// required statements to `self.additional_stmts`.
+    /// Zero-sized values, which are always structs, are materialized by construction.
+    fn materialize_const(
+        &mut self,
+        value: ConstValueId<'db>,
+        output: VariableId,
+    ) -> Option<Statement<'db>> {
+        if self.db.type_size_info(self.variables[output].ty) == Ok(TypeSizeInformation::Other) {
+            return Some(Statement::Const(StatementConst::new_flat(value, output)));
+        }
+        let ConstValue::Struct(members, _) = value.long(self.db) else {
+            return None;
+        };
+        let location = self.variables[output].location;
+        let inputs = members
+            .iter()
+            .map(|member| {
+                let ty = member.long(self.db).ty(self.db).ok()?;
+                let var =
+                    self.variables.alloc(Variable::with_default_context(self.db, ty, location));
+                let stmt = self.materialize_const(*member, var)?;
+                self.additional_stmts.push(stmt);
+                Some(VarUsage { var_id: var, location })
+            })
+            .collect::<Option<Vec<_>>>()?;
+        Some(Statement::StructConstruct(StatementStructConstruct { inputs, output }))
     }
 
     /// Adds `value` as a const to `var_info` and return a const statement for it.
