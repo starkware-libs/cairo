@@ -269,10 +269,10 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v2: core::integer::u32) <- 1
-  (v3: core::integer::u32) <- 0
-  (v4: core::integer::u32) <- 5
+  (v3: core::integer::u32) <- 5
+  (v4: core::integer::u32) <- 0
 End:
-  Match(match core::ops::range::internal::int_range_try_new::<core::integer::u32>(v0, v3, v4) {
+  Match(match core::ops::range::internal::int_range_try_new::<core::integer::u32>(v0, v4, v3) {
     Result::Ok(v5, v6) => blk1,
     Result::Err(v7, v8) => blk2,
   })
