@@ -1060,15 +1060,25 @@ pub struct MacroExpansionResult {
 }
 
 /// The reason the expansion of a macro rule could not be performed.
+///
+/// No user-writable program currently reaches any of these variants: expansion only runs on rules
+/// that have passed the declaration-time checks, and each variant below names the check
+/// foreclosing it. They are kept as a backstop, so that a rule a future matcher or checker change
+/// lets through fails with a diagnostic instead of expanding to something arbitrary.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MacroExpansionFailure<'db> {
     /// No placeholder of a `$( ... )` block in the expansion repeats at the block's depth, so the
-    /// number of groups to expand it over is unknown.
+    /// number of groups to expand it over is unknown. Foreclosed by
+    /// [`SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder`].
     MissingRepetitionDriver,
     /// The placeholders of a `$( ... )` block in the expansion disagree on the number of groups to
-    /// expand it over.
+    /// expand it over. Foreclosed by
+    /// [`SemanticDiagnosticKind::MacroPlaceholderRepDriverMismatch`].
     ConflictingRepetitionDrivers,
     /// A placeholder in the expansion has no captured value for the group being expanded.
+    /// Foreclosed by [`SemanticDiagnosticKind::UndefinedMacroPlaceholder`],
+    /// [`SemanticDiagnosticKind::MacroPlaceholderRepDepthMismatch`] and
+    /// [`SemanticDiagnosticKind::DuplicateMacroPlaceholder`].
     MissingCapture(SmolStrId<'db>),
 }
 
@@ -1213,7 +1223,12 @@ impl<'db> ExpansionContext<'db, '_> {
         else {
             // Either the placeholder is not one of the pattern's - rejected at declaration time by
             // `UndefinedMacroPlaceholder` - or its captures are nested deeper than the blocks it is
-            // used in, rejected there by `MacroPlaceholderRepDepthMismatch`.
+            // used in, rejected there by `MacroPlaceholderRepDepthMismatch`. An out-of-range group
+            // index cannot land here: every index came from `group_count` on an enclosing block,
+            // which scanned this placeholder (a descendant of that block) before descending - so
+            // its tree is either a `Seq` of exactly that length, a shorter one having been
+            // rejected as `ConflictingRepetitionDrivers`, or a `Leaf`, which `at` returns for any
+            // remaining indices.
             return Err(MacroExpansionError {
                 stable_ptr: param.stable_ptr(db).untyped(),
                 failure: MacroExpansionFailure::MissingCapture(name),
@@ -1273,8 +1288,8 @@ impl<'db> ExpansionContext<'db, '_> {
     /// A placeholder drives `repetition` if its captures still repeat at its depth -
     /// [`CaptureTree::at`] reaches a [`CaptureTree::Seq`]; one reaching a [`CaptureTree::Leaf`] is
     /// broadcast to every group instead. The declaration-time checks guarantee the drivers exist
-    /// and agree, but both are verified here rather than assumed, so that a pattern the checks do
-    /// not cover fails with a diagnostic instead of expanding to something arbitrary.
+    /// and agree, but both are verified here rather than assumed - see
+    /// [`MacroExpansionFailure`].
     fn group_count(
         &self,
         repetition: &ast::MacroRepetition<'db>,
