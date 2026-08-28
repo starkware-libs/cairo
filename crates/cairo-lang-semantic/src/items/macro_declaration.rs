@@ -1085,17 +1085,43 @@ pub enum MacroExpansionFailure<'db> {
 /// An error preventing the expansion of a macro rule, to be reported by the caller performing the
 /// expansion.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MacroExpansionError<'db> {
-    /// The node in the rule's expansion that could not be expanded.
-    stable_ptr: SyntaxStablePtrId<'db>,
-    /// The reason the expansion failed.
-    failure: MacroExpansionFailure<'db>,
+pub enum MacroExpansionError<'db> {
+    /// A defensive failure - see [`MacroExpansionFailure`].
+    Failure {
+        /// The node in the rule's expansion that could not be expanded.
+        stable_ptr: SyntaxStablePtrId<'db>,
+        /// The reason the expansion failed.
+        failure: MacroExpansionFailure<'db>,
+    },
+    /// A `$( ... )` block in the rule's expansion was to be expanded over a number of groups its
+    /// operator does not allow - see
+    /// [`SemanticDiagnosticKind::MacroExpansionRepetitionCountMismatch`].
+    RepetitionCountMismatch {
+        /// Whether the count exceeded a `?` block's at-most-once promise; otherwise it fell short
+        /// of a `+` block's at-least-once one.
+        too_many: bool,
+    },
 }
 impl<'db> MacroExpansionError<'db> {
-    /// Reports the error as a semantic diagnostic on the node that could not be expanded.
-    pub fn report(self, diagnostics: &mut SemanticDiagnostics<'db>) -> DiagnosticAdded {
-        diagnostics
-            .report(self.stable_ptr, SemanticDiagnosticKind::MacroExpansionFailed(self.failure))
+    /// Reports the error as a semantic diagnostic.
+    ///
+    /// The defensive [`MacroExpansionFailure`]s are reported on the node of the rule's expansion
+    /// that could not be expanded. The repetition-count mismatch is reported on `call_ptr` - the
+    /// call whose match determined the group count: a macro is often declared in another file, and
+    /// an error inside the declaration would point at nothing in the file being compiled.
+    pub fn report(
+        self,
+        diagnostics: &mut SemanticDiagnostics<'db>,
+        call_ptr: SyntaxStablePtrId<'db>,
+    ) -> DiagnosticAdded {
+        match self {
+            Self::Failure { stable_ptr, failure } => diagnostics
+                .report(stable_ptr, SemanticDiagnosticKind::MacroExpansionFailed(failure)),
+            Self::RepetitionCountMismatch { too_many } => diagnostics.report(
+                call_ptr,
+                SemanticDiagnosticKind::MacroExpansionRepetitionCountMismatch { too_many },
+            ),
+        }
     }
 }
 
@@ -1229,7 +1255,7 @@ impl<'db> ExpansionContext<'db, '_> {
             // its tree is either a `Seq` of exactly that length, a shorter one having been
             // rejected as `ConflictingRepetitionDrivers`, or a `Leaf`, which `at` returns for any
             // remaining indices.
-            return Err(MacroExpansionError {
+            return Err(MacroExpansionError::Failure {
                 stable_ptr: param.stable_ptr(db).untyped(),
                 failure: MacroExpansionFailure::MissingCapture(name),
             });
@@ -1262,6 +1288,19 @@ impl<'db> ExpansionContext<'db, '_> {
     ) -> Result<(), MacroExpansionError<'db>> {
         let db = self.db;
         let group_count = self.group_count(repetition)?;
+        // The block's operator promises a group count - at least one for `+`, at most one for
+        // `?` - and only the matched call determines the actual one, so the promise is enforced
+        // here, on both ends. `rustc` reports "this must repeat at least once" on the `+` end;
+        // it never reaches the `?` end, as it rejects an expansion block whose operator differs
+        // from its driver's at declaration time, which Cairo deliberately allows.
+        let valid = match repetition.operator(db) {
+            ast::MacroRepetitionOperator::OneOrMore(_) => group_count >= 1,
+            ast::MacroRepetitionOperator::ZeroOrOne(_) => group_count <= 1,
+            _ => true,
+        };
+        if !valid {
+            return Err(MacroExpansionError::RepetitionCountMismatch { too_many: group_count > 1 });
+        }
         let elements = repetition.elements(db);
         let separator = repetition_separator(db, repetition);
         for index in 0..group_count {
@@ -1301,7 +1340,7 @@ impl<'db> ExpansionContext<'db, '_> {
             .descendants(db)
             .filter_map(|node| MacroParam::cast(db, node))
             .filter_map(|param| extract_placeholder(db, &param));
-        let error = |failure| MacroExpansionError {
+        let error = |failure| MacroExpansionError::Failure {
             stable_ptr: repetition.stable_ptr(db).untyped(),
             failure,
         };
