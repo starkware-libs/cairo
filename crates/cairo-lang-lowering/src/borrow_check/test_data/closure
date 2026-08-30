@@ -63,7 +63,7 @@ fn foo(a: PanicDestructable) {
 Parameters: v0: test::PanicDestructable
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:10:5: 10:7}) <- struct_construct(v0{`a`})
+  (v1: {closure@test::foo[0]}) <- struct_construct(v0{`a`})
   (v2: core::felt252) <- 345232009571
   (v3: core::never) <- core::panic_with_felt252(v2{`'Panic'`})
 End:
@@ -138,7 +138,7 @@ note: Trait has no implementation in context: Copy::<S>.
 Parameters: v0: test::S
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:10:5: 10:7}) <- struct_construct(v0{`a`})
+  (v1: {closure@test::foo[0]}) <- struct_construct(v0{`a`})
   (v3: ()) <- struct_construct()
 End:
   Return(v3)
@@ -202,9 +202,9 @@ Parameters: v0: core::array::Array::<core::integer::u32>
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::integer::u32>, v2: @core::array::Array::<core::integer::u32>) <- snapshot(v0{`a`})
-  (v3: {closure@lib.cairo:5:13: 5:22}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
+  (v3: {closure@test::foo[0]}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
   () <- test::use_value::<core::array::Array::<core::integer::u32>>(v1{`a`})
-  () <- test::use_value::<{closure@lib.cairo:5:13: 5:22}>(v3{`f`})
+  () <- test::use_value::<{closure@test::foo[0]}>(v3{`f`})
   (v4: ()) <- struct_construct()
 End:
   Return(v4)
@@ -264,11 +264,11 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 8
-  (v1: {closure@lib.cairo:4:13: 4:16}) <- struct_construct(v0{`x`})
-  (v2: {closure@lib.cairo:4:13: 4:16}, v3: @{closure@lib.cairo:4:13: 4:16}) <- snapshot(v1{`c`})
+  (v1: {closure@test::foo[0]}) <- struct_construct(v0{`x`})
+  (v2: {closure@test::foo[0]}, v3: @{closure@test::foo[0]}) <- snapshot(v1{`c`})
   (v4: core::felt252) <- 2
   (v5: (core::felt252,)) <- struct_construct(v4{`2`})
-  (v6: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:4:13: 4:16}(v3{`c`}, v5{`c(2)`})
+  (v6: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[0]}(v3{`c`}, v5{`c(2)`})
   (v7: core::felt252) <- core::Felt252Add::add(v6{`y`}, v0{`x`})
 End:
   Return(v7)
@@ -303,11 +303,11 @@ Statements:
   (v1: core::felt252) <- 99
   (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0{`__array_builder_macro_result__`}, v1{`99_felt252`})
   (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v3{`x`})
-  (v6: {closure@lib.cairo:4:13: 4:16}) <- struct_construct(v5{`|a| { (@x).len() * (a + 3) }`})
-  (v7: {closure@lib.cairo:4:13: 4:16}, v8: @{closure@lib.cairo:4:13: 4:16}) <- snapshot(v6{`c`})
+  (v6: {closure@test::foo[0]}) <- struct_construct(v5{`|a| { (@x).len() * (a + 3) }`})
+  (v7: {closure@test::foo[0]}, v8: @{closure@test::foo[0]}) <- snapshot(v6{`c`})
   (v9: core::integer::u32) <- 2
   (v10: (core::integer::u32,)) <- struct_construct(v9{`2`})
-  (v11: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:4:13: 4:16}(v8{`c`}, v10{`c(2)`})
+  (v11: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[0]}(v8{`c`}, v10{`c(2)`})
   (v12: core::array::Array::<core::felt252>, v13: @core::array::Array::<core::felt252>) <- snapshot(v4{`x`})
   (v14: core::integer::u32) <- 0
   (v15: @core::felt252) <- core::ops::index::DeprecatedIndexViewImpl::<core::array::Array::<core::felt252>, core::integer::u32, @core::felt252, core::array::ArrayIndex::<core::felt252>>::index(v13{`x`}, v14{`0`})
@@ -413,8 +413,8 @@ fn foo(a: Destructable, b: Destructable) {
 Parameters: v0: test::Destructable, v1: test::Destructable
 blk0 (root):
 Statements:
-  (v2: {closure@lib.cairo:10:13: 10:15}) <- struct_construct(v0{`a`}, v1{`b`})
-  (v3: ()) <- Generated `core::traits::Destruct::destruct` for {closure@lib.cairo:10:13: 10:15}(v2{`c`})
+  (v2: {closure@test::foo[0]}) <- struct_construct(v0{`a`}, v1{`b`})
+  (v3: ()) <- Generated `core::traits::Destruct::destruct` for {closure@test::foo[0]}(v2{`c`})
   (v4: ()) <- struct_construct()
 End:
   Return(v4)

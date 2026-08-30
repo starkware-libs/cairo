@@ -272,7 +272,7 @@ ret;
 
 //! > function_costs
 test::fib: SmallOrderedMap({Const: 3370})
-test::fib[116-219]: SmallOrderedMap({Const: 1970})
+test::fib[0]: SmallOrderedMap({Const: 1970})
 core::panic_with_const_felt252::<375233589013918064796019>: SmallOrderedMap({Const: 700})
 core::panic_with_felt252: SmallOrderedMap({Const: 400})
 
@@ -303,7 +303,7 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc dup<felt252> = dup<felt252>;
-libfunc function_call<user@test::fib[116-219]> = function_call<user@test::fib[116-219]>;
+libfunc function_call<user@test::fib[0]> = function_call<user@test::fib[0]>;
 libfunc enum_match<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>> = enum_match<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>>;
 libfunc branch_align = branch_align;
 libfunc redeposit_gas = redeposit_gas;
@@ -352,7 +352,7 @@ dup<felt252>([3]) -> ([3], [7]);
 store_temp<felt252>([7]) -> ([7]);
 store_temp<felt252>([3]) -> ([3]);
 store_temp<felt252>([6]) -> ([6]);
-function_call<user@test::fib[116-219]>([0], [1], [4], [7], [3], [6]) -> ([8], [9], [10]);
+function_call<user@test::fib[0]>([0], [1], [4], [7], [3], [6]) -> ([8], [9], [10]);
 enum_match<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>>([10]) { fallthrough([11]) F0_B0([12]) };
 branch_align() -> ();
 redeposit_gas([9]) -> ([13]);
@@ -417,7 +417,7 @@ store_temp<felt252>([27]) -> ([27]);
 store_temp<felt252>([2]) -> ([2]);
 store_temp<felt252>([29]) -> ([29]);
 store_temp<felt252>([5]) -> ([5]);
-function_call<user@test::fib[116-219]>([6], [22], [27], [2], [29], [5]) -> ([30], [31], [32]);
+function_call<user@test::fib[0]>([6], [22], [27], [2], [29], [5]) -> ([30], [31], [32]);
 return([30], [31], [32]);
 F1_B1:
 branch_align() -> ();
@@ -445,7 +445,7 @@ store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
 return([4]);
 
 test::fib@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::felt252,)>);
-test::fib[116-219]@F1([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252, [3]: felt252, [4]: felt252, [5]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>);
+test::fib[0]@F1([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252, [3]: felt252, [4]: felt252, [5]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>);
 core::panic_with_const_felt252::<375233589013918064796019>@F2() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_felt252@F3([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);
 
@@ -547,7 +547,7 @@ ret;
 
 //! > function_costs
 test::loop_snap_mut: SmallOrderedMap({Const: 3170})
-test::loop_snap_mut[116-254]: SmallOrderedMap({Const: 1870})
+test::loop_snap_mut[0]: SmallOrderedMap({Const: 1870})
 core::panic_with_const_felt252::<375233589013918064796019>: SmallOrderedMap({Const: 700})
 core::panic_with_felt252: SmallOrderedMap({Const: 400})
 
@@ -580,7 +580,7 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<test::Inner> = store_temp<test::Inner>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc function_call<user@test::loop_snap_mut[116-254]> = function_call<user@test::loop_snap_mut[116-254]>;
+libfunc function_call<user@test::loop_snap_mut[0]> = function_call<user@test::loop_snap_mut[0]>;
 libfunc enum_match<core::panics::PanicResult::<(test::Inner, core::felt252, ())>> = enum_match<core::panics::PanicResult::<(test::Inner, core::felt252, ())>>;
 libfunc branch_align = branch_align;
 libfunc redeposit_gas = redeposit_gas;
@@ -627,7 +627,7 @@ store_temp<GasBuiltin>([1]) -> ([1]);
 store_temp<test::Inner>([7]) -> ([7]);
 store_temp<felt252>([4]) -> ([4]);
 store_temp<felt252>([6]) -> ([6]);
-function_call<user@test::loop_snap_mut[116-254]>([0], [1], [7], [4], [6]) -> ([8], [9], [10]);
+function_call<user@test::loop_snap_mut[0]>([0], [1], [7], [4], [6]) -> ([8], [9], [10]);
 enum_match<core::panics::PanicResult::<(test::Inner, core::felt252, ())>>([10]) { fallthrough([11]) F0_B0([12]) };
 branch_align() -> ();
 redeposit_gas([9]) -> ([13]);
@@ -683,7 +683,7 @@ store_temp<GasBuiltin>([18]) -> ([18]);
 store_temp<test::Inner>([24]) -> ([24]);
 store_temp<felt252>([23]) -> ([23]);
 store_temp<felt252>([4]) -> ([4]);
-function_call<user@test::loop_snap_mut[116-254]>([5], [18], [24], [23], [4]) -> ([25], [26], [27]);
+function_call<user@test::loop_snap_mut[0]>([5], [18], [24], [23], [4]) -> ([25], [26], [27]);
 return([25], [26], [27]);
 F1_B1:
 branch_align() -> ();
@@ -710,6 +710,6 @@ store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
 return([4]);
 
 test::loop_snap_mut@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::felt252,)>);
-test::loop_snap_mut[116-254]@F1([0]: RangeCheck, [1]: GasBuiltin, [2]: test::Inner, [3]: felt252, [4]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(test::Inner, core::felt252, ())>);
+test::loop_snap_mut[0]@F1([0]: RangeCheck, [1]: GasBuiltin, [2]: test::Inner, [3]: felt252, [4]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(test::Inner, core::felt252, ())>);
 core::panic_with_const_felt252::<375233589013918064796019>@F2() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_felt252@F3([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);

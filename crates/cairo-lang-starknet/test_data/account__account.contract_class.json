@@ -1406,7 +1406,7 @@
       ],
       [
         70,
-        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[501-1145]>"
+        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[0]>"
       ],
       [
         71,
@@ -1972,7 +1972,7 @@
       ],
       [
         13,
-        "cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[501-1145]"
+        "cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[0]"
       ],
       [
         14,

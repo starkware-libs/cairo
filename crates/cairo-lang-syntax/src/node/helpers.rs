@@ -813,3 +813,64 @@ impl<'a> IsDependentType<'a> for ast::Expr<'a> {
         }
     }
 }
+
+/// The syntax kinds of the expressions that the compiler lowers into a separate generated function.
+const GENERATED_FUNCTION_KINDS: [SyntaxKind; 4] =
+    [SyntaxKind::ExprClosure, SyntaxKind::ExprLoop, SyntaxKind::ExprWhile, SyntaxKind::ExprFor];
+
+/// The syntax kinds of the items owning the generated functions defined in their body.
+const GENERATED_FUNCTION_OWNER_KINDS: [SyntaxKind; 2] =
+    [SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction];
+
+/// Returns the index of the generated function created for `node` - or for its closest ancestor
+/// that is lowered into a generated function - among all the generated functions of the function
+/// it is defined in, ordered by their position in the code.
+///
+/// Generated functions of nested functions are not counted, as they belong to the nested function.
+///
+/// As the index only depends on the code of the containing function, it makes the names of
+/// generated functions independent of the path of the file they are defined in, and of any code
+/// outside of their containing function.
+pub fn generated_function_index<'db>(db: &'db dyn Database, node: SyntaxNode<'db>) -> usize {
+    let Some(generated) =
+        node.ancestors_with_self(db).find(|node| GENERATED_FUNCTION_KINDS.contains(&node.kind(db)))
+    else {
+        return 0;
+    };
+    let Some(owner) = generated
+        .ancestors(db)
+        .find(|node| GENERATED_FUNCTION_OWNER_KINDS.contains(&node.kind(db)))
+    else {
+        return 0;
+    };
+    let mut index = 0;
+    count_generated_functions_before(db, owner, generated, &mut index);
+    index
+}
+
+/// Accumulates into `index` the number of generated functions preceding `target` in the subtree of
+/// `node`, stopping once `target` is reached. Returns whether `target` was found.
+fn count_generated_functions_before<'db>(
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+    target: SyntaxNode<'db>,
+    index: &mut usize,
+) -> bool {
+    for child in node.get_children(db) {
+        let kind = child.kind(db);
+        if *child == target {
+            return true;
+        }
+        // Generated functions of a nested function belong to it, and are not counted here.
+        if GENERATED_FUNCTION_OWNER_KINDS.contains(&kind) {
+            continue;
+        }
+        if GENERATED_FUNCTION_KINDS.contains(&kind) {
+            *index += 1;
+        }
+        if count_generated_functions_before(db, *child, target, index) {
+            return true;
+        }
+    }
+    false
+}

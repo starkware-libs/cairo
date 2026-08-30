@@ -30,7 +30,9 @@ pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_filesystem::ids::{CrateId, FileId, SmolStrId};
 use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName, NameGreen};
+use cairo_lang_syntax::node::helpers::{
+    GetIdentifier, HasName, NameGreen, generated_function_index,
+};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -1046,8 +1048,10 @@ impl<'db> TopLevelLanguageElementId<'db> for ParamId<'db> {
         let mut closure_segment = None;
         let node = long.1.lookup(db).as_syntax_node();
         if let Some(closure) = node.ancestor_of_kind(db, SyntaxKind::ExprClosure) {
-            closure_segment =
-                Some(SmolStrId::from(db, format!("{{closure@{}}}", closure.offset(db).as_u32())));
+            closure_segment = Some(SmolStrId::from(
+                db,
+                format!("{{closure@{}}}", generated_function_index(db, closure)),
+            ));
         }
         let mut segments = if let Some(decl) =
             node.ancestors(db).find_map(|node| match node.kind(db) {

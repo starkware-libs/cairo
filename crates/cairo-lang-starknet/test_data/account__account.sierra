@@ -143,7 +143,7 @@ libfunc function_call<user@core::panic_with_const_felt252::<63858535502925324588
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc array_new<core::array::Span::<core::felt252>> = array_new<core::array::Span::<core::felt252>>;
 libfunc store_temp<Array<core::array::Span::<core::felt252>>> = store_temp<Array<core::array::Span::<core::felt252>>>;
-libfunc function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[501-1145]> = function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[501-1145]>;
+libfunc function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[0]> = function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[0]>;
 libfunc store_local<System> = store_local<System>;
 libfunc enum_match<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>> = enum_match<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>>;
 libfunc struct_deconstruct<Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>> = struct_deconstruct<Tuple<Array<core::starknet::account::Call>, Array<core::array::Span::<core::felt252>>, Unit>>;
@@ -679,7 +679,7 @@ store_temp<GasBuiltin>([47]) -> ([47]);
 store_temp<System>([48]) -> ([48]);
 store_temp<Array<core::starknet::account::Call>>([25]) -> ([25]);
 store_temp<Array<core::array::Span::<core::felt252>>>([77]) -> ([77]);
-function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[501-1145]>([18], [47], [48], [25], [77]) -> ([78], [79], [4], [80]);
+function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[0]>([18], [47], [48], [25], [77]) -> ([78], [79], [4], [80]);
 store_local<System>([5], [4]) -> ([4]);
 enum_match<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>>([80]) { fallthrough([81]) F3_B3([82]) };
 branch_align() -> ();
@@ -1158,7 +1158,7 @@ store_temp<GasBuiltin>([22]) -> ([22]);
 store_temp<System>([17]) -> ([17]);
 store_temp<Array<core::starknet::account::Call>>([9]) -> ([9]);
 store_temp<Array<core::array::Span::<core::felt252>>>([23]) -> ([23]);
-function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[501-1145]>([5], [22], [17], [9], [23]) -> ([24], [25], [26], [27]);
+function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[0]>([5], [22], [17], [9], [23]) -> ([24], [25], [26], [27]);
 return([24], [25], [26], [27]);
 F13_B0:
 branch_align() -> ();
@@ -1611,7 +1611,7 @@ core::panic_with_const_felt252::<48574846148423057179126568265911316026422348939
 core::panic_with_const_felt252::<375233589013918064796019>@F10() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>@F11([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>, [3]: Array<core::starknet::account::Call>, [4]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>);
 core::panic_with_const_felt252::<6385853550292532458850551396466810579144526>@F12() -> (Tuple<core::panics::Panic, Array<felt252>>);
-cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[501-1145]@F13([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: Array<core::starknet::account::Call>, [4]: Array<core::array::Span::<core::felt252>>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>);
+cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[0]@F13([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: Array<core::starknet::account::Call>, [4]: Array<core::array::Span::<core::felt252>>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>);
 core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanFelt252Serde, core::array::SpanDrop::<core::felt252>>@F14([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::array::Span::<core::felt252>>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
 core::panic_with_const_felt252::<1486822392393958861653191391200594>@F15() -> (Tuple<core::panics::Panic, Array<felt252>>);
 core::panic_with_felt252@F16([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);

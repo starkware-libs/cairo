@@ -110,7 +110,7 @@ warning[E3000]: Unreachable code
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252,)>) <- test::foo[41-53](v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252,)>) <- test::foo[0](v0, v1)
 End:
   Return(v2, v3, v4)
 

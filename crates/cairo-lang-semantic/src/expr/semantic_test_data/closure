@@ -21,7 +21,7 @@ ExprClosure(
                             args: [
                                 Value(
                                     Var(
-                                        ParamId(test::test_func::{closure@39}::a),
+                                        ParamId(test::test_func::{closure@0}::a),
                                     ),
                                 ),
                                 Value(
@@ -43,13 +43,13 @@ ExprClosure(
         ),
         params: [
             Parameter {
-                id: ParamId(test::test_func::{closure@39}::a),
+                id: ParamId(test::test_func::{closure@0}::a),
                 name: "a",
                 ty: core::felt252,
                 mutability: Immutable,
             },
         ],
-        ty: {closure@lib.cairo:2:1: 2:4},
+        ty: {closure@test::test_func[0]},
     },
 )
 
@@ -96,7 +96,7 @@ Block(
                                                     d,
                                                 ),
                                                 expr: Var(
-                                                    ParamId(test::test_func::{closure@181}::a),
+                                                    ParamId(test::test_func::{closure@0}::a),
                                                 ),
                                                 else_clause: None,
                                             },
@@ -123,13 +123,13 @@ Block(
                             ),
                             params: [
                                 Parameter {
-                                    id: ParamId(test::test_func::{closure@181}::a),
+                                    id: ParamId(test::test_func::{closure@0}::a),
                                     name: "a",
                                     ty: core::integer::u8,
                                     mutability: Immutable,
                                 },
                             ],
-                            ty: {closure@lib.cairo:6:13: 6:16},
+                            ty: {closure@test::test_func[0]},
                         },
                     ),
                     else_clause: None,
@@ -142,7 +142,7 @@ Block(
                     ),
                     expr: FunctionCall(
                         ExprFunctionCall {
-                            function: test::bar::<{closure@lib.cairo:6:13: 6:16}, core::ops::function::FnOnceImpl::<{closure@lib.cairo:6:13: 6:16}, (core::integer::u8,), core::traits::DestructFromDrop::<{closure@lib.cairo:6:13: 6:16}, Generated core::traits::Drop::<{closure@lib.cairo:6:13: 6:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:6:13: 6:16}, (core::integer::u8,)>>>,
+                            function: test::bar::<{closure@test::test_func[0]}, core::ops::function::FnOnceImpl::<{closure@test::test_func[0]}, (core::integer::u8,), core::traits::DestructFromDrop::<{closure@test::test_func[0]}, Generated core::traits::Drop::<{closure@test::test_func[0]}>>, Generated core::ops::function::Fn::<{closure@test::test_func[0]}, (core::integer::u8,)>>>,
                             args: [
                                 Value(
                                     Var(
