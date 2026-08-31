@@ -519,16 +519,28 @@ impl<'db> SpanInFile<'db> {
     /// Helper function to format the location of a diagnostic.
     pub fn fmt_location(&self, f: &mut impl fmt::Write, db: &'db dyn Database) -> fmt::Result {
         let file_path = self.file_id.long(db).full_path(db);
-        let start = match self.span.start.position_in_file(db, self.file_id) {
-            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-            None => "?".into(),
-        };
-
-        let end = match self.span.end.position_in_file(db, self.file_id) {
-            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-            None => "?".into(),
-        };
+        let start = self.position(db, self.span.start);
+        let end = self.position(db, self.span.end);
         write!(f, "{file_path}:{start}: {end}")
+    }
+
+    /// Helper function to format the start of the span, as `<file path>:<line>:<column>`.
+    pub fn fmt_start_location(
+        &self,
+        f: &mut impl fmt::Write,
+        db: &'db dyn Database,
+    ) -> fmt::Result {
+        let file_path = self.file_id.long(db).full_path(db);
+        let start = self.position(db, self.span.start);
+        write!(f, "{file_path}:{start}")
+    }
+
+    /// Returns the `<line>:<column>` of `offset` in the file, or `?` if it is not in it.
+    fn position(&self, db: &'db dyn Database, offset: TextOffset) -> String {
+        match offset.position_in_file(db, self.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        }
     }
 }
 impl<'db> DebugWithDb<'db> for SpanInFile<'db> {

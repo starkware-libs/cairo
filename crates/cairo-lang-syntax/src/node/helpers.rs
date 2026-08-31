@@ -849,8 +849,57 @@ fn opens_generated_function_scope(kind: SyntaxKind) -> bool {
     GeneratedFunctionKind::of(kind).is_some() || GENERATED_FUNCTION_OWNER_KINDS.contains(&kind)
 }
 
-/// Returns the path segments of the generated function created for `node` - or for its closest
-/// ancestor that is lowered into a generated function - relative to the function it is defined in.
+/// A segment of the path of a generated function.
+#[derive(Clone, Copy)]
+struct GeneratedFunctionPathSegment {
+    kind: GeneratedFunctionKind,
+    /// The index of the generated function among the generated functions of the same kind directly
+    /// within its scope.
+    index: usize,
+}
+impl std::fmt::Display for GeneratedFunctionPathSegment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{{}#{}}}", self.kind.name(), self.index)
+    }
+}
+
+/// Calls `handle_segment` for each segment of the path of the generated function created for
+/// `node` - or for its closest ancestor that is lowered into a generated function - from the
+/// outermost segment inwards.
+///
+/// Recursing rather than collecting keeps the segments allocation-free for callers that only write
+/// them out - see [generated_function_path] and [generated_function_path_segments].
+fn for_each_generated_function_path_segment<'db>(
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+    handle_segment: &mut impl FnMut(GeneratedFunctionPathSegment) -> std::fmt::Result,
+) -> std::fmt::Result {
+    let Some(generated) = node
+        .ancestors_with_self(db)
+        .find(|node| GeneratedFunctionKind::of(node.kind(db)).is_some())
+    else {
+        return Ok(());
+    };
+    let kind = GeneratedFunctionKind::of(generated.kind(db)).expect("Found above.");
+    // A generated function with no enclosing function is an error, but is still named - index it
+    // within the file, so that its name stays unique.
+    let Some(scope) = generated
+        .ancestors(db)
+        .find(|node| opens_generated_function_scope(node.kind(db)))
+        .or_else(|| generated.ancestors(db).last())
+    else {
+        return Ok(());
+    };
+    if GeneratedFunctionKind::of(scope.kind(db)).is_some() {
+        for_each_generated_function_path_segment(db, scope, handle_segment)?;
+    }
+    let mut index = 0;
+    count_preceding_generated_functions(db, scope, generated, kind, &mut index);
+    handle_segment(GeneratedFunctionPathSegment { kind, index })
+}
+
+/// Returns the path of the generated function created for `node` - or for its closest ancestor that
+/// is lowered into a generated function - relative to the function it is defined in.
 ///
 /// Every level of nesting adds a `{<kind>#<index>}` segment, where the index counts, per kind, the
 /// generated functions directly within the enclosing generated function (or within the function
@@ -869,42 +918,42 @@ fn opens_generated_function_scope(kind: SyntaxKind) -> bool {
 /// As the path only depends on the code of the containing function, it makes the names of
 /// generated functions independent of the path of the file they are defined in, and of any code
 /// outside of their containing function.
+pub fn generated_function_path<'db>(
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+) -> impl std::fmt::Display + 'db {
+    GeneratedFunctionPath { db, node }
+}
+
+/// The [std::fmt::Display] of [generated_function_path].
+struct GeneratedFunctionPath<'db> {
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+}
+impl std::fmt::Display for GeneratedFunctionPath<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut is_first = true;
+        for_each_generated_function_path_segment(self.db, self.node, &mut |segment| {
+            if !std::mem::take(&mut is_first) {
+                write!(f, "::")?;
+            }
+            write!(f, "{segment}")
+        })
+    }
+}
+
+/// Returns the segments of [generated_function_path], for callers that need them separately.
 pub fn generated_function_path_segments<'db>(
     db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Vec<String> {
     let mut segments = vec![];
-    let mut curr = node
-        .ancestors_with_self(db)
-        .find(|node| GeneratedFunctionKind::of(node.kind(db)).is_some());
-    while let Some(generated) = curr {
-        // A generated function with no enclosing function is an error, but is still named - index
-        // it within the file, so that its name stays unique.
-        let Some(scope) = generated
-            .ancestors(db)
-            .find(|node| opens_generated_function_scope(node.kind(db)))
-            .or_else(|| generated.ancestors(db).last())
-        else {
-            break;
-        };
-        segments.push(generated_function_segment(db, scope, generated));
-        curr = GeneratedFunctionKind::of(scope.kind(db)).is_some().then_some(scope);
-    }
-    segments.reverse();
+    for_each_generated_function_path_segment(db, node, &mut |segment| {
+        segments.push(segment.to_string());
+        Ok(())
+    })
+    .expect("Pushing into a `Vec` cannot fail.");
     segments
-}
-
-/// Returns the path segment of `generated`, a generated function directly within `scope`.
-fn generated_function_segment<'db>(
-    db: &'db dyn Database,
-    scope: SyntaxNode<'db>,
-    generated: SyntaxNode<'db>,
-) -> String {
-    let kind = GeneratedFunctionKind::of(generated.kind(db))
-        .expect("`generated` must be a generated function.");
-    let mut index = 0;
-    count_preceding_generated_functions(db, scope, generated, kind, &mut index);
-    format!("{{{}#{index}}}", kind.name())
 }
 
 /// Accumulates into `index` the number of generated functions of kind `kind` directly within

@@ -11,7 +11,7 @@ use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_proc_macros::{HeapSize, SemanticObject};
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::PathSegment;
-use cairo_lang_syntax::node::helpers::generated_function_path_segments;
+use cairo_lang_syntax::node::helpers::generated_function_path;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -512,12 +512,16 @@ impl<'db> DebugWithDb<'db> for ClosureTypeLongId<'db> {
     type Db = dyn Database;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
-        let path =
-            generated_function_path_segments(db, self.params_location.syntax_node(db)).join("::");
-        match self.parent_function {
-            Ok(parent_function) => write!(f, "{:?}::{path}", parent_function.debug(db)),
-            Err(_) => write!(f, "<missing>::{path}"),
+        let path = generated_function_path(db, self.params_location.syntax_node(db));
+        if let Ok(parent_function) = self.parent_function {
+            return write!(f, "{:?}::{path}", parent_function.debug(db));
         }
+        // The parent function has no semantic id - the closure is not in a function, or its
+        // function failed to resolve; either way a diagnostic was already reported for it. Name the
+        // closure by its location instead, which is unique and points at the code to fix.
+        write!(f, "<")?;
+        self.params_location.span_in_file(db).fmt_start_location(f, db)?;
+        write!(f, ">::{path}")
     }
 }
 

@@ -14,7 +14,7 @@ use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::ast::ExprPtr;
-use cairo_lang_syntax::node::helpers::generated_function_path_segments;
+use cairo_lang_syntax::node::helpers::generated_function_path;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
@@ -520,7 +520,7 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
                     f,
                     "{:?}::{}",
                     self.parent.debug(db),
-                    generated_function_path_segments(db, expr_ptr.0.lookup(db)).join("::")
+                    generated_function_path(db, expr_ptr.0.lookup(db))
                 )
             }
             GeneratedFunctionKey::TraitFunc(trait_func, loc) => {
@@ -531,7 +531,7 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
                     trait_id.full_path(db),
                     trait_func.name(db).long(db),
                     self.parent.debug(db),
-                    generated_function_path_segments(db, loc.syntax_node(db)).join("::"),
+                    generated_function_path(db, loc.syntax_node(db)),
                 )
             }
         }
