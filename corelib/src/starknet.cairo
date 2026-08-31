@@ -37,9 +37,10 @@ use storage_access::{
 pub mod syscalls;
 #[allow(unused_imports)]
 use syscalls::{
-    call_contract_syscall, deploy_syscall, emit_event_syscall, get_block_hash_syscall,
-    get_class_hash_at_syscall, get_execution_info_syscall, keccak_syscall, library_call_syscall,
-    replace_class_syscall, send_message_to_l1_syscall, storage_read_syscall, storage_write_syscall,
+    call_contract_syscall, deploy_syscall, deploy_v2_syscall, emit_event_syscall,
+    get_block_hash_syscall, get_class_hash_at_syscall, get_execution_info_syscall, keccak_syscall,
+    library_call_syscall, replace_class_syscall, send_message_to_l1_syscall, storage_read_syscall,
+    storage_write_syscall,
 };
 
 pub mod contract_address;
