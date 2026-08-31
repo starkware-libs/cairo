@@ -14,7 +14,7 @@ use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::ast::ExprPtr;
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::helpers::generated_function_path;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
@@ -516,32 +516,22 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
         match self.key {
             GeneratedFunctionKey::Loop(expr_ptr) => {
-                let mut func_ptr = expr_ptr.untyped();
-                while !matches!(
-                    func_ptr.kind(db),
-                    SyntaxKind::FunctionWithBody | SyntaxKind::TraitItemFunction
-                ) {
-                    func_ptr = func_ptr.parent(db)
-                }
-
-                let span = expr_ptr.0.lookup(db).span(db);
-                let function_start = func_ptr.lookup(db).span(db).start.as_u32();
                 write!(
                     f,
-                    "{:?}[{}-{}]",
+                    "{:?}::{}",
                     self.parent.debug(db),
-                    span.start.as_u32() - function_start,
-                    span.end.as_u32() - function_start
+                    generated_function_path(db, expr_ptr.0.lookup(db))
                 )
             }
             GeneratedFunctionKey::TraitFunc(trait_func, loc) => {
                 let trait_id = trait_func.trait_id(db);
                 write!(
                     f,
-                    "Generated `{}::{}` for {{closure@{:?}}}",
+                    "Generated `{}::{}` for {:?}::{}",
                     trait_id.full_path(db),
                     trait_func.name(db).long(db),
-                    loc.debug(db),
+                    self.parent.debug(db),
+                    generated_function_path(db, loc.syntax_node(db)),
                 )
             }
         }
