@@ -12437,7 +12437,7 @@
       ],
       [
         161,
-        "function_call<user@core::sha256::compute_sha256_byte_array[522-1092]>"
+        "function_call<user@core::sha256::compute_sha256_byte_array::{loop#0}>"
       ],
       [
         162,
@@ -13117,7 +13117,7 @@
       ],
       [
         331,
-        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::all_libfuncs[2863-2880]>"
+        "function_call<user@cairo_level_tests::contracts::libfuncs_coverage::all_libfuncs::{loop#0}>"
       ],
       [
         332,
@@ -14841,7 +14841,7 @@
       ],
       [
         762,
-        "function_call<user@core::sha256::compute_sha256_u32_array_safe[1183-1342]>"
+        "function_call<user@core::sha256::compute_sha256_u32_array_safe::{loop#0}>"
       ],
       [
         763,
@@ -14917,7 +14917,7 @@
       ],
       [
         781,
-        "function_call<user@core::sha2_64_core::compute_sha2_64_byte_array[340-1652]>"
+        "function_call<user@core::sha2_64_core::compute_sha2_64_byte_array::{loop#0}>"
       ],
       [
         782,
@@ -14973,7 +14973,7 @@
       ],
       [
         795,
-        "function_call<user@core::sha2_64_core::compute_sha2_64_u64_array[457-616]>"
+        "function_call<user@core::sha2_64_core::compute_sha2_64_u64_array::{loop#0}>"
       ],
       [
         796,
@@ -17917,7 +17917,7 @@
       ],
       [
         1531,
-        "function_call<user@core::starknet::storage_access::inner_write_byte_array[634-1476]{NotSpecialized, NotSpecialized, NotSpecialized, 0, 0, NotSpecialized, }>"
+        "function_call<user@core::starknet::storage_access::inner_write_byte_array::{loop#0}{NotSpecialized, NotSpecialized, NotSpecialized, 0, 0, NotSpecialized, }>"
       ],
       [
         1532,
@@ -18213,7 +18213,7 @@
       ],
       [
         1605,
-        "function_call<user@core::keccak::keccak_u256s_be_inputs[652-819]>"
+        "function_call<user@core::keccak::keccak_u256s_be_inputs::{loop#0}>"
       ],
       [
         1606,
@@ -18313,7 +18313,7 @@
       ],
       [
         1630,
-        "function_call<user@core::starknet::storage_access::inner_write_byte_array[634-1476]{NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, 0, NotSpecialized, }>"
+        "function_call<user@core::starknet::storage_access::inner_write_byte_array::{loop#0}{NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, 0, NotSpecialized, }>"
       ],
       [
         1631,
@@ -18389,7 +18389,7 @@
       ],
       [
         1649,
-        "function_call<user@core::starknet::storage_access::inner_write_byte_array[634-1476]>"
+        "function_call<user@core::starknet::storage_access::inner_write_byte_array::{loop#0}>"
       ]
     ],
     "user_func_names": [
@@ -18499,7 +18499,7 @@
       ],
       [
         26,
-        "core::sha256::compute_sha256_byte_array[522-1092]"
+        "core::sha256::compute_sha256_byte_array::{loop#0}"
       ],
       [
         27,
@@ -18655,7 +18655,7 @@
       ],
       [
         65,
-        "cairo_level_tests::contracts::libfuncs_coverage::all_libfuncs[2863-2880]"
+        "cairo_level_tests::contracts::libfuncs_coverage::all_libfuncs::{loop#0}"
       ],
       [
         66,
@@ -18895,11 +18895,11 @@
       ],
       [
         125,
-        "core::sha256::compute_sha256_u32_array_safe[1183-1342]"
+        "core::sha256::compute_sha256_u32_array_safe::{loop#0}"
       ],
       [
         126,
-        "core::sha2_64_core::compute_sha2_64_byte_array[340-1652]"
+        "core::sha2_64_core::compute_sha2_64_byte_array::{loop#0}"
       ],
       [
         127,
@@ -18907,7 +18907,7 @@
       ],
       [
         128,
-        "core::sha2_64_core::compute_sha2_64_u64_array[457-616]"
+        "core::sha2_64_core::compute_sha2_64_u64_array::{loop#0}"
       ],
       [
         129,
@@ -19151,7 +19151,7 @@
       ],
       [
         189,
-        "core::starknet::storage_access::inner_write_byte_array[634-1476]{NotSpecialized, NotSpecialized, NotSpecialized, 0, 0, NotSpecialized, }"
+        "core::starknet::storage_access::inner_write_byte_array::{loop#0}{NotSpecialized, NotSpecialized, NotSpecialized, 0, 0, NotSpecialized, }"
       ],
       [
         190,
@@ -19171,7 +19171,7 @@
       ],
       [
         194,
-        "core::keccak::keccak_u256s_be_inputs[652-819]"
+        "core::keccak::keccak_u256s_be_inputs::{loop#0}"
       ],
       [
         195,
@@ -19179,11 +19179,11 @@
       ],
       [
         196,
-        "core::starknet::storage_access::inner_write_byte_array[634-1476]{NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, 0, NotSpecialized, }"
+        "core::starknet::storage_access::inner_write_byte_array::{loop#0}{NotSpecialized, NotSpecialized, NotSpecialized, NotSpecialized, 0, NotSpecialized, }"
       ],
       [
         197,
-        "core::starknet::storage_access::inner_write_byte_array[634-1476]"
+        "core::starknet::storage_access::inner_write_byte_array::{loop#0}"
       ]
     ]
   },

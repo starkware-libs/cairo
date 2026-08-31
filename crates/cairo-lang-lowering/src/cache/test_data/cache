@@ -176,7 +176,7 @@ fn foo() -> i32 {
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::integer::i32,)>) <- test::MyImpl::foo[22-113](v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::integer::i32,)>) <- test::MyImpl::foo::{loop#0}(v0, v1)
 End:
   Return(v2, v3, v4)
 
