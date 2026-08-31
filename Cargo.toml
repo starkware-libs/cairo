@@ -107,7 +107,7 @@ clap = { version = "4.5.42", features = ["derive"] }
 colored = "3.0.0"
 const-fnv1a-hash = "1.1.0"
 const_format = "0.2.34"
-convert_case = "0.11.0"
+convert_case = "0.12.0"
 criterion = { version = "0.8", features = ["html_reports"] }
 derivative = "2.2.0"
 dhat = "0.3.3"
@@ -147,7 +147,7 @@ sha2 = "0.11.0"
 sha3 = "0.12.0"
 smol_str = { version = "0.3.2", default-features = false }
 starknet-types-core = { version = "0.2.4", features = ["hash", "prime-bigint", "serde"] }
-syn = { version = "2.0.104", features = ["extra-traits", "full"] }
+syn = { version = "3.0.4", features = ["extra-traits", "full"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
 thiserror = "2.0.12"
@@ -158,7 +158,7 @@ tracing = "0.1.40"
 tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt", "time"] }
 typetag = "0.2"
-unescaper = "0.1.6"
+unescaper = "0.2.0"
 vector-map = { version = "1.0.2", features = ["serde_impl"] }
 xshell = "0.2.7"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
