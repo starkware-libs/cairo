@@ -1889,3 +1889,437 @@ Statements:
   (v12: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v11)
 End:
   Return(v7, v12)
+
+//! > ==========================================================================
+
+//! > Test that generated functions of nested scopes are numbered independently of their depth.
+
+//! > test_runner_name
+test_generated_function
+
+//! > cairo_code
+#[target_function]
+fn foo(a: u32) -> u32 {
+    let outer = |x: u32| {
+        let mut y = x;
+        loop {
+            y = y + 1;
+            break;
+        }
+        let nested = |z: u32| z + 1;
+        nested(y)
+    };
+    let mut sum = outer(a);
+    loop {
+        sum = sum + 2;
+        break;
+    }
+    let last = |x: u32| x + 3;
+    last(sum)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}) <- struct_construct()
+  (v2: test::foo::{closure#0}, v3: @test::foo::{closure#0}) <- snapshot(v1)
+  (v4: (core::integer::u32,)) <- struct_construct(v0)
+  (v5: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v3, v4)
+  (v7: core::integer::u32, v6: ()) <- test::foo::{loop#0}(v5)
+  (v8: test::foo::{closure#1}) <- struct_construct()
+  (v9: test::foo::{closure#1}, v10: @test::foo::{closure#1}) <- snapshot(v8)
+  (v11: (core::integer::u32,)) <- struct_construct(v7)
+  (v12: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#1}(v10, v11)
+End:
+  Return(v12)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v1) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk9, {v0 -> v3})
+
+blk2:
+Statements:
+  (v4: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v5: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v2, v4)
+  (v6: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v5)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v6) {
+    OptionRev::None => blk3,
+    OptionRev::Some(v7) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk9, {v0 -> v3})
+
+blk4:
+Statements:
+  (v8: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v7, v4)
+  (v9: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v8)
+  (v10: core::integer::u32) <- 2
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v9, v10) {
+    Result::Ok(v11, v12) => blk5,
+    Result::Err(v13, v14) => blk8,
+  })
+
+blk5:
+Statements:
+  (v15: core::integer::u32) <- 3
+End:
+  Match(match core::integer::u32_overflowing_add(v11, v12, v15) {
+    Result::Ok(v16, v17) => blk6,
+    Result::Err(v18, v19) => blk7,
+  })
+
+blk6:
+Statements:
+  (v20: (core::integer::u32,)) <- struct_construct(v17)
+  (v21: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v20)
+End:
+  Return(v16, v21)
+
+blk7:
+Statements:
+End:
+  Goto(blk9, {v18 -> v3})
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {v13 -> v3})
+
+blk9:
+Statements:
+  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v23: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v22)
+End:
+  Return(v3, v23)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let outer = |x: u32| {
+                ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated loop lowering for source location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 1
+  (v2: core::integer::u32) <- core::integer::U32Add::add(v0, v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v2, v3)
+
+
+Final lowering:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v0) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v3: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Err(v2)
+End:
+  Return(v3)
+
+blk2:
+Statements:
+  (v4: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v5: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v1, v4)
+  (v6: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v5)
+  (v7: ()) <- struct_construct()
+  (v8: (core::integer::u32, ())) <- struct_construct(v6, v7)
+  (v9: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Ok(v8)
+End:
+  Return(v9)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+        let nested = |z: u32| z + 1;
+                     ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#0}::{closure#0}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+        let nested = |z: u32| z + 1;
+                     ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}::{closure#0}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 1
+  (v5: core::integer::u32) <- core::integer::U32Add::add(v3, v4)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: @test::foo::{closure#0}::{closure#0}, v1: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- struct_destructure(v1)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v2) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v5: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v4)
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v7: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v3, v6)
+  (v8: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v7)
+  (v9: (core::integer::u32,)) <- struct_construct(v8)
+  (v10: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v9)
+End:
+  Return(v10)
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let outer = |x: u32| {
+                ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v5: core::integer::u32, v4: ()) <- test::foo::{closure#0}::{loop#0}(v3)
+  (v6: test::foo::{closure#0}::{closure#0}) <- struct_construct()
+  (v7: test::foo::{closure#0}::{closure#0}, v8: @test::foo::{closure#0}::{closure#0}) <- snapshot(v6)
+  (v9: (core::integer::u32,)) <- struct_construct(v5)
+  (v10: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}(v8, v9)
+End:
+  Return(v10)
+
+
+Final lowering:
+Parameters: v0: @test::foo::{closure#0}, v1: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- struct_destructure(v1)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v2) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk2:
+Statements:
+  (v4: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v5: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v3, v4)
+  (v6: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v5)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v6) {
+    OptionRev::None => blk3,
+    OptionRev::Some(v7) => blk5,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v9: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v8)
+End:
+  Return(v9)
+
+blk5:
+Statements:
+  (v10: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v7, v4)
+  (v11: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v10)
+  (v12: (core::integer::u32,)) <- struct_construct(v11)
+  (v13: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v12)
+End:
+  Return(v13)
+
+
+Generated loop lowering for source location:
+      loop {
+ _____^
+| ...
+|     }
+|_____^
+
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 2
+  (v2: core::integer::u32) <- core::integer::U32Add::add(v0, v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v2, v3)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- 2
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v1, v2) {
+    Result::Ok(v3, v4) => blk1,
+    Result::Err(v5, v6) => blk2,
+  })
+
+blk1:
+Statements:
+  (v7: ()) <- struct_construct()
+  (v8: (core::integer::u32, ())) <- struct_construct(v4, v7)
+  (v9: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Ok(v8)
+End:
+  Return(v3, v9)
+
+blk2:
+Statements:
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v11: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Err(v10)
+End:
+  Return(v5, v11)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let last = |x: u32| x + 3;
+               ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#1}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#1}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let last = |x: u32| x + 3;
+               ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#1}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#1}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 3
+  (v5: core::integer::u32) <- core::integer::U32Add::add(v3, v4)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#1}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 3
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v3, v4) {
+    Result::Ok(v5, v6) => blk1,
+    Result::Err(v7, v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v9: (core::integer::u32,)) <- struct_construct(v6)
+  (v10: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v9)
+End:
+  Return(v5, v10)
+
+blk2:
+Statements:
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v12: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v11)
+End:
+  Return(v7, v12)

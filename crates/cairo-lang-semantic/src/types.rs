@@ -516,12 +516,9 @@ impl<'db> DebugWithDb<'db> for ClosureTypeLongId<'db> {
         if let Ok(parent_function) = self.parent_function {
             return write!(f, "{:?}::{path}", parent_function.debug(db));
         }
-        // The parent function has no semantic id - the closure is not in a function, or its
-        // function failed to resolve; either way a diagnostic was already reported for it. Name the
-        // closure by its location instead, which is unique and points at the code to fix.
-        write!(f, "<")?;
-        self.params_location.span_in_file(db).fmt_start_location(f, db)?;
-        write!(f, ">::{path}")
+        // The parent function is unknown, and a diagnostic was already reported for it - name the
+        // closure by its location, which is unique.
+        write!(f, "<{:?}>::{path}", self.params_location.debug(db))
     }
 }
 

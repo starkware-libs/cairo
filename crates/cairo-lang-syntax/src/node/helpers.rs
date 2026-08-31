@@ -1,4 +1,9 @@
-use cairo_lang_filesystem::ids::SmolStrId;
+use std::convert::Infallible;
+use std::ops::ControlFlow;
+
+use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, chain};
 use salsa::Database;
 
@@ -815,7 +820,7 @@ impl<'a> IsDependentType<'a> for ast::Expr<'a> {
 }
 
 /// A kind of function the compiler generates for an expression in a function's body.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum GeneratedFunctionKind {
     Closure,
     Loop,
@@ -850,11 +855,8 @@ fn opens_generated_function_scope(kind: SyntaxKind) -> bool {
 }
 
 /// A segment of the path of a generated function.
-#[derive(Clone, Copy)]
 struct GeneratedFunctionPathSegment {
     kind: GeneratedFunctionKind,
-    /// The index of the generated function among the generated functions of the same kind directly
-    /// within its scope.
     index: usize,
 }
 impl std::fmt::Display for GeneratedFunctionPathSegment {
@@ -863,24 +865,19 @@ impl std::fmt::Display for GeneratedFunctionPathSegment {
     }
 }
 
-/// Calls `handle_segment` for each segment of the path of the generated function created for
-/// `node` - or for its closest ancestor that is lowered into a generated function - from the
-/// outermost segment inwards.
-///
-/// Recursing rather than collecting keeps the segments allocation-free for callers that only write
-/// them out - see [generated_function_path] and [generated_function_path_segments].
-fn for_each_generated_function_path_segment<'db>(
+/// Calls `handle_segment` for each segment of the path of `node`'s generated function, from the
+/// outermost segment inwards. See [generated_function_path].
+fn for_each_generated_function_path_segment<'db, Break>(
     db: &'db dyn Database,
     node: SyntaxNode<'db>,
-    handle_segment: &mut impl FnMut(GeneratedFunctionPathSegment) -> std::fmt::Result,
-) -> std::fmt::Result {
-    let Some(generated) = node
+    handle_segment: &mut impl FnMut(GeneratedFunctionPathSegment) -> ControlFlow<Break>,
+) -> ControlFlow<Break> {
+    let Some((generated, kind)) = node
         .ancestors_with_self(db)
-        .find(|node| GeneratedFunctionKind::of(node.kind(db)).is_some())
+        .find_map(|node| Some((node, GeneratedFunctionKind::of(node.kind(db))?)))
     else {
-        return Ok(());
+        return ControlFlow::Continue(());
     };
-    let kind = GeneratedFunctionKind::of(generated.kind(db)).expect("Found above.");
     // A generated function with no enclosing function is an error, but is still named - index it
     // within the file, so that its name stays unique.
     let Some(scope) = generated
@@ -888,13 +885,12 @@ fn for_each_generated_function_path_segment<'db>(
         .find(|node| opens_generated_function_scope(node.kind(db)))
         .or_else(|| generated.ancestors(db).last())
     else {
-        return Ok(());
+        return ControlFlow::Continue(());
     };
     if GeneratedFunctionKind::of(scope.kind(db)).is_some() {
         for_each_generated_function_path_segment(db, scope, handle_segment)?;
     }
-    let mut index = 0;
-    count_preceding_generated_functions(db, scope, generated, kind, &mut index);
+    let index = generated_function_indices(db, (), scope)[&generated];
     handle_segment(GeneratedFunctionPathSegment { kind, index })
 }
 
@@ -934,54 +930,68 @@ impl std::fmt::Display for GeneratedFunctionPath<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut is_first = true;
         for_each_generated_function_path_segment(self.db, self.node, &mut |segment| {
-            if !std::mem::take(&mut is_first) {
-                write!(f, "::")?;
+            let separator = if std::mem::take(&mut is_first) { "" } else { "::" };
+            match write!(f, "{separator}{segment}") {
+                Ok(()) => ControlFlow::Continue(()),
+                Err(err) => ControlFlow::Break(err),
             }
-            write!(f, "{segment}")
         })
+        .break_value()
+        .map_or(Ok(()), Err)
     }
 }
 
-/// Returns the segments of [generated_function_path], for callers that need them separately.
+/// Returns the segments of [generated_function_path].
 pub fn generated_function_path_segments<'db>(
     db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Vec<String> {
     let mut segments = vec![];
-    for_each_generated_function_path_segment(db, node, &mut |segment| {
-        segments.push(segment.to_string());
-        Ok(())
-    })
-    .expect("Pushing into a `Vec` cannot fail.");
+    let ControlFlow::Continue(()) =
+        for_each_generated_function_path_segment::<Infallible>(db, node, &mut |segment| {
+            segments.push(segment.to_string());
+            ControlFlow::Continue(())
+        });
     segments
 }
 
-/// Accumulates into `index` the number of generated functions of kind `kind` directly within
-/// `node`'s scope that precede `target`. Returns whether `target` was found.
-fn count_preceding_generated_functions<'db>(
+/// Returns the index of each generated function directly within `scope`, counted per kind in the
+/// order the functions appear in it.
+///
+/// Memoized per scope, so naming every generated function of a function costs one pass over its
+/// body rather than one per name.
+#[salsa::tracked(returns(ref))]
+fn generated_function_indices<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    scope: SyntaxNode<'db>,
+) -> OrderedHashMap<SyntaxNode<'db>, usize> {
+    let mut indices = OrderedHashMap::default();
+    collect_generated_function_indices(db, scope, &mut Default::default(), &mut indices);
+    indices
+}
+
+/// Accumulates into `indices` the index of each generated function directly within `node`'s scope,
+/// counting each kind in `counters`.
+fn collect_generated_function_indices<'db>(
     db: &'db dyn Database,
     node: SyntaxNode<'db>,
-    target: SyntaxNode<'db>,
-    kind: GeneratedFunctionKind,
-    index: &mut usize,
-) -> bool {
+    counters: &mut UnorderedHashMap<GeneratedFunctionKind, usize>,
+    indices: &mut OrderedHashMap<SyntaxNode<'db>, usize>,
+) {
     for child in node.get_children(db) {
-        if *child == target {
-            return true;
-        }
         let child_kind = child.kind(db);
         // A nested function is not a generated function, and its body opens a scope of its own.
         if GENERATED_FUNCTION_OWNER_KINDS.contains(&child_kind) {
             continue;
         }
-        // A nested generated function is counted, but its body belongs to its own scope.
-        if let Some(child_generated_kind) = GeneratedFunctionKind::of(child_kind) {
-            *index += (child_generated_kind == kind) as usize;
+        // A nested generated function is indexed here, but its body belongs to its own scope.
+        if let Some(kind) = GeneratedFunctionKind::of(child_kind) {
+            let counter = counters.entry(kind).or_default();
+            indices.insert(*child, *counter);
+            *counter += 1;
             continue;
         }
-        if count_preceding_generated_functions(db, *child, target, kind, index) {
-            return true;
-        }
+        collect_generated_function_indices(db, *child, counters, indices);
     }
-    false
 }

@@ -101,7 +101,7 @@ error[E2182]: Closures are not allowed in this context.
 | };
 |_^
 
-error[E2302]: Type mismatch: `<lib.cairo:1:17>::{closure#0}` and `i32`.
+error[E2302]: Type mismatch: `<lib.cairo:1:17: 1:19>::{closure#0}` and `i32`.
  --> lib.cairo:1:17-4:1
   const _x: i32 = || {
  _________________^
@@ -133,7 +133,7 @@ error[E2182]: Closures are not allowed in this context.
 |     } }>();
 |_____^
 
-error[E2302]: Type mismatch: `<lib.cairo:3:13>::{closure#0}` and `u32`.
+error[E2302]: Type mismatch: `<lib.cairo:3:13: 3:15>::{closure#0}` and `u32`.
  --> lib.cairo:3:11-5:7
       bar::<{ || -> u32 {
  ___________^
