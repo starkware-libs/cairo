@@ -814,61 +814,123 @@ impl<'a> IsDependentType<'a> for ast::Expr<'a> {
     }
 }
 
-/// The syntax kinds of the expressions that the compiler lowers into a separate generated function.
-const GENERATED_FUNCTION_KINDS: [SyntaxKind; 4] =
-    [SyntaxKind::ExprClosure, SyntaxKind::ExprLoop, SyntaxKind::ExprWhile, SyntaxKind::ExprFor];
+/// A kind of function the compiler generates for an expression in a function's body.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum GeneratedFunctionKind {
+    Closure,
+    Loop,
+}
+impl GeneratedFunctionKind {
+    /// Returns the kind of function generated for an expression of the given syntax kind, if any.
+    fn of(kind: SyntaxKind) -> Option<Self> {
+        match kind {
+            SyntaxKind::ExprClosure => Some(Self::Closure),
+            SyntaxKind::ExprLoop | SyntaxKind::ExprWhile | SyntaxKind::ExprFor => Some(Self::Loop),
+            _ => None,
+        }
+    }
+
+    /// Returns the name of the kind, as it appears in the path of a generated function.
+    fn name(self) -> &'static str {
+        match self {
+            Self::Closure => "closure",
+            Self::Loop => "loop",
+        }
+    }
+}
 
 /// The syntax kinds of the items owning the generated functions defined in their body.
 const GENERATED_FUNCTION_OWNER_KINDS: [SyntaxKind; 2] =
     [SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction];
 
-/// Returns the index of the generated function created for `node` - or for its closest ancestor
-/// that is lowered into a generated function - among all the generated functions of the function
-/// it is defined in, ordered by their position in the code.
-///
-/// Generated functions of nested functions are not counted, as they belong to the nested function.
-///
-/// As the index only depends on the code of the containing function, it makes the names of
-/// generated functions independent of the path of the file they are defined in, and of any code
-/// outside of their containing function.
-pub fn generated_function_index<'db>(db: &'db dyn Database, node: SyntaxNode<'db>) -> usize {
-    let Some(generated) =
-        node.ancestors_with_self(db).find(|node| GENERATED_FUNCTION_KINDS.contains(&node.kind(db)))
-    else {
-        return 0;
-    };
-    let Some(owner) = generated
-        .ancestors(db)
-        .find(|node| GENERATED_FUNCTION_OWNER_KINDS.contains(&node.kind(db)))
-    else {
-        return 0;
-    };
-    let mut index = 0;
-    count_generated_functions_before(db, owner, generated, &mut index);
-    index
+/// Returns whether an expression of the given syntax kind opens a scope for the generated
+/// functions defined in it - either by being a generated function itself, or by being a function.
+fn opens_generated_function_scope(kind: SyntaxKind) -> bool {
+    GeneratedFunctionKind::of(kind).is_some() || GENERATED_FUNCTION_OWNER_KINDS.contains(&kind)
 }
 
-/// Accumulates into `index` the number of generated functions preceding `target` in the subtree of
-/// `node`, stopping once `target` is reached. Returns whether `target` was found.
-fn count_generated_functions_before<'db>(
+/// Returns the path segments of the generated function created for `node` - or for its closest
+/// ancestor that is lowered into a generated function - relative to the function it is defined in.
+///
+/// Every level of nesting adds a `{<kind>#<index>}` segment, where the index counts, per kind, the
+/// generated functions directly within the enclosing generated function (or within the function
+/// itself). So the closures of:
+/// ```ignore
+/// fn foo() {
+///     let outer = |x| {
+///         let inner = |y| y;
+///         inner(x)
+///     };
+///     let last = |z| z;
+/// }
+/// ```
+/// are `{closure#0}`, `{closure#0}::{closure#0}` and `{closure#1}`.
+///
+/// As the path only depends on the code of the containing function, it makes the names of
+/// generated functions independent of the path of the file they are defined in, and of any code
+/// outside of their containing function.
+pub fn generated_function_path_segments<'db>(
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+) -> Vec<String> {
+    let mut segments = vec![];
+    let mut curr = node
+        .ancestors_with_self(db)
+        .find(|node| GeneratedFunctionKind::of(node.kind(db)).is_some());
+    while let Some(generated) = curr {
+        // A generated function with no enclosing function is an error, but is still named - index
+        // it within the file, so that its name stays unique.
+        let Some(scope) = generated
+            .ancestors(db)
+            .find(|node| opens_generated_function_scope(node.kind(db)))
+            .or_else(|| generated.ancestors(db).last())
+        else {
+            break;
+        };
+        segments.push(generated_function_segment(db, scope, generated));
+        curr = GeneratedFunctionKind::of(scope.kind(db)).is_some().then_some(scope);
+    }
+    segments.reverse();
+    segments
+}
+
+/// Returns the path segment of `generated`, a generated function directly within `scope`.
+fn generated_function_segment<'db>(
+    db: &'db dyn Database,
+    scope: SyntaxNode<'db>,
+    generated: SyntaxNode<'db>,
+) -> String {
+    let kind = GeneratedFunctionKind::of(generated.kind(db))
+        .expect("`generated` must be a generated function.");
+    let mut index = 0;
+    count_preceding_generated_functions(db, scope, generated, kind, &mut index);
+    format!("{{{}#{index}}}", kind.name())
+}
+
+/// Accumulates into `index` the number of generated functions of kind `kind` directly within
+/// `node`'s scope that precede `target`. Returns whether `target` was found.
+fn count_preceding_generated_functions<'db>(
     db: &'db dyn Database,
     node: SyntaxNode<'db>,
     target: SyntaxNode<'db>,
+    kind: GeneratedFunctionKind,
     index: &mut usize,
 ) -> bool {
     for child in node.get_children(db) {
-        let kind = child.kind(db);
         if *child == target {
             return true;
         }
-        // Generated functions of a nested function belong to it, and are not counted here.
-        if GENERATED_FUNCTION_OWNER_KINDS.contains(&kind) {
+        let child_kind = child.kind(db);
+        // A nested function is not a generated function, and its body opens a scope of its own.
+        if GENERATED_FUNCTION_OWNER_KINDS.contains(&child_kind) {
             continue;
         }
-        if GENERATED_FUNCTION_KINDS.contains(&kind) {
-            *index += 1;
+        // A nested generated function is counted, but its body belongs to its own scope.
+        if let Some(child_generated_kind) = GeneratedFunctionKind::of(child_kind) {
+            *index += (child_generated_kind == kind) as usize;
+            continue;
         }
-        if count_generated_functions_before(db, *child, target, index) {
+        if count_preceding_generated_functions(db, *child, target, kind, index) {
             return true;
         }
     }

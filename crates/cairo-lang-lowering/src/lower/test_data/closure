@@ -20,7 +20,7 @@ Main:
 Parameters: v0: core::dict::Felt252Dict::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- struct_construct(v0)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
@@ -39,7 +39,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     || {
     ^^
 
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v0)
@@ -49,7 +49,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@test::foo[0]}
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v4: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
@@ -62,7 +62,7 @@ Generated core::ops::function::FnOnce::call lowering for source location:
     || {
     ^^
 
-Parameters: v0: {closure@test::foo[0]}, v1: ()
+Parameters: v0: test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v0)
@@ -73,7 +73,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@test::foo[0]}, v4: ()
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: test::foo::{closure#0}, v4: ()
 blk0 (root):
 Statements:
   (v5: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
@@ -115,7 +115,7 @@ Main:
 Parameters: v0: test::PanicDestructable
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- struct_construct(v0)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
   (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v3: core::felt252) <- 345232009571
   (v4: core::internal::bounded_int::BoundedInt::<0, 30>) <- 5
@@ -152,7 +152,7 @@ Generated core::traits::PanicDestruct::panic_destruct lowering for source locati
     || {
     ^^
 
-Parameters: v0: {closure@test::foo[0]}, v1: core::panics::Panic
+Parameters: v0: test::foo::{closure#0}, v1: core::panics::Panic
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -162,7 +162,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[0]}, v1: core::panics::Panic
+Parameters: v0: test::foo::{closure#0}, v1: core::panics::Panic
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -175,7 +175,7 @@ Generated core::ops::function::FnOnce::call lowering for source location:
     || {
     ^^
 
-Parameters: v0: {closure@test::foo[0]}, v1: ()
+Parameters: v0: test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -187,7 +187,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[0]}, v1: ()
+Parameters: v0: test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -223,9 +223,9 @@ Main:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- struct_construct(v0)
-  (v2: {closure@test::foo[0]}) <- test::identity::<{closure@test::foo[0]}>(v1)
-  (v3: {closure@test::foo[0]}) <- test::identity::<{closure@test::foo[0]}>(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
+  (v2: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
+  (v3: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
   (v4: ()) <- struct_construct()
 End:
   Return(v4)
@@ -235,9 +235,9 @@ Final lowering:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- struct_construct(v0)
-  (v2: {closure@test::foo[0]}) <- test::identity::<{closure@test::foo[0]}>(v1)
-  (v3: {closure@test::foo[0]}) <- test::identity::<{closure@test::foo[0]}>(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
+  (v2: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
+  (v3: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
 End:
   Return()
 
@@ -246,7 +246,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let c = || a;
             ^^
 
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- struct_destructure(v0)
@@ -256,7 +256,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -267,10 +267,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let c = || a;
             ^^
 
-Parameters: v0: @{closure@test::foo[0]}, v2: ()
+Parameters: v0: @test::foo::{closure#0}, v2: ()
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v1)
   () <- struct_destructure(v2)
 End:
@@ -278,10 +278,10 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@test::foo[0]}, v1: ()
+Parameters: v0: @test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
-  (v2: {closure@test::foo[0]}) <- desnap(v0)
+  (v2: test::foo::{closure#0}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v2)
 End:
   Return(v3)
@@ -320,11 +320,11 @@ Main:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- struct_construct()
-  (v2: {closure@test::foo[0]}, v3: @{closure@test::foo[0]}) <- snapshot(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct()
+  (v2: test::foo::{closure#0}, v3: @test::foo::{closure#0}) <- snapshot(v1)
   (v4: core::felt252) <- 0
   (v5: (core::felt252,)) <- struct_construct(v4)
-  (v6: ()) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[0]}(v3, v5)
+  (v6: ()) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v3, v5)
   (v7: ()) <- struct_construct()
 End:
   Return(v7)
@@ -359,7 +359,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let f = |a: felt252| {
             ^^^^^^^^^^^^
 
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -369,7 +369,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -380,10 +380,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let f = |a: felt252| {
             ^^^^^^^^^^^^
 
-Parameters: v0: @{closure@test::foo[0]}, v2: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::felt252,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- 0
@@ -420,7 +420,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@test::foo[0]}, v1: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v1: (core::felt252,)
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 2
@@ -479,8 +479,8 @@ Main:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: {closure@test::foo[0]}) <- struct_construct()
-  (v1: ()) <- test::apply::<{closure@test::foo[0]}, Generated core::traits::Drop::<{closure@test::foo[0]}>, core::ops::function::FnOnceImpl::<{closure@test::foo[0]}, (core::felt252,), core::traits::DestructFromDrop::<{closure@test::foo[0]}, Generated core::traits::Drop::<{closure@test::foo[0]}>>, Generated core::ops::function::Fn::<{closure@test::foo[0]}, (core::felt252,)>>, core::felt252Drop>(v0)
+  (v0: test::foo::{closure#0}) <- struct_construct()
+  (v1: ()) <- test::apply::<test::foo::{closure#0}, Generated core::traits::Drop::<test::foo::{closure#0}>, core::ops::function::FnOnceImpl::<test::foo::{closure#0}, (core::felt252,), core::traits::DestructFromDrop::<test::foo::{closure#0}, Generated core::traits::Drop::<test::foo::{closure#0}>>, Generated core::ops::function::Fn::<test::foo::{closure#0}, (core::felt252,)>>, core::felt252Drop>(v0)
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
@@ -498,7 +498,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let uninlined_closure = |mut a| {
                             ^^^^^^^
 
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -508,7 +508,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -519,10 +519,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let uninlined_closure = |mut a| {
                             ^^^^^^^
 
-Parameters: v0: @{closure@test::foo[0]}, v2: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::felt252,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- core::Felt252Add::add(v3, v3)
@@ -555,7 +555,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@test::foo[0]}, v1: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v1: (core::felt252,)
 blk0 (root):
 Statements:
   (v2: core::felt252) <- struct_destructure(v1)
@@ -616,11 +616,11 @@ Parameters: v0: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
-  (v3: {closure@test::foo[0]}) <- struct_construct(v2)
-  (v4: {closure@test::foo[0]}, v5: @{closure@test::foo[0]}) <- snapshot(v3)
+  (v3: test::foo::{closure#0}) <- struct_construct(v2)
+  (v4: test::foo::{closure#0}, v5: @test::foo::{closure#0}) <- snapshot(v3)
   (v6: core::integer::u32) <- 42
   (v7: (core::integer::u32,)) <- struct_construct(v6)
-  (v8: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[0]}(v5, v7)
+  (v8: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v5, v7)
 End:
   Return(v8)
 
@@ -657,7 +657,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let inner = |x| {
                 ^^^
 
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
@@ -667,7 +667,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -678,7 +678,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
         let nested = |y| {
                      ^^^
 
-Parameters: v0: {closure@test::foo[1]}
+Parameters: v0: test::foo::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
   (v1: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
@@ -688,7 +688,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[1]}
+Parameters: v0: test::foo::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -699,10 +699,10 @@ Generated core::ops::function::Fn::call lowering for source location:
         let nested = |y| {
                      ^^^
 
-Parameters: v0: @{closure@test::foo[1]}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[1]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}::{closure#0}) <- desnap(v0)
   (v3: @core::array::Array::<core::felt252>) <- struct_destructure(v1)
   (v4: core::integer::u32) <- struct_destructure(v2)
   (v5: core::integer::u32) <- core::array::ArrayImpl::<core::felt252>::len(v3)
@@ -712,10 +712,10 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@test::foo[1]}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v3: {closure@test::foo[1]}) <- desnap(v1)
+  (v3: test::foo::{closure#0}::{closure#0}) <- desnap(v1)
   (v4: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
   (v5: core::integer::u32) <- core::array::array_len::<core::felt252>(v4)
   (v6: core::integer::u32) <- struct_destructure(v2)
@@ -744,25 +744,25 @@ Generated core::ops::function::Fn::call lowering for source location:
     let inner = |x| {
                 ^^^
 
-Parameters: v0: @{closure@test::foo[0]}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   (v3: @core::array::Array::<core::felt252>) <- struct_destructure(v1)
   (v4: core::integer::u32) <- struct_destructure(v2)
-  (v5: {closure@test::foo[1]}) <- struct_construct(v3)
-  (v6: {closure@test::foo[1]}, v7: @{closure@test::foo[1]}) <- snapshot(v5)
+  (v5: test::foo::{closure#0}::{closure#0}) <- struct_construct(v3)
+  (v6: test::foo::{closure#0}::{closure#0}, v7: @test::foo::{closure#0}::{closure#0}) <- snapshot(v5)
   (v8: (core::integer::u32,)) <- struct_construct(v4)
-  (v9: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[1]}(v7, v8)
+  (v9: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}(v7, v8)
 End:
   Return(v9)
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@test::foo[0]}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v3: {closure@test::foo[0]}) <- desnap(v1)
+  (v3: test::foo::{closure#0}) <- desnap(v1)
   (v4: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
   (v5: core::integer::u32) <- core::array::array_len::<core::felt252>(v4)
   (v6: core::integer::u32) <- struct_destructure(v2)
@@ -817,7 +817,7 @@ Main:
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::felt252, v1: core::felt252) <- test::foo[0](v0)
+  (v2: core::felt252, v1: core::felt252) <- test::foo::{loop#0}(v0)
 End:
   Return(v1)
 
@@ -826,7 +826,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[0](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -853,7 +853,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
         let f = || -> felt252 {
                 ^^
 
-Parameters: v0: {closure@test::foo[1]}
+Parameters: v0: test::foo::{loop#0}::{closure#0}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -863,7 +863,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[1]}
+Parameters: v0: test::foo::{loop#0}::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -874,10 +874,10 @@ Generated core::ops::function::Fn::call lowering for source location:
         let f = || -> felt252 {
                 ^^
 
-Parameters: v0: @{closure@test::foo[1]}, v2: ()
+Parameters: v0: @test::foo::{loop#0}::{closure#0}, v2: ()
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[1]}) <- desnap(v0)
+  (v1: test::foo::{loop#0}::{closure#0}) <- desnap(v0)
   () <- struct_destructure(v1)
   () <- struct_destructure(v2)
   (v3: core::felt252) <- 7
@@ -886,7 +886,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@test::foo[1]}, v1: ()
+Parameters: v0: @test::foo::{loop#0}::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 7
@@ -904,10 +904,10 @@ Generated loop lowering for source location:
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[1]}) <- struct_construct()
-  (v2: {closure@test::foo[1]}, v3: @{closure@test::foo[1]}) <- snapshot(v1)
+  (v1: test::foo::{loop#0}::{closure#0}) <- struct_construct()
+  (v2: test::foo::{loop#0}::{closure#0}, v3: @test::foo::{loop#0}::{closure#0}) <- snapshot(v1)
   (v4: ()) <- struct_construct()
-  (v5: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[1]}(v3, v4)
+  (v5: core::felt252) <- Generated `core::ops::function::Fn::call` for test::foo::{loop#0}::{closure#0}(v3, v4)
   (v6: core::felt252) <- core::Felt252Add::add(v0, v5)
   (v7: core::felt252, v8: @core::felt252) <- snapshot(v6)
   (v9: core::felt252) <- 100
@@ -931,7 +931,7 @@ End:
 
 blk3:
 Statements:
-  (v16: core::felt252, v15: core::felt252) <- test::foo[0](v7)
+  (v16: core::felt252, v15: core::felt252) <- test::foo::{loop#0}(v7)
 End:
   Return(v16, v15)
 
@@ -969,7 +969,7 @@ End:
 blk3:
 Statements:
   (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[0](v3, v15, v8)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v3, v15, v8)
 End:
   Return(v16, v17, v18)
 
@@ -981,7 +981,7 @@ End:
   Return(v5, v6, v20)
 
 
-Final lowering of specialized call "test::foo[0]":
+Final lowering of specialized call "test::foo::{loop#0}":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
@@ -1014,7 +1014,7 @@ End:
 blk3:
 Statements:
   (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[0](v3, v15, v8)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v3, v15, v8)
 End:
   Return(v16, v17, v18)
 
@@ -1049,10 +1049,10 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
-  (v3: {closure@test::foo[0]}) <- struct_construct(v2)
-  (v4: {closure@test::foo[0]}, v5: @{closure@test::foo[0]}) <- snapshot(v3)
+  (v3: test::foo::{closure#0}) <- struct_construct(v2)
+  (v4: test::foo::{closure#0}, v5: @test::foo::{closure#0}) <- snapshot(v3)
   (v6: ()) <- struct_construct()
-  (v7: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[0]}(v5, v6)
+  (v7: core::felt252) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v5, v6)
 End:
   Return(v7)
 
@@ -1069,7 +1069,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let f = || *(@a);
             ^^
 
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: @core::felt252) <- struct_destructure(v0)
@@ -1079,7 +1079,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -1090,10 +1090,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let f = || *(@a);
             ^^
 
-Parameters: v0: @{closure@test::foo[0]}, v2: ()
+Parameters: v0: @test::foo::{closure#0}, v2: ()
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   (v3: @core::felt252) <- struct_destructure(v1)
   () <- struct_destructure(v2)
   (v4: core::felt252) <- desnap(v3)
@@ -1102,10 +1102,10 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@test::foo[0]}, v1: ()
+Parameters: v0: @test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
-  (v2: {closure@test::foo[0]}) <- desnap(v0)
+  (v2: test::foo::{closure#0}) <- desnap(v0)
   (v3: @core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- desnap(v3)
 End:
@@ -1113,7 +1113,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test that sibling generated functions are indexed by their order in the function.
+//! > Test that generated functions are numbered per kind, in their order in the function.
 
 //! > test_runner_name
 test_generated_function
@@ -1140,17 +1140,17 @@ Main:
 Parameters: v0: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- struct_construct()
-  (v2: {closure@test::foo[0]}, v3: @{closure@test::foo[0]}) <- snapshot(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct()
+  (v2: test::foo::{closure#0}, v3: @test::foo::{closure#0}) <- snapshot(v1)
   (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v0)
   (v6: core::integer::u32) <- core::array::ArrayImpl::<core::felt252>::len(v5)
   (v7: (core::integer::u32,)) <- struct_construct(v6)
-  (v8: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[0]}(v3, v7)
-  (v10: core::integer::u32, v9: ()) <- test::foo[1](v8)
-  (v11: {closure@test::foo[2]}) <- struct_construct()
-  (v12: {closure@test::foo[2]}, v13: @{closure@test::foo[2]}) <- snapshot(v11)
+  (v8: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v3, v7)
+  (v10: core::integer::u32, v9: ()) <- test::foo::{loop#0}(v8)
+  (v11: test::foo::{closure#1}) <- struct_construct()
+  (v12: test::foo::{closure#1}, v13: @test::foo::{closure#1}) <- snapshot(v11)
   (v14: (core::integer::u32,)) <- struct_construct(v10)
-  (v15: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[2]}(v13, v14)
+  (v15: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#1}(v13, v14)
 End:
   Return(v15)
 
@@ -1223,7 +1223,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let first = |x: u32| x + 1;
                 ^^^^^^^^
 
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -1233,7 +1233,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -1244,10 +1244,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let first = |x: u32| x + 1;
                 ^^^^^^^^
 
-Parameters: v0: @{closure@test::foo[0]}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::integer::u32) <- struct_destructure(v2)
   (v4: core::integer::u32) <- 1
@@ -1257,7 +1257,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@test::foo[0]}, v1: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}, v1: (core::integer::u32,)
 blk0 (root):
 Statements:
   (v2: core::integer::u32) <- struct_destructure(v1)
@@ -1335,7 +1335,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let second = |x: u32| x + 2;
                  ^^^^^^^^
 
-Parameters: v0: {closure@test::foo[2]}
+Parameters: v0: test::foo::{closure#1}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -1345,7 +1345,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[2]}
+Parameters: v0: test::foo::{closure#1}
 blk0 (root):
 Statements:
 End:
@@ -1356,10 +1356,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let second = |x: u32| x + 2;
                  ^^^^^^^^
 
-Parameters: v0: @{closure@test::foo[2]}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#1}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[2]}) <- desnap(v0)
+  (v1: test::foo::{closure#1}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::integer::u32) <- struct_destructure(v2)
   (v4: core::integer::u32) <- 2
@@ -1369,7 +1369,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@test::foo[2]}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#1}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
   (v3: core::integer::u32) <- struct_destructure(v2)
@@ -1396,7 +1396,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test that recursively nested closures are indexed by their order in the code.
+//! > Test that a nested closure is nested in the path of the closure containing it.
 
 //! > test_runner_name
 test_generated_function
@@ -1425,14 +1425,14 @@ Main:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- struct_construct(v0)
-  (v2: {closure@test::foo[4]}) <- struct_construct()
-  (v3: {closure@test::foo[0]}, v4: @{closure@test::foo[0]}) <- snapshot(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
+  (v2: test::foo::{closure#1}) <- struct_construct()
+  (v3: test::foo::{closure#0}, v4: @test::foo::{closure#0}) <- snapshot(v1)
   (v5: (core::integer::u32,)) <- struct_construct(v0)
-  (v6: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[0]}(v4, v5)
-  (v7: {closure@test::foo[4]}, v8: @{closure@test::foo[4]}) <- snapshot(v2)
+  (v6: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v4, v5)
+  (v7: test::foo::{closure#1}, v8: @test::foo::{closure#1}) <- snapshot(v2)
   (v9: (core::integer::u32,)) <- struct_construct(v0)
-  (v10: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[4]}(v8, v9)
+  (v10: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#1}(v8, v9)
   (v11: core::integer::u32) <- core::integer::U32Add::add(v6, v10)
 End:
   Return(v11)
@@ -1528,7 +1528,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let outer = |x: u32| {
                 ^^^^^^^^
 
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- struct_destructure(v0)
@@ -1538,7 +1538,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[0]}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -1549,7 +1549,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
         let mid = |y: u32| {
                   ^^^^^^^^
 
-Parameters: v0: {closure@test::foo[1]}
+Parameters: v0: test::foo::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- struct_destructure(v0)
@@ -1559,7 +1559,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[1]}
+Parameters: v0: test::foo::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -1570,7 +1570,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
             let inner = |z: u32| z + a;
                         ^^^^^^^^
 
-Parameters: v0: {closure@test::foo[2]}
+Parameters: v0: test::foo::{closure#0}::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- struct_destructure(v0)
@@ -1580,7 +1580,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[2]}
+Parameters: v0: test::foo::{closure#0}::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -1591,10 +1591,10 @@ Generated core::ops::function::Fn::call lowering for source location:
             let inner = |z: u32| z + a;
                         ^^^^^^^^
 
-Parameters: v0: @{closure@test::foo[2]}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[2]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}::{closure#0}::{closure#0}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v1)
   (v4: core::integer::u32) <- struct_destructure(v2)
   (v5: core::integer::u32) <- core::integer::U32Add::add(v4, v3)
@@ -1603,10 +1603,10 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@test::foo[2]}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v3: {closure@test::foo[2]}) <- desnap(v1)
+  (v3: test::foo::{closure#0}::{closure#0}::{closure#0}) <- desnap(v1)
   (v4: core::integer::u32) <- struct_destructure(v3)
   (v5: core::integer::u32) <- struct_destructure(v2)
 End:
@@ -1634,25 +1634,25 @@ Generated core::ops::function::Fn::call lowering for source location:
         let mid = |y: u32| {
                   ^^^^^^^^
 
-Parameters: v0: @{closure@test::foo[1]}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[1]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}::{closure#0}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v1)
   (v4: core::integer::u32) <- struct_destructure(v2)
-  (v5: {closure@test::foo[2]}) <- struct_construct(v3)
-  (v6: {closure@test::foo[2]}, v7: @{closure@test::foo[2]}) <- snapshot(v5)
+  (v5: test::foo::{closure#0}::{closure#0}::{closure#0}) <- struct_construct(v3)
+  (v6: test::foo::{closure#0}::{closure#0}::{closure#0}, v7: @test::foo::{closure#0}::{closure#0}::{closure#0}) <- snapshot(v5)
   (v8: (core::integer::u32,)) <- struct_construct(v4)
-  (v9: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[2]}(v7, v8)
+  (v9: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}::{closure#0}(v7, v8)
 End:
   Return(v9)
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@test::foo[1]}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v3: {closure@test::foo[1]}) <- desnap(v1)
+  (v3: test::foo::{closure#0}::{closure#0}) <- desnap(v1)
   (v4: core::integer::u32) <- struct_destructure(v3)
   (v5: core::integer::u32) <- struct_destructure(v2)
 End:
@@ -1680,7 +1680,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
         let sibling = |w: u32| w + 1;
                       ^^^^^^^^
 
-Parameters: v0: {closure@test::foo[3]}
+Parameters: v0: test::foo::{closure#0}::{closure#1}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -1690,7 +1690,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[3]}
+Parameters: v0: test::foo::{closure#0}::{closure#1}
 blk0 (root):
 Statements:
 End:
@@ -1701,10 +1701,10 @@ Generated core::ops::function::Fn::call lowering for source location:
         let sibling = |w: u32| w + 1;
                       ^^^^^^^^
 
-Parameters: v0: @{closure@test::foo[3]}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}::{closure#1}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[3]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}::{closure#1}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::integer::u32) <- struct_destructure(v2)
   (v4: core::integer::u32) <- 1
@@ -1714,7 +1714,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@test::foo[3]}, v1: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}::{closure#1}, v1: (core::integer::u32,)
 blk0 (root):
 Statements:
   (v2: core::integer::u32) <- struct_destructure(v1)
@@ -1746,31 +1746,31 @@ Generated core::ops::function::Fn::call lowering for source location:
     let outer = |x: u32| {
                 ^^^^^^^^
 
-Parameters: v0: @{closure@test::foo[0]}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[0]}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v1)
   (v4: core::integer::u32) <- struct_destructure(v2)
-  (v5: {closure@test::foo[1]}) <- struct_construct(v3)
-  (v6: {closure@test::foo[3]}) <- struct_construct()
-  (v7: {closure@test::foo[1]}, v8: @{closure@test::foo[1]}) <- snapshot(v5)
+  (v5: test::foo::{closure#0}::{closure#0}) <- struct_construct(v3)
+  (v6: test::foo::{closure#0}::{closure#1}) <- struct_construct()
+  (v7: test::foo::{closure#0}::{closure#0}, v8: @test::foo::{closure#0}::{closure#0}) <- snapshot(v5)
   (v9: (core::integer::u32,)) <- struct_construct(v4)
-  (v10: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[1]}(v8, v9)
-  (v11: {closure@test::foo[3]}, v12: @{closure@test::foo[3]}) <- snapshot(v6)
+  (v10: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}(v8, v9)
+  (v11: test::foo::{closure#0}::{closure#1}, v12: @test::foo::{closure#0}::{closure#1}) <- snapshot(v6)
   (v13: (core::integer::u32,)) <- struct_construct(v4)
-  (v14: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@test::foo[3]}(v12, v13)
+  (v14: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#1}(v12, v13)
   (v15: core::integer::u32) <- core::integer::U32Add::add(v10, v14)
 End:
   Return(v15)
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@test::foo[0]}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
   (v3: core::integer::u32) <- struct_destructure(v2)
-  (v4: {closure@test::foo[0]}) <- desnap(v1)
+  (v4: test::foo::{closure#0}) <- desnap(v1)
   (v5: core::integer::u32) <- struct_destructure(v4)
 End:
   Match(match core::integer::u32_overflowing_add(v0, v3, v5) {
@@ -1831,7 +1831,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let last = |v: u32| v + 2;
                ^^^^^^^^
 
-Parameters: v0: {closure@test::foo[4]}
+Parameters: v0: test::foo::{closure#1}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -1841,7 +1841,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@test::foo[4]}
+Parameters: v0: test::foo::{closure#1}
 blk0 (root):
 Statements:
 End:
@@ -1852,10 +1852,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let last = |v: u32| v + 2;
                ^^^^^^^^
 
-Parameters: v0: @{closure@test::foo[4]}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#1}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@test::foo[4]}) <- desnap(v0)
+  (v1: test::foo::{closure#1}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::integer::u32) <- struct_destructure(v2)
   (v4: core::integer::u32) <- 2
@@ -1865,7 +1865,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@test::foo[4]}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#1}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
   (v3: core::integer::u32) <- struct_destructure(v2)

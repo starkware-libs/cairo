@@ -14,7 +14,7 @@ use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::ast::ExprPtr;
-use cairo_lang_syntax::node::helpers::generated_function_index;
+use cairo_lang_syntax::node::helpers::generated_function_path_segments;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
@@ -518,20 +518,20 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
             GeneratedFunctionKey::Loop(expr_ptr) => {
                 write!(
                     f,
-                    "{:?}[{}]",
+                    "{:?}::{}",
                     self.parent.debug(db),
-                    generated_function_index(db, expr_ptr.0.lookup(db))
+                    generated_function_path_segments(db, expr_ptr.0.lookup(db)).join("::")
                 )
             }
             GeneratedFunctionKey::TraitFunc(trait_func, loc) => {
                 let trait_id = trait_func.trait_id(db);
                 write!(
                     f,
-                    "Generated `{}::{}` for {{closure@{:?}[{}]}}",
+                    "Generated `{}::{}` for {:?}::{}",
                     trait_id.full_path(db),
                     trait_func.name(db).long(db),
                     self.parent.debug(db),
-                    generated_function_index(db, loc.syntax_node(db)),
+                    generated_function_path_segments(db, loc.syntax_node(db)).join("::"),
                 )
             }
         }

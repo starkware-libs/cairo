@@ -31,7 +31,7 @@ use cairo_lang_filesystem::ids::{CrateId, FileId, SmolStrId};
 use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::helpers::{
-    GetIdentifier, HasName, NameGreen, generated_function_index,
+    GetIdentifier, HasName, NameGreen, generated_function_path_segments,
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -1045,14 +1045,10 @@ define_named_language_element_id!(ParamId, ParamLongId, ast::Param<'db>);
 impl<'db> TopLevelLanguageElementId<'db> for ParamId<'db> {
     fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         let long = self.long(db);
-        let mut closure_segment = None;
         let node = long.1.lookup(db).as_syntax_node();
-        if let Some(closure) = node.ancestor_of_kind(db, SyntaxKind::ExprClosure) {
-            closure_segment = Some(SmolStrId::from(
-                db,
-                format!("{{closure@{}}}", generated_function_index(db, closure)),
-            ));
-        }
+        let generated_segments = generated_function_path_segments(db, node)
+            .into_iter()
+            .map(|segment| SmolStrId::from(db, segment));
         let mut segments = if let Some(decl) =
             node.ancestors(db).find_map(|node| match node.kind(db) {
                 SyntaxKind::FunctionDeclaration => Some(node),
@@ -1072,7 +1068,7 @@ impl<'db> TopLevelLanguageElementId<'db> for ParamId<'db> {
         } else {
             self.parent_module(db).path_segments(db)
         };
-        segments.extend(chain!(closure_segment, [self.name(db)]));
+        segments.extend(chain!(generated_segments, [self.name(db)]));
         segments
     }
 }

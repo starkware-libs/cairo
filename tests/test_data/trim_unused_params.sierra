@@ -18,7 +18,7 @@ type core::panics::PanicResult::<(core::felt252, core::integer::u32, ())> = Enum
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc store_temp<u32> = store_temp<u32>;
-libfunc function_call<user@examples::trim_unused_params::overwritten_in_loop[0]> = function_call<user@examples::trim_unused_params::overwritten_in_loop[0]>;
+libfunc function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}> = function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}>;
 libfunc enum_match<core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>> = enum_match<core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>>;
 libfunc branch_align = branch_align;
 libfunc struct_deconstruct<Tuple<felt252, u32, Unit>> = struct_deconstruct<Tuple<felt252, u32, Unit>>;
@@ -42,7 +42,7 @@ libfunc enum_init<core::panics::PanicResult::<(core::felt252, core::integer::u32
 libfunc const_as_immediate<Const<BoundedInt<1, 1>, 1>> = const_as_immediate<Const<BoundedInt<1, 1>, 1>>;
 libfunc bounded_int_sub<BoundedInt<1, 4294967295>, BoundedInt<1, 1>> = bounded_int_sub<BoundedInt<1, 4294967295>, BoundedInt<1, 1>>;
 libfunc upcast<BoundedInt<0, 4294967294>, u32> = upcast<BoundedInt<0, 4294967294>, u32>;
-libfunc function_call<user@examples::trim_unused_params::overwritten_in_loop[0]{17, NotSpecialized, }> = function_call<user@examples::trim_unused_params::overwritten_in_loop[0]{17, NotSpecialized, }>;
+libfunc function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}{17, NotSpecialized, }> = function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}{17, NotSpecialized, }>;
 libfunc const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>> = const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@core::panic_with_felt252> = function_call<user@core::panic_with_felt252>;
@@ -55,7 +55,7 @@ libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tupl
 F0:
 disable_ap_tracking() -> ();
 store_temp<u32>([0]) -> ([0]);
-function_call<user@examples::trim_unused_params::overwritten_in_loop[0]>([0]) -> ([1]);
+function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}>([0]) -> ([1]);
 enum_match<core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>>([1]) { fallthrough([2]) F0_B0([3]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<felt252, u32, Unit>>([2]) -> ([4], [5], [6]);
@@ -96,7 +96,7 @@ const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([10]);
 bounded_int_sub<BoundedInt<1, 4294967295>, BoundedInt<1, 1>>([7], [10]) -> ([11]);
 upcast<BoundedInt<0, 4294967294>, u32>([11]) -> ([12]);
 store_temp<u32>([12]) -> ([12]);
-function_call<user@examples::trim_unused_params::overwritten_in_loop[0]{17, NotSpecialized, }>([12]) -> ([13]);
+function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}{17, NotSpecialized, }>([12]) -> ([13]);
 return([13]);
 F2:
 const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>>() -> ([0]);
@@ -129,7 +129,7 @@ const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([10]);
 bounded_int_sub<BoundedInt<1, 4294967295>, BoundedInt<1, 1>>([7], [10]) -> ([11]);
 upcast<BoundedInt<0, 4294967294>, u32>([11]) -> ([12]);
 store_temp<u32>([12]) -> ([12]);
-function_call<user@examples::trim_unused_params::overwritten_in_loop[0]{17, NotSpecialized, }>([12]) -> ([13]);
+function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}{17, NotSpecialized, }>([12]) -> ([13]);
 return([13]);
 F4:
 array_new<felt252>() -> ([1]);
@@ -140,7 +140,7 @@ store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
 return([4]);
 
 examples::trim_unused_params::overwritten_in_loop@F0([0]: u32) -> (core::panics::PanicResult::<(core::felt252,)>);
-examples::trim_unused_params::overwritten_in_loop[0]@F1([0]: u32) -> (core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>);
+examples::trim_unused_params::overwritten_in_loop::{loop#0}@F1([0]: u32) -> (core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>);
 core::panic_with_const_felt252::<155785504329508738615720351733824384887>@F2() -> (Tuple<core::panics::Panic, Array<felt252>>);
-examples::trim_unused_params::overwritten_in_loop[0]{17, NotSpecialized, }@F3([0]: u32) -> (core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>);
+examples::trim_unused_params::overwritten_in_loop::{loop#0}{17, NotSpecialized, }@F3([0]: u32) -> (core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>);
 core::panic_with_felt252@F4([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);

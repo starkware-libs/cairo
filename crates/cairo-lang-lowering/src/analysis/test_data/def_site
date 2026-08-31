@@ -162,7 +162,7 @@ fn foo(n: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[0](v0)
+  (v1: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v0)
 End:
   Match(match_enum(v1) {
     PanicResult::Ok(v2) => blk1,
