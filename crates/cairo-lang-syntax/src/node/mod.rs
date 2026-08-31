@@ -30,6 +30,8 @@ pub mod with_db;
 #[cfg(test)]
 mod ast_test;
 #[cfg(test)]
+mod green_test;
+#[cfg(test)]
 mod test_utils;
 
 /// Private enum for syntax node id. This holds data used to identify the node.

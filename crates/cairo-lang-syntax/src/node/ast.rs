@@ -13,7 +13,7 @@ use cairo_lang_utils::{Intern, extract_matches};
 use salsa::Database;
 
 use super::element_list::ElementList;
-use super::green::GreenNodeDetails;
+use super::green::{GreenNodeDetails, GreenNodeDetailsRef, GreenNodeRef};
 use super::kind::SyntaxKind;
 use super::{
     GreenId, GreenNode, SyntaxNode, SyntaxStablePtrId, Terminal, Token, TypedStablePtr,
@@ -285,9 +285,9 @@ impl<'db> ExprMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -318,11 +318,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprMissing<'db> {
     type StablePtr = ExprMissingPtr<'db>;
     type Green = ExprMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         ExprMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -960,9 +961,9 @@ impl<'db> Arg<'db> {
         let children = [modifiers.0, arg_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Arg,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -1000,11 +1001,12 @@ impl<'db> TypedSyntaxNode<'db> for Arg<'db> {
     type StablePtr = ArgPtr<'db>;
     type Green = ArgGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [ModifierList::missing(db).0, ArgClause::missing(db).0];
         ArgGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Arg,
-                details: GreenNodeDetails::Node {
-                    children: [ModifierList::missing(db).0, ArgClause::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -1163,9 +1165,9 @@ impl<'db> ArgClauseNamed<'db> {
         let children = [name.0, colon.0, value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgClauseNamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgClauseNamed,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -1206,16 +1208,13 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseNamed<'db> {
     type StablePtr = ArgClauseNamedPtr<'db>;
     type Green = ArgClauseNamedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalIdentifier::missing(db).0, TerminalColon::missing(db).0, Expr::missing(db).0];
         ArgClauseNamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgClauseNamed,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalIdentifier::missing(db).0,
-                        TerminalColon::missing(db).0,
-                        Expr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -1258,9 +1257,9 @@ impl<'db> ArgClauseUnnamed<'db> {
         let children = [value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgClauseUnnamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgClauseUnnamed,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -1295,11 +1294,12 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseUnnamed<'db> {
     type StablePtr = ArgClauseUnnamedPtr<'db>;
     type Green = ArgClauseUnnamedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Expr::missing(db).0];
         ArgClauseUnnamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgClauseUnnamed,
-                details: GreenNodeDetails::Node {
-                    children: [Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -1347,9 +1347,9 @@ impl<'db> ArgClauseFieldInitShorthand<'db> {
         let children = [colon.0, name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgClauseFieldInitShorthandGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgClauseFieldInitShorthand,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -1387,12 +1387,12 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseFieldInitShorthand<'db> {
     type StablePtr = ArgClauseFieldInitShorthandPtr<'db>;
     type Green = ArgClauseFieldInitShorthandGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalColon::missing(db).0, ExprFieldInitShorthand::missing(db).0];
         ArgClauseFieldInitShorthandGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgClauseFieldInitShorthand,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalColon::missing(db).0, ExprFieldInitShorthand::missing(db).0]
-                        .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -1438,9 +1438,9 @@ impl<'db> ExprFieldInitShorthand<'db> {
         let children = [name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprFieldInitShorthandGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprFieldInitShorthand,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -1475,11 +1475,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprFieldInitShorthand<'db> {
     type StablePtr = ExprFieldInitShorthandPtr<'db>;
     type Green = ExprFieldInitShorthandGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalIdentifier::missing(db).0];
         ExprFieldInitShorthandGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprFieldInitShorthand,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalIdentifier::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -1711,9 +1712,9 @@ impl<'db> PathSegmentSimple<'db> {
         let children = [ident.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PathSegmentSimpleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PathSegmentSimple,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -1748,11 +1749,12 @@ impl<'db> TypedSyntaxNode<'db> for PathSegmentSimple<'db> {
     type StablePtr = PathSegmentSimplePtr<'db>;
     type Green = PathSegmentSimpleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalIdentifier::missing(db).0];
         PathSegmentSimpleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PathSegmentSimple,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalIdentifier::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -1887,9 +1889,9 @@ impl<'db> OptionTerminalColonColonEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalColonColonEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalColonColonEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -1920,11 +1922,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalColonColonEmpty<'db> {
     type StablePtr = OptionTerminalColonColonEmptyPtr<'db>;
     type Green = OptionTerminalColonColonEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionTerminalColonColonEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalColonColonEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -1974,9 +1977,9 @@ impl<'db> PathSegmentWithGenericArgs<'db> {
         let children = [ident.0, separator.0, generic_args.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PathSegmentWithGenericArgsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PathSegmentWithGenericArgs,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -2017,16 +2020,16 @@ impl<'db> TypedSyntaxNode<'db> for PathSegmentWithGenericArgs<'db> {
     type StablePtr = PathSegmentWithGenericArgsPtr<'db>;
     type Green = PathSegmentWithGenericArgsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalIdentifier::missing(db).0,
+            OptionTerminalColonColon::missing(db).0,
+            GenericArgs::missing(db).0,
+        ];
         PathSegmentWithGenericArgsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PathSegmentWithGenericArgs,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalIdentifier::missing(db).0,
-                        OptionTerminalColonColon::missing(db).0,
-                        GenericArgs::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -2074,9 +2077,9 @@ impl<'db> ExprPath<'db> {
         let children = [dollar.0, segments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprPathGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprPath,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -2114,12 +2117,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprPath<'db> {
     type StablePtr = ExprPathPtr<'db>;
     type Green = ExprPathGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [OptionTerminalDollar::missing(db).0, ExprPathInner::missing(db).0];
         ExprPathGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprPath,
-                details: GreenNodeDetails::Node {
-                    children: [OptionTerminalDollar::missing(db).0, ExprPathInner::missing(db).0]
-                        .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -2250,9 +2253,9 @@ impl<'db> OptionTerminalDollarEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalDollarEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalDollarEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -2283,11 +2286,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalDollarEmpty<'db> {
     type StablePtr = OptionTerminalDollarEmptyPtr<'db>;
     type Green = OptionTerminalDollarEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionTerminalDollarEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalDollarEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -2437,9 +2441,9 @@ impl<'db> ExprParenthesized<'db> {
         let children = [lparen.0, expr.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprParenthesizedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprParenthesized,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -2480,16 +2484,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprParenthesized<'db> {
     type StablePtr = ExprParenthesizedPtr<'db>;
     type Green = ExprParenthesizedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalLParen::missing(db).0, Expr::missing(db).0, TerminalRParen::missing(db).0];
         ExprParenthesizedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprParenthesized,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLParen::missing(db).0,
-                        Expr::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -2537,9 +2538,9 @@ impl<'db> ExprUnary<'db> {
         let children = [op.0, expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprUnaryGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprUnary,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -2577,11 +2578,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprUnary<'db> {
     type StablePtr = ExprUnaryPtr<'db>;
     type Green = ExprUnaryGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [UnaryOperator::missing(db).0, Expr::missing(db).0];
         ExprUnaryGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprUnary,
-                details: GreenNodeDetails::Node {
-                    children: [UnaryOperator::missing(db).0, Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -2793,9 +2795,9 @@ impl<'db> ExprBinary<'db> {
         let children = [lhs.0, op.0, rhs.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprBinaryGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprBinary,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -2836,16 +2838,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprBinary<'db> {
     type StablePtr = ExprBinaryPtr<'db>;
     type Green = ExprBinaryGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Expr::missing(db).0, BinaryOperator::missing(db).0, Expr::missing(db).0];
         ExprBinaryGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprBinary,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Expr::missing(db).0,
-                        BinaryOperator::missing(db).0,
-                        Expr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -3415,9 +3413,9 @@ impl<'db> ExprListParenthesized<'db> {
         let children = [lparen.0, expressions.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprListParenthesizedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprListParenthesized,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -3458,16 +3456,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprListParenthesized<'db> {
     type StablePtr = ExprListParenthesizedPtr<'db>;
     type Green = ExprListParenthesizedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalLParen::missing(db).0, ExprList::missing(db).0, TerminalRParen::missing(db).0];
         ExprListParenthesizedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprListParenthesized,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLParen::missing(db).0,
-                        ExprList::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -3515,9 +3510,9 @@ impl<'db> ExprFunctionCall<'db> {
         let children = [path.0, arguments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprFunctionCallGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprFunctionCall,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -3555,11 +3550,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprFunctionCall<'db> {
     type StablePtr = ExprFunctionCallPtr<'db>;
     type Green = ExprFunctionCallGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [ExprPath::missing(db).0, ArgListParenthesized::missing(db).0];
         ExprFunctionCallGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprFunctionCall,
-                details: GreenNodeDetails::Node {
-                    children: [ExprPath::missing(db).0, ArgListParenthesized::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -3609,9 +3605,9 @@ impl<'db> ArgListParenthesized<'db> {
         let children = [lparen.0, arguments.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgListParenthesizedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgListParenthesized,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -3652,16 +3648,13 @@ impl<'db> TypedSyntaxNode<'db> for ArgListParenthesized<'db> {
     type StablePtr = ArgListParenthesizedPtr<'db>;
     type Green = ArgListParenthesizedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalLParen::missing(db).0, ArgList::missing(db).0, TerminalRParen::missing(db).0];
         ArgListParenthesizedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgListParenthesized,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLParen::missing(db).0,
-                        ArgList::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -3801,9 +3794,9 @@ impl<'db> OptionArgListParenthesizedEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionArgListParenthesizedEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionArgListParenthesizedEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -3834,11 +3827,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionArgListParenthesizedEmpty<'db> {
     type StablePtr = OptionArgListParenthesizedEmptyPtr<'db>;
     type Green = OptionArgListParenthesizedEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionArgListParenthesizedEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionArgListParenthesizedEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -3886,9 +3880,9 @@ impl<'db> ExprStructCtorCall<'db> {
         let children = [path.0, arguments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprStructCtorCallGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprStructCtorCall,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -3926,11 +3920,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprStructCtorCall<'db> {
     type StablePtr = ExprStructCtorCallPtr<'db>;
     type Green = ExprStructCtorCallGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [ExprPath::missing(db).0, StructArgListBraced::missing(db).0];
         ExprStructCtorCallGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprStructCtorCall,
-                details: GreenNodeDetails::Node {
-                    children: [ExprPath::missing(db).0, StructArgListBraced::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -3980,9 +3975,9 @@ impl<'db> StructArgListBraced<'db> {
         let children = [lbrace.0, arguments.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StructArgListBracedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StructArgListBraced,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -4023,16 +4018,16 @@ impl<'db> TypedSyntaxNode<'db> for StructArgListBraced<'db> {
     type StablePtr = StructArgListBracedPtr<'db>;
     type Green = StructArgListBracedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrace::missing(db).0,
+            StructArgList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         StructArgListBracedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StructArgListBraced,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrace::missing(db).0,
-                        StructArgList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -4082,9 +4077,9 @@ impl<'db> ExprBlock<'db> {
         let children = [lbrace.0, statements.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprBlockGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprBlock,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -4125,16 +4120,16 @@ impl<'db> TypedSyntaxNode<'db> for ExprBlock<'db> {
     type StablePtr = ExprBlockPtr<'db>;
     type Green = ExprBlockGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrace::missing(db).0,
+            StatementList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         ExprBlockGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprBlock,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrace::missing(db).0,
-                        StatementList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -4184,9 +4179,9 @@ impl<'db> ExprMatch<'db> {
         let children = [match_kw.0, expr.0, lbrace.0, arms.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprMatchGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprMatch,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -4233,18 +4228,18 @@ impl<'db> TypedSyntaxNode<'db> for ExprMatch<'db> {
     type StablePtr = ExprMatchPtr<'db>;
     type Green = ExprMatchGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalMatch::missing(db).0,
+            Expr::missing(db).0,
+            TerminalLBrace::missing(db).0,
+            MatchArms::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         ExprMatchGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprMatch,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalMatch::missing(db).0,
-                        Expr::missing(db).0,
-                        TerminalLBrace::missing(db).0,
-                        MatchArms::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -4390,9 +4385,9 @@ impl<'db> MatchArm<'db> {
         let children = [patterns.0, arrow.0, expression.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MatchArmGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MatchArm,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -4433,16 +4428,13 @@ impl<'db> TypedSyntaxNode<'db> for MatchArm<'db> {
     type StablePtr = MatchArmPtr<'db>;
     type Green = MatchArmGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [PatternListOr::missing(db).0, TerminalMatchArrow::missing(db).0, Expr::missing(db).0];
         MatchArmGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MatchArm,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        PatternListOr::missing(db).0,
-                        TerminalMatchArrow::missing(db).0,
-                        Expr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -4490,9 +4482,9 @@ impl<'db> ExprIf<'db> {
         let children = [if_kw.0, conditions.0, if_block.0, else_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprIfGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprIf,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -4536,17 +4528,17 @@ impl<'db> TypedSyntaxNode<'db> for ExprIf<'db> {
     type StablePtr = ExprIfPtr<'db>;
     type Green = ExprIfGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalIf::missing(db).0,
+            ConditionListAnd::missing(db).0,
+            ExprBlock::missing(db).0,
+            OptionElseClause::missing(db).0,
+        ];
         ExprIfGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprIf,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalIf::missing(db).0,
-                        ConditionListAnd::missing(db).0,
-                        ExprBlock::missing(db).0,
-                        OptionElseClause::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -4780,9 +4772,9 @@ impl<'db> ConditionLet<'db> {
         let children = [let_kw.0, patterns.0, eq.0, expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ConditionLetGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ConditionLet,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -4826,17 +4818,17 @@ impl<'db> TypedSyntaxNode<'db> for ConditionLet<'db> {
     type StablePtr = ConditionLetPtr<'db>;
     type Green = ConditionLetGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLet::missing(db).0,
+            PatternListOr::missing(db).0,
+            TerminalEq::missing(db).0,
+            Expr::missing(db).0,
+        ];
         ConditionLetGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ConditionLet,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLet::missing(db).0,
-                        PatternListOr::missing(db).0,
-                        TerminalEq::missing(db).0,
-                        Expr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -4875,9 +4867,9 @@ impl<'db> ConditionExpr<'db> {
         let children = [expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ConditionExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ConditionExpr,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -4912,11 +4904,12 @@ impl<'db> TypedSyntaxNode<'db> for ConditionExpr<'db> {
     type StablePtr = ConditionExprPtr<'db>;
     type Green = ConditionExprGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Expr::missing(db).0];
         ConditionExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ConditionExpr,
-                details: GreenNodeDetails::Node {
-                    children: [Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -5046,9 +5039,9 @@ impl<'db> ExprLoop<'db> {
         let children = [loop_kw.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprLoopGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprLoop,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -5086,11 +5079,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprLoop<'db> {
     type StablePtr = ExprLoopPtr<'db>;
     type Green = ExprLoopGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalLoop::missing(db).0, ExprBlock::missing(db).0];
         ExprLoopGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprLoop,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalLoop::missing(db).0, ExprBlock::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -5136,9 +5130,9 @@ impl<'db> ExprWhile<'db> {
         let children = [while_kw.0, conditions.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprWhileGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprWhile,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -5179,16 +5173,16 @@ impl<'db> TypedSyntaxNode<'db> for ExprWhile<'db> {
     type StablePtr = ExprWhilePtr<'db>;
     type Green = ExprWhileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalWhile::missing(db).0,
+            ConditionListAnd::missing(db).0,
+            ExprBlock::missing(db).0,
+        ];
         ExprWhileGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprWhile,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalWhile::missing(db).0,
-                        ConditionListAnd::missing(db).0,
-                        ExprBlock::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -5238,9 +5232,9 @@ impl<'db> ExprFor<'db> {
         let children = [for_kw.0, pattern.0, identifier.0, expr.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprForGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprFor,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -5294,18 +5288,18 @@ impl<'db> TypedSyntaxNode<'db> for ExprFor<'db> {
     type StablePtr = ExprForPtr<'db>;
     type Green = ExprForGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalFor::missing(db).0,
+            Pattern::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            Expr::missing(db).0,
+            ExprBlock::missing(db).0,
+        ];
         ExprForGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprFor,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalFor::missing(db).0,
-                        Pattern::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        Expr::missing(db).0,
-                        ExprBlock::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -5349,9 +5343,9 @@ impl<'db> ElseClause<'db> {
         let children = [else_kw.0, else_block_or_if.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ElseClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ElseClause,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -5389,11 +5383,12 @@ impl<'db> TypedSyntaxNode<'db> for ElseClause<'db> {
     type StablePtr = ElseClausePtr<'db>;
     type Green = ElseClauseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalElse::missing(db).0, BlockOrIf::missing(db).0];
         ElseClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ElseClause,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalElse::missing(db).0, BlockOrIf::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -5524,9 +5519,9 @@ impl<'db> OptionElseClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionElseClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionElseClauseEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -5557,11 +5552,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionElseClauseEmpty<'db> {
     type StablePtr = OptionElseClauseEmptyPtr<'db>;
     type Green = OptionElseClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionElseClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionElseClauseEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -5609,9 +5605,9 @@ impl<'db> ExprErrorPropagate<'db> {
         let children = [expr.0, op.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprErrorPropagateGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprErrorPropagate,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -5649,11 +5645,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprErrorPropagate<'db> {
     type StablePtr = ExprErrorPropagatePtr<'db>;
     type Green = ExprErrorPropagateGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Expr::missing(db).0, TerminalQuestionMark::missing(db).0];
         ExprErrorPropagateGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprErrorPropagate,
-                details: GreenNodeDetails::Node {
-                    children: [Expr::missing(db).0, TerminalQuestionMark::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -5705,9 +5702,9 @@ impl<'db> ExprIndexed<'db> {
         let children = [expr.0, lbrack.0, index_expr.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprIndexedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprIndexed,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -5751,17 +5748,17 @@ impl<'db> TypedSyntaxNode<'db> for ExprIndexed<'db> {
     type StablePtr = ExprIndexedPtr<'db>;
     type Green = ExprIndexedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            Expr::missing(db).0,
+            TerminalLBrack::missing(db).0,
+            Expr::missing(db).0,
+            TerminalRBrack::missing(db).0,
+        ];
         ExprIndexedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprIndexed,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Expr::missing(db).0,
-                        TerminalLBrack::missing(db).0,
-                        Expr::missing(db).0,
-                        TerminalRBrack::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -5809,9 +5806,9 @@ impl<'db> ExprFixedSizeArray<'db> {
         let children = [lbrack.0, exprs.0, size.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprFixedSizeArrayGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprFixedSizeArray,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -5855,17 +5852,17 @@ impl<'db> TypedSyntaxNode<'db> for ExprFixedSizeArray<'db> {
     type StablePtr = ExprFixedSizeArrayPtr<'db>;
     type Green = ExprFixedSizeArrayGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrack::missing(db).0,
+            ExprList::missing(db).0,
+            OptionFixedSizeArraySize::missing(db).0,
+            TerminalRBrack::missing(db).0,
+        ];
         ExprFixedSizeArrayGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprFixedSizeArray,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrack::missing(db).0,
-                        ExprList::missing(db).0,
-                        OptionFixedSizeArraySize::missing(db).0,
-                        TerminalRBrack::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -5913,9 +5910,9 @@ impl<'db> FixedSizeArraySize<'db> {
         let children = [semicolon.0, size.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         FixedSizeArraySizeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::FixedSizeArraySize,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -5953,11 +5950,12 @@ impl<'db> TypedSyntaxNode<'db> for FixedSizeArraySize<'db> {
     type StablePtr = FixedSizeArraySizePtr<'db>;
     type Green = FixedSizeArraySizeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalSemicolon::missing(db).0, Expr::missing(db).0];
         FixedSizeArraySizeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::FixedSizeArraySize,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalSemicolon::missing(db).0, Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -6092,9 +6090,9 @@ impl<'db> OptionFixedSizeArraySizeEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionFixedSizeArraySizeEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionFixedSizeArraySizeEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -6125,11 +6123,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionFixedSizeArraySizeEmpty<'db> {
     type StablePtr = OptionFixedSizeArraySizeEmptyPtr<'db>;
     type Green = OptionFixedSizeArraySizeEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionFixedSizeArraySizeEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionFixedSizeArraySizeEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -6181,9 +6180,9 @@ impl<'db> ExprClosure<'db> {
         let children = [params.0, ret_ty.0, optional_no_panic.0, expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprClosureGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprClosure,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -6227,17 +6226,17 @@ impl<'db> TypedSyntaxNode<'db> for ExprClosure<'db> {
     type StablePtr = ExprClosurePtr<'db>;
     type Green = ExprClosureGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            ClosureParams::missing(db).0,
+            OptionReturnTypeClause::missing(db).0,
+            OptionTerminalNoPanic::missing(db).0,
+            Expr::missing(db).0,
+        ];
         ExprClosureGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprClosure,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        ClosureParams::missing(db).0,
-                        OptionReturnTypeClause::missing(db).0,
-                        OptionTerminalNoPanic::missing(db).0,
-                        Expr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -6283,9 +6282,9 @@ impl<'db> ClosureParams<'db> {
         let children = [leftor.0, params.0, rightor.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ClosureParamsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ClosureParams,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -6326,16 +6325,13 @@ impl<'db> TypedSyntaxNode<'db> for ClosureParams<'db> {
     type StablePtr = ClosureParamsPtr<'db>;
     type Green = ClosureParamsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalOr::missing(db).0, ParamList::missing(db).0, TerminalOr::missing(db).0];
         ClosureParamsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ClosureParams,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalOr::missing(db).0,
-                        ParamList::missing(db).0,
-                        TerminalOr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -6383,9 +6379,9 @@ impl<'db> StructArgExpr<'db> {
         let children = [colon.0, expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StructArgExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StructArgExpr,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -6423,11 +6419,12 @@ impl<'db> TypedSyntaxNode<'db> for StructArgExpr<'db> {
     type StablePtr = StructArgExprPtr<'db>;
     type Green = StructArgExprGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalColon::missing(db).0, Expr::missing(db).0];
         StructArgExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StructArgExpr,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalColon::missing(db).0, Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -6562,9 +6559,9 @@ impl<'db> OptionStructArgExprEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionStructArgExprEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionStructArgExprEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -6595,11 +6592,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionStructArgExprEmpty<'db> {
     type StablePtr = OptionStructArgExprEmptyPtr<'db>;
     type Green = OptionStructArgExprEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionStructArgExprEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionStructArgExprEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -6647,9 +6645,9 @@ impl<'db> StructArgSingle<'db> {
         let children = [identifier.0, arg_expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StructArgSingleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StructArgSingle,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -6691,15 +6689,12 @@ impl<'db> TypedSyntaxNode<'db> for StructArgSingle<'db> {
     type StablePtr = StructArgSinglePtr<'db>;
     type Green = StructArgSingleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalIdentifier::missing(db).0, OptionStructArgExpr::missing(db).0];
         StructArgSingleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StructArgSingle,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalIdentifier::missing(db).0,
-                        OptionStructArgExpr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -6747,9 +6742,9 @@ impl<'db> StructArgTail<'db> {
         let children = [dotdot.0, expression.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StructArgTailGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StructArgTail,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -6787,11 +6782,12 @@ impl<'db> TypedSyntaxNode<'db> for StructArgTail<'db> {
     type StablePtr = StructArgTailPtr<'db>;
     type Green = StructArgTailGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalDotDot::missing(db).0, Expr::missing(db).0];
         StructArgTailGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StructArgTail,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalDotDot::missing(db).0, Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -7031,9 +7027,9 @@ impl<'db> ArgListBraced<'db> {
         let children = [lbrace.0, arguments.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgListBracedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgListBraced,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -7074,16 +7070,13 @@ impl<'db> TypedSyntaxNode<'db> for ArgListBraced<'db> {
     type StablePtr = ArgListBracedPtr<'db>;
     type Green = ArgListBracedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalLBrace::missing(db).0, ArgList::missing(db).0, TerminalRBrace::missing(db).0];
         ArgListBracedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgListBraced,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrace::missing(db).0,
-                        ArgList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -7133,9 +7126,9 @@ impl<'db> ArgListBracketed<'db> {
         let children = [lbrack.0, arguments.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgListBracketedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgListBracketed,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -7176,16 +7169,13 @@ impl<'db> TypedSyntaxNode<'db> for ArgListBracketed<'db> {
     type StablePtr = ArgListBracketedPtr<'db>;
     type Green = ArgListBracketedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalLBrack::missing(db).0, ArgList::missing(db).0, TerminalRBrack::missing(db).0];
         ArgListBracketedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ArgListBracketed,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrack::missing(db).0,
-                        ArgList::missing(db).0,
-                        TerminalRBrack::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -7227,9 +7217,9 @@ impl<'db> WrappedArgListMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         WrappedArgListMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::WrappedArgListMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -7260,11 +7250,12 @@ impl<'db> TypedSyntaxNode<'db> for WrappedArgListMissing<'db> {
     type StablePtr = WrappedArgListMissingPtr<'db>;
     type Green = WrappedArgListMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         WrappedArgListMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::WrappedArgListMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -7714,9 +7705,9 @@ impl<'db> PatternIdentifier<'db> {
         let children = [modifiers.0, name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternIdentifierGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternIdentifier,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -7758,12 +7749,12 @@ impl<'db> TypedSyntaxNode<'db> for PatternIdentifier<'db> {
     type StablePtr = PatternIdentifierPtr<'db>;
     type Green = PatternIdentifierGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [ModifierList::missing(db).0, TerminalIdentifier::missing(db).0];
         PatternIdentifierGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternIdentifier,
-                details: GreenNodeDetails::Node {
-                    children: [ModifierList::missing(db).0, TerminalIdentifier::missing(db).0]
-                        .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -7815,9 +7806,9 @@ impl<'db> PatternStruct<'db> {
         let children = [path.0, lbrace.0, params.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternStructGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternStruct,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -7861,17 +7852,17 @@ impl<'db> TypedSyntaxNode<'db> for PatternStruct<'db> {
     type StablePtr = PatternStructPtr<'db>;
     type Green = PatternStructGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            ExprPath::missing(db).0,
+            TerminalLBrace::missing(db).0,
+            PatternStructParamList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         PatternStructGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternStruct,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        ExprPath::missing(db).0,
-                        TerminalLBrace::missing(db).0,
-                        PatternStructParamList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -8023,9 +8014,9 @@ impl<'db> PatternTuple<'db> {
         let children = [lparen.0, patterns.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternTupleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternTuple,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -8066,16 +8057,16 @@ impl<'db> TypedSyntaxNode<'db> for PatternTuple<'db> {
     type StablePtr = PatternTuplePtr<'db>;
     type Green = PatternTupleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLParen::missing(db).0,
+            PatternList::missing(db).0,
+            TerminalRParen::missing(db).0,
+        ];
         PatternTupleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternTuple,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLParen::missing(db).0,
-                        PatternList::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -8121,9 +8112,9 @@ impl<'db> PatternFixedSizeArray<'db> {
         let children = [lbrack.0, patterns.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternFixedSizeArrayGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternFixedSizeArray,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -8164,16 +8155,16 @@ impl<'db> TypedSyntaxNode<'db> for PatternFixedSizeArray<'db> {
     type StablePtr = PatternFixedSizeArrayPtr<'db>;
     type Green = PatternFixedSizeArrayGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrack::missing(db).0,
+            PatternList::missing(db).0,
+            TerminalRBrack::missing(db).0,
+        ];
         PatternFixedSizeArrayGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternFixedSizeArray,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrack::missing(db).0,
-                        PatternList::missing(db).0,
-                        TerminalRBrack::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -8541,9 +8532,9 @@ impl<'db> PatternStructParamWithExpr<'db> {
         let children = [modifiers.0, name.0, colon.0, pattern.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternStructParamWithExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternStructParamWithExpr,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -8587,17 +8578,17 @@ impl<'db> TypedSyntaxNode<'db> for PatternStructParamWithExpr<'db> {
     type StablePtr = PatternStructParamWithExprPtr<'db>;
     type Green = PatternStructParamWithExprGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            ModifierList::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            TerminalColon::missing(db).0,
+            Pattern::missing(db).0,
+        ];
         PatternStructParamWithExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternStructParamWithExpr,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        ModifierList::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TerminalColon::missing(db).0,
-                        Pattern::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -8645,9 +8636,9 @@ impl<'db> PatternEnum<'db> {
         let children = [path.0, pattern.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternEnumGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternEnum,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -8685,15 +8676,12 @@ impl<'db> TypedSyntaxNode<'db> for PatternEnum<'db> {
     type StablePtr = PatternEnumPtr<'db>;
     type Green = PatternEnumGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [ExprPath::missing(db).0, OptionPatternEnumInnerPattern::missing(db).0];
         PatternEnumGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternEnum,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        ExprPath::missing(db).0,
-                        OptionPatternEnumInnerPattern::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -8739,9 +8727,9 @@ impl<'db> PatternEnumInnerPattern<'db> {
         let children = [lparen.0, pattern.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternEnumInnerPatternGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternEnumInnerPattern,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -8782,16 +8770,13 @@ impl<'db> TypedSyntaxNode<'db> for PatternEnumInnerPattern<'db> {
     type StablePtr = PatternEnumInnerPatternPtr<'db>;
     type Green = PatternEnumInnerPatternGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalLParen::missing(db).0, Pattern::missing(db).0, TerminalRParen::missing(db).0];
         PatternEnumInnerPatternGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::PatternEnumInnerPattern,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLParen::missing(db).0,
-                        Pattern::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -8939,9 +8924,9 @@ impl<'db> OptionPatternEnumInnerPatternEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionPatternEnumInnerPatternEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionPatternEnumInnerPatternEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -8972,11 +8957,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionPatternEnumInnerPatternEmpty<'db> {
     type StablePtr = OptionPatternEnumInnerPatternEmptyPtr<'db>;
     type Green = OptionPatternEnumInnerPatternEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionPatternEnumInnerPatternEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionPatternEnumInnerPatternEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -9024,9 +9010,9 @@ impl<'db> TypeClause<'db> {
         let children = [colon.0, ty.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TypeClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TypeClause,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -9064,11 +9050,12 @@ impl<'db> TypedSyntaxNode<'db> for TypeClause<'db> {
     type StablePtr = TypeClausePtr<'db>;
     type Green = TypeClauseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalColon::missing(db).0, Expr::missing(db).0];
         TypeClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TypeClause,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalColon::missing(db).0, Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -9199,9 +9186,9 @@ impl<'db> OptionTypeClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTypeClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTypeClauseEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -9232,11 +9219,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionTypeClauseEmpty<'db> {
     type StablePtr = OptionTypeClauseEmptyPtr<'db>;
     type Green = OptionTypeClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionTypeClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTypeClauseEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -9284,9 +9272,9 @@ impl<'db> ReturnTypeClause<'db> {
         let children = [arrow.0, ty.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ReturnTypeClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ReturnTypeClause,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -9324,11 +9312,12 @@ impl<'db> TypedSyntaxNode<'db> for ReturnTypeClause<'db> {
     type StablePtr = ReturnTypeClausePtr<'db>;
     type Green = ReturnTypeClauseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalArrow::missing(db).0, Expr::missing(db).0];
         ReturnTypeClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ReturnTypeClause,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalArrow::missing(db).0, Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -9463,9 +9452,9 @@ impl<'db> OptionReturnTypeClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionReturnTypeClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionReturnTypeClauseEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -9496,11 +9485,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionReturnTypeClauseEmpty<'db> {
     type StablePtr = OptionReturnTypeClauseEmptyPtr<'db>;
     type Green = OptionReturnTypeClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionReturnTypeClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionReturnTypeClauseEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -9542,9 +9532,9 @@ impl<'db> StatementMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -9575,11 +9565,12 @@ impl<'db> TypedSyntaxNode<'db> for StatementMissing<'db> {
     type StablePtr = StatementMissingPtr<'db>;
     type Green = StatementMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         StatementMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -9908,9 +9899,9 @@ impl<'db> StatementLet<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementLetGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementLet,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -9970,21 +9961,21 @@ impl<'db> TypedSyntaxNode<'db> for StatementLet<'db> {
     type StablePtr = StatementLetPtr<'db>;
     type Green = StatementLetGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            TerminalLet::missing(db).0,
+            Pattern::missing(db).0,
+            OptionTypeClause::missing(db).0,
+            TerminalEq::missing(db).0,
+            Expr::missing(db).0,
+            OptionLetElseClause::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         StatementLetGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementLet,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        TerminalLet::missing(db).0,
-                        Pattern::missing(db).0,
-                        OptionTypeClause::missing(db).0,
-                        TerminalEq::missing(db).0,
-                        Expr::missing(db).0,
-                        OptionLetElseClause::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -10028,9 +10019,9 @@ impl<'db> LetElseClause<'db> {
         let children = [else_kw.0, else_block.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         LetElseClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::LetElseClause,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -10068,11 +10059,12 @@ impl<'db> TypedSyntaxNode<'db> for LetElseClause<'db> {
     type StablePtr = LetElseClausePtr<'db>;
     type Green = LetElseClauseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalElse::missing(db).0, ExprBlock::missing(db).0];
         LetElseClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::LetElseClause,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalElse::missing(db).0, ExprBlock::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -10207,9 +10199,9 @@ impl<'db> OptionLetElseClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionLetElseClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionLetElseClauseEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -10240,11 +10232,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionLetElseClauseEmpty<'db> {
     type StablePtr = OptionLetElseClauseEmptyPtr<'db>;
     type Green = OptionLetElseClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionLetElseClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionLetElseClauseEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -10379,9 +10372,9 @@ impl<'db> OptionTerminalSemicolonEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalSemicolonEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalSemicolonEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -10412,11 +10405,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalSemicolonEmpty<'db> {
     type StablePtr = OptionTerminalSemicolonEmptyPtr<'db>;
     type Green = OptionTerminalSemicolonEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionTerminalSemicolonEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalSemicolonEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -10466,9 +10460,9 @@ impl<'db> StatementExpr<'db> {
         let children = [attributes.0, expr.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementExpr,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -10509,16 +10503,16 @@ impl<'db> TypedSyntaxNode<'db> for StatementExpr<'db> {
     type StablePtr = StatementExprPtr<'db>;
     type Green = StatementExprGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Expr::missing(db).0,
+            OptionTerminalSemicolon::missing(db).0,
+        ];
         StatementExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementExpr,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Expr::missing(db).0,
-                        OptionTerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -10568,9 +10562,9 @@ impl<'db> StatementContinue<'db> {
         let children = [attributes.0, continue_kw.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementContinueGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementContinue,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -10611,16 +10605,16 @@ impl<'db> TypedSyntaxNode<'db> for StatementContinue<'db> {
     type StablePtr = StatementContinuePtr<'db>;
     type Green = StatementContinueGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            TerminalContinue::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         StatementContinueGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementContinue,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        TerminalContinue::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -10663,9 +10657,9 @@ impl<'db> ExprClause<'db> {
         let children = [expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprClause,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -10700,11 +10694,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprClause<'db> {
     type StablePtr = ExprClausePtr<'db>;
     type Green = ExprClauseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Expr::missing(db).0];
         ExprClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprClause,
-                details: GreenNodeDetails::Node {
-                    children: [Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -10835,9 +10830,9 @@ impl<'db> OptionExprClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionExprClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionExprClauseEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -10868,11 +10863,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionExprClauseEmpty<'db> {
     type StablePtr = OptionExprClauseEmptyPtr<'db>;
     type Green = OptionExprClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionExprClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionExprClauseEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -10924,9 +10920,9 @@ impl<'db> StatementReturn<'db> {
         let children = [attributes.0, return_kw.0, expr_clause.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementReturnGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementReturn,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -10970,17 +10966,17 @@ impl<'db> TypedSyntaxNode<'db> for StatementReturn<'db> {
     type StablePtr = StatementReturnPtr<'db>;
     type Green = StatementReturnGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            TerminalReturn::missing(db).0,
+            OptionExprClause::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         StatementReturnGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementReturn,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        TerminalReturn::missing(db).0,
-                        OptionExprClause::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -11032,9 +11028,9 @@ impl<'db> StatementBreak<'db> {
         let children = [attributes.0, break_kw.0, expr_clause.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementBreakGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementBreak,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -11078,17 +11074,17 @@ impl<'db> TypedSyntaxNode<'db> for StatementBreak<'db> {
     type StablePtr = StatementBreakPtr<'db>;
     type Green = StatementBreakGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            TerminalBreak::missing(db).0,
+            OptionExprClause::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         StatementBreakGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementBreak,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        TerminalBreak::missing(db).0,
-                        OptionExprClause::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -11131,9 +11127,9 @@ impl<'db> StatementItem<'db> {
         let children = [item.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementItemGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementItem,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -11168,11 +11164,12 @@ impl<'db> TypedSyntaxNode<'db> for StatementItem<'db> {
     type StablePtr = StatementItemPtr<'db>;
     type Green = StatementItemGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [ModuleItem::missing(db).0];
         StatementItemGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::StatementItem,
-                details: GreenNodeDetails::Node {
-                    children: [ModuleItem::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -11222,9 +11219,9 @@ impl<'db> Param<'db> {
         let children = [modifiers.0, name.0, type_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParamGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Param,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -11269,16 +11266,16 @@ impl<'db> TypedSyntaxNode<'db> for Param<'db> {
     type StablePtr = ParamPtr<'db>;
     type Green = ParamGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            ModifierList::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionTypeClause::missing(db).0,
+        ];
         ParamGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Param,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        ModifierList::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionTypeClause::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -11585,9 +11582,9 @@ impl<'db> ImplicitsClause<'db> {
         let children = [implicits_kw.0, lparen.0, implicits.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ImplicitsClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ImplicitsClause,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -11631,17 +11628,17 @@ impl<'db> TypedSyntaxNode<'db> for ImplicitsClause<'db> {
     type StablePtr = ImplicitsClausePtr<'db>;
     type Green = ImplicitsClauseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalImplicits::missing(db).0,
+            TerminalLParen::missing(db).0,
+            ImplicitsList::missing(db).0,
+            TerminalRParen::missing(db).0,
+        ];
         ImplicitsClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ImplicitsClause,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalImplicits::missing(db).0,
-                        TerminalLParen::missing(db).0,
-                        ImplicitsList::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -11876,9 +11873,9 @@ impl<'db> OptionImplicitsClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionImplicitsClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionImplicitsClauseEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -11909,11 +11906,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionImplicitsClauseEmpty<'db> {
     type StablePtr = OptionImplicitsClauseEmptyPtr<'db>;
     type Green = OptionImplicitsClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionImplicitsClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionImplicitsClauseEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -12048,9 +12046,9 @@ impl<'db> OptionTerminalNoPanicEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalNoPanicEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalNoPanicEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -12081,11 +12079,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalNoPanicEmpty<'db> {
     type StablePtr = OptionTerminalNoPanicEmptyPtr<'db>;
     type Green = OptionTerminalNoPanicEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionTerminalNoPanicEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalNoPanicEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -12220,9 +12219,9 @@ impl<'db> OptionTerminalConstEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalConstEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalConstEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -12253,11 +12252,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalConstEmpty<'db> {
     type StablePtr = OptionTerminalConstEmptyPtr<'db>;
     type Green = OptionTerminalConstEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionTerminalConstEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalConstEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -12314,9 +12314,9 @@ impl<'db> FunctionSignature<'db> {
             [lparen.0, parameters.0, rparen.0, ret_ty.0, implicits_clause.0, optional_no_panic.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         FunctionSignatureGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::FunctionSignature,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -12366,19 +12366,19 @@ impl<'db> TypedSyntaxNode<'db> for FunctionSignature<'db> {
     type StablePtr = FunctionSignaturePtr<'db>;
     type Green = FunctionSignatureGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLParen::missing(db).0,
+            ParamList::missing(db).0,
+            TerminalRParen::missing(db).0,
+            OptionReturnTypeClause::missing(db).0,
+            OptionImplicitsClause::missing(db).0,
+            OptionTerminalNoPanic::missing(db).0,
+        ];
         FunctionSignatureGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::FunctionSignature,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLParen::missing(db).0,
-                        ParamList::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                        OptionReturnTypeClause::missing(db).0,
-                        OptionImplicitsClause::missing(db).0,
-                        OptionTerminalNoPanic::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -12430,9 +12430,9 @@ impl<'db> Member<'db> {
         let children = [attributes.0, visibility.0, name.0, type_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MemberGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Member,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -12480,17 +12480,17 @@ impl<'db> TypedSyntaxNode<'db> for Member<'db> {
     type StablePtr = MemberPtr<'db>;
     type Green = MemberGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            TypeClause::missing(db).0,
+        ];
         MemberGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Member,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TypeClause::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -12636,9 +12636,9 @@ impl<'db> Variant<'db> {
         let children = [attributes.0, name.0, type_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         VariantGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Variant,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -12683,16 +12683,16 @@ impl<'db> TypedSyntaxNode<'db> for Variant<'db> {
     type StablePtr = VariantPtr<'db>;
     type Green = VariantGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionTypeClause::missing(db).0,
+        ];
         VariantGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Variant,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionTypeClause::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -12830,9 +12830,9 @@ impl<'db> ModuleItemMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ModuleItemMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ModuleItemMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -12863,11 +12863,12 @@ impl<'db> TypedSyntaxNode<'db> for ModuleItemMissing<'db> {
     type StablePtr = ModuleItemMissingPtr<'db>;
     type Green = ModuleItemMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         ModuleItemMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ModuleItemMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -13338,9 +13339,9 @@ impl<'db> Attribute<'db> {
         let children = [hash.0, lbrack.0, attr.0, arguments.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         AttributeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Attribute,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -13387,18 +13388,18 @@ impl<'db> TypedSyntaxNode<'db> for Attribute<'db> {
     type StablePtr = AttributePtr<'db>;
     type Green = AttributeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalHash::missing(db).0,
+            TerminalLBrack::missing(db).0,
+            ExprPath::missing(db).0,
+            OptionArgListParenthesized::missing(db).0,
+            TerminalRBrack::missing(db).0,
+        ];
         AttributeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::Attribute,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalHash::missing(db).0,
-                        TerminalLBrack::missing(db).0,
-                        ExprPath::missing(db).0,
-                        OptionArgListParenthesized::missing(db).0,
-                        TerminalRBrack::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -13513,9 +13514,9 @@ impl<'db> VisibilityDefault<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         VisibilityDefaultGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::VisibilityDefault,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -13546,11 +13547,12 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityDefault<'db> {
     type StablePtr = VisibilityDefaultPtr<'db>;
     type Green = VisibilityDefaultGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         VisibilityDefaultGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::VisibilityDefault,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -13600,9 +13602,9 @@ impl<'db> VisibilityPubArgumentClause<'db> {
         let children = [lparen.0, argument.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         VisibilityPubArgumentClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::VisibilityPubArgumentClause,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -13643,16 +13645,16 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityPubArgumentClause<'db> {
     type StablePtr = VisibilityPubArgumentClausePtr<'db>;
     type Green = VisibilityPubArgumentClauseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLParen::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            TerminalRParen::missing(db).0,
+        ];
         VisibilityPubArgumentClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::VisibilityPubArgumentClause,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLParen::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -13805,9 +13807,9 @@ impl<'db> OptionVisibilityPubArgumentClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionVisibilityPubArgumentClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionVisibilityPubArgumentClauseEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -13839,11 +13841,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionVisibilityPubArgumentClauseEmpty<'db> {
     type StablePtr = OptionVisibilityPubArgumentClauseEmptyPtr<'db>;
     type Green = OptionVisibilityPubArgumentClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionVisibilityPubArgumentClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionVisibilityPubArgumentClauseEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -13891,9 +13894,9 @@ impl<'db> VisibilityPub<'db> {
         let children = [pub_kw.0, argument_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         VisibilityPubGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::VisibilityPub,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -13931,15 +13934,13 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityPub<'db> {
     type StablePtr = VisibilityPubPtr<'db>;
     type Green = VisibilityPubGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalPub::missing(db).0, OptionVisibilityPubArgumentClause::missing(db).0];
         VisibilityPubGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::VisibilityPub,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalPub::missing(db).0,
-                        OptionVisibilityPubArgumentClause::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -14081,9 +14082,9 @@ impl<'db> ItemModule<'db> {
         let children = [attributes.0, visibility.0, module_kw.0, name.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemModuleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemModule,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -14134,18 +14135,18 @@ impl<'db> TypedSyntaxNode<'db> for ItemModule<'db> {
     type StablePtr = ItemModulePtr<'db>;
     type Green = ItemModuleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalModule::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            MaybeModuleBody::missing(db).0,
+        ];
         ItemModuleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemModule,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalModule::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        MaybeModuleBody::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -14281,9 +14282,9 @@ impl<'db> ModuleBody<'db> {
         let children = [lbrace.0, items.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ModuleBodyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ModuleBody,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -14324,16 +14325,16 @@ impl<'db> TypedSyntaxNode<'db> for ModuleBody<'db> {
     type StablePtr = ModuleBodyPtr<'db>;
     type Green = ModuleBodyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrace::missing(db).0,
+            ModuleItemList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         ModuleBodyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ModuleBody,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrace::missing(db).0,
-                        ModuleItemList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -14383,9 +14384,9 @@ impl<'db> FunctionDeclaration<'db> {
         let children = [optional_const.0, function_kw.0, name.0, generic_params.0, signature.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         FunctionDeclarationGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::FunctionDeclaration,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -14436,18 +14437,18 @@ impl<'db> TypedSyntaxNode<'db> for FunctionDeclaration<'db> {
     type StablePtr = FunctionDeclarationPtr<'db>;
     type Green = FunctionDeclarationGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            OptionTerminalConst::missing(db).0,
+            TerminalFunction::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionWrappedGenericParamList::missing(db).0,
+            FunctionSignature::missing(db).0,
+        ];
         FunctionDeclarationGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::FunctionDeclaration,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        OptionTerminalConst::missing(db).0,
-                        TerminalFunction::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionWrappedGenericParamList::missing(db).0,
-                        FunctionSignature::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -14516,9 +14517,9 @@ impl<'db> ItemConstant<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemConstantGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemConstant,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -14578,21 +14579,21 @@ impl<'db> TypedSyntaxNode<'db> for ItemConstant<'db> {
     type StablePtr = ItemConstantPtr<'db>;
     type Green = ItemConstantGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalConst::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            TypeClause::missing(db).0,
+            TerminalEq::missing(db).0,
+            Expr::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         ItemConstantGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemConstant,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalConst::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TypeClause::missing(db).0,
-                        TerminalEq::missing(db).0,
-                        Expr::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -14640,9 +14641,9 @@ impl<'db> FunctionWithBody<'db> {
         let children = [attributes.0, visibility.0, declaration.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         FunctionWithBodyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::FunctionWithBody,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -14690,17 +14691,17 @@ impl<'db> TypedSyntaxNode<'db> for FunctionWithBody<'db> {
     type StablePtr = FunctionWithBodyPtr<'db>;
     type Green = FunctionWithBodyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            FunctionDeclaration::missing(db).0,
+            ExprBlock::missing(db).0,
+        ];
         FunctionWithBodyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::FunctionWithBody,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        FunctionDeclaration::missing(db).0,
-                        ExprBlock::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -14754,9 +14755,9 @@ impl<'db> ItemExternFunction<'db> {
         let children = [attributes.0, visibility.0, extern_kw.0, declaration.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemExternFunctionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemExternFunction,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -14807,18 +14808,18 @@ impl<'db> TypedSyntaxNode<'db> for ItemExternFunction<'db> {
     type StablePtr = ItemExternFunctionPtr<'db>;
     type Green = ItemExternFunctionGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalExtern::missing(db).0,
+            FunctionDeclaration::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         ItemExternFunctionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemExternFunction,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalExtern::missing(db).0,
-                        FunctionDeclaration::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -14884,9 +14885,9 @@ impl<'db> ItemExternType<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemExternTypeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemExternType,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -14943,20 +14944,20 @@ impl<'db> TypedSyntaxNode<'db> for ItemExternType<'db> {
     type StablePtr = ItemExternTypePtr<'db>;
     type Green = ItemExternTypeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalExtern::missing(db).0,
+            TerminalType::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionWrappedGenericParamList::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         ItemExternTypeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemExternType,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalExtern::missing(db).0,
-                        TerminalType::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionWrappedGenericParamList::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -15012,9 +15013,9 @@ impl<'db> ItemTrait<'db> {
         let children = [attributes.0, visibility.0, trait_kw.0, name.0, generic_params.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemTraitGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemTrait,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -15068,19 +15069,19 @@ impl<'db> TypedSyntaxNode<'db> for ItemTrait<'db> {
     type StablePtr = ItemTraitPtr<'db>;
     type Green = ItemTraitGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalTrait::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionWrappedGenericParamList::missing(db).0,
+            MaybeTraitBody::missing(db).0,
+        ];
         ItemTraitGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemTrait,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalTrait::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionWrappedGenericParamList::missing(db).0,
-                        MaybeTraitBody::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -15216,9 +15217,9 @@ impl<'db> TraitBody<'db> {
         let children = [lbrace.0, items.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitBodyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitBody,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -15259,16 +15260,16 @@ impl<'db> TypedSyntaxNode<'db> for TraitBody<'db> {
     type StablePtr = TraitBodyPtr<'db>;
     type Green = TraitBodyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrace::missing(db).0,
+            TraitItemList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         TraitBodyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitBody,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrace::missing(db).0,
-                        TraitItemList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -15383,9 +15384,9 @@ impl<'db> TraitItemMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -15416,11 +15417,12 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemMissing<'db> {
     type StablePtr = TraitItemMissingPtr<'db>;
     type Green = TraitItemMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         TraitItemMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -15617,9 +15619,9 @@ impl<'db> TraitItemFunction<'db> {
         let children = [attributes.0, declaration.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemFunctionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemFunction,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -15664,16 +15666,16 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemFunction<'db> {
     type StablePtr = TraitItemFunctionPtr<'db>;
     type Green = TraitItemFunctionGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            FunctionDeclaration::missing(db).0,
+            MaybeTraitFunctionBody::missing(db).0,
+        ];
         TraitItemFunctionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemFunction,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        FunctionDeclaration::missing(db).0,
-                        MaybeTraitFunctionBody::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -15727,9 +15729,9 @@ impl<'db> TraitItemType<'db> {
         let children = [attributes.0, type_kw.0, name.0, generic_params.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemTypeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemType,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -15780,18 +15782,18 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemType<'db> {
     type StablePtr = TraitItemTypePtr<'db>;
     type Green = TraitItemTypeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            TerminalType::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionWrappedGenericParamList::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         TraitItemTypeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemType,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        TerminalType::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionWrappedGenericParamList::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -15845,9 +15847,9 @@ impl<'db> TraitItemConstant<'db> {
         let children = [attributes.0, const_kw.0, name.0, type_clause.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemConstantGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemConstant,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -15898,18 +15900,18 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemConstant<'db> {
     type StablePtr = TraitItemConstantPtr<'db>;
     type Green = TraitItemConstantGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            TerminalConst::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            TypeClause::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         TraitItemConstantGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemConstant,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        TerminalConst::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TypeClause::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -15965,9 +15967,9 @@ impl<'db> TraitItemImpl<'db> {
         let children = [attributes.0, impl_kw.0, name.0, colon.0, trait_path.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemImplGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemImpl,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -16021,19 +16023,19 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemImpl<'db> {
     type StablePtr = TraitItemImplPtr<'db>;
     type Green = TraitItemImplGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            TerminalImpl::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            TerminalColon::missing(db).0,
+            ExprPath::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         TraitItemImplGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TraitItemImpl,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        TerminalImpl::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TerminalColon::missing(db).0,
-                        ExprPath::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -16195,9 +16197,9 @@ impl<'db> ItemImpl<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemImplGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemImpl,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -16257,21 +16259,21 @@ impl<'db> TypedSyntaxNode<'db> for ItemImpl<'db> {
     type StablePtr = ItemImplPtr<'db>;
     type Green = ItemImplGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalImpl::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionWrappedGenericParamList::missing(db).0,
+            TerminalOf::missing(db).0,
+            ExprPath::missing(db).0,
+            MaybeImplBody::missing(db).0,
+        ];
         ItemImplGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemImpl,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalImpl::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionWrappedGenericParamList::missing(db).0,
-                        TerminalOf::missing(db).0,
-                        ExprPath::missing(db).0,
-                        MaybeImplBody::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -16313,9 +16315,9 @@ impl<'db> ItemHeaderDoc<'db> {
         let children = [empty.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemHeaderDocGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemHeaderDoc,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -16350,11 +16352,12 @@ impl<'db> TypedSyntaxNode<'db> for ItemHeaderDoc<'db> {
     type StablePtr = ItemHeaderDocPtr<'db>;
     type Green = ItemHeaderDocGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalEmpty::missing(db).0];
         ItemHeaderDocGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemHeaderDoc,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalEmpty::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -16490,9 +16493,9 @@ impl<'db> ImplBody<'db> {
         let children = [lbrace.0, items.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ImplBodyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ImplBody,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -16533,16 +16536,16 @@ impl<'db> TypedSyntaxNode<'db> for ImplBody<'db> {
     type StablePtr = ImplBodyPtr<'db>;
     type Green = ImplBodyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrace::missing(db).0,
+            ImplItemList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         ImplBodyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ImplBody,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrace::missing(db).0,
-                        ImplItemList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -16657,9 +16660,9 @@ impl<'db> ImplItemMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ImplItemMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ImplItemMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -16690,11 +16693,12 @@ impl<'db> TypedSyntaxNode<'db> for ImplItemMissing<'db> {
     type StablePtr = ImplItemMissingPtr<'db>;
     type Green = ImplItemMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         ImplItemMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ImplItemMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -17027,9 +17031,9 @@ impl<'db> ItemImplAlias<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemImplAliasGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemImplAlias,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -17089,21 +17093,21 @@ impl<'db> TypedSyntaxNode<'db> for ItemImplAlias<'db> {
     type StablePtr = ItemImplAliasPtr<'db>;
     type Green = ItemImplAliasGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalImpl::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionWrappedGenericParamList::missing(db).0,
+            TerminalEq::missing(db).0,
+            ExprPath::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         ItemImplAliasGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemImplAlias,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalImpl::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionWrappedGenericParamList::missing(db).0,
-                        TerminalEq::missing(db).0,
-                        ExprPath::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -17172,9 +17176,9 @@ impl<'db> ItemStruct<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemStructGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemStruct,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -17234,21 +17238,21 @@ impl<'db> TypedSyntaxNode<'db> for ItemStruct<'db> {
     type StablePtr = ItemStructPtr<'db>;
     type Green = ItemStructGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalStruct::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionWrappedGenericParamList::missing(db).0,
+            TerminalLBrace::missing(db).0,
+            MemberList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         ItemStructGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemStruct,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalStruct::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionWrappedGenericParamList::missing(db).0,
-                        TerminalLBrace::missing(db).0,
-                        MemberList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -17313,9 +17317,9 @@ impl<'db> ItemEnum<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemEnumGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemEnum,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -17375,21 +17379,21 @@ impl<'db> TypedSyntaxNode<'db> for ItemEnum<'db> {
     type StablePtr = ItemEnumPtr<'db>;
     type Green = ItemEnumGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalEnum::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionWrappedGenericParamList::missing(db).0,
+            TerminalLBrace::missing(db).0,
+            VariantList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         ItemEnumGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemEnum,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalEnum::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionWrappedGenericParamList::missing(db).0,
-                        TerminalLBrace::missing(db).0,
-                        VariantList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -17454,9 +17458,9 @@ impl<'db> ItemTypeAlias<'db> {
         ];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemTypeAliasGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemTypeAlias,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -17516,21 +17520,21 @@ impl<'db> TypedSyntaxNode<'db> for ItemTypeAlias<'db> {
     type StablePtr = ItemTypeAliasPtr<'db>;
     type Green = ItemTypeAliasGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalType::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionWrappedGenericParamList::missing(db).0,
+            TerminalEq::missing(db).0,
+            Expr::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         ItemTypeAliasGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemTypeAlias,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalType::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionWrappedGenericParamList::missing(db).0,
-                        TerminalEq::missing(db).0,
-                        Expr::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -17586,9 +17590,9 @@ impl<'db> ItemUse<'db> {
         let children = [attributes.0, visibility.0, use_kw.0, dollar.0, use_path.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemUseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemUse,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -17642,19 +17646,19 @@ impl<'db> TypedSyntaxNode<'db> for ItemUse<'db> {
     type StablePtr = ItemUsePtr<'db>;
     type Green = ItemUseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalUse::missing(db).0,
+            OptionTerminalDollar::missing(db).0,
+            UsePath::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         ItemUseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemUse,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalUse::missing(db).0,
-                        OptionTerminalDollar::missing(db).0,
-                        UsePath::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -17818,9 +17822,9 @@ impl<'db> UsePathLeaf<'db> {
         let children = [ident.0, alias_clause.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         UsePathLeafGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::UsePathLeaf,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -17865,11 +17869,12 @@ impl<'db> TypedSyntaxNode<'db> for UsePathLeaf<'db> {
     type StablePtr = UsePathLeafPtr<'db>;
     type Green = UsePathLeafGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [PathSegment::missing(db).0, OptionAliasClause::missing(db).0];
         UsePathLeafGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::UsePathLeaf,
-                details: GreenNodeDetails::Node {
-                    children: [PathSegment::missing(db).0, OptionAliasClause::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -17915,9 +17920,9 @@ impl<'db> UsePathSingle<'db> {
         let children = [ident.0, colon_colon.0, use_path.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         UsePathSingleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::UsePathSingle,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -17958,16 +17963,13 @@ impl<'db> TypedSyntaxNode<'db> for UsePathSingle<'db> {
     type StablePtr = UsePathSinglePtr<'db>;
     type Green = UsePathSingleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [PathSegment::missing(db).0, TerminalColonColon::missing(db).0, UsePath::missing(db).0];
         UsePathSingleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::UsePathSingle,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        PathSegment::missing(db).0,
-                        TerminalColonColon::missing(db).0,
-                        UsePath::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -18017,9 +18019,9 @@ impl<'db> UsePathMulti<'db> {
         let children = [lbrace.0, use_paths.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         UsePathMultiGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::UsePathMulti,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -18060,16 +18062,16 @@ impl<'db> TypedSyntaxNode<'db> for UsePathMulti<'db> {
     type StablePtr = UsePathMultiPtr<'db>;
     type Green = UsePathMultiGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrace::missing(db).0,
+            UsePathList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         UsePathMultiGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::UsePathMulti,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrace::missing(db).0,
-                        UsePathList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -18108,9 +18110,9 @@ impl<'db> UsePathStar<'db> {
         let children = [star.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         UsePathStarGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::UsePathStar,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -18145,11 +18147,12 @@ impl<'db> TypedSyntaxNode<'db> for UsePathStar<'db> {
     type StablePtr = UsePathStarPtr<'db>;
     type Green = UsePathStarGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalMul::missing(db).0];
         UsePathStarGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::UsePathStar,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalMul::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -18293,9 +18296,9 @@ impl<'db> AliasClause<'db> {
         let children = [as_kw.0, alias.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         AliasClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::AliasClause,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -18337,11 +18340,12 @@ impl<'db> TypedSyntaxNode<'db> for AliasClause<'db> {
     type StablePtr = AliasClausePtr<'db>;
     type Green = AliasClauseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalAs::missing(db).0, TerminalIdentifier::missing(db).0];
         AliasClauseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::AliasClause,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalAs::missing(db).0, TerminalIdentifier::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -18472,9 +18476,9 @@ impl<'db> OptionAliasClauseEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionAliasClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionAliasClauseEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -18505,11 +18509,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionAliasClauseEmpty<'db> {
     type StablePtr = OptionAliasClauseEmptyPtr<'db>;
     type Green = OptionAliasClauseEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionAliasClauseEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionAliasClauseEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -18649,9 +18654,9 @@ impl<'db> GenericArgNamed<'db> {
         let children = [name.0, colon.0, value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericArgNamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericArgNamed,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -18692,16 +18697,13 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgNamed<'db> {
     type StablePtr = GenericArgNamedPtr<'db>;
     type Green = GenericArgNamedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalIdentifier::missing(db).0, TerminalColon::missing(db).0, Expr::missing(db).0];
         GenericArgNamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericArgNamed,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalIdentifier::missing(db).0,
-                        TerminalColon::missing(db).0,
-                        Expr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -18744,9 +18746,9 @@ impl<'db> GenericArgUnnamed<'db> {
         let children = [value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericArgUnnamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericArgUnnamed,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -18781,11 +18783,12 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgUnnamed<'db> {
     type StablePtr = GenericArgUnnamedPtr<'db>;
     type Green = GenericArgUnnamedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Expr::missing(db).0];
         GenericArgUnnamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericArgUnnamed,
-                details: GreenNodeDetails::Node {
-                    children: [Expr::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -18835,9 +18838,9 @@ impl<'db> GenericArgs<'db> {
         let children = [langle.0, generic_args.0, rangle.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericArgsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericArgs,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -18878,16 +18881,13 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgs<'db> {
     type StablePtr = GenericArgsPtr<'db>;
     type Green = GenericArgsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalLT::missing(db).0, GenericArgList::missing(db).0, TerminalGT::missing(db).0];
         GenericArgsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericArgs,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLT::missing(db).0,
-                        GenericArgList::missing(db).0,
-                        TerminalGT::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -19033,9 +19033,9 @@ impl<'db> AssociatedItemConstraint<'db> {
         let children = [item.0, colon.0, value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         AssociatedItemConstraintGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::AssociatedItemConstraint,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -19076,16 +19076,13 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraint<'db> {
     type StablePtr = AssociatedItemConstraintPtr<'db>;
     type Green = AssociatedItemConstraintGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalIdentifier::missing(db).0, TerminalColon::missing(db).0, Expr::missing(db).0];
         AssociatedItemConstraintGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::AssociatedItemConstraint,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalIdentifier::missing(db).0,
-                        TerminalColon::missing(db).0,
-                        Expr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -19135,9 +19132,9 @@ impl<'db> AssociatedItemConstraints<'db> {
         let children = [lbrack.0, associated_item_constraints.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         AssociatedItemConstraintsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::AssociatedItemConstraints,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -19181,16 +19178,16 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraints<'db> {
     type StablePtr = AssociatedItemConstraintsPtr<'db>;
     type Green = AssociatedItemConstraintsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrack::missing(db).0,
+            AssociatedItemConstraintList::missing(db).0,
+            TerminalRBrack::missing(db).0,
+        ];
         AssociatedItemConstraintsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::AssociatedItemConstraints,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrack::missing(db).0,
-                        AssociatedItemConstraintList::missing(db).0,
-                        TerminalRBrack::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -19445,9 +19442,9 @@ impl<'db> OptionAssociatedItemConstraintsEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionAssociatedItemConstraintsEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionAssociatedItemConstraintsEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -19479,11 +19476,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionAssociatedItemConstraintsEmpty<'db> {
     type StablePtr = OptionAssociatedItemConstraintsEmptyPtr<'db>;
     type Green = OptionAssociatedItemConstraintsEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionAssociatedItemConstraintsEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionAssociatedItemConstraintsEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -19631,9 +19629,9 @@ impl<'db> OptionWrappedGenericParamListEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionWrappedGenericParamListEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionWrappedGenericParamListEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -19664,11 +19662,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionWrappedGenericParamListEmpty<'db> {
     type StablePtr = OptionWrappedGenericParamListEmptyPtr<'db>;
     type Green = OptionWrappedGenericParamListEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionWrappedGenericParamListEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionWrappedGenericParamListEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -19718,9 +19717,9 @@ impl<'db> WrappedGenericParamList<'db> {
         let children = [langle.0, generic_params.0, rangle.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         WrappedGenericParamListGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::WrappedGenericParamList,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -19761,16 +19760,13 @@ impl<'db> TypedSyntaxNode<'db> for WrappedGenericParamList<'db> {
     type StablePtr = WrappedGenericParamListPtr<'db>;
     type Green = WrappedGenericParamListGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [TerminalLT::missing(db).0, GenericParamList::missing(db).0, TerminalGT::missing(db).0];
         WrappedGenericParamListGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::WrappedGenericParamList,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLT::missing(db).0,
-                        GenericParamList::missing(db).0,
-                        TerminalGT::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -20067,9 +20063,9 @@ impl<'db> GenericParamType<'db> {
         let children = [name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamTypeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamType,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -20108,11 +20104,12 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamType<'db> {
     type StablePtr = GenericParamTypePtr<'db>;
     type Green = GenericParamTypeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalIdentifier::missing(db).0];
         GenericParamTypeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamType,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalIdentifier::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -20164,9 +20161,9 @@ impl<'db> GenericParamConst<'db> {
         let children = [const_kw.0, name.0, colon.0, ty.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamConstGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamConst,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -20214,17 +20211,17 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamConst<'db> {
     type StablePtr = GenericParamConstPtr<'db>;
     type Green = GenericParamConstGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalConst::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            TerminalColon::missing(db).0,
+            Expr::missing(db).0,
+        ];
         GenericParamConstGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamConst,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalConst::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TerminalColon::missing(db).0,
-                        Expr::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -20278,9 +20275,9 @@ impl<'db> GenericParamImplNamed<'db> {
         let children = [impl_kw.0, name.0, colon.0, trait_path.0, type_constrains.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamImplNamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamImplNamed,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -20331,18 +20328,18 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamImplNamed<'db> {
     type StablePtr = GenericParamImplNamedPtr<'db>;
     type Green = GenericParamImplNamedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalImpl::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            TerminalColon::missing(db).0,
+            ExprPath::missing(db).0,
+            OptionAssociatedItemConstraints::missing(db).0,
+        ];
         GenericParamImplNamedGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamImplNamed,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalImpl::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TerminalColon::missing(db).0,
-                        ExprPath::missing(db).0,
-                        OptionAssociatedItemConstraints::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -20392,9 +20389,9 @@ impl<'db> GenericParamImplAnonymous<'db> {
         let children = [plus.0, trait_path.0, type_constrains.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamImplAnonymousGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamImplAnonymous,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -20435,16 +20432,16 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamImplAnonymous<'db> {
     type StablePtr = GenericParamImplAnonymousPtr<'db>;
     type Green = GenericParamImplAnonymousGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalPlus::missing(db).0,
+            ExprPath::missing(db).0,
+            OptionAssociatedItemConstraints::missing(db).0,
+        ];
         GenericParamImplAnonymousGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamImplAnonymous,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalPlus::missing(db).0,
-                        ExprPath::missing(db).0,
-                        OptionAssociatedItemConstraints::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -20492,9 +20489,9 @@ impl<'db> GenericParamNegativeImpl<'db> {
         let children = [minus.0, trait_path.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamNegativeImplGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamNegativeImpl,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -20532,11 +20529,12 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamNegativeImpl<'db> {
     type StablePtr = GenericParamNegativeImplPtr<'db>;
     type Green = GenericParamNegativeImplGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalMinus::missing(db).0, ExprPath::missing(db).0];
         GenericParamNegativeImplGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::GenericParamNegativeImpl,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalMinus::missing(db).0, ExprPath::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -20656,9 +20654,9 @@ impl<'db> TokenTreeLeaf<'db> {
         let children = [leaf.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeLeafGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeLeaf,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -20693,11 +20691,12 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeLeaf<'db> {
     type StablePtr = TokenTreeLeafPtr<'db>;
     type Green = TokenTreeLeafGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TokenNode::missing(db).0];
         TokenTreeLeafGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeLeaf,
-                details: GreenNodeDetails::Node {
-                    children: [TokenNode::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -20743,9 +20742,9 @@ impl<'db> TokenTreeNode<'db> {
         let children = [subtree.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeNodeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeNode,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -20780,11 +20779,12 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeNode<'db> {
     type StablePtr = TokenTreeNodePtr<'db>;
     type Green = TokenTreeNodeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [WrappedTokenTree::missing(db).0];
         TokenTreeNodeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeNode,
-                details: GreenNodeDetails::Node {
-                    children: [WrappedTokenTree::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -20840,9 +20840,9 @@ impl<'db> TokenTreeRepetition<'db> {
         let children = [dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeRepetitionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeRepetition,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -20892,19 +20892,19 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeRepetition<'db> {
     type StablePtr = TokenTreeRepetitionPtr<'db>;
     type Green = TokenTreeRepetitionGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalDollar::missing(db).0,
+            TerminalLParen::missing(db).0,
+            TokenList::missing(db).0,
+            TerminalRParen::missing(db).0,
+            OptionTerminalComma::missing(db).0,
+            MacroRepetitionOperator::missing(db).0,
+        ];
         TokenTreeRepetitionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeRepetition,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalDollar::missing(db).0,
-                        TerminalLParen::missing(db).0,
-                        TokenList::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                        OptionTerminalComma::missing(db).0,
-                        MacroRepetitionOperator::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -20952,9 +20952,9 @@ impl<'db> TokenTreeParam<'db> {
         let children = [dollar.0, name.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeParamGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeParam,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -20992,12 +20992,12 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeParam<'db> {
     type StablePtr = TokenTreeParamPtr<'db>;
     type Green = TokenTreeParamGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalDollar::missing(db).0, TerminalIdentifier::missing(db).0];
         TokenTreeParamGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeParam,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalDollar::missing(db).0, TerminalIdentifier::missing(db).0]
-                        .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -21039,9 +21039,9 @@ impl<'db> TokenTreeMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -21072,11 +21072,12 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
     type StablePtr = TokenTreeMissingPtr<'db>;
     type Green = TokenTreeMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         TokenTreeMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TokenTreeMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -21269,9 +21270,9 @@ impl<'db> WrappedTokenTreeMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         WrappedTokenTreeMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::WrappedTokenTreeMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -21302,11 +21303,12 @@ impl<'db> TypedSyntaxNode<'db> for WrappedTokenTreeMissing<'db> {
     type StablePtr = WrappedTokenTreeMissingPtr<'db>;
     type Green = WrappedTokenTreeMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         WrappedTokenTreeMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::WrappedTokenTreeMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -21491,9 +21493,9 @@ impl<'db> ParenthesizedTokenTree<'db> {
         let children = [lparen.0, tokens.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParenthesizedTokenTreeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParenthesizedTokenTree,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -21534,16 +21536,16 @@ impl<'db> TypedSyntaxNode<'db> for ParenthesizedTokenTree<'db> {
     type StablePtr = ParenthesizedTokenTreePtr<'db>;
     type Green = ParenthesizedTokenTreeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLParen::missing(db).0,
+            TokenList::missing(db).0,
+            TerminalRParen::missing(db).0,
+        ];
         ParenthesizedTokenTreeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParenthesizedTokenTree,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLParen::missing(db).0,
-                        TokenList::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -21593,9 +21595,9 @@ impl<'db> BracedTokenTree<'db> {
         let children = [lbrace.0, tokens.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         BracedTokenTreeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::BracedTokenTree,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -21636,16 +21638,16 @@ impl<'db> TypedSyntaxNode<'db> for BracedTokenTree<'db> {
     type StablePtr = BracedTokenTreePtr<'db>;
     type Green = BracedTokenTreeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrace::missing(db).0,
+            TokenList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         BracedTokenTreeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::BracedTokenTree,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrace::missing(db).0,
-                        TokenList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -21695,9 +21697,9 @@ impl<'db> BracketedTokenTree<'db> {
         let children = [lbrack.0, tokens.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         BracketedTokenTreeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::BracketedTokenTree,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -21738,16 +21740,16 @@ impl<'db> TypedSyntaxNode<'db> for BracketedTokenTree<'db> {
     type StablePtr = BracketedTokenTreePtr<'db>;
     type Green = BracketedTokenTreeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrack::missing(db).0,
+            TokenList::missing(db).0,
+            TerminalRBrack::missing(db).0,
+        ];
         BracketedTokenTreeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::BracketedTokenTree,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrack::missing(db).0,
-                        TokenList::missing(db).0,
-                        TerminalRBrack::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -21797,9 +21799,9 @@ impl<'db> ExprInlineMacro<'db> {
         let children = [path.0, bang.0, arguments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprInlineMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprInlineMacro,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -21840,16 +21842,13 @@ impl<'db> TypedSyntaxNode<'db> for ExprInlineMacro<'db> {
     type StablePtr = ExprInlineMacroPtr<'db>;
     type Green = ExprInlineMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [ExprPath::missing(db).0, TerminalNot::missing(db).0, TokenTreeNode::missing(db).0];
         ExprInlineMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ExprInlineMacro,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        ExprPath::missing(db).0,
-                        TerminalNot::missing(db).0,
-                        TokenTreeNode::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -21903,9 +21902,9 @@ impl<'db> ItemInlineMacro<'db> {
         let children = [attributes.0, path.0, bang.0, arguments.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemInlineMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemInlineMacro,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -21952,18 +21951,18 @@ impl<'db> TypedSyntaxNode<'db> for ItemInlineMacro<'db> {
     type StablePtr = ItemInlineMacroPtr<'db>;
     type Green = ItemInlineMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            ExprPath::missing(db).0,
+            TerminalNot::missing(db).0,
+            TokenTreeNode::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         ItemInlineMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemInlineMacro,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        ExprPath::missing(db).0,
-                        TerminalNot::missing(db).0,
-                        TokenTreeNode::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -22022,9 +22021,9 @@ impl<'db> ItemMacroDeclaration<'db> {
             [attributes.0, visibility.0, macro_kw.0, name.0, lbrace.0, rules.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemMacroDeclarationGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemMacroDeclaration,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -22081,20 +22080,20 @@ impl<'db> TypedSyntaxNode<'db> for ItemMacroDeclaration<'db> {
     type StablePtr = ItemMacroDeclarationPtr<'db>;
     type Green = ItemMacroDeclarationGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            Visibility::missing(db).0,
+            TerminalMacro::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            TerminalLBrace::missing(db).0,
+            MacroRulesList::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         ItemMacroDeclarationGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ItemMacroDeclaration,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        Visibility::missing(db).0,
-                        TerminalMacro::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        TerminalLBrace::missing(db).0,
-                        MacroRulesList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -22223,9 +22222,9 @@ impl<'db> MacroRule<'db> {
         let children = [lhs.0, fat_arrow.0, rhs.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroRuleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroRule,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -22269,17 +22268,17 @@ impl<'db> TypedSyntaxNode<'db> for MacroRule<'db> {
     type StablePtr = MacroRulePtr<'db>;
     type Green = MacroRuleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            WrappedMacro::missing(db).0,
+            TerminalMatchArrow::missing(db).0,
+            BracedMacro::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         MacroRuleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroRule,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        WrappedMacro::missing(db).0,
-                        TerminalMatchArrow::missing(db).0,
-                        BracedMacro::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -22323,9 +22322,9 @@ impl<'db> ParamKind<'db> {
         let children = [colon.0, kind.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParamKindGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParamKind,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -22363,11 +22362,12 @@ impl<'db> TypedSyntaxNode<'db> for ParamKind<'db> {
     type StablePtr = ParamKindPtr<'db>;
     type Green = ParamKindGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalColon::missing(db).0, MacroParamKind::missing(db).0];
         ParamKindGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParamKind,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalColon::missing(db).0, MacroParamKind::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -22497,9 +22497,9 @@ impl<'db> OptionParamKindEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionParamKindEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionParamKindEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -22530,11 +22530,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionParamKindEmpty<'db> {
     type StablePtr = OptionParamKindEmptyPtr<'db>;
     type Green = OptionParamKindEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionParamKindEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionParamKindEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -22584,9 +22585,9 @@ impl<'db> MacroParam<'db> {
         let children = [dollar.0, name.0, kind.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroParamGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroParam,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -22627,16 +22628,16 @@ impl<'db> TypedSyntaxNode<'db> for MacroParam<'db> {
     type StablePtr = MacroParamPtr<'db>;
     type Green = MacroParamGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalDollar::missing(db).0,
+            TerminalIdentifier::missing(db).0,
+            OptionParamKind::missing(db).0,
+        ];
         MacroParamGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroParam,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalDollar::missing(db).0,
-                        TerminalIdentifier::missing(db).0,
-                        OptionParamKind::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -22688,9 +22689,9 @@ impl<'db> MacroRepetition<'db> {
         let children = [dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroRepetitionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroRepetition,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -22740,19 +22741,19 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetition<'db> {
     type StablePtr = MacroRepetitionPtr<'db>;
     type Green = MacroRepetitionGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalDollar::missing(db).0,
+            TerminalLParen::missing(db).0,
+            MacroElements::missing(db).0,
+            TerminalRParen::missing(db).0,
+            OptionTerminalComma::missing(db).0,
+            MacroRepetitionOperator::missing(db).0,
+        ];
         MacroRepetitionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroRepetition,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalDollar::missing(db).0,
-                        TerminalLParen::missing(db).0,
-                        MacroElements::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                        OptionTerminalComma::missing(db).0,
-                        MacroRepetitionOperator::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -22887,9 +22888,9 @@ impl<'db> OptionTerminalCommaEmpty<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalCommaEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalCommaEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -22920,11 +22921,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalCommaEmpty<'db> {
     type StablePtr = OptionTerminalCommaEmptyPtr<'db>;
     type Green = OptionTerminalCommaEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         OptionTerminalCommaEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::OptionTerminalCommaEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -22966,9 +22968,9 @@ impl<'db> MacroRepetitionOperatorMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroRepetitionOperatorMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroRepetitionOperatorMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -22999,11 +23001,12 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperatorMissing<'db> {
     type StablePtr = MacroRepetitionOperatorMissingPtr<'db>;
     type Green = MacroRepetitionOperatorMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         MacroRepetitionOperatorMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroRepetitionOperatorMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -23184,9 +23187,9 @@ impl<'db> ParamIdent<'db> {
         let children = [ident.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParamIdentGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParamIdent,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -23221,11 +23224,12 @@ impl<'db> TypedSyntaxNode<'db> for ParamIdent<'db> {
     type StablePtr = ParamIdentPtr<'db>;
     type Green = ParamIdentGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalIdentifier::missing(db).0];
         ParamIdentGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParamIdent,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalIdentifier::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -23267,9 +23271,9 @@ impl<'db> ParamExpr<'db> {
         let children = [expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParamExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParamExpr,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -23304,11 +23308,12 @@ impl<'db> TypedSyntaxNode<'db> for ParamExpr<'db> {
     type StablePtr = ParamExprPtr<'db>;
     type Green = ParamExprGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [TerminalIdentifier::missing(db).0];
         ParamExprGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParamExpr,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalIdentifier::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -23346,9 +23351,9 @@ impl<'db> MacroParamKindMissing<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroParamKindMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroParamKindMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -23379,11 +23384,12 @@ impl<'db> TypedSyntaxNode<'db> for MacroParamKindMissing<'db> {
     type StablePtr = MacroParamKindMissingPtr<'db>;
     type Green = MacroParamKindMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [];
         MacroParamKindMissingGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroParamKindMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -23747,9 +23753,9 @@ impl<'db> MacroWrapper<'db> {
         let children = [subtree.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroWrapperGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroWrapper,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -23784,11 +23790,12 @@ impl<'db> TypedSyntaxNode<'db> for MacroWrapper<'db> {
     type StablePtr = MacroWrapperPtr<'db>;
     type Green = MacroWrapperGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [WrappedMacro::missing(db).0];
         MacroWrapperGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::MacroWrapper,
-                details: GreenNodeDetails::Node {
-                    children: [WrappedMacro::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -23945,9 +23952,9 @@ impl<'db> ParenthesizedMacro<'db> {
         let children = [lparen.0, elements.0, rparen.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParenthesizedMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParenthesizedMacro,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -23988,16 +23995,16 @@ impl<'db> TypedSyntaxNode<'db> for ParenthesizedMacro<'db> {
     type StablePtr = ParenthesizedMacroPtr<'db>;
     type Green = ParenthesizedMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLParen::missing(db).0,
+            MacroElements::missing(db).0,
+            TerminalRParen::missing(db).0,
+        ];
         ParenthesizedMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::ParenthesizedMacro,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLParen::missing(db).0,
-                        MacroElements::missing(db).0,
-                        TerminalRParen::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -24047,9 +24054,9 @@ impl<'db> BracedMacro<'db> {
         let children = [lbrace.0, elements.0, rbrace.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         BracedMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::BracedMacro,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -24090,16 +24097,16 @@ impl<'db> TypedSyntaxNode<'db> for BracedMacro<'db> {
     type StablePtr = BracedMacroPtr<'db>;
     type Green = BracedMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrace::missing(db).0,
+            MacroElements::missing(db).0,
+            TerminalRBrace::missing(db).0,
+        ];
         BracedMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::BracedMacro,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrace::missing(db).0,
-                        MacroElements::missing(db).0,
-                        TerminalRBrace::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -24145,9 +24152,9 @@ impl<'db> BracketedMacro<'db> {
         let children = [lbrack.0, elements.0, rbrack.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         BracketedMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::BracketedMacro,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -24188,16 +24195,16 @@ impl<'db> TypedSyntaxNode<'db> for BracketedMacro<'db> {
     type StablePtr = BracketedMacroPtr<'db>;
     type Green = BracketedMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            TerminalLBrack::missing(db).0,
+            MacroElements::missing(db).0,
+            TerminalRBrack::missing(db).0,
+        ];
         BracketedMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::BracketedMacro,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        TerminalLBrack::missing(db).0,
-                        MacroElements::missing(db).0,
-                        TerminalRBrack::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -24247,9 +24254,9 @@ impl<'db> LegacyExprInlineMacro<'db> {
         let children = [path.0, bang.0, arguments.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         LegacyExprInlineMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::LegacyExprInlineMacro,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -24290,16 +24297,13 @@ impl<'db> TypedSyntaxNode<'db> for LegacyExprInlineMacro<'db> {
     type StablePtr = LegacyExprInlineMacroPtr<'db>;
     type Green = LegacyExprInlineMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [ExprPath::missing(db).0, TerminalNot::missing(db).0, WrappedArgList::missing(db).0];
         LegacyExprInlineMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::LegacyExprInlineMacro,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        ExprPath::missing(db).0,
-                        TerminalNot::missing(db).0,
-                        WrappedArgList::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -24353,9 +24357,9 @@ impl<'db> LegacyItemInlineMacro<'db> {
         let children = [attributes.0, path.0, bang.0, arguments.0, semicolon.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         LegacyItemInlineMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::LegacyItemInlineMacro,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -24402,18 +24406,18 @@ impl<'db> TypedSyntaxNode<'db> for LegacyItemInlineMacro<'db> {
     type StablePtr = LegacyItemInlineMacroPtr<'db>;
     type Green = LegacyItemInlineMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [
+            AttributeList::missing(db).0,
+            ExprPath::missing(db).0,
+            TerminalNot::missing(db).0,
+            WrappedArgList::missing(db).0,
+            TerminalSemicolon::missing(db).0,
+        ];
         LegacyItemInlineMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::LegacyItemInlineMacro,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        AttributeList::missing(db).0,
-                        ExprPath::missing(db).0,
-                        TerminalNot::missing(db).0,
-                        WrappedArgList::missing(db).0,
-                        TerminalSemicolon::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -24459,9 +24463,9 @@ impl<'db> TriviumSkippedNode<'db> {
         let children = [node.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TriviumSkippedNodeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TriviumSkippedNode,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -24496,11 +24500,12 @@ impl<'db> TypedSyntaxNode<'db> for TriviumSkippedNode<'db> {
     type StablePtr = TriviumSkippedNodePtr<'db>;
     type Green = TriviumSkippedNodeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [SkippedNode::missing(db).0];
         TriviumSkippedNodeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TriviumSkippedNode,
-                details: GreenNodeDetails::Node {
-                    children: [SkippedNode::missing(db).0].into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -24731,9 +24736,9 @@ impl<'db> Terminal<'db> for TerminalIdentifier<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalIdentifierGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalIdentifier,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -24780,16 +24785,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIdentifier<'db> {
     type StablePtr = TerminalIdentifierPtr<'db>;
     type Green = TerminalIdentifierGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenIdentifier::missing(db).0, Trivia::missing(db).0];
         TerminalIdentifierGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalIdentifier,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenIdentifier::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -24918,9 +24920,9 @@ impl<'db> Terminal<'db> for TerminalLiteralNumber<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLiteralNumberGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLiteralNumber,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -24967,16 +24969,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLiteralNumber<'db> {
     type StablePtr = TerminalLiteralNumberPtr<'db>;
     type Green = TerminalLiteralNumberGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenLiteralNumber::missing(db).0, Trivia::missing(db).0];
         TerminalLiteralNumberGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLiteralNumber,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenLiteralNumber::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -25104,9 +25103,9 @@ impl<'db> Terminal<'db> for TerminalShortString<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalShortStringGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalShortString,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -25153,16 +25152,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalShortString<'db> {
     type StablePtr = TerminalShortStringPtr<'db>;
     type Green = TerminalShortStringGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenShortString::missing(db).0, Trivia::missing(db).0];
         TerminalShortStringGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalShortString,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenShortString::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -25287,9 +25283,9 @@ impl<'db> Terminal<'db> for TerminalString<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalStringGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalString,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -25336,16 +25332,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalString<'db> {
     type StablePtr = TerminalStringPtr<'db>;
     type Green = TerminalStringGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenString::missing(db).0, Trivia::missing(db).0];
         TerminalStringGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalString,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenString::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -25470,9 +25462,9 @@ impl<'db> Terminal<'db> for TerminalAs<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalAs,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -25519,16 +25511,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAs<'db> {
     type StablePtr = TerminalAsPtr<'db>;
     type Green = TerminalAsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenAs::missing(db).0, Trivia::missing(db).0];
         TerminalAsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalAs,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenAs::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -25649,9 +25637,9 @@ impl<'db> Terminal<'db> for TerminalConst<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalConstGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalConst,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -25698,16 +25686,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalConst<'db> {
     type StablePtr = TerminalConstPtr<'db>;
     type Green = TerminalConstGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenConst::missing(db).0, Trivia::missing(db).0];
         TerminalConstGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalConst,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenConst::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -25832,9 +25816,9 @@ impl<'db> Terminal<'db> for TerminalElse<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalElseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalElse,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -25881,16 +25865,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalElse<'db> {
     type StablePtr = TerminalElsePtr<'db>;
     type Green = TerminalElseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenElse::missing(db).0, Trivia::missing(db).0];
         TerminalElseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalElse,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenElse::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -26011,9 +25991,9 @@ impl<'db> Terminal<'db> for TerminalEnum<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEnumGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEnum,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -26060,16 +26040,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEnum<'db> {
     type StablePtr = TerminalEnumPtr<'db>;
     type Green = TerminalEnumGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenEnum::missing(db).0, Trivia::missing(db).0];
         TerminalEnumGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEnum,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenEnum::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -26190,9 +26166,9 @@ impl<'db> Terminal<'db> for TerminalExtern<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalExternGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalExtern,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -26239,16 +26215,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalExtern<'db> {
     type StablePtr = TerminalExternPtr<'db>;
     type Green = TerminalExternGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenExtern::missing(db).0, Trivia::missing(db).0];
         TerminalExternGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalExtern,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenExtern::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -26373,9 +26345,9 @@ impl<'db> Terminal<'db> for TerminalFalse<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalFalseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalFalse,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -26422,16 +26394,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFalse<'db> {
     type StablePtr = TerminalFalsePtr<'db>;
     type Green = TerminalFalseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenFalse::missing(db).0, Trivia::missing(db).0];
         TerminalFalseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalFalse,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenFalse::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -26556,9 +26524,9 @@ impl<'db> Terminal<'db> for TerminalFunction<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalFunctionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalFunction,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -26605,16 +26573,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFunction<'db> {
     type StablePtr = TerminalFunctionPtr<'db>;
     type Green = TerminalFunctionGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenFunction::missing(db).0, Trivia::missing(db).0];
         TerminalFunctionGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalFunction,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenFunction::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -26739,9 +26703,9 @@ impl<'db> Terminal<'db> for TerminalIf<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalIfGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalIf,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -26788,16 +26752,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIf<'db> {
     type StablePtr = TerminalIfPtr<'db>;
     type Green = TerminalIfGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenIf::missing(db).0, Trivia::missing(db).0];
         TerminalIfGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalIf,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenIf::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -26918,9 +26878,9 @@ impl<'db> Terminal<'db> for TerminalWhile<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalWhileGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalWhile,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -26967,16 +26927,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalWhile<'db> {
     type StablePtr = TerminalWhilePtr<'db>;
     type Green = TerminalWhileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenWhile::missing(db).0, Trivia::missing(db).0];
         TerminalWhileGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalWhile,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenWhile::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -27101,9 +27057,9 @@ impl<'db> Terminal<'db> for TerminalFor<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalForGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalFor,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -27150,16 +27106,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFor<'db> {
     type StablePtr = TerminalForPtr<'db>;
     type Green = TerminalForGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenFor::missing(db).0, Trivia::missing(db).0];
         TerminalForGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalFor,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenFor::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -27280,9 +27232,9 @@ impl<'db> Terminal<'db> for TerminalLoop<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLoopGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLoop,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -27329,16 +27281,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLoop<'db> {
     type StablePtr = TerminalLoopPtr<'db>;
     type Green = TerminalLoopGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenLoop::missing(db).0, Trivia::missing(db).0];
         TerminalLoopGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLoop,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenLoop::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -27459,9 +27407,9 @@ impl<'db> Terminal<'db> for TerminalImpl<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalImplGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalImpl,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -27508,16 +27456,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImpl<'db> {
     type StablePtr = TerminalImplPtr<'db>;
     type Green = TerminalImplGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenImpl::missing(db).0, Trivia::missing(db).0];
         TerminalImplGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalImpl,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenImpl::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -27638,9 +27582,9 @@ impl<'db> Terminal<'db> for TerminalImplicits<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalImplicitsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalImplicits,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -27687,16 +27631,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImplicits<'db> {
     type StablePtr = TerminalImplicitsPtr<'db>;
     type Green = TerminalImplicitsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenImplicits::missing(db).0, Trivia::missing(db).0];
         TerminalImplicitsGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalImplicits,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenImplicits::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -27821,9 +27762,9 @@ impl<'db> Terminal<'db> for TerminalLet<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLetGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLet,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -27870,16 +27811,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLet<'db> {
     type StablePtr = TerminalLetPtr<'db>;
     type Green = TerminalLetGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenLet::missing(db).0, Trivia::missing(db).0];
         TerminalLetGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLet,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenLet::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -28000,9 +27937,9 @@ impl<'db> Terminal<'db> for TerminalMacro<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMacro,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -28049,16 +27986,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMacro<'db> {
     type StablePtr = TerminalMacroPtr<'db>;
     type Green = TerminalMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenMacro::missing(db).0, Trivia::missing(db).0];
         TerminalMacroGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMacro,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenMacro::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -28183,9 +28116,9 @@ impl<'db> Terminal<'db> for TerminalMatch<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMatchGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMatch,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -28232,16 +28165,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatch<'db> {
     type StablePtr = TerminalMatchPtr<'db>;
     type Green = TerminalMatchGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenMatch::missing(db).0, Trivia::missing(db).0];
         TerminalMatchGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMatch,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenMatch::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -28366,9 +28295,9 @@ impl<'db> Terminal<'db> for TerminalModule<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalModuleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalModule,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -28415,16 +28344,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModule<'db> {
     type StablePtr = TerminalModulePtr<'db>;
     type Green = TerminalModuleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenModule::missing(db).0, Trivia::missing(db).0];
         TerminalModuleGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalModule,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenModule::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -28549,9 +28474,9 @@ impl<'db> Terminal<'db> for TerminalMut<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMutGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMut,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -28598,16 +28523,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMut<'db> {
     type StablePtr = TerminalMutPtr<'db>;
     type Green = TerminalMutGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenMut::missing(db).0, Trivia::missing(db).0];
         TerminalMutGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMut,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenMut::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -28728,9 +28649,9 @@ impl<'db> Terminal<'db> for TerminalNoPanic<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalNoPanicGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalNoPanic,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -28777,16 +28698,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNoPanic<'db> {
     type StablePtr = TerminalNoPanicPtr<'db>;
     type Green = TerminalNoPanicGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenNoPanic::missing(db).0, Trivia::missing(db).0];
         TerminalNoPanicGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalNoPanic,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenNoPanic::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -28911,9 +28828,9 @@ impl<'db> Terminal<'db> for TerminalOf<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalOfGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalOf,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -28960,16 +28877,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOf<'db> {
     type StablePtr = TerminalOfPtr<'db>;
     type Green = TerminalOfGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenOf::missing(db).0, Trivia::missing(db).0];
         TerminalOfGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalOf,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenOf::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -29090,9 +29003,9 @@ impl<'db> Terminal<'db> for TerminalRef<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRefGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalRef,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -29139,16 +29052,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRef<'db> {
     type StablePtr = TerminalRefPtr<'db>;
     type Green = TerminalRefGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenRef::missing(db).0, Trivia::missing(db).0];
         TerminalRefGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalRef,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenRef::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -29269,9 +29178,9 @@ impl<'db> Terminal<'db> for TerminalContinue<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalContinueGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalContinue,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -29318,16 +29227,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalContinue<'db> {
     type StablePtr = TerminalContinuePtr<'db>;
     type Green = TerminalContinueGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenContinue::missing(db).0, Trivia::missing(db).0];
         TerminalContinueGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalContinue,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenContinue::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -29452,9 +29357,9 @@ impl<'db> Terminal<'db> for TerminalReturn<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalReturnGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalReturn,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -29501,16 +29406,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalReturn<'db> {
     type StablePtr = TerminalReturnPtr<'db>;
     type Green = TerminalReturnGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenReturn::missing(db).0, Trivia::missing(db).0];
         TerminalReturnGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalReturn,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenReturn::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -29635,9 +29536,9 @@ impl<'db> Terminal<'db> for TerminalBreak<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalBreakGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalBreak,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -29684,16 +29585,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBreak<'db> {
     type StablePtr = TerminalBreakPtr<'db>;
     type Green = TerminalBreakGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenBreak::missing(db).0, Trivia::missing(db).0];
         TerminalBreakGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalBreak,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenBreak::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -29818,9 +29715,9 @@ impl<'db> Terminal<'db> for TerminalStruct<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalStructGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalStruct,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -29867,16 +29764,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalStruct<'db> {
     type StablePtr = TerminalStructPtr<'db>;
     type Green = TerminalStructGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenStruct::missing(db).0, Trivia::missing(db).0];
         TerminalStructGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalStruct,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenStruct::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -30001,9 +29894,9 @@ impl<'db> Terminal<'db> for TerminalTrait<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalTraitGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalTrait,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -30050,16 +29943,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrait<'db> {
     type StablePtr = TerminalTraitPtr<'db>;
     type Green = TerminalTraitGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenTrait::missing(db).0, Trivia::missing(db).0];
         TerminalTraitGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalTrait,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenTrait::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -30184,9 +30073,9 @@ impl<'db> Terminal<'db> for TerminalTrue<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalTrueGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalTrue,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -30233,16 +30122,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrue<'db> {
     type StablePtr = TerminalTruePtr<'db>;
     type Green = TerminalTrueGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenTrue::missing(db).0, Trivia::missing(db).0];
         TerminalTrueGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalTrue,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenTrue::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -30363,9 +30248,9 @@ impl<'db> Terminal<'db> for TerminalType<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalTypeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalType,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -30412,16 +30297,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalType<'db> {
     type StablePtr = TerminalTypePtr<'db>;
     type Green = TerminalTypeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenType::missing(db).0, Trivia::missing(db).0];
         TerminalTypeGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalType,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenType::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -30542,9 +30423,9 @@ impl<'db> Terminal<'db> for TerminalUse<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalUseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalUse,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -30591,16 +30472,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUse<'db> {
     type StablePtr = TerminalUsePtr<'db>;
     type Green = TerminalUseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenUse::missing(db).0, Trivia::missing(db).0];
         TerminalUseGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalUse,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenUse::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -30721,9 +30598,9 @@ impl<'db> Terminal<'db> for TerminalPub<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalPubGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalPub,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -30770,16 +30647,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPub<'db> {
     type StablePtr = TerminalPubPtr<'db>;
     type Green = TerminalPubGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenPub::missing(db).0, Trivia::missing(db).0];
         TerminalPubGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalPub,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenPub::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -30900,9 +30773,9 @@ impl<'db> Terminal<'db> for TerminalAnd<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAndGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalAnd,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -30949,16 +30822,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAnd<'db> {
     type StablePtr = TerminalAndPtr<'db>;
     type Green = TerminalAndGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenAnd::missing(db).0, Trivia::missing(db).0];
         TerminalAndGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalAnd,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenAnd::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -31079,9 +30948,9 @@ impl<'db> Terminal<'db> for TerminalAndAnd<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAndAndGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalAndAnd,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -31128,16 +30997,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAndAnd<'db> {
     type StablePtr = TerminalAndAndPtr<'db>;
     type Green = TerminalAndAndGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenAndAnd::missing(db).0, Trivia::missing(db).0];
         TerminalAndAndGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalAndAnd,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenAndAnd::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -31262,9 +31127,9 @@ impl<'db> Terminal<'db> for TerminalArrow<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalArrowGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalArrow,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -31311,16 +31176,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalArrow<'db> {
     type StablePtr = TerminalArrowPtr<'db>;
     type Green = TerminalArrowGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenArrow::missing(db).0, Trivia::missing(db).0];
         TerminalArrowGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalArrow,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenArrow::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -31445,9 +31306,9 @@ impl<'db> Terminal<'db> for TerminalAt<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAtGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalAt,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -31494,16 +31355,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAt<'db> {
     type StablePtr = TerminalAtPtr<'db>;
     type Green = TerminalAtGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenAt::missing(db).0, Trivia::missing(db).0];
         TerminalAtGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalAt,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenAt::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -31628,9 +31485,9 @@ impl<'db> Terminal<'db> for TerminalBadCharacters<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalBadCharactersGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalBadCharacters,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -31677,16 +31534,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBadCharacters<'db> {
     type StablePtr = TerminalBadCharactersPtr<'db>;
     type Green = TerminalBadCharactersGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenBadCharacters::missing(db).0, Trivia::missing(db).0];
         TerminalBadCharactersGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalBadCharacters,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenBadCharacters::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -31811,9 +31665,9 @@ impl<'db> Terminal<'db> for TerminalColon<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalColonGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalColon,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -31860,16 +31714,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColon<'db> {
     type StablePtr = TerminalColonPtr<'db>;
     type Green = TerminalColonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenColon::missing(db).0, Trivia::missing(db).0];
         TerminalColonGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalColon,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenColon::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -31994,9 +31844,9 @@ impl<'db> Terminal<'db> for TerminalColonColon<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalColonColonGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalColonColon,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -32043,16 +31893,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColonColon<'db> {
     type StablePtr = TerminalColonColonPtr<'db>;
     type Green = TerminalColonColonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenColonColon::missing(db).0, Trivia::missing(db).0];
         TerminalColonColonGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalColonColon,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenColonColon::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -32177,9 +32024,9 @@ impl<'db> Terminal<'db> for TerminalComma<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalCommaGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalComma,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -32226,16 +32073,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalComma<'db> {
     type StablePtr = TerminalCommaPtr<'db>;
     type Green = TerminalCommaGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenComma::missing(db).0, Trivia::missing(db).0];
         TerminalCommaGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalComma,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenComma::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -32360,9 +32203,9 @@ impl<'db> Terminal<'db> for TerminalDiv<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDivGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDiv,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -32409,16 +32252,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDiv<'db> {
     type StablePtr = TerminalDivPtr<'db>;
     type Green = TerminalDivGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenDiv::missing(db).0, Trivia::missing(db).0];
         TerminalDivGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDiv,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenDiv::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -32539,9 +32378,9 @@ impl<'db> Terminal<'db> for TerminalDivEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDivEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDivEq,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -32588,16 +32427,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDivEq<'db> {
     type StablePtr = TerminalDivEqPtr<'db>;
     type Green = TerminalDivEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenDivEq::missing(db).0, Trivia::missing(db).0];
         TerminalDivEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDivEq,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenDivEq::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -32722,9 +32557,9 @@ impl<'db> Terminal<'db> for TerminalDollar<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDollarGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDollar,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -32771,16 +32606,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDollar<'db> {
     type StablePtr = TerminalDollarPtr<'db>;
     type Green = TerminalDollarGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenDollar::missing(db).0, Trivia::missing(db).0];
         TerminalDollarGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDollar,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenDollar::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -32905,9 +32736,9 @@ impl<'db> Terminal<'db> for TerminalDot<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDotGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDot,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -32954,16 +32785,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDot<'db> {
     type StablePtr = TerminalDotPtr<'db>;
     type Green = TerminalDotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenDot::missing(db).0, Trivia::missing(db).0];
         TerminalDotGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDot,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenDot::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -33084,9 +32911,9 @@ impl<'db> Terminal<'db> for TerminalDotDot<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDotDotGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDotDot,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -33133,16 +32960,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDot<'db> {
     type StablePtr = TerminalDotDotPtr<'db>;
     type Green = TerminalDotDotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenDotDot::missing(db).0, Trivia::missing(db).0];
         TerminalDotDotGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDotDot,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenDotDot::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -33267,9 +33090,9 @@ impl<'db> Terminal<'db> for TerminalDotDotEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDotDotEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDotDotEq,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -33316,16 +33139,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDotEq<'db> {
     type StablePtr = TerminalDotDotEqPtr<'db>;
     type Green = TerminalDotDotEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenDotDotEq::missing(db).0, Trivia::missing(db).0];
         TerminalDotDotEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalDotDotEq,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenDotDotEq::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -33450,9 +33269,9 @@ impl<'db> Terminal<'db> for TerminalEndOfFile<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEndOfFileGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEndOfFile,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -33499,16 +33318,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEndOfFile<'db> {
     type StablePtr = TerminalEndOfFilePtr<'db>;
     type Green = TerminalEndOfFileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenEndOfFile::missing(db).0, Trivia::missing(db).0];
         TerminalEndOfFileGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEndOfFile,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenEndOfFile::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -33633,9 +33449,9 @@ impl<'db> Terminal<'db> for TerminalEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEq,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -33682,16 +33498,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEq<'db> {
     type StablePtr = TerminalEqPtr<'db>;
     type Green = TerminalEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenEq::missing(db).0, Trivia::missing(db).0];
         TerminalEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEq,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenEq::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -33812,9 +33624,9 @@ impl<'db> Terminal<'db> for TerminalEqEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEqEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEqEq,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -33861,16 +33673,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEqEq<'db> {
     type StablePtr = TerminalEqEqPtr<'db>;
     type Green = TerminalEqEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenEqEq::missing(db).0, Trivia::missing(db).0];
         TerminalEqEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEqEq,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenEqEq::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -33991,9 +33799,9 @@ impl<'db> Terminal<'db> for TerminalGE<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalGEGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalGE,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -34040,16 +33848,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGE<'db> {
     type StablePtr = TerminalGEPtr<'db>;
     type Green = TerminalGEGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenGE::missing(db).0, Trivia::missing(db).0];
         TerminalGEGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalGE,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenGE::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -34170,9 +33974,9 @@ impl<'db> Terminal<'db> for TerminalGT<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalGTGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalGT,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -34219,16 +34023,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGT<'db> {
     type StablePtr = TerminalGTPtr<'db>;
     type Green = TerminalGTGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenGT::missing(db).0, Trivia::missing(db).0];
         TerminalGTGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalGT,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenGT::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -34349,9 +34149,9 @@ impl<'db> Terminal<'db> for TerminalHash<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalHashGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalHash,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -34398,16 +34198,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalHash<'db> {
     type StablePtr = TerminalHashPtr<'db>;
     type Green = TerminalHashGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenHash::missing(db).0, Trivia::missing(db).0];
         TerminalHashGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalHash,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenHash::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -34528,9 +34324,9 @@ impl<'db> Terminal<'db> for TerminalLBrace<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLBraceGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLBrace,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -34577,16 +34373,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrace<'db> {
     type StablePtr = TerminalLBracePtr<'db>;
     type Green = TerminalLBraceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenLBrace::missing(db).0, Trivia::missing(db).0];
         TerminalLBraceGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLBrace,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenLBrace::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -34711,9 +34503,9 @@ impl<'db> Terminal<'db> for TerminalLBrack<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLBrackGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLBrack,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -34760,16 +34552,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrack<'db> {
     type StablePtr = TerminalLBrackPtr<'db>;
     type Green = TerminalLBrackGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenLBrack::missing(db).0, Trivia::missing(db).0];
         TerminalLBrackGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLBrack,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenLBrack::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -34894,9 +34682,9 @@ impl<'db> Terminal<'db> for TerminalLE<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLEGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLE,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -34943,16 +34731,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLE<'db> {
     type StablePtr = TerminalLEPtr<'db>;
     type Green = TerminalLEGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenLE::missing(db).0, Trivia::missing(db).0];
         TerminalLEGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLE,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenLE::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -35073,9 +34857,9 @@ impl<'db> Terminal<'db> for TerminalLParen<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLParenGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLParen,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -35122,16 +34906,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLParen<'db> {
     type StablePtr = TerminalLParenPtr<'db>;
     type Green = TerminalLParenGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenLParen::missing(db).0, Trivia::missing(db).0];
         TerminalLParenGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLParen,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenLParen::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -35256,9 +35036,9 @@ impl<'db> Terminal<'db> for TerminalLT<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLTGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLT,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -35305,16 +35085,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLT<'db> {
     type StablePtr = TerminalLTPtr<'db>;
     type Green = TerminalLTGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenLT::missing(db).0, Trivia::missing(db).0];
         TerminalLTGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalLT,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenLT::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -35435,9 +35211,9 @@ impl<'db> Terminal<'db> for TerminalMatchArrow<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMatchArrowGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMatchArrow,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -35484,16 +35260,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatchArrow<'db> {
     type StablePtr = TerminalMatchArrowPtr<'db>;
     type Green = TerminalMatchArrowGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenMatchArrow::missing(db).0, Trivia::missing(db).0];
         TerminalMatchArrowGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMatchArrow,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenMatchArrow::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -35618,9 +35391,9 @@ impl<'db> Terminal<'db> for TerminalMinus<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMinusGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMinus,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -35667,16 +35440,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinus<'db> {
     type StablePtr = TerminalMinusPtr<'db>;
     type Green = TerminalMinusGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenMinus::missing(db).0, Trivia::missing(db).0];
         TerminalMinusGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMinus,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenMinus::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -35801,9 +35570,9 @@ impl<'db> Terminal<'db> for TerminalMinusEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMinusEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMinusEq,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -35850,16 +35619,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinusEq<'db> {
     type StablePtr = TerminalMinusEqPtr<'db>;
     type Green = TerminalMinusEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenMinusEq::missing(db).0, Trivia::missing(db).0];
         TerminalMinusEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMinusEq,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenMinusEq::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -35984,9 +35749,9 @@ impl<'db> Terminal<'db> for TerminalMod<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalModGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMod,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -36033,16 +35798,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMod<'db> {
     type StablePtr = TerminalModPtr<'db>;
     type Green = TerminalModGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenMod::missing(db).0, Trivia::missing(db).0];
         TerminalModGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMod,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenMod::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -36163,9 +35924,9 @@ impl<'db> Terminal<'db> for TerminalModEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalModEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalModEq,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -36212,16 +35973,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModEq<'db> {
     type StablePtr = TerminalModEqPtr<'db>;
     type Green = TerminalModEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenModEq::missing(db).0, Trivia::missing(db).0];
         TerminalModEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalModEq,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenModEq::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -36346,9 +36103,9 @@ impl<'db> Terminal<'db> for TerminalMul<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMulGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMul,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -36395,16 +36152,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMul<'db> {
     type StablePtr = TerminalMulPtr<'db>;
     type Green = TerminalMulGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenMul::missing(db).0, Trivia::missing(db).0];
         TerminalMulGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMul,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenMul::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -36525,9 +36278,9 @@ impl<'db> Terminal<'db> for TerminalMulEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMulEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMulEq,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -36574,16 +36327,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMulEq<'db> {
     type StablePtr = TerminalMulEqPtr<'db>;
     type Green = TerminalMulEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenMulEq::missing(db).0, Trivia::missing(db).0];
         TerminalMulEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalMulEq,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenMulEq::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -36708,9 +36457,9 @@ impl<'db> Terminal<'db> for TerminalNeq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalNeqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalNeq,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -36757,16 +36506,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNeq<'db> {
     type StablePtr = TerminalNeqPtr<'db>;
     type Green = TerminalNeqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenNeq::missing(db).0, Trivia::missing(db).0];
         TerminalNeqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalNeq,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenNeq::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -36887,9 +36632,9 @@ impl<'db> Terminal<'db> for TerminalNot<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalNotGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalNot,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -36936,16 +36681,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNot<'db> {
     type StablePtr = TerminalNotPtr<'db>;
     type Green = TerminalNotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenNot::missing(db).0, Trivia::missing(db).0];
         TerminalNotGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalNot,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenNot::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -37066,9 +36807,9 @@ impl<'db> Terminal<'db> for TerminalBitNot<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalBitNotGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalBitNot,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -37115,16 +36856,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBitNot<'db> {
     type StablePtr = TerminalBitNotPtr<'db>;
     type Green = TerminalBitNotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenBitNot::missing(db).0, Trivia::missing(db).0];
         TerminalBitNotGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalBitNot,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenBitNot::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -37249,9 +36986,9 @@ impl<'db> Terminal<'db> for TerminalOr<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalOrGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalOr,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -37298,16 +37035,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOr<'db> {
     type StablePtr = TerminalOrPtr<'db>;
     type Green = TerminalOrGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenOr::missing(db).0, Trivia::missing(db).0];
         TerminalOrGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalOr,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenOr::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -37428,9 +37161,9 @@ impl<'db> Terminal<'db> for TerminalOrOr<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalOrOrGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalOrOr,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -37477,16 +37210,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOrOr<'db> {
     type StablePtr = TerminalOrOrPtr<'db>;
     type Green = TerminalOrOrGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenOrOr::missing(db).0, Trivia::missing(db).0];
         TerminalOrOrGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalOrOr,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenOrOr::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -37607,9 +37336,9 @@ impl<'db> Terminal<'db> for TerminalPlus<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalPlusGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalPlus,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -37656,16 +37385,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlus<'db> {
     type StablePtr = TerminalPlusPtr<'db>;
     type Green = TerminalPlusGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenPlus::missing(db).0, Trivia::missing(db).0];
         TerminalPlusGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalPlus,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenPlus::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -37786,9 +37511,9 @@ impl<'db> Terminal<'db> for TerminalPlusEq<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalPlusEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalPlusEq,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -37835,16 +37560,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlusEq<'db> {
     type StablePtr = TerminalPlusEqPtr<'db>;
     type Green = TerminalPlusEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenPlusEq::missing(db).0, Trivia::missing(db).0];
         TerminalPlusEqGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalPlusEq,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenPlusEq::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -37972,9 +37693,9 @@ impl<'db> Terminal<'db> for TerminalQuestionMark<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalQuestionMarkGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalQuestionMark,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -38021,16 +37742,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalQuestionMark<'db> {
     type StablePtr = TerminalQuestionMarkPtr<'db>;
     type Green = TerminalQuestionMarkGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenQuestionMark::missing(db).0, Trivia::missing(db).0];
         TerminalQuestionMarkGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalQuestionMark,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenQuestionMark::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -38155,9 +37873,9 @@ impl<'db> Terminal<'db> for TerminalRBrace<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRBraceGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalRBrace,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -38204,16 +37922,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrace<'db> {
     type StablePtr = TerminalRBracePtr<'db>;
     type Green = TerminalRBraceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenRBrace::missing(db).0, Trivia::missing(db).0];
         TerminalRBraceGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalRBrace,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenRBrace::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -38338,9 +38052,9 @@ impl<'db> Terminal<'db> for TerminalRBrack<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRBrackGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalRBrack,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -38387,16 +38101,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrack<'db> {
     type StablePtr = TerminalRBrackPtr<'db>;
     type Green = TerminalRBrackGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenRBrack::missing(db).0, Trivia::missing(db).0];
         TerminalRBrackGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalRBrack,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenRBrack::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -38521,9 +38231,9 @@ impl<'db> Terminal<'db> for TerminalRParen<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRParenGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalRParen,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -38570,16 +38280,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRParen<'db> {
     type StablePtr = TerminalRParenPtr<'db>;
     type Green = TerminalRParenGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenRParen::missing(db).0, Trivia::missing(db).0];
         TerminalRParenGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalRParen,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenRParen::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -38704,9 +38410,9 @@ impl<'db> Terminal<'db> for TerminalSemicolon<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalSemicolonGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalSemicolon,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -38753,16 +38459,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalSemicolon<'db> {
     type StablePtr = TerminalSemicolonPtr<'db>;
     type Green = TerminalSemicolonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenSemicolon::missing(db).0, Trivia::missing(db).0];
         TerminalSemicolonGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalSemicolon,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenSemicolon::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -38887,9 +38590,9 @@ impl<'db> Terminal<'db> for TerminalUnderscore<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalUnderscoreGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalUnderscore,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -38936,16 +38639,13 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUnderscore<'db> {
     type StablePtr = TerminalUnderscorePtr<'db>;
     type Green = TerminalUnderscoreGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children =
+            [Trivia::missing(db).0, TokenUnderscore::missing(db).0, Trivia::missing(db).0];
         TerminalUnderscoreGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalUnderscore,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenUnderscore::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -39070,9 +38770,9 @@ impl<'db> Terminal<'db> for TerminalXor<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalXorGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalXor,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -39119,16 +38819,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalXor<'db> {
     type StablePtr = TerminalXorPtr<'db>;
     type Green = TerminalXorGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenXor::missing(db).0, Trivia::missing(db).0];
         TerminalXorGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalXor,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenXor::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -39172,9 +38868,9 @@ impl<'db> SyntaxFile<'db> {
         let children = [items.0, eof.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         SyntaxFileGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::SyntaxFile,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -39212,12 +38908,12 @@ impl<'db> TypedSyntaxNode<'db> for SyntaxFile<'db> {
     type StablePtr = SyntaxFilePtr<'db>;
     type Green = SyntaxFileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [ModuleItemList::missing(db).0, TerminalEndOfFile::missing(db).0];
         SyntaxFileGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::SyntaxFile,
-                details: GreenNodeDetails::Node {
-                    children: [ModuleItemList::missing(db).0, TerminalEndOfFile::missing(db).0]
-                        .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }
@@ -39338,9 +39034,9 @@ impl<'db> Terminal<'db> for TerminalEmpty<'db> {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEmpty,
-                details: GreenNodeDetails::Node { children: children.into(), width },
+                details: GreenNodeDetailsRef::Node { children: &children, width },
             }
             .intern(db),
         )
@@ -39387,16 +39083,12 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEmpty<'db> {
     type StablePtr = TerminalEmptyPtr<'db>;
     type Green = TerminalEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
+        let children = [Trivia::missing(db).0, TokenEmpty::missing(db).0, Trivia::missing(db).0];
         TerminalEmptyGreen(
-            GreenNode {
+            GreenNodeRef {
                 kind: SyntaxKind::TerminalEmpty,
-                details: GreenNodeDetails::Node {
-                    children: [
-                        Trivia::missing(db).0,
-                        TokenEmpty::missing(db).0,
-                        Trivia::missing(db).0,
-                    ]
-                    .into(),
+                details: GreenNodeDetailsRef::Node {
+                    children: &children,
                     width: TextWidth::default(),
                 },
             }

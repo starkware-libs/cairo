@@ -212,7 +212,7 @@ fn generate_ast_code() -> rust::Tokens {
         use salsa::Database;
 
         use super::element_list::ElementList;
-        use super::green::GreenNodeDetails;
+        use super::green::{GreenNodeDetails, GreenNodeDetailsRef, GreenNodeRef};
         use super::kind::SyntaxKind;
         use super::{
             GreenId, GreenNode, SyntaxNode, SyntaxStablePtrId, Terminal, Token, TypedStablePtr,
@@ -671,9 +671,9 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     let children = [$args];
                     let width =
                         children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-                    $(&green_name)(GreenNode {
+                    $(&green_name)(GreenNodeRef {
                         kind: SyntaxKind::$(&name),
-                        details: GreenNodeDetails::Node { children: children.into(), width },
+                        details: GreenNodeDetailsRef::Node { children: &children, width },
                     }.intern(db))
                 }
                 fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -692,9 +692,9 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     let children = [$args];
                     let width =
                         children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-                    $(&green_name)(GreenNode {
+                    $(&green_name)(GreenNodeRef {
                         kind: SyntaxKind::$(&name),
-                        details: GreenNodeDetails::Node { children: children.into(), width },
+                        details: GreenNodeDetailsRef::Node { children: &children, width },
                     }.intern(db))
                 }
             }
@@ -737,10 +737,11 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             fn missing(db: &'db dyn Database) -> Self::Green {
                 // Note: A missing syntax element should result in an internal green node
                 // of width 0, with as much structure as possible.
-                $(&green_name)(GreenNode {
+                let children = [$args_for_missing];
+                $(&green_name)(GreenNodeRef {
                     kind: SyntaxKind::$(&name),
-                    details: GreenNodeDetails::Node {
-                        children: [$args_for_missing].into(),
+                    details: GreenNodeDetailsRef::Node {
+                        children: &children,
                         width: TextWidth::default(),
                     },
                 }.intern(db))
