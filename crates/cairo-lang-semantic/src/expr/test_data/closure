@@ -71,7 +71,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "i32", found: "{closure@lib.cairo:2:19: 2:21}".
+error[E2041]: Unexpected argument type. Expected: "i32", found: "test::foo::{closure#0}".
  --> lib.cairo:2:19-5:5
       let _x: i32 = || {
  ___________________^
@@ -101,7 +101,7 @@ error[E2182]: Closures are not allowed in this context.
 | };
 |_^
 
-error[E2302]: Type mismatch: `{closure@lib.cairo:1:17: 1:19}` and `i32`.
+error[E2302]: Type mismatch: `<lib.cairo:1:17: 1:19>::{closure#0}` and `i32`.
  --> lib.cairo:1:17-4:1
   const _x: i32 = || {
  _________________^
@@ -133,7 +133,7 @@ error[E2182]: Closures are not allowed in this context.
 |     } }>();
 |_____^
 
-error[E2302]: Type mismatch: `{closure@lib.cairo:3:13: 3:15}` and `u32`.
+error[E2302]: Type mismatch: `<lib.cairo:3:13: 3:15>::{closure#0}` and `u32`.
  --> lib.cairo:3:11-5:7
       bar::<{ || -> u32 {
  ___________^
@@ -204,7 +204,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::ops::function::FnOnce::<{closure@lib.cairo:5:13: 5:16}, (u32,)>.
+error[E2311]: Trait has no implementation in context: core::ops::function::FnOnce::<test::foo::{closure#0}, (u32,)>.
  --> lib.cairo:10:23
     let _k: felt252 = bar(c);
                       ^^^
@@ -230,7 +230,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2308]: `core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:13: 5:16}, (u32,), traits::DestructFromDrop::<{closure@lib.cairo:5:13: 5:16}, Generated core::traits::Drop::<{closure@lib.cairo:5:13: 5:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>>::Output` type mismatch: `u128` and `felt252`.
+error[E2308]: `core::ops::function::FnOnceImpl::<test::foo::{closure#0}, (u32,), traits::DestructFromDrop::<test::foo::{closure#0}, Generated core::traits::Drop::<test::foo::{closure#0}>>, Generated core::ops::function::Fn::<test::foo::{closure#0}, (core::integer::u32,)>>::Output` type mismatch: `u128` and `felt252`.
  --> lib.cairo:9:39
     let _f: u128 = core::ops::FnOnce::call(c, (2,));
                                       ^^^^
@@ -348,7 +348,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<{closure@lib.cairo:5:15: 5:27}, (felt252,)>.
+error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<test::foo::{closure#0}, (felt252,)>.
  --> lib.cairo:8:19
     let _f: u32 = bar(2);
                   ^^^^^^
@@ -734,7 +734,175 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "?0", found: "{closure@lib.cairo:4:13: 4:15}".
+error[E2041]: Unexpected argument type. Expected: "?0", found: "test::foo::{closure#0}".
  --> lib.cairo:7:14
     unify(x, f);
              ^
+
+//! > ==========================================================================
+
+//! > Test closure named relative to the trait or impl function it is defined in.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+trait MyTrait {
+    fn defaulted() {
+        let _: felt252 = |x: u32| x;
+    }
+    fn required();
+}
+
+impl MyImpl of MyTrait {
+    fn required() {
+        let _: felt252 = |x: u32| x;
+    }
+}
+
+//! > expected_diagnostics
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::MyTrait::defaulted::{closure#0}".
+ --> lib.cairo:3:26
+        let _: felt252 = |x: u32| x;
+                         ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::MyImpl::required::{closure#0}".
+ --> lib.cairo:10:26
+        let _: felt252 = |x: u32| x;
+                         ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test the path a generated function is named by, in every scope one can be defined in.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// Numbered per kind, in their order in the function - the loop does not renumber the closures.
+fn ordering() {
+    let _first: felt252 = |x: u32| x;
+    loop {
+        break;
+    }
+    let _second: felt252 = |x: u32| x;
+}
+
+// Nested in the path of the generated function containing them, each scope numbered from 0
+// independently of its depth.
+fn nesting() {
+    let _outer = |x: u32| {
+        let _mid = |y: u32| {
+            let _inner: felt252 = |z: u32| z;
+            y
+        };
+        loop {
+            let _in_loop: felt252 = |z: u32| z;
+            break;
+        }
+        x
+    };
+    loop {
+        let _in_loop: felt252 = |z: u32| z;
+        break;
+    }
+    let _last: felt252 = |v: u32| v;
+}
+
+// Only the body of a `for` is lowered into its loop function, so a closure in its iterable is
+// scoped outside the loop.
+fn for_scopes(a: Array<u32>) {
+    for _x in a.into_iter().map(|y: u32| {
+        let _in_iterable: felt252 = |z: u32| z;
+        y
+    }) {
+        let _in_body: felt252 = |z: u32| z;
+    }
+}
+
+// Named per macro expansion, as the expansion is in a file of its own.
+fn macro_expansions() {
+    let _a = array![{
+        let _in_macro: felt252 = |z: u32| z;
+        1_u32
+    }];
+    let _b = array![{
+        let _in_macro: felt252 = |z: u32| z;
+        2_u32
+    }];
+}
+
+// Relative to the trait function with a default body, or the impl function, defining them.
+trait MyTrait {
+    fn defaulted() {
+        let _in_trait: felt252 = |y: u32| y;
+    }
+    fn required();
+}
+
+impl MyImpl of MyTrait {
+    fn required() {
+        let _in_impl: felt252 = |y: u32| y;
+    }
+}
+
+//! > expected_diagnostics
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::ordering::{closure#0}".
+ --> lib.cairo:3:27
+    let _first: felt252 = |x: u32| x;
+                          ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::ordering::{closure#1}".
+ --> lib.cairo:7:28
+    let _second: felt252 = |x: u32| x;
+                           ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::nesting::{closure#0}::{closure#0}::{closure#0}".
+ --> lib.cairo:15:35
+            let _inner: felt252 = |z: u32| z;
+                                  ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::nesting::{closure#0}::{loop#0}::{closure#0}".
+ --> lib.cairo:19:37
+            let _in_loop: felt252 = |z: u32| z;
+                                    ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::nesting::{loop#0}::{closure#0}".
+ --> lib.cairo:25:33
+        let _in_loop: felt252 = |z: u32| z;
+                                ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::nesting::{closure#1}".
+ --> lib.cairo:28:26
+    let _last: felt252 = |v: u32| v;
+                         ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::for_scopes::{closure#0}::{closure#0}".
+ --> lib.cairo:35:37
+        let _in_iterable: felt252 = |z: u32| z;
+                                    ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::for_scopes::{loop#0}::{closure#0}".
+ --> lib.cairo:38:33
+        let _in_body: felt252 = |z: u32| z;
+                                ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::macro_expansions::{array_inline_macro@1142}::{closure#0}".
+ --> lib.cairo:45:34
+        let _in_macro: felt252 = |z: u32| z;
+                                 ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::macro_expansions::{array_inline_macro@1231}::{closure#0}".
+ --> lib.cairo:49:34
+        let _in_macro: felt252 = |z: u32| z;
+                                 ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::MyTrait::defaulted::{closure#0}".
+ --> lib.cairo:57:34
+        let _in_trait: felt252 = |y: u32| y;
+                                 ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::MyImpl::required::{closure#0}".
+ --> lib.cairo:64:33
+        let _in_impl: felt252 = |y: u32| y;
+                                ^^^^^^^^^^
