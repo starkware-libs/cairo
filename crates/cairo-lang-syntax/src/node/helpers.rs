@@ -1,4 +1,9 @@
-use cairo_lang_filesystem::ids::SmolStrId;
+use std::ops::ControlFlow;
+
+use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::require;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, chain};
 use salsa::Database;
 
@@ -811,5 +816,204 @@ impl<'a> IsDependentType<'a> for ast::Expr<'a> {
             | ast::Expr::Missing(_)
             | ast::Expr::Underscore(_) => false,
         }
+    }
+}
+
+/// A kind of function the compiler generates for an expression in a function's body.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum GeneratedFunctionKind {
+    Closure,
+    Loop,
+}
+impl GeneratedFunctionKind {
+    /// Returns the kind of function generated for an expression of the given syntax kind, if any.
+    fn of(kind: SyntaxKind) -> Option<Self> {
+        match kind {
+            SyntaxKind::ExprClosure => Some(Self::Closure),
+            SyntaxKind::ExprLoop | SyntaxKind::ExprWhile | SyntaxKind::ExprFor => Some(Self::Loop),
+            _ => None,
+        }
+    }
+
+    /// Returns the name of the kind, as it appears in the path of a generated function.
+    fn name(self) -> &'static str {
+        match self {
+            Self::Closure => "closure",
+            Self::Loop => "loop",
+        }
+    }
+}
+
+/// The syntax kinds of the items owning the generated functions defined in their body.
+const GENERATED_FUNCTION_OWNER_KINDS: [SyntaxKind; 2] =
+    [SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction];
+
+/// Returns whether an expression of the given syntax kind opens a scope for the generated
+/// functions defined in it - either by being a generated function itself, or by being a function.
+fn opens_generated_function_scope(kind: SyntaxKind) -> bool {
+    GeneratedFunctionKind::of(kind).is_some() || GENERATED_FUNCTION_OWNER_KINDS.contains(&kind)
+}
+
+/// Returns the part of `node` that is lowered into the generated function of `node`, if only a part
+/// of it is - the body of a `for`, whose iterable is lowered into the function containing it.
+fn generated_function_body<'db>(
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+) -> Option<SyntaxNode<'db>> {
+    require(node.kind(db) == SyntaxKind::ExprFor)?;
+    Some(ast::ExprFor::from_syntax_node(db, node).body(db).as_syntax_node())
+}
+
+/// Returns the scope the generated function of `generated` is defined in - the closest ancestor
+/// that is a function, or a generated function whose body contains it.
+fn generated_function_scope<'db>(
+    db: &'db dyn Database,
+    generated: SyntaxNode<'db>,
+) -> Option<SyntaxNode<'db>> {
+    let mut child = generated;
+    for ancestor in generated.ancestors(db) {
+        if opens_generated_function_scope(ancestor.kind(db))
+            && generated_function_body(db, ancestor).is_none_or(|body| body == child)
+        {
+            return Some(ancestor);
+        }
+        child = ancestor;
+    }
+    // A generated function with no enclosing function is an error, but is still named - index it
+    // within the file, so that its name stays unique.
+    generated.ancestors(db).last()
+}
+
+/// A segment of the path of a generated function, as `{<kind>#<index>}`.
+pub struct GeneratedFunctionPathSegment {
+    kind: GeneratedFunctionKind,
+    index: usize,
+}
+impl std::fmt::Display for GeneratedFunctionPathSegment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{{{}#{}}}", self.kind.name(), self.index)
+    }
+}
+
+/// Calls `handle_segment` for each segment of the path of `node`'s generated function, from the
+/// outermost segment inwards. See [generated_function_path].
+pub fn for_each_generated_function_path_segment<'db, Break>(
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+    handle_segment: &mut impl FnMut(GeneratedFunctionPathSegment) -> ControlFlow<Break>,
+) -> ControlFlow<Break> {
+    let Some((generated, kind)) = node
+        .ancestors_with_self(db)
+        .find_map(|node| Some((node, GeneratedFunctionKind::of(node.kind(db))?)))
+    else {
+        return ControlFlow::Continue(());
+    };
+    let Some(scope) = generated_function_scope(db, generated) else {
+        return ControlFlow::Continue(());
+    };
+    if GeneratedFunctionKind::of(scope.kind(db)).is_some() {
+        for_each_generated_function_path_segment(db, scope, handle_segment)?;
+    }
+    let index = generated_function_indices(db, (), scope)[&generated];
+    handle_segment(GeneratedFunctionPathSegment { kind, index })
+}
+
+/// Returns the path of the generated function created for `node` - or for its closest ancestor that
+/// is lowered into a generated function - relative to the function it is defined in.
+///
+/// Every level of nesting adds a `{<kind>#<index>}` segment, where the index counts, per kind, the
+/// generated functions directly within the enclosing generated function (or within the function
+/// itself). So the closures of:
+/// ```ignore
+/// fn foo() {
+///     let outer = |x| {
+///         let inner = |y| y;
+///         inner(x)
+///     };
+///     let last = |z| z;
+/// }
+/// ```
+/// are `{closure#0}`, `{closure#0}::{closure#0}` and `{closure#1}`.
+///
+/// As the path only depends on the code of the containing function, it makes the names of
+/// generated functions independent of the path of the file they are defined in, and of any code
+/// outside of their containing function.
+pub fn generated_function_path<'db>(
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+) -> impl std::fmt::Display + 'db {
+    GeneratedFunctionPath { db, node }
+}
+
+/// The [std::fmt::Display] of [generated_function_path].
+struct GeneratedFunctionPath<'db> {
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+}
+impl std::fmt::Display for GeneratedFunctionPath<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut is_first = true;
+        for_each_generated_function_path_segment(self.db, self.node, &mut |segment| {
+            let separator = if std::mem::take(&mut is_first) { "" } else { "::" };
+            match write!(f, "{separator}{segment}") {
+                Ok(()) => ControlFlow::Continue(()),
+                Err(err) => ControlFlow::Break(err),
+            }
+        })
+        .break_value()
+        .map_or(Ok(()), Err)
+    }
+}
+
+/// Returns the index of each generated function directly within `scope`, counted per kind in the
+/// order the functions appear in it.
+///
+/// Memoized per scope, so naming every generated function of a function costs one pass over its
+/// body rather than one per name.
+#[salsa::tracked(returns(ref))]
+fn generated_function_indices<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    scope: SyntaxNode<'db>,
+) -> OrderedHashMap<SyntaxNode<'db>, usize> {
+    let mut indices = OrderedHashMap::default();
+    let lowered_into_scope = generated_function_body(db, scope).unwrap_or(scope);
+    collect_generated_function_indices(
+        db,
+        lowered_into_scope,
+        &mut Default::default(),
+        &mut indices,
+    );
+    indices
+}
+
+/// Accumulates into `indices` the index of each generated function directly within `node`'s scope,
+/// counting each kind in `counters`.
+fn collect_generated_function_indices<'db>(
+    db: &'db dyn Database,
+    node: SyntaxNode<'db>,
+    counters: &mut UnorderedHashMap<GeneratedFunctionKind, usize>,
+    indices: &mut OrderedHashMap<SyntaxNode<'db>, usize>,
+) {
+    for child in node.get_children(db) {
+        let child_kind = child.kind(db);
+        // A nested function is not a generated function, and its body opens a scope of its own.
+        if GENERATED_FUNCTION_OWNER_KINDS.contains(&child_kind) {
+            continue;
+        }
+        // A nested generated function is indexed here, but its body belongs to its own scope -
+        // except for the iterable of a `for`, which is lowered into this scope.
+        if let Some(kind) = GeneratedFunctionKind::of(child_kind) {
+            let counter = counters.entry(kind).or_default();
+            indices.insert(*child, *counter);
+            *counter += 1;
+            if let Some(body) = generated_function_body(db, *child) {
+                for part in child.get_children(db).iter().filter(|part| **part != body) {
+                    collect_generated_function_indices(db, *part, counters, indices);
+                }
+            }
+            continue;
+        }
+        collect_generated_function_indices(db, *child, counters, indices);
     }
 }
