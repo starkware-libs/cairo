@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788138119330,
+  "lastUpdate": 1788138263168,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -25691,6 +25691,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/3908259b01adaad6f03092e2ec0be826554cc874"
         },
         "date": 1788051589909,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "3908259b01adaad6f03092e2ec0be826554cc874",
+          "message": "fix(semantic): reject a macro expansion block with nothing repeating at its depth (#10298)",
+          "timestamp": "2026-08-28T12:41:39Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/3908259b01adaad6f03092e2ec0be826554cc874"
+        },
+        "date": 1788138263010,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
