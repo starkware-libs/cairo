@@ -28,6 +28,39 @@ cairo_lang_test_utils::test_file_test!(
     test_generated_function
 );
 
+cairo_lang_test_utils::test_file_test!(
+    generated_names,
+    "src/lower/test_data",
+    {
+        generated_function_names: "generated_function_names",
+    },
+    test_generated_function_names
+);
+
+/// Tests the names of the functions generated for the tested function, at any depth within it.
+fn test_generated_function_names(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
+
+    let mut names = String::new();
+    if let Ok(multi_lowering) = db.priv_function_with_body_multi_lowering(test_function.function_id)
+    {
+        for key in multi_lowering.generated_lowerings.keys() {
+            let generated =
+                GeneratedFunction { parent: test_function.concrete_function_id, key: *key };
+            writeln!(&mut names, "{}", generated.full_path(db)).unwrap();
+        }
+    }
+
+    TestRunnerResult::success(OrderedHashMap::from([
+        ("semantic_diagnostics".into(), semantic_diagnostics),
+        ("generated_function_names".into(), names),
+    ]))
+}
+
 fn test_generated_function(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,

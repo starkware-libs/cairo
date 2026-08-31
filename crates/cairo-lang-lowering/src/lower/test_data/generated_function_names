@@ -1,0 +1,149 @@
+//! > Test that generated functions are numbered per kind, in their order in the function.
+
+//! > test_runner_name
+test_generated_function_names
+
+//! > cairo_code
+#[target_function]
+fn foo(a: Array<felt252>) -> u32 {
+    let first = |x: u32| x + 1;
+    let mut sum = first(a.len());
+    loop {
+        sum = sum + 1;
+        break;
+    }
+    let second = |x: u32| x + 2;
+    second(sum)
+}
+
+//! > semantic_diagnostics
+
+//! > generated_function_names
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#0}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#0}
+test::foo::{loop#0}
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#1}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#1}
+
+//! > ==========================================================================
+
+//! > Test that a nested closure is nested in the path of the closure containing it.
+
+//! > test_runner_name
+test_generated_function_names
+
+//! > cairo_code
+#[target_function]
+fn foo(a: u32) -> u32 {
+    let outer = |x: u32| {
+        let mid = |y: u32| {
+            let inner = |z: u32| z + a;
+            inner(y)
+        };
+        let sibling = |w: u32| w + 1;
+        mid(x) + sibling(x)
+    };
+    let last = |v: u32| v + 2;
+    outer(a) + last(a)
+}
+
+//! > semantic_diagnostics
+
+//! > generated_function_names
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#0}
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#0}::{closure#0}
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#0}::{closure#0}::{closure#0}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}::{closure#0}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#0}::{closure#1}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#1}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#0}
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#1}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#1}
+
+//! > ==========================================================================
+
+//! > Test that generated functions of nested scopes are numbered independently of their depth.
+
+//! > test_runner_name
+test_generated_function_names
+
+//! > cairo_code
+#[target_function]
+fn foo(a: u32) -> u32 {
+    let outer = |x: u32| {
+        let mut y = x;
+        loop {
+            y = y + 1;
+            break;
+        }
+        let nested = |z: u32| z + 1;
+        nested(y)
+    };
+    let mut sum = outer(a);
+    loop {
+        sum = sum + 2;
+        break;
+    }
+    let last = |x: u32| x + 3;
+    last(sum)
+}
+
+//! > semantic_diagnostics
+
+//! > generated_function_names
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#0}
+test::foo::{closure#0}::{loop#0}
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#0}::{closure#0}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#0}
+test::foo::{loop#0}
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#1}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#1}
+
+//! > ==========================================================================
+
+//! > Test that a closure in the iterable of a `for` is not scoped under its loop.
+
+//! > test_runner_name
+test_generated_function_names
+
+//! > cairo_code
+#[target_function]
+fn foo(a: Array<u32>) -> u32 {
+    let mut sum = 0;
+    for x in a.into_iter().map(|y| y + 1) {
+        sum = sum + x;
+    }
+    sum
+}
+
+//! > semantic_diagnostics
+
+//! > generated_function_names
+Generated `core::traits::Destruct::destruct` for test::foo::{closure#0}
+Generated `core::ops::function::Fn::call` for test::foo::{closure#0}
+test::foo::{loop#0}
+
+//! > ==========================================================================
+
+//! > Test that generated functions in macro expansions are named per expansion.
+
+//! > test_runner_name
+test_generated_function_names
+
+//! > cairo_code
+macro m {
+    ($n:expr) => { loop { if $n == 0 { break 7_u32; } break $n; } };
+}
+
+#[target_function]
+fn foo(n: u32) -> u32 {
+    m!(n) + m!(n)
+}
+
+//! > semantic_diagnostics
+
+//! > generated_function_names
+test::foo::{m@129}::{loop#0}
+test::foo::{m@137}::{loop#0}
