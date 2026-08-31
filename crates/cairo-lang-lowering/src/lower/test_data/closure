@@ -20,7 +20,7 @@ Main:
 Parameters: v0: core::dict::Felt252Dict::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:3:5: 3:7}) <- struct_construct(v0)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
@@ -39,7 +39,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     || {
     ^^
 
-Parameters: v0: {closure@lib.cairo:3:5: 3:7}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v0)
@@ -49,7 +49,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@lib.cairo:3:5: 3:7}
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v4: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
@@ -62,7 +62,7 @@ Generated core::ops::function::FnOnce::call lowering for source location:
     || {
     ^^
 
-Parameters: v0: {closure@lib.cairo:3:5: 3:7}, v1: ()
+Parameters: v0: test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v0)
@@ -73,7 +73,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@lib.cairo:3:5: 3:7}, v4: ()
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: test::foo::{closure#0}, v4: ()
 blk0 (root):
 Statements:
   (v5: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
@@ -115,7 +115,7 @@ Main:
 Parameters: v0: test::PanicDestructable
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:12:5: 12:7}) <- struct_construct(v0)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
   (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v3: core::felt252) <- 345232009571
   (v4: core::internal::bounded_int::BoundedInt::<0, 30>) <- 5
@@ -152,7 +152,7 @@ Generated core::traits::PanicDestruct::panic_destruct lowering for source locati
     || {
     ^^
 
-Parameters: v0: {closure@lib.cairo:12:5: 12:7}, v1: core::panics::Panic
+Parameters: v0: test::foo::{closure#0}, v1: core::panics::Panic
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -162,7 +162,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:12:5: 12:7}, v1: core::panics::Panic
+Parameters: v0: test::foo::{closure#0}, v1: core::panics::Panic
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -175,7 +175,7 @@ Generated core::ops::function::FnOnce::call lowering for source location:
     || {
     ^^
 
-Parameters: v0: {closure@lib.cairo:12:5: 12:7}, v1: ()
+Parameters: v0: test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -187,7 +187,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:12:5: 12:7}, v1: ()
+Parameters: v0: test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -223,9 +223,9 @@ Main:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:7:13: 7:15}) <- struct_construct(v0)
-  (v2: {closure@lib.cairo:7:13: 7:15}) <- test::identity::<{closure@lib.cairo:7:13: 7:15}>(v1)
-  (v3: {closure@lib.cairo:7:13: 7:15}) <- test::identity::<{closure@lib.cairo:7:13: 7:15}>(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
+  (v2: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
+  (v3: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
   (v4: ()) <- struct_construct()
 End:
   Return(v4)
@@ -235,9 +235,9 @@ Final lowering:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:7:13: 7:15}) <- struct_construct(v0)
-  (v2: {closure@lib.cairo:7:13: 7:15}) <- test::identity::<{closure@lib.cairo:7:13: 7:15}>(v1)
-  (v3: {closure@lib.cairo:7:13: 7:15}) <- test::identity::<{closure@lib.cairo:7:13: 7:15}>(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
+  (v2: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
+  (v3: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
 End:
   Return()
 
@@ -246,7 +246,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let c = || a;
             ^^
 
-Parameters: v0: {closure@lib.cairo:7:13: 7:15}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- struct_destructure(v0)
@@ -256,7 +256,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:7:13: 7:15}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -267,10 +267,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let c = || a;
             ^^
 
-Parameters: v0: @{closure@lib.cairo:7:13: 7:15}, v2: ()
+Parameters: v0: @test::foo::{closure#0}, v2: ()
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:7:13: 7:15}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v1)
   () <- struct_destructure(v2)
 End:
@@ -278,10 +278,10 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:7:13: 7:15}, v1: ()
+Parameters: v0: @test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
-  (v2: {closure@lib.cairo:7:13: 7:15}) <- desnap(v0)
+  (v2: test::foo::{closure#0}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v2)
 End:
   Return(v3)
@@ -320,11 +320,11 @@ Main:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:7:13: 7:25}) <- struct_construct()
-  (v2: {closure@lib.cairo:7:13: 7:25}, v3: @{closure@lib.cairo:7:13: 7:25}) <- snapshot(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct()
+  (v2: test::foo::{closure#0}, v3: @test::foo::{closure#0}) <- snapshot(v1)
   (v4: core::felt252) <- 0
   (v5: (core::felt252,)) <- struct_construct(v4)
-  (v6: ()) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:7:13: 7:25}(v3, v5)
+  (v6: ()) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v3, v5)
   (v7: ()) <- struct_construct()
 End:
   Return(v7)
@@ -359,7 +359,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let f = |a: felt252| {
             ^^^^^^^^^^^^
 
-Parameters: v0: {closure@lib.cairo:7:13: 7:25}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -369,7 +369,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:7:13: 7:25}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -380,10 +380,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let f = |a: felt252| {
             ^^^^^^^^^^^^
 
-Parameters: v0: @{closure@lib.cairo:7:13: 7:25}, v2: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::felt252,)
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:7:13: 7:25}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- 0
@@ -420,7 +420,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:7:13: 7:25}, v1: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v1: (core::felt252,)
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 2
@@ -479,8 +479,8 @@ Main:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: {closure@lib.cairo:6:29: 6:36}) <- struct_construct()
-  (v1: ()) <- test::apply::<{closure@lib.cairo:6:29: 6:36}, Generated core::traits::Drop::<{closure@lib.cairo:6:29: 6:36}>, core::ops::function::FnOnceImpl::<{closure@lib.cairo:6:29: 6:36}, (core::felt252,), core::traits::DestructFromDrop::<{closure@lib.cairo:6:29: 6:36}, Generated core::traits::Drop::<{closure@lib.cairo:6:29: 6:36}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:6:29: 6:36}, (core::felt252,)>>, core::felt252Drop>(v0)
+  (v0: test::foo::{closure#0}) <- struct_construct()
+  (v1: ()) <- test::apply::<test::foo::{closure#0}, Generated core::traits::Drop::<test::foo::{closure#0}>, core::ops::function::FnOnceImpl::<test::foo::{closure#0}, (core::felt252,), core::traits::DestructFromDrop::<test::foo::{closure#0}, Generated core::traits::Drop::<test::foo::{closure#0}>>, Generated core::ops::function::Fn::<test::foo::{closure#0}, (core::felt252,)>>, core::felt252Drop>(v0)
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
@@ -498,7 +498,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let uninlined_closure = |mut a| {
                             ^^^^^^^
 
-Parameters: v0: {closure@lib.cairo:6:29: 6:36}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -508,7 +508,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:6:29: 6:36}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -519,10 +519,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let uninlined_closure = |mut a| {
                             ^^^^^^^
 
-Parameters: v0: @{closure@lib.cairo:6:29: 6:36}, v2: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::felt252,)
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:6:29: 6:36}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- core::Felt252Add::add(v3, v3)
@@ -555,7 +555,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:6:29: 6:36}, v1: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v1: (core::felt252,)
 blk0 (root):
 Statements:
   (v2: core::felt252) <- struct_destructure(v1)
@@ -616,11 +616,11 @@ Parameters: v0: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
-  (v3: {closure@lib.cairo:3:17: 3:20}) <- struct_construct(v2)
-  (v4: {closure@lib.cairo:3:17: 3:20}, v5: @{closure@lib.cairo:3:17: 3:20}) <- snapshot(v3)
+  (v3: test::foo::{closure#0}) <- struct_construct(v2)
+  (v4: test::foo::{closure#0}, v5: @test::foo::{closure#0}) <- snapshot(v3)
   (v6: core::integer::u32) <- 42
   (v7: (core::integer::u32,)) <- struct_construct(v6)
-  (v8: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:3:17: 3:20}(v5, v7)
+  (v8: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v5, v7)
 End:
   Return(v8)
 
@@ -657,7 +657,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let inner = |x| {
                 ^^^
 
-Parameters: v0: {closure@lib.cairo:3:17: 3:20}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
@@ -667,7 +667,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:3:17: 3:20}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -678,7 +678,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
         let nested = |y| {
                      ^^^
 
-Parameters: v0: {closure@lib.cairo:4:22: 4:25}
+Parameters: v0: test::foo::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
   (v1: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
@@ -688,7 +688,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:4:22: 4:25}
+Parameters: v0: test::foo::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -699,10 +699,10 @@ Generated core::ops::function::Fn::call lowering for source location:
         let nested = |y| {
                      ^^^
 
-Parameters: v0: @{closure@lib.cairo:4:22: 4:25}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:4:22: 4:25}) <- desnap(v0)
+  (v1: test::foo::{closure#0}::{closure#0}) <- desnap(v0)
   (v3: @core::array::Array::<core::felt252>) <- struct_destructure(v1)
   (v4: core::integer::u32) <- struct_destructure(v2)
   (v5: core::integer::u32) <- core::array::ArrayImpl::<core::felt252>::len(v3)
@@ -712,10 +712,10 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@lib.cairo:4:22: 4:25}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v3: {closure@lib.cairo:4:22: 4:25}) <- desnap(v1)
+  (v3: test::foo::{closure#0}::{closure#0}) <- desnap(v1)
   (v4: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
   (v5: core::integer::u32) <- core::array::array_len::<core::felt252>(v4)
   (v6: core::integer::u32) <- struct_destructure(v2)
@@ -744,25 +744,25 @@ Generated core::ops::function::Fn::call lowering for source location:
     let inner = |x| {
                 ^^^
 
-Parameters: v0: @{closure@lib.cairo:3:17: 3:20}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:3:17: 3:20}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   (v3: @core::array::Array::<core::felt252>) <- struct_destructure(v1)
   (v4: core::integer::u32) <- struct_destructure(v2)
-  (v5: {closure@lib.cairo:4:22: 4:25}) <- struct_construct(v3)
-  (v6: {closure@lib.cairo:4:22: 4:25}, v7: @{closure@lib.cairo:4:22: 4:25}) <- snapshot(v5)
+  (v5: test::foo::{closure#0}::{closure#0}) <- struct_construct(v3)
+  (v6: test::foo::{closure#0}::{closure#0}, v7: @test::foo::{closure#0}::{closure#0}) <- snapshot(v5)
   (v8: (core::integer::u32,)) <- struct_construct(v4)
-  (v9: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:4:22: 4:25}(v7, v8)
+  (v9: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}(v7, v8)
 End:
   Return(v9)
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@lib.cairo:3:17: 3:20}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v3: {closure@lib.cairo:3:17: 3:20}) <- desnap(v1)
+  (v3: test::foo::{closure#0}) <- desnap(v1)
   (v4: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
   (v5: core::integer::u32) <- core::array::array_len::<core::felt252>(v4)
   (v6: core::integer::u32) <- struct_destructure(v2)
@@ -817,7 +817,7 @@ Main:
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::felt252, v1: core::felt252) <- test::foo[70-227](v0)
+  (v2: core::felt252, v1: core::felt252) <- test::foo::{loop#0}(v0)
 End:
   Return(v1)
 
@@ -826,7 +826,7 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[70-227](v0, v1, v2)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v0, v1, v2)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -853,7 +853,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
         let f = || -> felt252 {
                 ^^
 
-Parameters: v0: {closure@lib.cairo:5:17: 5:19}
+Parameters: v0: test::foo::{loop#0}::{closure#0}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -863,7 +863,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:5:17: 5:19}
+Parameters: v0: test::foo::{loop#0}::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -874,10 +874,10 @@ Generated core::ops::function::Fn::call lowering for source location:
         let f = || -> felt252 {
                 ^^
 
-Parameters: v0: @{closure@lib.cairo:5:17: 5:19}, v2: ()
+Parameters: v0: @test::foo::{loop#0}::{closure#0}, v2: ()
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:5:17: 5:19}) <- desnap(v0)
+  (v1: test::foo::{loop#0}::{closure#0}) <- desnap(v0)
   () <- struct_destructure(v1)
   () <- struct_destructure(v2)
   (v3: core::felt252) <- 7
@@ -886,7 +886,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:5:17: 5:19}, v1: ()
+Parameters: v0: @test::foo::{loop#0}::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 7
@@ -904,10 +904,10 @@ Generated loop lowering for source location:
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:5:17: 5:19}) <- struct_construct()
-  (v2: {closure@lib.cairo:5:17: 5:19}, v3: @{closure@lib.cairo:5:17: 5:19}) <- snapshot(v1)
+  (v1: test::foo::{loop#0}::{closure#0}) <- struct_construct()
+  (v2: test::foo::{loop#0}::{closure#0}, v3: @test::foo::{loop#0}::{closure#0}) <- snapshot(v1)
   (v4: ()) <- struct_construct()
-  (v5: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:5:17: 5:19}(v3, v4)
+  (v5: core::felt252) <- Generated `core::ops::function::Fn::call` for test::foo::{loop#0}::{closure#0}(v3, v4)
   (v6: core::felt252) <- core::Felt252Add::add(v0, v5)
   (v7: core::felt252, v8: @core::felt252) <- snapshot(v6)
   (v9: core::felt252) <- 100
@@ -931,7 +931,7 @@ End:
 
 blk3:
 Statements:
-  (v16: core::felt252, v15: core::felt252) <- test::foo[70-227](v7)
+  (v16: core::felt252, v15: core::felt252) <- test::foo::{loop#0}(v7)
 End:
   Return(v16, v15)
 
@@ -969,7 +969,7 @@ End:
 blk3:
 Statements:
   (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[70-227](v3, v15, v8)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v3, v15, v8)
 End:
   Return(v16, v17, v18)
 
@@ -981,7 +981,7 @@ End:
   Return(v5, v6, v20)
 
 
-Final lowering of specialized call "test::foo[70-227]":
+Final lowering of specialized call "test::foo::{loop#0}":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
@@ -1014,7 +1014,7 @@ End:
 blk3:
 Statements:
   (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo[70-227](v3, v15, v8)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v3, v15, v8)
 End:
   Return(v16, v17, v18)
 
@@ -1049,10 +1049,10 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
-  (v3: {closure@lib.cairo:3:13: 3:15}) <- struct_construct(v2)
-  (v4: {closure@lib.cairo:3:13: 3:15}, v5: @{closure@lib.cairo:3:13: 3:15}) <- snapshot(v3)
+  (v3: test::foo::{closure#0}) <- struct_construct(v2)
+  (v4: test::foo::{closure#0}, v5: @test::foo::{closure#0}) <- snapshot(v3)
   (v6: ()) <- struct_construct()
-  (v7: core::felt252) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:3:13: 3:15}(v5, v6)
+  (v7: core::felt252) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v5, v6)
 End:
   Return(v7)
 
@@ -1069,7 +1069,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let f = || *(@a);
             ^^
 
-Parameters: v0: {closure@lib.cairo:3:13: 3:15}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: @core::felt252) <- struct_destructure(v0)
@@ -1079,7 +1079,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:3:13: 3:15}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -1090,10 +1090,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let f = || *(@a);
             ^^
 
-Parameters: v0: @{closure@lib.cairo:3:13: 3:15}, v2: ()
+Parameters: v0: @test::foo::{closure#0}, v2: ()
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:3:13: 3:15}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   (v3: @core::felt252) <- struct_destructure(v1)
   () <- struct_destructure(v2)
   (v4: core::felt252) <- desnap(v3)
@@ -1102,11 +1102,1224 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:3:13: 3:15}, v1: ()
+Parameters: v0: @test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
-  (v2: {closure@lib.cairo:3:13: 3:15}) <- desnap(v0)
+  (v2: test::foo::{closure#0}) <- desnap(v0)
   (v3: @core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- desnap(v3)
 End:
   Return(v4)
+
+//! > ==========================================================================
+
+//! > Test that generated functions are numbered per kind, in their order in the function.
+
+//! > test_runner_name
+test_generated_function
+
+//! > cairo_code
+#[target_function]
+fn foo(a: Array<felt252>) -> u32 {
+    let first = |x: u32| x + 1;
+    let mut sum = first(a.len());
+    loop {
+        sum = sum + 1;
+        break;
+    }
+    let second = |x: u32| x + 2;
+    second(sum)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}) <- struct_construct()
+  (v2: test::foo::{closure#0}, v3: @test::foo::{closure#0}) <- snapshot(v1)
+  (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v0)
+  (v6: core::integer::u32) <- core::array::ArrayImpl::<core::felt252>::len(v5)
+  (v7: (core::integer::u32,)) <- struct_construct(v6)
+  (v8: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v3, v7)
+  (v10: core::integer::u32, v9: ()) <- test::foo::{loop#0}(v8)
+  (v11: test::foo::{closure#1}) <- struct_construct()
+  (v12: test::foo::{closure#1}, v13: @test::foo::{closure#1}) <- snapshot(v11)
+  (v14: (core::integer::u32,)) <- struct_construct(v10)
+  (v15: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#1}(v13, v14)
+End:
+  Return(v15)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>, v3: @core::array::Array::<core::felt252>) <- snapshot(v1)
+  (v4: core::integer::u32) <- core::array::array_len::<core::felt252>(v3)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v4) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v5) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk7, {v0 -> v6})
+
+blk2:
+Statements:
+  (v7: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v8: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v5, v7)
+  (v9: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v8)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v9) {
+    OptionRev::None => blk3,
+    OptionRev::Some(v10) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk7, {v0 -> v6})
+
+blk4:
+Statements:
+  (v11: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v10, v7)
+  (v12: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v11)
+  (v13: core::integer::u32) <- 2
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v12, v13) {
+    Result::Ok(v14, v15) => blk5,
+    Result::Err(v16, v17) => blk6,
+  })
+
+blk5:
+Statements:
+  (v18: (core::integer::u32,)) <- struct_construct(v15)
+  (v19: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v18)
+End:
+  Return(v14, v19)
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {v16 -> v6})
+
+blk7:
+Statements:
+  (v20: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v21: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v20)
+End:
+  Return(v6, v21)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let first = |x: u32| x + 1;
+                ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let first = |x: u32| x + 1;
+                ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 1
+  (v5: core::integer::u32) <- core::integer::U32Add::add(v3, v4)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: @test::foo::{closure#0}, v1: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- struct_destructure(v1)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v2) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v5: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v4)
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v7: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v3, v6)
+  (v8: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v7)
+  (v9: (core::integer::u32,)) <- struct_construct(v8)
+  (v10: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v9)
+End:
+  Return(v10)
+
+
+Generated loop lowering for source location:
+      loop {
+ _____^
+| ...
+|     }
+|_____^
+
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 1
+  (v2: core::integer::u32) <- core::integer::U32Add::add(v0, v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v2, v3)
+
+
+Final lowering:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v0) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v3: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Err(v2)
+End:
+  Return(v3)
+
+blk2:
+Statements:
+  (v4: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v5: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v1, v4)
+  (v6: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v5)
+  (v7: ()) <- struct_construct()
+  (v8: (core::integer::u32, ())) <- struct_construct(v6, v7)
+  (v9: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Ok(v8)
+End:
+  Return(v9)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let second = |x: u32| x + 2;
+                 ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#1}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#1}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let second = |x: u32| x + 2;
+                 ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#1}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#1}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 2
+  (v5: core::integer::u32) <- core::integer::U32Add::add(v3, v4)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#1}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 2
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v3, v4) {
+    Result::Ok(v5, v6) => blk1,
+    Result::Err(v7, v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v9: (core::integer::u32,)) <- struct_construct(v6)
+  (v10: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v9)
+End:
+  Return(v5, v10)
+
+blk2:
+Statements:
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v12: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v11)
+End:
+  Return(v7, v12)
+
+//! > ==========================================================================
+
+//! > Test that a nested closure is nested in the path of the closure containing it.
+
+//! > test_runner_name
+test_generated_function
+
+//! > cairo_code
+#[target_function]
+fn foo(a: u32) -> u32 {
+    let outer = |x: u32| {
+        let mid = |y: u32| {
+            let inner = |z: u32| z + a;
+            inner(y)
+        };
+        let sibling = |w: u32| w + 1;
+        mid(x) + sibling(x)
+    };
+    let last = |v: u32| v + 2;
+    outer(a) + last(a)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
+  (v2: test::foo::{closure#1}) <- struct_construct()
+  (v3: test::foo::{closure#0}, v4: @test::foo::{closure#0}) <- snapshot(v1)
+  (v5: (core::integer::u32,)) <- struct_construct(v0)
+  (v6: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v4, v5)
+  (v7: test::foo::{closure#1}, v8: @test::foo::{closure#1}) <- snapshot(v2)
+  (v9: (core::integer::u32,)) <- struct_construct(v0)
+  (v10: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#1}(v8, v9)
+  (v11: core::integer::u32) <- core::integer::U32Add::add(v6, v10)
+End:
+  Return(v11)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v1, v1) {
+    Result::Ok(v2, v3) => blk1,
+    Result::Err(v4, v5) => blk10,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v1) {
+    OptionRev::None => blk2,
+    OptionRev::Some(v6) => blk3,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk11, {v2 -> v7})
+
+blk3:
+Statements:
+  (v8: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v9: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v6, v8)
+  (v10: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v9)
+End:
+  Match(match core::integer::u32_overflowing_add(v2, v3, v10) {
+    Result::Ok(v11, v12) => blk4,
+    Result::Err(v13, v14) => blk9,
+  })
+
+blk4:
+Statements:
+  (v15: core::integer::u32) <- 2
+End:
+  Match(match core::integer::u32_overflowing_add(v11, v1, v15) {
+    Result::Ok(v16, v17) => blk5,
+    Result::Err(v18, v19) => blk8,
+  })
+
+blk5:
+Statements:
+End:
+  Match(match core::integer::u32_overflowing_add(v16, v12, v17) {
+    Result::Ok(v20, v21) => blk6,
+    Result::Err(v22, v23) => blk7,
+  })
+
+blk6:
+Statements:
+  (v24: (core::integer::u32,)) <- struct_construct(v21)
+  (v25: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v24)
+End:
+  Return(v20, v25)
+
+blk7:
+Statements:
+End:
+  Goto(blk11, {v22 -> v7})
+
+blk8:
+Statements:
+End:
+  Goto(blk11, {v18 -> v7})
+
+blk9:
+Statements:
+End:
+  Goto(blk11, {v13 -> v7})
+
+blk10:
+Statements:
+End:
+  Goto(blk11, {v4 -> v7})
+
+blk11:
+Statements:
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v27: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v26)
+End:
+  Return(v7, v27)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let outer = |x: u32| {
+                ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- struct_destructure(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+        let mid = |y: u32| {
+                  ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#0}::{closure#0}
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- struct_destructure(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+            let inner = |z: u32| z + a;
+                        ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#0}::{closure#0}::{closure#0}
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- struct_destructure(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}::{closure#0}::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+            let inner = |z: u32| z + a;
+                        ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#0}::{closure#0}::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}::{closure#0}::{closure#0}) <- desnap(v0)
+  (v3: core::integer::u32) <- struct_destructure(v1)
+  (v4: core::integer::u32) <- struct_destructure(v2)
+  (v5: core::integer::u32) <- core::integer::U32Add::add(v4, v3)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}::{closure#0}::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v3: test::foo::{closure#0}::{closure#0}::{closure#0}) <- desnap(v1)
+  (v4: core::integer::u32) <- struct_destructure(v3)
+  (v5: core::integer::u32) <- struct_destructure(v2)
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v5, v4) {
+    Result::Ok(v6, v7) => blk1,
+    Result::Err(v8, v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v10: (core::integer::u32,)) <- struct_construct(v7)
+  (v11: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v10)
+End:
+  Return(v6, v11)
+
+blk2:
+Statements:
+  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v13: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v12)
+End:
+  Return(v8, v13)
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+        let mid = |y: u32| {
+                  ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}::{closure#0}) <- desnap(v0)
+  (v3: core::integer::u32) <- struct_destructure(v1)
+  (v4: core::integer::u32) <- struct_destructure(v2)
+  (v5: test::foo::{closure#0}::{closure#0}::{closure#0}) <- struct_construct(v3)
+  (v6: test::foo::{closure#0}::{closure#0}::{closure#0}, v7: @test::foo::{closure#0}::{closure#0}::{closure#0}) <- snapshot(v5)
+  (v8: (core::integer::u32,)) <- struct_construct(v4)
+  (v9: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}::{closure#0}(v7, v8)
+End:
+  Return(v9)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v3: test::foo::{closure#0}::{closure#0}) <- desnap(v1)
+  (v4: core::integer::u32) <- struct_destructure(v3)
+  (v5: core::integer::u32) <- struct_destructure(v2)
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v5, v4) {
+    Result::Ok(v6, v7) => blk1,
+    Result::Err(v8, v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v10: (core::integer::u32,)) <- struct_construct(v7)
+  (v11: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v10)
+End:
+  Return(v6, v11)
+
+blk2:
+Statements:
+  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v13: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v12)
+End:
+  Return(v8, v13)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+        let sibling = |w: u32| w + 1;
+                      ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#0}::{closure#1}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}::{closure#1}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+        let sibling = |w: u32| w + 1;
+                      ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#0}::{closure#1}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}::{closure#1}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 1
+  (v5: core::integer::u32) <- core::integer::U32Add::add(v3, v4)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: @test::foo::{closure#0}::{closure#1}, v1: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- struct_destructure(v1)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v2) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v5: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v4)
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v7: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v3, v6)
+  (v8: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v7)
+  (v9: (core::integer::u32,)) <- struct_construct(v8)
+  (v10: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v9)
+End:
+  Return(v10)
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let outer = |x: u32| {
+                ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}) <- desnap(v0)
+  (v3: core::integer::u32) <- struct_destructure(v1)
+  (v4: core::integer::u32) <- struct_destructure(v2)
+  (v5: test::foo::{closure#0}::{closure#0}) <- struct_construct(v3)
+  (v6: test::foo::{closure#0}::{closure#1}) <- struct_construct()
+  (v7: test::foo::{closure#0}::{closure#0}, v8: @test::foo::{closure#0}::{closure#0}) <- snapshot(v5)
+  (v9: (core::integer::u32,)) <- struct_construct(v4)
+  (v10: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}(v8, v9)
+  (v11: test::foo::{closure#0}::{closure#1}, v12: @test::foo::{closure#0}::{closure#1}) <- snapshot(v6)
+  (v13: (core::integer::u32,)) <- struct_construct(v4)
+  (v14: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#1}(v12, v13)
+  (v15: core::integer::u32) <- core::integer::U32Add::add(v10, v14)
+End:
+  Return(v15)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: test::foo::{closure#0}) <- desnap(v1)
+  (v5: core::integer::u32) <- struct_destructure(v4)
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v3, v5) {
+    Result::Ok(v6, v7) => blk1,
+    Result::Err(v8, v9) => blk6,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v3) {
+    OptionRev::None => blk2,
+    OptionRev::Some(v10) => blk3,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk7, {v6 -> v11})
+
+blk3:
+Statements:
+  (v12: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v13: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v10, v12)
+  (v14: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v13)
+End:
+  Match(match core::integer::u32_overflowing_add(v6, v7, v14) {
+    Result::Ok(v15, v16) => blk4,
+    Result::Err(v17, v18) => blk5,
+  })
+
+blk4:
+Statements:
+  (v19: (core::integer::u32,)) <- struct_construct(v16)
+  (v20: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v19)
+End:
+  Return(v15, v20)
+
+blk5:
+Statements:
+End:
+  Goto(blk7, {v17 -> v11})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {v8 -> v11})
+
+blk7:
+Statements:
+  (v21: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v22: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v21)
+End:
+  Return(v11, v22)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let last = |v: u32| v + 2;
+               ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#1}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#1}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let last = |v: u32| v + 2;
+               ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#1}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#1}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 2
+  (v5: core::integer::u32) <- core::integer::U32Add::add(v3, v4)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#1}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 2
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v3, v4) {
+    Result::Ok(v5, v6) => blk1,
+    Result::Err(v7, v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v9: (core::integer::u32,)) <- struct_construct(v6)
+  (v10: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v9)
+End:
+  Return(v5, v10)
+
+blk2:
+Statements:
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v12: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v11)
+End:
+  Return(v7, v12)
+
+//! > ==========================================================================
+
+//! > Test that generated functions of nested scopes are numbered independently of their depth.
+
+//! > test_runner_name
+test_generated_function
+
+//! > cairo_code
+#[target_function]
+fn foo(a: u32) -> u32 {
+    let outer = |x: u32| {
+        let mut y = x;
+        loop {
+            y = y + 1;
+            break;
+        }
+        let nested = |z: u32| z + 1;
+        nested(y)
+    };
+    let mut sum = outer(a);
+    loop {
+        sum = sum + 2;
+        break;
+    }
+    let last = |x: u32| x + 3;
+    last(sum)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}) <- struct_construct()
+  (v2: test::foo::{closure#0}, v3: @test::foo::{closure#0}) <- snapshot(v1)
+  (v4: (core::integer::u32,)) <- struct_construct(v0)
+  (v5: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v3, v4)
+  (v7: core::integer::u32, v6: ()) <- test::foo::{loop#0}(v5)
+  (v8: test::foo::{closure#1}) <- struct_construct()
+  (v9: test::foo::{closure#1}, v10: @test::foo::{closure#1}) <- snapshot(v8)
+  (v11: (core::integer::u32,)) <- struct_construct(v7)
+  (v12: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#1}(v10, v11)
+End:
+  Return(v12)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v1) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk9, {v0 -> v3})
+
+blk2:
+Statements:
+  (v4: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v5: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v2, v4)
+  (v6: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v5)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v6) {
+    OptionRev::None => blk3,
+    OptionRev::Some(v7) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk9, {v0 -> v3})
+
+blk4:
+Statements:
+  (v8: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v7, v4)
+  (v9: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v8)
+  (v10: core::integer::u32) <- 2
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v9, v10) {
+    Result::Ok(v11, v12) => blk5,
+    Result::Err(v13, v14) => blk8,
+  })
+
+blk5:
+Statements:
+  (v15: core::integer::u32) <- 3
+End:
+  Match(match core::integer::u32_overflowing_add(v11, v12, v15) {
+    Result::Ok(v16, v17) => blk6,
+    Result::Err(v18, v19) => blk7,
+  })
+
+blk6:
+Statements:
+  (v20: (core::integer::u32,)) <- struct_construct(v17)
+  (v21: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v20)
+End:
+  Return(v16, v21)
+
+blk7:
+Statements:
+End:
+  Goto(blk9, {v18 -> v3})
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {v13 -> v3})
+
+blk9:
+Statements:
+  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v23: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v22)
+End:
+  Return(v3, v23)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let outer = |x: u32| {
+                ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated loop lowering for source location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 1
+  (v2: core::integer::u32) <- core::integer::U32Add::add(v0, v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v2, v3)
+
+
+Final lowering:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v0) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v3: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Err(v2)
+End:
+  Return(v3)
+
+blk2:
+Statements:
+  (v4: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v5: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v1, v4)
+  (v6: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v5)
+  (v7: ()) <- struct_construct()
+  (v8: (core::integer::u32, ())) <- struct_construct(v6, v7)
+  (v9: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Ok(v8)
+End:
+  Return(v9)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+        let nested = |z: u32| z + 1;
+                     ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#0}::{closure#0}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+        let nested = |z: u32| z + 1;
+                     ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}::{closure#0}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 1
+  (v5: core::integer::u32) <- core::integer::U32Add::add(v3, v4)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: @test::foo::{closure#0}::{closure#0}, v1: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- struct_destructure(v1)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v2) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v5: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v4)
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v7: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v3, v6)
+  (v8: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v7)
+  (v9: (core::integer::u32,)) <- struct_construct(v8)
+  (v10: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v9)
+End:
+  Return(v10)
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let outer = |x: u32| {
+                ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#0}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v5: core::integer::u32, v4: ()) <- test::foo::{closure#0}::{loop#0}(v3)
+  (v6: test::foo::{closure#0}::{closure#0}) <- struct_construct()
+  (v7: test::foo::{closure#0}::{closure#0}, v8: @test::foo::{closure#0}::{closure#0}) <- snapshot(v6)
+  (v9: (core::integer::u32,)) <- struct_construct(v5)
+  (v10: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}(v8, v9)
+End:
+  Return(v10)
+
+
+Final lowering:
+Parameters: v0: @test::foo::{closure#0}, v1: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- struct_destructure(v1)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v2) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk2:
+Statements:
+  (v4: core::internal::bounded_int::BoundedInt::<1, 1>) <- 1
+  (v5: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v3, v4)
+  (v6: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v5)
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::u32, core::internal::bounded_int::trim_impl::Max::<core::integer::u32, 0, 4294967294>>(v6) {
+    OptionRev::None => blk3,
+    OptionRev::Some(v7) => blk5,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v9: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v8)
+End:
+  Return(v9)
+
+blk5:
+Statements:
+  (v10: core::internal::bounded_int::BoundedInt::<1, 4294967295>) <- core::internal::bounded_int::bounded_int_add::<core::internal::bounded_int::BoundedInt::<0, 4294967294>, core::internal::bounded_int::BoundedInt::<1, 1>, core::internal::bounded_int::AddOneToU32Helper>(v7, v4)
+  (v11: core::integer::u32) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<1, 4294967295>, core::integer::u32>(v10)
+  (v12: (core::integer::u32,)) <- struct_construct(v11)
+  (v13: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v12)
+End:
+  Return(v13)
+
+
+Generated loop lowering for source location:
+      loop {
+ _____^
+| ...
+|     }
+|_____^
+
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 2
+  (v2: core::integer::u32) <- core::integer::U32Add::add(v0, v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v2, v3)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::integer::u32
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- 2
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v1, v2) {
+    Result::Ok(v3, v4) => blk1,
+    Result::Err(v5, v6) => blk2,
+  })
+
+blk1:
+Statements:
+  (v7: ()) <- struct_construct()
+  (v8: (core::integer::u32, ())) <- struct_construct(v4, v7)
+  (v9: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Ok(v8)
+End:
+  Return(v3, v9)
+
+blk2:
+Statements:
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v11: core::panics::PanicResult::<(core::integer::u32, ())>) <- PanicResult::Err(v10)
+End:
+  Return(v5, v11)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let last = |x: u32| x + 3;
+               ^^^^^^^^
+
+Parameters: v0: test::foo::{closure#1}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#1}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let last = |x: u32| x + 3;
+               ^^^^^^^^
+
+Parameters: v0: @test::foo::{closure#1}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#1}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 3
+  (v5: core::integer::u32) <- core::integer::U32Add::add(v3, v4)
+End:
+  Return(v5)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#1}, v2: (core::integer::u32,)
+blk0 (root):
+Statements:
+  (v3: core::integer::u32) <- struct_destructure(v2)
+  (v4: core::integer::u32) <- 3
+End:
+  Match(match core::integer::u32_overflowing_add(v0, v3, v4) {
+    Result::Ok(v5, v6) => blk1,
+    Result::Err(v7, v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v9: (core::integer::u32,)) <- struct_construct(v6)
+  (v10: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v9)
+End:
+  Return(v5, v10)
+
+blk2:
+Statements:
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<155785504323917466144735657540098748279>()
+  (v12: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v11)
+End:
+  Return(v7, v12)
