@@ -21,7 +21,9 @@
 //
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
+use std::convert::Infallible;
 use std::hash::{Hash, Hasher};
+use std::ops::ControlFlow;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
@@ -31,13 +33,13 @@ use cairo_lang_filesystem::ids::{CrateId, FileId, SmolStrId};
 use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::helpers::{
-    GetIdentifier, HasName, NameGreen, generated_function_path_segments,
+    GetIdentifier, HasName, NameGreen, for_each_generated_function_path_segment,
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require};
-use itertools::{Itertools, chain};
+use itertools::Itertools;
 use salsa::Database;
 
 use crate::db::ModuleData;
@@ -1046,9 +1048,6 @@ impl<'db> TopLevelLanguageElementId<'db> for ParamId<'db> {
     fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         let long = self.long(db);
         let node = long.1.lookup(db).as_syntax_node();
-        let generated_segments = generated_function_path_segments(db, node)
-            .into_iter()
-            .map(|segment| SmolStrId::from(db, segment));
         let mut segments = if let Some(decl) =
             node.ancestors(db).find_map(|node| match node.kind(db) {
                 SyntaxKind::FunctionDeclaration => Some(node),
@@ -1068,7 +1067,12 @@ impl<'db> TopLevelLanguageElementId<'db> for ParamId<'db> {
         } else {
             self.parent_module(db).path_segments(db)
         };
-        segments.extend(chain!(generated_segments, [self.name(db)]));
+        let ControlFlow::Continue(()) =
+            for_each_generated_function_path_segment::<Infallible>(db, node, &mut |segment| {
+                segments.push(SmolStrId::from(db, segment.to_string()));
+                ControlFlow::Continue(())
+            });
+        segments.push(self.name(db));
         segments
     }
 }

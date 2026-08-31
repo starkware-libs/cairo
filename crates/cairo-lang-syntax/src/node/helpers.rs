@@ -1,4 +1,3 @@
-use std::convert::Infallible;
 use std::ops::ControlFlow;
 
 use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
@@ -854,8 +853,8 @@ fn opens_generated_function_scope(kind: SyntaxKind) -> bool {
     GeneratedFunctionKind::of(kind).is_some() || GENERATED_FUNCTION_OWNER_KINDS.contains(&kind)
 }
 
-/// A segment of the path of a generated function.
-struct GeneratedFunctionPathSegment {
+/// A segment of the path of a generated function, as `{<kind>#<index>}`.
+pub struct GeneratedFunctionPathSegment {
     kind: GeneratedFunctionKind,
     index: usize,
 }
@@ -867,7 +866,7 @@ impl std::fmt::Display for GeneratedFunctionPathSegment {
 
 /// Calls `handle_segment` for each segment of the path of `node`'s generated function, from the
 /// outermost segment inwards. See [generated_function_path].
-fn for_each_generated_function_path_segment<'db, Break>(
+pub fn for_each_generated_function_path_segment<'db, Break>(
     db: &'db dyn Database,
     node: SyntaxNode<'db>,
     handle_segment: &mut impl FnMut(GeneratedFunctionPathSegment) -> ControlFlow<Break>,
@@ -939,20 +938,6 @@ impl std::fmt::Display for GeneratedFunctionPath<'_> {
         .break_value()
         .map_or(Ok(()), Err)
     }
-}
-
-/// Returns the segments of [generated_function_path].
-pub fn generated_function_path_segments<'db>(
-    db: &'db dyn Database,
-    node: SyntaxNode<'db>,
-) -> Vec<String> {
-    let mut segments = vec![];
-    let ControlFlow::Continue(()) =
-        for_each_generated_function_path_segment::<Infallible>(db, node, &mut |segment| {
-            segments.push(segment.to_string());
-            ControlFlow::Continue(())
-        });
-    segments
 }
 
 /// Returns the index of each generated function directly within `scope`, counted per kind in the
