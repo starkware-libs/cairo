@@ -507,7 +507,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
 
     /// Pops multiple values from the front of the span.
     /// Returns an option containing a snapshot of a box that contains the values as a fixed-size
-    /// array if the action completed successfully, 'None' otherwise.
+    /// array if the action completed successfully, `None` otherwise.
     ///
     /// # Examples
     ///
@@ -523,7 +523,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
 
     /// Pops multiple values from the back of the span.
     /// Returns an option containing a snapshot of a box that contains the values as a fixed-size
-    /// array if the action completed successfully, 'None' otherwise.
+    /// array if the action completed successfully, `None` otherwise.
     ///
     /// # Examples
     ///
