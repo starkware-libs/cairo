@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788223962395,
+  "lastUpdate": 1788224101628,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -25991,6 +25991,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/3908259b01adaad6f03092e2ec0be826554cc874"
         },
         "date": 1788138263010,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c2fce833305d6b31d8eac9fd272ab69c40685b15",
+          "message": "Formatted audited json. (#10361)",
+          "timestamp": "2026-08-31T12:00:41Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/c2fce833305d6b31d8eac9fd272ab69c40685b15"
+        },
+        "date": 1788224101440,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
