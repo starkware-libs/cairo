@@ -1,7 +1,7 @@
 # Cairo-language test mechanics (this repo)
 
 Self-sufficient reference for tests written in Cairo and executed on the VM.
-Use this layer when the behavior under test is what the code *does when run*
+Use this layer when the behavior under test is what the code _does when run_
 (corelib semantics, arithmetic, Starknet storage/events/syscalls) — codegen
 goldens only prove output stability, and the VM is this repo's execution
 oracle (lambdaclass cairo-vm, via cairo-lang-runner).
@@ -38,7 +38,7 @@ fn bounded_loop() { ... }
 
 Assertion/attribute vocabulary: `assert!`, `assert_eq!`, `assert_ne!`,
 `#[should_panic(expected: ...)]`, `#[available_gas(N)]`, `#[ignore]`.
-Compile-rejection cases (code that must *not* compile) are not written here —
+Compile-rejection cases (code that must _not_ compile) are not written here —
 those are semantic-diagnostic golden cases (see `rust.md`).
 
 ## Running

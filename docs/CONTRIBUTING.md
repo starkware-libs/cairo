@@ -11,9 +11,9 @@ To set up a development environment, please follow these steps:
 
 1. Clone the repo
 
-   ```sh
-   git clone https://github.com/starkware-libs/cairo
-   ```
+    ```sh
+    git clone https://github.com/starkware-libs/cairo
+    ```
 
 2. Download and install [Visual Studio Code](https://code.visualstudio.com/).
 
@@ -114,17 +114,17 @@ Please try to create bug reports that are:
 7. Push to the branch (`git push origin feat/amazing_feature`)
 8. [Open a Pull Request](https://github.com/starkware-libs/cairo/compare) to one of the following
    branches:
-    * [main](https://github.com/starkware-libs/cairo/tree/main) -
+    - [main](https://github.com/starkware-libs/cairo/tree/main) -
       If the change does not break any existing Cairo code (**Cairo backward-compatible**), and does
       not affect Sierra to CASM compilation.
-    * [cairo-major-update](https://github.com/starkware-libs/cairo/tree/cairo-major-update) -
+    - [cairo-major-update](https://github.com/starkware-libs/cairo/tree/cairo-major-update) -
       If the change breaks the existing high-level code (**Cairo non-backward-compatible**), and
       does not affect Sierra to CASM compilation.
-    * [sierra-minor-update](https://github.com/starkware-libs/cairo/tree/sierra-minor-update) -
+    - [sierra-minor-update](https://github.com/starkware-libs/cairo/tree/sierra-minor-update) -
       If Sierra to CASM compilation changed in a **backward-compatible** manner — meaning existing
       Sierra code will compile to the same CASM.
       For example, addition of a new libfunc.
-    * [sierra-major-update](https://github.com/starkware-libs/cairo/tree/sierra-major-update) -
+    - [sierra-major-update](https://github.com/starkware-libs/cairo/tree/sierra-major-update) -
       If Sierra to CASM compilation changed in a **non-backward-compatible** manner — meaning
       existing Sierra code will compile to different CASM.
       For example, editing the CASM implementation of an existing libfunc.
