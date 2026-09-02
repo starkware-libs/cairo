@@ -47,9 +47,9 @@ it. A behavior covered at its home layer is not re-asserted at other layers.
 6. **Performance-sensitive path** → benchmark, only per
    `references/benchmarks.md` (benches run nightly, not on PRs).
 
-Go up a layer only when the behavior is the *interaction* of stages; reserve
+Go up a layer only when the behavior is the _interaction_ of stages; reserve
 e2e (`tests/e2e_test_data/`) for behavior that individual stage suites cannot
-express. When a plugin/codegen change alters what generated code *does* at
+express. When a plugin/codegen change alters what generated code _does_ at
 runtime, add the executed Cairo-level test in addition to the codegen golden —
 that pair is two different behaviors (shape vs. semantics), not duplication.
 
@@ -106,7 +106,7 @@ from the code inherit its bugs. Cover, in order of demonstrated payoff here:
 No property-testing framework exists in this workspace, so do not write
 property tests today, and do not add the dependency inside an unrelated PR —
 adoption is a team decision. What you can do: when a change touches one of the
-candidates below, suggest adoption *once* (a review note or follow-up task,
+candidates below, suggest adoption _once_ (a review note or follow-up task,
 not a nag on every PR). Recommended framework: **proptest** (composable
 strategies suit compiler-shaped inputs better than quickcheck's one-strategy-
 per-type). Evidence-backed candidates, each motivated by an escaped bug:

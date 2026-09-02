@@ -1,12 +1,13 @@
 # Cairo 0 Feature Parity
 
- On this page we track the missing features to reach feature parity with the old compiler version. We've divided them into Cairo, Starknet and specific system calls in Starknet OS.
+On this page we track the missing features to reach feature parity with the old compiler version. We've divided them into Cairo, Starknet and specific system calls in Starknet OS.
 
- If we missed a feature, please let us know.
+If we missed a feature, please let us know.
 
 ## Cairo features
+
 | name                   | status |
-|------------------------|--------|
+| ---------------------- | ------ |
 | `if (x == y)`          | ✅     |
 | `if (x == y & z == w)` | ✅     |
 | Short strings          | ✅     |
@@ -23,13 +24,12 @@
 | `if (cond1 && cond2)`  | ✅     |
 | Find element           |        |
 
-
 ---
 
 ## Starknet features
 
 | name                                      | status |
-|-------------------------------------------|--------|
+| ----------------------------------------- | ------ |
 | Contract interface                        | ✅     |
 | External functions and view functions     | ✅     |
 | Storage variables - felts                 | ✅     |
@@ -37,13 +37,12 @@
 | Storage variables - other types as values | ✅     |
 | Events                                    | ✅     |
 
-
 ---
 
 ## Starknet system calls
 
 | name                  | status |
-|-----------------------|--------|
+| --------------------- | ------ |
 | storage_read          | ✅     |
 | storage_write         | ✅     |
 | get_caller_address    | ✅     |
@@ -56,4 +55,3 @@
 | get_sequencer_address | ✅     |
 | get_transaction_info  | ✅     |
 | send_message_to_l1    | ✅     |
-

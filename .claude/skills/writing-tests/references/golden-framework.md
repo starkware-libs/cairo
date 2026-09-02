@@ -30,6 +30,7 @@ more expected output
 ```
 
 Key points:
+
 - `//! >` is the tag prefix
 - First tag after separator is the test name/description
 - `test_runner_name` specifies which runner function to use (with optional arguments)
@@ -59,6 +60,7 @@ fn foo() -> felt252 {
 ```
 
 Rules:
+
 - `setup_test_function(db, inputs)` (in `cairo_lang_semantic::test_utils`) reads `cairo_code` and
   resolves the single `#[target_function]`-marked free function. Marking several functions is
   supported at the resolution level (`resolve_target_functions` returns all, in definition order),
@@ -129,6 +131,7 @@ cairo_lang_test_utils::test_file_test!(
 ```
 
 Common arguments:
+
 - `expect_diagnostics`: `true`, `false`, or `warnings_only` - use with `verify_diagnostics_expectation`
 
 ### Verifying Diagnostics Expectation
@@ -207,6 +210,7 @@ CAIRO_FIX_TESTS=1 cargo test -p <crate> <test_name>
 This updates the test file with actual outputs.
 
 **CRITICAL**: After using `CAIRO_FIX_TESTS=1`:
+
 1. **Always review the diff** - compare against the state before your branch
 2. Use `git diff` to see exactly what changed in test data files
 3. Verify changes are expected and intentional
@@ -227,6 +231,7 @@ CAIRO_SKIP_FORMAT_TESTS=1 cargo test ...
 ## Test Data File Locations
 
 Convention in this codebase:
+
 - Main tests: `src/test_data/`
 - Optimization tests: `src/optimizations/test_data/`
 - Inline tests: `src/inline/test_data/`
@@ -257,10 +262,10 @@ Two variants take one extra parameter each, for tests the plain entry point cann
 
 - `run_lowering_phases_test_with_db(db, inputs, stage, before_phases, after_phases)` — runs on the
   `LoweringDatabaseForTesting` you pass in instead of a default one, for tests that must configure
-  the database *before* the test function is lowered. `early_unsafe_panic_test.rs` uses it to set
+  the database _before_ the test function is lowered. `early_unsafe_panic_test.rs` uses it to set
   `Flag::UnsafePanic`.
-- `run_lowering_phases_test_with_extra_outputs(inputs, stage, before_phases, after_phases,
-  extra_outputs)` — `extra_outputs` is a `|before, after| -> Vec<(String, String)>` closure whose
+- `run_lowering_phases_test_with_extra_outputs(inputs, stage, before_phases, after_phases, extra_outputs)`
+  — `extra_outputs` is a `|before, after| -> Vec<(String, String)>` closure whose
   entries are appended as output tags after the standard four; it is not called if the function
   failed to lower. `reboxing_test.rs` uses it to emit a `candidates` tag computed from `before`.
 
@@ -307,9 +312,9 @@ When creating a new runner, ensure tests fail appropriately:
 
 1. **Invalid arguments**: Test passes an argument not in `allowed_args` → should fail
 2. **Diagnostic expectations**:
-   - `expect_diagnostics: true` with no diagnostics → should fail
-   - `expect_diagnostics: false` with diagnostics → should fail
-   - `expect_diagnostics: warnings_only` with errors → should fail
+    - `expect_diagnostics: true` with no diagnostics → should fail
+    - `expect_diagnostics: false` with diagnostics → should fail
+    - `expect_diagnostics: warnings_only` with errors → should fail
 3. **Output mismatch**: Actual output differs from expected → should fail
 
 Run without `CAIRO_FIX_TESTS` to verify failures are caught.
