@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use cairo_lang_proc_macros::{HeapSize, SemanticObject};
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::PathSegment;
@@ -17,13 +17,13 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, extract_matches, try_extract_matches};
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
-use num_traits::Zero;
+use num_traits::{ToPrimitive, Zero};
 use salsa::Database;
 use sha3::{Digest, Keccak256};
 
 use crate::corelib::{
     CorelibSemantic, concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait, core_box_ty, get_usize_ty, unit_ty,
+    concrete_panic_destruct_trait, core_box_ty, core_submodule, get_usize_ty, unit_ty,
 };
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -956,7 +956,119 @@ pub fn add_value_type_based_diagnostics<'db>(
         diagnostics.report(stable_ptr, InstancesOfPhantomTypes);
     } else if let Some(violation) = array_element_violation(db, ty) {
         diagnostics.report(stable_ptr, violation.to_kind());
+    } else if let Some(CircuitInputIndexViolation { circuit, expected, actual }) =
+        circuit_input_index_violation(db, ty)
+    {
+        diagnostics.report_circuit_input_indices(stable_ptr, circuit, expected, actual);
     }
+}
+
+/// The first gap in a circuit's sorted input indices.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, salsa::SalsaValue)]
+struct CircuitInputIndexViolation<'db> {
+    circuit: TypeId<'db>,
+    expected: usize,
+    actual: usize,
+}
+
+/// Finds a malformed `core::circuit::Circuit` nested in `ty`.
+///
+/// Sierra lays out circuit inputs in index order, so the indices reachable from the circuit's
+/// outputs must be exactly `0..n`. Detecting the gap while the type still has a source location
+/// lets the compiler report a diagnostic instead of failing during Sierra type specialization.
+#[salsa::tracked(returns(copy))]
+fn circuit_input_index_violation<'db>(
+    db: &'db dyn Database,
+    ty: TypeId<'db>,
+) -> Option<CircuitInputIndexViolation<'db>> {
+    let circuit_module = core_submodule(db, SmolStrId::from(db, "circuit"));
+    let mut visited = OrderedHashSet::<TypeId<'db>>::default();
+    let mut stack = vec![ty];
+
+    while let Some(ty) = stack.pop() {
+        if !visited.insert(ty) {
+            continue;
+        }
+        match ty.long(db) {
+            TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) => {
+                let ConcreteExternTypeLongId { extern_type_id, generic_args } = extrn.long(db);
+                if extern_type_id.parent_module(db) == circuit_module
+                    && extern_type_id.name(db).long(db).as_str() == "Circuit"
+                    && let [GenericArgumentId::Type(outputs)] = generic_args[..]
+                    && let Some((expected, actual)) =
+                        non_contiguous_circuit_input(db, outputs, circuit_module)
+                {
+                    return Some(CircuitInputIndexViolation { circuit: ty, expected, actual });
+                }
+                stack.extend(generic_args.iter().filter_map(|arg| match arg {
+                    GenericArgumentId::Type(ty) => Some(*ty),
+                    _ => None,
+                }));
+            }
+            TypeLongId::Concrete(ConcreteTypeId::Struct(id)) => {
+                stack.extend(db.concrete_struct_members(*id).ok()?.iter().map(|(_, m)| m.ty));
+            }
+            TypeLongId::Concrete(ConcreteTypeId::Enum(id)) => {
+                stack.extend(db.concrete_enum_variants(*id).ok()?.iter().map(|v| v.ty));
+            }
+            TypeLongId::Tuple(types) => stack.extend(types.iter().copied()),
+            TypeLongId::Snapshot(inner) => stack.push(*inner),
+            TypeLongId::FixedSizeArray { type_id, .. } => stack.push(*type_id),
+            TypeLongId::Closure(closure) => stack.extend(closure.captured_types.iter().copied()),
+            TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::NumericLiteral(_)
+            | TypeLongId::Coupon(_)
+            | TypeLongId::ImplType(_)
+            | TypeLongId::Missing(_) => {}
+        }
+    }
+    None
+}
+
+/// Returns the first missing index in the input set reachable from `outputs`.
+fn non_contiguous_circuit_input<'db>(
+    db: &'db dyn Database,
+    outputs: TypeId<'db>,
+    circuit_module: ModuleId<'db>,
+) -> Option<(usize, usize)> {
+    let mut visited = OrderedHashSet::<TypeId<'db>>::default();
+    let mut input_indices = OrderedHashSet::<usize>::default();
+    let mut stack = vec![outputs];
+
+    while let Some(ty) = stack.pop() {
+        if !visited.insert(ty) {
+            continue;
+        }
+        match ty.long(db) {
+            TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) => {
+                let ConcreteExternTypeLongId { extern_type_id, generic_args } = extrn.long(db);
+                if extern_type_id.parent_module(db) == circuit_module
+                    && extern_type_id.name(db).long(db).as_str() == "CircuitInput"
+                {
+                    if let [GenericArgumentId::Constant(index)] = generic_args[..]
+                        && let ConstValue::Int(index, _) = index.long(db)
+                        && let Some(index) = index.to_usize()
+                    {
+                        input_indices.insert(index);
+                    }
+                    continue;
+                }
+                stack.extend(generic_args.iter().filter_map(|arg| match arg {
+                    GenericArgumentId::Type(ty) => Some(*ty),
+                    _ => None,
+                }));
+            }
+            TypeLongId::Tuple(types) => stack.extend(types.iter().copied()),
+            _ => {}
+        }
+    }
+
+    input_indices
+        .into_iter()
+        .sorted_unstable()
+        .enumerate()
+        .find(|(expected, actual)| expected != actual)
 }
 
 /// Adds diagnostics for a type in a definition - a struct member or an enum variant.

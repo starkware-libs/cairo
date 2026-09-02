@@ -20,6 +20,7 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::Itertools;
 use salsa::Database;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -42,12 +43,17 @@ mod test;
 pub struct SemanticDiagnostics<'db> {
     builder: DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
     context_module: ModuleId<'db>,
+    diagnosed_circuits: OrderedHashSet<semantic::TypeId<'db>>,
 }
 
 impl<'db> SemanticDiagnostics<'db> {
     /// Create a new SemanticDiagnostics with the given context module.
     pub fn new(context_module: ModuleId<'db>) -> Self {
-        Self { builder: DiagnosticsBuilder::default(), context_module }
+        Self {
+            builder: DiagnosticsBuilder::default(),
+            context_module,
+            diagnosed_circuits: Default::default(),
+        }
     }
 
     /// Create a new SemanticDiagnostics from the given context module and diagnostics.
@@ -57,12 +63,29 @@ impl<'db> SemanticDiagnostics<'db> {
     ) -> Self {
         let mut builder = DiagnosticsBuilder::default();
         builder.extend(diagnostics);
-        Self { builder, context_module }
+        Self { builder, context_module, diagnosed_circuits: Default::default() }
     }
 
     /// Build a Diagnostics object.
     pub fn build(self) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
         self.builder.build()
+    }
+
+    /// Reports a non-contiguous circuit input set once per concrete circuit type.
+    pub(crate) fn report_circuit_input_indices(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
+        circuit: semantic::TypeId<'db>,
+        expected: usize,
+        actual: usize,
+    ) {
+        if self.diagnosed_circuits.insert(circuit) {
+            self.builder.add(SemanticDiagnostic::new(
+                StableLocation::new(stable_ptr.into()),
+                SemanticDiagnosticKind::CircuitInputIndicesNotContiguous { expected, actual },
+                self.context_module,
+            ));
+        }
     }
 }
 
@@ -491,6 +514,12 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 format!(
                     r#"Cannot have array of type "{}" that is zero sized."#,
                     ty.contextualized_path(db, self.context_module)
+                )
+            }
+            SemanticDiagnosticKind::CircuitInputIndicesNotContiguous { expected, actual } => {
+                format!(
+                    "Circuit input indices must be contiguous and start at 0. Expected index \
+                     {expected}, found {actual}."
                 )
             }
             SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
@@ -1376,6 +1405,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::EnumVariantRedefinition { .. } => error_code!(E2051),
             SemanticDiagnosticKind::InfiniteSizeType(..) => error_code!(E2052),
             SemanticDiagnosticKind::ArrayOfZeroSizedElements(..) => error_code!(E2053),
+            SemanticDiagnosticKind::CircuitInputIndicesNotContiguous { .. } => {
+                error_code!(E2204)
+            }
             SemanticDiagnosticKind::ParamNameRedefinition { .. } => error_code!(E2054),
             SemanticDiagnosticKind::ConditionNotBool(..) => error_code!(E2055),
             SemanticDiagnosticKind::IncompatibleArms { .. } => error_code!(E2056),
@@ -1704,6 +1736,10 @@ pub enum SemanticDiagnosticKind<'db> {
     },
     InfiniteSizeType(semantic::TypeId<'db>),
     ArrayOfZeroSizedElements(semantic::TypeId<'db>),
+    CircuitInputIndicesNotContiguous {
+        expected: usize,
+        actual: usize,
+    },
     ParamNameRedefinition {
         function_title_id: Option<FunctionTitleId<'db>>,
         param_name: SmolStrId<'db>,
