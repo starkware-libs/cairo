@@ -43,7 +43,7 @@ mod test;
 pub struct SemanticDiagnostics<'db> {
     builder: DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
     context_module: ModuleId<'db>,
-    diagnosed_circuits: OrderedHashSet<semantic::TypeId<'db>>,
+    pub(crate) diagnosed_circuits: OrderedHashSet<semantic::TypeId<'db>>,
 }
 
 impl<'db> SemanticDiagnostics<'db> {
@@ -69,23 +69,6 @@ impl<'db> SemanticDiagnostics<'db> {
     /// Build a Diagnostics object.
     pub fn build(self) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
         self.builder.build()
-    }
-
-    /// Reports a non-contiguous circuit input set once per concrete circuit type.
-    pub(crate) fn report_circuit_input_indices(
-        &mut self,
-        stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
-        circuit: semantic::TypeId<'db>,
-        expected: usize,
-        actual: usize,
-    ) {
-        if self.diagnosed_circuits.insert(circuit) {
-            self.builder.add(SemanticDiagnostic::new(
-                StableLocation::new(stable_ptr.into()),
-                SemanticDiagnosticKind::CircuitInputIndicesNotContiguous { expected, actual },
-                self.context_module,
-            ));
-        }
     }
 }
 
