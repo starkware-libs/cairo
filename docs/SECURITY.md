@@ -7,10 +7,10 @@ If there are any vulnerabilities in **Cairo**, don't hesitate to _report them_.
 1. Use any of the [private contact addresses](https://github.com/starkware-libs/cairo#support).
 2. Describe the vulnerability.
 
-   If you have a fix, that is most welcome -- please attach or summarize it in your message!
+    If you have a fix, that is most welcome -- please attach or summarize it in your message!
 
 3. We will evaluate the vulnerability and, if necessary, release a fix or mitigation steps. We will contact you to let you know the outcome and credit you in the report.
 
-   Please **do not disclose the vulnerability publicly** until a fix has been released!
+    Please **do not disclose the vulnerability publicly** until a fix has been released!
 
 4. Once we have either a) published a fix, or b) declined to address the vulnerability for whatever reason, you are free to publicly disclose it.
