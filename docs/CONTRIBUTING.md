@@ -24,7 +24,7 @@ The `rustfmt` configuration used by Cairo requires a nightly version of Rust.
 You can install the nightly version by running:
 
 ```sh
-rustup install nightly-2026-07-27
+rustup install nightly-2026-08-31
 ```
 
 ## Running Tests

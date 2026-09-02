@@ -566,8 +566,8 @@ impl LineBuilder {
             };
             let cur_indent = base_indent + added_indent;
             trees.push(LineBuilder::new(cur_indent));
-            for j in current_line_start..*current_line_end {
-                match &self.children[j] {
+            for child in &self.children[current_line_start..*current_line_end] {
+                match child {
                     LineComponent::Indent(_) => {}
                     LineComponent::Space => {
                         // Ignore spaces at the start of a line
@@ -587,10 +587,10 @@ impl LineBuilder {
                             is_trailing: *is_trailing,
                         });
                     }
-                    _ => trees.last_mut().unwrap().push_child(self.children[j].clone()),
+                    _ => trees.last_mut().unwrap().push_child(child.clone()),
                 }
                 // Indent the comment only if it directly follows the break point.
-                if !self.children[j].is_trivia() {
+                if !child.is_trivia() {
                     comment_only_added_indent = 0;
                 }
             }

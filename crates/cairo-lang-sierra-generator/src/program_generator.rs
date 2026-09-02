@@ -234,8 +234,8 @@ impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {
             for param in &func.params {
                 writeln!(f, "//   {param}")?;
             }
-            for i in start..end {
-                writeln!(f, "{}; // {i}", sierra_program.statements[i])?;
+            for (i, stmt) in sierra_program.statements.iter().enumerate().take(end).skip(start) {
+                writeln!(f, "{stmt}; // {i}")?;
                 if let Some(loc) =
                     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
                 {

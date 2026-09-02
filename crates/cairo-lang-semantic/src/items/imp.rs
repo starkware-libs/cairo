@@ -1780,44 +1780,38 @@ impl<'db> ImplLookupContext<'db> {
         db: &'db dyn Database,
     ) -> ImplLookupContext<'db> {
         let crate_id = module_id.owning_crate(db);
-        let negative_impls = generic_params
-            .iter()
-            .filter(|generic_param_id| matches!(generic_param_id.kind(db), GenericKind::NegImpl))
-            .copied()
-            .collect_vec();
-        let generic_params = generic_params
-            .iter()
-            .filter(|generic_param_id| {
-                if !matches!(generic_param_id.kind(db), GenericKind::Impl) {
-                    return false;
+        let mut negative_impls = vec![];
+        let mut constrained_generic_params = vec![];
+        let mut inner_impls = BTreeSet::default();
+        for id in generic_params {
+            match id.kind(db) {
+                GenericKind::Type | GenericKind::Const => {}
+                GenericKind::NegImpl => {
+                    negative_impls.push(id);
                 }
-
-                let uninferred_impl = UninferredImpl::GenericParam(**generic_param_id);
-
-                let Ok(trait_id) = uninferred_impl.trait_id(db) else {
-                    return true;
-                };
-                let Some(set) = db.crate_global_impls(crate_id).get(&trait_id) else {
-                    return true;
-                };
-                let uninferred_impl: UninferredImplById<'db> = uninferred_impl.into();
-                if set.contains(&uninferred_impl) {
-                    return false;
-                };
-                true
-            })
-            .copied()
-            .collect_vec();
+                GenericKind::Impl => {
+                    let uninferred_impl = UninferredImpl::GenericParam(id);
+                    let valid = if let Ok(trait_id) = uninferred_impl.trait_id(db)
+                        && let Some(set) = db.crate_global_impls(crate_id).get(&trait_id)
+                    {
+                        let uninferred_impl: UninferredImplById<'db> = uninferred_impl.into();
+                        !set.contains(&uninferred_impl)
+                    } else {
+                        true
+                    };
+                    if valid {
+                        inner_impls.insert(uninferred_impl.into());
+                        if id.long(db).has_type_constraints_syntax(db) {
+                            constrained_generic_params.push(id);
+                        }
+                    }
+                }
+            }
+        }
         let mut res = Self {
             crate_id,
-            generic_params: generic_params
-                .clone()
-                .into_iter()
-                .filter(|id| id.long(db).has_type_constraints_syntax(db))
-                .collect_vec(),
-            inner_impls: BTreeSet::from_iter(
-                generic_params.into_iter().map(|id| UninferredImpl::GenericParam(id).into()),
-            ),
+            generic_params: constrained_generic_params,
+            inner_impls,
             negative_impls,
         };
         res.insert_module(module_id, db);
