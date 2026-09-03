@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788396806157,
+  "lastUpdate": 1788396953970,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -26591,6 +26591,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/c2fce833305d6b31d8eac9fd272ab69c40685b15"
         },
         "date": 1788310388957,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "1e4816300dcafcf8bd33b24a53fc1ad1aa50df52",
+          "message": "Parse the generated function paths in generated Sierra (#10360)\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+          "timestamp": "2026-09-02T09:09:42Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/1e4816300dcafcf8bd33b24a53fc1ad1aa50df52"
+        },
+        "date": 1788396953778,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
