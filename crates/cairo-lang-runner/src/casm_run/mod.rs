@@ -51,7 +51,9 @@ use num_traits::{Signed, ToPrimitive, Zero};
 use rand::RngExt;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
-use self::contract_address::calculate_contract_address;
+use self::contract_address::{
+    calculate_contract_address, calculate_contract_address_blake_escaped,
+};
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{Arg, RunResultValue, SierraCasmRunner, StarknetExecutionResources, args_size};
@@ -344,6 +346,8 @@ mod gas_costs {
     // compiler).
     pub const CALL_CONTRACT: usize = 10 * STEP + ENTRY_POINT;
     pub const DEPLOY: usize = 200 * STEP + ENTRY_POINT;
+    // Provisional: same profile as `DEPLOY` until a measured one lands (sequencer-side).
+    pub const DEPLOY_V2: usize = 200 * STEP + ENTRY_POINT;
     pub const EMIT_EVENT: usize = 10 * STEP;
     pub const GET_BLOCK_HASH: usize = 50 * STEP;
     pub const GET_EXECUTION_INFO: usize = 10 * STEP;
@@ -829,6 +833,16 @@ impl CairoHintProcessor<'_> {
                     system_buffer,
                 )
             }),
+            "DeployV2" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.deploy_v2(
+                    gas_counter,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_arr()?,
+                    system_buffer.next_bool()?,
+                    system_buffer,
+                )
+            }),
             "CallContract" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.call_contract(
                     gas_counter,
@@ -1029,6 +1043,47 @@ impl CairoHintProcessor<'_> {
             &if deploy_from_zero { Felt252::zero() } else { caller_address },
         );
 
+        self.deploy_at(gas_counter, class_hash, calldata, deployed_address, caller_address, vm)
+    }
+
+    /// Executes the `deploy_v2_syscall` syscall.
+    ///
+    /// Identical to [`Self::deploy`] except the deployed address is derived with the Blake-escaped
+    /// derivation ([`calculate_contract_address_blake_escaped`]) instead of Pedersen.
+    fn deploy_v2(
+        &mut self,
+        gas_counter: &mut usize,
+        class_hash: Felt252,
+        contract_address_salt: Felt252,
+        calldata: Vec<Felt252>,
+        deploy_from_zero: bool,
+        vm: &mut dyn VMWrapper,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, DEPLOY_V2);
+
+        let caller_address = self.starknet_state.exec_info.call_info.contract_address;
+        // Assign the Starknet address of the contract.
+        let deployed_address = calculate_contract_address_blake_escaped(
+            &contract_address_salt,
+            &class_hash,
+            &calldata,
+            &if deploy_from_zero { Felt252::zero() } else { caller_address },
+        );
+
+        self.deploy_at(gas_counter, class_hash, calldata, deployed_address, caller_address, vm)
+    }
+
+    /// Deploys `class_hash` at `deployed_address` and runs its constructor. Shared by the `deploy`
+    /// and `deploy_v2` syscalls, which differ only in how they derive the address.
+    fn deploy_at(
+        &mut self,
+        gas_counter: &mut usize,
+        class_hash: Felt252,
+        calldata: Vec<Felt252>,
+        deployed_address: Felt252,
+        caller_address: Felt252,
+        vm: &mut dyn VMWrapper,
+    ) -> Result<SyscallResult, HintError> {
         // Prepare runner for running the constructor.
         let runner = self.runner.expect("Runner is needed for starknet.");
         let Some(contract_info) = runner.starknet_contracts_info.get(&class_hash) else {
