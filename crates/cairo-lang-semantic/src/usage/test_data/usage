@@ -122,7 +122,7 @@ fn foo(a: u32) {
 
 //! > usage
 Closure 3:8:
-  Usage: ParamId(test::foo::a), ParamId(test::foo::{closure@36}::b),
+  Usage: ParamId(test::foo::a), ParamId(test::foo::{closure#0}::b),
   Changes:
   Snapshot_Usage:
 Closure 2:4:
