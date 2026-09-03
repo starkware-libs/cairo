@@ -20,7 +20,6 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::Itertools;
 use salsa::Database;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -43,17 +42,12 @@ mod test;
 pub struct SemanticDiagnostics<'db> {
     builder: DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
     context_module: ModuleId<'db>,
-    pub(crate) diagnosed_circuits: OrderedHashSet<semantic::TypeId<'db>>,
 }
 
 impl<'db> SemanticDiagnostics<'db> {
     /// Create a new SemanticDiagnostics with the given context module.
     pub fn new(context_module: ModuleId<'db>) -> Self {
-        Self {
-            builder: DiagnosticsBuilder::default(),
-            context_module,
-            diagnosed_circuits: Default::default(),
-        }
+        Self { builder: DiagnosticsBuilder::default(), context_module }
     }
 
     /// Create a new SemanticDiagnostics from the given context module and diagnostics.
@@ -63,7 +57,7 @@ impl<'db> SemanticDiagnostics<'db> {
     ) -> Self {
         let mut builder = DiagnosticsBuilder::default();
         builder.extend(diagnostics);
-        Self { builder, context_module, diagnosed_circuits: Default::default() }
+        Self { builder, context_module }
     }
 
     /// Build a Diagnostics object.

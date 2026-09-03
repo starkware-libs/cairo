@@ -957,9 +957,8 @@ pub fn add_value_type_based_diagnostics<'db>(
         diagnostics.report(stable_ptr, InstancesOfPhantomTypes);
     } else if let Some(violation) = array_element_violation(db, ty) {
         diagnostics.report(stable_ptr, violation.to_kind());
-    } else if let Some(CircuitInputIndexViolation { circuit, expected, actual }) =
+    } else if let Some(CircuitInputIndexViolation { expected, actual }) =
         circuit_input_index_violation(db, ty)
-        && diagnostics.diagnosed_circuits.insert(circuit)
     {
         diagnostics.report(stable_ptr, CircuitInputIndicesNotContiguous { expected, actual });
     }
@@ -1098,8 +1097,7 @@ fn array_element_deps_or_issue<'db>(
 
 /// The first gap in a circuit's sorted input indices.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, salsa::SalsaValue)]
-struct CircuitInputIndexViolation<'db> {
-    circuit: TypeId<'db>,
+struct CircuitInputIndexViolation {
     expected: usize,
     actual: usize,
 }
@@ -1113,7 +1111,7 @@ struct CircuitInputIndexViolation<'db> {
 fn circuit_input_index_violation<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
-) -> Option<CircuitInputIndexViolation<'db>> {
+) -> Option<CircuitInputIndexViolation> {
     let circuit_module = ModuleHelper::core(db).submodule("circuit");
     let circuit_extern_id = circuit_module.extern_type_id("Circuit");
     let circuit_input_extern_id = circuit_module.extern_type_id("CircuitInput");
@@ -1136,7 +1134,7 @@ fn circuit_input_index_violation<'db>(
                     && let Some((expected, actual)) =
                         non_contiguous_circuit_input(db, outputs, circuit_input_extern_id)
                 {
-                    return Some(CircuitInputIndexViolation { circuit: ty, expected, actual });
+                    return Some(CircuitInputIndexViolation { expected, actual });
                 }
             }
             TypeLongId::Concrete(ConcreteTypeId::Struct(id)) => {

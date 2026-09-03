@@ -32,6 +32,30 @@ error[E2204]: Circuit input indices must be contiguous and start at 0. Expected 
 |         .new_inputs()
 |_____________________^
 
+error[E2204]: Circuit input indices must be contiguous and start at 0. Expected index 1, found 2.
+ --> lib.cairo:11:19-15:15
+      let outputs = (sum,)
+ ___________________^
+| ...
+|         .done()
+|_______________^
+
+error[E2204]: Circuit input indices must be contiguous and start at 0. Expected index 1, found 2.
+ --> lib.cairo:11:19-16:22
+      let outputs = (sum,)
+ ___________________^
+| ...
+|         .eval(modulus)
+|______________________^
+
+error[E2204]: Circuit input indices must be contiguous and start at 0. Expected index 1, found 2.
+ --> lib.cairo:11:19-17:17
+      let outputs = (sum,)
+ ___________________^
+| ...
+|         .unwrap();
+|_________________^
+
 //! > ==========================================================================
 
 //! > Circuit input indices must start at zero.
@@ -57,6 +81,21 @@ error[E2204]: Circuit input indices must be contiguous and start at 0. Expected 
  --> lib.cairo:9:19
     let outputs = (a,).new_inputs().next([3, 0, 0, 0]).done().eval(modulus).unwrap();
                   ^^^^^^^^^^^^^^^^^
+
+error[E2204]: Circuit input indices must be contiguous and start at 0. Expected index 0, found 5.
+ --> lib.cairo:9:19
+    let outputs = (a,).new_inputs().next([3, 0, 0, 0]).done().eval(modulus).unwrap();
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2204]: Circuit input indices must be contiguous and start at 0. Expected index 0, found 5.
+ --> lib.cairo:9:19
+    let outputs = (a,).new_inputs().next([3, 0, 0, 0]).done().eval(modulus).unwrap();
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2204]: Circuit input indices must be contiguous and start at 0. Expected index 0, found 5.
+ --> lib.cairo:9:19
+    let outputs = (a,).new_inputs().next([3, 0, 0, 0]).done().eval(modulus).unwrap();
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -84,6 +123,21 @@ error[E2204]: Circuit input indices must be contiguous and start at 0. Expected 
  --> lib.cairo:10:19
     let outputs = (b,).new_inputs().next([3, 0, 0, 0]).done().eval(modulus).unwrap();
                   ^^^^^^^^^^^^^^^^^
+
+error[E2204]: Circuit input indices must be contiguous and start at 0. Expected index 0, found 1.
+ --> lib.cairo:10:19
+    let outputs = (b,).new_inputs().next([3, 0, 0, 0]).done().eval(modulus).unwrap();
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2204]: Circuit input indices must be contiguous and start at 0. Expected index 0, found 1.
+ --> lib.cairo:10:19
+    let outputs = (b,).new_inputs().next([3, 0, 0, 0]).done().eval(modulus).unwrap();
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2204]: Circuit input indices must be contiguous and start at 0. Expected index 0, found 1.
+ --> lib.cairo:10:19
+    let outputs = (b,).new_inputs().next([3, 0, 0, 0]).done().eval(modulus).unwrap();
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
