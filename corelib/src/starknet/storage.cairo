@@ -577,6 +577,13 @@ impl StoragePathAsNonMutImpl<T> of StoragePathMutableConversion<T> {
     }
 }
 
+impl StoragePathMutDeref<T> of core::ops::Deref<StoragePath<Mutable<T>>> {
+    type Target = StoragePath<T>;
+    fn deref(self: StoragePath<Mutable<T>>) -> StoragePath<T> {
+        self.as_non_mut()
+    }
+}
+
 
 /// Trait for turning collection of values into an iterator over a specific range.
 pub trait IntoIterRange<T> {
