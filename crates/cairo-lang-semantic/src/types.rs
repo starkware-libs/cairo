@@ -1126,10 +1126,11 @@ fn circuit_input_index_violation<'db>(
             TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) => {
                 let ConcreteExternTypeLongId { extern_type_id, generic_args } = extrn.long(db);
                 if *extern_type_id != circuit_extern_id {
-                    stack.extend(generic_args.iter().filter_map(|arg| match arg {
-                        GenericArgumentId::Type(ty) => Some(*ty),
-                        _ => None,
-                    }));
+                    stack.extend(
+                        generic_args
+                            .iter()
+                            .filter_map(|arg| try_extract_matches!(arg, GenericArgumentId::Type)),
+                    );
                 } else if let [GenericArgumentId::Type(outputs)] = generic_args[..]
                     && let Some((expected, actual)) =
                         non_contiguous_circuit_input(db, outputs, circuit_input_extern_id)
