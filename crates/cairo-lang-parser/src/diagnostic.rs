@@ -92,6 +92,19 @@ impl<'a> ParserDiagnostic<'a> {
             }
         )
     }
+
+    /// Returns the operator text for comparisons that can be rewritten as explicit conjunctions.
+    fn ordering_operator_text(kind: SyntaxKind) -> Option<&'static str> {
+        match kind {
+            SyntaxKind::TerminalLT => Some("<"),
+            SyntaxKind::TerminalGT => Some(">"),
+            SyntaxKind::TerminalLE => Some("<="),
+            SyntaxKind::TerminalGE => Some(">="),
+            SyntaxKind::TerminalEqEq => Some("=="),
+            SyntaxKind::TerminalNeq => Some("!="),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
@@ -222,11 +235,26 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                 "A trailing `|` is not allowed in an or-pattern.".to_string()
             }
             ParserDiagnosticKind::ConsecutiveMathOperators { first_op, second_op } => {
-                format!(
-                    "Consecutive comparison operators are not allowed: {} followed by {}",
+                let message = format!(
+                    "Consecutive comparison operators are not allowed: {} followed by {}.",
                     self.kind_to_string(*first_op),
                     self.kind_to_string(*second_op)
-                )
+                );
+                if *first_op == SyntaxKind::TerminalLT && *second_op == SyntaxKind::TerminalGT {
+                    format!(
+                        "{message} If this appears in a generic path, you may be missing `::` \
+                         (for example, `foo::<T>(...)`)."
+                    )
+                } else if let Some(op1) = Self::ordering_operator_text(*first_op)
+                    && let Some(op2) = Self::ordering_operator_text(*second_op)
+                {
+                    format!(
+                        "{message} If this was intended as a chained comparison, rewrite it with \
+                         `&&` (for example, `a {op1} b && b {op2} c`)."
+                    )
+                } else {
+                    message
+                }
             }
             ParserDiagnosticKind::ExpectedSemicolonOrBody => {
                 "Expected either ';' or '{' after module name. Use ';' for an external module \
