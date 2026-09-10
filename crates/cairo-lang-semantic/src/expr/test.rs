@@ -37,6 +37,7 @@ cairo_lang_test_utils::test_file_test!(
         constructor: "constructor",
         closure: "closure",
         coupon: "coupon",
+        circuit: "circuit",
         deref: "deref",
         enum_: "enum",
         error_propagate: "error_propagate",

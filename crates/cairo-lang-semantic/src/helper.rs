@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::{
-    EnumId, ExternFunctionId, FreeFunctionId, ModuleId, ModuleItemId, TraitId,
+    EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, ModuleId, ModuleItemId, TraitId,
 };
 use cairo_lang_filesystem::ids::SmolStrId;
 use salsa::Database;
@@ -33,6 +33,15 @@ impl<'a> ModuleHelper<'a> {
             self.db.module_item_by_name(self.id, SmolStrId::from(self.db, name))
         else {
             panic!("`{}` not found in `{}`.", name, self.id.full_path(self.db));
+        };
+        id
+    }
+    /// Returns the id of an extern type named `name` in the current module.
+    pub fn extern_type_id(&self, name: &str) -> ExternTypeId<'a> {
+        let Ok(Some(ModuleItemId::ExternType(id))) =
+            self.db.module_item_by_name(self.id, SmolStrId::from(self.db, name))
+        else {
+            panic!("`{name}` not found in `{}`.", self.id.full_path(self.db));
         };
         id
     }
