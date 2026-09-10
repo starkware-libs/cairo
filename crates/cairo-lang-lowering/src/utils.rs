@@ -129,55 +129,19 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
                     MatchInfo::Extern(stmt) => MatchInfo::Extern(MatchExternInfo {
                         function: stmt.function,
                         inputs: stmt.inputs.iter().map(|v| self.map_var_usage(*v)).collect(),
-                        arms: stmt
-                            .arms
-                            .iter()
-                            .map(|arm| MatchArm {
-                                arm_selector: arm.arm_selector.clone(),
-                                block_id: self.map_block_id(arm.block_id),
-                                var_ids: arm
-                                    .var_ids
-                                    .iter()
-                                    .map(|var_id| self.map_var_id(*var_id))
-                                    .collect(),
-                            })
-                            .collect(),
+                        arms: self.rebuild_match_arms(&stmt.arms),
                         location: self.map_location(stmt.location),
                     }),
                     MatchInfo::Enum(stmt) => MatchInfo::Enum(MatchEnumInfo {
                         concrete_enum_id: stmt.concrete_enum_id,
                         input: self.map_var_usage(stmt.input),
-                        arms: stmt
-                            .arms
-                            .iter()
-                            .map(|arm| MatchArm {
-                                arm_selector: arm.arm_selector.clone(),
-                                block_id: self.map_block_id(arm.block_id),
-                                var_ids: arm
-                                    .var_ids
-                                    .iter()
-                                    .map(|var_id| self.map_var_id(*var_id))
-                                    .collect(),
-                            })
-                            .collect(),
+                        arms: self.rebuild_match_arms(&stmt.arms),
                         location: self.map_location(stmt.location),
                     }),
                     MatchInfo::Value(stmt) => MatchInfo::Value(MatchEnumValue {
                         num_of_arms: stmt.num_of_arms,
                         input: self.map_var_usage(stmt.input),
-                        arms: stmt
-                            .arms
-                            .iter()
-                            .map(|arm| MatchArm {
-                                arm_selector: arm.arm_selector.clone(),
-                                block_id: self.map_block_id(arm.block_id),
-                                var_ids: arm
-                                    .var_ids
-                                    .iter()
-                                    .map(|var_id| self.map_var_id(*var_id))
-                                    .collect(),
-                            })
-                            .collect(),
+                        arms: self.rebuild_match_arms(&stmt.arms),
                         location: self.map_location(stmt.location),
                     }),
                 },
@@ -185,6 +149,20 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
         };
         self.transform_end(&mut end);
         end
+    }
+
+    /// Rebuilds all match arms with renamed var and block ids.
+    fn rebuild_match_arms(&mut self, arms: &[MatchArm<'db>]) -> Vec<MatchArm<'db>> {
+        arms.iter().map(|arm| self.rebuild_match_arm(arm)).collect()
+    }
+
+    /// Rebuilds a match arm with renamed var and block ids.
+    fn rebuild_match_arm(&mut self, arm: &MatchArm<'db>) -> MatchArm<'db> {
+        MatchArm {
+            arm_selector: arm.arm_selector.clone(),
+            block_id: self.map_block_id(arm.block_id),
+            var_ids: arm.var_ids.iter().map(|var_id| self.map_var_id(*var_id)).collect(),
+        }
     }
 
     /// Rebuilds the block with renamed var and block ids.
