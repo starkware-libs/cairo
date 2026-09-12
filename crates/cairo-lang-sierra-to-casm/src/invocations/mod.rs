@@ -288,12 +288,12 @@ pub struct CompiledInvocation {
 /// Checks that the list of references is contiguous on the stack and ends at ap - 1.
 /// This is the requirement for function call and return statements.
 pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), InvocationError> {
-    let mut expected_offset: i16 = -1;
+    let mut expected_offset = -1_i64;
     for reference in refs.iter().rev() {
         for cell_expr in reference.expression.cells.iter().rev() {
             match cell_expr {
                 CellExpression::Deref(CellRef { register: Register::AP, offset })
-                    if *offset == expected_offset =>
+                    if i64::from(*offset) == expected_offset =>
                 {
                     expected_offset -= 1;
                 }

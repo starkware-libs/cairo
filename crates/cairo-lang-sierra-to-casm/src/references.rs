@@ -21,6 +21,8 @@ pub enum ReferencesError {
     InvalidReferenceTypeForArgument,
     #[error("Unknown type `{0}`.")]
     UnknownType(ConcreteTypeId),
+    #[error("A function parameter is outside the encodable frame offset range.")]
+    ParameterOffsetOutOfRange,
 }
 
 pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue>;
@@ -149,13 +151,25 @@ impl core::fmt::Display for ReferenceExpression {
     }
 }
 
+pub(crate) fn build_deref_reference(
+    register: Register,
+    end_offset: i64,
+    size: i16,
+) -> Option<ReferenceExpression> {
+    let start_offset = end_offset - i64::from(size) + 1;
+    let cells = (start_offset..=end_offset)
+        .map(|offset| Some(CellExpression::Deref(CellRef { register, offset: offset.try_into().ok()? })))
+        .collect::<Option<_>>()?;
+    Some(ReferenceExpression { cells })
+}
+
 /// Builds the HashMap of references to the parameters of a function.
 pub fn build_function_parameters_refs(
     func: &Function,
     type_sizes: &TypeSizeMap,
 ) -> Result<StatementRefs, ReferencesError> {
     let mut refs = StatementRefs::default();
-    let mut offset = -3_i16;
+    let mut offset = -3_i64;
     for (param_idx, param) in func.params.iter().rev().enumerate() {
         let size = type_sizes
             .get(&param.ty)
@@ -164,13 +178,8 @@ pub fn build_function_parameters_refs(
             .insert(
                 param.id.clone(),
                 ReferenceValue {
-                    expression: ReferenceExpression {
-                        cells: ((offset - size + 1)..(offset + 1))
-                            .map(|i| {
-                                CellExpression::Deref(CellRef { register: Register::FP, offset: i })
-                            })
-                            .collect(),
-                    },
+                    expression: build_deref_reference(Register::FP, offset, *size)
+                        .ok_or(ReferencesError::ParameterOffsetOutOfRange)?,
                     ty: param.ty.clone(),
                     stack_idx: None,
                     introduction_point: IntroductionPoint {
@@ -184,7 +193,7 @@ pub fn build_function_parameters_refs(
         {
             return Err(ReferencesError::InvalidFunctionDeclaration(func.clone()));
         }
-        offset -= size;
+        offset -= i64::from(*size);
     }
     Ok(refs)
 }
@@ -198,5 +207,30 @@ pub fn check_types_match(
         Ok(())
     } else {
         Err(ReferencesError::InvalidReferenceTypeForArgument)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, VarId};
+    use cairo_lang_sierra::program::{Function, Param};
+
+    use super::*;
+
+    #[test]
+    fn wide_parameter_offsets_boundaries() {
+        for size in [32765, 32766] {
+            let ty = ConcreteTypeId::from("Wide");
+            let func = Function::new(
+                FunctionId::from("wide"),
+                vec![Param { id: VarId::from("value"), ty: ty.clone() }],
+                vec![],
+                StatementIdx(0),
+            );
+            let mut type_sizes = TypeSizeMap::default();
+            type_sizes.insert(ty, size);
+            let refs = build_function_parameters_refs(&func, &type_sizes).unwrap();
+            assert_eq!(refs[&VarId::from("value")].expression.cells.len(), size as usize);
+        }
     }
 }
