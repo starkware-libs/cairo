@@ -169,7 +169,9 @@ pub fn simulate<
                 CoreValue::Uint32(start),
                 CoreValue::Uint32(length),
             ] = inputs);
-            match arr.get(start as usize..(start + length) as usize) {
+            let start = start as usize;
+            let end = start.checked_add(length as usize);
+            match end.and_then(|end| arr.get(start..end)) {
                 Some(elements) => {
                     (vec![CoreValue::RangeCheck, CoreValue::Array(elements.to_vec())], 0)
                 }

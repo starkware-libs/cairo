@@ -154,6 +154,13 @@ fn simulate(
              vec![RangeCheck, Felt252(((BigInt::from(3) << 128_u32) + BigInt::from(7)).into())]
              => Ok((vec![RangeCheck, Uint128(3), Uint128(7)], 1));
             "u128s_from_felt252(3 * 2**128 + 7)")]
+#[test_case("array_slice", vec![type_arg("u128")],
+             vec![RangeCheck, Array(vec![]), Uint32(u32::MAX), Uint32(1)]
+             => Ok((vec![RangeCheck], 1)); "array_slice([], u32::MAX, 1)")]
+#[test_case("array_slice", vec![type_arg("u128")],
+             vec![RangeCheck, Array(vec![Uint128(1), Uint128(2), Uint128(3)]), Uint32(1), Uint32(2)]
+             => Ok((vec![RangeCheck, Array(vec![Uint128(2), Uint128(3)])], 0));
+            "array_slice([1, 2, 3], 1, 2)")]
 fn simulate_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
