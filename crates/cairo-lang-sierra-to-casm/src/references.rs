@@ -158,7 +158,9 @@ pub(crate) fn build_deref_reference(
 ) -> Option<ReferenceExpression> {
     let start_offset = end_offset - i64::from(size) + 1;
     let cells = (start_offset..=end_offset)
-        .map(|offset| Some(CellExpression::Deref(CellRef { register, offset: offset.try_into().ok()? })))
+        .map(|offset| {
+            Some(CellExpression::Deref(CellRef { register, offset: offset.try_into().ok()? }))
+        })
         .collect::<Option<_>>()?;
     Some(ReferenceExpression { cells })
 }
