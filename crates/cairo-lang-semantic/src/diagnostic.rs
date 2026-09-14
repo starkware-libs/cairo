@@ -1282,6 +1282,17 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     name.long(db)
                 ),
             },
+            SemanticDiagnosticKind::MacroExpansionRepetitionCountMismatch { too_many } => {
+                if *too_many {
+                    "A `?` expansion block of the matched macro rule may repeat at most once, but \
+                     this call matched more than one group."
+                        .into()
+                } else {
+                    "A `+` expansion block of the matched macro rule must repeat at least once, \
+                     but this call matched zero groups."
+                        .into()
+                }
+            }
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
                 "User defined inline macros are disabled in the current crate.".into()
             }
@@ -1562,6 +1573,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UnsupportedItemInStatement => error_code!(E2197),
             SemanticDiagnosticKind::ExternItemOutsideCorelib => error_code!(E2201),
             SemanticDiagnosticKind::MacroExpansionFailed(_) => error_code!(E2202),
+            SemanticDiagnosticKind::MacroExpansionRepetitionCountMismatch { .. } => {
+                error_code!(E2210)
+            }
             SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder => {
                 error_code!(E2203)
             }
@@ -2005,6 +2019,12 @@ pub enum SemanticDiagnosticKind<'db> {
     },
     MacroRuleWithUnparsablePattern,
     MacroExpansionFailed(MacroExpansionFailure<'db>),
+    /// A `$( ... )` block in the matched rule's expansion was to be expanded over a number of
+    /// groups its operator does not allow: a `+` block over zero groups (`too_many: false`), or a
+    /// `?` block over more than one (`too_many: true`).
+    MacroExpansionRepetitionCountMismatch {
+        too_many: bool,
+    },
     UserDefinedInlineMacrosDisabled,
     NonNeverLetElseType,
     OnlyTypeOrConstParamsInNegImpl,
