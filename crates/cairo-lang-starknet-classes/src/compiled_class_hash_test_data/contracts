@@ -23,10 +23,10 @@ test_compiled_class_hash
 circuit_contract__circuit_contract
 
 //! > compiled_class_hash
-3033d1e6a5fb4022fc89279e1cb0fce8b0cdc1c9d372407bd5c1a1dc52d80db
+11158be29e98e72a6db5787b48f71b90accf83e992d0140243a213a071cc2f8
 
 //! > legacy_compiled_class_hash
-639d8f5e0ea5da5fe428302fd0c9ec4016e77918cadcd1d04df74432eac186
+24c61d350938f43576da6aeb300e1fde8b2af6d5af652d89fd67f4548e19d45
 
 //! > ==========================================================================
 
@@ -103,10 +103,10 @@ test_compiled_class_hash
 libfuncs_coverage__libfuncs_coverage
 
 //! > compiled_class_hash
-2b6abc7af0ca1d59d7a266a324f9586d0ce2008e82472c8cb15faa6e5ea5572
+2db7a621b8ecb36159cdcc993c96714212806fe114acb5770f3aaadc514fc44
 
 //! > legacy_compiled_class_hash
-1d3dd0ea33b0e249f0ebf4c070102b40a15ea11cee9c7081422603dee88f31c
+7f80f04bf13ff5e1bec088ca398253191042206612e9bc466a4dd9861ef1fc
 
 //! > ==========================================================================
 
