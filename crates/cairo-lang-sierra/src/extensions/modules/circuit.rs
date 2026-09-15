@@ -84,6 +84,7 @@ define_libfunc_hierarchy! {
         IntoU96Guarantee(IntoU96GuaranteeLibFunc),
         U96GuaranteeVerify(U96GuaranteeVerifyLibFunc),
         U96LimbsLessThanGuaranteeVerify(U96LimbsLessThanGuaranteeVerifyLibfunc),
+        U96LimbsLessThanGuaranteeVerifyV2(U96LimbsLessThanGuaranteeVerifyV2Libfunc),
         U96SingleLimbLessThanGuaranteeVerify(U96SingleLimbLessThanGuaranteeVerifyLibfunc),
     }, CircuitConcreteLibfunc
 }
@@ -933,6 +934,49 @@ pub struct ConcreteU96LimbsLessThanGuaranteeVerifyLibfunc {
 impl SignatureBasedConcreteLibfunc for ConcreteU96LimbsLessThanGuaranteeVerifyLibfunc {
     fn signature(&self) -> &LibfuncSignature {
         &self.signature
+    }
+}
+
+/// Verifies that a number with u96 limbs is smaller than another.
+/// Unlike `U96LimbsLessThanGuaranteeVerifyLibfunc`, consumes the whole guarantee at once instead of
+/// outputting a smaller guarantee per call.
+#[derive(Default)]
+pub struct U96LimbsLessThanGuaranteeVerifyV2Libfunc {}
+impl NamedLibfunc for U96LimbsLessThanGuaranteeVerifyV2Libfunc {
+    const STR_ID: &'static str = "u96_limbs_less_than_guarantee_verify_v2";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let limb_count = args_as_single_value(args)?
+            .to_usize()
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        require((1..=4).contains(&limb_count)).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let in_guarantee_ty = u96_limbs_less_than_guarantee_ty(context, limb_count)?;
+        let range_check96_type = context.get_concrete_type(RangeCheck96Type::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(range_check96_type.clone()).with_allow_add_const(),
+                ParamSignature::new(in_guarantee_ty),
+            ],
+            vec![OutputVarInfo::new_builtin(range_check96_type)],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+
+    type Concrete = ConcreteU96LimbsLessThanGuaranteeVerifyLibfunc;
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let limb_count = args_as_single_value(args)?
+            .to_usize()
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        Ok(Self::Concrete { signature: self.specialize_signature(context, args)?, limb_count })
     }
 }
 
