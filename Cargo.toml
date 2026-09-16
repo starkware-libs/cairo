@@ -113,7 +113,9 @@ derivative = "2.2.0"
 dhat = "0.3.3"
 diffy = "0.5.0"
 genco = "0.19.0"
-good_lp = { version = "1.14.0", features = ["minilp"], default-features = false }
+# Pinned: `good_lp` 1.15.3 moves to `microlp` 0.6, whose simplex picks different optima for the
+# (degenerate) gas equations, changing `withdraw_gas` constants and compiled class hashes of existing classes.
+good_lp = { version = "=1.15.2", features = ["minilp"], default-features = false }
 hashbrown = "0.17.0"
 id-arena = "2.2.1"
 ignore = "0.4.23"
