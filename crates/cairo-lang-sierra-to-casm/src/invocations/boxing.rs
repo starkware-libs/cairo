@@ -64,12 +64,20 @@ fn build_local_into_box(
     let [operand] = builder.try_get_refs()?;
 
     let fp_val = cell_ref!([ap - 2]);
-    let offset = match operand.cells.as_slice() {
-        [] => 0,
-        [CellExpression::Deref(CellRef { register: Register::FP, offset }), ..] => *offset,
+    let mut cell_iter = operand.cells.iter();
+    let base_offset = match cell_iter.next() {
+        None => 0,
+        Some(CellExpression::Deref(CellRef { register: Register::FP, offset })) => *offset,
         _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
     };
-    let ptr = CellExpression::add_with_const(fp_val, offset);
+    for (cell, inner_offset) in cell_iter.zip(1i16..) {
+        let offset =
+            base_offset.checked_add(inner_offset).ok_or(InvocationError::IntegerOverflow)?;
+        if *cell != CellExpression::Deref(cell_ref!([fp + offset])) {
+            return Err(InvocationError::InvalidReferenceExpressionForArgument);
+        }
+    }
+    let ptr = CellExpression::add_with_const(fp_val, base_offset);
     Ok(builder.build(
         casm!(call rel 0;).instructions,
         vec![RelocationEntry { instruction_idx: 0, relocation: Relocation::EndOfProgram }],
