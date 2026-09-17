@@ -50,6 +50,7 @@ mod account {
         self.validate_transaction()
     }
 
+    #[feature("deprecated-starknet-account-trait")]
     #[abi(embed_v0)]
     impl AccountContractImpl of starknet::account::AccountContract<ContractState> {
         fn __validate_declare__(self: @ContractState, class_hash: felt252) -> felt252 {
