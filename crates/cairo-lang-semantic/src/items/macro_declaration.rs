@@ -725,7 +725,7 @@ fn expand_macro_rule_ex<'db>(
                 return Ok(());
             }
 
-            for child in node.get_children(db).iter() {
+            for child in &node.get_children(db) {
                 expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
             }
             return Ok(());
@@ -735,7 +735,7 @@ fn expand_macro_rule_ex<'db>(
         res_buffer.push_str(node.get_text(db));
         return Ok(());
     }
-    for child in node.get_children(db).iter() {
+    for child in &node.get_children(db) {
         expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
     }
     Ok(())
