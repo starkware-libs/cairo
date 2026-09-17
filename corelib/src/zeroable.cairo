@@ -83,21 +83,93 @@ impl NonZeroCopy<T> of Copy<NonZero<T>>;
 impl NonZeroDrop<T> of Drop<NonZero<T>>;
 
 pub(crate) mod non_zero_neg {
+    // Generic implementation for types that don't support bounded integer optimization
     pub impl Impl<T, +Neg<T>, +TryInto<T, NonZero<T>>> of Neg<NonZero<T>> {
         fn neg(a: NonZero<T>) -> NonZero<T> {
-            // TODO(orizi): Optimize using bounded integers.
             let value: T = a.into();
             let negated: T = -value;
             negated.try_into().unwrap()
         }
     }
+
+    // Optimized implementation for signed integer types using bounded integers
+    // This uses NegateHelper directly on bounded integers, which is more efficient
+    // than the generic implementation that goes through Neg<T>
+    #[feature("bounded-int-utils")]
+    mod optimized_signed {
+        use crate::internal::bounded_int::{self, upcast};
+
+        pub impl I8Impl of super::super::Neg<super::super::NonZero<i8>> {
+            fn neg(a: super::super::NonZero<i8>) -> super::super::NonZero<i8> {
+                let value: i8 = a.into();
+                // Use bounded integer negation directly, which is optimized
+                let core::internal::OptionRev::Some(bounded) = bounded_int::trim_min(value) else {
+                    // Minimum value case: use standard negation (will panic, but consistent with Neg<i8>)
+                    return (-value).try_into().unwrap();
+                };
+                let negated = bounded_int::NegateHelper::negate(bounded);
+                upcast(negated).try_into().unwrap()
+            }
+        }
+
+        pub impl I16Impl of super::super::Neg<super::super::NonZero<i16>> {
+            fn neg(a: super::super::NonZero<i16>) -> super::super::NonZero<i16> {
+                let value: i16 = a.into();
+                let core::internal::OptionRev::Some(bounded) = bounded_int::trim_min(value) else {
+                    return (-value).try_into().unwrap();
+                };
+                let negated = bounded_int::NegateHelper::negate(bounded);
+                upcast(negated).try_into().unwrap()
+            }
+        }
+
+        pub impl I32Impl of super::super::Neg<super::super::NonZero<i32>> {
+            fn neg(a: super::super::NonZero<i32>) -> super::super::NonZero<i32> {
+                let value: i32 = a.into();
+                let core::internal::OptionRev::Some(bounded) = bounded_int::trim_min(value) else {
+                    return (-value).try_into().unwrap();
+                };
+                let negated = bounded_int::NegateHelper::negate(bounded);
+                upcast(negated).try_into().unwrap()
+            }
+        }
+
+        pub impl I64Impl of super::super::Neg<super::super::NonZero<i64>> {
+            fn neg(a: super::super::NonZero<i64>) -> super::super::NonZero<i64> {
+                let value: i64 = a.into();
+                let core::internal::OptionRev::Some(bounded) = bounded_int::trim_min(value) else {
+                    return (-value).try_into().unwrap();
+                };
+                let negated = bounded_int::NegateHelper::negate(bounded);
+                upcast(negated).try_into().unwrap()
+            }
+        }
+
+        pub impl I128Impl of super::super::Neg<super::super::NonZero<i128>> {
+            fn neg(a: super::super::NonZero<i128>) -> super::super::NonZero<i128> {
+                let value: i128 = a.into();
+                let core::internal::OptionRev::Some(bounded) = bounded_int::trim_min(value) else {
+                    return (-value).try_into().unwrap();
+                };
+                let negated = bounded_int::NegateHelper::negate(bounded);
+                upcast(negated).try_into().unwrap()
+            }
+        }
+    }
 }
 
-impl NonZeroI8Neg = non_zero_neg::Impl<i8>;
-impl NonZeroI16Neg = non_zero_neg::Impl<i16>;
-impl NonZeroI32Neg = non_zero_neg::Impl<i32>;
-impl NonZeroI64Neg = non_zero_neg::Impl<i64>;
-impl NonZeroI128Neg = non_zero_neg::Impl<i128>;
+// Use optimized implementation for signed integer types
+#[feature("bounded-int-utils")]
+impl NonZeroI8Neg = non_zero_neg::optimized_signed::I8Impl;
+#[feature("bounded-int-utils")]
+impl NonZeroI16Neg = non_zero_neg::optimized_signed::I16Impl;
+#[feature("bounded-int-utils")]
+impl NonZeroI32Neg = non_zero_neg::optimized_signed::I32Impl;
+#[feature("bounded-int-utils")]
+impl NonZeroI64Neg = non_zero_neg::optimized_signed::I64Impl;
+#[feature("bounded-int-utils")]
+impl NonZeroI128Neg = non_zero_neg::optimized_signed::I128Impl;
+// Use generic implementation for felt252 (no bounded integer optimization available)
 impl NonZeroFelt252Neg = non_zero_neg::Impl<felt252>;
 
 /// Represents the result of checking whether a value is zero.
