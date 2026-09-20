@@ -241,7 +241,7 @@ impl TextPosition {
     /// If `line` or `col` are out of range, the offset will be clamped to the end of file, or end
     /// of line respectively.
     ///
-    /// Returns `None` if file is not found in `db`.
+    /// Returns `None` if the file is not found in `db`.
     pub fn offset_in_file(self, db: &dyn Database, file: FileId<'_>) -> Option<TextOffset> {
         let file_summary = db.file_summary(file)?;
         let content = db.file_content(file)?;

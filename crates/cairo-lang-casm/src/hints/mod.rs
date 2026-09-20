@@ -147,7 +147,7 @@ pub enum CoreHint {
     DivMod { lhs: ResOperand, rhs: ResOperand, quotient: CellRef, remainder: CellRef },
     /// Divides dividend (represented by 2 128-bit limbs) by divisor (represented by 2 128-bit
     /// limbs). Returns the quotient (represented by 2 128-bit limbs) and remainder (represented by
-    /// 2 128-bit limbs). In all cases, `name`0 is the least significant limb.
+    /// 2 128-bit limbs). In all cases, `name0` is the least significant limb.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 5))]
     Uint256DivMod {
         dividend0: ResOperand,
@@ -162,7 +162,7 @@ pub enum CoreHint {
     /// Divides dividend (represented by 4 128-bit limbs) by divisor (represented by 2 128-bit
     /// limbs). Returns the quotient (represented by 4 128-bit limbs) and remainder (represented
     /// by 2 128-bit limbs).
-    /// In all cases, `name`0 is the least significant limb.
+    /// In all cases, `name0` is the least significant limb.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 6))]
     Uint512DivModByUint256 {
         dividend0: ResOperand,
@@ -279,7 +279,7 @@ pub enum CoreHint {
     /// In this case: Returns `g == 1`, `s == b` and `t == 1`.
     /// All no-inverse requirements are satisfied, except for `g > 1`.
     ///
-    /// In all cases, `name`0 is the least significant limb.
+    /// In all cases, `name0` is the least significant limb.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 27))]
     U256InvModN {
         b0: ResOperand,

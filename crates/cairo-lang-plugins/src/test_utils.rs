@@ -9,7 +9,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use salsa::Database;
 
 /// Returns the expanded code for `module_id` after running all plugins and extends `diagnostics`
-/// with all the plugins diagnostics.
+/// with all plugins diagnostics.
 pub fn expand_module_text<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
