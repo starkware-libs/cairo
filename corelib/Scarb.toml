@@ -1,6 +1,12 @@
 [package]
 name = "core"
+<<<<<<< HEAD
 version = "2.20.0"
+||||||| fab648011
+version = "2.19.4"
+=======
+version = "2.19.5"
+>>>>>>> dev-v2.19.5
 edition = "2025_12"
 experimental-features = [
   "associated_item_constraints",
@@ -14,4 +20,10 @@ experimental-features = [
 no-core = true
 
 [dev-dependencies]
+<<<<<<< HEAD
 cairo_test = "2.20.0"
+||||||| fab648011
+cairo_test = "2.19.4"
+=======
+cairo_test = "2.19.5"
+>>>>>>> dev-v2.19.5
