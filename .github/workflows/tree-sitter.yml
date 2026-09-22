@@ -11,21 +11,9 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout repository
-<<<<<<< HEAD
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-||||||| fab648011
-        uses: actions/checkout@v6
-=======
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
->>>>>>> dev-v2.19.5
       - name: Set up tree-sitter
-<<<<<<< HEAD
         uses: tree-sitter/setup-action/cli@49f8c1f20b60102eae8c033bb7c7f6cd056f6086 # v2
-||||||| fab648011
-        uses: tree-sitter/setup-action/cli@v2
-=======
-        uses: tree-sitter/setup-action/cli@1868a545ffb91bdc221d14a168b5b6d8de4a28b3 # v2
->>>>>>> dev-v2.19.5
       - name: Clone tree-sitter-repo
         run: |-
           git clone https://github.com/starkware-libs/tree-sitter-cairo --single-branch --depth=1 --filter=blob:none
@@ -43,17 +31,7 @@ jobs:
     needs: [ test ]
     steps:
       - name: Notifying about Nightly fail!
-<<<<<<< HEAD
         uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
-||||||| fab648011
-        uses: slackapi/slack-github-action@v1.26.0
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TREE_SITTER_FAILURE_WEBHOOK }}
-=======
-        uses: slackapi/slack-github-action@70cd7be8e40a46e8b0eced40b0de447bdb42f68e # v1.26.0
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_TREE_SITTER_FAILURE_WEBHOOK }}
->>>>>>> dev-v2.19.5
         with:
           webhook: ${{ secrets.SLACK_TREE_SITTER_FAILURE_WEBHOOK }}
           webhook-type: webhook-trigger
