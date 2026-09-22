@@ -13,6 +13,7 @@ use crate::extensions::lib_func::{
     SignatureAndTypeGenericLibfunc, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
     WrapSignatureAndTypeGenericLibfunc,
 };
+use crate::extensions::structure::StructType;
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
@@ -74,16 +75,19 @@ fn specialize_with_dict_value_param(
             // Zero is not a valid value for enums with 3 or more variants, so they cannot be
             // used in a dict (whose default value is zero).
             // (the additional argument is the user type).
-            && generic_args.len() <= 3
-                // All contained types must be 0-sized, so the total size will be exactly 1.
+            && generic_args.len() == 3
+                // All contained types must be 0-sized unit style structs, so the total size will be exactly 1.
                 && generic_args.iter().skip(1).all(|arg| {
-                    let GenericArg::Type(ty) = arg else {
-                        return false;
-                    };
-                    let Ok(info) = context.get_type_info(ty) else {
-                        return false;
-                    };
-                    info.zero_sized
+                    if let GenericArg::Type(ty) = arg
+                        && let Ok(info) = context.get_type_info(ty)
+                        && info.zero_sized
+                        && info.long_id.generic_id == StructType::id()
+                        && info.long_id.generic_args.len() == 1
+                    {
+                        true
+                    } else {
+                        false
+                    }
                 })
         }
         _ => false,
