@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: crate-ci/typos@d43b6c087ac471e2ea7b8af622ff15f05c0c365b # master
+      - uses: crate-ci/typos@512fc24f32f44ab01972217aaaf3dc86ec234d53 # master
 
   benchmark:
     if: github.repository == 'starkware-libs/cairo'
@@ -76,7 +76,7 @@ jobs:
           cargo bench --bench compile -- --output-format bencher 2>&1 | tee benchmark-output.txt
 
       - name: Store timing benchmark results
-        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc
         with:
           name: Cairo Compiler Benchmarks
           tool: 'cargo'
@@ -97,7 +97,7 @@ jobs:
 
       - name: Store heap benchmark results
         if: ${{ !cancelled() }}
-        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc
         with:
           name: Cairo Heap Benchmarks
           tool: 'customSmallerIsBetter'
@@ -118,7 +118,7 @@ jobs:
 
       - name: Store LS-flow heap benchmark results
         if: ${{ !cancelled() }}
-        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc
         with:
           name: Cairo LS-Flow Memory Benchmarks
           tool: 'customSmallerIsBetter'
@@ -138,7 +138,7 @@ jobs:
 
       - name: Store language-server re-execution benchmark results
         if: ${{ !cancelled() }}
-        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc
         with:
           name: Cairo Language Server Re-execution Benchmarks
           tool: 'customSmallerIsBetter'
