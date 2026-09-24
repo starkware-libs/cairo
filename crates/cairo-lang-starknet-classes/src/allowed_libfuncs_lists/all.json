@@ -274,6 +274,7 @@
         "u8_wide_mul",
         "u96_guarantee_verify",
         "u96_limbs_less_than_guarantee_verify",
+        "u96_limbs_less_than_guarantee_verify_v2",
         "u96_single_limb_less_than_guarantee_verify",
         "unbox",
         "unsafe_panic",
