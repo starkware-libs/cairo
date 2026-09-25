@@ -1063,12 +1063,11 @@ fn get_circuit_info(
         .collect();
 
     while let Some((ty, first_visit)) = stack.pop() {
-        let long_id = &context.get_type_info(&ty)?.long_id;
-
         if values.contains_key(&ty) {
-            // The value was already processed.
             continue;
         }
+
+        let long_id = &context.get_type_info(&ty)?.long_id;
 
         let gate_inputs = long_id
             .generic_args
