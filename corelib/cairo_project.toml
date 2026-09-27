@@ -3,7 +3,7 @@ core = "src"
 
 [config.global]
 edition = "2025_12"
-version = "2.19.5"
+version = "2.19.6"
 
 [config.global.experimental_features]
 associated_item_constraints = true
