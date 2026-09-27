@@ -95,7 +95,13 @@ license = "Apache-2.0"
 license-file = "LICENSE"
 repository = "https://github.com/starkware-libs/cairo/"
 rust-version = "1.94"
+<<<<<<< HEAD
 version = "2.20.0"
+||||||| 3a267a8fe
+version = "2.19.5"
+=======
+version = "2.19.6"
+>>>>>>> dev-v2.19.6
 
 [workspace.dependencies]
 anyhow = "1.0.98"
