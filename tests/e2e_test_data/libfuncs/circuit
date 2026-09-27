@@ -1038,7 +1038,6 @@ SmallE2ETestRunner
 //! > cairo_code
 use core::circuit::{RangeCheck96, U96LimbsLtGuarantee};
 
-#[allow(extern_outside_corelib)]
 extern fn u96_limbs_less_than_guarantee_verify_v2<const NUM_LIMBS: usize>(
     guarantee: U96LimbsLtGuarantee<NUM_LIMBS>,
 ) implicits(RangeCheck96) nopanic;
@@ -1082,7 +1081,6 @@ SmallE2ETestRunner
 //! > cairo_code
 use core::circuit::{RangeCheck96, U96LimbsLtGuarantee};
 
-#[allow(extern_outside_corelib)]
 extern fn u96_limbs_less_than_guarantee_verify_v2<const NUM_LIMBS: usize>(
     guarantee: U96LimbsLtGuarantee<NUM_LIMBS>,
 ) implicits(RangeCheck96) nopanic;
@@ -1130,7 +1128,6 @@ SmallE2ETestRunner
 //! > cairo_code
 use core::circuit::{RangeCheck96, U96LimbsLtGuarantee};
 
-#[allow(extern_outside_corelib)]
 extern fn u96_limbs_less_than_guarantee_verify_v2<const NUM_LIMBS: usize>(
     guarantee: U96LimbsLtGuarantee<NUM_LIMBS>,
 ) implicits(RangeCheck96) nopanic;
@@ -1182,7 +1179,6 @@ SmallE2ETestRunner
 //! > cairo_code
 use core::circuit::{RangeCheck96, U96LimbsLtGuarantee};
 
-#[allow(extern_outside_corelib)]
 extern fn u96_limbs_less_than_guarantee_verify_v2<const NUM_LIMBS: usize>(
     guarantee: U96LimbsLtGuarantee<NUM_LIMBS>,
 ) implicits(RangeCheck96) nopanic;

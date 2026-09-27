@@ -563,6 +563,7 @@ fn build_u96_limbs_less_than_guarantee_verify_v2(
     let diffs = (0..limb_count).map(|_| casm_builder.alloc_var(false)).collect_vec();
     casm_build_extend!(casm_builder, let rc96_start = rc96;);
     // Labels for the limbs, extend if deciding to support more than 4.
+    // Note that for larger than 4 value additional ap-balancing work is required.
     const LIMB_LABELS: [&str; 4] = ["LIMB0", "LIMB1", "LIMB2", "LIMB3"];
     assert!(limb_count <= LIMB_LABELS.len(), "Unsupported limb count: {limb_count}.");
     // Find the first limb (starting from the most significant) that is different.
