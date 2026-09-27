@@ -252,6 +252,7 @@
         "u8_wide_mul": null,
         "u96_guarantee_verify": null,
         "u96_limbs_less_than_guarantee_verify": null,
+        "u96_limbs_less_than_guarantee_verify_v2": { "major": 1, "minor": 9, "patch": 5 },
         "u96_single_limb_less_than_guarantee_verify": null,
         "unbox": null,
         "unwrap_non_zero": null,
