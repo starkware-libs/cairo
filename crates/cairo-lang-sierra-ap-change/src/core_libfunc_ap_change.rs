@@ -461,6 +461,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Circuit(CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerify(_)) => {
             vec![ApChange::Known(1), ApChange::Known(1)]
         }
+        Circuit(CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerifyV2(libfunc)) => {
+            vec![ApChange::Known(libfunc.limb_count)]
+        }
         Circuit(CircuitConcreteLibfunc::U96SingleLimbLessThanGuaranteeVerify(_)) => {
             vec![ApChange::Known(0)]
         }

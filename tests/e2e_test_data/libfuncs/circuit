@@ -1027,3 +1027,203 @@ test::foo@F0([0]: RangeCheck96, [1]: U96LimbsLtGuarantee<4>) -> (RangeCheck96);
 
 //! > function_costs
 test::foo: SmallOrderedMap({Const: 1056})
+
+//! > ==========================================================================
+
+//! > U96LimbsLtGuarantee<1> full destruct v2.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::circuit::{RangeCheck96, U96LimbsLtGuarantee};
+
+#[allow(extern_outside_corelib)]
+extern fn u96_limbs_less_than_guarantee_verify_v2<const NUM_LIMBS: usize>(
+    guarantee: U96LimbsLtGuarantee<NUM_LIMBS>,
+) implicits(RangeCheck96) nopanic;
+
+fn foo(guarantee: U96LimbsLtGuarantee<1>) {
+    u96_limbs_less_than_guarantee_verify_v2(guarantee)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+jmp rel 4 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + -1] = [[fp + -5] + 0];
+[ap + 0] = [fp + -5] + 1, ap++;
+ret;
+
+//! > sierra_code
+type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
+type U96LimbsLtGuarantee<1> = U96LimbsLtGuarantee<1> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc u96_limbs_less_than_guarantee_verify_v2<1> = u96_limbs_less_than_guarantee_verify_v2<1>;
+libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
+
+F0:
+u96_limbs_less_than_guarantee_verify_v2<1>([0], [1]) -> ([2]);
+store_temp<RangeCheck96>([2]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: RangeCheck96, [1]: U96LimbsLtGuarantee<1>) -> (RangeCheck96);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 456})
+
+//! > ==========================================================================
+
+//! > U96LimbsLtGuarantee<2> full destruct v2.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::circuit::{RangeCheck96, U96LimbsLtGuarantee};
+
+#[allow(extern_outside_corelib)]
+extern fn u96_limbs_less_than_guarantee_verify_v2<const NUM_LIMBS: usize>(
+    guarantee: U96LimbsLtGuarantee<NUM_LIMBS>,
+) implicits(RangeCheck96) nopanic;
+
+fn foo(guarantee: U96LimbsLtGuarantee<2>) {
+    u96_limbs_less_than_guarantee_verify_v2(guarantee)
+}
+
+//! > casm
+[fp + -3] = [ap + 1] + [fp + -5], ap++;
+jmp rel 7 if [ap + 0] != 0, ap++;
+[fp + -4] = [ap + -2] + [fp + -6];
+jmp rel 7 if [ap + -2] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + -1] = [[fp + -7] + 0];
+jmp rel 3;
+[ap + -2] = [[fp + -7] + 0];
+[ap + 0] = [fp + -7] + 1, ap++;
+ret;
+
+//! > sierra_code
+type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
+type U96LimbsLtGuarantee<2> = U96LimbsLtGuarantee<2> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc u96_limbs_less_than_guarantee_verify_v2<2> = u96_limbs_less_than_guarantee_verify_v2<2>;
+libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
+
+F0:
+u96_limbs_less_than_guarantee_verify_v2<2>([0], [1]) -> ([2]);
+store_temp<RangeCheck96>([2]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: RangeCheck96, [1]: U96LimbsLtGuarantee<2>) -> (RangeCheck96);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 656})
+
+//! > ==========================================================================
+
+//! > U96LimbsLtGuarantee<3> full destruct v2.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::circuit::{RangeCheck96, U96LimbsLtGuarantee};
+
+#[allow(extern_outside_corelib)]
+extern fn u96_limbs_less_than_guarantee_verify_v2<const NUM_LIMBS: usize>(
+    guarantee: U96LimbsLtGuarantee<NUM_LIMBS>,
+) implicits(RangeCheck96) nopanic;
+
+fn foo(guarantee: U96LimbsLtGuarantee<3>) {
+    u96_limbs_less_than_guarantee_verify_v2(guarantee)
+}
+
+//! > casm
+[fp + -3] = [ap + 2] + [fp + -6], ap++;
+jmp rel 10 if [ap + 1] != 0, ap++;
+[fp + -4] = [ap + -1] + [fp + -7], ap++;
+jmp rel 10 if [ap + -2] != 0;
+[fp + -5] = [ap + -3] + [fp + -8];
+jmp rel 10 if [ap + -3] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + 0] = [[fp + -9] + 0], ap++;
+jmp rel 6;
+[ap + -2] = [[fp + -9] + 0];
+jmp rel 3;
+[ap + -3] = [[fp + -9] + 0];
+[ap + 0] = [fp + -9] + 1, ap++;
+ret;
+
+//! > sierra_code
+type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
+type U96LimbsLtGuarantee<3> = U96LimbsLtGuarantee<3> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc u96_limbs_less_than_guarantee_verify_v2<3> = u96_limbs_less_than_guarantee_verify_v2<3>;
+libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
+
+F0:
+u96_limbs_less_than_guarantee_verify_v2<3>([0], [1]) -> ([2]);
+store_temp<RangeCheck96>([2]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: RangeCheck96, [1]: U96LimbsLtGuarantee<3>) -> (RangeCheck96);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 856})
+
+//! > ==========================================================================
+
+//! > U96LimbsLtGuarantee<4> full destruct v2.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::circuit::{RangeCheck96, U96LimbsLtGuarantee};
+
+#[allow(extern_outside_corelib)]
+extern fn u96_limbs_less_than_guarantee_verify_v2<const NUM_LIMBS: usize>(
+    guarantee: U96LimbsLtGuarantee<NUM_LIMBS>,
+) implicits(RangeCheck96) nopanic;
+
+fn foo(guarantee: U96LimbsLtGuarantee<4>) {
+    u96_limbs_less_than_guarantee_verify_v2(guarantee)
+}
+
+//! > casm
+[fp + -3] = [ap + 3] + [fp + -7], ap++;
+jmp rel 13 if [ap + 2] != 0, ap++;
+[fp + -4] = [ap + 0] + [fp + -8], ap++;
+jmp rel 13 if [ap + -1] != 0, ap++;
+[fp + -5] = [ap + -3] + [fp + -9];
+jmp rel 13 if [ap + -3] != 0;
+[fp + -6] = [ap + -4] + [fp + -10];
+jmp rel 13 if [ap + -4] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + 1] = [[fp + -11] + 0], ap++;
+jmp rel 9, ap++;
+[ap + -2] = [[fp + -11] + 0];
+jmp rel 6;
+[ap + -3] = [[fp + -11] + 0];
+jmp rel 3;
+[ap + -4] = [[fp + -11] + 0];
+[ap + 0] = [fp + -11] + 1, ap++;
+ret;
+
+//! > sierra_code
+type RangeCheck96 = RangeCheck96 [storable: true, drop: false, dup: false, zero_sized: false];
+type U96LimbsLtGuarantee<4> = U96LimbsLtGuarantee<4> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc u96_limbs_less_than_guarantee_verify_v2<4> = u96_limbs_less_than_guarantee_verify_v2<4>;
+libfunc store_temp<RangeCheck96> = store_temp<RangeCheck96>;
+
+F0:
+u96_limbs_less_than_guarantee_verify_v2<4>([0], [1]) -> ([2]);
+store_temp<RangeCheck96>([2]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: RangeCheck96, [1]: U96LimbsLtGuarantee<4>) -> (RangeCheck96);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 1056})

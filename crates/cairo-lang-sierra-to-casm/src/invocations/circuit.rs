@@ -7,7 +7,7 @@ use cairo_lang_sierra::extensions::circuit::{
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
-use itertools::chain;
+use itertools::{Itertools, chain};
 
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -44,6 +44,9 @@ pub fn build(
         CircuitConcreteLibfunc::U96GuaranteeVerify(_) => build_u96_guarantee_verify(builder),
         CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerify(libfunc) => {
             build_u96_limbs_less_than_guarantee_verify(libfunc.limb_count, builder)
+        }
+        CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerifyV2(libfunc) => {
+            build_u96_limbs_less_than_guarantee_verify_v2(libfunc.limb_count, builder)
         }
         CircuitConcreteLibfunc::U96SingleLimbLessThanGuaranteeVerify(_) => {
             build_u96_single_limb_less_than_guarantee_verify(builder)
@@ -532,6 +535,55 @@ fn build_u96_guarantee_verify(
         let rc96_start = rc96;
         assert guarantee = *(rc96++);
     }
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[rc96]], None)],
+        CostValidationInfo {
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck96,
+                start: rc96_start,
+                end: rc96,
+            }],
+            extra_costs: None,
+        },
+    ))
+}
+
+/// Builds instructions for `u96_limbs_less_than_guarantee_verify_v2` libfunc.
+fn build_u96_limbs_less_than_guarantee_verify_v2(
+    limb_count: usize,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_rc96, expr_guarantee] = builder.try_get_refs()?;
+    let rc96 = expr_rc96.try_unpack_single()?;
+    let guarantee = &expr_guarantee.cells;
+    assert_eq!(guarantee.len(), limb_count * 2);
+    let mut casm_builder = CasmBuilder::with_capacity(limb_count * 4, limb_count * 2 - 1);
+    add_input_variables!(casm_builder, buffer(0) rc96;);
+    let diffs = (0..limb_count).map(|_| casm_builder.alloc_var(false)).collect_vec();
+    casm_build_extend!(casm_builder, let rc96_start = rc96;);
+    // Labels for the limbs, extend if deciding to support more than 4.
+    const LIMB_LABELS: [&str; 4] = ["LIMB0", "LIMB1", "LIMB2", "LIMB3"];
+    assert!(limb_count <= LIMB_LABELS.len(), "Unsupported limb count: {limb_count}.");
+    // Find the first limb (starting from the most significant) that is different.
+    for (i, &diff) in diffs.iter().enumerate().rev() {
+        let lhs = casm_builder.add_var(guarantee[i].clone());
+        let rhs = casm_builder.add_var(guarantee[limb_count + i].clone());
+        casm_build_extend!(casm_builder, assert diff = rhs - lhs;);
+        casm_builder.jump_nz(diff, LIMB_LABELS[i]);
+    }
+    // If none of the jumps were executed, the input values are equal.
+    casm_build_extend!(casm_builder, fail;);
+    for (i, diff) in diffs.into_iter().enumerate().rev() {
+        casm_builder.label(LIMB_LABELS[i]);
+        // Range-check the first non-zero `rhs - lhs`, proving `lhs < rhs`.
+        casm_build_extend!(casm_builder, assert diff = *(rc96++););
+        // For all but the final iteration, jump to `Final`.
+        if i != 0 {
+            casm_build_extend!(casm_builder, jump Final;);
+        }
+    }
+    casm_build_extend!(casm_builder, Final:);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[rc96]], None)],
