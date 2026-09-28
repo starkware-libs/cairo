@@ -146,13 +146,16 @@ impl RunnableBuilder {
         &self.program_info.registry
     }
 
-    /// Finds the first function ending with `name_suffix`.
+    /// Finds the function named `name_suffix`, or else the first function ending with it.
     pub fn find_function(&self, name_suffix: &str) -> Result<&Function, BuildError> {
-        self.sierra_program
-            .funcs
+        let funcs = &self.sierra_program.funcs;
+        funcs
             .iter()
-            .find(|f| {
-                if let Some(name) = &f.id.debug_name { name.ends_with(name_suffix) } else { false }
+            .find(|f| f.id.debug_name.as_deref() == Some(name_suffix))
+            .or_else(|| {
+                funcs.iter().find(|f| {
+                    f.id.debug_name.as_ref().is_some_and(|name| name.ends_with(name_suffix))
+                })
             })
             .ok_or_else(|| BuildError::MissingFunction { suffix: name_suffix.to_owned() })
     }
