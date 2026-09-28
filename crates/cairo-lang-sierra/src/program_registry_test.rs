@@ -102,3 +102,23 @@ fn libfunc_id_double_declaration() {
         Err(Box::new(ProgramRegistryError::LibfuncConcreteIdAlreadyExists("used_id".into())))
     );
 }
+
+#[test]
+fn function_params_signature_mismatch() {
+    let mut program = ProgramParser::new()
+        .parse(indoc! {"
+            type felt252 = felt252;
+            type u128 = u128;
+
+            return(a);
+
+            Func@0(a: felt252) -> (felt252);
+        "})
+        .unwrap();
+    // A deserialized program may carry a signature that differs from the function's params.
+    program.funcs[0].signature.param_types = vec!["u128".into()];
+    assert_eq!(
+        ProgramRegistry::<CoreType, CoreLibfunc>::new(&program).map(|_| ()),
+        Err(Box::new(ProgramRegistryError::FunctionParamsSignatureMismatch("Func".into())))
+    );
+}

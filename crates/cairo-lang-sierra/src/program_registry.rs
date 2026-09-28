@@ -51,6 +51,8 @@ pub enum ProgramRegistryError {
     FunctionWithUnstorableType { func_id: FunctionId, ty: ConcreteTypeId },
     #[error("Function `{0}` points to non existing entry point statement.")]
     FunctionNonExistingEntryPoint(FunctionId),
+    #[error("Function `{0}`'s parameter types do not match its signature.")]
+    FunctionParamsSignatureMismatch(FunctionId),
     #[error("#{0}: Libfunc invocation input count mismatch")]
     LibfuncInvocationInputCountMismatch(StatementIdx),
     #[error("#{0}: Libfunc invocation branch count mismatch")]
@@ -155,6 +157,11 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                         ty: ty.clone(),
                     }));
                 }
+            }
+            if !func.params.iter().map(|param| &param.ty).eq(func.signature.param_types.iter()) {
+                return Err(Box::new(ProgramRegistryError::FunctionParamsSignatureMismatch(
+                    func.id.clone(),
+                )));
             }
             if func.entry_point.0 >= program.statements.len() {
                 return Err(Box::new(ProgramRegistryError::FunctionNonExistingEntryPoint(
