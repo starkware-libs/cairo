@@ -849,6 +849,32 @@ const X: felt252 = f();
 
 //! > ==========================================================================
 
+//! > Const ordering comparison through a user `PartialOrd` impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[derive(Drop, Copy)]
+struct S {
+    a: u8,
+}
+impl SPartialOrd of PartialOrd<S> {
+    fn lt(lhs: S, rhs: S) -> bool {
+        lhs.a < rhs.a
+    }
+}
+const X: bool = @S { a: 1 } < @S { a: 2 };
+const Y: bool = @1_u8 < @2_u8;
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:10:17
+const X: bool = @S { a: 1 } < @S { a: 2 };
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Statement-level const struct literal with missing field.
 
 //! > test_runner_name

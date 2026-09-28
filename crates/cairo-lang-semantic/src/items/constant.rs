@@ -922,12 +922,21 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         }
 
         let args = match args
-            .into_iter()
-            .map(|arg| NumericArg::try_new(db, arg))
+            .iter()
+            .map(|arg| NumericArg::try_new(db, *arg))
             .collect::<Option<Vec<_>>>()
         {
             Some(args) => args,
-            None => return to_missing(skip_diagnostic()),
+            None => {
+                // A missing argument was already reported.
+                if args.iter().any(|arg| matches!(arg.long(db), ConstValue::Missing(_))) {
+                    return to_missing(skip_diagnostic());
+                }
+                return to_missing(self.diagnostics.report(
+                    expr.stable_ptr.untyped(),
+                    SemanticDiagnosticKind::UnsupportedConstant,
+                ));
+            }
         };
         let value = match imp.function {
             id if id == self.neg_fn => -&args[0].v,
@@ -966,7 +975,12 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 )
                 .intern(db);
             }
-            _ => return to_missing(skip_diagnostic()),
+            _ => {
+                return to_missing(self.diagnostics.report(
+                    expr.stable_ptr.untyped(),
+                    SemanticDiagnosticKind::UnsupportedConstant,
+                ));
+            }
         };
         if expr.ty == self.felt252 {
             ConstValue::Int(canonical_felt252(&value), expr.ty).intern(db)
