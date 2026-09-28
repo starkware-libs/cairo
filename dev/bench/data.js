@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790556457455,
+  "lastUpdate": 1790556565046,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -34091,6 +34091,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/aee0ee7d22288b89c0e66c7a887be8af8bd816e1"
         },
         "date": 1790470312029,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "ddd3c4c53b9aba6b0af439b2a2477eaf0236e420",
+          "message": "Merge v2.19.6 into main (#10383)",
+          "timestamp": "2026-09-27T13:07:21Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/ddd3c4c53b9aba6b0af439b2a2477eaf0236e420"
+        },
+        "date": 1790556564524,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
