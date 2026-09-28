@@ -680,6 +680,24 @@ impl LineBuilder {
     fn contains_protected_zone(&self) -> bool {
         self.children.iter().any(|child| matches!(child, LineComponent::ProtectedZone { .. }))
     }
+    /// Returns whether the line currently ends with a non-empty token, looking into protected zones
+    /// and skipping break points that add no space if not broken.
+    /// Returns None if nothing that decides it was found.
+    fn ends_with_token(&self) -> Option<bool> {
+        for child in self.pending_break_line_points.iter().rev().chain(self.children.iter().rev()) {
+            match child {
+                LineComponent::Token(s) => return Some(!s.is_empty()),
+                LineComponent::ProtectedZone { builder, .. } => {
+                    if let Some(res) = builder.ends_with_token() {
+                        return Some(res);
+                    }
+                }
+                LineComponent::BreakLinePoint(properties) if !properties.space_if_not_broken => {}
+                _ => return Some(false),
+            }
+        }
+        None
+    }
     /// Returns whether the line contains only indents.
     fn is_only_indents(&self) -> bool {
         !self.children.iter().any(|child| !matches!(child, LineComponent::Indent { .. }))
@@ -1267,7 +1285,9 @@ impl<'a> FormatterImpl<'a> {
                 ast::Trivium::SingleLineComment(_)
                 | ast::Trivium::SingleLineDocComment(_)
                 | ast::Trivium::SingleLineInnerComment(_) => {
-                    if !is_leading {
+                    // A leading comment may still be printed right after the previous token, so it
+                    // must be separated from it - e.g. `/` followed by `// c` would become `/// c`.
+                    if !is_leading || self.line_state.line_buffer.ends_with_token() == Some(true) {
                         self.line_state.line_buffer.push_space();
                     }
                     self.line_state
