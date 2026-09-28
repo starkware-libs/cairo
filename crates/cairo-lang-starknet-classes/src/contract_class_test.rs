@@ -1,12 +1,17 @@
 use std::io::BufReader;
 
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
+use cairo_lang_sierra::program::{ConcreteLibfuncLongId, LibfuncDeclaration, Program};
 use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
+use crate::allowed_libfuncs::{AllowedLibfuncsError, ListSelector};
+use crate::compiler_version::VersionId;
 use crate::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints, DEFAULT_CONTRACT_CLASS_VERSION,
+    ExtractedSierraProgram,
 };
 use crate::test_utils::get_example_file_path;
 
@@ -72,4 +77,32 @@ fn test_full_contract_deserialization_from_contracts_crate(name: &str) {
     let contract: ContractClass = serde_json::from_value(deserialized.clone()).unwrap();
     let serialized = serde_json::to_value(&contract).unwrap();
     assert_eq!(serialized, deserialized);
+}
+
+/// `u96_limbs_less_than_guarantee_verify_v2` is allowed from Sierra 1.9.5 only.
+#[test_case(4, false; "before")]
+#[test_case(5, true; "at")]
+fn test_libfunc_required_patch_version(patch: usize, expect_ok: bool) {
+    let extracted = ExtractedSierraProgram {
+        program: Program {
+            type_declarations: vec![],
+            libfunc_declarations: vec![LibfuncDeclaration {
+                id: ConcreteLibfuncId::new(0),
+                long_id: ConcreteLibfuncLongId {
+                    generic_id: GenericLibfuncId::from("u96_limbs_less_than_guarantee_verify_v2"),
+                    generic_args: vec![],
+                },
+            }],
+            statements: vec![],
+            funcs: vec![],
+        },
+        sierra_version: VersionId { major: 1, minor: 9, patch },
+        compiler_version: VersionId { major: 2, minor: 19, patch: 0 },
+    };
+    let result = extracted.validate_version_compatible(ListSelector::DefaultList);
+    if expect_ok {
+        assert_eq!(result, Ok(()));
+    } else {
+        assert!(matches!(result, Err(AllowedLibfuncsError::UnsupportedLibfuncAtVersion { .. })));
+    }
 }

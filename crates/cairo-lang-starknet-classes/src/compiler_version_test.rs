@@ -11,7 +11,7 @@ fn test_version_support() {
     assert!(!v131.supports(v140));
     assert!(v140.supports(v131));
     assert!(v140.supports(v140));
-    assert!(v140.supports(v141));
+    assert!(!v140.supports(v141));
     assert!(!v140.supports(v150));
     assert!(!v140.supports(v151));
     assert!(!v140.supports(v200));
@@ -25,7 +25,7 @@ fn test_version_support() {
 
     assert!(v150.supports(v141));
     assert!(v150.supports(v150));
-    assert!(v150.supports(v151));
+    assert!(!v150.supports(v151));
     assert!(!v150.supports(v200));
 
     assert!(v151.supports(v141));

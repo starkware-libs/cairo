@@ -11,9 +11,9 @@ pub struct VersionId {
     pub patch: usize,
 }
 impl VersionId {
-    /// Returns whether this version support the given version.
+    /// Returns whether this version supports the given version, i.e. is not older than it.
     pub fn supports(&self, other: VersionId) -> bool {
-        self.major > other.major || (self.major == other.major && self.minor >= other.minor)
+        (self.major, self.minor, self.patch) >= (other.major, other.minor, other.patch)
     }
 }
 
