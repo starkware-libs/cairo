@@ -560,3 +560,47 @@ pub trait MyTrait {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test logical operators in a config attribute broken over several lines.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: false)
+
+//! > cfg
+[["feature", "enabled_feature_with_a_long_name"]]
+
+//! > cairo_code
+#[cfg(
+    and(
+        not(feature: "some_really_long_feature_name"),
+        not(feature: "another_really_long_feature_name_here"),
+    ),
+)]
+fn f1() -> felt252 {
+    0
+}
+
+#[cfg(
+    and(
+        not(feature: "enabled_feature_with_a_long_name"),
+        not(feature: "another_really_long_feature_name_here"),
+    ),
+)]
+fn f2() -> felt252 {
+    0
+}
+
+//! > expanded_cairo_code
+#[cfg(
+    and(
+        not(feature: "some_really_long_feature_name"),
+        not(feature: "another_really_long_feature_name_here"),
+    ),
+)]
+fn f1() -> felt252 {
+    0
+}
+
+//! > expected_diagnostics
