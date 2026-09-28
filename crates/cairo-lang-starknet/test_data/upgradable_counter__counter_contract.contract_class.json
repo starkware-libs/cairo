@@ -1546,7 +1546,7 @@
       ],
       [
         3,
-        "cairo_level_tests::components::upgradable::upgradable::__wrapper__UpgradableImpl__upgrade::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable_comp, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateDrop, cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateUpgradableImpl>"
+        "cairo_level_tests::components::upgradable::upgradable::__wrapper__UpgradableImpl__upgrade::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable_comp, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateDrop, cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateUpgradable>"
       ],
       [
         4,

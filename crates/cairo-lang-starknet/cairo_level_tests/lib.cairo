@@ -13,6 +13,8 @@ mod contracts;
 #[cfg(test)]
 mod deployment;
 #[cfg(test)]
+mod embeddable_name_collision_test;
+#[cfg(test)]
 mod erc20_test;
 #[cfg(test)]
 mod events;

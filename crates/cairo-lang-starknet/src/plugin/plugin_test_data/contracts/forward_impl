@@ -936,7 +936,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x20c8dcb117f9363167927bfabb7c2d09f58f71bedf05e8fac0a9e604ed10a85.try_into().unwrap();
 
-impl ContractStateIContractForwardImpl of
+impl ContractStateForwardedImpl of
     super::UnsafeNewContractStateTraitForIContractForwardImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -2695,13 +2695,13 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x16a68a84419b4469ecb3dd73d3fccf12f5d26792e1630b0450ea6ab6d2c11ff.try_into().unwrap();
 
-impl ContractStateDirectImpl of
+impl ContractStateDirect of
     super::UnsafeNewContractStateTraitForDirectImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateIForwardedForwardImpl of
+impl ContractStateForwarded of
     super::UnsafeNewContractStateTraitForIForwardedForwardImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()

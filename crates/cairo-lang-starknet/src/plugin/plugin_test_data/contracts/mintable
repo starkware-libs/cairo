@@ -164,19 +164,19 @@ pub fn unsafe_new_contract_state() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
-impl ContractStateIERC20 of
+impl ContractStateERC20Impl of
     erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateTransfer of
+impl ContractStateOwnershipTransfer of
     ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateMint of
+impl ContractStateMintImpl of
     mintable_comp::UnsafeNewContractStateTraitForMint<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -1168,19 +1168,19 @@ pub fn unsafe_new_contract_state() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
-impl ContractStateIERC20 of
+impl ContractStateERC20Impl of
     erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateTransfer of
+impl ContractStateOwnershipTransfer of
     ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateMint of
+impl ContractStateMintImpl of
     mintable_comp::UnsafeNewContractStateTraitForMint<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
