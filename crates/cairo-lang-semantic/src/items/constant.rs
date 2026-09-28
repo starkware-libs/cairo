@@ -52,8 +52,8 @@ use crate::types::resolve_type;
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
     ExprConstant, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor,
-    FunctionId, GenericParam, LogicalOperator, MemberAccessKind, Pattern, PatternId,
-    SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
+    FunctionId, GenericArgumentId, GenericParam, LogicalOperator, MemberAccessKind, Pattern,
+    PatternId, SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
@@ -904,10 +904,16 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             if condition { self.true_const } else { self.false_const }
         };
 
-        if imp.function == self.eq_fn {
-            return bool_value(self.const_values_eq(args[0], args[1]));
-        } else if imp.function == self.ne_fn {
-            return bool_value(!self.const_values_eq(args[0], args[1]));
+        if imp.function == self.eq_fn || imp.function == self.ne_fn {
+            // Values are compared structurally, which is only the semantics of core impls.
+            if !self.is_core_impl(imp.impl_id) {
+                return to_missing(self.diagnostics.report(
+                    expr.stable_ptr.untyped(),
+                    SemanticDiagnosticKind::UnsupportedConstant,
+                ));
+            }
+            let eq = self.const_values_eq(args[0], args[1]);
+            return bool_value(if imp.function == self.eq_fn { eq } else { !eq });
         } else if args.iter().all(|arg| [self.false_const, self.true_const].contains(arg)) {
             let as_bool = |v| v == self.true_const;
             if imp.function == self.not_fn {
@@ -1246,6 +1252,20 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 }
             }
         }
+    }
+
+    /// Returns whether the impl, and all the impls it is generic over, are defined in the core
+    /// crate.
+    fn is_core_impl(&self, impl_id: ImplId<'a>) -> bool {
+        let db = self.db;
+        let ImplLongId::Concrete(concrete_impl) = impl_id.long(db) else {
+            return false;
+        };
+        concrete_impl.impl_def_id(db).parent_module(db).owning_crate(db) == db.core_crate()
+            && concrete_impl.long(db).generic_args.iter().all(|arg| match arg {
+                GenericArgumentId::Impl(impl_id) => self.is_core_impl(*impl_id),
+                _ => true,
+            })
     }
 
     /// Substitutes generic parameters in the given object.
