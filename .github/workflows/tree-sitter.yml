@@ -12,8 +12,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Installed manually, as `tree-sitter/setup-action` internally uses actions not pinned to a
+      # commit SHA, which are disallowed in this repo. The binary is pinned by checksum.
       - name: Set up tree-sitter
-        uses: tree-sitter/setup-action/cli@49f8c1f20b60102eae8c033bb7c7f6cd056f6086 # v2
+        run: |-
+          bin_dir="$RUNNER_TEMP/tree-sitter/bin"
+          mkdir -p "$bin_dir"
+          curl -fLSs -o "$RUNNER_TEMP/tree-sitter.gz" \
+            "https://github.com/tree-sitter/tree-sitter/releases/download/$TREE_SITTER_VERSION/tree-sitter-linux-x64.gz"
+          echo "$TREE_SITTER_SHA256  $RUNNER_TEMP/tree-sitter.gz" | sha256sum -c -
+          gunzip -c "$RUNNER_TEMP/tree-sitter.gz" > "$bin_dir/tree-sitter"
+          chmod +x "$bin_dir/tree-sitter"
+          echo "$bin_dir" >> "$GITHUB_PATH"
+          config="$("$bin_dir/tree-sitter" init-config 2>&1 | cut -c32-)"
+          printf '{"parser-directories":["%q"]}' "${GITHUB_WORKSPACE%/*}" > "$config"
+        env:
+          TREE_SITTER_VERSION: v0.27.0
+          TREE_SITTER_SHA256: 20a1f39ec1c45f2211492dcb8881c802b643b554bb196869a29ac3778277fa77
       - name: Clone tree-sitter-repo
         run: |-
           git clone https://github.com/starkware-libs/tree-sitter-cairo --single-branch --depth=1 --filter=blob:none
