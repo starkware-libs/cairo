@@ -1,0 +1,72 @@
+struct S {
+    a: u32,
+    b: u32,
+}
+
+fn call_args() {
+    foo(
+        1,
+        // Before the second argument.
+        0,
+    );
+}
+
+fn macro_args() {
+    let arr = array![
+        1,
+        // Before the second element.
+        0,
+    ];
+}
+
+fn fixed_size_array() {
+    let arr = [
+        1,
+        // Before the second element.
+        0,
+    ];
+}
+
+fn tuple() {
+    let t = (
+        // Before the first element.
+        1,
+        // Before the second element.
+        2,
+    );
+}
+
+fn struct_ctor() {
+    let s = S {
+        // Before a.
+        a: 1,
+        // Before b.
+        b: 2,
+    };
+}
+
+fn struct_pattern(s: S) {
+    let S {
+        // Before a.
+        a,
+        // Before b.
+        b,
+    } = s;
+}
+
+fn generic_args() {
+    let x = bar::<
+        // Before the first type.
+        u32,
+        // Before the second type.
+        u64,
+    >();
+}
+
+fn trailing_comment_before_close() {
+    foo(
+        1,
+        0,
+        // Before the closing parenthesis.
+    );
+}

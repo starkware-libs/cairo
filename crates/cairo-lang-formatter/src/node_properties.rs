@@ -535,7 +535,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_leading_single_line_comment(db, self),
                         true,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -549,7 +549,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_leading_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -565,7 +565,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_leading_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -594,7 +594,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_leading_single_line_comment(db, self),
                         true,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -636,7 +636,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_leading_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -681,7 +681,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         6,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_leading_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -695,7 +695,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         21,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_leading_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -861,7 +861,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    true,
+                    !list_contains_leading_single_line_comment(db, self),
                     true,
                 ),
                 breaking_frequency: 2,
@@ -899,6 +899,10 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                         }
                     }
                 }
+                if list_contains_leading_single_line_comment(db, self) {
+                    properties.set_line_by_line();
+                    properties.is_optional = false;
+                }
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
             SyntaxKind::ExprList => {
@@ -933,6 +937,10 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                             properties.set_line_by_line();
                         }
                     }
+                }
+                if list_contains_leading_single_line_comment(db, self) {
+                    properties.set_line_by_line();
+                    properties.is_optional = false;
                 }
 
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
@@ -1129,6 +1137,25 @@ fn param_list_contains_single_line_comment(db: &dyn Database, node: &SyntaxNode<
                     false
                 }
             })
+        })
+}
+
+/// Returns whether an item of a list, or the closing delimiter following it, is preceded by a
+/// single-line comment, which is then on its own line.
+fn list_contains_leading_single_line_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    let has_leading_comment = |child: &SyntaxNode<'_>| {
+        child
+            .tokens(db)
+            .next()
+            .is_some_and(|terminal| contains_single_line_comment(db, &terminal.get_children(db)[0]))
+    };
+    node.get_children(db).iter().any(has_leading_comment)
+        || node.parent(db).is_some_and(|parent| {
+            parent
+                .get_children(db)
+                .iter()
+                .tuple_windows()
+                .any(|(current, next)| current == node && has_leading_comment(next))
         })
 }
 

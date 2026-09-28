@@ -35,6 +35,15 @@ use crate::{FormatterConfig, get_formatted_file};
     false
 )]
 #[test_case(
+    "test_data/cairo_files/list_comments.cairo",
+    "test_data/expected_results/list_comments.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
     "test_data/cairo_files/linebreaking.cairo",
     "test_data/expected_results/linebreaking.cairo",
     false,
