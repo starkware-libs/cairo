@@ -106,6 +106,47 @@ warning[E2200]: Plugin diagnostic: Failed to generate ABI: Event `test::test_con
 
 //! > ==========================================================================
 
+//! > Test duplicate event selector of a key variant.
+
+//! > test_runner_name
+test_abi_failure(expect_diagnostics: warnings_only)
+
+//! > cairo_code
+#[derive(Drop, starknet::Event)]
+enum A {
+    Dup: B,
+}
+#[derive(Drop, starknet::Event)]
+struct B {}
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        A: super::A,
+        #[key]
+        Dup: felt252,
+    }
+}
+
+//! > expected_error
+Event `test::test_contract::Event` has duplicate selector `Dup`.
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Failed to generate ABI: Event `test::test_contract::Event` has duplicate selector `Dup`.
+ --> lib.cairo:18:9-19:20
+          #[key]
+ _________^
+|         Dup: felt252,
+|____________________^
+
+//! > ==========================================================================
+
 //! > Test duplicate entry points with the same name.
 
 //! > test_runner_name
