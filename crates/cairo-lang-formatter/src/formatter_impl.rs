@@ -1000,10 +1000,10 @@ impl<'a> FormatterImpl<'a> {
             }
             // The trailing trivia is formatted separately, so a trailing comment ends the line
             // instead of swallowing the tokens that follow it.
-            let text_span = TextSpan::new(
-                syntax_node.span(self.db).start,
-                syntax_node.span_end_without_trivia(self.db),
-            );
+            let text_span = TextSpan {
+                end: syntax_node.span_end_without_trivia(self.db),
+                ..syntax_node.span(self.db)
+            };
             self.line_state
                 .line_buffer
                 .push_str(syntax_node.get_text_of_span(self.db, text_span).trim());
