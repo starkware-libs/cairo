@@ -611,7 +611,8 @@ impl<'db> AbiBuilder<'db> {
                 let event_fields = zip_eq(variants, concrete_variants)
                     .map(|((name, kind), concrete_variant)| {
                         let source = Source::Variant(concrete_variant.id);
-                        if kind == EventFieldKind::Nested {
+                        // Every non-flat variant emits its name as its selector.
+                        if kind != EventFieldKind::Flat {
                             add_selector(&name, source)?;
                         }
                         let field =
