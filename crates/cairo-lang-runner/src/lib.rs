@@ -466,6 +466,11 @@ impl SierraCasmRunner {
         Ok(self.builder.find_function(name_suffix)?)
     }
 
+    /// Finds the function whose debug name is exactly `name`.
+    pub fn find_function_by_name(&self, name: &str) -> Result<&Function, RunnerError> {
+        Ok(self.builder.find_function_by_name(name)?)
+    }
+
     /// Returns whether the gas builtin is required in the given function.
     fn requires_gas_builtin(&self, func: &Function) -> bool {
         func.signature
