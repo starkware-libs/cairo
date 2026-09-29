@@ -998,8 +998,28 @@ impl<'a> FormatterImpl<'a> {
             if spacing_data.add_space_before && !self.line_state.prevent_next_space {
                 self.line_state.line_buffer.push_space();
             }
-            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+            // The trailing trivia is formatted separately, so a trailing comment ends the line
+            // instead of swallowing the tokens that follow it.
+            let text_span = TextSpan {
+                end: syntax_node.span_end_without_trivia(self.db),
+                ..syntax_node.span(self.db)
+            };
+            self.line_state
+                .line_buffer
+                .push_str(syntax_node.get_text_of_span(self.db, text_span).trim());
             self.line_state.prevent_next_space = spacing_data.prevent_space_after;
+            self.is_current_line_whitespaces = false;
+            self.is_last_element_comment = false;
+            if let Some(last_terminal) = syntax_node
+                .tokens(self.db)
+                .filter(|t| t.width(self.db) != TextWidth::default())
+                .last()
+            {
+                let [_, _, trailing] = last_terminal.get_children(self.db) else {
+                    panic!("Terminal node should have 3 children.");
+                };
+                self.format_trivia(ast::Trivia::from_syntax_node(self.db, *trailing), false);
+            }
         } else if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node);
         } else {
