@@ -658,7 +658,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         // Core's generic impls forward to the impls of their generic args (e.g. `PartialEq` of
         // `@T`), so those must be fully core as well.
         if impl_def.parent_module(db).owning_crate(db) != db.core_crate()
-            || !imp.concrete_impl_id.long(db).generic_args.iter().all(|arg| self.is_core_arg(*arg))
+            || imp.concrete_impl_id.long(db).generic_args.iter().any(|arg| !self.is_core_arg(*arg))
         {
             return false;
         }
