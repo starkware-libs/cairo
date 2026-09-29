@@ -239,9 +239,9 @@ impl BreakLinePointProperties {
     pub fn set_single_breakpoint(&mut self) {
         self.is_single_breakpoint = true;
     }
+    /// Makes all the breakpoints of the list break together, instead of only one of them.
     pub fn set_line_by_line(&mut self) {
         self.is_single_breakpoint = false;
-        self.is_optional = true;
     }
     pub fn unset_comma_if_broken(&mut self) {
         self.is_comma_if_broken = false;

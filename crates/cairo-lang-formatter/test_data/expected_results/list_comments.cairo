@@ -1,3 +1,11 @@
+fn foo(
+    // before first param
+    a: u32,
+    // between params
+    b: u32,
+    // before close paren
+) {}
+
 struct S {
     a: u32,
     b: u32,
@@ -68,5 +76,15 @@ fn trailing_comment_before_close() {
         1,
         0,
         // Before the closing parenthesis.
+    );
+}
+
+fn trailing_comment_on_item_line() {
+    foo(1, // Trailing the first argument.
+    0);
+}
+
+fn trailing_comment_on_last_item_line() {
+    foo(1, 0 // Trailing the last argument.
     );
 }
