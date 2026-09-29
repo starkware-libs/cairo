@@ -52,8 +52,8 @@ use crate::types::resolve_type;
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
     ExprConstant, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor,
-    FunctionId, GenericParam, LogicalOperator, MemberAccessKind, Pattern, PatternId,
-    SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
+    FunctionId, GenericArgumentId, GenericParam, LogicalOperator, MemberAccessKind, Pattern,
+    PatternId, SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
@@ -655,7 +655,11 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return false;
         };
         let impl_def = imp.concrete_impl_id.impl_def_id(db);
-        if impl_def.parent_module(db).owning_crate(db) != db.core_crate() {
+        // Generic core impls may forward to impls of their type arguments (e.g. `@S == @S`
+        // calling `S`'s `eq`), which are only known to be core impls for core types.
+        if impl_def.parent_module(db).owning_crate(db) != db.core_crate()
+            || imp.concrete_impl_id.long(db).generic_args.iter().any(|arg| !is_core_arg(db, *arg))
+        {
             return false;
         }
         let Ok(trait_id) = db.impl_def_trait(impl_def) else {
@@ -1285,6 +1289,29 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
     /// Compares two `BigInt`s of type `ty` for value equality, treating `felt252` as a field.
     fn eq_in_type(&self, a: &BigInt, b: &BigInt, ty: TypeId<'a>) -> bool {
         a == b || (ty == self.felt252 && Felt252::from(a) == Felt252::from(b))
+    }
+}
+
+/// Returns whether the type is built only from types defined in the core crate.
+fn is_core_type<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
+    match ty.long(db) {
+        TypeLongId::Concrete(concrete) => {
+            concrete.generic_type(db).parent_module(db).owning_crate(db) == db.core_crate()
+                && concrete.generic_args(db).into_iter().all(|arg| is_core_arg(db, arg))
+        }
+        TypeLongId::Tuple(tys) => tys.iter().all(|ty| is_core_type(db, *ty)),
+        TypeLongId::Snapshot(ty) | TypeLongId::FixedSizeArray { type_id: ty, .. } => {
+            is_core_type(db, *ty)
+        }
+        _ => false,
+    }
+}
+
+/// Returns whether the generic argument, if it is a type, is built only from core types.
+fn is_core_arg<'db>(db: &'db dyn Database, arg: GenericArgumentId<'db>) -> bool {
+    match arg {
+        GenericArgumentId::Type(ty) => is_core_type(db, ty),
+        _ => true,
     }
 }
 

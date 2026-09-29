@@ -631,6 +631,57 @@ error[E2127]: This expression is not supported as constant.
 
 //! > ==========================================================================
 
+//! > Core generic impls over user impls in consts.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[derive(Drop, Copy)]
+struct S {
+    a: u8,
+    b: u8,
+}
+impl SPartialEq of PartialEq<S> {
+    fn eq(lhs: @S, rhs: @S) -> bool {
+        lhs.a == rhs.a
+    }
+}
+impl SPartialOrd of PartialOrd<S> {
+    fn lt(lhs: S, rhs: S) -> bool {
+        lhs.a < rhs.a
+    }
+}
+const SNAPSHOT_EQ: bool = @S { a: 1, b: 2 } == @S { a: 1, b: 3 };
+const TUPLE_EQ: bool = (S { a: 1, b: 2 },) == (S { a: 1, b: 3 },);
+const OPTION_NE: bool = Some(S { a: 1, b: 2 }) != Some(S { a: 1, b: 3 });
+const SNAPSHOT_LT: bool = @S { a: 1, b: 2 } < @S { a: 2, b: 2 };
+const CORE_EQ: bool = @(1_u8, Some(2_u16)) == @(1_u8, Some(2_u16));
+const CORE_LT: bool = @1_u8 < @2_u8;
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:16:27
+const SNAPSHOT_EQ: bool = @S { a: 1, b: 2 } == @S { a: 1, b: 3 };
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:17:24
+const TUPLE_EQ: bool = (S { a: 1, b: 2 },) == (S { a: 1, b: 3 },);
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:18:25
+const OPTION_NE: bool = Some(S { a: 1, b: 2 }) != Some(S { a: 1, b: 3 });
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:19:27
+const SNAPSHOT_LT: bool = @S { a: 1, b: 2 } < @S { a: 2, b: 2 };
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Starknet consts diagnostics
 
 //! > test_runner_name
