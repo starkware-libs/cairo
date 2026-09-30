@@ -10103,7 +10103,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x291a893aaae68e6364fac8003da0089f1c976946ebe457ce78ed62b5e680be2.try_into().unwrap();
 
-impl ContractStateMyEmbeddableImpl of
+impl ContractStateMyEmbeddedImpl of
     super::component::UnsafeNewContractStateTraitForMyEmbeddableImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -17636,7 +17636,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3168f720317a98a00e5727dec4873607cd97bfa1e65fef0524f5661f2b767ed.try_into().unwrap();
 
-impl ContractStateMyImpl of
+impl ContractStateMyEmbeddedImpl of
     super::component::UnsafeNewContractStateTraitForMyImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()

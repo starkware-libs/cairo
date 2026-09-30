@@ -625,7 +625,7 @@ fn handle_embed_impl_alias<'db>(
     data.generated_wrapper_functions.push(
         RewriteNode::interpolate_patched(
             &formatdoc! {"
-            impl ContractState$impl_name$ of
+            impl ContractState$alias_name$ of
                 $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
                 fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
                     unsafe_new_contract_state()
@@ -633,6 +633,7 @@ fn handle_embed_impl_alias<'db>(
             }}
         "},
             &[
+                ("alias_name".to_string(), RewriteNode::from_ast_trimmed(&alias_ast.name(db))),
                 ("impl_name".to_string(), RewriteNode::from_ast_trimmed(&impl_name)),
                 ("impl_module".to_string(), impl_module),
             ]

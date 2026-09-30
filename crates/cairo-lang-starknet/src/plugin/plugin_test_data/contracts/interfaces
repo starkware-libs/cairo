@@ -1879,19 +1879,19 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x22aa9f2c832fb18ac0ec19b508b86f5fc9d78a62b4d7a72ee2a8c7c11a786b5.try_into().unwrap();
 
-impl ContractStateI1I1 of
+impl ContractStateEmbeddedI1I1 of
     super::comp::UnsafeNewContractStateTraitForI1I1<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateI1I2 of
+impl ContractStateEmbeddedI1I2 of
     super::comp::UnsafeNewContractStateTraitForI1I2<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateI2I of
+impl ContractStateEmbeddedI2I of
     super::comp::UnsafeNewContractStateTraitForI2I<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()

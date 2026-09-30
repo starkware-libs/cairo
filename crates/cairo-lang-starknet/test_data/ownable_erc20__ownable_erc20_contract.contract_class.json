@@ -3141,55 +3141,55 @@
     "user_func_names": [
       [
         0,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_name::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_name::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         1,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_symbol::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_symbol::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         2,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_decimals::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_decimals::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         3,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_total_supply::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_total_supply::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         4,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__balance_of::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__balance_of::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         5,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__allowance::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__allowance::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         6,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__transfer::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__transfer::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         7,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__transfer_from::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__transfer_from::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         8,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__approve::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__approve::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         9,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__increase_allowance::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__increase_allowance::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         10,
-        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__decrease_allowance::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__decrease_allowance::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateERC20Impl>"
       ],
       [
         11,
-        "cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__owner::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateTransfer>"
+        "cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__owner::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateOwnershipTransfer>"
       ],
       [
         12,
-        "cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__transfer_ownership::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateTransfer>"
+        "cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__transfer_ownership::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateDrop, cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractStateOwnershipTransfer>"
       ],
       [
         13,
