@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790729659273,
+  "lastUpdate": 1790729805229,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -34691,6 +34691,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/ddd3c4c53b9aba6b0af439b2a2477eaf0236e420"
         },
         "date": 1790643437496,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3146,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "FlashW",
+            "username": "FlashWayne",
+            "email": "flashwayne00@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "8075a64f9b848f7b82b3c4f6d3a02310dd1c8edf",
+          "message": "starknet: check key variant selectors for duplicates (#10403)\n\nCo-authored-by: FlashW <332458478+FlashWayne@users.noreply.github.com>",
+          "timestamp": "2026-09-29T11:48:54Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/8075a64f9b848f7b82b3c4f6d3a02310dd1c8edf"
+        },
+        "date": 1790729804959,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
