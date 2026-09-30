@@ -3,6 +3,7 @@ use indoc::indoc;
 
 use crate::ProgramParser;
 use crate::extensions::core::{CoreLibfunc, CoreType};
+use crate::extensions::{ExtensionError, SpecializationError};
 use crate::program::{ConcreteTypeLongId, TypeDeclaration};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 
@@ -100,5 +101,31 @@ fn libfunc_id_double_declaration() {
         )
         .map(|_| ()),
         Err(Box::new(ProgramRegistryError::LibfuncConcreteIdAlreadyExists("used_id".into())))
+    );
+}
+
+#[test]
+fn circuit_with_cyclic_gates() {
+    assert_eq!(
+        ProgramRegistry::<CoreType, CoreLibfunc>::new(
+            &ProgramParser::new()
+                .parse(indoc! {"
+                    type In = CircuitInput<0>;
+                    type Gate0 = AddModGate<Gate1, In>;
+                    type Gate1 = AddModGate<Gate0, In> \
+                        [storable: false, drop: false, dup: false, zero_sized: true];
+                    type Outputs = Struct<ut@Tuple, Gate0>;
+                    type C = Circuit<Outputs>;
+                "})
+                .unwrap()
+        )
+        .map(|_| ()),
+        Err(Box::new(ProgramRegistryError::TypeSpecialization {
+            concrete_id: "C".into(),
+            error: ExtensionError::TypeSpecialization {
+                type_id: "Circuit".into(),
+                error: SpecializationError::UnsupportedGenericArg,
+            },
+        }))
     );
 }

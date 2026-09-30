@@ -1105,6 +1105,8 @@ fn get_circuit_info(
     let mut stack: Vec<(ConcreteTypeId, bool)> = circ_outputs
         .map(|generic_arg| (extract_matches!(generic_arg, GenericArg::Type).clone(), true))
         .collect();
+    // The gates that had their first visit but not yet their second one.
+    let mut in_progress = UnorderedHashSet::<ConcreteTypeId>::default();
 
     while let Some((ty, first_visit)) = stack.pop() {
         let long_id = &context.get_type_info(&ty)?.long_id;
@@ -1120,6 +1122,10 @@ fn get_circuit_info(
             .map(|generic_arg| extract_matches!(generic_arg, GenericArg::Type));
 
         if first_visit {
+            // Reaching a gate again before its second visit means it is one of its own inputs,
+            // i.e. the gates form a cycle.
+            require(in_progress.insert(ty.clone()))
+                .ok_or(SpecializationError::UnsupportedGenericArg)?;
             stack.push((ty, false));
             stack.extend(gate_inputs.map(|ty| (ty.clone(), true)))
         } else {
