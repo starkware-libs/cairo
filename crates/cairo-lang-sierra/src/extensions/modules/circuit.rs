@@ -1179,15 +1179,20 @@ fn parse_circuit_inputs<'a>(
             let idx = args_as_single_value(&long_id.generic_args)?
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
-            assert!(inputs.insert(idx, ty).is_none());
+            require(inputs.insert(idx, ty).is_none())
+                .ok_or(SpecializationError::UnsupportedGenericArg)?;
         } else {
-            // generic_id must be a gate. This was validated in `validate_output_tuple`.
-            stack.extend(
-                long_id
-                    .generic_args
-                    .iter()
-                    .map(|generic_arg| extract_matches!(generic_arg, GenericArg::Type).clone()),
-            );
+            // generic_id should be a gate, which is checked in `get_circuit_info`. The gate may be
+            // forward declared, so its generic args are not necessarily validated yet.
+            let n_gate_inputs = if long_id.generic_id == InverseGate::ID { 1 } else { 2 };
+            require(long_id.generic_args.len() == n_gate_inputs)
+                .ok_or(SpecializationError::UnsupportedGenericArg)?;
+            for generic_arg in &long_id.generic_args {
+                let GenericArg::Type(input) = generic_arg else {
+                    return Err(SpecializationError::UnsupportedGenericArg);
+                };
+                stack.push(input.clone());
+            }
         }
     }
 

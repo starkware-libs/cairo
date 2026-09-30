@@ -53,14 +53,15 @@ impl GenericTypeArgGenericType for IntRangeTypeWrapped {
     ) -> Result<TypeInfo, SpecializationError> {
         check_inner_type(wrapped_info)?;
 
-        // The following assert is a sanity check. It should follow from the fact that
-        // `check_inner_type` passed.
-        assert!(
-            wrapped_info.storable
-                && wrapped_info.duplicatable
-                && wrapped_info.droppable
-                && !wrapped_info.zero_sized
-        );
+        // This follows from `check_inner_type` for a valid type, but the info may be forward
+        // declared and not yet validated.
+        if !(wrapped_info.storable
+            && wrapped_info.duplicatable
+            && wrapped_info.droppable
+            && !wrapped_info.zero_sized)
+        {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
         Ok(TypeInfo {
             long_id,
             duplicatable: true,
