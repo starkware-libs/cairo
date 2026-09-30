@@ -31,10 +31,9 @@ impl<TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
 }
 
 /// A base to start ap tracking from.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum ApTrackingBase {
     FunctionStart(FunctionId),
-    #[expect(dead_code)]
     EnableStatement(StatementIdx),
 }
 
@@ -209,7 +208,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     }
 
     /// Calculates the tracking information for a statement.
-    fn calc_tracking_info_for_statement(&mut self, idx: StatementIdx) {
+    fn calc_tracking_info_for_statement(&mut self, idx: StatementIdx) -> Result<(), ApChangeError> {
         for (ap_change, target) in &self.branches[idx.0] {
             if matches!(ap_change, ApChange::EnableApTracking) {
                 self.infos[target.0].tracking_info = Some(ApTrackingInfo {
@@ -231,12 +230,16 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             let target_info = &mut self.infos[target.0].tracking_info;
             *target_info = Some(match target_info.take() {
                 Some(mut e) => {
+                    if e.base != base_info.base {
+                        return Err(ApChangeError::BadMergeBaseMismatch(*target));
+                    }
                     e.ap_change = e.ap_change.max(base_info.ap_change);
                     e
                 }
                 None => base_info,
             });
         }
+        Ok(())
     }
 
     /// Calculates the effective ap change for a statement, and the variables for ap alignment.
@@ -350,7 +353,7 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
         });
     }
     for idx in ap_tracked_reverse_topological_ordering.iter().rev() {
-        helper.calc_tracking_info_for_statement(*idx);
+        helper.calc_tracking_info_for_statement(*idx)?;
     }
     for idx in ap_tracked_reverse_topological_ordering {
         helper.calc_effective_ap_change_and_variables_per_statement(idx);
