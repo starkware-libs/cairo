@@ -680,7 +680,10 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 concrete_impl.impl_def_id(db).parent_module(db).owning_crate(db) == db.core_crate()
                     && concrete_impl.long(db).generic_args.iter().all(|arg| self.is_core_arg(*arg))
             }
-            GenericArgumentId::Constant(_) | GenericArgumentId::NegImpl(_) => true,
+            GenericArgumentId::Constant(value) => {
+                value.ty(db).is_ok_and(|ty| self.is_core_type(ty))
+            }
+            GenericArgumentId::NegImpl(_) => true,
         }
     }
 
