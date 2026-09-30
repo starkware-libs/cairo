@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Label, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::felt252_dict::{
     Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
@@ -52,7 +52,7 @@ fn build_felt252_dict_new(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[segment_arena_ptr], &[new_dict_end]], None)],
+        [(Label::FALLTHROUGH, &[&[segment_arena_ptr], &[new_dict_end]], None)],
         CostValidationInfo {
             builtin_infos: vec![],
             // The segment arena finalization cost.
@@ -79,6 +79,7 @@ fn build_felt252_dict_squash(
         deref gas_builtin;
         buffer(0) dict_end_address;
     };
+    casm_build_extend!(casm_builder, label DestructDict, SquashDict, SquashDictInner, DONE;);
     let (
         dict_access_size,
         one,
@@ -188,6 +189,8 @@ fn build_felt252_dict_squash(
 
     let (squash_dict_inner_args, fixed_steps_) = build_squash_dict(
         &mut casm_builder,
+        SquashDict,
+        SquashDictInner,
         dict_access_size,
         one,
         SquashDictArgs {
@@ -199,7 +202,7 @@ fn build_felt252_dict_squash(
     fixed_steps += fixed_steps_;
 
     let (fixed_steps_, unique_key_steps_, repeated_access_steps_) =
-        build_squash_dict_inner(&mut casm_builder, squash_dict_inner_args);
+        build_squash_dict_inner(&mut casm_builder, SquashDictInner, squash_dict_inner_args);
     fixed_steps += fixed_steps_;
     unique_key_steps += unique_key_steps_;
     repeated_access_steps += repeated_access_steps_;
@@ -240,7 +243,7 @@ fn build_felt252_dict_squash(
         DICT_SQUASH_UNIQUE_KEY_COST
     );
     let CasmBuildResult { instructions, branches: [(state, _)] } =
-        casm_builder.build(["Fallthrough"]);
+        casm_builder.build([Label::FALLTHROUGH]);
 
     Ok(builder.build(
         instructions,
@@ -279,6 +282,8 @@ struct SquashDictInnerArgs {
 
 fn build_squash_dict(
     casm_builder: &mut CasmBuilder,
+    squash_dict: Label,
+    squash_dict_inner: Label,
     dict_access_size: Var,
     one: Var,
     args: SquashDictArgs,
@@ -291,10 +296,11 @@ fn build_squash_dict(
     } = args;
 
     casm_build_extend! {casm_builder,
+        label SquashDictNotEmpty, SquashDictIfBigKeys, SquashDictEndIfBigKeys;
         // Verifies that dict_accesses lists valid chronological accesses (and updates) to a
         // mutable dictionary and outputs a squashed dict with one DictAccess instance per key
         // (value before and value after) which summarizes all the changes to that key.
-        SquashDict:
+        squash_dict:
         #{ validate steps == 0; }
         localvar ptr_diff =
             squash_dict_arg_dict_accesses_end - squash_dict_arg_dict_accesses_start;
@@ -355,7 +361,7 @@ fn build_squash_dict(
         tempvar squash_dict_inner_arg_remaining_accesses = n_accesses;
         tempvar squash_dict_inner_arg_squashed_dict_end = squashed_dict_start;
         tempvar squash_dict_inner_arg_big_keys = big_keys;
-        let (_range_check_ptr, _squashed_dict_end) = call SquashDictInner;
+        let (_range_check_ptr, _squashed_dict_end) = call squash_dict_inner;
         // For efficiency, return `squashed_dict_start` after `range_check_ptr` and
         // `squashed_dict_end` (which are always at the top of the stack).
         tempvar returned_squashed_dict_start = squashed_dict_start;
@@ -379,6 +385,7 @@ fn build_squash_dict(
 /// Generates CASM code for the `SquashDictInner` function.
 fn build_squash_dict_inner(
     casm_builder: &mut CasmBuilder,
+    squash_dict_inner: Label,
     args: SquashDictInnerArgs,
 ) -> (i32, i32, i32) {
     let mut fixed_steps = 0;
@@ -396,9 +403,10 @@ fn build_squash_dict_inner(
     } = args;
 
     casm_build_extend! {casm_builder,
+        label SquashDictInnerSkipLoop;
         // Inner tail-recursive function for squash_dict.
         // Loops over a single key accesses and verifies a valid order.
-        SquashDictInner:
+        squash_dict_inner:
         #{ validate steps == 0; }
         const dict_access_size = DICT_ACCESS_SIZE;
         const zero = 0;
@@ -468,6 +476,7 @@ fn build_squash_dict_inner(
         },
     );
     casm_build_extend! {casm_builder,
+        label SquashDictInnerContinueRecursion;
         SquashDictInnerSkipLoop:
         let last_loop_locals_access_ptr = prev_loop_locals_access_ptr;
         let last_loop_locals_value = prev_loop_locals_value;
@@ -495,6 +504,7 @@ fn build_squash_dict_inner(
     }
     // Split just to avoid recursion limit when the macro is parsed.
     casm_build_extend! {casm_builder,
+        label SquashDictInnerIfBigKeys, SquashDictInnerEndIfBigKeys;
         SquashDictInnerContinueRecursion:
         hint GetNextDictKey into { next_key };
         // The if order is reversed w.r.t. the original code since the fallthrough case in the
@@ -543,7 +553,7 @@ fn build_squash_dict_inner(
         tempvar rec_arg_squashed_dict =
             squash_dict_inner_arg_squashed_dict_end + dict_access_size;
         tempvar rec_arg_big_keys = squash_dict_inner_arg_big_keys;
-        let () = call SquashDictInner;
+        let () = call squash_dict_inner;
         ret;
         #{ unique_key_steps += steps; steps = 0; }
     };
@@ -584,6 +594,7 @@ fn build_squash_dict_inner_loop(
     } = loop_args;
 
     casm_build_extend! {casm_builder,
+        label SquashDictInnerLoop;
         const dict_access_size = DICT_ACCESS_SIZE;
         const one = 1;
         SquashDictInnerLoop:
@@ -636,6 +647,7 @@ fn build_squash_dict_inner_loop(
 /// to that of b.
 fn validate_felt252_lt(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b: Var) {
     casm_build_extend! {casm_builder,
+        label AssertLtFelt252Continue;
         // Verify that a != b. Fail otherwise.
         tempvar a_minus_b = a - b;
         jump AssertLtFelt252Continue if a_minus_b != 0;
@@ -654,6 +666,7 @@ fn validate_felt252_lt(casm_builder: &mut CasmBuilder, range_check: Var, a: Var,
 /// Since the sum of the lengths of these two arcs is less than PRIME, there is no wrap-around.
 fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b: Var) {
     casm_build_extend! {casm_builder,
+        label AssertLeFelt252SkipExcludeA, EndOfFelt252Le, AssertLeFelt252SkipExcludeBMinusA;
         const one = 1;
         const minus_1 = -1;
         // ceil((PRIME / 3) / 2 ** 128).
@@ -739,7 +752,7 @@ fn build_felt252_dict_entry_get(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[dict_ptr], &[prev_value]], None)],
+        [(Label::FALLTHROUGH, &[&[dict_ptr], &[prev_value]], None)],
         CostValidationInfo {
             builtin_infos: vec![],
             extra_costs: Some([DICT_SQUASH_UNIQUE_KEY_COST.cost()]),
@@ -760,7 +773,7 @@ fn build_felt252_dict_entry_finalize(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[dict_entry]], None)],
+        [(Label::FALLTHROUGH, &[&[dict_entry]], None)],
         Default::default(),
     ))
 }
