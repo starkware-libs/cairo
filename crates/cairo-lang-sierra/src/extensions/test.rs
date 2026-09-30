@@ -212,6 +212,9 @@ impl SpecializationContext for MockSpecializationContext {
             "Struct<name, UninitializedFelt252>")]
 #[test_case("Struct", vec![type_arg("u128"), type_arg("felt252")] => Err(UnsupportedGenericArg);
             "Struct<u128, felt252>")]
+#[test_case("Const", vec![type_arg("Option"), GenericArg::Value(usize::MAX.into()), type_arg("T")]
+            => Err(UnsupportedGenericArg);
+            "Const<Option, usize::MAX, T>")]
 #[test_case("System", vec![] => Ok(()); "System")]
 #[test_case("StorageBaseAddress", vec![] => Ok(()); "StorageBaseAddress")]
 #[test_case("Snapshot", vec![type_arg("RangeCheck")] => Ok(()); "Snapshot<RangeCheck>")]
