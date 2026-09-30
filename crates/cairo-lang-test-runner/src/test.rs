@@ -6,7 +6,7 @@ use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
 
-use crate::{TestCompilation, TestCompiler, filter_test_cases};
+use crate::{TestCompilation, TestCompiler, TestRunConfig, filter_test_cases, run_tests};
 
 #[test]
 fn test_compiled_serialization() {
@@ -309,4 +309,39 @@ fn test_filter_test_cases_include_ignored_and_ignored() {
         ),
         (to_test_compilation(&[("test1", false), ("test2", false), ("test3", false)]), 0)
     );
+}
+
+#[test]
+fn test_run_tests_by_full_name() {
+    use std::path::PathBuf;
+    // `foo::a::foo::b::check` ends with `foo::b::check`, the name of the other test.
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test_data_name_suffix");
+    let compiler = TestCompiler::try_new(
+        &path,
+        false,
+        true,
+        TestsCompilationConfig {
+            starknet: false,
+            add_statements_functions: false,
+            add_statements_code_locations: false,
+            add_functions_debug_info: false,
+            add_type_names: false,
+            contract_declarations: None,
+            contract_crate_ids: None,
+            executable_crate_ids: None,
+            replace_ids: false,
+        },
+    )
+    .unwrap();
+    let config = TestRunConfig {
+        filter: String::new(),
+        include_ignored: false,
+        ignored: false,
+        profiler_config: None,
+        gas_enabled: true,
+        print_resource_usage: false,
+    };
+    let summary = run_tests(None, compiler.build().unwrap(), &config, None).unwrap();
+    assert_eq!(summary.passed, ["foo::a::foo::b::check"]);
+    assert_eq!(summary.failed, ["foo::b::check"]);
 }

@@ -437,7 +437,7 @@ fn run_single_test(
     if test.ignored {
         return Ok(None);
     }
-    let func = runner.find_function(name)?;
+    let func = runner.find_function_by_name(name)?;
 
     let (hint_processor, ctx) =
         runner.prepare_starknet_context(func, vec![], test.available_gas, Default::default())?;
