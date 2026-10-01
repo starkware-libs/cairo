@@ -188,7 +188,7 @@ fn check_pattern_elements<'db>(
                 // comes after it, or by whatever comes after the repetition itself.
                 let mut body_outer = after();
                 if let Some(separator) = repetition_separator(db, repetition) {
-                    body_outer.push(separator.as_syntax_node());
+                    body_outer.push(separator);
                 }
                 res = res
                     .and(check_repetition_separator(db, repetition, diagnostics))
@@ -216,18 +216,14 @@ fn check_pattern_elements<'db>(
     res
 }
 
-/// The separator token of `repetition`, if it declares one; only a comma is supported for now.
-// TODO(Dean): Add support for more kinds of separators.
+/// The separator token of `repetition`, if it declares one - matched and emitted as written.
 fn repetition_separator<'db>(
     db: &'db dyn Database,
     repetition: &ast::MacroRepetition<'db>,
-) -> Option<ast::TerminalComma<'db>> {
+) -> Option<SyntaxNode<'db>> {
     match repetition.separator(db) {
         ast::OptionMacroRepetitionSeparator::MacroRepetitionSeparator(separator) => {
-            match separator.token(db) {
-                ast::TokenNode::TerminalComma(comma) => Some(comma),
-                _ => None,
-            }
+            Some(separator.token(db).as_syntax_node())
         }
         ast::OptionMacroRepetitionSeparator::Empty(_) => None,
     }
@@ -244,7 +240,7 @@ fn check_repetition_separator<'db>(
         && matches!(repetition.operator(db), ast::MacroRepetitionOperator::ZeroOrOne(_))
     {
         return Err(diagnostics.report(
-            separator.stable_ptr(db).untyped(),
+            separator.stable_ptr(db),
             SemanticDiagnosticKind::MacroRepetitionSeparatorWithZeroOrOne,
         ));
     }
@@ -853,7 +849,7 @@ fn is_macro_rule_match_ex<'db>(
                 let elements = repetition.elements(db);
                 let operator = repetition.operator(db);
                 let expected_separator = repetition_separator(db, &repetition)
-                    .map(|sep| sep.as_syntax_node().get_text_without_trivia(db));
+                    .map(|sep| sep.get_text_without_trivia(db));
                 let mut match_count = 0;
                 loop {
                     let mut inner_ctx = ctx.clone();
@@ -1107,7 +1103,7 @@ impl<'db> ExpansionContext<'db, '_> {
             if index + 1 < group_count
                 && let Some(sep) = repetition_separator(db, repetition)
             {
-                self.push_text(sep.as_syntax_node().get_text(db));
+                self.push_text(sep.get_text(db));
             }
         }
         Ok(())
