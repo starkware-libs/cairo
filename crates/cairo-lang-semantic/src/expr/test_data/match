@@ -477,3 +477,24 @@ error[E2039]: Expected type "T", found: "felt252".
  --> lib.cairo:3:27
         Ok(Some(x)) | Err(x) => x,
                           ^
+
+//! > ==========================================================================
+
+//! > Test match guard is not supported yet.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo(a: Option<u32>) -> u32 {
+    match a {
+        Some(x) if x > 5_u32 => x,
+        _ => 0,
+    }
+}
+
+//! > expected_diagnostics
+error[E2000]: Unsupported feature.
+ --> lib.cairo:3:17
+        Some(x) if x > 5_u32 => x,
+                ^^^^^^^^^^^^

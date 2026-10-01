@@ -1959,9 +1959,13 @@ fn compute_arm_semantic<'db>(
     expr: &Expr<'db>,
     arm_expr_syntax: ast::Expr<'db>,
     patterns_syntax: &PatternListOr<'db>,
+    guard_clause: ast::OptionMatchGuardClause<'db>,
 ) -> (Vec<PatternAndId<'db>>, ExprAndId<'db>) {
     ctx.run_in_subscope(|new_ctx| {
         let patterns = compute_pattern_list_or_semantic(new_ctx, expr, patterns_syntax);
+        if let ast::OptionMatchGuardClause::MatchGuardClause(clause) = guard_clause {
+            new_ctx.diagnostics.report(clause.stable_ptr(new_ctx.db), Unsupported);
+        }
         let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
         (patterns, arm_expr)
     })
@@ -2059,7 +2063,13 @@ fn compute_expr_match_semantic<'db>(
     // diagnostics as possible.
     let patterns_and_exprs: Vec<_> = syntax_arms
         .map(|syntax_arm| {
-            compute_arm_semantic(ctx, &expr, syntax_arm.expression(db), &syntax_arm.patterns(db))
+            compute_arm_semantic(
+                ctx,
+                &expr,
+                syntax_arm.expression(db),
+                &syntax_arm.patterns(db),
+                syntax_arm.guard_clause(db),
+            )
         })
         .collect();
     // Unify arm types.

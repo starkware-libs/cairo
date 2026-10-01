@@ -2583,9 +2583,21 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
         let pattern_list_green = PatternListOr::new_green(self.db, &pattern_list);
 
+        let guard_clause = if self.peek().kind == SyntaxKind::TerminalIf {
+            let if_kw = self.take::<TerminalIf<'_>>();
+            let condition = self.parse_expr_limited(
+                MAX_PRECEDENCE,
+                LbraceAllowed::Allow,
+                AndLetBehavior::Simple,
+            );
+            MatchGuardClause::new_green(self.db, if_kw, condition).into()
+        } else {
+            OptionMatchGuardClauseEmpty::new_green(self.db).into()
+        };
+
         let arrow = self.parse_token::<TerminalMatchArrow<'_>>();
         let expr = self.parse_expr();
-        Ok(MatchArm::new_green(self.db, pattern_list_green, arrow, expr))
+        Ok(MatchArm::new_green(self.db, pattern_list_green, guard_clause, arrow, expr))
     }
 
     /// Returns a GreenId of a node with some Pattern kind (see
