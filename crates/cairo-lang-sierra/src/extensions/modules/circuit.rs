@@ -1186,8 +1186,6 @@ fn parse_circuit_inputs<'a>(
             require(inputs.insert(idx, ty).is_none())
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
         } else {
-            // generic_id should be a gate, which is checked in `get_circuit_info`. The gate may be
-            // forward declared, so its generic args are not necessarily validated yet.
             for generic_arg in &long_id.generic_args {
                 let GenericArg::Type(input) = generic_arg else {
                     return Err(SpecializationError::UnsupportedGenericArg);

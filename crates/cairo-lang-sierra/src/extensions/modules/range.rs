@@ -55,8 +55,6 @@ impl GenericTypeArgGenericType for IntRangeTypeWrapped {
     ) -> Result<TypeInfo, SpecializationError> {
         check_inner_type(wrapped_info)?;
 
-        // Follows from `check_inner_type` for a valid type, but the info may be forward declared
-        // and not yet validated.
         require(
             wrapped_info.storable
                 && wrapped_info.duplicatable

@@ -79,7 +79,6 @@ impl Range {
             (id, []) if *id == Sint64Type::id() => Self::closed(i64::MIN, i64::MAX),
             (id, []) if *id == Sint128Type::id() => Self::closed(i128::MIN, i128::MAX),
             (id, []) if *id == Bytes31Type::id() => Self::half_open(0, BigInt::one().shl(248)),
-            // The bounds are checked, as the info may be forward declared and not yet validated.
             (id, [GenericArg::Value(min), GenericArg::Value(max)])
                 if *id == BoundedIntType::id() && min <= max =>
             {
