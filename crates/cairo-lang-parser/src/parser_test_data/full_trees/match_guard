@@ -1,0 +1,292 @@
+//! > Test parsing of match arms with guards.
+
+//! > test_runner_name
+test_full_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+>>> file: src/parser_test_data/cairo_test_files/match_guard.cairo
+
+//! > print_trivia
+false
+
+//! > print_colors
+false
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: FunctionWithBody)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
+    │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
+    │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
+    │   │   │   ├── name (kind: TokenIdentifier): 'classify'
+    │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │   │   │   └── signature (kind: FunctionSignature)
+    │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       ├── parameters (kind: ParamList)
+    │   │   │       │   ├── item #0 (kind: Param)
+    │   │   │       │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │       │   │   ├── name (kind: TokenIdentifier): 'x'
+    │   │   │       │   │   └── type_clause (kind: TypeClause)
+    │   │   │       │   │       ├── colon (kind: TokenColon): ':'
+    │   │   │       │   │       └── ty (kind: ExprPath)
+    │   │   │       │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       │   │           └── segments (kind: ExprPathInner)
+    │   │   │       │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │   │                   └── ident (kind: TokenIdentifier): 'u32'
+    │   │   │       │   ├── separator #0 (kind: TokenComma): ','
+    │   │   │       │   └── item #1 (kind: Param)
+    │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │   │       │       ├── name (kind: TokenIdentifier): 'flag'
+    │   │   │       │       └── type_clause (kind: TypeClause)
+    │   │   │       │           ├── colon (kind: TokenColon): ':'
+    │   │   │       │           └── ty (kind: ExprPath)
+    │   │   │       │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       │               └── segments (kind: ExprPathInner)
+    │   │   │       │                   └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │                       └── ident (kind: TokenIdentifier): 'bool'
+    │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │       ├── ret_ty (kind: ReturnTypeClause)
+    │   │   │       │   ├── arrow (kind: TokenArrow): '->'
+    │   │   │       │   └── ty (kind: ExprPath)
+    │   │   │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       │       └── segments (kind: ExprPathInner)
+    │   │   │       │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │               └── ident (kind: TokenIdentifier): 'u32'
+    │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │   │   └── body (kind: ExprBlock)
+    │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │   │       ├── statements (kind: StatementList)
+    │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
+    │   │       │       ├── expr (kind: ExprMatch)
+    │   │       │       │   ├── match_kw (kind: TokenMatch): 'match'
+    │   │       │       │   ├── expr (kind: ExprPath)
+    │   │       │       │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │       │   │   └── segments (kind: ExprPathInner)
+    │   │       │       │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │           └── ident (kind: TokenIdentifier): 'x'
+    │   │       │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │       │   ├── arms (kind: MatchArms)
+    │   │       │       │   │   ├── item #0 (kind: MatchArm)
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   ├── item #0 (kind: TokenLiteralNumber): '0'
+    │   │       │       │   │   │   │   ├── separator #0 (kind: TokenOr): '|'
+    │   │       │       │   │   │   │   └── item #1 (kind: TokenLiteralNumber): '1'
+    │   │       │       │   │   │   ├── guard_clause (kind: MatchGuardClause)
+    │   │       │       │   │   │   │   ├── if_kw (kind: TokenIf): 'if'
+    │   │       │       │   │   │   │   └── condition (kind: ExprPath)
+    │   │       │       │   │   │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │       │   │   │   │       └── segments (kind: ExprPathInner)
+    │   │       │       │   │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │               └── ident (kind: TokenIdentifier): 'flag'
+    │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '1'
+    │   │       │       │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │       │       │   │   ├── item #1 (kind: MatchArm)
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: ExprPath)
+    │   │       │       │   │   │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │       │   │   │   │       └── segments (kind: ExprPathInner)
+    │   │       │       │   │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │               └── ident (kind: TokenIdentifier): 'y'
+    │   │       │       │   │   │   ├── guard_clause (kind: MatchGuardClause)
+    │   │       │       │   │   │   │   ├── if_kw (kind: TokenIf): 'if'
+    │   │       │       │   │   │   │   └── condition (kind: ExprBinary)
+    │   │       │       │   │   │   │       ├── lhs (kind: ExprBinary)
+    │   │       │       │   │   │   │       │   ├── lhs (kind: ExprPath)
+    │   │       │       │   │   │   │       │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │       │   │   │   │       │   │   └── segments (kind: ExprPathInner)
+    │   │       │       │   │   │   │       │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │   │           └── ident (kind: TokenIdentifier): 'y'
+    │   │       │       │   │   │   │       │   ├── op (kind: TokenGT): '>'
+    │   │       │       │   │   │   │       │   └── rhs (kind: TokenLiteralNumber): '5'
+    │   │       │       │   │   │   │       ├── op (kind: TokenAndAnd): '&&'
+    │   │       │       │   │   │   │       └── rhs (kind: ExprPath)
+    │   │       │       │   │   │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │       │   │   │   │           └── segments (kind: ExprPathInner)
+    │   │       │       │   │   │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │                   └── ident (kind: TokenIdentifier): 'flag'
+    │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '2'
+    │   │       │       │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │       │       │   │   ├── item #2 (kind: MatchArm)
+    │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
+    │   │       │       │   │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
+    │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '3'
+    │   │       │       │   │   └── separator #2 (kind: TokenComma): ','
+    │   │       │       │   └── rbrace (kind: TokenRBrace): '}'
+    │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   │       └── rbrace (kind: TokenRBrace): '}'
+    │   └── child #1 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
+    │       │   ├── function_kw (kind: TokenFunction): 'fn'
+    │       │   ├── name (kind: TokenIdentifier): 'complex_guards'
+    │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       │   └── signature (kind: FunctionSignature)
+    │       │       ├── lparen (kind: TokenLParen): '('
+    │       │       ├── parameters (kind: ParamList)
+    │       │       │   ├── item #0 (kind: Param)
+    │       │       │   │   ├── modifiers (kind: ModifierList) []
+    │       │       │   │   ├── name (kind: TokenIdentifier): 'x'
+    │       │       │   │   └── type_clause (kind: TypeClause)
+    │       │       │   │       ├── colon (kind: TokenColon): ':'
+    │       │       │   │       └── ty (kind: ExprPath)
+    │       │       │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │   │           └── segments (kind: ExprPathInner)
+    │       │       │   │               └── item #0 (kind: PathSegmentSimple)
+    │       │       │   │                   └── ident (kind: TokenIdentifier): 'u32'
+    │       │       │   ├── separator #0 (kind: TokenComma): ','
+    │       │       │   └── item #1 (kind: Param)
+    │       │       │       ├── modifiers (kind: ModifierList) []
+    │       │       │       ├── name (kind: TokenIdentifier): 'p'
+    │       │       │       └── type_clause (kind: TypeClause)
+    │       │       │           ├── colon (kind: TokenColon): ':'
+    │       │       │           └── ty (kind: ExprPath)
+    │       │       │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │               └── segments (kind: ExprPathInner)
+    │       │       │                   └── item #0 (kind: PathSegmentSimple)
+    │       │       │                       └── ident (kind: TokenIdentifier): 'Point'
+    │       │       ├── rparen (kind: TokenRParen): ')'
+    │       │       ├── ret_ty (kind: ReturnTypeClause)
+    │       │       │   ├── arrow (kind: TokenArrow): '->'
+    │       │       │   └── ty (kind: ExprPath)
+    │       │       │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │       └── segments (kind: ExprPathInner)
+    │       │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │       │               └── ident (kind: TokenIdentifier): 'u32'
+    │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │       └── body (kind: ExprBlock)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── statements (kind: StatementList)
+    │           │   └── child #0 (kind: StatementExpr)
+    │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── expr (kind: ExprMatch)
+    │           │       │   ├── match_kw (kind: TokenMatch): 'match'
+    │           │       │   ├── expr (kind: ExprPath)
+    │           │       │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │       │   │   └── segments (kind: ExprPathInner)
+    │           │       │   │       └── item #0 (kind: PathSegmentSimple)
+    │           │       │   │           └── ident (kind: TokenIdentifier): 'x'
+    │           │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │           │       │   ├── arms (kind: MatchArms)
+    │           │       │   │   ├── item #0 (kind: MatchArm)
+    │           │       │   │   │   ├── patterns (kind: PatternListOr)
+    │           │       │   │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
+    │           │       │   │   │   ├── guard_clause (kind: MatchGuardClause)
+    │           │       │   │   │   │   ├── if_kw (kind: TokenIf): 'if'
+    │           │       │   │   │   │   └── condition (kind: ExprBinary)
+    │           │       │   │   │   │       ├── lhs (kind: ExprPath)
+    │           │       │   │   │   │       │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │       │   │   │   │       │   └── segments (kind: ExprPathInner)
+    │           │       │   │   │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │           │       │   │   │   │       │           └── ident (kind: TokenIdentifier): 'p'
+    │           │       │   │   │   │       ├── op (kind: TokenEqEq): '=='
+    │           │       │   │   │   │       └── rhs (kind: ExprStructCtorCall)
+    │           │       │   │   │   │           ├── path (kind: ExprPath)
+    │           │       │   │   │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │       │   │   │   │           │   └── segments (kind: ExprPathInner)
+    │           │       │   │   │   │           │       └── item #0 (kind: PathSegmentSimple)
+    │           │       │   │   │   │           │           └── ident (kind: TokenIdentifier): 'Point'
+    │           │       │   │   │   │           └── arguments (kind: StructArgListBraced)
+    │           │       │   │   │   │               ├── lbrace (kind: TokenLBrace): '{'
+    │           │       │   │   │   │               ├── arguments (kind: StructArgList)
+    │           │       │   │   │   │               │   └── item #0 (kind: StructArgSingle)
+    │           │       │   │   │   │               │       ├── identifier (kind: TokenIdentifier): 'a'
+    │           │       │   │   │   │               │       └── arg_expr (kind: StructArgExpr)
+    │           │       │   │   │   │               │           ├── colon (kind: TokenColon): ':'
+    │           │       │   │   │   │               │           └── expr (kind: TokenLiteralNumber): '1'
+    │           │       │   │   │   │               └── rbrace (kind: TokenRBrace): '}'
+    │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │           │       │   │   │   └── expression (kind: TokenLiteralNumber): '1'
+    │           │       │   │   ├── separator #0 (kind: TokenComma): ','
+    │           │       │   │   ├── item #1 (kind: MatchArm)
+    │           │       │   │   │   ├── patterns (kind: PatternListOr)
+    │           │       │   │   │   │   └── item #0 (kind: TokenLiteralNumber): '1'
+    │           │       │   │   │   ├── guard_clause (kind: MatchGuardClause)
+    │           │       │   │   │   │   ├── if_kw (kind: TokenIf): 'if'
+    │           │       │   │   │   │   └── condition (kind: ExprBlock)
+    │           │       │   │   │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │           │       │   │   │   │       ├── statements (kind: StatementList)
+    │           │       │   │   │   │       │   └── child #0 (kind: StatementExpr)
+    │           │       │   │   │   │       │       ├── attributes (kind: AttributeList) []
+    │           │       │   │   │   │       │       ├── expr (kind: ExprBinary)
+    │           │       │   │   │   │       │       │   ├── lhs (kind: ExprPath)
+    │           │       │   │   │   │       │       │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │       │   │   │   │       │       │   │   └── segments (kind: ExprPathInner)
+    │           │       │   │   │   │       │       │   │       └── item #0 (kind: PathSegmentSimple)
+    │           │       │   │   │   │       │       │   │           └── ident (kind: TokenIdentifier): 'x'
+    │           │       │   │   │   │       │       │   ├── op (kind: TokenGT): '>'
+    │           │       │   │   │   │       │       │   └── rhs (kind: TokenLiteralNumber): '1'
+    │           │       │   │   │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │           │       │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
+    │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │           │       │   │   │   └── expression (kind: TokenLiteralNumber): '2'
+    │           │       │   │   ├── separator #1 (kind: TokenComma): ','
+    │           │       │   │   ├── item #2 (kind: MatchArm)
+    │           │       │   │   │   ├── patterns (kind: PatternListOr)
+    │           │       │   │   │   │   └── item #0 (kind: TokenLiteralNumber): '2'
+    │           │       │   │   │   ├── guard_clause (kind: MatchGuardClause)
+    │           │       │   │   │   │   ├── if_kw (kind: TokenIf): 'if'
+    │           │       │   │   │   │   └── condition (kind: ExprIf)
+    │           │       │   │   │   │       ├── if_kw (kind: TokenIf): 'if'
+    │           │       │   │   │   │       ├── conditions (kind: ConditionListAnd)
+    │           │       │   │   │   │       │   └── item #0 (kind: ConditionExpr)
+    │           │       │   │   │   │       │       └── expr (kind: ExprBinary)
+    │           │       │   │   │   │       │           ├── lhs (kind: ExprBinary)
+    │           │       │   │   │   │       │           │   ├── lhs (kind: ExprPath)
+    │           │       │   │   │   │       │           │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │       │   │   │   │       │           │   │   └── segments (kind: ExprPathInner)
+    │           │       │   │   │   │       │           │   │       └── item #0 (kind: PathSegmentSimple)
+    │           │       │   │   │   │       │           │   │           └── ident (kind: TokenIdentifier): 'p'
+    │           │       │   │   │   │       │           │   ├── op (kind: TokenDot): '.'
+    │           │       │   │   │   │       │           │   └── rhs (kind: ExprPath)
+    │           │       │   │   │   │       │           │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │       │   │   │   │       │           │       └── segments (kind: ExprPathInner)
+    │           │       │   │   │   │       │           │           └── item #0 (kind: PathSegmentSimple)
+    │           │       │   │   │   │       │           │               └── ident (kind: TokenIdentifier): 'a'
+    │           │       │   │   │   │       │           ├── op (kind: TokenGT): '>'
+    │           │       │   │   │   │       │           └── rhs (kind: TokenLiteralNumber): '1'
+    │           │       │   │   │   │       ├── if_block (kind: ExprBlock)
+    │           │       │   │   │   │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │           │       │   │   │   │       │   ├── statements (kind: StatementList)
+    │           │       │   │   │   │       │   │   └── child #0 (kind: StatementExpr)
+    │           │       │   │   │   │       │   │       ├── attributes (kind: AttributeList) []
+    │           │       │   │   │   │       │   │       ├── expr (kind: TokenTrue): 'true'
+    │           │       │   │   │   │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │           │       │   │   │   │       │   └── rbrace (kind: TokenRBrace): '}'
+    │           │       │   │   │   │       └── else_clause (kind: ElseClause)
+    │           │       │   │   │   │           ├── else_kw (kind: TokenElse): 'else'
+    │           │       │   │   │   │           └── else_block_or_if (kind: ExprBlock)
+    │           │       │   │   │   │               ├── lbrace (kind: TokenLBrace): '{'
+    │           │       │   │   │   │               ├── statements (kind: StatementList)
+    │           │       │   │   │   │               │   └── child #0 (kind: StatementExpr)
+    │           │       │   │   │   │               │       ├── attributes (kind: AttributeList) []
+    │           │       │   │   │   │               │       ├── expr (kind: TokenFalse): 'false'
+    │           │       │   │   │   │               │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │           │       │   │   │   │               └── rbrace (kind: TokenRBrace): '}'
+    │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │           │       │   │   │   └── expression (kind: TokenLiteralNumber): '3'
+    │           │       │   │   ├── separator #2 (kind: TokenComma): ','
+    │           │       │   │   ├── item #3 (kind: MatchArm)
+    │           │       │   │   │   ├── patterns (kind: PatternListOr)
+    │           │       │   │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │           │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
+    │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │           │       │   │   │   └── expression (kind: TokenLiteralNumber): '4'
+    │           │       │   │   └── separator #3 (kind: TokenComma): ','
+    │           │       │   └── rbrace (kind: TokenRBrace): '}'
+    │           │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).

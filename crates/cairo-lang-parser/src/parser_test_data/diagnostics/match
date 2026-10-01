@@ -105,3 +105,24 @@ error[E1027]: A trailing `|` is not allowed in an or-pattern.
  --> dummy_file.cairo:4:15
         0 | 1 | => 1,
               ^
+
+//! > ==========================================================================
+
+//! > Test match guard without a condition
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    match x {
+        1 if => 1,
+        _ => 3,
+    }
+}
+
+//! > expected_diagnostics
+error[E1002]: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:3:13
+        1 if => 1,
+            ^

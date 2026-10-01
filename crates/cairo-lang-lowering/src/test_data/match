@@ -3307,3 +3307,30 @@ Statements:
 End:
   Match(match test::get_a() {
   })
+
+//! > ==========================================================================
+
+//! > Test match guard is not supported in lowering yet.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > cairo_code
+#[target_function]
+fn foo(a: Option<u32>) -> u32 {
+    match a {
+        Some(x) if x > 5_u32 => x,
+        _ => 0,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3011]: Unsupported feature.
+ --> lib.cairo:4:20
+        Some(x) if x > 5_u32 => x,
+                   ^^^^^^^^^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
