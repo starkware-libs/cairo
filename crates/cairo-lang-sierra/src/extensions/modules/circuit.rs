@@ -1105,6 +1105,7 @@ fn get_circuit_info(
     let mut stack: Vec<(ConcreteTypeId, bool)> = circ_outputs
         .map(|generic_arg| (extract_matches!(generic_arg, GenericArg::Type).clone(), true))
         .collect();
+    let mut visited = UnorderedHashSet::<ConcreteTypeId>::default();
 
     while let Some((ty, first_visit)) = stack.pop() {
         let long_id = &context.get_type_info(&ty)?.long_id;
@@ -1120,6 +1121,9 @@ fn get_circuit_info(
             .map(|generic_arg| extract_matches!(generic_arg, GenericArg::Type));
 
         if first_visit {
+            // A node of a DAG can't be visited for the first time twice - this is a cycle.
+            require(visited.insert(ty.clone()))
+                .ok_or(SpecializationError::UnsupportedGenericArg)?;
             stack.push((ty, false));
             stack.extend(gate_inputs.map(|ty| (ty.clone(), true)))
         } else {
