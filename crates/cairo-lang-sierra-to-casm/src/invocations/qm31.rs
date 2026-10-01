@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::{AssertEqKind, CasmBuilder};
+use cairo_lang_casm::builder::{AssertEqKind, CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -52,7 +52,7 @@ pub fn build_qm31_op(
     casm_builder.assert_vars_eq(dst, res, AssertEqKind::QM31);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[dst]], None)],
+        [(Label::FALLTHROUGH, &[&[dst]], None)],
         CostValidationInfo::default(),
     ))
 }
@@ -103,7 +103,7 @@ fn build_qm31_pack(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[w3_w2_w1_w0]], None)],
+        [(Label::FALLTHROUGH, &[&[w3_w2_w1_w0]], None)],
         CostValidationInfo::default(),
     ))
 }
@@ -159,7 +159,7 @@ fn build_qm31_unpack(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[w0], &[w1], &[w2], &[w3]], None)],
+        [(Label::FALLTHROUGH, &[&[range_check], &[w0], &[w1], &[w2], &[w3]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck,

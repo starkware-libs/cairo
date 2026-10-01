@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuilder, Label, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas_reserve::GasReserveConcreteLibfunc;
 
@@ -45,7 +45,7 @@ fn build_gas_reserve_utilize(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[updated_gas]], None)],
+        [(Label::FALLTHROUGH, &[&[updated_gas]], None)],
         Default::default(),
     ))
 }

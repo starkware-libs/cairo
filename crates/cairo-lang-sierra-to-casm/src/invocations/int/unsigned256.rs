@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
@@ -31,6 +31,7 @@ fn build_u256_is_zero(
     let mut casm_builder = CasmBuilder::with_capacity(2, 2);
     add_input_variables!(casm_builder, deref x; deref y; );
     casm_build_extend! {casm_builder,
+        label Target;
         jump Target if x != 0;
         jump Target if y != 0;
     };
@@ -38,7 +39,7 @@ fn build_u256_is_zero(
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[], None), ("Target", &[&[x, y]], Some(target_statement_id))],
+        [(Label::FALLTHROUGH, &[], None), (Target, &[&[x, y]], Some(target_statement_id))],
         Default::default(),
     ))
 }
@@ -62,6 +63,7 @@ fn build_u256_divmod(
     };
 
     casm_build_extend! {casm_builder,
+        label HighDiff, After;
         const zero = 0;
         const one = 1;
         const u128_bound_minus_u64_bound = u128::MAX - u64::MAX as u128;
@@ -110,6 +112,7 @@ fn build_u256_divmod(
         hint WideMul128 { lhs: quotient0, rhs: divisor0 } into { low: q0d0_low, high: q0d0_high };
     }
     casm_build_extend! {casm_builder,
+        label DIVISOR1_EQ_ZERO, QUOTIENT0_LESS_THAN_DIVISOR1, MERGE, QUOTIENT1_LESS_THAN_DIVISOR0;
         // Validating `quotient * divisor + remainder - dividend = 0`.
         // Validate limb0.
         // Note that limb0 is a combination of 3 u128s, so its absolute value should be less than
@@ -165,7 +168,7 @@ fn build_u256_divmod(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [(
-            "Fallthrough",
+            Label::FALLTHROUGH,
             &[
                 &[range_check],
                 &[quotient0, quotient1],
@@ -201,6 +204,7 @@ fn build_u256_sqrt(
     };
 
     casm_build_extend! {casm_builder,
+        label SqrtMul2MinusRemainderGeU128, Done;
         const u64_limit = (BigInt::from(u64::MAX) + 1) as BigInt;
         const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
         const u128_bound_minus_u65_bound = BigInt::from(2).pow(128) - BigInt::from(2).pow(65);
@@ -312,7 +316,7 @@ fn build_u256_sqrt(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[sqrt]], None)],
+        [(Label::FALLTHROUGH, &[&[range_check], &[sqrt]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck,
@@ -343,6 +347,7 @@ fn build_u256_inv_mod_n(
     };
 
     casm_build_extend! {casm_builder,
+        label NoInverse, HighDiff, After;
         const zero = 0;
         const one = 1;
         const u128_bound_minus_u65_bound = BigInt::from(2).pow(128) - BigInt::from(2).pow(65);
@@ -420,6 +425,7 @@ fn build_u256_inv_mod_n(
         hint WideMul128 { lhs: n1, rhs: k1 } into { low: n1k1_low, high: n1k1_high };
     }
     casm_build_extend! {casm_builder,
+        label Done;
         // Validating `k * n + 1 - r * b = 0`.
         // Validate limb0.
         tempvar part0 = n0k0_low + one;
@@ -466,6 +472,7 @@ fn build_u256_inv_mod_n(
         jump Done;
     }
     casm_build_extend! {casm_builder,
+        label GIsValid, S1_AND_T1_EQ_ZERO, G0IsSmall, MERGE, G1IsSmall, Failure;
     NoInverse:
         let g0 = g0_or_no_inv;
         let g1 = g1_option;
@@ -554,7 +561,7 @@ fn build_u256_inv_mod_n(
         casm_builder,
         [
             (
-                "Fallthrough",
+                Label::FALLTHROUGH,
                 &[
                     &[range_check],
                     &[r0, r1],
@@ -570,7 +577,7 @@ fn build_u256_inv_mod_n(
                 None,
             ),
             (
-                "Failure",
+                Failure,
                 &[&[range_check], &[g0, s0, g0s0_high, g0s0_low], &[g0, t0, g0t0_high, g0t0_low]],
                 Some(target_statement_id),
             ),
