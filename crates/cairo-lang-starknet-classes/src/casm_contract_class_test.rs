@@ -4,12 +4,14 @@ use std::collections::HashSet;
 use std::fs;
 use std::io::BufReader;
 
+use cairo_lang_sierra::ProgramParser;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericLibfuncId};
 use cairo_lang_sierra::program_registry::ProgramRegistryError;
 use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use indoc::indoc;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
@@ -20,8 +22,10 @@ use crate::allowed_libfuncs::{
 use crate::casm_contract_class::{
     BigUintAsHex, CasmContractClass, StarknetSierraCompilationError, TypeResolver,
 };
-use crate::compiler_version::current_sierra_version_id;
-use crate::contract_class::ContractClass;
+use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id};
+use crate::contract_class::{
+    ContractClass, ContractEntryPoint, ContractEntryPoints, ExtractedSierraProgram,
+};
 use crate::felt252_serde::{Felt252SerdeError, sierra_from_felt252s};
 use crate::test_utils::get_example_file_path;
 
@@ -107,6 +111,76 @@ fn test_entry_point_mid_list_gas_or_system_rejected() {
             StarknetSierraCompilationError::InvalidBuiltinType(mid_ty),
         );
     }
+}
+
+#[test]
+fn test_entry_point_using_builtin_before_gas_rejected() {
+    let program = ProgramParser::new()
+        .parse(indoc! {"
+            type [0] = felt252;
+            type [1] = Array<[0]>;
+            type [2] = Snapshot<[1]>;
+            type [3] = Struct<ut@core::array::Span::<core::felt252>, [2]>;
+            type [4] = Struct<ut@Tuple, [3]>;
+            type [5] = Enum<ut@core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, [4], [1]>;
+            type [6] = Pedersen;
+            type [7] = GasBuiltin;
+            type [8] = System;
+            type [9] = Const<[0], 1>;
+
+            libfunc const_as_immediate<[9]> = const_as_immediate<[9]>;
+            libfunc dup<[0]> = dup<[0]>;
+            libfunc store_temp<[0]> = store_temp<[0]>;
+            libfunc pedersen = pedersen;
+            libfunc drop<[0]> = drop<[0]>;
+            libfunc struct_construct<[4]> = struct_construct<[4]>;
+            libfunc enum_init<[5], 0> = enum_init<[5], 0>;
+            libfunc store_temp<[6]> = store_temp<[6]>;
+            libfunc store_temp<[7]> = store_temp<[7]>;
+            libfunc store_temp<[8]> = store_temp<[8]>;
+            libfunc store_temp<[5]> = store_temp<[5]>;
+            // Required for the `Const` cost of the entry point to be enforceable.
+            libfunc redeposit_gas = redeposit_gas;
+
+            const_as_immediate<[9]>() -> ([4]);
+            dup<[0]>([4]) -> ([4], [5]);
+            store_temp<[0]>([4]) -> ([4]);
+            store_temp<[0]>([5]) -> ([5]);
+            pedersen([0], [4], [5]) -> ([6], [7]);
+            drop<[0]>([7]) -> ();
+            struct_construct<[4]>([3]) -> ([8]);
+            enum_init<[5], 0>([8]) -> ([9]);
+            redeposit_gas([1]) -> ([1]);
+            store_temp<[6]>([6]) -> ([6]);
+            store_temp<[7]>([1]) -> ([1]);
+            store_temp<[8]>([2]) -> ([2]);
+            store_temp<[5]>([9]) -> ([9]);
+            return([6], [1], [2], [9]);
+
+            ep@0([0]: [6], [1]: [7], [2]: [8], [3]: [3]) -> ([6], [7], [8], [5]);
+        "})
+        .unwrap();
+    let contract_class = ContractClass {
+        sierra_program: vec![],
+        sierra_program_debug_info: None,
+        contract_class_version: String::new(),
+        entry_points_by_type: ContractEntryPoints {
+            external: vec![ContractEntryPoint { selector: 0u32.into(), function_idx: 0 }],
+            l1_handler: vec![],
+            constructor: vec![],
+        },
+        abi: None,
+    };
+    let extracted = ExtractedSierraProgram {
+        program,
+        sierra_version: current_sierra_version_id(),
+        compiler_version: current_compiler_version_id(),
+    };
+    assert_eq!(
+        CasmContractClass::from_contract_class(contract_class, extracted, false, usize::MAX)
+            .unwrap_err(),
+        StarknetSierraCompilationError::UnexpectedEntryPointCost,
+    );
 }
 
 #[test]
