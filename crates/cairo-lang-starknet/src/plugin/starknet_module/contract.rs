@@ -618,8 +618,7 @@ fn handle_embed_impl_alias<'db>(
         return;
     }
     let impl_name = impl_final_part.identifier_ast(db);
-    // The trait is generated next to the embeddable impl, so it is referred to by the same path.
-    let impl_module = RewriteNode::new_modified(
+    let impl_path_prefix = RewriteNode::new_modified(
         elements
             .flat_map(|e| [RewriteNode::from_ast_trimmed(&e), RewriteNode::text("::")])
             .collect(),
@@ -628,7 +627,7 @@ fn handle_embed_impl_alias<'db>(
         RewriteNode::interpolate_patched(
             &formatdoc! {"
             impl ContractState$alias_name$ of
-                $impl_module$UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
+                $impl_path_prefix$UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
                 fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
                     unsafe_new_contract_state()
                 }}
@@ -637,7 +636,7 @@ fn handle_embed_impl_alias<'db>(
             &[
                 ("alias_name".to_string(), RewriteNode::from_ast_trimmed(&alias_ast.name(db))),
                 ("impl_name".to_string(), RewriteNode::from_ast_trimmed(&impl_name)),
-                ("impl_module".to_string(), impl_module),
+                ("impl_path_prefix".to_string(), impl_path_prefix),
             ]
             .into(),
         )
