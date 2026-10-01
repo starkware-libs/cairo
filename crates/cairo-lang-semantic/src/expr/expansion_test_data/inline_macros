@@ -97,7 +97,7 @@ macro broadcast {
 let expanded = broadcast!(10, 1, 2);
 
 //! > expanded_code
-expanded: (10+ 1,10+ 2)
+expanded: (10 + 1,10 + 2)
 
 //! > diagnostics
 
@@ -398,8 +398,8 @@ let broadcast = deep_broadcast!((10, [1, 2]), (20, [3, 4]));
 let empty_non_final_group = deep_broadcast!((10, []), (20, [3, 4]));
 
 //! > expanded_code
-broadcast: ((10* 1),(10* 2),(20* 3),(20* 4),) 
-empty_non_final_group: ((20* 3),(20* 4),)
+broadcast: ((10 * 1),(10 * 2),(20 * 3),(20 * 4),) 
+empty_non_final_group: ((20 * 3),(20 * 4),)
 
 //! > diagnostics
 
@@ -420,7 +420,7 @@ macro nested_sum {
 let full = nested_sum!([1, 2], [3, 4]);
 
 //! > expanded_code
-full: 1+2+3+4+0
+full: 1 +2 +3 +4 + 0
 
 //! > diagnostics
 
@@ -485,7 +485,7 @@ let literal_token_between_captures = keep_plus!(x + y);
 
 //! > expanded_code
 plus_as_literal_token: 7 
-literal_token_between_captures: x+ y
+literal_token_between_captures: x + y
 
 //! > diagnostics
 
@@ -541,7 +541,8 @@ let bare_dollar_matches_no_ident_rule = take_ident!($);
 test_expand_expr(expect_diagnostics: false)
 
 //! > module_code
-// Each capture is the longest expression its tokens start with, so it stops at the pattern's `,`.
+// Each capture is the longest expression its tokens start with, without the trivia around it, so
+// the expansion is spaced by the rule's own trivia however the call is spelled.
 #[feature("user_defined_inline_macros")]
 macro pair {
     ($a:expr, $b:expr) => { ($a, $b) };
@@ -556,6 +557,7 @@ let comment_inside = pair!(1 + // c
 2, 3);
 let comment_after = pair!(1 // c
 , 2);
+let call_spacing = pair!(1 , 2);
 
 //! > expanded_code
 two_multi_token: (1 + 2, 3 * 4) 
@@ -563,8 +565,8 @@ parenthesized_subtree: ((1 + 2) * 3, 4)
 comment_before: (1, 2) 
 comment_inside: (1 + // c
 2, 3) 
-comment_after: (1 // c
-, 2)
+comment_after: (1, 2) 
+call_spacing: (1, 2)
 
 //! > diagnostics
 
@@ -689,5 +691,140 @@ let fell_through_parse_error = pick!((a b));
 //! > expanded_code
 fell_through_empty: 1 
 fell_through_parse_error: 2
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test two placeholders adjacent in the expansion.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// The space the rule puts between the placeholders is the only thing keeping their values apart.
+#[feature("user_defined_inline_macros")]
+macro glue {
+    ($a:ident, $b:ident) => { { $a $b } };
+}
+
+//! > function_body
+let _x = 1_felt252;
+let _y = 2_felt252;
+
+//! > expr_code
+let expanded = glue!(_x, _y);
+
+//! > expanded_code
+expanded: { _x _y }
+
+//! > diagnostics
+error[E2133]: Missing semicolon
+ --> lib.cairo:8:22
+let expanded = glue!(_x, _y);
+                     ^^
+
+//! > ==========================================================================
+
+//! > Test the groups of a separator-less expansion repetition kept apart.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > module_code
+// A `$()` block carries no trivia between its groups, so a space keeps consecutive values separate
+// tokens, as they are in rustc.
+#[feature("user_defined_inline_macros")]
+macro cat {
+    ($($x:expr),*) => { $($x)* };
+}
+
+//! > expr_code
+let kept_apart = cat!(1, 2);
+
+//! > expanded_code
+kept_apart: cat!(1, 2)
+
+//! > diagnostics
+error[E2117]: Parser error in macro-expanded code: Skipped tokens. Expected: end of expr.
+ --> lib.cairo:8:26
+let kept_apart = cat!(1, 2);
+                         ^
+
+//! > ==========================================================================
+
+//! > Test a placeholder followed by a keyword in the expansion.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The space between `$i` and `in` is the rule's; losing it glued the loop variable to the keyword.
+#[feature("user_defined_inline_macros")]
+macro sum_over {
+    ($i:ident, $arr:expr) => {
+        {
+            let mut total = 0_felt252;
+            for $i in $arr {
+                total = total + $i;
+            };
+            total
+        }
+    };
+}
+
+//! > expr_code
+let expanded = sum_over!(v, array![1_felt252, 2_felt252]);
+
+//! > expanded_code
+expanded:         {
+    let mut total = 0_felt252;
+    for v in array![1_felt252, 2_felt252] {
+        total = total + v;
+    };
+    total
+}
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expansion block whose group ends every placeholder against a keyword.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// The same inside a `$()` block: every group keeps its loop variable apart from `in`.
+#[feature("user_defined_inline_macros")]
+macro sum_each {
+    ($($i:ident in $arr:expr),+) => {
+        {
+            let mut total = 0_felt252;
+            $(
+                for $i in $arr {
+                    total = total + $i;
+                };
+            )+
+            total
+        }
+    };
+}
+
+//! > expr_code
+let expanded = sum_each!(a in array![1_felt252, 2_felt252], b in array![3_felt252]);
+
+//! > expanded_code
+expanded:         {
+    let mut total = 0_felt252;
+        for a in array![1_felt252, 2_felt252] {
+            total = total + a;
+        };
+        for b in array![3_felt252] {
+            total = total + b;
+        };
+
+    total
+}
 
 //! > diagnostics
