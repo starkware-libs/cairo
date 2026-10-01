@@ -113,8 +113,6 @@ fn test_entry_point_mid_list_gas_or_system_rejected() {
     }
 }
 
-/// An entry point that uses a builtin before withdrawing gas costs more than `ENTRY_POINT_COST`,
-/// and is rejected.
 #[test]
 fn test_entry_point_using_builtin_before_gas_rejected() {
     let program = ProgramParser::new()
@@ -141,6 +139,7 @@ fn test_entry_point_using_builtin_before_gas_rejected() {
             libfunc store_temp<[7]> = store_temp<[7]>;
             libfunc store_temp<[8]> = store_temp<[8]>;
             libfunc store_temp<[5]> = store_temp<[5]>;
+            // Required for the `Const` cost of the entry point to be enforceable.
             libfunc redeposit_gas = redeposit_gas;
 
             const_as_immediate<[9]>() -> ([4]);
