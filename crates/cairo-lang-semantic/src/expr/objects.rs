@@ -454,6 +454,8 @@ pub enum Condition {
 #[debug_db(ExprFormatter<'db>)]
 pub struct MatchArm {
     pub patterns: Vec<PatternId>,
+    /// The optional guard of the arm, a `bool` expression that must hold for the arm to be taken.
+    pub guard: Option<ExprId>,
     pub expression: ExprId,
 }
 

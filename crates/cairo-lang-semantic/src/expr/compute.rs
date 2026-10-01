@@ -95,9 +95,9 @@ use crate::resolve::{
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::{HasDb, SemanticRewriter};
 use crate::types::{
-    ClosureTypeLongId, ConcreteTypeId, add_value_type_based_diagnostics, are_coupons_enabled,
-    extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex, resolve_type_ex,
-    verify_fixed_size_array_size, wrap_in_snapshots,
+    ClosureTypeLongId, ConcreteTypeId, TypesSemantic, add_value_type_based_diagnostics,
+    are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex,
+    resolve_type_ex, verify_fixed_size_array_size, wrap_in_snapshots,
 };
 use crate::usage::Usages;
 use crate::{
@@ -1953,22 +1953,81 @@ impl<'db> FlowMergeTypeHelper<'db> {
     }
 }
 
-/// Computes the semantic of a match arm pattern and the block expression.
+/// Computes the semantic of a match arm pattern, its optional guard and the arm expression.
+///
+/// The guard is computed after the patterns, in the scope of the arm, so it can use the variables
+/// the patterns bind.
 fn compute_arm_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     expr: &Expr<'db>,
     arm_expr_syntax: ast::Expr<'db>,
     patterns_syntax: &PatternListOr<'db>,
     guard_clause: ast::OptionMatchGuardClause<'db>,
-) -> (Vec<PatternAndId<'db>>, ExprAndId<'db>) {
+) -> (Vec<PatternAndId<'db>>, Option<ExprId>, ExprAndId<'db>) {
     ctx.run_in_subscope(|new_ctx| {
         let patterns = compute_pattern_list_or_semantic(new_ctx, expr, patterns_syntax);
-        if let ast::OptionMatchGuardClause::MatchGuardClause(clause) = guard_clause {
-            new_ctx.diagnostics.report(clause.stable_ptr(new_ctx.db), Unsupported);
-        }
+        let guard = match guard_clause {
+            ast::OptionMatchGuardClause::Empty(_) => None,
+            ast::OptionMatchGuardClause::MatchGuardClause(clause) => {
+                let db = new_ctx.db;
+                let condition_syntax = clause.condition(db);
+                let condition = compute_expr_semantic(new_ctx, &condition_syntax);
+                let bool_ty = core_bool_ty(db);
+                let inference = &mut new_ctx.resolver.inference();
+                let _ = inference.conform_ty_for_diag(
+                    condition.ty(),
+                    bool_ty,
+                    new_ctx.diagnostics,
+                    || condition_syntax.stable_ptr(db).untyped(),
+                    |actual_ty, expected_ty| WrongType { expected_ty, actual_ty },
+                );
+                validate_guard_pattern_variables_use(new_ctx, &patterns, condition.id);
+                Some(condition.id)
+            }
+        };
         let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
-        (patterns, arm_expr)
+        (patterns, guard, arm_expr)
     })
+}
+
+/// Reports every use of a variable bound by the arm's patterns in the arm's guard that moves or
+/// modifies it.
+///
+/// When a guard evaluates to false, the following arms bind the matched value again, so the guard
+/// must leave the value intact. Reading a variable through a snapshot, or copying a `Copy` value,
+/// is allowed.
+fn validate_guard_pattern_variables_use<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    patterns: &[PatternAndId<'db>],
+    guard: ExprId,
+) {
+    let mut bound_names: UnorderedHashMap<VarId<'db>, SmolStrId<'db>> = Default::default();
+    for pattern in patterns {
+        for variable in pattern.variables(&ctx.arenas.patterns) {
+            bound_names.insert(VarId::Local(variable.var.id), variable.name);
+        }
+    }
+    let usage = Usages::for_expr(&ctx.arenas, guard);
+    let lookup_context = ctx.resolver.impl_lookup_context();
+    for (path, expr) in usage.changes.iter() {
+        if let Some(name) = bound_names.get(&path.base_var()) {
+            ctx.diagnostics.report(expr.stable_ptr(), MatchGuardUsesPatternVariable(*name));
+        }
+    }
+    for (path, expr) in usage.usage.iter() {
+        let Some(name) = bound_names.get(&path.base_var()) else { continue };
+        if usage.changes.contains_key(path) {
+            continue;
+        }
+        let mut ty = ctx.reduce_ty(expr.ty());
+        if !ty.is_var_free(ctx.db) {
+            ctx.resolver.inference().solve().ok();
+            ty = ctx.reduce_ty(ty);
+        }
+        if ty.is_var_free(ctx.db) && ctx.db.type_info(lookup_context, ty).copyable.is_err() {
+            ctx.diagnostics.report(expr.stable_ptr(), MatchGuardUsesPatternVariable(*name));
+        }
+    }
 }
 
 /// Computes the semantic of `PatternListOr` and introducing the pattern variables into the scope.
@@ -2074,7 +2133,7 @@ fn compute_expr_match_semantic<'db>(
         .collect();
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match);
-    for (_, expr) in &patterns_and_exprs {
+    for (_, _, expr) in &patterns_and_exprs {
         let expr_ty = ctx.reduce_ty(expr.ty());
         if !helper.try_merge_types(
             ctx.db,
@@ -2089,8 +2148,9 @@ fn compute_expr_match_semantic<'db>(
     // Compute semantic representation of the match arms.
     let semantic_arms = patterns_and_exprs
         .into_iter()
-        .map(|(patterns, arm_expr)| MatchArm {
+        .map(|(patterns, guard, arm_expr)| MatchArm {
             patterns: patterns.iter().map(|pattern| pattern.id).collect(),
+            guard,
             expression: arm_expr.id,
         })
         .collect();
