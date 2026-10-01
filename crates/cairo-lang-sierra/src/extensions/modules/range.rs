@@ -1,3 +1,5 @@
+use cairo_lang_utils::require;
+
 use super::bounded_int::BoundedIntType;
 use super::int::signed::{Sint8Type, Sint16Type, Sint32Type, Sint64Type};
 use super::int::signed128::Sint128Type;
@@ -53,15 +55,15 @@ impl GenericTypeArgGenericType for IntRangeTypeWrapped {
     ) -> Result<TypeInfo, SpecializationError> {
         check_inner_type(wrapped_info)?;
 
-        // This follows from `check_inner_type` for a valid type, but the info may be forward
-        // declared and not yet validated.
-        if !(wrapped_info.storable
-            && wrapped_info.duplicatable
-            && wrapped_info.droppable
-            && !wrapped_info.zero_sized)
-        {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
+        // Follows from `check_inner_type` for a valid type, but the info may be forward declared
+        // and not yet validated.
+        require(
+            wrapped_info.storable
+                && wrapped_info.duplicatable
+                && wrapped_info.droppable
+                && !wrapped_info.zero_sized,
+        )
+        .ok_or(SpecializationError::UnsupportedGenericArg)?;
         Ok(TypeInfo {
             long_id,
             duplicatable: true,

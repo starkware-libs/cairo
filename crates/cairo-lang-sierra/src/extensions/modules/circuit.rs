@@ -1127,27 +1127,31 @@ fn get_circuit_info(
             let mut input_offsets = gate_inputs.map(|ty| values[ty]);
 
             if long_id.generic_id == AddModGate::ID {
-                let [lhs, rhs] = input_offsets.next_array().unwrap();
+                let [lhs, rhs] =
+                    input_offsets.next_array().ok_or(SpecializationError::UnsupportedGenericArg)?;
                 add_offsets.push(GateOffsets { lhs, rhs, output: output_offset });
             } else if long_id.generic_id == SubModGate::ID {
                 // output = sub_lhs - sub_rhs => output + sub_rhs = sub_lhs.
-                let [sub_lhs, sub_rhs] = input_offsets.next_array().unwrap();
+                let [sub_lhs, sub_rhs] =
+                    input_offsets.next_array().ok_or(SpecializationError::UnsupportedGenericArg)?;
                 add_offsets.push(GateOffsets { lhs: output_offset, rhs: sub_rhs, output: sub_lhs });
             } else if long_id.generic_id == MulModGate::ID {
-                let [lhs, rhs] = input_offsets.next_array().unwrap();
+                let [lhs, rhs] =
+                    input_offsets.next_array().ok_or(SpecializationError::UnsupportedGenericArg)?;
                 mul_offsets.push(GateOffsets { lhs, rhs, output: output_offset });
             } else if long_id.generic_id == InverseGate::ID {
                 // output = 1 / input => 1 = output * input.
                 // Note that the gate will fail if the input is not invertible.
                 // Evaluating this gate successfully implies that input is invertible.
-                let rhs = input_offsets.next().unwrap();
+                let rhs = input_offsets.next().ok_or(SpecializationError::UnsupportedGenericArg)?;
                 mul_offsets.push(GateOffsets { lhs: output_offset, rhs, output: ONE_OFFSET });
             } else {
                 return Err(SpecializationError::UnsupportedGenericArg);
             };
 
             // Make sure all the gate inputs were consumed.
-            assert!(input_offsets.next().is_none());
+            require(input_offsets.next().is_none())
+                .ok_or(SpecializationError::UnsupportedGenericArg)?;
             values.insert(ty.clone(), output_offset);
         }
     }
@@ -1184,9 +1188,6 @@ fn parse_circuit_inputs<'a>(
         } else {
             // generic_id should be a gate, which is checked in `get_circuit_info`. The gate may be
             // forward declared, so its generic args are not necessarily validated yet.
-            let n_gate_inputs = if long_id.generic_id == InverseGate::ID { 1 } else { 2 };
-            require(long_id.generic_args.len() == n_gate_inputs)
-                .ok_or(SpecializationError::UnsupportedGenericArg)?;
             for generic_arg in &long_id.generic_args {
                 let GenericArg::Type(input) = generic_arg else {
                     return Err(SpecializationError::UnsupportedGenericArg);
