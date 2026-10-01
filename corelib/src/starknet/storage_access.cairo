@@ -26,6 +26,7 @@
 use core::RangeCheck;
 use core::array::ArrayTrait;
 use core::byte_array::ByteArrayTrait;
+use core::num::traits::CheckedSub;
 use core::option::OptionTrait;
 use core::serde::Serde;
 use core::traits::{Into, TryInto};
@@ -228,19 +229,23 @@ pub trait Store<T> {
     ) -> SyscallResult<
         (),
     > {
-        let mut result = Result::Ok(());
+        let Some(last) = Self::size().checked_sub(1) else {
+            return Ok(());
+        };
         let mut offset = offset;
-        for _ in 0..Self::size() {
-            if let Result::Err(err) =
+        let last = offset + last;
+        loop {
+            if let Err(err) =
                 storage_write_syscall(
                     address_domain, storage_address_from_base_and_offset(base, offset), 0,
                 ) {
-                result = Result::Err(err);
-                break;
+                break Err(err);
+            }
+            if offset == last {
+                break Ok(());
             }
             offset += 1;
         }
-        result
     }
 }
 
