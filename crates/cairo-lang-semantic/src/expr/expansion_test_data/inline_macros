@@ -1223,3 +1223,28 @@ error[E2200]: Plugin diagnostic: Macro cannot be parsed as legacy macro. Expecte
  --> lib.cairo:9:16
 let expanded = m!(X and Y);
                ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test a trailing separator picking the rule that asks for it.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > module_code
+// Rule 1 declares the comma as the separator, so it only stands between groups; rule 2 makes it
+// part of every group, which is how rustc spells trailing-separator tolerance.
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($($x:expr),*) => { 1 };
+
+    ($($x:expr,)*) => { 2 };
+}
+
+//! > expr_code
+let expanded = m!(1, 2,);
+
+//! > expanded_code
+expanded: 2
+
+//! > diagnostics
