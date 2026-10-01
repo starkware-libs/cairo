@@ -188,7 +188,7 @@ condition ::= ("let" pattern ("|" pattern)* "=")? expr
 
 match_expr ::= "match" expr "{" match_arm* "}"
 
-match_arm ::= pattern ("|" pattern)* "=>" expr ","?
+match_arm ::= pattern ("|" pattern)* ("if" expr)? "=>" expr ","?
 
 loop_expr ::= "loop" block_expr
 

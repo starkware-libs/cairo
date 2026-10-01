@@ -34,6 +34,8 @@ pub fn key_fields_range(kind: SyntaxKind) -> core::ops::Range<usize> {
         SyntaxKind::ExprMatch => 0..0,
         SyntaxKind::MatchArms => 0..0,
         SyntaxKind::MatchArm => 0..0,
+        SyntaxKind::MatchGuardClause => 0..0,
+        SyntaxKind::OptionMatchGuardClauseEmpty => 0..0,
         SyntaxKind::ExprIf => 0..0,
         SyntaxKind::ConditionListAnd => 0..0,
         SyntaxKind::ConditionLet => 0..0,

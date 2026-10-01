@@ -43,6 +43,8 @@ pub enum SyntaxKind {
     ExprMatch,
     MatchArms,
     MatchArm,
+    MatchGuardClause,
+    OptionMatchGuardClauseEmpty,
     ExprIf,
     ConditionListAnd,
     ConditionLet,
