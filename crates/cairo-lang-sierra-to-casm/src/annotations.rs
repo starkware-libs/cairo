@@ -35,8 +35,6 @@ pub enum AnnotationError {
     },
     #[error("#{statement_idx}: {error}")]
     InconsistentEnvironments { statement_idx: StatementIdx, error: EnvironmentError },
-    #[error("#{statement_idx}: Belongs to two different functions.")]
-    InconsistentFunctionId { statement_idx: StatementIdx },
     #[error("#{statement_idx}: Invalid convergence.")]
     InvalidConvergence { statement_idx: StatementIdx },
     #[error("InvalidStatementIdx")]
@@ -202,9 +200,6 @@ impl ProgramAnnotations {
         match self.per_statement_annotations.get(idx).ok_or(AnnotationError::InvalidStatementIdx)? {
             None => self.per_statement_annotations[idx] = Some(annotations),
             Some(expected_annotations) => {
-                if expected_annotations.function_id != annotations.function_id {
-                    return Err(AnnotationError::InconsistentFunctionId { statement_idx });
-                }
                 validate_environment_equality(
                     &expected_annotations.environment,
                     &annotations.environment,

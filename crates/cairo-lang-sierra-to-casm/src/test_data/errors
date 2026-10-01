@@ -631,6 +631,49 @@ bar@0() -> ();
 
 //! > ==========================================================================
 
+//! > Function entry point inside another function
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc store_temp_felt252 = store_temp<felt252>;
+
+store_temp_felt252([0]) -> ([0]);
+return([0]);
+
+foo@0([0]: felt252) -> (felt252);
+bar@1([0]: felt252) -> (felt252);
+
+//! > error
+#1: Belongs to two different functions.
+
+//! > ==========================================================================
+
+//! > Functions converging on a statement
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc jump = jump;
+
+store_temp_felt252([0]) -> ([0]);
+jump() { 3() };
+store_temp_felt252([0]) -> ([0]);
+return([0]);
+
+foo@0([0]: felt252) -> (felt252);
+bar@2([0]: felt252) -> (felt252);
+
+//! > error
+#3: Belongs to two different functions.
+
+//! > ==========================================================================
+
 //! > Alloc local after re-enabling ap tracking
 
 //! > test_runner_name

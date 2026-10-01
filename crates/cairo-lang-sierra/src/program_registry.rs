@@ -67,6 +67,8 @@ pub enum ProgramRegistryError {
     MultipleJumpsToSameStatement { src1: StatementIdx, src2: StatementIdx, dst: StatementIdx },
     #[error("#{0}: Jump out of range")]
     JumpOutOfRange(StatementIdx),
+    #[error("#{0}: Belongs to two different functions.")]
+    StatementInTwoFunctions(StatementIdx),
     #[error("Type size computation failed for `{ty}`: missing size information for `{dep}`")]
     TypeSizeDependencyMissing { ty: ConcreteTypeId, dep: ConcreteTypeId },
     #[error("Type size computation failed for `{0}`: size overflow.")]
@@ -170,7 +172,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         for (i, statement) in program.statements.iter().enumerate() {
             self.validate_statement(program, StatementIdx(i), statement, &mut branches)?;
         }
-        Ok(())
+        validate_functions_disjoint(program)
     }
 
     /// Checks the validity of a statement.
@@ -249,6 +251,29 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         }
         Ok(())
     }
+}
+
+/// Checks that no statement is reachable from the entry points of two different functions.
+///
+/// Assumes all branch targets were already validated to be in range.
+fn validate_functions_disjoint(program: &Program) -> Result<(), Box<ProgramRegistryError>> {
+    let mut statement_function: Vec<Option<&FunctionId>> = vec![None; program.statements.len()];
+    for func in &program.funcs {
+        let mut stack = vec![func.entry_point];
+        while let Some(idx) = stack.pop() {
+            match statement_function[idx.0] {
+                Some(id) if id == &func.id => continue,
+                Some(_) => {
+                    return Err(Box::new(ProgramRegistryError::StatementInTwoFunctions(idx)));
+                }
+                None => statement_function[idx.0] = Some(&func.id),
+            }
+            if let Statement::Invocation(invocation) = &program.statements[idx.0] {
+                stack.extend(invocation.branches.iter().map(|branch| idx.next(branch.target)));
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Creates the functions map.
