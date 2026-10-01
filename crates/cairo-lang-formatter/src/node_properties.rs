@@ -535,7 +535,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_single_line_comment(db, self),
                         true,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -549,7 +549,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -565,7 +565,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -576,7 +576,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     }
                 }
                 SyntaxKind::ParamList => {
-                    let is_optional = !param_list_contains_single_line_comment(db, self);
+                    let is_optional = !list_contains_single_line_comment(db, self);
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
@@ -594,7 +594,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_single_line_comment(db, self),
                         true,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -636,7 +636,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -681,7 +681,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         6,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -695,7 +695,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         21,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_single_line_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -861,7 +861,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    true,
+                    !list_contains_single_line_comment(db, self),
                     true,
                 ),
                 breaking_frequency: 2,
@@ -870,16 +870,17 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    !param_list_contains_single_line_comment(db, self),
+                    !list_contains_single_line_comment(db, self),
                     true,
                 ),
                 breaking_frequency: 2,
             },
             SyntaxKind::ArgList => {
+                let has_comment = list_contains_single_line_comment(db, self);
                 let mut properties = BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    true,
+                    !has_comment,
                     true,
                 );
                 if self.parent_kind(db) == Some(SyntaxKind::ArgListBracketed) {
@@ -899,13 +900,17 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                         }
                     }
                 }
+                if has_comment {
+                    properties.set_line_by_line();
+                }
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
             SyntaxKind::ExprList => {
+                let has_comment = list_contains_single_line_comment(db, self);
                 let mut properties = BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    true,
+                    !has_comment,
                     true,
                 );
 
@@ -933,6 +938,9 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                             properties.set_line_by_line();
                         }
                     }
+                }
+                if has_comment {
+                    properties.set_line_by_line();
                 }
 
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
@@ -1115,20 +1123,22 @@ fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'
         && !contains_single_line_comment(db, node)
 }
 
-/// Returns whether a parameter list contains a line comment, including one attached to the
-/// following closing parenthesis as leading trivia.
-fn param_list_contains_single_line_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
-    contains_single_line_comment(db, node)
+/// Returns whether an item of a list, or the closing delimiter following it, is preceded by a
+/// single-line comment, which is then on its own line. Trailing comments do not count.
+fn list_contains_single_line_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    let has_leading_comment = |child: &SyntaxNode<'_>| {
+        child
+            .tokens(db)
+            .next()
+            .is_some_and(|terminal| contains_single_line_comment(db, &terminal.get_children(db)[0]))
+    };
+    node.get_children(db).iter().any(has_leading_comment)
         || node.parent(db).is_some_and(|parent| {
-            parent.get_children(db).iter().tuple_windows().any(|(current, next)| {
-                if current == node
-                    && let Some(rparen) = ast::TerminalRParen::cast(db, *next)
-                {
-                    contains_single_line_comment(db, &rparen.leading_trivia(db).as_syntax_node())
-                } else {
-                    false
-                }
-            })
+            parent
+                .get_children(db)
+                .iter()
+                .tuple_windows()
+                .any(|(current, next)| current == node && has_leading_comment(next))
         })
 }
 
