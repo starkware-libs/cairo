@@ -1248,18 +1248,6 @@ fn lower_expr_match<'db>(
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a match expression: {:?}", expr.debug(&ctx.expr_formatter));
-    let guard_error = expr
-        .arms
-        .iter()
-        .filter_map(|arm| arm.guard)
-        .map(|guard| {
-            let stable_ptr = ctx.function_body.arenas.exprs[guard].stable_ptr();
-            ctx.diagnostics.report(stable_ptr, Unsupported)
-        })
-        .last();
-    if let Some(diag_added) = guard_error {
-        return Err(LoweringFlowError::Failed(diag_added));
-    }
     let graph = create_graph_expr_match(ctx, expr);
     lower_graph(ctx, builder, &graph, ctx.get_location(expr.stable_ptr.untyped()))
 }
