@@ -130,3 +130,26 @@ error[E2142]: `inline` attribute is not allowed for extern functions.
  --> lib.cairo:5:1
 #[inline(never)]
 ^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test that a comment after the `inline` argument is ignored.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{}
+
+//! > module_code
+#[inline(always // Small enough to inline.
+)]
+fn foo() {}
+
+#[inline(never // Keep it out of the callers.
+)]
+fn bar() {}
+
+//! > function_body
+
+//! > expected_diagnostics
