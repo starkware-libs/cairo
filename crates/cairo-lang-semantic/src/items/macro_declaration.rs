@@ -784,14 +784,18 @@ fn is_macro_rule_match_ex<'db>(
                         let file_id = peek_token.as_syntax_node().stable_ptr(db).file_id(db);
                         let expr_node = as_expr_macro_token_tree(input_iter, file_id, db)?;
                         let syntax_node = expr_node.as_syntax_node();
+                        // The trivia around the expression belongs to the call; the expansion
+                        // spaces the value by its own trivia.
+                        let text =
+                            syntax_node.get_text_of_span(db, syntax_node.span_without_trivia(db));
                         ctx.record_capture(
                             placeholder_name,
                             CapturedValue {
-                                // The trivia around the expression belongs to the call; the
-                                // expansion spaces the value by its own trivia.
-                                text: syntax_node
-                                    .get_text_of_span(db, syntax_node.span_without_trivia(db))
-                                    .to_string(),
+                                text: if capture_needs_parens(db, expr_node) {
+                                    format!("({text})")
+                                } else {
+                                    text.to_string()
+                                },
                                 stable_ptr: peek_token.stable_ptr(db).untyped(),
                             },
                         );
@@ -881,6 +885,20 @@ fn is_macro_rule_match_ex<'db>(
         return None;
     }
     Some(advanced)
+}
+
+/// Whether an `expr` capture of `expr_node`'s shape must be parenthesized to stay a single operand
+/// when spliced as text: its top level is an operator the expansion's own operators would bind
+/// into, or a struct constructor, whose `{` does not parse in a match scrutinee or loop condition.
+/// `@` and `&` also form types, which must reach a type-position splice bare, so they are exempt.
+fn capture_needs_parens(db: &dyn Database, expr_node: ast::Expr<'_>) -> bool {
+    match expr_node {
+        ast::Expr::Unary(unary) => {
+            !matches!(unary.op(db), ast::UnaryOperator::At(_) | ast::UnaryOperator::Reference(_))
+        }
+        ast::Expr::Binary(_) | ast::Expr::Closure(_) | ast::Expr::StructCtorCall(_) => true,
+        _ => false,
+    }
 }
 
 fn validate_repetition_operator_constraints(ctx: &MatcherContext<'_>) -> bool {
