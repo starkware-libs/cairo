@@ -345,3 +345,28 @@ fn test_run_tests_by_full_name() {
     assert_eq!(summary.passed, ["foo::a::foo::b::check"]);
     assert_eq!(summary.failed, ["foo::b::check"]);
 }
+
+#[test]
+fn test_invalid_string_in_expected_panic() {
+    use std::path::PathBuf;
+    // The `expected` strings are not valid string literals (non-ASCII, bad escape).
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test_data_invalid_expected_panic");
+    let compiler = TestCompiler::try_new(
+        &path,
+        false,
+        true,
+        TestsCompilationConfig {
+            starknet: false,
+            add_statements_functions: false,
+            add_statements_code_locations: false,
+            add_functions_debug_info: false,
+            add_type_names: false,
+            contract_declarations: None,
+            contract_crate_ids: None,
+            executable_crate_ids: None,
+            replace_ids: false,
+        },
+    )
+    .unwrap();
+    assert!(compiler.build().is_err());
+}
