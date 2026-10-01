@@ -1,6 +1,7 @@
 use bimap::BiMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use num_bigint::BigInt;
+use starknet_types_core::felt::CAIRO_PRIME_BIGINT;
 use test_case::test_case;
 
 use super::SpecializationError::{
@@ -253,6 +254,13 @@ fn find_type_specialization(
 #[test_case("felt252_add_const", vec![value_arg(0)] =>  Ok(()); "felt252_add_const<0>")]
 #[test_case("felt252_mul", vec![] => Ok(()); "felt252_mul")]
 #[test_case("felt252_mul_const", vec![value_arg(0)] =>  Ok(()); "felt252_mul_const<0>")]
+#[test_case("felt252_div_const", vec![value_arg(7)] => Ok(()); "felt252_div_const<7>")]
+#[test_case("felt252_div_const", vec![value_arg(0)] => Err(UnsupportedGenericArg);
+            "felt252_div_const<0>")]
+#[test_case("felt252_div_const", vec![GenericArg::Value(CAIRO_PRIME_BIGINT.clone())]
+            => Err(UnsupportedGenericArg); "felt252_div_const<P>")]
+#[test_case("felt252_div_const", vec![GenericArg::Value(-CAIRO_PRIME_BIGINT.clone())]
+            => Err(UnsupportedGenericArg); "felt252_div_const<minus P>")]
 #[test_case("felt252_is_zero", vec![] => Ok(()); "felt252_is_zero<>")]
 #[test_case("felt252_is_zero", vec![type_arg("felt252")]
             => Err(WrongNumberOfGenericArgs); "felt252_is_zero<int>")]

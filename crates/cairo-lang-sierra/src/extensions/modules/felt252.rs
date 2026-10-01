@@ -1,5 +1,6 @@
 use num_bigint::BigInt;
 use num_traits::Zero;
+use starknet_types_core::felt::CAIRO_PRIME_BIGINT;
 
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
@@ -180,7 +181,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
         match args {
             [GenericArg::Value(c)] => {
                 let output_ref_info = if matches!(self.operator, Felt252BinaryOperator::Div) {
-                    if c.is_zero() {
+                    if is_zero_in_field(c) {
                         return Err(SpecializationError::UnsupportedGenericArg);
                     }
                     OutputVarReferenceInfo::NewTempVar { idx: 0 }
@@ -205,7 +206,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [GenericArg::Value(c)] => {
-                if matches!(self.operator, Felt252BinaryOperator::Div) && c.is_zero() {
+                if matches!(self.operator, Felt252BinaryOperator::Div) && is_zero_in_field(c) {
                     Err(SpecializationError::UnsupportedGenericArg)
                 } else {
                     Ok(Felt252OperationWithConstConcreteLibfunc {
@@ -218,6 +219,11 @@ impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }
     }
+}
+
+/// Returns whether `c` is zero as a felt252, i.e. a multiple of the prime.
+fn is_zero_in_field(c: &BigInt) -> bool {
+    (c % &*CAIRO_PRIME_BIGINT).is_zero()
 }
 
 pub struct Felt252BinaryOpConcreteLibfunc {
