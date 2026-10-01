@@ -605,6 +605,9 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             Expr::Match(expr) => {
                 self.validate(expr.matched_expr);
                 for arm in &expr.arms {
+                    if let Some(guard) = arm.guard {
+                        self.validate(guard);
+                    }
                     self.validate(arm.expression);
                 }
             }
@@ -846,9 +849,19 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 let value = self.evaluate(expr.matched_expr);
                 for arm in &expr.arms {
                     for pattern_id in &arm.patterns {
-                        if self.destructure_pattern(*pattern_id, value).is_some() {
-                            return self.evaluate(arm.expression);
+                        if self.destructure_pattern(*pattern_id, value).is_none() {
+                            continue;
                         }
+                        if let Some(guard) = arm.guard {
+                            let guard = self.evaluate(guard);
+                            if guard == self.false_const {
+                                continue;
+                            }
+                            if guard != self.true_const {
+                                return to_missing(skip_diagnostic());
+                            }
+                        }
+                        return self.evaluate(arm.expression);
                     }
                 }
                 to_missing(
@@ -1236,6 +1249,12 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             Pattern::Literal(v) => {
                 let arg = NumericArg::try_new(db, value)?;
                 require(self.eq_in_type(&arg.v, &v.literal.value, arg.ty))
+            }
+            Pattern::Range(range) => {
+                let arg = NumericArg::try_new(db, value)?;
+                let below_end =
+                    if range.inclusive { arg.v <= range.end } else { arg.v < range.end };
+                require(arg.v >= range.start && below_end)
             }
             Pattern::Variable(pattern) => {
                 self.vars.insert(VarId::Local(pattern.var.id), value);

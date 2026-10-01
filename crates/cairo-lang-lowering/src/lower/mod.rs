@@ -724,7 +724,8 @@ fn lower_single_pattern<'db>(
     match pattern {
         semantic::Pattern::Literal(_)
         | semantic::Pattern::StringLiteral(_)
-        | semantic::Pattern::EnumVariant(_) => {
+        | semantic::Pattern::EnumVariant(_)
+        | semantic::Pattern::Range(_) => {
             return Err(LoweringFlowError::Failed(
                 ctx.diagnostics.report(pattern.stable_ptr(), RefutablePattern),
             ));

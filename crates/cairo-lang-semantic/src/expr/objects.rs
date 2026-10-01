@@ -454,6 +454,7 @@ pub enum Condition {
 #[debug_db(ExprFormatter<'db>)]
 pub struct MatchArm {
     pub patterns: Vec<PatternId>,
+    pub guard: Option<ExprId>,
     pub expression: ExprId,
 }
 

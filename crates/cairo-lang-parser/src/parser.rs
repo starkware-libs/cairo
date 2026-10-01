@@ -2583,9 +2583,30 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
         let pattern_list_green = PatternListOr::new_green(self.db, &pattern_list);
 
+        let guard_clause = if self.peek().kind == SyntaxKind::TerminalIf {
+            let if_kw = self.take::<TerminalIf<'_>>();
+            let condition = self.parse_expr_limited(
+                MAX_PRECEDENCE,
+                LbraceAllowed::Forbid,
+                AndLetBehavior::Simple,
+            );
+            MatchGuardClause::new_green(self.db, if_kw, condition).into()
+        } else {
+            OptionMatchGuardClauseEmpty::new_green(self.db).into()
+        };
+
         let arrow = self.parse_token::<TerminalMatchArrow<'_>>();
         let expr = self.parse_expr();
-        Ok(MatchArm::new_green(self.db, pattern_list_green, arrow, expr))
+        Ok(MatchArm::new_green(self.db, pattern_list_green, guard_clause, arrow, expr))
+    }
+
+    /// Parses the end bound of a range pattern, reporting a missing literal if it is absent.
+    fn parse_range_pattern_end(&mut self) -> TerminalLiteralNumberGreen<'a> {
+        if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
+            self.take_terminal_literal_number()
+        } else {
+            self.create_and_report_missing_terminal::<TerminalLiteralNumber<'_>>()
+        }
     }
 
     /// Returns a GreenId of a node with some Pattern kind (see
@@ -2600,7 +2621,22 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
         // TODO(yuval): Support "Or" patterns.
         Ok(match self.peek().kind {
-            SyntaxKind::TerminalLiteralNumber => self.take_terminal_literal_number().into(),
+            SyntaxKind::TerminalLiteralNumber => {
+                let start = self.take_terminal_literal_number();
+                match self.peek().kind {
+                    SyntaxKind::TerminalDotDot => {
+                        let dots = self.take::<TerminalDotDot<'_>>();
+                        let end = self.parse_range_pattern_end();
+                        PatternRange::new_green(self.db, start, dots.into(), end).into()
+                    }
+                    SyntaxKind::TerminalDotDotEq => {
+                        let dots = self.take::<TerminalDotDotEq<'_>>();
+                        let end = self.parse_range_pattern_end();
+                        PatternRange::new_green(self.db, start, dots.into(), end).into()
+                    }
+                    _ => start.into(),
+                }
+            }
             SyntaxKind::TerminalShortString => self.take_terminal_short_string().into(),
             SyntaxKind::TerminalTrue => self.take::<TerminalTrue<'_>>().into(),
             SyntaxKind::TerminalFalse => self.take::<TerminalFalse<'_>>().into(),

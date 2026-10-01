@@ -54,7 +54,7 @@ use super::inference::{Inference, InferenceData, InferenceError};
 use super::objects::*;
 use super::pattern::{
     Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternMissing,
-    PatternOtherwise, PatternTuple, PatternVariable, PatternWrappingInfo,
+    PatternOtherwise, PatternRange, PatternTuple, PatternVariable, PatternWrappingInfo,
 };
 use crate::corelib::{
     self, CorelibSemantic, LiteralError, core_binary_operator, core_bool_ty, core_unary_operator,
@@ -1959,11 +1959,30 @@ fn compute_arm_semantic<'db>(
     expr: &Expr<'db>,
     arm_expr_syntax: ast::Expr<'db>,
     patterns_syntax: &PatternListOr<'db>,
-) -> (Vec<PatternAndId<'db>>, ExprAndId<'db>) {
+    guard_clause: ast::OptionMatchGuardClause<'db>,
+) -> (Vec<PatternAndId<'db>>, Option<ExprId>, ExprAndId<'db>) {
     ctx.run_in_subscope(|new_ctx| {
         let patterns = compute_pattern_list_or_semantic(new_ctx, expr, patterns_syntax);
+        let guard = match guard_clause {
+            ast::OptionMatchGuardClause::Empty(_) => None,
+            ast::OptionMatchGuardClause::MatchGuardClause(clause) => {
+                let db = new_ctx.db;
+                let condition_syntax = clause.condition(db);
+                let condition = compute_expr_semantic(new_ctx, &condition_syntax);
+                let bool_ty = core_bool_ty(db);
+                let inference = &mut new_ctx.resolver.inference();
+                let _ = inference.conform_ty_for_diag(
+                    condition.ty(),
+                    bool_ty,
+                    new_ctx.diagnostics,
+                    || condition_syntax.stable_ptr(db).untyped(),
+                    |actual_ty, expected_ty| WrongType { expected_ty, actual_ty },
+                );
+                Some(condition.id)
+            }
+        };
         let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
-        (patterns, arm_expr)
+        (patterns, guard, arm_expr)
     })
 }
 
@@ -2059,12 +2078,18 @@ fn compute_expr_match_semantic<'db>(
     // diagnostics as possible.
     let patterns_and_exprs: Vec<_> = syntax_arms
         .map(|syntax_arm| {
-            compute_arm_semantic(ctx, &expr, syntax_arm.expression(db), &syntax_arm.patterns(db))
+            compute_arm_semantic(
+                ctx,
+                &expr,
+                syntax_arm.expression(db),
+                &syntax_arm.patterns(db),
+                syntax_arm.guard_clause(db),
+            )
         })
         .collect();
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db, MultiArmExprKind::Match);
-    for (_, expr) in &patterns_and_exprs {
+    for (_, _, expr) in &patterns_and_exprs {
         let expr_ty = ctx.reduce_ty(expr.ty());
         if !helper.try_merge_types(
             ctx.db,
@@ -2079,8 +2104,9 @@ fn compute_expr_match_semantic<'db>(
     // Compute semantic representation of the match arms.
     let semantic_arms = patterns_and_exprs
         .into_iter()
-        .map(|(patterns, arm_expr)| MatchArm {
+        .map(|(patterns, guard, arm_expr)| MatchArm {
             patterns: patterns.iter().map(|pattern| pattern.id).collect(),
+            guard,
             expression: arm_expr.id,
         })
         .collect();
@@ -3155,6 +3181,37 @@ fn maybe_compute_pattern_semantic<'db>(
                 stable_ptr: pattern_false.stable_ptr(db).into(),
                 ty,
                 inner_pattern: None,
+            })
+        }
+        ast::Pattern::Range(range_pattern) => {
+            let start_literal = literal_to_semantic(ctx, &range_pattern.start(db))?;
+            let end_literal = literal_to_semantic(ctx, &range_pattern.end(db))?;
+
+            let start_ty = ctx.reduce_ty(start_literal.ty);
+            let end_ty = ctx.reduce_ty(end_literal.ty);
+            let inference = &mut ctx.resolver.inference();
+            inference.conform_ty(start_ty, end_ty).map_err(|err_set| {
+                inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr)
+            })?;
+
+            let inclusive = matches!(range_pattern.dots(db), ast::PatternRangeDots::DotDotEq(_));
+            let is_empty = if inclusive {
+                start_literal.value > end_literal.value
+            } else {
+                start_literal.value >= end_literal.value
+            };
+            if is_empty {
+                return Err(ctx
+                    .diagnostics
+                    .report(range_pattern.stable_ptr(db), EmptyRangePattern));
+            }
+
+            Pattern::Range(PatternRange {
+                start: start_literal.value,
+                end: end_literal.value,
+                inclusive,
+                ty: start_ty,
+                stable_ptr: range_pattern.stable_ptr(db),
             })
         }
         ast::Pattern::True(pattern_true) => {

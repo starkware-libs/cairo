@@ -30,6 +30,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Literal(
                     ExprNumericLiteral {
                         value: 0,
@@ -45,6 +46,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Literal(
                     ExprNumericLiteral {
                         value: 1,
@@ -92,6 +94,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Literal(
                     ExprNumericLiteral {
                         value: 0,
@@ -109,6 +112,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Literal(
                     ExprNumericLiteral {
                         value: 1,
@@ -170,6 +174,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Literal(
                     ExprNumericLiteral {
                         value: 0,
@@ -187,6 +192,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Literal(
                     ExprNumericLiteral {
                         value: 1,
@@ -274,6 +280,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Var(
                     LocalVarId(test::x),
                 ),
@@ -359,6 +366,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: FunctionCall(
                     ExprFunctionCall {
                         function: core::integer::U8Add::add,
@@ -431,6 +439,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Literal(
                     ExprNumericLiteral {
                         value: 3,
@@ -448,6 +457,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Literal(
                     ExprNumericLiteral {
                         value: 3,
@@ -505,6 +515,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: FunctionCall(
                     ExprFunctionCall {
                         function: ?0::add,
@@ -541,6 +552,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: FunctionCall(
                     ExprFunctionCall {
                         function: ?1::add,
@@ -645,6 +657,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: FunctionCall(
                     ExprFunctionCall {
                         function: ?0::add,
@@ -746,6 +759,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: FunctionCall(
                     ExprFunctionCall {
                         function: ?1::add,
@@ -860,6 +874,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Var(
                     LocalVarId(test::x),
                 ),
@@ -949,6 +964,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Var(
                     LocalVarId(test::x),
                 ),
@@ -1029,6 +1045,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Literal(
                     ExprNumericLiteral {
                         value: 1,
@@ -1115,6 +1132,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: Var(
                     LocalVarId(test::x),
                 ),
@@ -1143,6 +1161,7 @@ Match(
                         },
                     ),
                 ],
+                guard: None,
                 expression: FunctionCall(
                     ExprFunctionCall {
                         function: core::integer::U8Add::add,

@@ -32,12 +32,14 @@ ExprMatch
     │   ├── item #0 (kind: MatchArm)
     │   │   ├── patterns (kind: PatternListOr)
     │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
+    │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '1'
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: MatchArm)
     │   │   ├── patterns (kind: PatternListOr)
     │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '2'
     │   └── separator #1 (kind: TokenComma): ','
@@ -81,12 +83,14 @@ ExprMatch
     │   │   │   ├── item #0 (kind: TokenLiteralNumber): '0'
     │   │   │   ├── separator #0 (kind: TokenOr): '|'
     │   │   │   └── item #1 (kind: TokenLiteralNumber): '1'
+    │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '1'
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: MatchArm)
     │   │   ├── patterns (kind: PatternListOr)
     │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '2'
     │   └── separator #1 (kind: TokenComma): ','
@@ -128,13 +132,85 @@ ExprMatch
     │   ├── item #0 (kind: MatchArm)
     │   │   ├── patterns (kind: PatternListOr)
     │   │   │   └── item #0 (kind: TokenTrue): 'true'
+    │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '1'
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: MatchArm)
     │   │   ├── patterns (kind: PatternListOr)
     │   │   │   └── item #0 (kind: TokenFalse): 'false'
+    │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │   └── expression (kind: TokenLiteralNumber): '2'
     │   └── separator #1 (kind: TokenComma): ','
+    └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test match guard and range patterns
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    match x {
+        1..5 | 7 if y => 1,
+        8..=9 => 2,
+        _ => 3,
+    };
+}
+
+//! > top_level_kind
+ExprMatch
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprMatch
+    ├── match_kw (kind: TokenMatch): 'match'
+    ├── expr (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'x'
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── arms (kind: MatchArms)
+    │   ├── item #0 (kind: MatchArm)
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   ├── item #0 (kind: PatternRange)
+    │   │   │   │   ├── start (kind: TokenLiteralNumber): '1'
+    │   │   │   │   ├── dots (kind: TokenDotDot): '..'
+    │   │   │   │   └── end (kind: TokenLiteralNumber): '5'
+    │   │   │   ├── separator #0 (kind: TokenOr): '|'
+    │   │   │   └── item #1 (kind: TokenLiteralNumber): '7'
+    │   │   ├── guard_clause (kind: MatchGuardClause)
+    │   │   │   ├── if_kw (kind: TokenIf): 'if'
+    │   │   │   └── condition (kind: ExprPath)
+    │   │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       └── segments (kind: ExprPathInner)
+    │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │               └── ident (kind: TokenIdentifier): 'y'
+    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   └── expression (kind: TokenLiteralNumber): '1'
+    │   ├── separator #0 (kind: TokenComma): ','
+    │   ├── item #1 (kind: MatchArm)
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   └── item #0 (kind: PatternRange)
+    │   │   │       ├── start (kind: TokenLiteralNumber): '8'
+    │   │   │       ├── dots (kind: TokenDotDotEq): '..='
+    │   │   │       └── end (kind: TokenLiteralNumber): '9'
+    │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
+    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   └── expression (kind: TokenLiteralNumber): '2'
+    │   ├── separator #1 (kind: TokenComma): ','
+    │   ├── item #2 (kind: MatchArm)
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
+    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   └── expression (kind: TokenLiteralNumber): '3'
+    │   └── separator #2 (kind: TokenComma): ','
     └── rbrace (kind: TokenRBrace): '}'

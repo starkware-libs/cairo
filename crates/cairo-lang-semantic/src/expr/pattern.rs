@@ -5,6 +5,7 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use num_bigint::BigInt;
 use salsa::Database;
 
 use super::fmt::ExprFormatter;
@@ -35,6 +36,7 @@ pub enum Pattern<'db> {
     FixedSizeArray(PatternFixedSizeArray<'db>),
     EnumVariant(PatternEnumVariant<'db>),
     Otherwise(PatternOtherwise<'db>),
+    Range(PatternRange<'db>),
     Missing(PatternMissing<'db>),
 }
 
@@ -49,6 +51,7 @@ impl<'db> Pattern<'db> {
             Pattern::FixedSizeArray(pattern_fixed_size_array) => pattern_fixed_size_array.ty,
             Pattern::EnumVariant(pattern_enum_variant) => pattern_enum_variant.ty,
             Pattern::Otherwise(pattern_otherwise) => pattern_otherwise.ty,
+            Pattern::Range(pattern_range) => pattern_range.ty,
             Pattern::Missing(pattern_missing) => pattern_missing.ty,
         }
     }
@@ -83,6 +86,7 @@ impl<'db> Pattern<'db> {
             Pattern::Literal(_)
             | Pattern::StringLiteral(_)
             | Pattern::Otherwise(_)
+            | Pattern::Range(_)
             | Pattern::Missing(_) => vec![],
         }
     }
@@ -97,6 +101,7 @@ impl<'db> Pattern<'db> {
             Pattern::FixedSizeArray(pattern) => pattern.stable_ptr.into(),
             Pattern::EnumVariant(pattern) => pattern.stable_ptr,
             Pattern::Otherwise(pattern) => pattern.stable_ptr.into(),
+            Pattern::Range(pattern) => pattern.stable_ptr.into(),
             Pattern::Missing(pattern) => pattern.stable_ptr,
         }
     }
@@ -253,6 +258,21 @@ pub struct PatternOtherwise<'db> {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::TerminalUnderscorePtr<'db>,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'db>)]
+pub struct PatternRange<'db> {
+    #[dont_rewrite]
+    pub start: BigInt,
+    #[dont_rewrite]
+    pub end: BigInt,
+    #[dont_rewrite]
+    pub inclusive: bool,
+    pub ty: semantic::TypeId<'db>,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::PatternRangePtr<'db>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]

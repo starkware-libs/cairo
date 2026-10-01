@@ -144,6 +144,15 @@ use crate::{FormatterConfig, get_formatted_file};
     false
 )]
 #[test_case(
+    "test_data/cairo_files/match_guard_and_range.cairo",
+    "test_data/expected_results/match_guard_and_range.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
     "test_data/cairo_files/trailing_comment.cairo",
     "test_data/expected_results/trailing_comment.cairo",
     false,

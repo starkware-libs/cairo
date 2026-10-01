@@ -835,6 +835,7 @@ Block(
                                             },
                                         ),
                                     ],
+                                    guard: None,
                                     expression: Block(
                                         ExprBlock {
                                             statements: [],
@@ -859,6 +860,7 @@ Block(
                                             },
                                         ),
                                     ],
+                                    guard: None,
                                     expression: Block(
                                         ExprBlock {
                                             statements: [],
@@ -906,6 +908,7 @@ Block(
                                     },
                                 ),
                             ],
+                            guard: None,
                             expression: Block(
                                 ExprBlock {
                                     statements: [],
@@ -930,6 +933,7 @@ Block(
                                     },
                                 ),
                             ],
+                            guard: None,
                             expression: Block(
                                 ExprBlock {
                                     statements: [],

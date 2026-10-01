@@ -227,6 +227,7 @@ fn create_node_for_enum<'db>(
             Some(
                 pattern @ (semantic::Pattern::StringLiteral(..)
                 | semantic::Pattern::Literal(..)
+                | semantic::Pattern::Range(..)
                 | semantic::Pattern::Struct(..)
                 | semantic::Pattern::Tuple(..)
                 | semantic::Pattern::FixedSizeArray(..)
@@ -679,6 +680,12 @@ fn create_node_for_tuple_inner<'db>(
             })) if current_member.is_none() => {
                 Some(get_pattern(ctx, elements_patterns[item_idx]).clone())
             }
+            Some(semantic::Pattern::Range(range)) => {
+                return graph.report_with_missing_node(
+                    range.stable_ptr.untyped(),
+                    LoweringDiagnosticKind::Unsupported,
+                );
+            }
             Some(
                 pattern @ (semantic::Pattern::StringLiteral(..)
                 | semantic::Pattern::EnumVariant(..)
@@ -817,6 +824,20 @@ fn create_node_for_value<'db>(
                     .0
                     .add(pattern_index);
             }
+            Some(semantic::Pattern::Range(range)) => {
+                // A range is handled as the sequence of the literals it contains.
+                let end_val = if range.inclusive { range.end.clone() } else { &range.end - 1 };
+                let stable_ptr = ExprPtr(range.stable_ptr.0);
+                let mut val = range.start.clone();
+                while val <= end_val {
+                    literals_map
+                        .entry(val.clone())
+                        .or_insert((otherwise_filter.clone(), stable_ptr))
+                        .0
+                        .add(pattern_index);
+                    val += 1;
+                }
+            }
             Some(semantic::Pattern::Otherwise(_)) | None => {
                 otherwise_filter.add(pattern_index);
                 for (_, (filter, _)) in literals_map.iter_mut() {
@@ -952,6 +973,7 @@ fn pattern_is_any<'a, 'db>(pattern: &'a semantic::Pattern<'db>) -> bool {
         semantic::Pattern::Otherwise(..) | semantic::Pattern::Variable(..) => true,
         semantic::Pattern::Literal(..)
         | semantic::Pattern::StringLiteral(..)
+        | semantic::Pattern::Range(..)
         | semantic::Pattern::Struct(..)
         | semantic::Pattern::Tuple(..)
         | semantic::Pattern::FixedSizeArray(..)

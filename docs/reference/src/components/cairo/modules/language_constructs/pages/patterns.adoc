@@ -53,6 +53,22 @@ Supported literals:
 * **Boolean literals**: `true`, `false`
 * **Short string literals**: `'hello'`
 
+=== Range Patterns
+
+Range patterns match a numeric value that falls between two literals.
+`start..end` excludes `end`, and `start..=end` includes it:
+
+[source,cairo]
+----
+match x {
+    0..10 => { /* 0 to 9 */ },
+    10..=20 => { /* 10 to 20 */ },
+    _ => { /* anything else */ },
+}
+----
+
+Both bounds must be numeric literals of the matched type, and the range must not be empty.
+
 === Identifier Patterns
 
 An identifier pattern binds the matched value to a variable:

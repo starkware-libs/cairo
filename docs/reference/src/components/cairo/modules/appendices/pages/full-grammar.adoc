@@ -188,7 +188,7 @@ condition ::= ("let" pattern ("|" pattern)* "=")? expr
 
 match_expr ::= "match" expr "{" match_arm* "}"
 
-match_arm ::= pattern ("|" pattern)* "=>" expr ","?
+match_arm ::= pattern ("|" pattern)* ("if" expr)? "=>" expr ","?
 
 loop_expr ::= "loop" block_expr
 
@@ -253,6 +253,7 @@ macro_expr ::= path "!" token_tree
 ----
 pattern ::=
     literal_pattern
+  | range_pattern
   | identifier_pattern
   | path_pattern
   | struct_pattern
@@ -262,6 +263,8 @@ pattern ::=
   | underscore_pattern
 
 literal_pattern ::= literal
+
+range_pattern ::= integer_literal (".." | "..=") integer_literal
 
 identifier_pattern ::= "ref"? "mut"? identifier
 

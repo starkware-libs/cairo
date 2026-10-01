@@ -66,6 +66,11 @@ impl FilteredPatterns {
         self.filter.into_iter().next()
     }
 
+    /// Returns all the patterns accepted by the filter, in order.
+    pub fn into_vec(self) -> Vec<IndexAndBindings> {
+        self.filter
+    }
+
     /// Adds bindings to the filter. The length of the slice must be equal to the number of
     /// patterns in the original list of patterns.
     ///

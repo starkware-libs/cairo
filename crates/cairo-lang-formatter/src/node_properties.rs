@@ -60,6 +60,11 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 }
             }
             SyntaxKind::TokenOrOr => false,
+            SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
+                if self.parent_kind(db) == Some(SyntaxKind::PatternRange) =>
+            {
+                true
+            }
             SyntaxKind::TokenLBrack
                 if !matches!(
                     self.grandparent_kind(db),
@@ -112,7 +117,10 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             | SyntaxKind::TokenImplicits
             | SyntaxKind::TokenDollar => true,
             SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
-                if matches!(self.parent_kind(db), Some(SyntaxKind::ExprBinary)) =>
+                if matches!(
+                    self.parent_kind(db),
+                    Some(SyntaxKind::ExprBinary | SyntaxKind::PatternRange)
+                ) =>
             {
                 true
             }

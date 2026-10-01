@@ -1259,6 +1259,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UnsupportedItemInStatement => {
                 "Item not supported as a statement.".into()
             }
+            SemanticDiagnosticKind::EmptyRangePattern => "Range pattern is empty.".into(),
         }
     }
     fn location(&self, db: &'db dyn Database) -> SpanInFile<'db> {
@@ -1528,6 +1529,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder => {
                 error_code!(E2203)
             }
+            SemanticDiagnosticKind::EmptyRangePattern => error_code!(E2204),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1955,6 +1957,7 @@ pub enum SemanticDiagnosticKind<'db> {
     NonNeverLetElseType,
     OnlyTypeOrConstParamsInNegImpl,
     UnsupportedItemInStatement,
+    EmptyRangePattern,
 }
 
 /// The kind of an expression with multiple possible return types.

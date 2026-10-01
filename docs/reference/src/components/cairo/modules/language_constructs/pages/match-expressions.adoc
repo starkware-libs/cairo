@@ -105,6 +105,46 @@ match value {
 
 Variables bound across alternatives must be consistent (same name and type in each branch).
 
+=== Range patterns
+
+A numeric pattern can also cover a range of literal values.
+`a..b` matches every value from `a` up to but not including `b`, and `a..=b` includes `b`.
+A range whose start is not below its end (or, for `a..=b`, is above it) is empty and is reported
+as an error.
+
+[source, cairo]
+----
+fn grade(score: u8) -> felt252 {
+    match score {
+        0..60 => 'fail',
+        60..=100 => 'pass',
+        _ => 'invalid',
+    }
+}
+----
+
+=== Match guards
+
+An arm can carry a guard, written as `if` followed by a boolean expression between the pattern and
+the `=>` operator.
+The arm is taken only if its pattern matches and the guard evaluates to `true`.
+Otherwise matching continues with the following arms.
+Variables bound by the pattern can be used in the guard.
+When the pattern contains several alternatives joined by `|`, the guard applies to the arm as a
+whole.
+
+[source, cairo]
+----
+match value {
+    Option::Some(x) if x > 10 => { x },
+    Option::Some(_) => { 0 },
+    Option::None => { 0 },
+}
+----
+
+An arm with a guard does not count towards exhaustiveness.
+Every value must still be matched by some arm without a guard.
+
 === Nested (recursive) matching
 
 Patterns can be nested to match complex data structures in a single arm:

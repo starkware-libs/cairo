@@ -2,7 +2,7 @@ use cache::Cache;
 use cairo_lang_semantic::{self as semantic, Condition, ExprId, PatternId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use filtered_patterns::IndexAndBindings;
+use filtered_patterns::{FilteredPatterns, IndexAndBindings};
 use itertools::Itertools;
 use patterns::{CreateNodeParams, create_node_for_patterns, get_pattern};
 
@@ -119,8 +119,8 @@ pub fn create_graph_expr_match<'db>(
     let matched_expr_location = ctx.get_location(matched_expr.stable_ptr().untyped());
     let matched_var = graph.new_var(matched_expr.ty(), matched_expr_location);
 
-    // Create a list of patterns and nodes.
-    let pattern_and_nodes: Vec<(PatternId, NodeId)> = expr
+    // Create a list of patterns, nodes and guards.
+    let pattern_and_nodes: Vec<(PatternId, NodeId, Option<ExprId>)> = expr
         .arms
         .iter()
         .flat_map(|match_arm| {
@@ -128,11 +128,12 @@ pub fn create_graph_expr_match<'db>(
             let arm_node =
                 graph.add_node(FlowControlNode::ArmExpr(ArmExpr { expr: match_arm.expression }));
             // Then map the patterns to that node.
-            match_arm.patterns.iter().map(move |pattern| (*pattern, arm_node))
+            match_arm.patterns.iter().map(move |pattern| (*pattern, arm_node, match_arm.guard))
         })
         .collect();
 
     let mut cache = Cache::default();
+    let mut guarded_cache = Cache::default();
 
     let match_node_id = create_node_for_patterns(
         CreateNodeParams {
@@ -140,11 +141,11 @@ pub fn create_graph_expr_match<'db>(
             graph: &mut graph,
             patterns: &pattern_and_nodes
                 .iter()
-                .map(|(pattern, _)| Some(get_pattern(ctx, *pattern)))
+                .map(|(pattern, ..)| Some(get_pattern(ctx, *pattern)))
                 .collect_vec(),
             build_node_callback: &mut |graph, pattern_indices, path| {
                 // Get the first arm that matches.
-                let Some(index_and_bindings) = pattern_indices.first() else {
+                let Some(index_and_bindings) = pattern_indices.clone().first() else {
                     // If no arm is available, report a non-exhaustive match error.
                     let kind = LoweringDiagnosticKind::MatchError(MatchError {
                         kind: MatchKind::Match,
@@ -152,6 +153,26 @@ pub fn create_graph_expr_match<'db>(
                     });
                     return graph.report_with_missing_node(expr.stable_ptr.untyped(), kind);
                 };
+
+                // If the arm has a guard, the arms that follow it may be selected as well, so the
+                // node depends on the entire list of accepted patterns.
+                if pattern_and_nodes[index_and_bindings.index()].2.is_some() {
+                    return guarded_cache.get_or_compute(
+                        &mut |graph, pattern_indices: FilteredPatterns, path| {
+                            create_guarded_arms_node(
+                                ctx,
+                                graph,
+                                expr,
+                                &pattern_and_nodes,
+                                pattern_indices,
+                                path,
+                            )
+                        },
+                        graph,
+                        pattern_indices,
+                        path,
+                    );
+                }
 
                 cache.get_or_compute(
                     &mut |graph, index_and_bindings: IndexAndBindings, _path| {
@@ -175,6 +196,61 @@ pub fn create_graph_expr_match<'db>(
     }));
 
     graph.finalize(root, ctx)
+}
+
+/// Creates a node for a match whose first accepted pattern belongs to an arm with a guard.
+///
+/// The candidates are tried in order. For each candidate, the bindings of its pattern are applied
+/// and its guard is evaluated. If the guard holds, the arm is chosen; otherwise, the next
+/// candidate is tried. A candidate without a guard is always chosen, so the candidates that follow
+/// it are not reachable. If all the candidates fail, the match is non-exhaustive.
+fn create_guarded_arms_node<'db>(
+    ctx: &LoweringContext<'db, '_>,
+    graph: &mut FlowControlGraphBuilder<'db>,
+    expr: &semantic::ExprMatch<'db>,
+    pattern_and_nodes: &[(PatternId, NodeId, Option<ExprId>)],
+    pattern_indices: FilteredPatterns,
+    path: String,
+) -> NodeId {
+    let candidates = pattern_indices.into_vec();
+    let n_reachable = candidates
+        .iter()
+        .position(|candidate| pattern_and_nodes[candidate.index()].2.is_none())
+        .map_or(candidates.len(), |idx| idx + 1);
+
+    // The node to continue to if none of the candidates processed so far is chosen.
+    let mut fallthrough: Option<NodeId> = None;
+    for candidate in candidates.into_iter().take(n_reachable).rev() {
+        let (_, arm_node, guard) = pattern_and_nodes[candidate.index()];
+        let Some(guard) = guard else {
+            fallthrough = Some(candidate.wrap_node(graph, arm_node));
+            continue;
+        };
+        let false_branch = fallthrough.unwrap_or_else(|| {
+            let kind = LoweringDiagnosticKind::MatchError(MatchError {
+                kind: MatchKind::Match,
+                error: MatchDiagnostic::NonExhaustiveMatch(path.clone()),
+            });
+            graph.report_with_missing_node(expr.stable_ptr.untyped(), kind)
+        });
+
+        let guard_expr = &ctx.function_body.arenas.exprs[guard];
+        let guard_var =
+            graph.new_var(guard_expr.ty(), ctx.get_location(guard_expr.stable_ptr().untyped()));
+        let if_node = graph.add_node(FlowControlNode::BooleanIf(BooleanIf {
+            condition_var: guard_var,
+            true_branch: arm_node,
+            false_branch,
+        }));
+        let evaluate_node = graph.add_node(FlowControlNode::EvaluateExpr(EvaluateExpr {
+            expr: guard,
+            var_id: guard_var,
+            next: if_node,
+        }));
+        fallthrough = Some(candidate.wrap_node(graph, evaluate_node));
+    }
+
+    fallthrough.expect("A guarded arm is always the first candidate.")
 }
 
 /// Creates a graph node for a let-else statement.

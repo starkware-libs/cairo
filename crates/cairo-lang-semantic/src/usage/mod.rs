@@ -363,6 +363,9 @@ impl<'db> Usages<'db> {
                     for pattern in &arm.patterns {
                         Self::handle_pattern(&arenas.patterns, *pattern, current);
                     }
+                    if let Some(guard) = arm.guard {
+                        self.handle_expr(arenas, guard, current);
+                    }
                     self.handle_expr(arenas, arm.expression, current);
                 }
             }
@@ -445,6 +448,7 @@ impl<'db> Usages<'db> {
                 }
             }
             Pattern::Otherwise(_) => {}
+            Pattern::Range(_) => {}
             Pattern::Missing(_) => {}
         }
     }

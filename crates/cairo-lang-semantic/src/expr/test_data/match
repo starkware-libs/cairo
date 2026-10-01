@@ -477,3 +477,139 @@ error[E2039]: Expected type "T", found: "felt252".
  --> lib.cairo:3:27
         Ok(Some(x)) | Err(x) => x,
                           ^
+
+//! > ==========================================================================
+
+//! > Test match guards.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+enum MyEnum {
+    A: u32,
+    B,
+    C: u32,
+}
+fn foo(a: MyEnum, b: bool) -> u32 {
+    match a {
+        MyEnum::A(x) if x > 5_u32 => x,
+        MyEnum::A(x) | MyEnum::C(x) if b => x + 1,
+        MyEnum::A(x) | MyEnum::C(x) => x,
+        MyEnum::B if true => 99,
+        _ => 0,
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match guard with a non bool condition.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo(a: Option<u32>) -> u32 {
+    match a {
+        Some(x) if x => x,
+        _ => 0,
+    }
+}
+
+//! > expected_diagnostics
+error[E2039]: Expected type "bool", found: "u32".
+ --> lib.cairo:3:20
+        Some(x) if x => x,
+                   ^
+
+//! > ==========================================================================
+
+//! > Test range patterns.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo(a: u32) -> u32 {
+    match a {
+        1_u32..5_u32 => 10,
+        5_u32..=9_u32 => 20,
+        _ => 30,
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test range pattern combined with a guard.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo(a: u32, b: bool) -> u32 {
+    match a {
+        1_u32..=10_u32 if b => 100,
+        1_u32..=10_u32 => 50,
+        _ => 0,
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test empty range patterns.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo(a: u32) -> u32 {
+    match a {
+        5_u32..5_u32 => 10,
+        5_u32..=3_u32 => 20,
+        6_u32..5_u32 => 30,
+        _ => 40,
+    }
+}
+
+//! > expected_diagnostics
+error[E2204]: Range pattern is empty.
+ --> lib.cairo:3:9
+        5_u32..5_u32 => 10,
+        ^^^^^^^^^^^^
+
+error[E2204]: Range pattern is empty.
+ --> lib.cairo:4:9
+        5_u32..=3_u32 => 20,
+        ^^^^^^^^^^^^^
+
+error[E2204]: Range pattern is empty.
+ --> lib.cairo:5:9
+        6_u32..5_u32 => 30,
+        ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test range pattern with mismatched bound types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo(a: u32) -> u32 {
+    match a {
+        1_u32..5_u64 => 10,
+        _ => 20,
+    }
+}
+
+//! > expected_diagnostics
+error[E2302]: Type mismatch: `u32` and `u64`.
+ --> lib.cairo:3:9
+        1_u32..5_u64 => 10,
+        ^^^^^^^^^^^^
