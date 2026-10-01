@@ -1,11 +1,7 @@
 #[test]
 #[should_panic(expected: "café")]
-fn non_ascii() {
-    panic!("cafe");
-}
+fn non_ascii() {}
 
 #[test]
 #[should_panic(expected: ('a', "bad\q"))]
-fn bad_escape() {
-    panic!("bad");
-}
+fn bad_escape() {}

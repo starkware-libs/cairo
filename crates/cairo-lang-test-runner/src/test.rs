@@ -1,3 +1,4 @@
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_runner::casm_run::format_for_panic;
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_test_plugin::test_config::TestExpectation;
@@ -368,5 +369,14 @@ fn test_invalid_string_in_expected_panic() {
         },
     )
     .unwrap();
-    assert!(compiler.build().is_err());
+    let mut diagnostics = String::new();
+    let result = DiagnosticsReporter::write_to_string(&mut diagnostics)
+        .with_crates(&compiler.main_crate_ids)
+        .ensure(&compiler.db);
+    assert!(result.is_err());
+    assert!(
+        diagnostics.contains("String literals can only include ASCII characters."),
+        "{diagnostics}"
+    );
+    assert!(diagnostics.contains("Expected panic must be of the form"), "{diagnostics}");
 }
