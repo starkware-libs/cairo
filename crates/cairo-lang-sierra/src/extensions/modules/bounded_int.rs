@@ -46,7 +46,7 @@ impl NamedType for BoundedIntType {
 /// A guarantee that a value is within the specified bounds.
 /// Unlike BoundedInt, this type is non-duplicatable and non-droppable.
 /// It must be verified via `bounded_int_guarantee_verify` to be consumed.
-/// Currently only supports u32 bounds (0 to 2^32-1).
+/// Currently only supports u32 and u128 bounds.
 #[derive(Default)]
 pub struct BoundedIntGuaranteeType {}
 impl NamedType for BoundedIntGuaranteeType {
@@ -60,7 +60,8 @@ impl NamedType for BoundedIntGuaranteeType {
     ) -> Result<Self::Concrete, SpecializationError> {
         let (min, max) = extract_bounds(args)?;
         // Currently only u32 guarantees are supported.
-        require(is_u32_range(min, max)).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        require(is_valid_guarantee_range(min, max))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
         specialize_bounded_int_type(Self::ID, args, false, false)
     }
 }
@@ -554,7 +555,7 @@ impl SignatureOnlyGenericLibfunc for BoundedIntWrapNonZeroLibfunc {
 /// Libfunc for verifying a BoundedIntGuarantee.
 /// Consumes the guarantee and returns the underlying value as a BoundedInt.
 /// Generic args: [min, max] - the bounds of the guarantee.
-/// Currently only supports u32 bounds (0 to 2^32-1).
+/// Currently only supports u32 and u128 bounds.
 #[derive(Default)]
 pub struct BoundedIntGuaranteeVerifyLibfunc {}
 impl NamedLibfunc for BoundedIntGuaranteeVerifyLibfunc {
@@ -569,7 +570,8 @@ impl NamedLibfunc for BoundedIntGuaranteeVerifyLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (min, max) = extract_bounds(args)?;
         // Currently only u32 guarantees are supported.
-        require(is_u32_range(min, max)).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        require(is_valid_guarantee_range(min, max))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
 
         let range_check_ty = context.get_concrete_type(RangeCheckType::ID, &[])?;
         let guarantee_ty = bounded_int_guarantee_ty(context, min.clone(), max.clone())?;
@@ -591,7 +593,8 @@ impl NamedLibfunc for BoundedIntGuaranteeVerifyLibfunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let (min, max) = extract_bounds(args)?;
         // Currently only u32 guarantees are supported.
-        require(is_u32_range(min, max)).ok_or(SpecializationError::UnsupportedGenericArg)?;
+        require(is_valid_guarantee_range(min, max))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
 
         let range = Range::closed(min.clone(), max.clone());
         Ok(Self::Concrete { range, signature: self.specialize_signature(context, args)? })
@@ -678,9 +681,9 @@ fn extract_bounds(args: &[GenericArg]) -> Result<(&BigInt, &BigInt), Specializat
     }
 }
 
-/// Checks if the given bounds match the u32 range.
-fn is_u32_range(min: &BigInt, max: &BigInt) -> bool {
-    min.is_zero() && max.to_u32() == Some(u32::MAX)
+/// Checks if the given bounds match allowed bounded int guarantee ranges.
+fn is_valid_guarantee_range(min: &BigInt, max: &BigInt) -> bool {
+    min.is_zero() && matches!(max.to_u128(), Some(0xffffffff | u128::MAX))
 }
 
 /// Helper to specialize bounded int types.
