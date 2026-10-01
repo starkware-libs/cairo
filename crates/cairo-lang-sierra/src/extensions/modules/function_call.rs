@@ -1,4 +1,3 @@
-use cairo_lang_utils::extract_matches;
 use itertools::{Itertools, chain};
 use num_traits::Zero;
 
@@ -148,7 +147,7 @@ impl NamedLibfunc for DummyFunctionCallLibfunc {
 
         Ok(LibfuncSignature::new_non_branch(
             signature.param_types.clone(),
-            get_output_var_infos(context, signature).unwrap(),
+            get_output_var_infos(context, signature)?,
             ap_change,
         ))
     }
@@ -158,7 +157,7 @@ impl NamedLibfunc for DummyFunctionCallLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let function_id = args_as_single_user_func(&args[..1])?;
+        let function_id = args_as_single_user_func(args.get(..1).unwrap_or_default())?;
 
         Ok(Self::Concrete {
             function: context.get_function(function_id)?,
@@ -182,12 +181,17 @@ fn try_extract_dummy_func_info<'a>(
     } else {
         SierraApChange::Unknown
     };
-    let extract_ty = |garg: &GenericArg| extract_matches!(garg, GenericArg::Type).clone();
-    let param_types = args.by_ref().take(n_params.try_into().ok()?).map(extract_ty).collect();
+    let extract_ty = |garg: &GenericArg| match garg {
+        GenericArg::Type(ty) => Some(ty.clone()),
+        _ => None,
+    };
+    let param_types =
+        args.by_ref().take(n_params.try_into().ok()?).map(extract_ty).collect::<Option<_>>()?;
 
     let GenericArg::Value(n_ret) = args.next()? else {
         return None;
     };
-    let ret_types = args.by_ref().take(n_ret.try_into().ok()?).map(extract_ty).collect();
+    let ret_types =
+        args.by_ref().take(n_ret.try_into().ok()?).map(extract_ty).collect::<Option<_>>()?;
     Some((FunctionSignature { param_types, ret_types }, ap_change))
 }

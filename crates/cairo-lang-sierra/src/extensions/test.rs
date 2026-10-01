@@ -238,6 +238,22 @@ fn find_type_specialization(
 #[test_case("function_call", vec![GenericArg::UserFunc("RegisteredFunction".into())]
             => Ok(()); "function_call<&RegisteredFunction>")]
 #[test_case("function_call", vec![] => Err(WrongNumberOfGenericArgs); "function_call")]
+#[test_case("dummy_function_call",
+            vec![GenericArg::UserFunc("RegisteredFunction".into()), value_arg(0), value_arg(1),
+                 type_arg("felt252"), value_arg(1), type_arg("felt252")]
+            => Ok(()); "dummy_function_call<&RegisteredFunction, 0, 1, felt252, 1, felt252>")]
+#[test_case("dummy_function_call", vec![] => Err(WrongNumberOfGenericArgs);
+            "dummy_function_call")]
+#[test_case("dummy_function_call",
+            vec![GenericArg::UserFunc("RegisteredFunction".into()), value_arg(0), value_arg(1),
+                 value_arg(5), value_arg(0)]
+            => Err(UnsupportedGenericArg);
+            "dummy_function_call<&RegisteredFunction, 0, 1, 5, 0>")]
+#[test_case("dummy_function_call",
+            vec![GenericArg::UserFunc("RegisteredFunction".into()), value_arg(0), value_arg(0),
+                 value_arg(1), type_arg("UndeclaredType")]
+            => Err(SpecializationError::MissingTypeInfo("UndeclaredType".into()));
+            "dummy_function_call<&RegisteredFunction, 0, 0, 1, UndeclaredType>")]
 #[test_case("array_new", vec![] => Err(WrongNumberOfGenericArgs); "array_new")]
 #[test_case("array_new", vec![type_arg("u128")] => Ok(()); "array_new<u128>")]
 #[test_case("array_append", vec![] => Err(WrongNumberOfGenericArgs); "array_append")]
