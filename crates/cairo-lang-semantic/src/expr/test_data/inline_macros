@@ -3685,3 +3685,180 @@ error[E2206]: The `?` macro repetition operator does not take a separator.
  --> lib.cairo:2:20
     ($([$($x:ident),?]),*) => { 0 };
                    ^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder that the pattern follows with a token.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The call would match today; the pattern is rejected so that extending the expression grammar
+// cannot change which rule a call picks, as in rustc.
+macro add_two {
+    (base $x:expr 2) => { $x + 2 };
+}
+fn foo() -> felt252 {
+    add_two!(base 1 2)
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `2`.
+ --> lib.cairo:4:19
+    (base $x:expr 2) => { $x + 2 };
+                  ^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder that the pattern follows with another placeholder.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// Nothing separates the two placeholders, so the first swallows what the second was meant to
+// capture.
+macro pair {
+    ($x:expr $y:expr) => { $x + $y };
+}
+fn foo() -> felt252 {
+    pair!(1 2)
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `$y:expr`.
+ --> lib.cairo:4:14
+    ($x:expr $y:expr) => { $x + $y };
+             ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder whose followers are reached across an optional repetition.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The `?` block may match zero times, so both the token it opens with and the subtree after it can
+// follow the placeholder.
+macro opt {
+    ($x:expr $(a)? [b]) => { $x };
+}
+fn foo() -> felt252 {
+    opt!(1 a[b])
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `a`.
+ --> lib.cairo:4:16
+    ($x:expr $(a)? [b]) => { $x };
+               ^
+
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `[`.
+ --> lib.cairo:4:20
+    ($x:expr $(a)? [b]) => { $x };
+                   ^
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder in a repetition that the pattern follows with a placeholder.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The last group's placeholder is followed by what comes after the whole repetition too.
+macro sum {
+    ($($x:expr),* $y:ident) => { $y };
+}
+fn foo(q: felt252) -> felt252 {
+    sum!(1, 2 q)
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `$y:ident`.
+ --> lib.cairo:3:19
+    ($($x:expr),* $y:ident) => { $y };
+                  ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test the tokens an expr placeholder may be followed by (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro allowed {
+    ($x:expr, $a:ident) => { $x + $a };
+
+    ($x:expr; $a:ident) => { $x + $a };
+
+    ($x:expr => $a:ident) => { $x + $a };
+
+    ($x:expr) => { $x };
+}
+fn foo(q: felt252) -> felt252 {
+    allowed!(1, q) + allowed!(1; q) + allowed!(1 => q) + allowed!(1)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test expr placeholders in nested repetitions with separators (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// A subtree's closing delimiter bounds its last placeholder just as the end of the pattern would.
+macro grid {
+    ($($x:expr),* ; $([$($y:expr),*]),*) => { $($x)* $($($y)*)* };
+}
+fn foo() -> felt252 {
+    grid!(1, 2;[3, 4],[5, 6])
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a separator-less repetition of a lone expr placeholder (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+// The follow set is not wrapped around the repetition: a group's placeholder does not follow the
+// previous group's. rustc accepts this too.
+macro juxtaposed {
+    ($($x:expr)*) => { 0 $(+ $x)* };
+}
+fn foo() -> felt252 {
+    juxtaposed!(1 2)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test an expr placeholder followed inside a subtree.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ([$x:expr 2]) => { $x };
+}
+fn foo() -> felt252 {
+    m!([1 2])
+}
+
+//! > expected_diagnostics
+error[E2209]: Macro placeholder 'x' captures an expression, so the pattern may only follow it with `,`, `;` or `=>` - not with `2`.
+ --> lib.cairo:2:15
+    ([$x:expr 2]) => { $x };
+              ^
