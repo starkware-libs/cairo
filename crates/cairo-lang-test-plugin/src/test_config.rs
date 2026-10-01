@@ -192,14 +192,14 @@ fn extract_panic_bytes(db: &dyn Database, attr: &Attribute<'_>) -> Option<Vec<Fe
                         panic_bytes.push(panic_expr.numeric_value(db).unwrap_or_default().into())
                     }
                     ast::Expr::String(panic_expr) => {
-                        panic_bytes.append(&mut extract_string_panic_bytes(&panic_expr, db))
+                        panic_bytes.extend(extract_string_panic_bytes(&panic_expr, db)?)
                     }
                     _ => return None,
                 }
             }
             Some(panic_bytes)
         }
-        ast::Expr::String(panic_string) => Some(extract_string_panic_bytes(panic_string, db)),
+        ast::Expr::String(panic_string) => extract_string_panic_bytes(panic_string, db),
         ast::Expr::Literal(panic_expr) => {
             let (value, suffix) = panic_expr.numeric_value_and_suffix(db);
             if suffix.is_some() {
@@ -214,22 +214,24 @@ fn extract_panic_bytes(db: &dyn Database, attr: &Attribute<'_>) -> Option<Vec<Fe
     }
 }
 
-/// Extracts panic bytes from a string.
+/// Extracts panic bytes from a string. Returns `None` if the string literal is invalid.
 fn extract_string_panic_bytes(
     panic_string: &ast::TerminalString<'_>,
     db: &dyn Database,
-) -> Vec<Felt252> {
-    let panic_string = panic_string.string_value(db).unwrap();
+) -> Option<Vec<Felt252>> {
+    let panic_string = panic_string.string_value(db)?;
     let (chunks, remainder) = panic_string.as_bytes().as_chunks::<BYTES_IN_WORD>();
     let num_full_words = chunks.len().into();
     let pending_word_len = remainder.len().into();
     let full_words = chunks.iter().map(|chunk| BigInt::from_bytes_be(Sign::Plus, chunk).into());
     let pending_word = BigInt::from_bytes_be(Sign::Plus, remainder).into();
 
-    chain!(
-        [Felt252::from_hex(BYTE_ARRAY_MAGIC).unwrap(), num_full_words],
-        full_words.into_iter(),
-        [pending_word, pending_word_len]
+    Some(
+        chain!(
+            [Felt252::from_hex(BYTE_ARRAY_MAGIC).unwrap(), num_full_words],
+            full_words.into_iter(),
+            [pending_word, pending_word_len]
+        )
+        .collect(),
     )
-    .collect()
 }

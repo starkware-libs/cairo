@@ -1,0 +1,2 @@
+# Ignore non compiling test files.
+lib.cairo
