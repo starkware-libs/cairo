@@ -17,12 +17,17 @@ jobs:
       - name: Set up tree-sitter
         env:
           TREE_SITTER_VERSION: v0.27.0
+          # sha256 of `tree-sitter-linux-x64.gz` of the above release.
+          TREE_SITTER_SHA256: 20a1f39ec1c45f2211492dcb8881c802b643b554bb196869a29ac3778277fa77
         run: |-
-          mkdir -p "$RUNNER_TEMP/tree-sitter"
-          curl -LSsf "https://github.com/tree-sitter/tree-sitter/releases/download/$TREE_SITTER_VERSION/tree-sitter-linux-x64.gz" |
-            gunzip > "$RUNNER_TEMP/tree-sitter/tree-sitter"
-          chmod +x "$RUNNER_TEMP/tree-sitter/tree-sitter"
-          echo "$RUNNER_TEMP/tree-sitter" >> "$GITHUB_PATH"
+          dir="$RUNNER_TEMP/tree-sitter"
+          mkdir -p "$dir"
+          curl -LSsf -o "$dir/tree-sitter.gz" \
+            "https://github.com/tree-sitter/tree-sitter/releases/download/$TREE_SITTER_VERSION/tree-sitter-linux-x64.gz"
+          echo "$TREE_SITTER_SHA256  $dir/tree-sitter.gz" | sha256sum -c -
+          gunzip -c "$dir/tree-sitter.gz" > "$dir/tree-sitter"
+          chmod +x "$dir/tree-sitter"
+          echo "$dir" >> "$GITHUB_PATH"
       - name: Clone tree-sitter-repo
         run: |-
           git clone https://github.com/starkware-libs/tree-sitter-cairo --single-branch --depth=1 --filter=blob:none
