@@ -1020,7 +1020,15 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     }
                 });
             // Propagating the const value information.
-            self.var_info.insert(output, payload.wrap_with_snapshots(n_snapshots));
+            // A non-copyable payload variable was already moved into the enum, so the arm variable
+            // must not be replaced by it.
+            let payload_info = payload.wrap_with_snapshots(n_snapshots);
+            if !matches!(
+                payload_info.as_ref(),
+                VarInfo::Var(var) if self.variables[var.var_id].info.copyable.is_err()
+            ) {
+                self.var_info.insert(output, payload_info);
+            }
             if let Some((mut unwrapped, extra_snapshots)) = unwrapped {
                 let total_snapshots = n_snapshots + extra_snapshots;
                 if total_snapshots != 0 {
