@@ -66,6 +66,11 @@ impl FilteredPatterns {
         self.filter.into_iter().next()
     }
 
+    /// Returns all the patterns accepted by the filter, in order.
+    pub fn into_vec(self) -> Vec<IndexAndBindings> {
+        self.filter
+    }
+
     /// Adds bindings to the filter. The length of the slice must be equal to the number of
     /// patterns in the original list of patterns.
     ///
@@ -124,6 +129,19 @@ impl IndexAndBindings {
             node = graph.add_node(FlowControlNode::BindVar(BindVar { input, output, next: node }));
         }
         node
+    }
+
+    /// Returns the bindings that should be applied if the pattern is chosen.
+    pub fn bindings(&self) -> &[(FlowControlVar, PatternVarId)] {
+        &self.bindings.bindings
+    }
+
+    /// Replaces the [FlowControlVar] of each binding according to `replace`.
+    pub fn map_inputs(mut self, replace: impl Fn(FlowControlVar) -> FlowControlVar) -> Self {
+        for (input, _) in self.bindings.bindings.iter_mut() {
+            *input = replace(*input);
+        }
+        self
     }
 
     /// Extends `self` with the given [Bindings].

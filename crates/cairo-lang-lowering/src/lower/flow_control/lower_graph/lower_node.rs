@@ -5,6 +5,7 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::{CorelibSemantic, get_usize_ty, unit_ty};
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{
     self as semantic, GenericArgumentId, MatchArmSelector, ValueSelectorArm, corelib,
 };
@@ -23,7 +24,8 @@ use crate::lower::context::{LoweredExpr, LoweredExprExternEnum, VarRequest};
 use crate::lower::external::extern_facade_expr;
 use crate::lower::flow_control::graph::{
     ArmExpr, BindVar, BooleanIf, Deconstruct, Downcast, EnumMatch, EqualsLiteral, EvaluateExpr,
-    FlowControlNode, LetElseSuccess, NodeId, SliceDestructure, Upcast, ValueMatch, WhileBody,
+    FlowControlNode, LetElseSuccess, NodeId, RefreshVar, SliceDestructure, Upcast, ValueMatch,
+    WhileBody,
 };
 use crate::lower::lower_let_else::lower_success_arm_body;
 use crate::lower::{
@@ -60,6 +62,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::ValueMatch(node) => lower_value_match(ctx, id, node, builder),
         FlowControlNode::EqualsLiteral(node) => lower_equals_literal(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
+        FlowControlNode::RefreshVar(node) => lower_refresh_var(ctx, id, node, builder),
         FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
         FlowControlNode::Upcast(node) => lower_upcast(ctx, id, node, builder),
         FlowControlNode::Downcast(node) => lower_downcast(ctx, id, node, builder),
@@ -419,6 +422,27 @@ fn lower_bind_var<'db>(
     let sem_var = semantic::Binding::LocalVar(pattern_variable.var.clone());
     builder.put_semantic(sem_var.id(), var_id);
     ctx.ctx.semantic_defs.insert(sem_var.id(), sem_var);
+
+    ctx.pass_builder_to_child(id, node.next, builder);
+    Ok(())
+}
+
+/// Lowers a [RefreshVar] node.
+///
+/// Registers the current lowered variable of the pattern variable as the output
+/// [super::FlowControlVar].
+fn lower_refresh_var<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &RefreshVar,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let pattern_variable = node.source.get(ctx.graph);
+    let sem_var = semantic::Binding::LocalVar(pattern_variable.var.clone());
+    let var_usage = builder
+        .get_ref_raw(ctx.ctx, &MemberPath::Var(sem_var.id()), node.output.location(ctx.graph), None)
+        .expect("A pattern variable is bound before the guard of its arm is evaluated.");
+    ctx.register_var(node.output, var_usage.var_id);
 
     ctx.pass_builder_to_child(id, node.next, builder);
     Ok(())
