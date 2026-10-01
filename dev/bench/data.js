@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790814938048,
+  "lastUpdate": 1790815030215,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -35011,6 +35011,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "ls_reexec/plain trivia edit",
             "value": 3126,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "2d38b6bd59e315c3aef260b3d7e1040e5bcbf9df",
+          "message": "chore(deps): bump crate-ci/typos from 1.50.2 to 1.50.3 in the github-actions group (#10407)\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-09-30T21:28:23Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/2d38b6bd59e315c3aef260b3d7e1040e5bcbf9df"
+        },
+        "date": 1790815029920,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3223,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3203,
             "unit": "queries"
           }
         ]
