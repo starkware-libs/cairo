@@ -229,16 +229,14 @@ pub trait Store<T> {
         (),
     > {
         let mut result = Result::Ok(());
-        let mut offset = offset;
-        for _ in 0..Self::size() {
+        for i in 0..Self::size() {
             if let Result::Err(err) =
                 storage_write_syscall(
-                    address_domain, storage_address_from_base_and_offset(base, offset), 0,
+                    address_domain, storage_address_from_base_and_offset(base, offset + i), 0,
                 ) {
                 result = Result::Err(err);
                 break;
             }
-            offset += 1;
         }
         result
     }
