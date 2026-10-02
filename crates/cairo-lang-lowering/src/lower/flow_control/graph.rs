@@ -202,6 +202,20 @@ pub struct BindVar {
     pub next: NodeId,
 }
 
+/// Assigns a [FlowControlVar] the current lowered value of a pattern variable.
+///
+/// A match guard may replace the lowered variable of a pattern variable (for example, by taking a
+/// snapshot of it), so the arms that follow a failed guard continue from the updated value.
+#[derive(Debug)]
+pub struct RefreshVar {
+    /// The pattern variable to read.
+    pub source: PatternVarId,
+    /// The (output) variable to assign the value to.
+    pub output: FlowControlVar,
+    /// The next node.
+    pub next: NodeId,
+}
+
 /// Upcasts a value to a larger type.
 #[derive(Debug)]
 pub struct Upcast {
@@ -285,6 +299,8 @@ pub enum FlowControlNode<'db> {
     Deconstruct(Deconstruct),
     /// Binds a [FlowControlVar] to a pattern variable.
     BindVar(BindVar),
+    /// Assigns a [FlowControlVar] the current lowered value of a pattern variable.
+    RefreshVar(RefreshVar),
     /// Upcasts a value to a larger type.
     Upcast(Upcast),
     /// Downcasts a value to a smaller type.
@@ -318,6 +334,7 @@ impl<'db> FlowControlNode<'db> {
             FlowControlNode::WhileBody(..) => None,
             FlowControlNode::Deconstruct(node) => Some(node.input),
             FlowControlNode::BindVar(node) => Some(node.input),
+            FlowControlNode::RefreshVar(..) => None,
             FlowControlNode::Upcast(node) => Some(node.input),
             FlowControlNode::Downcast(node) => Some(node.input),
             FlowControlNode::SliceDestructure(node) => Some(node.input),
@@ -340,6 +357,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::WhileBody(node) => node.fmt(f),
             FlowControlNode::Deconstruct(node) => node.fmt(f),
             FlowControlNode::BindVar(node) => node.fmt(f),
+            FlowControlNode::RefreshVar(node) => node.fmt(f),
             FlowControlNode::Upcast(node) => node.fmt(f),
             FlowControlNode::Downcast(node) => node.fmt(f),
             FlowControlNode::SliceDestructure(node) => node.fmt(f),

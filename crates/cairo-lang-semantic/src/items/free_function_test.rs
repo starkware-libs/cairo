@@ -54,12 +54,13 @@ fn test_expr_lookup() {
              [Value(Literal(ExprNumericLiteral { value: 1, ty: core::felt252 })), \
              Value(Literal(ExprNumericLiteral { value: 1, ty: core::felt252 }))], coupon_arg: \
              None, ty: core::felt252 }), arms: [MatchArm { patterns: [Literal(PatternLiteral { \
-             literal: ExprNumericLiteral { value: 0, ty: core::felt252 } })], expression: \
-             Block(ExprBlock { statements: [], tail: Some(Literal(ExprNumericLiteral { value: 5, \
-             ty: core::felt252 })), ty: core::felt252 }) }, MatchArm { patterns: \
-             [Otherwise(PatternOtherwise { ty: core::felt252 })], expression: Block(ExprBlock { \
-             statements: [], tail: Some(Literal(ExprNumericLiteral { value: 6, ty: core::felt252 \
-             })), ty: core::felt252 }) }], ty: core::felt252 })), ty: core::felt252 })",
+             literal: ExprNumericLiteral { value: 0, ty: core::felt252 } })], guard: None, \
+             expression: Block(ExprBlock { statements: [], tail: Some(Literal(ExprNumericLiteral \
+             { value: 5, ty: core::felt252 })), ty: core::felt252 }) }, MatchArm { patterns: \
+             [Otherwise(PatternOtherwise { ty: core::felt252 })], guard: None, expression: \
+             Block(ExprBlock { statements: [], tail: Some(Literal(ExprNumericLiteral { value: 6, \
+             ty: core::felt252 })), ty: core::felt252 }) }], ty: core::felt252 })), ty: \
+             core::felt252 })",
             "Block(ExprBlock { statements: [], tail: Some(Literal(ExprNumericLiteral { value: 5, \
              ty: core::felt252 })), ty: core::felt252 })",
             "Block(ExprBlock { statements: [], tail: Some(Literal(ExprNumericLiteral { value: 6, \
@@ -83,11 +84,12 @@ fn test_expr_lookup() {
              core::felt252 })), Value(Literal(ExprNumericLiteral { value: 1, ty: core::felt252 \
              }))], coupon_arg: None, ty: core::felt252 }), arms: [MatchArm { patterns: \
              [Literal(PatternLiteral { literal: ExprNumericLiteral { value: 0, ty: core::felt252 \
-             } })], expression: Block(ExprBlock { statements: [], tail: \
+             } })], guard: None, expression: Block(ExprBlock { statements: [], tail: \
              Some(Literal(ExprNumericLiteral { value: 5, ty: core::felt252 })), ty: core::felt252 \
              }) }, MatchArm { patterns: [Otherwise(PatternOtherwise { ty: core::felt252 })], \
-             expression: Block(ExprBlock { statements: [], tail: Some(Literal(ExprNumericLiteral \
-             { value: 6, ty: core::felt252 })), ty: core::felt252 }) }], ty: core::felt252 })",
+             guard: None, expression: Block(ExprBlock { statements: [], tail: \
+             Some(Literal(ExprNumericLiteral { value: 6, ty: core::felt252 })), ty: core::felt252 \
+             }) }], ty: core::felt252 })",
         ]
     );
 

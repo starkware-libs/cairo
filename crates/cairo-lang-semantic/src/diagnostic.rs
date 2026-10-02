@@ -1259,6 +1259,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UnsupportedItemInStatement => {
                 "Item not supported as a statement.".into()
             }
+            SemanticDiagnosticKind::MatchGuardUsesPatternVariable(name) => {
+                format!(
+                    "A match guard cannot move or modify `{}`, which is bound by the arm's \
+                     pattern.",
+                    name.long(db)
+                )
+            }
         }
     }
     fn location(&self, db: &'db dyn Database) -> SpanInFile<'db> {
@@ -1528,6 +1535,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder => {
                 error_code!(E2203)
             }
+            SemanticDiagnosticKind::MatchGuardUsesPatternVariable(_) => error_code!(E2204),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1955,6 +1963,7 @@ pub enum SemanticDiagnosticKind<'db> {
     NonNeverLetElseType,
     OnlyTypeOrConstParamsInNegImpl,
     UnsupportedItemInStatement,
+    MatchGuardUsesPatternVariable(SmolStrId<'db>),
 }
 
 /// The kind of an expression with multiple possible return types.

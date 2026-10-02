@@ -182,6 +182,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   ├── item #0 (kind: MatchArm)
     │   │       │   │   │   │   │   ├── patterns (kind: PatternListOr)
     │   │       │   │   │   │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
+    │   │       │   │   │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │   │   │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │   │   └── expression (kind: ExprBlock)
     │   │       │   │   │   │   │       ├── lbrace (kind: TokenLBrace): '{'
@@ -195,6 +196,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   ├── item #1 (kind: MatchArm)
     │   │       │   │   │   │   │   ├── patterns (kind: PatternListOr)
     │   │       │   │   │   │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │   │   │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │   │   └── expression (kind: TokenLiteralNumber): '0'
     │   │       │   │   │   │   └── separator #1 (kind: TokenComma): ','
@@ -295,6 +297,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │   │   │           ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │   │       │   │   │           ├── pattern (kind: TokenUnderscore): '_'
     │   │       │   │   │   │       │   │   │           └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │   │   │   │       │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │       │   │   └── expression (kind: TokenLiteralNumber): '4'
     │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
@@ -313,6 +316,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │       │           ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │   │       │       │           ├── pattern (kind: TokenUnderscore): '_'
     │   │       │   │   │   │       │       │           └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │       ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │   │   │   │       │       ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │       │       └── expression (kind: TokenLiteralNumber): '2'
     │   │       │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
@@ -916,6 +920,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │           ├── lparen (kind: TokenLParen): '('
     │   │       │       │   │   │   │           ├── pattern (kind: TokenUnderscore): '_'
     │   │       │       │   │   │   │           └── rparen (kind: TokenRParen): ')'
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '1'
     │   │       │       │   │   ├── separator #0 (kind: TokenComma): ','
@@ -938,6 +943,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │           │       └── item #0 (kind: PathSegmentSimple)
     │   │       │       │   │   │   │           │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │       │   │   │   │           └── rparen (kind: TokenRParen): ')'
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '2'
     │   │       │       │   │   ├── separator #1 (kind: TokenComma): ','
@@ -953,6 +959,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │       │       └── item #1 (kind: PathSegmentSimple)
     │   │       │       │   │   │   │       │           └── ident (kind: TokenIdentifier): 'VEmpty'
     │   │       │       │   │   │   │       └── pattern (kind: OptionPatternEnumInnerPatternEmpty) []
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '0'
     │   │       │       │   │   └── separator #2 (kind: TokenComma): ','
@@ -1436,6 +1443,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │   │       ├── token (kind: TokenLiteralNumber): '0'
     │   │       │   │   │   │   │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │   │           └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │   │   │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1473,6 +1481,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │   │   │       ├── token (kind: TokenUnderscore): '_'
     │   │       │   │   │   │   │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │   │           └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │   │   │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1722,6 +1731,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │   │   │               ├── token (kind: TokenRParen): ')'
     │   │       │   │   │   │       │   │   │               └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       │   │   │                   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │       │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │   │   │   │       │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1770,6 +1780,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │   │   │   │       │       │               ├── token (kind: TokenRParen): ')'
     │   │       │   │   │   │       │       │               └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       │       │                   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │       │       ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │   │   │   │       │       ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │       │   ├── token (kind: TokenMatchArrow): '=>'
@@ -3138,6 +3149,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │               ├── token (kind: TokenRParen): ')'
     │   │       │       │   │   │   │               └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │                   └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -3191,6 +3203,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │               ├── token (kind: TokenRParen): ')'
     │   │       │       │   │   │   │               └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │                   └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -3228,6 +3241,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
     │   │       │       │   │   │   │       │               └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │       │                   └── child #0 (kind: TokenWhitespace).
     │   │       │       │   │   │   │       └── pattern (kind: OptionPatternEnumInnerPatternEmpty) []
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'

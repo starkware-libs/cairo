@@ -4379,15 +4379,17 @@ pub struct MatchArm<'db> {
 }
 impl<'db> MatchArm<'db> {
     pub const INDEX_PATTERNS: usize = 0;
-    pub const INDEX_ARROW: usize = 1;
-    pub const INDEX_EXPRESSION: usize = 2;
+    pub const INDEX_GUARD_CLAUSE: usize = 1;
+    pub const INDEX_ARROW: usize = 2;
+    pub const INDEX_EXPRESSION: usize = 3;
     pub fn new_green(
         db: &'db dyn Database,
         patterns: PatternListOrGreen<'db>,
+        guard_clause: OptionMatchGuardClauseGreen<'db>,
         arrow: TerminalMatchArrowGreen<'db>,
         expression: ExprGreen<'db>,
     ) -> MatchArmGreen<'db> {
-        let children = [patterns.0, arrow.0, expression.0];
+        let children = [patterns.0, guard_clause.0, arrow.0, expression.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MatchArmGreen(
             GreenNode {
@@ -4402,11 +4404,14 @@ impl<'db> MatchArm<'db> {
     pub fn patterns(&self, db: &'db dyn Database) -> PatternListOr<'db> {
         PatternListOr::from_syntax_node(db, self.node.get_children(db)[0])
     }
+    pub fn guard_clause(&self, db: &'db dyn Database) -> OptionMatchGuardClause<'db> {
+        OptionMatchGuardClause::from_syntax_node(db, self.node.get_children(db)[1])
+    }
     pub fn arrow(&self, db: &'db dyn Database) -> TerminalMatchArrow<'db> {
-        TerminalMatchArrow::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalMatchArrow::from_syntax_node(db, self.node.get_children(db)[2])
     }
     pub fn expression(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[2])
+        Expr::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
@@ -4439,6 +4444,7 @@ impl<'db> TypedSyntaxNode<'db> for MatchArm<'db> {
                 details: GreenNodeDetails::Node {
                     children: [
                         PatternListOr::missing(db).0,
+                        OptionMatchGuardClause::missing(db).0,
                         TerminalMatchArrow::missing(db).0,
                         Expr::missing(db).0,
                     ]
@@ -4469,6 +4475,270 @@ impl<'db> TypedSyntaxNode<'db> for MatchArm<'db> {
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
         MatchArmPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct MatchGuardClause<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> MatchGuardClause<'db> {
+    pub const INDEX_IF_KW: usize = 0;
+    pub const INDEX_CONDITION: usize = 1;
+    pub fn new_green(
+        db: &'db dyn Database,
+        if_kw: TerminalIfGreen<'db>,
+        condition: ExprGreen<'db>,
+    ) -> MatchGuardClauseGreen<'db> {
+        let children = [if_kw.0, condition.0];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        MatchGuardClauseGreen(
+            GreenNode {
+                kind: SyntaxKind::MatchGuardClause,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> MatchGuardClause<'db> {
+    pub fn if_kw(&self, db: &'db dyn Database) -> TerminalIf<'db> {
+        TerminalIf::from_syntax_node(db, self.node.get_children(db)[0])
+    }
+    pub fn condition(&self, db: &'db dyn Database) -> Expr<'db> {
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct MatchGuardClausePtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> MatchGuardClausePtr<'db> {}
+impl<'db> TypedStablePtr<'db> for MatchGuardClausePtr<'db> {
+    type SyntaxNode = MatchGuardClause<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> MatchGuardClause<'db> {
+        MatchGuardClause::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<MatchGuardClausePtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: MatchGuardClausePtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct MatchGuardClauseGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for MatchGuardClause<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MatchGuardClause);
+    type StablePtr = MatchGuardClausePtr<'db>;
+    type Green = MatchGuardClauseGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        MatchGuardClauseGreen(
+            GreenNode {
+                kind: SyntaxKind::MatchGuardClause,
+                details: GreenNodeDetails::Node {
+                    children: [TerminalIf::missing(db).0, Expr::missing(db).0].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MatchGuardClause,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MatchGuardClause
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MatchGuardClause {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        MatchGuardClausePtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub enum OptionMatchGuardClause<'db> {
+    Empty(OptionMatchGuardClauseEmpty<'db>),
+    MatchGuardClause(MatchGuardClause<'db>),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct OptionMatchGuardClausePtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> TypedStablePtr<'db> for OptionMatchGuardClausePtr<'db> {
+    type SyntaxNode = OptionMatchGuardClause<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> Self::SyntaxNode {
+        OptionMatchGuardClause::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<OptionMatchGuardClausePtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: OptionMatchGuardClausePtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+impl<'db> From<OptionMatchGuardClauseEmptyPtr<'db>> for OptionMatchGuardClausePtr<'db> {
+    fn from(value: OptionMatchGuardClauseEmptyPtr<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<MatchGuardClausePtr<'db>> for OptionMatchGuardClausePtr<'db> {
+    fn from(value: MatchGuardClausePtr<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<OptionMatchGuardClauseEmptyGreen<'db>> for OptionMatchGuardClauseGreen<'db> {
+    fn from(value: OptionMatchGuardClauseEmptyGreen<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<MatchGuardClauseGreen<'db>> for OptionMatchGuardClauseGreen<'db> {
+    fn from(value: MatchGuardClauseGreen<'db>) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct OptionMatchGuardClauseGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for OptionMatchGuardClause<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionMatchGuardClausePtr<'db>;
+    type Green = OptionMatchGuardClauseGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionMatchGuardClauseEmpty => OptionMatchGuardClause::Empty(
+                OptionMatchGuardClauseEmpty::from_syntax_node(db, node),
+            ),
+            SyntaxKind::MatchGuardClause => OptionMatchGuardClause::MatchGuardClause(
+                MatchGuardClause::from_syntax_node(db, node),
+            ),
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionMatchGuardClause"
+            ),
+        }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionMatchGuardClauseEmpty => Some(OptionMatchGuardClause::Empty(
+                OptionMatchGuardClauseEmpty::from_syntax_node(db, node),
+            )),
+            SyntaxKind::MatchGuardClause => Some(OptionMatchGuardClause::MatchGuardClause(
+                MatchGuardClause::from_syntax_node(db, node),
+            )),
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        match self {
+            OptionMatchGuardClause::Empty(x) => x.as_syntax_node(),
+            OptionMatchGuardClause::MatchGuardClause(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        OptionMatchGuardClausePtr(self.as_syntax_node().stable_ptr(db))
+    }
+}
+impl<'db> OptionMatchGuardClause<'db> {
+    /// Checks if a kind of a variant of [OptionMatchGuardClause].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::OptionMatchGuardClauseEmpty | SyntaxKind::MatchGuardClause)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct OptionMatchGuardClauseEmpty<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> OptionMatchGuardClauseEmpty<'db> {
+    pub fn new_green(db: &'db dyn Database) -> OptionMatchGuardClauseEmptyGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        OptionMatchGuardClauseEmptyGreen(
+            GreenNode {
+                kind: SyntaxKind::OptionMatchGuardClauseEmpty,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> OptionMatchGuardClauseEmpty<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct OptionMatchGuardClauseEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> OptionMatchGuardClauseEmptyPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for OptionMatchGuardClauseEmptyPtr<'db> {
+    type SyntaxNode = OptionMatchGuardClauseEmpty<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> OptionMatchGuardClauseEmpty<'db> {
+        OptionMatchGuardClauseEmpty::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<OptionMatchGuardClauseEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: OptionMatchGuardClauseEmptyPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct OptionMatchGuardClauseEmptyGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for OptionMatchGuardClauseEmpty<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionMatchGuardClauseEmpty);
+    type StablePtr = OptionMatchGuardClauseEmptyPtr<'db>;
+    type Green = OptionMatchGuardClauseEmptyGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        OptionMatchGuardClauseEmptyGreen(
+            GreenNode {
+                kind: SyntaxKind::OptionMatchGuardClauseEmpty,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionMatchGuardClauseEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionMatchGuardClauseEmpty
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::OptionMatchGuardClauseEmpty {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        OptionMatchGuardClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
