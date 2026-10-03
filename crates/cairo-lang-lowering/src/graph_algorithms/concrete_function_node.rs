@@ -25,7 +25,7 @@ impl<'db> GraphNode for ConcreteFunctionWithBodyNode<'db> {
         ) else {
             return vec![];
         };
-        direct_callees
+        let mut direct_callees = direct_callees
             .iter()
             .map(|callee| ConcreteFunctionWithBodyNode {
                 function_id: *callee,
@@ -33,7 +33,9 @@ impl<'db> GraphNode for ConcreteFunctionWithBodyNode<'db> {
                 dependency_type: self.dependency_type,
                 stage: self.stage,
             })
-            .collect()
+            .collect::<Vec<_>>();
+        direct_callees.sort_by_key(|callee| callee.function_id.full_path(self.db));
+        direct_callees
     }
 
     fn get_id(&self) -> Self::NodeId {

@@ -2,6 +2,7 @@ use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::test_utils::setup_test_crate;
+use cairo_lang_sierra::program::Statement;
 use cairo_lang_syntax::node::ast::ModuleItem;
 use indoc::indoc;
 use salsa::Database;
@@ -86,4 +87,66 @@ fn can_collect_executables_from_macro_generated_modules() {
     // still be collected.
     let f_ids = executables.get("some").unwrap();
     assert_eq!(f_ids.len(), 1);
+}
+
+#[test]
+fn gas_checks_are_stable_for_recursive_functions() {
+    let content = indoc! {r#"
+        pub fn ping(n: u32) -> u32 {
+            if n == 0 {
+                return 0;
+            }
+            b::pong(n - 1)
+        }
+
+        pub mod b {
+            pub fn pong(n: u32) -> u32 {
+                if n == 0 {
+                    return 1;
+                }
+                super::ping(n - 1)
+            }
+        }
+    "#};
+
+    let pool = rayon::ThreadPoolBuilder::new().num_threads(4).build().unwrap();
+    pool.install(|| {
+        for _ in 0..4 {
+            let db = RootDatabase::builder().detect_corelib().build().unwrap();
+            let crate_id = setup_test_crate(&db, content);
+            let config = CompilerConfig { replace_ids: true, ..CompilerConfig::default() };
+            let artifact = compile_prepared_db_program_artifact(&db, vec![crate_id], config)
+                .expect("recursive test crate should compile");
+
+            let program = &artifact.program;
+            let withdraw_gas_ids = program
+                .libfunc_declarations
+                .iter()
+                .filter(|decl| decl.long_id.generic_id.0 == "withdraw_gas")
+                .map(|decl| decl.id.clone())
+                .collect::<Vec<_>>();
+            let gas_checked_functions = program
+                .funcs
+                .iter()
+                .enumerate()
+                .filter(|(index, function)| {
+                    let start = function.entry_point.0;
+                    let end = program
+                        .funcs
+                        .get(index + 1)
+                        .map_or(program.statements.len(), |next| next.entry_point.0);
+                    program.statements[start..end].iter().any(|statement| {
+                        matches!(
+                            statement,
+                            Statement::Invocation(invocation)
+                                if withdraw_gas_ids.contains(&invocation.libfunc_id)
+                        )
+                    })
+                })
+                .map(|(_, function)| function.id.debug_name.as_deref().unwrap())
+                .collect::<Vec<_>>();
+
+            assert_eq!(gas_checked_functions, ["test::b::pong"]);
+        }
+    });
 }
