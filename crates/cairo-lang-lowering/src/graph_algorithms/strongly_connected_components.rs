@@ -1,4 +1,3 @@
-use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
 use salsa::Database;
 
@@ -19,7 +18,7 @@ pub fn lowered_scc_representative<'db>(
     ConcreteSCCRepresentative(
         db.lowered_scc(function, dependency_type, stage)
             .into_iter()
-            .min_by(|x, y| x.get_internal_id().cmp(&y.get_internal_id()))
+            .min_by_key(|function| function.full_path(db))
             .unwrap_or(function),
     )
 }
