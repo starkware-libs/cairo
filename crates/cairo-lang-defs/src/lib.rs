@@ -8,5 +8,6 @@ pub mod ids;
 pub mod patcher;
 pub mod plugin;
 pub mod plugin_utils;
+pub mod source_position;
 #[cfg(test)]
 mod test;
