@@ -190,3 +190,58 @@ Statements:
   () <- test::DDestruct::destruct(v0)
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Test gas check placed on the function of a cycle that is first in stable order.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+#[target_function]
+fn pong(n: felt252) -> felt252 {
+    if n == 0 {
+        return 1;
+    }
+    ping(n - 1)
+}
+
+fn ping(n: felt252) -> felt252 {
+    if n == 0 {
+        return 0;
+    }
+    pong(n - 1)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v2) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v1)
+  (v5: core::felt252) <- 1
+  (v6: (core::felt252,)) <- struct_construct(v5)
+  (v7: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
+End:
+  Return(v0, v4, v7)
+
+blk2:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v1)
+  (v9: core::felt252) <- 1
+  (v10: core::felt252) <- core::felt252_sub(v2, v9)
+  (v11: core::RangeCheck, v12: core::gas::GasBuiltin, v13: core::panics::PanicResult::<(core::felt252,)>) <- test::ping(v0, v8, v10)
+End:
+  Return(v11, v12, v13)
