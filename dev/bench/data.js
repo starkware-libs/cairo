@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791077520961,
+  "lastUpdate": 1791077995651,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -40873,6 +40873,68 @@ window.BENCHMARK_DATA = {
           {
             "name": "max_bytes/ls-new-item-edit",
             "value": 628930073,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Shadow",
+            "username": "0xShadowX",
+            "email": "146137079+0xShadowX@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "4bf9732a2c5d5c0edd6e8d79202750128a708be1",
+          "message": "Fix ap change underflow when merging tracking from different bases (#10413)",
+          "timestamp": "2026-10-01T14:30:08Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/4bf9732a2c5d5c0edd6e8d79202750128a708be1"
+        },
+        "date": 1791077995376,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit",
+            "value": 1364,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit",
+            "value": 627843085,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-body-edit",
+            "value": 10980,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-body-edit",
+            "value": 628259087,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit-plain",
+            "value": 1364,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit-plain",
+            "value": 627822435,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-new-item-edit",
+            "value": 27636,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-new-item-edit",
+            "value": 628930161,
             "unit": "bytes"
           }
         ]
