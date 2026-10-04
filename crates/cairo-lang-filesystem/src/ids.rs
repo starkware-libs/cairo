@@ -114,19 +114,6 @@ impl<'db> CrateId<'db> {
     }
 }
 
-/// A trait for getting the internal salsa::InternId of a short id object.
-///
-/// This id is unstable across runs and should not be used for anything that is externally visible.
-/// This is currently used to pick representative for strongly connected components.
-pub trait UnstableSalsaId {
-    fn get_internal_id(&self) -> salsa::Id;
-}
-impl UnstableSalsaId for CrateId<'_> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
-    }
-}
-
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub struct FlagLongId(pub String);

@@ -2,9 +2,7 @@ use std::iter::repeat;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
-use cairo_lang_defs::ids::{
-    NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
-};
+use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId};
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe, MaybeAsRef};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_semantic as semantic;
@@ -124,11 +122,6 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     }
 }
 
-impl<'db> UnstableSalsaId for ConcreteFunctionWithBodyId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.as_intern_id()
-    }
-}
 impl<'db> ConcreteFunctionWithBodyLongId<'db> {
     /// Returns the generic `FunctionWithLongId` if one exists, otherwise returns the specialized
     /// function.

@@ -28,7 +28,6 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
-pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_filesystem::ids::{CrateId, FileId, SmolStrId};
 use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
@@ -750,11 +749,6 @@ impl<'db> TryFrom<ModuleItemId<'db>> for ImportableId<'db> {
 }
 
 define_top_level_language_element_id!(SubmoduleId, SubmoduleLongId, ast::ItemModule<'db>);
-impl<'db> UnstableSalsaId for SubmoduleId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
-    }
-}
 
 define_top_level_language_element_id!(ConstantId, ConstantLongId, ast::ItemConstant<'db>);
 define_language_element_id_basic!(GlobalUseId, GlobalUseLongId, ast::UsePathStar<'db>);
@@ -773,25 +767,8 @@ define_top_level_language_element_id!(
 
 define_language_element_id_basic!(MacroCallId, MacroCallLongId, ast::ItemInlineMacro<'db>);
 
-impl<'db> UnstableSalsaId for MacroCallId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
-    }
-}
-
-impl<'db> UnstableSalsaId for FreeFunctionId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
-    }
-}
-
 // --- Impls ---
 define_top_level_language_element_id!(ImplDefId, ImplDefLongId, ast::ItemImpl<'db>);
-impl<'db> UnstableSalsaId for ImplDefId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
-    }
-}
 
 // --- Impl type items ---
 define_named_language_element_id!(ImplTypeDefId, ImplTypeDefLongId, ast::ItemTypeAlias<'db>);
@@ -861,11 +838,6 @@ impl<'db> ImplFunctionId<'db> {
         ImplDefLongId(module_id, impl_ptr).intern(db)
     }
 }
-impl<'db> UnstableSalsaId for ImplFunctionId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
-    }
-}
 impl<'db> TopLevelLanguageElementId<'db> for ImplFunctionId<'db> {
     fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         let mut segments = self.impl_def_id(db).path_segments(db);
@@ -897,11 +869,6 @@ define_top_level_language_element_id!(
     ast::ItemTypeAlias<'db>
 );
 define_top_level_language_element_id!(ImplAliasId, ImplAliasLongId, ast::ItemImplAlias<'db>);
-impl<'db> UnstableSalsaId for ImplAliasId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
-    }
-}
 define_top_level_language_element_id!(ExternTypeId, ExternTypeLongId, ast::ItemExternType<'db>);
 
 // --- Trait ---
@@ -922,11 +889,6 @@ impl<'db> TopLevelLanguageElementId<'db> for TraitTypeId<'db> {
         let mut segments = self.trait_id(db).path_segments(db);
         segments.push(self.name(db));
         segments
-    }
-}
-impl<'db> UnstableSalsaId for TraitTypeId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
     }
 }
 
@@ -967,11 +929,6 @@ impl<'db> TopLevelLanguageElementId<'db> for TraitImplId<'db> {
         let mut segments = self.trait_id(db).path_segments(db);
         segments.push(self.name(db));
         segments
-    }
-}
-impl<'db> UnstableSalsaId for TraitImplId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
     }
 }
 
@@ -1168,12 +1125,6 @@ impl<'db> GenericParamId<'db> {
     }
     pub fn generic_item(&self, db: &'db dyn Database) -> GenericItemId<'db> {
         self.long(db).generic_item(db)
-    }
-}
-
-impl<'db> UnstableSalsaId for GenericParamId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
     }
 }
 
