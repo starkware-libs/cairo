@@ -669,3 +669,30 @@ error[E0004]: Not all trait items are implemented. Missing: 'ty'.
  --> lib.cairo:5:6
 impl MyImpl of MyTrait {
      ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test impl candidates are reported in source order: generic params before local impls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+mod a {
+    pub trait Tr<T> {
+        fn f();
+    }
+}
+impl L of a::Tr<u32> {
+    fn f() {}
+}
+fn baz<+a::Tr<u32>>() {}
+fn bar<+a::Tr<u32>>() {
+    baz();
+}
+
+//! > expected_diagnostics
+error[E2313]: Trait `a::Tr::<u32>` has multiple implementations, in: `+a::Tr<u32>`, `L`
+ --> lib.cairo:11:5
+    baz();
+    ^^^

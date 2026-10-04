@@ -3,7 +3,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleId,
-    NamedLanguageElementId, StructId, TraitTypeId, UnstableSalsaId,
+    NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -556,30 +556,6 @@ impl<'db> DebugWithDb<'db> for ImplTypeId<'db> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         write!(f, "{}", self.format(db))
-    }
-}
-
-/// A wrapper around ImplTypeById that implements Ord for saving in an ordered collection.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
-pub struct ImplTypeById<'db>(ImplTypeId<'db>);
-
-impl<'db> From<ImplTypeId<'db>> for ImplTypeById<'db> {
-    fn from(impl_type_id: ImplTypeId<'db>) -> Self {
-        Self(impl_type_id)
-    }
-}
-impl<'db> Ord for ImplTypeById<'db> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.0
-            .impl_id
-            .get_internal_id()
-            .cmp(&other.0.impl_id.get_internal_id())
-            .then_with(|| self.0.ty.get_internal_id().cmp(&other.0.ty.get_internal_id()))
-    }
-}
-impl<'db> PartialOrd for ImplTypeById<'db> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
     }
 }
 

@@ -145,7 +145,7 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                 }
             }
             TypeLongId::ImplType(impl_type) => {
-                if let Some(ty) = self.impl_type_bounds.get(&(*impl_type).into()) {
+                if let Some(ty) = self.impl_type_bounds.get(impl_type) {
                     return self.conform_ty_ex(ty0, *ty, ty0_is_self);
                 }
             }
@@ -248,7 +248,7 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                 }
             }
             TypeLongId::ImplType(impl_type) => {
-                if let Some(ty) = self.impl_type_bounds.get(&(*impl_type).into()) {
+                if let Some(ty) = self.impl_type_bounds.get(impl_type) {
                     return self.conform_ty_ex(*ty, ty1, ty0_is_self);
                 }
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))

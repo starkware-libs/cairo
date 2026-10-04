@@ -84,6 +84,15 @@ impl<Key: Eq, BH> PartialEq for OrderedHashSet<Key, BH> {
 
 impl<Key: Eq, BH> Eq for OrderedHashSet<Key, BH> {}
 
+impl<Key: Hash, BH> Hash for OrderedHashSet<Key, BH> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.len().hash(state);
+        for e in self.iter() {
+            e.hash(state);
+        }
+    }
+}
+
 impl<Key: Hash + Eq, BH: BuildHasher + Default> FromIterator<Key> for OrderedHashSet<Key, BH> {
     fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
