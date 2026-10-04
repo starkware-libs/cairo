@@ -268,8 +268,8 @@ pub trait LoweringGroup: Database {
 
     // ### Strongly connected components ###
 
-    /// Returns the representative of the concrete function's strongly connected component. The
-    /// representative is consistently chosen for all the concrete functions in the same SCC.
+    /// Returns the representative of the concrete function's strongly connected component: its
+    /// first member in source order, which is independent of interning order.
     fn lowered_scc_representative<'db>(
         &'db self,
         function: ids::ConcreteFunctionWithBodyId<'db>,
