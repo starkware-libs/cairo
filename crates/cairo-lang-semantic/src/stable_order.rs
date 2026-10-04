@@ -14,7 +14,7 @@ use crate::items::functions::{
     ConcreteFunctionWithBodyId, GenericFunctionId, GenericFunctionWithBodyId,
 };
 use crate::items::imp::{
-    GeneratedImplItems, ImplId, ImplLongId, NegativeImplId, NegativeImplLongId,
+    GeneratedImplItems, ImplId, ImplLongId, NegativeImplId, NegativeImplLongId, UninferredImpl,
 };
 use crate::items::trt::ConcreteTraitId;
 use crate::types::{TypeId, TypeLongId};
@@ -289,5 +289,34 @@ impl<'db> StableOrd<'db> for ConcreteFunctionWithBodyId<'db> {
                 _ => Ordering::Equal,
             })
             .then_with(|| cmp_slices(db, &a.generic_args, &b.generic_args))
+    }
+}
+
+impl<'db> StableOrd<'db> for UninferredImpl<'db> {
+    fn stable_cmp(&self, other: &Self, db: &'db dyn Database) -> Ordering {
+        use UninferredImpl::*;
+        let kind = |imp: &Self| match imp {
+            Def(_) => 0,
+            ImplAlias(_) => 1,
+            GenericParam(_) => 2,
+            ImplImpl(_) => 3,
+            GeneratedImpl(_) => 4,
+        };
+        match (self, other) {
+            (Def(a), Def(b)) => cmp_elements(db, a, b),
+            (ImplAlias(a), ImplAlias(b)) => cmp_elements(db, a, b),
+            (GenericParam(a), GenericParam(b)) => cmp_elements(db, a, b),
+            (ImplImpl(a), ImplImpl(b)) => a
+                .impl_id()
+                .stable_cmp(&b.impl_id(), db)
+                .then_with(|| cmp_elements(db, &a.trait_impl_id(), &b.trait_impl_id())),
+            (GeneratedImpl(a), GeneratedImpl(b)) => {
+                let (a, b) = (a.long(db), b.long(db));
+                a.concrete_trait
+                    .stable_cmp(&b.concrete_trait, db)
+                    .then_with(|| a.impl_items.stable_cmp(&b.impl_items, db))
+            }
+            (a, b) => kind(a).cmp(&kind(b)),
+        }
     }
 }

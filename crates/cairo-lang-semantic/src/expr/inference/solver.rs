@@ -1,11 +1,10 @@
-use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{GenericParamId, LanguageElementId, ModuleId};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::ordered_hash_map::Entry;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain, zip_eq};
 use salsa::Database;
@@ -20,13 +19,13 @@ use super::{
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::imp::{
     ImplId, ImplImplId, ImplLongId, ImplLookupContext, ImplLookupContextId, ImplSemantic,
-    UninferredImpl, UninferredImplById, find_candidates_at_context,
-    find_closure_generated_candidate, find_integer_literal_generated_candidate,
+    UninferredImpl, find_candidates_at_context, find_closure_generated_candidate,
+    find_integer_literal_generated_candidate,
 };
 use crate::items::trt::TraitSemantic;
 use crate::path::ContextualizePath;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
-use crate::types::{ImplTypeById, ImplTypeId};
+use crate::types::ImplTypeId;
 use crate::{
     ConcreteImplLongId, ConcreteTraitId, GenericArgumentId, GenericParam, TypeId, TypeLongId,
 };
@@ -106,7 +105,7 @@ pub fn canonic_trait_solutions<'db>(
     db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
     lookup_context: ImplLookupContextId<'db>,
-    impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+    impl_type_bounds: OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>,
 ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     let mut concrete_trait_id = canonical_trait.id;
     let impl_type_bounds = Arc::new(impl_type_bounds);
@@ -140,7 +139,7 @@ pub fn canonic_trait_solutions_tracked<'db>(
     db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
     lookup_context: ImplLookupContextId<'db>,
-    impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+    impl_type_bounds: OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>,
 ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     canonic_trait_solutions(db, canonical_trait, lookup_context, impl_type_bounds)
 }
@@ -151,7 +150,7 @@ pub fn canonic_trait_solutions_cycle<'db>(
     _id: salsa::Id,
     _canonical_trait: CanonicalTrait<'db>,
     _lookup_context: ImplLookupContextId<'db>,
-    _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+    _impl_type_bounds: OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>,
 ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
 }
@@ -212,7 +211,7 @@ fn solve_canonical_trait<'db>(
     db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
     lookup_context: ImplLookupContextId<'db>,
-    impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+    impl_type_bounds: Arc<OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>>,
 ) -> SolutionSet<'db, CanonicalImpl<'db>> {
     let filter = canonical_trait.id.filter(db);
     // For `NumericLiteral` target types with Drop/Copy/Destruct/PanicDestruct, only the
@@ -221,11 +220,11 @@ fn solve_canonical_trait<'db>(
     let candidates = if let Some(integer_literal_candidate) =
         find_integer_literal_generated_candidate(db, canonical_trait.id)
     {
-        OrderedHashSet::from_iter([UninferredImplById(integer_literal_candidate)])
+        OrderedHashSet::from_iter([integer_literal_candidate])
     } else {
         let mut set = find_candidates_at_context(db, lookup_context, filter).unwrap_or_default();
         find_closure_generated_candidate(db, canonical_trait.id)
-            .map(|candidate| set.insert(UninferredImplById(candidate)));
+            .map(|candidate| set.insert(candidate));
         set
     };
 
@@ -234,7 +233,7 @@ fn solve_canonical_trait<'db>(
         let Ok(candidate_solution_set) = solve_candidate(
             db,
             &canonical_trait,
-            candidate.0,
+            candidate,
             lookup_context,
             impl_type_bounds.clone(),
         ) else {
@@ -268,7 +267,7 @@ fn solve_candidate<'db>(
     canonical_trait: &CanonicalTrait<'db>,
     candidate: UninferredImpl<'db>,
     lookup_context: ImplLookupContextId<'db>,
-    impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+    impl_type_bounds: Arc<OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>>,
 ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
     let Ok(candidate_concrete_trait) = candidate.concrete_trait(db) else {
         return Err(super::ErrorSet);
@@ -447,7 +446,7 @@ impl<'db> LiteInference<'db> {
         &mut self,
         params: &[GenericParam<'db>],
         lookup_context: ImplLookupContextId<'db>,
-        impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+        impl_type_bounds: Arc<OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>>,
     ) -> InferenceResult<SolutionSet<'db, Vec<GenericArgumentId<'db>>>> {
         let mut generic_args = Vec::with_capacity(params.len());
         for param in params {
@@ -905,7 +904,7 @@ pub trait SemanticSolver<'db>: Database {
         &'db self,
         canonical_trait: CanonicalTrait<'db>,
         lookup_context: ImplLookupContextId<'db>,
-        impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+        impl_type_bounds: OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>,
     ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
         canonic_trait_solutions_tracked(
             self.as_dyn_database(),

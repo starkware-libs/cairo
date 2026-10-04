@@ -2,7 +2,7 @@
 
 #![expect(clippy::disallowed_types)]
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
@@ -55,7 +55,7 @@ use crate::path::ContextualizePath;
 use crate::substitution::{GenericSubstitution, HasDb, RewriteResult, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
-    ImplTypeById, ImplTypeId, get_impl_at_context,
+    ImplTypeId, get_impl_at_context,
 };
 use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
@@ -451,7 +451,7 @@ pub struct InferenceData<'db> {
     /// Negative impl inference variables that are currently ambiguous. May be solved later.
     negative_ambiguous: Vec<(LocalNegativeImplVarId, Ambiguity<'db>)>,
     /// Mapping from impl types to type variables.
-    pub impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+    pub impl_type_bounds: Arc<OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>>,
 
     /// The current error status.
     error_status: Result<(), InferenceErrorStatus<'db>>,
@@ -693,7 +693,7 @@ impl<'db, 'id> Inference<'db, 'id> {
             .filter_map(|(impl_type, ty)| {
                 let rewritten_type = self.rewrite(ty.long(self.db).clone()).no_err();
                 if !matches!(rewritten_type, TypeLongId::Var(_) | TypeLongId::NumericLiteral(_)) {
-                    return Some(((*impl_type).into(), rewritten_type.intern(self.db)));
+                    return Some((*impl_type, rewritten_type.intern(self.db)));
                 }
                 // conformed the var type to the original impl type to remove it from the pending
                 // list.
@@ -1624,7 +1624,7 @@ impl<'db, 'mt> SemanticRewriter<TypeLongId<'db>, NoError> for Inference<'db, 'mt
                 }
             }
             TypeLongId::ImplType(impl_type_id) => {
-                if let Some(type_id) = self.impl_type_bounds.get(&((*impl_type_id).into())) {
+                if let Some(type_id) = self.impl_type_bounds.get(impl_type_id) {
                     *value = type_id.long(self.db).clone();
                     self.internal_rewrite(value)?;
                     return Ok(RewriteResult::Modified);

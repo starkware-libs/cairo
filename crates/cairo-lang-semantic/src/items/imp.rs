@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::hash::Hash;
 use std::mem;
 use std::sync::Arc;
@@ -17,7 +16,7 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, Diagnostics, Maybe, MaybeAsRef, ToMaybe, skip_diagnostic,
 };
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId, Tracked, UnstableSalsaId};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId, Tracked};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{
@@ -93,6 +92,7 @@ use crate::resolve::{
     AsSegments, ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
     ResolverData,
 };
+use crate::stable_order::StableOrd;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{
     ImplTypeId, ShallowGenericArg, TypeHead, TypesSemantic, add_type_based_diagnostics,
@@ -454,12 +454,6 @@ impl<'db> NegativeImplId<'db> {
     }
 }
 semantic_object_for_id!(NegativeImplId, NegativeImplLongId<'a>);
-
-impl<'db> UnstableSalsaId for ImplId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.as_intern_id()
-    }
-}
 
 /// Head of an impl.
 ///
@@ -1685,75 +1679,26 @@ pub enum GenericsHeadFilter<'db> {
     NoGenerics,
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, HeapSize, salsa::SalsaValue)]
-pub struct UninferredImplById<'db>(pub UninferredImpl<'db>);
-impl<'db> Ord for UninferredImplById<'db> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        match (&self.0, &other.0) {
-            (UninferredImpl::Def(impl_def_id), UninferredImpl::Def(other_impl_def_id)) => {
-                impl_def_id.get_internal_id().cmp(&other_impl_def_id.get_internal_id())
-            }
-            (
-                UninferredImpl::ImplAlias(impl_alias_id),
-                UninferredImpl::ImplAlias(other_impl_alias_id),
-            ) => impl_alias_id.get_internal_id().cmp(&other_impl_alias_id.get_internal_id()),
-            (UninferredImpl::GenericParam(param), UninferredImpl::GenericParam(other_param)) => {
-                param.get_internal_id().cmp(&other_param.get_internal_id())
-            }
-            (
-                UninferredImpl::ImplImpl(impl_impl_id),
-                UninferredImpl::ImplImpl(other_impl_impl_id),
-            ) => {
-                if impl_impl_id.impl_id() == other_impl_impl_id.impl_id() {
-                    impl_impl_id
-                        .trait_impl_id()
-                        .get_internal_id()
-                        .cmp(&other_impl_impl_id.trait_impl_id().get_internal_id())
-                } else {
-                    impl_impl_id
-                        .impl_id()
-                        .get_internal_id()
-                        .cmp(&other_impl_impl_id.impl_id().get_internal_id())
-                }
-            }
-            (
-                UninferredImpl::GeneratedImpl(generated_impl),
-                UninferredImpl::GeneratedImpl(other_generated_impl),
-            ) => generated_impl.get_internal_id().cmp(&other_generated_impl.get_internal_id()),
-            (UninferredImpl::Def(_), _) => std::cmp::Ordering::Less,
-            (_, UninferredImpl::Def(_)) => std::cmp::Ordering::Greater,
-            (UninferredImpl::ImplAlias(_), _) => std::cmp::Ordering::Less,
-            (_, UninferredImpl::ImplAlias(_)) => std::cmp::Ordering::Greater,
-            (UninferredImpl::GenericParam(_), _) => std::cmp::Ordering::Less,
-            (_, UninferredImpl::GenericParam(_)) => std::cmp::Ordering::Greater,
-            (UninferredImpl::ImplImpl(_), _) => std::cmp::Ordering::Less,
-            (_, UninferredImpl::ImplImpl(_)) => std::cmp::Ordering::Greater,
-        }
-    }
-}
-impl<'db> PartialOrd for UninferredImplById<'db> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl<'db> From<UninferredImpl<'db>> for UninferredImplById<'db> {
-    fn from(uninferred_impl: UninferredImpl<'db>) -> Self {
-        UninferredImplById(uninferred_impl)
-    }
-}
-
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::SalsaValue, HeapSize)]
 #[debug_db(dyn Database)]
 pub struct ImplLookupContext<'db> {
     pub crate_id: CrateId<'db>,
     pub generic_params: Vec<GenericParamId<'db>>,
-    pub inner_impls: BTreeSet<UninferredImplById<'db>>,
+    /// Sorted by stable order when interned, see [Self::intern].
+    pub inner_impls: OrderedHashSet<UninferredImpl<'db>>,
     pub negative_impls: Vec<GenericParamId<'db>>,
 }
 
 define_short_id!(ImplLookupContextId, ImplLookupContext<'db>);
 
 impl<'db> ImplLookupContext<'db> {
+    /// Interns the context with its impls sorted by stable order, so that contexts with the same
+    /// impls are interned once regardless of the order the impls were added in.
+    pub fn intern(mut self, db: &'db dyn Database) -> ImplLookupContextId<'db> {
+        self.inner_impls.sort_by(|a, b| a.stable_cmp(b, db));
+        Intern::intern(self, db)
+    }
+
     /// Creates a new [ImplLookupContext] from a [CrateId].
     pub fn new_from_crate(crate_id: CrateId<'db>) -> Self {
         Self {
@@ -1782,7 +1727,7 @@ impl<'db> ImplLookupContext<'db> {
         let crate_id = module_id.owning_crate(db);
         let mut negative_impls = vec![];
         let mut constrained_generic_params = vec![];
-        let mut inner_impls = BTreeSet::default();
+        let mut inner_impls = OrderedHashSet::default();
         for id in generic_params {
             match id.kind(db) {
                 GenericKind::Type | GenericKind::Const => {}
@@ -1794,13 +1739,12 @@ impl<'db> ImplLookupContext<'db> {
                     let valid = if let Ok(trait_id) = uninferred_impl.trait_id(db)
                         && let Some(set) = db.crate_global_impls(crate_id).get(&trait_id)
                     {
-                        let uninferred_impl: UninferredImplById<'db> = uninferred_impl.into();
                         !set.contains(&uninferred_impl)
                     } else {
                         true
                     };
                     if valid {
-                        inner_impls.insert(uninferred_impl.into());
+                        inner_impls.insert(uninferred_impl);
                         if id.long(db).has_type_constraints_syntax(db) {
                             constrained_generic_params.push(id);
                         }
@@ -1840,7 +1784,7 @@ impl<'db> ImplLookupContext<'db> {
         let crate_global_impls = db.crate_global_impls(self.crate_id);
         if let Ok(module_impls) = db.module_global_impls((), module_id) {
             module_impls.locals.iter().for_each(|imp| {
-                if let Ok(trait_id) = imp.0.trait_id(db)
+                if let Ok(trait_id) = imp.trait_id(db)
                     && let Some(set) = crate_global_impls.get(&trait_id)
                     && set.contains(imp)
                 {
@@ -1853,7 +1797,7 @@ impl<'db> ImplLookupContext<'db> {
             if !crate_dependencies(db, self.crate_id).contains(&module_id.owning_crate(db)) {
                 module_impls.globals_by_trait.iter().for_each(|(_, imps)| {
                     imps.iter().for_each(|imp| {
-                        if let Ok(trait_id) = imp.0.trait_id(db)
+                        if let Ok(trait_id) = imp.trait_id(db)
                             && let Some(set) = crate_global_impls.get(&trait_id)
                             && set.contains(imp)
                         {
@@ -1885,7 +1829,7 @@ impl<'db> ImplLookupContext<'db> {
             )));
         }
         for uninferred_impl in uninferred_impls {
-            self.inner_impls.insert(uninferred_impl.into());
+            self.inner_impls.insert(uninferred_impl);
         }
     }
 
@@ -1894,8 +1838,8 @@ impl<'db> ImplLookupContext<'db> {
     pub fn strip_for_trait_id(&mut self, db: &dyn Database, trait_id: TraitId<'db>) {
         let deps = db.reachable_trait_dependencies(trait_id, self.crate_id);
         let type_eq_trt = db.core_info().type_eq_trt;
-        self.inner_impls.retain(|impl_by_id| {
-            if let Ok(impl_trait_id) = impl_by_id.0.trait_id(db) {
+        self.inner_impls.retain(|imp| {
+            if let Ok(impl_trait_id) = imp.trait_id(db) {
                 return trait_id == impl_trait_id
                     || trait_id == type_eq_trt
                     || deps.contains(&impl_trait_id);
@@ -1994,11 +1938,6 @@ impl<'db> DebugWithDb<'db> for UninferredImpl<'db> {
 }
 
 define_short_id!(UninferredGeneratedImplId, UninferredGeneratedImplLongId<'db>);
-impl<'db> UnstableSalsaId for UninferredGeneratedImplId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.0
-    }
-}
 semantic_object_for_id!(UninferredGeneratedImplId, UninferredGeneratedImplLongId<'a>);
 
 impl<'db> UninferredGeneratedImplId<'db> {
@@ -2033,13 +1972,13 @@ fn trait_candidate_by_head<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
     trait_id: TraitId<'db>,
-) -> OrderedHashMap<GenericsHeadFilter<'db>, OrderedHashSet<UninferredImplById<'db>>> {
-    let mut res: OrderedHashMap<GenericsHeadFilter<'db>, OrderedHashSet<UninferredImplById<'db>>> =
+) -> OrderedHashMap<GenericsHeadFilter<'db>, OrderedHashSet<UninferredImpl<'db>>> {
+    let mut res: OrderedHashMap<GenericsHeadFilter<'db>, OrderedHashSet<UninferredImpl<'db>>> =
         OrderedHashMap::default();
 
     if let Some(candidates) = db.crate_global_impls(crate_id).get(&trait_id) {
         for candidate in candidates.iter() {
-            let Ok(shallow_generic_args) = candidate.0.trait_shallow_generic_args(db) else {
+            let Ok(shallow_generic_args) = candidate.trait_shallow_generic_args(db) else {
                 continue;
             };
             let Ok(trait_params) = db.trait_generic_params(trait_id) else {
@@ -2054,7 +1993,7 @@ fn trait_candidate_by_head<'db>(
             let shallow_arg =
                 shallow_generic_args.iter().find(|(param, _)| *param == first_param.id());
             if let Some(first_generic_head) = shallow_arg.map(|(_, arg)| arg.head()) {
-                if !matches!(candidate.0, UninferredImpl::GenericParam(_)) {
+                if !matches!(candidate, UninferredImpl::GenericParam(_)) {
                     let mut type_head = first_generic_head.clone();
                     while let TypeHead::Snapshot(inner) = type_head {
                         type_head = *inner;
@@ -2082,7 +2021,7 @@ pub fn find_candidates_at_context<'db>(
     db: &'db dyn Database,
     lookup_context: ImplLookupContextId<'db>,
     filter: TraitFilter<'db>,
-) -> Maybe<OrderedHashSet<UninferredImplById<'db>>> {
+) -> Maybe<OrderedHashSet<UninferredImpl<'db>>> {
     let mut res = OrderedHashSet::default();
     let lookup = lookup_context.long(db);
     let crate_id = lookup.crate_id;
@@ -2090,10 +2029,10 @@ pub fn find_candidates_at_context<'db>(
         .inner_impls
         .iter()
         .filter(|uninferred_impl| {
-            let Ok(trait_id) = uninferred_impl.0.trait_id(db) else { return false };
+            let Ok(trait_id) = uninferred_impl.trait_id(db) else { return false };
             trait_id == filter.trait_id
         })
-        .cloned();
+        .copied();
     match filter.generics_filter {
         GenericsHeadFilter::NoFilter => {
             let globals = db.crate_global_impls(crate_id);
@@ -2108,7 +2047,7 @@ pub fn find_candidates_at_context<'db>(
             res.extend(filtered.into_iter().flat_map(|s| s.into_iter()));
             res.extend(no_filtered.into_iter().flat_map(|s| s.into_iter()));
             res.extend(locals.filter(|uninferred_impl| {
-                let Ok(_) = uninferred_impl.0.concrete_trait(db) else {
+                let Ok(_) = uninferred_impl.concrete_trait(db) else {
                     return false;
                 };
                 // TODO(TomerStarkware): Check if the concrete trait fits the trait filter.
@@ -3698,10 +3637,10 @@ fn crate_dependencies<'db>(
 fn crate_global_impls<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
-) -> UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>> {
+) -> UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImpl<'db>>> {
     let mut crate_global_impls: UnorderedHashMap<
         TraitId<'db>,
-        OrderedHashSet<UninferredImplById<'db>>,
+        OrderedHashSet<UninferredImpl<'db>>,
     > = UnorderedHashMap::default();
     for crate_id in crate_dependencies(db, crate_id).iter() {
         let mut modules = vec![ModuleId::CrateRoot(*crate_id)];
@@ -3842,11 +3781,11 @@ fn uninferred_impl_trait_dependency<'db>(
 
 #[derive(Default, Debug, Eq, PartialEq, salsa::SalsaValue)]
 struct ModuleImpls<'db> {
-    globals_by_trait: OrderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>,
+    globals_by_trait: OrderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImpl<'db>>>,
     trait_deps: OrderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>,
     globals_by_type: OrderedHashMap<TypeId<'db>, Vec<UninferredImpl<'db>>>,
 
-    locals: BTreeSet<UninferredImplById<'db>>,
+    locals: OrderedHashSet<UninferredImpl<'db>>,
 }
 
 #[salsa::tracked(returns(ref))]
@@ -3913,9 +3852,9 @@ fn module_global_impls<'db>(
 
                 if let Ok(true) = is_global_impl(db, imp, module_id) {
                     let trait_id = imp.trait_id(db)?;
-                    module_impls.globals_by_trait.entry(trait_id).or_default().insert(imp.into());
+                    module_impls.globals_by_trait.entry(trait_id).or_default().insert(imp);
                 } else {
-                    module_impls.locals.insert(imp.into());
+                    module_impls.locals.insert(imp);
                 }
             }
         }
@@ -3950,7 +3889,7 @@ fn global_impls_insert_generic_impls<'db>(
     db: &'db dyn Database,
     generic_params: &ast::OptionWrappedGenericParamList<'db>,
     module_id: ModuleId<'db>,
-    globals_by_trait: &mut OrderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>,
+    globals_by_trait: &mut OrderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImpl<'db>>>,
 ) {
     let ast::OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
         generic_params
@@ -3989,7 +3928,7 @@ fn global_impls_insert_generic_impls<'db>(
                 ) {
                     continue;
                 }
-                globals_by_trait.entry(trait_id).or_default().insert(uninferred_impl.into());
+                globals_by_trait.entry(trait_id).or_default().insert(uninferred_impl);
             }
         }
     }
@@ -4599,7 +4538,7 @@ trait PrivImplSemantic<'db>: Database {
     fn crate_global_impls(
         &'db self,
         crate_id: CrateId<'db>,
-    ) -> &'db UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>> {
+    ) -> &'db UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImpl<'db>>> {
         crate_global_impls(self.as_dyn_database(), crate_id)
     }
     /// Returns the traits which impls of a trait directly depend on.
@@ -4630,7 +4569,7 @@ trait PrivImplSemantic<'db>: Database {
         &'db self,
         crate_id: CrateId<'db>,
         trait_id: TraitId<'db>,
-    ) -> &'db OrderedHashMap<GenericsHeadFilter<'db>, OrderedHashSet<UninferredImplById<'db>>> {
+    ) -> &'db OrderedHashMap<GenericsHeadFilter<'db>, OrderedHashSet<UninferredImpl<'db>>> {
         trait_candidate_by_head(self.as_dyn_database(), crate_id, trait_id)
     }
 }
