@@ -669,3 +669,35 @@ error[E0004]: Not all trait items are implemented. Missing: 'ty'.
  --> lib.cairo:5:6
 impl MyImpl of MyTrait {
      ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test impl candidates are tried in source order.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+mod t {
+    pub trait Tr<T> {
+        fn f();
+    }
+}
+mod m {
+    pub impl L2 of super::t::Tr<u32> {
+        fn f() {}
+    }
+}
+impl L1 of t::Tr<u32> {
+    fn f() {}
+}
+use m::L2;
+fn bar() {
+    t::Tr::<u32>::f();
+}
+
+//! > expected_diagnostics
+error[E2313]: Trait `t::Tr::<u32>` has multiple implementations, in: `m::L2`, `L1`
+ --> lib.cairo:16:19
+    t::Tr::<u32>::f();
+                  ^
