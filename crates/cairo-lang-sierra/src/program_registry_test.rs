@@ -36,6 +36,75 @@ fn basic_insertion() {
 
 #[test_case(
     indoc! {"
+        type felt = felt252;
+        libfunc d = dummy_function_call<user@[0], 0, 0, 1, [999]>;
+        return();
+        [0]@0() -> ();
+    "},
+    SpecializationError::MissingTypeInfo(999.into());
+    "missing return type info"
+)]
+#[test_case(
+    indoc! {"
+        type felt = felt252;
+        libfunc d = dummy_function_call<user@[0], 0, 1, 5, 0>;
+        return();
+        [0]@0() -> ();
+    "},
+    SpecializationError::UnsupportedGenericArg;
+    "value instead of parameter type"
+)]
+#[test_case(
+    indoc! {"
+        type felt = felt252;
+        libfunc d = dummy_function_call<user@[0], 0, 0, 1, 5>;
+        return();
+        [0]@0() -> ();
+    "},
+    SpecializationError::UnsupportedGenericArg;
+    "value instead of return type"
+)]
+#[test_case(
+    indoc! {"
+        libfunc d = dummy_function_call;
+        return();
+        [0]@0() -> ();
+    "},
+    SpecializationError::WrongNumberOfGenericArgs;
+    "missing function argument"
+)]
+fn invalid_dummy_function_call(program: &str, expected_error: SpecializationError) {
+    let error = ProgramRegistry::<CoreType, CoreLibfunc>::new(
+        &ProgramParser::new().parse(program).unwrap(),
+    )
+    .map(|_| ())
+    .unwrap_err();
+    let ProgramRegistryError::LibfuncSpecialization { concrete_id, error } = *error else {
+        panic!("Unexpected program registry error: {error:?}");
+    };
+    assert_eq!(concrete_id, "d".into());
+    let ExtensionError::LibfuncSpecialization { libfunc_id, error, .. } = error else {
+        panic!("Unexpected extension error: {error:?}");
+    };
+    assert_eq!(libfunc_id, "dummy_function_call".into());
+    assert_eq!(error, expected_error);
+}
+
+#[test]
+fn valid_dummy_function_call() {
+    let program = ProgramParser::new()
+        .parse(indoc! {"
+            type felt = felt252;
+            libfunc d = dummy_function_call<user@[0], 0, 0, 1, felt>;
+            return();
+            [0]@0() -> ();
+        "})
+        .unwrap();
+    assert!(ProgramRegistry::<CoreType, CoreLibfunc>::new(&program).is_ok());
+}
+
+#[test_case(
+    indoc! {"
         type C = Const<B, 3>;
         type B = BoundedInt<10, 0> [storable: true, drop: true, dup: true, zero_sized: false];
     "},
