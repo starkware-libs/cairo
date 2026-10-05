@@ -731,7 +731,8 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                                 } else {
                                     // Either the pattern is refutable and we are missing an else
                                     // clause, or the pattern is irrefutable and the pattern have
-                                    // failed for some reason. Both should already cause diagstics.
+                                    // failed for some reason. Both should already cause
+                                    // diagnostics.
                                     return to_missing(skip_diagnostic());
                                 }
                             }

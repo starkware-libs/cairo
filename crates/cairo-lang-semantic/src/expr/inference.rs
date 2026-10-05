@@ -682,7 +682,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         var
     }
 
-    /// Sets the inference's impl type bounds to the given map, and rewrittes the types so all the
+    /// Sets the inference's impl type bounds to the given map, and rewrites the types so all the
     /// types are var free.
     pub fn set_impl_type_bounds(
         &mut self,
@@ -1406,7 +1406,7 @@ impl<'db, 'id> Inference<'db, 'id> {
             concrete_trait_id,
             impl_var_trait_item_mappings,
         );
-        // impl_type_bounds order is deterimend by the generic params of the function and therefore
+        // impl_type_bounds order is determined by the generic params of the function and therefore
         // is consistent.
         let solution_set = match self.db.canonic_trait_solutions(
             canonical_trait,
