@@ -7025,3 +7025,365 @@ End:
   Return(v3)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Matching an enum wrapping a non-copyable payload keeps the arm variable.
+
+//! > test_runner_name
+test_const_folding
+
+//! > cairo_code
+#[inline(never)]
+fn consume(e: Option<Array<felt252>>) -> usize nopanic {
+    match e {
+        Option::Some(_) => 0,
+        Option::None => 1,
+    }
+}
+
+#[target_function]
+fn foo(a: Array<felt252>, c: bool) -> usize {
+    let e = Option::Some(a);
+    if c {
+        consume(e)
+    } else {
+        match e {
+            Option::Some(x) => x.len(),
+            Option::None => 1,
+        }
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::bool
+blk0 (root):
+Statements:
+  (v2: core::option::Option::<core::array::Array::<core::felt252>>) <- Option::Some(v0)
+End:
+  Match(match_enum(v1) {
+    bool::False(v3) => blk1,
+    bool::True(v4) => blk5,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Option::Some(v5) => blk2,
+    Option::None(v6) => blk3,
+  })
+
+blk2:
+Statements:
+  (v7: core::array::Array::<core::felt252>, v8: @core::array::Array::<core::felt252>) <- snapshot(v5)
+  (v9: core::integer::u32) <- core::array::array_len::<core::felt252>(v8)
+End:
+  Goto(blk4, {v9 -> v10})
+
+blk3:
+Statements:
+  (v11: core::integer::u32) <- 1
+End:
+  Goto(blk4, {v11 -> v10})
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v10 -> v12})
+
+blk5:
+Statements:
+  (v13: core::integer::u32) <- test::consume(v2)
+End:
+  Goto(blk6, {v13 -> v12})
+
+blk6:
+Statements:
+End:
+  Return(v12)
+
+//! > after
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::bool
+blk0 (root):
+Statements:
+  (v2: core::option::Option::<core::array::Array::<core::felt252>>) <- Option::Some(v0)
+End:
+  Match(match_enum(v1) {
+    bool::False(v3) => blk1,
+    bool::True(v4) => blk5,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Option::Some(v5) => blk2,
+    Option::None(v6) => blk3,
+  })
+
+blk2:
+Statements:
+  (v7: core::array::Array::<core::felt252>, v8: @core::array::Array::<core::felt252>) <- snapshot(v5)
+  (v9: core::integer::u32) <- core::array::array_len::<core::felt252>(v8)
+End:
+  Goto(blk4, {v9 -> v10})
+
+blk3:
+Statements:
+  (v11: core::integer::u32) <- 1
+End:
+  Goto(blk4, {v11 -> v10})
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v10 -> v12})
+
+blk5:
+Statements:
+  (v13: core::integer::u32) <- test::consume(v2)
+End:
+  Goto(blk6, {v13 -> v12})
+
+blk6:
+Statements:
+End:
+  Return(v12)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Specializing a call on an enum wrapping a non-copyable payload doesn't reuse the payload.
+
+//! > test_runner_name
+test_const_folding
+
+//! > cairo_code
+#[inline(never)]
+fn keep(e: Option<Array<felt252>>) -> Option<Array<felt252>> {
+    e
+}
+
+#[inline(never)]
+fn tick(
+    a: felt252, b: felt252, c: felt252, d: felt252, e: felt252, f: felt252, g: felt252, h: felt252,
+) -> felt252 {
+    a + b + c + d + e + f + g + h
+}
+
+fn consume(e: Option<Array<felt252>>) -> felt252 {
+    if let Option::Some(v) = e {
+        return v.len().into();
+    }
+    let y0 = tick(0, 0, 0, 0, 0, 0, 0, 0);
+    let y1 = tick(y0, y0, y0, y0, y0, y0, y0, y0);
+    let y2 = tick(y1, y1, y1, y1, y1, y1, y1, y1);
+    let y3 = tick(y2, y2, y2, y2, y2, y2, y2, y2);
+    let y4 = tick(y3, y3, y3, y3, y3, y3, y3, y3);
+    let y5 = tick(y4, y4, y4, y4, y4, y4, y4, y4);
+    let y6 = tick(y5, y5, y5, y5, y5, y5, y5, y5);
+    let y7 = tick(y6, y6, y6, y6, y6, y6, y6, y6);
+    let y8 = tick(y7, y7, y7, y7, y7, y7, y7, y7);
+    let y9 = tick(y8, y8, y8, y8, y8, y8, y8, y8);
+    let y10 = tick(y9, y9, y9, y9, y9, y9, y9, y9);
+    let y11 = tick(y10, y10, y10, y10, y10, y10, y10, y10);
+    let y12 = tick(y11, y11, y11, y11, y11, y11, y11, y11);
+    let y13 = tick(y12, y12, y12, y12, y12, y12, y12, y12);
+    let y14 = tick(y13, y13, y13, y13, y13, y13, y13, y13);
+    let y15 = tick(y14, y14, y14, y14, y14, y14, y14, y14);
+    y15
+}
+
+fn len_or_zero(e: Option<Array<felt252>>) -> felt252 {
+    match e {
+        Option::Some(v) => v.len().into(),
+        Option::None => 0,
+    }
+}
+
+#[derive(Drop)]
+enum Branch {
+    A,
+    B,
+    C,
+}
+
+#[target_function]
+fn foo(a: Array<felt252>, branch: Branch) -> felt252 {
+    let e = Option::Some(a);
+    match branch {
+        Branch::A => consume(e),
+        Branch::B => len_or_zero(keep(e)),
+        Branch::C => len_or_zero(keep(e)) + 1,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::felt252>, v1: test::Branch
+blk0 (root):
+Statements:
+  (v2: core::option::Option::<core::array::Array::<core::felt252>>) <- Option::Some(v0)
+End:
+  Match(match_enum(v1) {
+    Branch::A(v3) => blk1,
+    Branch::B(v4) => blk2,
+    Branch::C(v5) => blk6,
+  })
+
+blk1:
+Statements:
+  (v6: core::felt252) <- test::consume(v2)
+End:
+  Goto(blk10, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::option::Option::<core::array::Array::<core::felt252>>) <- test::keep(v2)
+End:
+  Match(match_enum(v8) {
+    Option::Some(v9) => blk3,
+    Option::None(v10) => blk4,
+  })
+
+blk3:
+Statements:
+  (v11: core::array::Array::<core::felt252>, v12: @core::array::Array::<core::felt252>) <- snapshot(v9)
+  (v13: core::integer::u32) <- core::array::array_len::<core::felt252>(v12)
+  (v14: core::felt252) <- core::integer::u32_to_felt252(v13)
+End:
+  Goto(blk5, {v14 -> v15})
+
+blk4:
+Statements:
+  (v16: core::felt252) <- 0
+End:
+  Goto(blk5, {v16 -> v15})
+
+blk5:
+Statements:
+End:
+  Goto(blk10, {v15 -> v7})
+
+blk6:
+Statements:
+  (v17: core::option::Option::<core::array::Array::<core::felt252>>) <- test::keep(v2)
+End:
+  Match(match_enum(v17) {
+    Option::Some(v18) => blk7,
+    Option::None(v19) => blk8,
+  })
+
+blk7:
+Statements:
+  (v20: core::array::Array::<core::felt252>, v21: @core::array::Array::<core::felt252>) <- snapshot(v18)
+  (v22: core::integer::u32) <- core::array::array_len::<core::felt252>(v21)
+  (v23: core::felt252) <- core::integer::u32_to_felt252(v22)
+End:
+  Goto(blk9, {v23 -> v24})
+
+blk8:
+Statements:
+  (v25: core::felt252) <- 0
+End:
+  Goto(blk9, {v25 -> v24})
+
+blk9:
+Statements:
+  (v26: core::felt252) <- 1
+  (v27: core::felt252) <- core::felt252_add(v24, v26)
+End:
+  Goto(blk10, {v27 -> v7})
+
+blk10:
+Statements:
+End:
+  Return(v7)
+
+//! > after
+Parameters: v0: core::array::Array::<core::felt252>, v1: test::Branch
+blk0 (root):
+Statements:
+  (v2: core::option::Option::<core::array::Array::<core::felt252>>) <- Option::Some(v0)
+End:
+  Match(match_enum(v1) {
+    Branch::A(v3) => blk1,
+    Branch::B(v4) => blk2,
+    Branch::C(v5) => blk6,
+  })
+
+blk1:
+Statements:
+  (v6: core::felt252) <- test::consume(v2)
+End:
+  Goto(blk10, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::option::Option::<core::array::Array::<core::felt252>>) <- test::keep(v2)
+End:
+  Match(match_enum(v8) {
+    Option::Some(v9) => blk3,
+    Option::None(v10) => blk4,
+  })
+
+blk3:
+Statements:
+  (v11: core::array::Array::<core::felt252>, v12: @core::array::Array::<core::felt252>) <- snapshot(v9)
+  (v13: core::integer::u32) <- core::array::array_len::<core::felt252>(v12)
+  (v14: core::felt252) <- core::integer::u32_to_felt252(v13)
+End:
+  Goto(blk5, {v14 -> v15})
+
+blk4:
+Statements:
+  (v16: core::felt252) <- 0
+End:
+  Goto(blk5, {v16 -> v15})
+
+blk5:
+Statements:
+End:
+  Goto(blk10, {v15 -> v7})
+
+blk6:
+Statements:
+  (v17: core::option::Option::<core::array::Array::<core::felt252>>) <- test::keep(v2)
+End:
+  Match(match_enum(v17) {
+    Option::Some(v18) => blk7,
+    Option::None(v19) => blk8,
+  })
+
+blk7:
+Statements:
+  (v20: core::array::Array::<core::felt252>, v21: @core::array::Array::<core::felt252>) <- snapshot(v18)
+  (v22: core::integer::u32) <- core::array::array_len::<core::felt252>(v21)
+  (v23: core::felt252) <- core::integer::u32_to_felt252(v22)
+End:
+  Goto(blk9, {v23 -> v24})
+
+blk8:
+Statements:
+  (v25: core::felt252) <- 0
+End:
+  Goto(blk9, {v25 -> v24})
+
+blk9:
+Statements:
+  (v26: core::felt252) <- 1
+  (v27: core::felt252) <- core::felt252_add(v24, v26)
+End:
+  Goto(blk10, {v27 -> v7})
+
+blk10:
+Statements:
+End:
+  Return(v7)
+
+//! > lowering_diagnostics

@@ -362,8 +362,10 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     } else {
                         VarInfo::Enum { variant: *variant, payload: info.clone() }
                     }
+                } else if let Some(payload) = var_info_if_copy(self.variables, *input) {
+                    VarInfo::Enum { variant: *variant, payload }
                 } else {
-                    VarInfo::Enum { variant: *variant, payload: VarInfo::Var(*input).into() }
+                    return;
                 };
                 self.var_info.insert(*output, value.into());
             }

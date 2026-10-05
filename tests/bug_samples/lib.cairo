@@ -1,4 +1,5 @@
 mod builtin_usage_before_unreachable;
+mod const_folding_non_copy_enum_payload;
 mod derive_associated_type_member;
 mod ecdsa_completeness;
 mod generic_cycles;

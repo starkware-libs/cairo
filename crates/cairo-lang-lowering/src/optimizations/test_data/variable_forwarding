@@ -589,7 +589,7 @@ End:
 blk4:
 Statements:
 End:
-  Goto(blk6, {v0 -> v10})
+  Goto(blk6, {v8 -> v10})
 
 blk5:
 Statements:
@@ -635,7 +635,7 @@ End:
 blk4:
 Statements:
 End:
-  Goto(blk6, {v0 -> v10})
+  Goto(blk6, {v8 -> v10})
 
 blk5:
 Statements:
