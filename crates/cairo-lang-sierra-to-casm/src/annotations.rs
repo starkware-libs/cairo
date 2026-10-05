@@ -295,11 +295,11 @@ impl ProgramAnnotations {
         Ok((entry, taken_refs))
     }
 
-    /// Propagates the annotations from `statement_idx` to 'destination_statement_idx'.
+    /// Propagates the annotations from `source_statement_idx` to 'destination_statement_idx'.
     ///
     /// `annotations` is the result of calling get_annotations_after_take_args at
     /// `source_statement_idx` and `branch_changes` are the reference changes at each branch.
-    ///  if `must_set` is true, asserts that destination_statement_idx wasn't annotated before.
+    /// if `must_set` is true, asserts that destination_statement_idx wasn't annotated before.
     pub fn propagate_annotations(
         &mut self,
         source_statement_idx: StatementIdx,
