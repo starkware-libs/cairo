@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791161315540,
+  "lastUpdate": 1791161423683,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -36191,6 +36191,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/4bf9732a2c5d5c0edd6e8d79202750128a708be1"
         },
         "date": 1791078142761,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Kanan",
+            "username": "kriss39",
+            "email": "93033289+kriss39@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "913019ad4906ca089bba858dc7df7cffd623eb52",
+          "message": "fix(starknet): don't emit a leading :: for single segment embedded impls (#10425)",
+          "timestamp": "2026-10-04T13:38:50Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/913019ad4906ca089bba858dc7df7cffd623eb52"
+        },
+        "date": 1791161423090,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
