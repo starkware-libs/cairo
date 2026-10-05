@@ -37,13 +37,13 @@ pub extern fn blake2s_finalize(
     state: Blake2sState, byte_count: u32, msg: Blake2sInput,
 ) -> Blake2sState nopanic;
 
-/// Variant of `blake2s_compress` that accepts a message as guarantees.
+/// Variant of `blake2s_compress` that accepts a message with guarantees.
 /// The guarantees are consumed by this function.
 pub extern fn blake2s_compress_guarantees(
     state: Blake2sState, byte_count: u32, msg: Blake2sInputGuarantee,
 ) -> Blake2sState nopanic;
 
-/// Variant of `blake2s_finalize` that accepts a message as guarantees.
+/// Variant of `blake2s_finalize` that accepts a message with guarantees.
 /// The guarantees are consumed by this function.
 pub extern fn blake2s_finalize_guarantees(
     state: Blake2sState, byte_count: u32, msg: Blake2sInputGuarantee,
