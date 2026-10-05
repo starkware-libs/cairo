@@ -935,15 +935,23 @@ pub struct MacroExpansionResult {
 }
 
 /// The reason the expansion of a macro rule could not be performed.
+///
+/// Unreachable from user code - each variant names the declaration-time check foreclosing it - and
+/// kept as a backstop.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MacroExpansionFailure<'db> {
     /// No placeholder of a `$( ... )` block in the expansion repeats at the block's depth, so the
-    /// number of groups to expand it over is unknown.
+    /// number of groups to expand it over is unknown. Foreclosed by
+    /// [`SemanticDiagnosticKind::MacroRepetitionWithoutRepeatingPlaceholder`].
     MissingRepetitionDriver,
     /// The placeholders of a `$( ... )` block in the expansion disagree on the number of groups to
-    /// expand it over.
+    /// expand it over. Foreclosed by
+    /// [`SemanticDiagnosticKind::MacroPlaceholderRepDriverMismatch`].
     ConflictingRepetitionDrivers,
     /// A placeholder in the expansion has no captured value for the group being expanded.
+    /// Foreclosed by [`SemanticDiagnosticKind::UndefinedMacroPlaceholder`],
+    /// [`SemanticDiagnosticKind::MacroPlaceholderRepDepthMismatch`] and
+    /// [`SemanticDiagnosticKind::DuplicateMacroPlaceholder`].
     MissingCapture(SmolStrId<'db>),
 }
 
