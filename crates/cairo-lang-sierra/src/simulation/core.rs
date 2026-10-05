@@ -1,7 +1,6 @@
 #[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
-use cairo_lang_utils::extract_matches;
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::{One, ToPrimitive, Zero};
@@ -280,7 +279,9 @@ pub fn simulate<
             take_inputs!(let [CoreValue::Array(arr)] = inputs);
             let mut bytes = Vec::new();
             for limb in arr {
-                let limb = extract_matches!(limb, CoreValue::Felt252);
+                let CoreValue::Felt252(limb) = limb else {
+                    return Err(LibfuncSimulationError::WrongArgType);
+                };
                 bytes.extend(limb.to_bytes_be());
             }
             if let Ok(s) = String::from_utf8(bytes) {
@@ -324,6 +325,9 @@ fn simulate_bool_libfunc(
                 CoreValue::Enum { index: a_index, .. },
                 CoreValue::Enum { index: b_index, .. },
             ] = inputs);
+            if a_index > 1 || b_index > 1 {
+                return Err(LibfuncSimulationError::WrongArgType);
+            }
             (
                 vec![CoreValue::Enum {
                     value: Box::new(CoreValue::Struct(vec![])),
@@ -334,6 +338,9 @@ fn simulate_bool_libfunc(
         }
         BoolConcreteLibfunc::Not(_) => {
             take_inputs!(let [CoreValue::Enum { index, .. }] = inputs);
+            if index > 1 {
+                return Err(LibfuncSimulationError::WrongArgType);
+            }
             (
                 vec![CoreValue::Enum {
                     value: Box::new(CoreValue::Struct(vec![])),
@@ -347,6 +354,9 @@ fn simulate_bool_libfunc(
                 CoreValue::Enum { index: a_index, .. },
                 CoreValue::Enum { index: b_index, .. },
             ] = inputs);
+            if a_index > 1 || b_index > 1 {
+                return Err(LibfuncSimulationError::WrongArgType);
+            }
             (
                 vec![CoreValue::Enum {
                     value: Box::new(CoreValue::Struct(vec![])),
@@ -360,6 +370,9 @@ fn simulate_bool_libfunc(
                 CoreValue::Enum { index: a_index, .. },
                 CoreValue::Enum { index: b_index, .. },
             ] = inputs);
+            if a_index > 1 || b_index > 1 {
+                return Err(LibfuncSimulationError::WrongArgType);
+            }
             (
                 vec![CoreValue::Enum {
                     value: Box::new(CoreValue::Struct(vec![])),
@@ -370,6 +383,9 @@ fn simulate_bool_libfunc(
         }
         BoolConcreteLibfunc::ToFelt252(_) => {
             take_inputs!(let [CoreValue::Enum { index, .. }] = inputs);
+            if index > 1 {
+                return Err(LibfuncSimulationError::WrongArgType);
+            }
             (vec![CoreValue::Felt252(Felt252::from(index))], 0)
         }
     })
@@ -421,6 +437,9 @@ fn simulate_u128_libfunc(
             take_inputs!(let [
                 CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)
             ] = inputs);
+            if rhs == 0 {
+                return Err(LibfuncSimulationError::WrongArgType);
+            }
             (
                 vec![
                     CoreValue::RangeCheck,
@@ -705,6 +724,9 @@ fn simulate_felt252_libfunc(
                     Felt252BinaryOperator::Sub => lhs - rhs,
                     Felt252BinaryOperator::Mul => lhs * rhs,
                     Felt252BinaryOperator::Div => {
+                        if rhs.is_zero() {
+                            return Err(LibfuncSimulationError::WrongArgType);
+                        }
                         lhs.field_div(&NonZeroFelt252::from_felt_unchecked(rhs))
                     }
                 })],
@@ -721,7 +743,11 @@ fn simulate_felt252_libfunc(
                     Felt252BinaryOperator::Sub => value - Felt252::from(c),
                     Felt252BinaryOperator::Mul => value * Felt252::from(c),
                     Felt252BinaryOperator::Div => {
-                        value.field_div(&NonZeroFelt252::from_felt_unchecked(Felt252::from(c)))
+                        let rhs = Felt252::from(c);
+                        if rhs.is_zero() {
+                            return Err(LibfuncSimulationError::WrongArgType);
+                        }
+                        value.field_div(&NonZeroFelt252::from_felt_unchecked(rhs))
                     }
                 })],
                 0,
