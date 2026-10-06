@@ -477,3 +477,171 @@ error[E2039]: Expected type "T", found: "felt252".
  --> lib.cairo:3:27
         Ok(Some(x)) | Err(x) => x,
                           ^
+
+//! > ==========================================================================
+
+//! > Test match guards.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+enum MyEnum {
+    A: u32,
+    B,
+    C: u32,
+}
+fn bump(ref n: u32) -> bool {
+    n += 1;
+    true
+}
+fn foo(a: MyEnum, b: bool, limit: u32) -> u32 {
+    let mut count = 0;
+    match a {
+        MyEnum::A(x) if x > 5_u32 => x,
+        MyEnum::A(x) | MyEnum::C(x) if b => x + 1,
+        MyEnum::A(x) | MyEnum::C(x) if x > limit => x + 2,
+        MyEnum::A(x) | MyEnum::C(x) => x,
+        MyEnum::B if bump(ref count) => count,
+        _ => 0,
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match guard with a non bool condition.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo(a: Option<u32>) -> u32 {
+    match a {
+        Some(x) if x => x,
+        _ => 0,
+    }
+}
+
+//! > expected_diagnostics
+error[E2039]: Expected type "bool", found: "u32".
+ --> lib.cairo:3:20
+        Some(x) if x => x,
+                   ^
+
+//! > ==========================================================================
+
+//! > Test match guard that moves a non copy binding.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn consume(arr: Array<felt252>) -> bool {
+    arr.len() == 0
+}
+fn foo(a: Option<Array<felt252>>) -> usize {
+    match a {
+        Some(arr) if consume(arr) => 1,
+        Some(arr) => arr.len(),
+        None => 0,
+    }
+}
+
+//! > expected_diagnostics
+error[E2204]: A match guard cannot move or modify `arr`, which is bound by the arm's pattern.
+ --> lib.cairo:6:30
+        Some(arr) if consume(arr) => 1,
+                             ^^^
+
+//! > ==========================================================================
+
+//! > Test match guard that reads a non copy binding through a snapshot.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+fn is_empty(arr: @Array<felt252>) -> bool {
+    arr.len() == 0
+}
+fn foo(a: Option<Array<felt252>>) -> usize {
+    match a {
+        Some(arr) if arr.len() > 2 => 1,
+        Some(arr) if is_empty(@arr) => 2,
+        Some(arr) => arr.len(),
+        None => 0,
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match guard that copies a copy binding.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+fn check<T, +Copy<T>, +Drop<T>>(value: T) -> bool {
+    true
+}
+fn foo<T, +Copy<T>, +Drop<T>>(a: Option<(u32, T)>) -> u32 {
+    match a {
+        Some((x, y)) if check(y) && x > 10 => x,
+        _ => 0,
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match guard that assigns to a mut binding.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn bump(ref n: u32) -> bool {
+    n += 1;
+    true
+}
+fn foo(a: Option<u32>) -> u32 {
+    match a {
+        Some(mut n) if bump(ref n) => n,
+        _ => 0,
+    }
+}
+
+//! > expected_diagnostics
+error[E2204]: A match guard cannot move or modify `n`, which is bound by the arm's pattern.
+ --> lib.cairo:7:33
+        Some(mut n) if bump(ref n) => n,
+                                ^
+
+//! > ==========================================================================
+
+//! > Test match guard that moves a binding of an or pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn consume(arr: Array<felt252>) -> bool {
+    arr.len() == 0
+}
+fn foo(a: Result<Array<felt252>, Array<felt252>>) -> usize {
+    match a {
+        Ok(arr) | Err(arr) if consume(arr) => 1,
+        Ok(arr) | Err(arr) => arr.len(),
+    }
+}
+
+//! > expected_diagnostics
+error[E2204]: A match guard cannot move or modify `arr`, which is bound by the arm's pattern.
+ --> lib.cairo:6:39
+        Ok(arr) | Err(arr) if consume(arr) => 1,
+                                      ^^^

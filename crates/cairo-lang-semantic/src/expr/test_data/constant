@@ -1090,3 +1090,56 @@ error[E2127]: This expression is not supported as constant.
  --> lib.cairo:20:27
 const SNAPSHOT_LT: bool = @S { a: 1, b: 2 } < @S { a: 2, b: 2 };
                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Const match with guards.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+const GUARD_TRUE: () = assert(match 3_u8 {
+    x if x == 3_u8 => 5,
+    _ => 0,
+} == 5, 'guard_true');
+
+const GUARD_FALSE_FALLS_THROUGH: () = assert(
+    match 4_u8 {
+        x if x == 3_u8 => 0,
+        _ => 5,
+    } == 5, 'guard_false',
+);
+
+const GUARD_ON_OR_PATTERN: () = assert(
+    match 2_u8 {
+        1 | 2 if false => 0,
+        1 | 2 => 5,
+        _ => 0,
+    } == 5, 'guard_or_pattern',
+);
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Const match with a guard that is not a constant.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+const GUARD_NOT_CONSTANT: u8 = match 1_u8 {
+    x if is_even(x) => 1,
+    _ => 2,
+};
+
+fn is_even(x: u8) -> bool {
+    x % 2 == 0
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:2:10
+    x if is_even(x) => 1,
+         ^^^^^^^^^^

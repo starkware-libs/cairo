@@ -194,6 +194,7 @@ false
     │   │       │       │   │   ├── item #0 (kind: MatchArm)
     │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
     │   │       │       │   │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: ExprFunctionCall)
     │   │       │       │   │   │       ├── path (kind: ExprPath)
@@ -217,6 +218,7 @@ false
     │   │       │       │   │   ├── item #1 (kind: MatchArm)
     │   │       │       │   │   │   ├── patterns (kind: PatternListOr)
     │   │       │       │   │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: ExprFunctionCall)
     │   │       │       │   │   │       ├── path (kind: ExprPath)
@@ -390,6 +392,7 @@ false
     │           │       │   │   ├── item #0 (kind: MatchArm)
     │           │       │   │   │   ├── patterns (kind: PatternListOr)
     │           │       │   │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
+    │           │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │           │       │   │   │   └── expression (kind: ExprListParenthesized)
     │           │       │   │   │       ├── lparen (kind: TokenLParen): '('
@@ -436,6 +439,7 @@ false
     │           │       │   │   ├── item #1 (kind: MatchArm)
     │           │       │   │   │   ├── patterns (kind: PatternListOr)
     │           │       │   │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │           │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │           │       │   │   │   └── expression (kind: ExprFunctionCall)
     │           │       │   │   │       ├── path (kind: ExprPath)
@@ -888,6 +892,7 @@ false
     │   │       │       │   │   │   │       ├── token (kind: TokenLiteralNumber): '0'
     │   │       │       │   │   │   │       └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -936,6 +941,7 @@ false
     │   │       │       │   │   │   │       ├── token (kind: TokenUnderscore): '_'
     │   │       │       │   │   │   │       └── trailing_trivia (kind: Trivia)
     │   │       │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │   │       │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1309,6 +1315,7 @@ false
     │           │       │   │   │   │       ├── token (kind: TokenLiteralNumber): '0'
     │           │       │   │   │   │       └── trailing_trivia (kind: Trivia)
     │           │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
+    │           │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │           │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │           │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │           │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -1402,6 +1409,7 @@ false
     │           │       │   │   │   │       ├── token (kind: TokenUnderscore): '_'
     │           │       │   │   │   │       └── trailing_trivia (kind: Trivia)
     │           │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
+    │           │       │   │   │   ├── guard_clause (kind: OptionMatchGuardClauseEmpty) []
     │           │       │   │   │   ├── arrow (kind: TerminalMatchArrow)
     │           │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │           │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
