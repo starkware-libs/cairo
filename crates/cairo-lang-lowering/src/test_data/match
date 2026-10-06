@@ -3307,3 +3307,623 @@ Statements:
 End:
   Match(match test::get_a() {
   })
+
+//! > ==========================================================================
+
+//! > Match with a guard falling through to the next arm.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+#[target_function]
+fn foo(a: Option<felt252>, b: bool) -> felt252 {
+    match a {
+        Some(x) if b => x,
+        Some(x) => x + 1,
+        None => 0,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::felt252>, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v4) => blk2,
+    bool::True(v5) => blk3,
+  })
+
+blk2:
+Statements:
+  (v6: core::felt252) <- 1
+  (v7: core::felt252) <- core::felt252_add(v2, v6)
+End:
+  Return(v7)
+
+blk3:
+Statements:
+End:
+  Return(v2)
+
+blk4:
+Statements:
+  (v8: core::felt252) <- 0
+End:
+  Return(v8)
+
+//! > ==========================================================================
+
+//! > Match with a guard that reads a non copy payload through a snapshot and falls through to an arm that moves it.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+fn take(a: Array<felt252>) -> felt252 {
+    a.len().into()
+}
+#[target_function]
+fn foo(a: Option<Array<felt252>>) -> felt252 {
+    match a {
+        Some(x) if x.len() > 1 => 2,
+        Some(y) => take(y),
+        None => 0,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::RangeCheck, v1: core::option::Option::<core::array::Array::<core::felt252>>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk4,
+  })
+
+blk1:
+Statements:
+  (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v2)
+  (v6: core::integer::u32) <- core::array::array_len::<core::felt252>(v5)
+  (v7: core::integer::u32) <- 1
+End:
+  Match(match core::integer::u32_overflowing_sub(v0, v7, v6) {
+    Result::Ok(v8, v9) => blk2,
+    Result::Err(v10, v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v12: core::integer::u32) <- core::array::array_len::<core::felt252>(v5)
+  (v13: core::felt252) <- core::integer::u32_to_felt252(v12)
+End:
+  Return(v8, v13)
+
+blk3:
+Statements:
+  (v14: core::felt252) <- 2
+End:
+  Return(v10, v14)
+
+blk4:
+Statements:
+  (v15: core::felt252) <- 0
+End:
+  Return(v0, v15)
+
+//! > ==========================================================================
+
+//! > Match with a guard that reads a non copy scrutinee through a snapshot and falls through to an arm that moves it.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+fn take(a: Array<felt252>) -> felt252 {
+    a.len().into()
+}
+#[target_function]
+fn foo(a: Array<felt252>) -> felt252 {
+    match a {
+        x if x.len() > 1 => 2,
+        y => take(y),
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::RangeCheck, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>, v3: @core::array::Array::<core::felt252>) <- snapshot(v1)
+  (v4: core::integer::u32) <- core::array::array_len::<core::felt252>(v3)
+  (v5: core::integer::u32) <- 1
+End:
+  Match(match core::integer::u32_overflowing_sub(v0, v5, v4) {
+    Result::Ok(v6, v7) => blk1,
+    Result::Err(v8, v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v10: core::integer::u32) <- core::array::array_len::<core::felt252>(v3)
+  (v11: core::felt252) <- core::integer::u32_to_felt252(v10)
+End:
+  Return(v6, v11)
+
+blk2:
+Statements:
+  (v12: core::felt252) <- 2
+End:
+  Return(v8, v12)
+
+//! > ==========================================================================
+
+//! > Match with a guard that changes an outer variable.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+fn bump(ref n: felt252) -> bool {
+    n += 1;
+    n == 2
+}
+#[target_function]
+fn foo(a: Option<felt252>, mut count: felt252) -> felt252 {
+    match a {
+        Some(x) if bump(ref count) => x + count,
+        Some(x) => x - count,
+        None => count,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::felt252>, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk4,
+  })
+
+blk1:
+Statements:
+  (v4: core::felt252) <- 1
+  (v5: core::felt252) <- core::felt252_add(v1, v4)
+  (v6: core::felt252) <- 2
+  (v7: core::felt252) <- core::felt252_sub(v5, v6)
+End:
+  Match(match core::felt252_is_zero(v7) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v8) => blk3,
+  })
+
+blk2:
+Statements:
+  (v9: core::felt252) <- core::felt252_add(v2, v5)
+End:
+  Return(v9)
+
+blk3:
+Statements:
+  (v10: core::felt252) <- core::felt252_sub(v2, v5)
+End:
+  Return(v10)
+
+blk4:
+Statements:
+End:
+  Return(v1)
+
+//! > ==========================================================================
+
+//! > Match with a guard on an or pattern.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B,
+    C: felt252,
+}
+#[target_function]
+fn foo(a: MyEnum, b: bool) -> felt252 {
+    match a {
+        MyEnum::A(x) | MyEnum::C(x) if b => x,
+        MyEnum::A(y) => y + 1,
+        MyEnum::C(z) => z + 2,
+        MyEnum::B => 0,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::MyEnum, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk4,
+    MyEnum::C(v4) => blk5,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v5) => blk2,
+    bool::True(v6) => blk3,
+  })
+
+blk2:
+Statements:
+  (v7: core::felt252) <- 1
+  (v8: core::felt252) <- core::felt252_add(v2, v7)
+End:
+  Return(v8)
+
+blk3:
+Statements:
+End:
+  Return(v2)
+
+blk4:
+Statements:
+  (v9: core::felt252) <- 0
+End:
+  Return(v9)
+
+blk5:
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v10) => blk6,
+    bool::True(v11) => blk7,
+  })
+
+blk6:
+Statements:
+  (v12: core::felt252) <- 2
+  (v13: core::felt252) <- core::felt252_add(v4, v12)
+End:
+  Return(v13)
+
+blk7:
+Statements:
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Match with a guard on overlapping or pattern alternatives with different bindings.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+#[target_function]
+fn foo(a: (felt252, felt252)) -> felt252 {
+    match a {
+        (x, _) | (_, x) if x == 5 => x,
+        _ => 0,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: (core::felt252, core::felt252)
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
+  (v3: core::felt252) <- 5
+  (v4: core::felt252) <- core::felt252_sub(v1, v3)
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v5) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+  (v6: core::felt252) <- core::felt252_sub(v2, v3)
+End:
+  Match(match core::felt252_is_zero(v6) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v7) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Return(v2)
+
+blk4:
+Statements:
+  (v8: core::felt252) <- 0
+End:
+  Return(v8)
+
+//! > ==========================================================================
+
+//! > Match with guards on nested enums.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+#[target_function]
+fn foo(a: Option<Result<felt252, felt252>>, b: bool) -> felt252 {
+    match a {
+        Some(Ok(x)) if b => x,
+        Some(Ok(x)) => x + 1,
+        Some(Err(e)) if b => e,
+        Some(Err(_)) | None => 0,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::result::Result::<core::felt252, core::felt252>>, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk8,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Result::Ok(v4) => blk2,
+    Result::Err(v5) => blk5,
+  })
+
+blk2:
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v6) => blk3,
+    bool::True(v7) => blk4,
+  })
+
+blk3:
+Statements:
+  (v8: core::felt252) <- 1
+  (v9: core::felt252) <- core::felt252_add(v4, v8)
+End:
+  Return(v9)
+
+blk4:
+Statements:
+End:
+  Return(v4)
+
+blk5:
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v10) => blk6,
+    bool::True(v11) => blk7,
+  })
+
+blk6:
+Statements:
+End:
+  Goto(blk9, {})
+
+blk7:
+Statements:
+End:
+  Return(v5)
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {})
+
+blk9:
+Statements:
+  (v12: core::felt252) <- 0
+End:
+  Return(v12)
+
+//! > ==========================================================================
+
+//! > Match with a guard on the last arm before the wildcard.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+#[target_function]
+fn foo(a: Option<felt252>, b: bool) -> felt252 {
+    match a {
+        None => 0,
+        Some(x) if b => x,
+        _ => 1,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::felt252>, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v4) => blk2,
+    bool::True(v5) => blk3,
+  })
+
+blk2:
+Statements:
+  (v6: core::felt252) <- 1
+End:
+  Return(v6)
+
+blk3:
+Statements:
+End:
+  Return(v2)
+
+blk4:
+Statements:
+  (v7: core::felt252) <- 0
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Match on a value with guards.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+#[target_function]
+fn foo(a: felt252, b: bool) -> felt252 {
+    match a {
+        0 if b => 1,
+        0 => 2,
+        _ => 3,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::felt252, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v3) => blk2,
+    bool::True(v4) => blk3,
+  })
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 2
+End:
+  Return(v5)
+
+blk3:
+Statements:
+  (v6: core::felt252) <- 1
+End:
+  Return(v6)
+
+blk4:
+Statements:
+  (v7: core::felt252) <- 3
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Match with all arms guarded is non exhaustive.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B,
+}
+#[target_function]
+fn foo(a: MyEnum, b: bool) -> felt252 {
+    match a {
+        MyEnum::A(x) if b => x,
+        MyEnum::B if b => 0,
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3004]: Match is non-exhaustive: `A(_)` not covered.
+ --> lib.cairo:7:5-10:5
+      match a {
+ _____^
+| ...
+|     }
+|_____^
+
+error[E3004]: Match is non-exhaustive: `B(_)` not covered.
+ --> lib.cairo:7:5-10:5
+      match a {
+ _____^
+| ...
+|     }
+|_____^
+
+//! > lowering_flat
+<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>

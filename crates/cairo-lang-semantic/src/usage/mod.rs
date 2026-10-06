@@ -174,6 +174,13 @@ impl<'db> Usages<'db> {
         usages
     }
 
+    /// Computes the [Usage] of a single expression, as it is evaluated within its enclosing scope.
+    pub fn for_expr(arenas: &Arenas<'db>, expr: ExprId) -> Usage<'db> {
+        let mut usage = Usage::default();
+        Self { usages: Default::default() }.handle_expr(arenas, expr, &mut usage);
+        usage
+    }
+
     pub fn handle_closure(
         &mut self,
         arenas: &Arenas<'db>,
@@ -362,6 +369,9 @@ impl<'db> Usages<'db> {
                 for arm in &expr.arms {
                     for pattern in &arm.patterns {
                         Self::handle_pattern(&arenas.patterns, *pattern, current);
+                    }
+                    if let Some(guard) = arm.guard {
+                        self.handle_expr(arenas, guard, current);
                     }
                     self.handle_expr(arenas, arm.expression, current);
                 }
