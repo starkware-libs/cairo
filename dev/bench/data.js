@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791248074068,
+  "lastUpdate": 1791248220163,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -36491,6 +36491,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/913019ad4906ca089bba858dc7df7cffd623eb52"
         },
         "date": 1791161423090,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bruce0X",
+            "username": "Bruce039",
+            "email": "109469941+Bruce039@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "3d67521516e876593c6cf9add1ad6f538d931cf9",
+          "message": "lowering: don't forward a moved non-copyable enum payload in const folding (#10388)",
+          "timestamp": "2026-10-05T10:01:54Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/3d67521516e876593c6cf9add1ad6f538d931cf9"
+        },
+        "date": 1791248219878,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
