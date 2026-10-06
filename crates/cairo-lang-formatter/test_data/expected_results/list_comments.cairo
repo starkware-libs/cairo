@@ -79,6 +79,14 @@ fn trailing_comment_before_close() {
     );
 }
 
+fn fixed_size_array_comment_before_close() {
+    let a = [
+        1,
+        2,
+        // c
+    ];
+}
+
 fn trailing_comment_on_item_line() {
     foo(
         1, // Trailing the first argument.

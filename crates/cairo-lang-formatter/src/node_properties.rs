@@ -4,7 +4,6 @@ use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
-use itertools::Itertools;
 use salsa::Database;
 
 use crate::formatter_impl::{
@@ -1128,12 +1127,15 @@ fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'
 fn list_contains_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
     contains_single_line_comment(db, node)
         || node.parent(db).is_some_and(|parent| {
-            parent.get_children(db).iter().tuple_windows().any(|(current, next)| {
-                current == node
-                    && next.tokens(db).next().is_some_and(|terminal| {
-                        contains_single_line_comment(db, &terminal.get_children(db)[0])
-                    })
-            })
+            parent
+                .get_children(db)
+                .iter()
+                .skip_while(|child| *child != node)
+                .skip(1)
+                .find_map(|child| child.tokens(db).next())
+                .is_some_and(|terminal| {
+                    contains_single_line_comment(db, &terminal.get_children(db)[0])
+                })
         })
 }
 
