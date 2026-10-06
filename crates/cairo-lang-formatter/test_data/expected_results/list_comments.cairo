@@ -116,3 +116,24 @@ fn trailing_comment_on_element_line() {
         0,
     );
 }
+
+fn comment_inside_closure_arg() {
+    foo(|x| {
+        // c
+        x
+    });
+}
+
+fn comment_inside_closure_in_tuple() {
+    let t = (1, |x| {
+        // c
+        x
+    });
+}
+
+fn comment_inside_nested_call() {
+    foo(bar(
+        // c
+        1,
+    ));
+}
