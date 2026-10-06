@@ -80,11 +80,31 @@ fn trailing_comment_before_close() {
 }
 
 fn trailing_comment_on_item_line() {
-    foo(1, // Trailing the first argument.
-    0);
+    foo(
+        1, // Trailing the first argument.
+        0,
+    );
 }
 
 fn trailing_comment_on_last_item_line() {
-    foo(1, 0 // Trailing the last argument.
+    foo(
+        1,
+        0 // Trailing the last argument.
+    );
+}
+
+fn trailing_comment_on_param_line(
+    a: felt252, // Trailing the first parameter.
+    b: felt252,
+) {}
+
+fn trailing_comment_on_element_line() {
+    let arr = array![
+        1, // Trailing the first element.
+        0
+    ];
+    let t = (
+        1, // Trailing the first element.
+        0,
     );
 }
