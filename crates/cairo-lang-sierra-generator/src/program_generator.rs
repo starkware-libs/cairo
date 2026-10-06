@@ -177,8 +177,12 @@ pub fn priv_libfunc_dependencies(
     )
     // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
     // the libfuncs in the [`CoreLibfunc`] structured enum.
-    .unwrap_or_else(|err| panic!("Failed to specialize: `{}`. Error: {err}",
-        DebugReplacer { db }.replace_libfunc_id(&libfunc_id)));
+    .unwrap_or_else(|err| {
+        panic!(
+            "Failed to specialize: `{}`. Error: {err}",
+            DebugReplacer { db }.replace_libfunc_id(&libfunc_id)
+        )
+    });
     // Collecting types as a vector since the set should be very small.
     let mut all_types = vec![];
     let mut add_ty = |ty: ConcreteTypeId| {
