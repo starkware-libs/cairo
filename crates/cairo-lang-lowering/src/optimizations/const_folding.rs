@@ -745,7 +745,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     /// Returns The specialized call statement if it was specialized, or None otherwise.
     ///
     /// Specialization occurs only if `priv_should_specialize` returns true.
-    /// Additionally specialization of a callee the with the same base as the caller is currently
+    /// Additionally specialization of a callee with the same base as the caller is currently
     /// not supported.
     fn try_specialize_call(&self, call_stmt: &mut StatementCall<'db>) -> Option<Statement<'db>> {
         if call_stmt.with_coupon {

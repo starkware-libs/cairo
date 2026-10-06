@@ -647,7 +647,7 @@ fn is_associated_item_constraints_enabled(db: &dyn Database, module_id: ModuleId
         .is_some_and(|c| c.settings.experimental_features.associated_item_constraints)
 }
 
-/// Computes the semantic model of a generic parameter give its ast.
+/// Computes the semantic model of a generic parameter given its ast.
 fn semantic_from_generic_param_ast<'db>(
     db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
