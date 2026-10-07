@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791334534336,
+  "lastUpdate": 1791334687519,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -36791,6 +36791,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/3d67521516e876593c6cf9add1ad6f538d931cf9"
         },
         "date": 1791248219878,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "fmterrors",
+            "username": "fmterrors",
+            "email": "fmterrors@outlook.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "6274b6140e1f89551af2f0d5e423d00a6da6e52f",
+          "message": "docs: fix typos and grammar in comments (#10444)\n\nSigned-off-by: fmterrors <fmterrors@outlook.com>",
+          "timestamp": "2026-10-06T12:52:43Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/6274b6140e1f89551af2f0d5e423d00a6da6e52f"
+        },
+        "date": 1791334687228,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
