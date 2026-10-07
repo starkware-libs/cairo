@@ -14,6 +14,8 @@ use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use num_bigint::BigUint;
+// Only linked to enable its `vendored` feature.
+use openssl as _;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 

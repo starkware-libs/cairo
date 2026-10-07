@@ -6,6 +6,9 @@ use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_compiler::{CompilerConfig, compile_cairo_project_at_path};
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
+// `dhat` overrides the allocator when both features are enabled.
+#[cfg(all(feature = "mimalloc", feature = "dhat"))]
+use mimalloc as _;
 
 #[cfg(all(feature = "mimalloc", not(feature = "dhat")))]
 #[global_allocator]

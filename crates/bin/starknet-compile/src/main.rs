@@ -8,6 +8,9 @@ use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_starknet::compile::starknet_compile;
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use clap::Parser;
+// `dhat` overrides the allocator when both features are enabled.
+#[cfg(all(feature = "mimalloc", feature = "dhat"))]
+use mimalloc as _;
 
 #[cfg(all(feature = "mimalloc", not(feature = "dhat")))]
 #[global_allocator]
