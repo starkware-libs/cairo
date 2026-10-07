@@ -137,3 +137,18 @@ fn comment_inside_nested_call() {
         1,
     ));
 }
+
+fn comment_after_opening_delimiter() {
+    foo( // c
+        1,
+        2,
+    );
+    let t = ( // c
+        1,
+        2,
+    );
+    let a = [ // c
+        1,
+        2,
+    ];
+}

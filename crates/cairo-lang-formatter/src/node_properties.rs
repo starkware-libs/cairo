@@ -1123,27 +1123,32 @@ fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'
 }
 
 /// Returns whether a list has a single-line comment attached to its structure: around an item or a
-/// separator, or before the closing delimiter. Comments nested inside an item do not count.
+/// separator, or next to the enclosing delimiters. Comments nested inside an item do not count.
 fn list_contains_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
     let leading_comment =
         |terminal: &SyntaxNode<'_>| contains_single_line_comment(db, &terminal.get_children(db)[0]);
+    let trailing_comment =
+        |terminal: &SyntaxNode<'_>| contains_single_line_comment(db, &terminal.get_children(db)[2]);
     let edge_comment = |child: &SyntaxNode<'_>| {
         let mut terminals = child.tokens(db);
         let Some(first) = terminals.next() else {
             return false;
         };
-        let last = terminals.last().unwrap_or(first);
-        leading_comment(&first) || contains_single_line_comment(db, &last.get_children(db)[2])
+        leading_comment(&first) || trailing_comment(&terminals.last().unwrap_or(first))
     };
     node.get_children(db).iter().any(edge_comment)
         || node.parent(db).is_some_and(|parent| {
-            parent
-                .get_children(db)
+            let siblings = parent.get_children(db);
+            let position = siblings.iter().position(|child| child == node).unwrap();
+            siblings[position + 1..]
                 .iter()
-                .skip_while(|child| *child != node)
-                .skip(1)
                 .find_map(|child| child.tokens(db).next())
                 .is_some_and(|terminal| leading_comment(&terminal))
+                || siblings[..position]
+                    .iter()
+                    .rev()
+                    .find_map(|child| child.tokens(db).last())
+                    .is_some_and(|terminal| trailing_comment(&terminal))
         })
 }
 
