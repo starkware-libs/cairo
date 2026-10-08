@@ -465,9 +465,10 @@ fn test_serde() {
     ba.serialize(ref serialized);
     assert_eq!(
         serialized.span(),
-        [0, // data len
-        0x68656c6c6f, // pending_word
-        5 // pending_word_len
+        [
+            0, // data len
+            0x68656c6c6f, // pending_word
+            5 // pending_word_len
         ].span(),
     );
 

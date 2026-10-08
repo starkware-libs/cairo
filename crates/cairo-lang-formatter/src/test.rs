@@ -26,8 +26,8 @@ use crate::{FormatterConfig, get_formatted_file};
     false
 )]
 #[test_case(
-    "test_data/cairo_files/parameter_list_comments.cairo",
-    "test_data/expected_results/parameter_list_comments.cairo",
+    "test_data/cairo_files/list_comments.cairo",
+    "test_data/expected_results/list_comments.cairo",
     false,
     false,
     false,

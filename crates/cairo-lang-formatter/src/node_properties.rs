@@ -4,7 +4,6 @@ use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
-use itertools::Itertools;
 use salsa::Database;
 
 use crate::formatter_impl::{
@@ -535,7 +534,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         true,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -549,7 +548,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -565,7 +564,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -576,7 +575,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     }
                 }
                 SyntaxKind::ParamList => {
-                    let is_optional = !param_list_contains_single_line_comment(db, self);
+                    let is_optional = !list_contains_comment(db, self);
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
@@ -594,7 +593,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         true,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -636,7 +635,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -681,7 +680,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         6,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -695,7 +694,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         21,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -861,7 +860,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    true,
+                    !list_contains_comment(db, self),
                     true,
                 ),
                 breaking_frequency: 2,
@@ -870,16 +869,17 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    !param_list_contains_single_line_comment(db, self),
+                    !list_contains_comment(db, self),
                     true,
                 ),
                 breaking_frequency: 2,
             },
             SyntaxKind::ArgList => {
+                let has_comment = list_contains_comment(db, self);
                 let mut properties = BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    true,
+                    !has_comment,
                     true,
                 );
                 if self.parent_kind(db) == Some(SyntaxKind::ArgListBracketed) {
@@ -899,13 +899,17 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                         }
                     }
                 }
+                if has_comment {
+                    properties.set_line_by_line();
+                }
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
             SyntaxKind::ExprList => {
+                let has_comment = list_contains_comment(db, self);
                 let mut properties = BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    true,
+                    !has_comment,
                     true,
                 );
 
@@ -933,6 +937,9 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                             properties.set_line_by_line();
                         }
                     }
+                }
+                if has_comment {
+                    properties.set_line_by_line();
                 }
 
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
@@ -1118,20 +1125,33 @@ fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'
         })
 }
 
-/// Returns whether a parameter list contains a line comment, including one attached to the
-/// following closing parenthesis as leading trivia.
-fn param_list_contains_single_line_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
-    contains_single_line_comment(db, node)
+/// Returns whether a list has a single-line comment attached to its structure: around an item or a
+/// separator, or next to the enclosing delimiters. Comments nested inside an item do not count.
+fn list_contains_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    let leading_comment =
+        |terminal: &SyntaxNode<'_>| contains_single_line_comment(db, &terminal.get_children(db)[0]);
+    let trailing_comment =
+        |terminal: &SyntaxNode<'_>| contains_single_line_comment(db, &terminal.get_children(db)[2]);
+    let edge_comment = |child: &SyntaxNode<'_>| {
+        let mut terminals = child.tokens(db);
+        let Some(first) = terminals.next() else {
+            return false;
+        };
+        leading_comment(&first) || trailing_comment(&terminals.last().unwrap_or(first))
+    };
+    node.get_children(db).iter().any(edge_comment)
         || node.parent(db).is_some_and(|parent| {
-            parent.get_children(db).iter().tuple_windows().any(|(current, next)| {
-                if current == node
-                    && let Some(rparen) = ast::TerminalRParen::cast(db, *next)
-                {
-                    contains_single_line_comment(db, &rparen.leading_trivia(db).as_syntax_node())
-                } else {
-                    false
-                }
-            })
+            let siblings = parent.get_children(db);
+            let position = siblings.iter().position(|child| child == node).unwrap();
+            siblings[position + 1..]
+                .iter()
+                .find_map(|child| child.tokens(db).next())
+                .is_some_and(|terminal| leading_comment(&terminal))
+                || siblings[..position]
+                    .iter()
+                    .rev()
+                    .find_map(|child| child.tokens(db).last())
+                    .is_some_and(|terminal| trailing_comment(&terminal))
         })
 }
 
