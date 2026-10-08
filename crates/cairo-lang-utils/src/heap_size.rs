@@ -1,6 +1,7 @@
 use std::sync::LazyLock;
 
 use crate::ordered_hash_map::OrderedHashMap;
+use crate::ordered_hash_set::OrderedHashSet;
 
 /// Environment variable to control whether shared allocations (Arc, SmolStr) are counted.
 /// When set to "1" or "true", these types will include their heap allocations in the count.
@@ -185,6 +186,12 @@ impl<T: HeapSize> HeapSize for std::collections::BTreeSet<T> {
 impl<K: HeapSize, V: HeapSize, BH> HeapSize for OrderedHashMap<K, V, BH> {
     fn heap_size(&self) -> usize {
         self.iter().map(|(k, v)| k.heap_size() + v.heap_size()).sum()
+    }
+}
+
+impl<K: HeapSize, BH> HeapSize for OrderedHashSet<K, BH> {
+    fn heap_size(&self) -> usize {
+        self.iter().map(|k| k.heap_size()).sum()
     }
 }
 
