@@ -957,91 +957,61 @@ fn foo(n: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+  (v2: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
 End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk2,
+    PanicResult::Err(v5) => blk3,
   })
 
 blk1:
 Statements:
-  (v3: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
+  (v6: (core::felt252,)) <- struct_construct(v1)
+  (v7: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
 End:
-  Match(match_enum(v3) {
-    PanicResult::Ok(v4) => blk4,
-    PanicResult::Err(v6) => blk5,
-  })
+  Return(v7)
 
 blk2:
 Statements:
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v8: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+  (v4: core::felt252) <- struct_destructure(v3)
 End:
-  Return(v8)
+  Goto(blk1, {v4 -> v1})
 
 blk3:
 Statements:
-  (v9: (core::felt252,)) <- struct_construct(v1)
-  (v10: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v9)
+  (v8: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v5)
 End:
-  Return(v10)
-
-blk4:
-Statements:
-  (v5: core::felt252) <- struct_destructure(v4)
-End:
-  Goto(blk3, {v5 -> v1})
-
-blk5:
-Statements:
-  (v11: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v6)
-End:
-  Return(v11)
+  Return(v8)
 
 //! > after
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+  (v2: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
 End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk2,
+    PanicResult::Err(v5) => blk3,
   })
 
 blk1:
 Statements:
-  (v3: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
+  (v6: (core::felt252,)) <- struct_construct(v1)
+  (v7: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
 End:
-  Match(match_enum(v3) {
-    PanicResult::Ok(v4) => blk4,
-    PanicResult::Err(v6) => blk5,
-  })
+  Return(v7)
 
 blk2:
 Statements:
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v8: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+  (v4: core::felt252) <- struct_destructure(v3)
 End:
-  Return(v8)
+  Goto(blk1, {v4 -> v1})
 
 blk3:
 Statements:
-  (v9: (core::felt252,)) <- struct_construct(v1)
-  (v10: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v9)
+  (v8: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v5)
 End:
-  Return(v10)
-
-blk4:
-Statements:
-  (v5: core::felt252) <- struct_destructure(v4)
-End:
-  Goto(blk3, {v5 -> v1})
-
-blk5:
-Statements:
-  (v11: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v6)
-End:
-  Return(v11)
+  Return(v8)
 
 //! > lowering_diagnostics
 
@@ -1464,91 +1434,61 @@ fn foo(n: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+  (v2: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
 End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk2,
+    PanicResult::Err(v5) => blk3,
   })
 
 blk1:
 Statements:
-  (v3: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
+  (v6: (core::felt252,)) <- struct_construct(v1)
+  (v7: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
 End:
-  Match(match_enum(v3) {
-    PanicResult::Ok(v4) => blk4,
-    PanicResult::Err(v6) => blk5,
-  })
+  Return(v7)
 
 blk2:
 Statements:
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v8: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+  (v4: core::felt252) <- struct_destructure(v3)
 End:
-  Return(v8)
+  Goto(blk1, {v4 -> v1})
 
 blk3:
 Statements:
-  (v9: (core::felt252,)) <- struct_construct(v1)
-  (v10: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v9)
+  (v8: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v5)
 End:
-  Return(v10)
-
-blk4:
-Statements:
-  (v5: core::felt252) <- struct_destructure(v4)
-End:
-  Goto(blk3, {v5 -> v1})
-
-blk5:
-Statements:
-  (v11: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v6)
-End:
-  Return(v11)
+  Return(v8)
 
 //! > after
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+  (v2: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
 End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk2,
+    PanicResult::Err(v5) => blk3,
   })
 
 blk1:
 Statements:
-  (v3: core::panics::PanicResult::<(core::felt252,)>) <- test::bar(v0)
+  (v6: (core::felt252,)) <- struct_construct(v1)
+  (v7: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
 End:
-  Match(match_enum(v3) {
-    PanicResult::Ok(v4) => blk4,
-    PanicResult::Err(v6) => blk5,
-  })
+  Return(v7)
 
 blk2:
 Statements:
-  (v7: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v8: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+  (v4: core::felt252) <- struct_destructure(v3)
 End:
-  Return(v8)
+  Goto(blk1, {v4 -> v1})
 
 blk3:
 Statements:
-  (v9: (core::felt252,)) <- struct_construct(v1)
-  (v10: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v9)
+  (v8: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v5)
 End:
-  Return(v10)
-
-blk4:
-Statements:
-  (v5: core::felt252) <- struct_destructure(v4)
-End:
-  Goto(blk3, {v5 -> v1})
-
-blk5:
-Statements:
-  (v11: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v6)
-End:
-  Return(v11)
+  Return(v8)
 
 //! > lowering_diagnostics
 

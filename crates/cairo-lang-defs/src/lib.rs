@@ -8,5 +8,6 @@ pub mod ids;
 pub mod patcher;
 pub mod plugin;
 pub mod plugin_utils;
+pub mod stable_order;
 #[cfg(test)]
 mod test;
