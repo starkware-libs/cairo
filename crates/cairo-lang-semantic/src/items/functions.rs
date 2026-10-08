@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
     TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
-use cairo_lang_filesystem::ids::{SmolStrId, Tracked, UnstableSalsaId};
+use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -673,12 +673,6 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
             GenericFunctionWithBodyId::Trait(trait_func) => trait_func.trait_function(db),
         };
         Ok(trait_function == db.core_info().panic_destruct_fn)
-    }
-}
-
-impl<'db> UnstableSalsaId for ConcreteFunctionWithBodyId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.as_intern_id()
     }
 }
 
