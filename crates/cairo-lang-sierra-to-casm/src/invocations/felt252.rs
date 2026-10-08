@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuilder, Label, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_sierra::extensions::felt252::{
@@ -51,7 +51,7 @@ pub fn build_felt252_op_with_var(
     let (res_var, extra_costs) = bin_op_helper(&mut casm_builder, a, b, op);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[res_var]], None)],
+        [(Label::FALLTHROUGH, &[&[res_var]], None)],
         CostValidationInfo { builtin_infos: vec![], extra_costs: Some([extra_costs]) },
     ))
 }
@@ -70,7 +70,7 @@ fn build_felt252_op_with_const(
     let (res_var, extra_costs) = bin_op_helper(&mut casm_builder, a, c, op);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[res_var]], None)],
+        [(Label::FALLTHROUGH, &[&[res_var]], None)],
         CostValidationInfo { builtin_infos: vec![], extra_costs: Some([extra_costs]) },
     ))
 }

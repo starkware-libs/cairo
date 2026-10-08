@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::IntOperator;
@@ -54,6 +54,7 @@ fn build_u128_overflowing_add(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            label NoOverflow, Target;
             let orig_range_check = range_check;
             tempvar no_overflow;
             tempvar a_plus_b = a + b;
@@ -71,8 +72,8 @@ fn build_u128_overflowing_add(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[a_plus_b]], None),
-            ("Target", &[&[range_check], &[wrapping_a_plus_b]], Some(failure_handle_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[a_plus_b]], None),
+            (Target, &[&[range_check], &[wrapping_a_plus_b]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -103,7 +104,7 @@ fn build_u128_guarantee_mul(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[res_high], &[res_low], &[a, b, res_high, res_low]], None)],
+        [(Label::FALLTHROUGH, &[&[res_high], &[res_low], &[a, b, res_high, res_low]], None)],
         Default::default(),
     ))
 }
@@ -218,7 +219,7 @@ fn build_u128_mul_guarantee_verify(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check]], None)],
+        [(Label::FALLTHROUGH, &[&[range_check]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck,
@@ -249,6 +250,7 @@ fn build_u128_from_felt252(
         deref value;
     };
     casm_build_extend! {casm_builder,
+            label NoOverflow, XNotMaxX, WriteRcedValue, FailureHandle;
             let orig_range_check = range_check;
             tempvar is_u128;
             const u128_limit = u128_bound.clone();
@@ -295,8 +297,8 @@ fn build_u128_from_felt252(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[value]], None),
-            ("FailureHandle", &[&[range_check], &[x], &[y]], Some(failure_handle_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[value]], None),
+            (FailureHandle, &[&[range_check], &[x], &[y]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -386,7 +388,7 @@ pub fn build_u128_byte_reverse(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[bitwise], &[result]], None)],
+        [(Label::FALLTHROUGH, &[&[bitwise], &[result]], None)],
         Default::default(),
     ))
 }

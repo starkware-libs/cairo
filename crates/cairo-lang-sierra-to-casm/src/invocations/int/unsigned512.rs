@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::unsigned512::Uint512Concrete;
@@ -40,6 +40,7 @@ fn build_u512_safe_divmod_by_u256(
     };
 
     casm_build_extend! {casm_builder,
+        label HighDiff, After;
         const zero = 0;
         const one = 1;
         const u128_bound_minus_4 = u128::MAX - 3;
@@ -108,6 +109,7 @@ fn build_u512_safe_divmod_by_u256(
         hint WideMul128 { lhs: quotient2, rhs: divisor0 } into { low: q2d0_low, high: q2d0_high };
     }
     casm_build_extend! {casm_builder,
+        label DIVISOR1_EQ_ZERO, QUOTIENT2_LESS_THAN_DIVISOR1, MERGE, QUOTIENT3_LESS_THAN_DIVISOR0;
         // Validating `quotient * divisor + remainder - dividend = 0`.
         // Validate limb0.
         tempvar part0 = q0d0_low + remainder0;
@@ -186,7 +188,7 @@ fn build_u512_safe_divmod_by_u256(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [(
-            "Fallthrough",
+            Label::FALLTHROUGH,
             &[
                 &[range_check],
                 &[quotient0, quotient1, quotient2, quotient3],
