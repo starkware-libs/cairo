@@ -142,11 +142,13 @@ test_expr_diagnostics
 {}
 
 //! > module_code
-#[inline(always // Small enough to inline.
+#[inline(
+    always // Small enough to inline.
 )]
 fn foo() {}
 
-#[inline(never // Keep it out of the callers.
+#[inline(
+    never // Keep it out of the callers.
 )]
 fn bar() {}
 
