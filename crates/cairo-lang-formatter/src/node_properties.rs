@@ -1114,12 +1114,15 @@ fn is_pattern_of_block_match_arm(db: &dyn Database, node: &SyntaxNode<'_>) -> bo
 /// For statement lists, returns if we want these as a single line.
 fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
     // Currently, we only want single line blocks for match arms or generic args, with a single
-    // statement, with no single line comments.
+    // statement, with no single line comments, including one before the closing brace.
     matches!(
         node.grandparent_kind(db),
         Some(SyntaxKind::MatchArm | SyntaxKind::GenericArgNamed | SyntaxKind::GenericArgUnnamed)
     ) && node.get_children(db).len() == 1
         && !contains_single_line_comment(db, node)
+        && !node.parent(db).and_then(|block| ast::ExprBlock::cast(db, block)).is_some_and(|block| {
+            contains_single_line_comment(db, &block.rbrace(db).leading_trivia(db).as_syntax_node())
+        })
 }
 
 /// Returns whether a list has a single-line comment attached to its structure: around an item or a

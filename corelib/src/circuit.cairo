@@ -748,13 +748,17 @@ extern fn u96_limbs_less_than_guarantee_verify<
     guarantee: U96LimbsLtGuarantee<LIMB_COUNT>,
 ) -> NextU96LessThanGuarantee<MO::VALUE> nopanic;
 
+extern fn u96_limbs_less_than_guarantee_verify_v2<const LIMB_COUNT: usize>(
+    guarantee: U96LimbsLtGuarantee<LIMB_COUNT>,
+) implicits(RangeCheck96) nopanic;
+
 extern fn u96_single_limb_less_than_guarantee_verify(
     guarantee: U96LimbsLtGuarantee<1>,
 ) -> U96Guarantee nopanic;
 
 impl DestructDestructU96LimbsLtGuarantee4 of Destruct<U96LimbsLtGuarantee<4>> {
     fn destruct(self: U96LimbsLtGuarantee<4>) nopanic {
-        self.into_u96_guarantee().destruct()
+        u96_limbs_less_than_guarantee_verify_v2(self)
     }
 }
 

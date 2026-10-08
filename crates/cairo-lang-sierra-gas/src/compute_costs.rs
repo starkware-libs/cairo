@@ -509,7 +509,7 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
 
     /// Helper function for `prepare_wallet()`.
     ///
-    /// Assumes that the values was already computed for the dependencies.
+    /// Assumes that the values were already computed for the dependencies.
     fn no_cache_compute_wallet_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
         &mut self,
         idx: StatementIdx,

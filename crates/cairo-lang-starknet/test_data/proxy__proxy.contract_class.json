@@ -581,15 +581,15 @@
     "user_func_names": [
       [
         0,
-        "cairo_level_tests::contracts::proxy::__wrapper__ICounterContractForwardImpl__increase_counter::<cairo_level_tests::contracts::proxy::proxy::ContractState, cairo_level_tests::contracts::proxy::proxy::ForwardingClassHashImpl, cairo_level_tests::contracts::proxy::proxy::ContractStateDrop, cairo_level_tests::contracts::proxy::proxy::ContractStateICounterContractForwardImpl>"
+        "cairo_level_tests::contracts::proxy::__wrapper__ICounterContractForwardImpl__increase_counter::<cairo_level_tests::contracts::proxy::proxy::ContractState, cairo_level_tests::contracts::proxy::proxy::ForwardingClassHashImpl, cairo_level_tests::contracts::proxy::proxy::ContractStateDrop, cairo_level_tests::contracts::proxy::proxy::ContractStateForwardedImpl>"
       ],
       [
         1,
-        "cairo_level_tests::contracts::proxy::__wrapper__ICounterContractForwardImpl__decrease_counter::<cairo_level_tests::contracts::proxy::proxy::ContractState, cairo_level_tests::contracts::proxy::proxy::ForwardingClassHashImpl, cairo_level_tests::contracts::proxy::proxy::ContractStateDrop, cairo_level_tests::contracts::proxy::proxy::ContractStateICounterContractForwardImpl>"
+        "cairo_level_tests::contracts::proxy::__wrapper__ICounterContractForwardImpl__decrease_counter::<cairo_level_tests::contracts::proxy::proxy::ContractState, cairo_level_tests::contracts::proxy::proxy::ForwardingClassHashImpl, cairo_level_tests::contracts::proxy::proxy::ContractStateDrop, cairo_level_tests::contracts::proxy::proxy::ContractStateForwardedImpl>"
       ],
       [
         2,
-        "cairo_level_tests::contracts::proxy::__wrapper__ICounterContractForwardImpl__get_counter::<cairo_level_tests::contracts::proxy::proxy::ContractState, cairo_level_tests::contracts::proxy::proxy::ForwardingClassHashImpl, cairo_level_tests::contracts::proxy::proxy::ContractStateDrop, cairo_level_tests::contracts::proxy::proxy::ContractStateICounterContractForwardImpl>"
+        "cairo_level_tests::contracts::proxy::__wrapper__ICounterContractForwardImpl__get_counter::<cairo_level_tests::contracts::proxy::proxy::ContractState, cairo_level_tests::contracts::proxy::proxy::ForwardingClassHashImpl, cairo_level_tests::contracts::proxy::proxy::ContractStateDrop, cairo_level_tests::contracts::proxy::proxy::ContractStateForwardedImpl>"
       ],
       [
         3,

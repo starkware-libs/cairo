@@ -80,6 +80,8 @@ pub enum StarknetSierraCompilationError {
     InvalidBuiltinType(ConcreteTypeId),
     #[error("Invalid entry point signature - builtins are not in the expected order.")]
     InvalidEntryPointSignatureWrongBuiltinsOrder,
+    #[error("Unexpected entry point cost.")]
+    UnexpectedEntryPointCost,
     #[error("Entry points not sorted by selectors.")]
     EntryPointsOutOfOrder,
     #[error("Duplicate entry point selector {selector}.")]
@@ -539,6 +541,16 @@ impl CasmContractClass {
             compute_runtime_costs: false,
         };
         let metadata = calc_metadata(&program, &program_info, metadata_computation_config)?;
+        // The linear gas solver only enforces the `Const` cost of the entry points, so other costs
+        // (e.g. a builtin used before the first gas withdrawal) are rejected here.
+        let expected_entry_point_cost =
+            CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST as i64)]);
+        for (_, function_id, _) in
+            external_infos.iter().chain(&l1_handler_infos).chain(&constructor_infos)
+        {
+            require(metadata.gas_info.function_costs[*function_id] == expected_entry_point_cost)
+                .ok_or(StarknetSierraCompilationError::UnexpectedEntryPointCost)?;
+        }
         let cairo_program = cairo_lang_sierra_to_casm::compiler::compile(
             &program,
             &program_info,
@@ -569,18 +581,10 @@ impl CasmContractClass {
             |contract_entry_points: Vec<ContractEntryPoint>,
              infos: Vec<(StatementIdx, &FunctionId, Vec<String>)>| {
                 zip_eq(contract_entry_points, infos)
-                    .map(|(contract_entry_point, (statement_id, function_id, builtins))| {
+                    .map(|(contract_entry_point, (statement_id, _, builtins))| {
                         let code_offset = cairo_program.debug_info.sierra_statement_info
                             [statement_id.0]
                             .start_offset;
-                        assert_eq!(
-                            metadata.gas_info.function_costs[function_id],
-                            CostTokenMap::from_iter([(
-                                CostTokenType::Const,
-                                ENTRY_POINT_COST as i64
-                            )]),
-                            "Unexpected entry point cost."
-                        );
                         CasmContractEntryPoint {
                             selector: contract_entry_point.selector,
                             offset: code_offset,

@@ -231,7 +231,8 @@ pub enum ValueInfo<'db> {
 enum OpResult {
     /// The input of the operation was consumed.
     InputConsumed,
-    /// One of the value is produced operation and therefore it is invalid before the operation.
+    /// One of the values is produced by the operation and therefore it is invalid before the
+    /// operation.
     ValueInvalidated,
     /// The operation did not change the value info.
     NoChange,

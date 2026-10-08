@@ -618,23 +618,25 @@ fn handle_embed_impl_alias<'db>(
         return;
     }
     let impl_name = impl_final_part.identifier_ast(db);
-    let impl_module = RewriteNode::interspersed(
-        elements.map(|e| RewriteNode::from_ast_trimmed(&e)),
-        RewriteNode::text("::"),
+    let impl_path_prefix = RewriteNode::new_modified(
+        elements
+            .flat_map(|e| [RewriteNode::from_ast_trimmed(&e), RewriteNode::text("::")])
+            .collect(),
     );
     data.generated_wrapper_functions.push(
         RewriteNode::interpolate_patched(
             &formatdoc! {"
-            impl ContractState$impl_name$ of
-                $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
+            impl ContractState$alias_name$ of
+                $impl_path_prefix$UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
                 fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
                     unsafe_new_contract_state()
                 }}
             }}
         "},
             &[
+                ("alias_name".to_string(), RewriteNode::from_ast_trimmed(&alias_ast.name(db))),
                 ("impl_name".to_string(), RewriteNode::from_ast_trimmed(&impl_name)),
-                ("impl_module".to_string(), impl_module),
+                ("impl_path_prefix".to_string(), impl_path_prefix),
             ]
             .into(),
         )

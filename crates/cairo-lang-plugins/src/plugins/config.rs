@@ -215,7 +215,8 @@ fn parse_predicate_item<'a>(
     match extract_config_predicate_part(db, &item) {
         Some(ConfigPredicatePart::Cfg(cfg)) => Some(PredicateTree::Cfg(cfg)),
         Some(ConfigPredicatePart::Call(call)) => {
-            let operator = call.path(db).as_syntax_node().get_text(db);
+            let operator =
+                call.path(db).as_syntax_node().get_text_without_trivia(db).long(db).as_str();
             let args = call
                 .arguments(db)
                 .arguments(db)

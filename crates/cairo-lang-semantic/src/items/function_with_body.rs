@@ -116,14 +116,14 @@ pub fn get_inline_config<'db>(
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-            ] if path.as_syntax_node().get_text(db) == "always" => {
+            ] if path.as_syntax_node().get_text_without_trivia(db).long(db) == "always" => {
                 config = InlineConfiguration::Always(attr.stable_ptr);
             }
             [
                 AttributeArg {
                     variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
                 },
-            ] if path.as_syntax_node().get_text(db) == "never" => {
+            ] if path.as_syntax_node().get_text_without_trivia(db).long(db) == "never" => {
                 config = InlineConfiguration::Never(attr.stable_ptr);
             }
             [] => {

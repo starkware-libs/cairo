@@ -12,8 +12,22 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Not using `tree-sitter/setup-action`, as it internally uses actions not pinned to a
+      # full-length commit SHA, which the repository policy forbids.
       - name: Set up tree-sitter
-        uses: tree-sitter/setup-action/cli@49f8c1f20b60102eae8c033bb7c7f6cd056f6086 # v2
+        env:
+          TREE_SITTER_VERSION: v0.27.0
+          # sha256 of `tree-sitter-linux-x64.gz` of the above release.
+          TREE_SITTER_SHA256: 20a1f39ec1c45f2211492dcb8881c802b643b554bb196869a29ac3778277fa77
+        run: |-
+          dir="$RUNNER_TEMP/tree-sitter"
+          mkdir -p "$dir"
+          curl -LSsf -o "$dir/tree-sitter.gz" \
+            "https://github.com/tree-sitter/tree-sitter/releases/download/$TREE_SITTER_VERSION/tree-sitter-linux-x64.gz"
+          echo "$TREE_SITTER_SHA256  $dir/tree-sitter.gz" | sha256sum -c -
+          gunzip -c "$dir/tree-sitter.gz" > "$dir/tree-sitter"
+          chmod +x "$dir/tree-sitter"
+          echo "$dir" >> "$GITHUB_PATH"
       - name: Clone tree-sitter-repo
         run: |-
           git clone https://github.com/starkware-libs/tree-sitter-cairo --single-branch --depth=1 --filter=blob:none

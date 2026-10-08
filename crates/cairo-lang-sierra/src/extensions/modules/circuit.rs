@@ -1105,6 +1105,7 @@ fn get_circuit_info(
     let mut stack: Vec<(ConcreteTypeId, bool)> = circ_outputs
         .map(|generic_arg| (extract_matches!(generic_arg, GenericArg::Type).clone(), true))
         .collect();
+    let mut visited = UnorderedHashSet::<ConcreteTypeId>::default();
 
     while let Some((ty, first_visit)) = stack.pop() {
         let long_id = &context.get_type_info(&ty)?.long_id;
@@ -1120,6 +1121,9 @@ fn get_circuit_info(
             .map(|generic_arg| extract_matches!(generic_arg, GenericArg::Type));
 
         if first_visit {
+            // A node of a DAG can't be visited for the first time twice - this is a cycle.
+            require(visited.insert(ty.clone()))
+                .ok_or(SpecializationError::UnsupportedGenericArg)?;
             stack.push((ty, false));
             stack.extend(gate_inputs.map(|ty| (ty.clone(), true)))
         } else {
@@ -1127,27 +1131,31 @@ fn get_circuit_info(
             let mut input_offsets = gate_inputs.map(|ty| values[ty]);
 
             if long_id.generic_id == AddModGate::ID {
-                let [lhs, rhs] = input_offsets.next_array().unwrap();
+                let [lhs, rhs] =
+                    input_offsets.next_array().ok_or(SpecializationError::UnsupportedGenericArg)?;
                 add_offsets.push(GateOffsets { lhs, rhs, output: output_offset });
             } else if long_id.generic_id == SubModGate::ID {
                 // output = sub_lhs - sub_rhs => output + sub_rhs = sub_lhs.
-                let [sub_lhs, sub_rhs] = input_offsets.next_array().unwrap();
+                let [sub_lhs, sub_rhs] =
+                    input_offsets.next_array().ok_or(SpecializationError::UnsupportedGenericArg)?;
                 add_offsets.push(GateOffsets { lhs: output_offset, rhs: sub_rhs, output: sub_lhs });
             } else if long_id.generic_id == MulModGate::ID {
-                let [lhs, rhs] = input_offsets.next_array().unwrap();
+                let [lhs, rhs] =
+                    input_offsets.next_array().ok_or(SpecializationError::UnsupportedGenericArg)?;
                 mul_offsets.push(GateOffsets { lhs, rhs, output: output_offset });
             } else if long_id.generic_id == InverseGate::ID {
                 // output = 1 / input => 1 = output * input.
                 // Note that the gate will fail if the input is not invertible.
                 // Evaluating this gate successfully implies that input is invertible.
-                let rhs = input_offsets.next().unwrap();
+                let rhs = input_offsets.next().ok_or(SpecializationError::UnsupportedGenericArg)?;
                 mul_offsets.push(GateOffsets { lhs: output_offset, rhs, output: ONE_OFFSET });
             } else {
                 return Err(SpecializationError::UnsupportedGenericArg);
             };
 
             // Make sure all the gate inputs were consumed.
-            assert!(input_offsets.next().is_none());
+            require(input_offsets.next().is_none())
+                .ok_or(SpecializationError::UnsupportedGenericArg)?;
             values.insert(ty.clone(), output_offset);
         }
     }
@@ -1179,15 +1187,15 @@ fn parse_circuit_inputs<'a>(
             let idx = args_as_single_value(&long_id.generic_args)?
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;
-            assert!(inputs.insert(idx, ty).is_none());
+            require(inputs.insert(idx, ty).is_none())
+                .ok_or(SpecializationError::UnsupportedGenericArg)?;
         } else {
-            // generic_id must be a gate. This was validated in `validate_output_tuple`.
-            stack.extend(
-                long_id
-                    .generic_args
-                    .iter()
-                    .map(|generic_arg| extract_matches!(generic_arg, GenericArg::Type).clone()),
-            );
+            for generic_arg in &long_id.generic_args {
+                let GenericArg::Type(input) = generic_arg else {
+                    return Err(SpecializationError::UnsupportedGenericArg);
+                };
+                stack.push(input.clone());
+            }
         }
     }
 

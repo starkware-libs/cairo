@@ -80,7 +80,7 @@ impl Range {
             (id, []) if *id == Sint128Type::id() => Self::closed(i128::MIN, i128::MAX),
             (id, []) if *id == Bytes31Type::id() => Self::half_open(0, BigInt::one().shl(248)),
             (id, [GenericArg::Value(min), GenericArg::Value(max)])
-                if *id == BoundedIntType::id() =>
+                if *id == BoundedIntType::id() && min <= max =>
             {
                 Self::closed(min.clone(), max.clone())
             }

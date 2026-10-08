@@ -131,7 +131,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
-impl ContractStateTransferImpl of
+impl ContractStateOwnershipTransfer of
     ownable_mini::UnsafeNewContractStateTraitForTransferImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -388,7 +388,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
-impl ContractStateTransferImpl of
+impl ContractStateOwnershipTransfer of
     ownable_mini::UnsafeNewContractStateTraitForTransferImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()

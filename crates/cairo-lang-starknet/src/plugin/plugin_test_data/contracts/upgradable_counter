@@ -242,7 +242,7 @@ fn __wrapper__CounterContract__decrease_counter(mut data: core::array::Span::<fe
     core::array::ArrayTrait::span(@arr)
 }
 
-impl ContractStateUpgradableImpl of
+impl ContractStateUpgradable of
     upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -1401,7 +1401,7 @@ fn __wrapper__CounterContract__decrease_counter(mut data: core::array::Span::<fe
     core::array::ArrayTrait::span(@arr)
 }
 
-impl ContractStateUpgradableImpl of
+impl ContractStateUpgradable of
     upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()

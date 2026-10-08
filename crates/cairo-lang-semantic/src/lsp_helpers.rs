@@ -584,12 +584,7 @@ fn find_module_containing_node<'db>(
     // module, that lead to the node.
     node.ancestors(db)
         .filter_map(|node| ItemModule::cast(db, node))
-        .map(|item_module| {
-            item_module
-                .stable_ptr(db)
-                .name_green(db)
-                .identifier(db)
-        })
+        .map(|item_module| item_module.stable_ptr(db).name_green(db).identifier(db))
         // Buffer the stack to get DoubleEndedIterator.
         .collect::<Vec<_>>()
         .into_iter()

@@ -207,8 +207,9 @@ fn get_impl_aliases_abi_functions<'db>(
         // Get the concrete generic args from the resolved impl alias
         let resolved_generic_args = &concrete.long(db).generic_args;
 
-        // Find the UnsafeNewContractState impl for this specific embeddable
-        let unsafe_impl_name = SmolStrId::from(db, format!("ContractState{impl_name}"));
+        // Find the UnsafeNewContractState impl generated for this impl alias.
+        let alias_name = impl_alias.name(db).text(db).long(db);
+        let unsafe_impl_name = SmolStrId::from(db, format!("ContractState{alias_name}"));
         let unsafe_impl_arg =
             find_impl_in_module_as_arg(db, generated_module_id, unsafe_impl_name)?;
 

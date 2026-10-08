@@ -91,7 +91,6 @@ exclude = ["ensure-no_std"]
 
 [workspace.package]
 edition = "2024"
-license = "Apache-2.0"
 license-file = "LICENSE"
 repository = "https://github.com/starkware-libs/cairo/"
 rust-version = "1.94"
@@ -151,9 +150,7 @@ smol_str = { version = "0.3.2", default-features = false }
 starknet-types-core = { version = "0.2.4", features = ["hash", "prime-bigint", "serde"] }
 syn = { version = "3.0.4", features = ["extra-traits", "full"] }
 test-case = "3.3.1"
-test-case-macros = "3.3.1"
 thiserror = "2.0.12"
-time = { version = "0.3.41", features = ["formatting", "local-offset", "macros"] }
 tokio = { version = "1.47.1", features = ["full", "sync"] }
 toml = "1.0.6"
 tracing = "0.1.40"

@@ -52,8 +52,8 @@ use crate::types::resolve_type;
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
     ExprConstant, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor,
-    FunctionId, GenericParam, LogicalOperator, MemberAccessKind, Pattern, PatternId,
-    SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
+    FunctionId, GenericArgumentId, GenericParam, LogicalOperator, MemberAccessKind, Pattern,
+    PatternId, SemanticDiagnostic, Statement, TypeId, TypeLongId, semantic_object_for_id,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
@@ -655,13 +655,52 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return false;
         };
         let impl_def = imp.concrete_impl_id.impl_def_id(db);
-        if impl_def.parent_module(db).owning_crate(db) != db.core_crate() {
+        // Core's generic impls forward to the impls of their generic args (e.g. `PartialEq` of
+        // `@T`), so those must be fully core as well.
+        if impl_def.parent_module(db).owning_crate(db) != db.core_crate()
+            || imp.concrete_impl_id.long(db).generic_args.iter().any(|arg| !self.is_core_arg(*arg))
+        {
             return false;
         }
         let Ok(trait_id) = db.impl_def_trait(impl_def) else {
             return false;
         };
         self.const_traits.contains(&trait_id)
+    }
+
+    /// Returns whether the generic argument only consists of core types and impls.
+    fn is_core_arg(&self, arg: GenericArgumentId<'a>) -> bool {
+        let db = self.db;
+        match arg {
+            GenericArgumentId::Type(ty) => self.is_core_type(ty),
+            GenericArgumentId::Impl(impl_id) => {
+                let ImplLongId::Concrete(concrete_impl) = impl_id.long(db) else {
+                    return false;
+                };
+                concrete_impl.impl_def_id(db).parent_module(db).owning_crate(db) == db.core_crate()
+                    && concrete_impl.long(db).generic_args.iter().all(|arg| self.is_core_arg(*arg))
+            }
+            GenericArgumentId::Constant(value) => {
+                value.ty(db).is_ok_and(|ty| self.is_core_type(ty))
+            }
+            GenericArgumentId::NegImpl(_) => true,
+        }
+    }
+
+    /// Returns whether the type only consists of types defined in the core crate.
+    fn is_core_type(&self, ty: TypeId<'a>) -> bool {
+        let db = self.db;
+        match ty.long(db) {
+            TypeLongId::Concrete(concrete) => {
+                concrete.generic_type(db).parent_module(db).owning_crate(db) == db.core_crate()
+                    && concrete.generic_args(db).into_iter().all(|arg| self.is_core_arg(arg))
+            }
+            TypeLongId::Tuple(tys) => tys.iter().all(|ty| self.is_core_type(*ty)),
+            TypeLongId::Snapshot(ty) | TypeLongId::FixedSizeArray { type_id: ty, .. } => {
+                self.is_core_type(*ty)
+            }
+            _ => false,
+        }
     }
 
     /// Evaluate the given const expression value.
@@ -692,7 +731,8 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                                 } else {
                                     // Either the pattern is refutable and we are missing an else
                                     // clause, or the pattern is irrefutable and the pattern have
-                                    // failed for some reason. Both should already cause diagstics.
+                                    // failed for some reason. Both should already cause
+                                    // diagnostics.
                                     return to_missing(skip_diagnostic());
                                 }
                             }

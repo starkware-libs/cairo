@@ -1,8 +1,10 @@
 use cairo_lang_test_utils::test;
 use indoc::indoc;
+use test_case::test_case;
 
 use crate::ProgramParser;
 use crate::extensions::core::{CoreLibfunc, CoreType};
+use crate::extensions::{ExtensionError, SpecializationError};
 use crate::program::{ConcreteTypeLongId, TypeDeclaration};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 
@@ -29,6 +31,85 @@ fn basic_insertion() {
         )
         .map(|_| ()),
         Ok(())
+    );
+}
+
+#[test_case(
+    indoc! {"
+        type C = Const<B, 3>;
+        type B = BoundedInt<10, 0> [storable: true, drop: true, dup: true, zero_sized: false];
+    "},
+    "C",
+    "Const";
+    "const of inverted bounded int"
+)]
+#[test_case(
+    indoc! {"
+        type R = IntRange<T>;
+        type T = u8 [storable: true, drop: false, dup: true, zero_sized: false];
+    "},
+    "R",
+    "IntRange";
+    "int range of wrongly declared u8"
+)]
+#[test_case(
+    indoc! {"
+        type In = CircuitInput<0>;
+        type Outputs = Struct<ut@Tuple, G>;
+        type C = Circuit<Outputs>;
+        type G = AddModGate<In> [storable: false, drop: false, dup: false, zero_sized: true];
+    "},
+    "C",
+    "Circuit";
+    "circuit with gate missing an input"
+)]
+#[test_case(
+    indoc! {"
+        type In = CircuitInput<0>;
+        type Outputs = Struct<ut@Tuple, G>;
+        type C = Circuit<Outputs>;
+        type G = AddModGate<In, In, In> [storable: false, drop: false, dup: false, zero_sized: true];
+    "},
+    "C",
+    "Circuit";
+    "circuit with gate with extra input"
+)]
+#[test_case(
+    indoc! {"
+        type In = CircuitInput<0>;
+        type Outputs = Struct<ut@Tuple, G>;
+        type C = Circuit<Outputs>;
+        type G = AddModGate<In, 5> [storable: false, drop: false, dup: false, zero_sized: true];
+    "},
+    "C",
+    "Circuit";
+    "circuit with gate with value input"
+)]
+#[test_case(
+    indoc! {"
+        type Outputs = Struct<ut@Tuple, G>;
+        type C = Circuit<Outputs>;
+        type G = AddModGate<In0, In1> [storable: false, drop: false, dup: false, zero_sized: true];
+        type In0 = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: true];
+        type In1 = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: true];
+    "},
+    "C",
+    "Circuit";
+    "circuit with duplicate input index"
+)]
+fn invalid_forward_declared_type(program: &str, concrete_id: &str, type_id: &str) {
+    assert_eq!(
+        ProgramRegistry::<CoreType, CoreLibfunc>::new(
+            &ProgramParser::new().parse(program).unwrap()
+        )
+        .map(|_| ()),
+        Err(Box::new(ProgramRegistryError::TypeSpecialization {
+            concrete_id: concrete_id.into(),
+            error: ExtensionError::TypeSpecialization {
+                type_id: type_id.into(),
+                error: SpecializationError::UnsupportedGenericArg,
+            },
+        }))
     );
 }
 
@@ -100,5 +181,31 @@ fn libfunc_id_double_declaration() {
         )
         .map(|_| ()),
         Err(Box::new(ProgramRegistryError::LibfuncConcreteIdAlreadyExists("used_id".into())))
+    );
+}
+
+#[test]
+fn circuit_with_cyclic_gates() {
+    assert_eq!(
+        ProgramRegistry::<CoreType, CoreLibfunc>::new(
+            &ProgramParser::new()
+                .parse(indoc! {"
+                    type In = CircuitInput<0>;
+                    type Gate0 = AddModGate<Gate1, In>;
+                    type Gate1 = AddModGate<Gate0, In> \
+                        [storable: false, drop: false, dup: false, zero_sized: true];
+                    type Outputs = Struct<ut@Tuple, Gate0>;
+                    type C = Circuit<Outputs>;
+                "})
+                .unwrap()
+        )
+        .map(|_| ()),
+        Err(Box::new(ProgramRegistryError::TypeSpecialization {
+            concrete_id: "C".into(),
+            error: ExtensionError::TypeSpecialization {
+                type_id: "Circuit".into(),
+                error: SpecializationError::UnsupportedGenericArg,
+            },
+        }))
     );
 }

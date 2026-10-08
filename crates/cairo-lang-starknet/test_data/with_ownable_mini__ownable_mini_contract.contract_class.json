@@ -1078,11 +1078,11 @@
       ],
       [
         2,
-        "cairo_level_tests::components::ownable_mini::__wrapper__TransferImpl__owner::<cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractState, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::OwnableHasStorage, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractStateTransferImpl>"
+        "cairo_level_tests::components::ownable_mini::__wrapper__TransferImpl__owner::<cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractState, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::OwnableHasStorage, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractStateOwnershipTransfer>"
       ],
       [
         3,
-        "cairo_level_tests::components::ownable_mini::__wrapper__TransferImpl__transfer_ownership::<cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractState, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::OwnableHasStorage, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractStateTransferImpl>"
+        "cairo_level_tests::components::ownable_mini::__wrapper__TransferImpl__transfer_ownership::<cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractState, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::OwnableHasStorage, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractStateDrop, cairo_level_tests::contracts::with_ownable_mini::ownable_mini_contract::ContractStateOwnershipTransfer>"
       ],
       [
         4,

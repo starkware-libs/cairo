@@ -76,10 +76,10 @@ impl<'db> Usage<'db> {
         self.has_early_return |= usage.has_early_return;
     }
 
-    /// Removes usage that was introduced current block and usage that is already covered
+    /// Removes usage that was introduced in the current block and usage that is already covered
     /// by containing variables.
     pub fn finalize_as_scope(&mut self) {
-        // Prune usages and introdictions from snap_usage. Runs before the `changes` pass so that
+        // Prune usages and introductions from snap_usage. Runs before the `changes` pass so that
         // the promotion below always promotes the top-most snapshotted ancestor.
         for member_path in prune_and_get_candidates(&mut self.snap_usage, |k| {
             self.usage.contains_key(k) || self.introductions.contains(&k.base_var())

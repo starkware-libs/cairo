@@ -680,6 +680,24 @@ impl LineBuilder {
     fn contains_protected_zone(&self) -> bool {
         self.children.iter().any(|child| matches!(child, LineComponent::ProtectedZone { .. }))
     }
+    /// Returns whether the line currently ends with a non-empty token, looking into protected zones
+    /// and skipping break points that add no space if not broken.
+    /// Returns None if nothing that decides it was found.
+    fn ends_with_token(&self) -> Option<bool> {
+        for child in self.pending_break_line_points.iter().rev().chain(self.children.iter().rev()) {
+            match child {
+                LineComponent::Token(s) => return Some(!s.is_empty()),
+                LineComponent::ProtectedZone { builder, .. } => {
+                    if let Some(res) = builder.ends_with_token() {
+                        return Some(res);
+                    }
+                }
+                LineComponent::BreakLinePoint(properties) if !properties.space_if_not_broken => {}
+                _ => return Some(false),
+            }
+        }
+        None
+    }
     /// Returns whether the line contains only indents.
     fn is_only_indents(&self) -> bool {
         !self.children.iter().any(|child| !matches!(child, LineComponent::Indent { .. }))
@@ -998,8 +1016,28 @@ impl<'a> FormatterImpl<'a> {
             if spacing_data.add_space_before && !self.line_state.prevent_next_space {
                 self.line_state.line_buffer.push_space();
             }
-            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+            // The trailing trivia is formatted separately, so a trailing comment ends the line
+            // instead of swallowing the tokens that follow it.
+            let text_span = TextSpan {
+                end: syntax_node.span_end_without_trivia(self.db),
+                ..syntax_node.span(self.db)
+            };
+            self.line_state
+                .line_buffer
+                .push_str(syntax_node.get_text_of_span(self.db, text_span).trim());
             self.line_state.prevent_next_space = spacing_data.prevent_space_after;
+            self.is_current_line_whitespaces = false;
+            self.is_last_element_comment = false;
+            if let Some(last_terminal) = syntax_node
+                .tokens(self.db)
+                .filter(|t| t.width(self.db) != TextWidth::default())
+                .last()
+            {
+                let [_, _, trailing] = last_terminal.get_children(self.db) else {
+                    panic!("Terminal node should have 3 children.");
+                };
+                self.format_trivia(ast::Trivia::from_syntax_node(self.db, *trailing), false);
+            }
         } else if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node);
         } else {
@@ -1267,7 +1305,9 @@ impl<'a> FormatterImpl<'a> {
                 ast::Trivium::SingleLineComment(_)
                 | ast::Trivium::SingleLineDocComment(_)
                 | ast::Trivium::SingleLineInnerComment(_) => {
-                    if !is_leading {
+                    // A leading comment may still be printed right after the previous token, so it
+                    // must be separated from it - e.g. `/` followed by `// c` would become `/// c`.
+                    if !is_leading || self.line_state.line_buffer.ends_with_token() == Some(true) {
                         self.line_state.line_buffer.push_space();
                     }
                     self.line_state
