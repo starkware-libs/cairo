@@ -1695,7 +1695,7 @@ impl<'db> ImplLookupContext<'db> {
     /// Interns the context with its impls sorted by stable order, so that contexts with the same
     /// impls are interned once regardless of the order the impls were added in.
     pub fn intern(mut self, db: &'db dyn Database) -> ImplLookupContextId<'db> {
-        self.inner_impls.sort_by(|a, b| a.stable_cmp(b, db));
+        self.inner_impls.sort_by_cached_key(|imp| imp.stable_key(db));
         Intern::intern(self, db)
     }
 
