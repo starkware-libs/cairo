@@ -1,9 +1,11 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::items::generics::short_concrete_name;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{TypeSizeInformation, TypesSemantic};
 use cairo_lang_semantic::{ConcreteTypeId, ConcreteVariant, GenericArgumentId, TypeId, TypeLongId};
@@ -39,6 +41,40 @@ pub enum SpecializationArg<'db> {
     NotSpecialized,
 }
 
+impl<'db> SpecializationArg<'db> {
+    /// A name of bounded size that distinct args do not share, unlike the debug name, which
+    /// leaves out the types.
+    pub fn short_name(&self, db: &'db dyn Database) -> String {
+        match self {
+            SpecializationArg::Const { value, boxed } => {
+                format!("{:?}{}", value.debug(db), if *boxed { ".into_box()" } else { "" })
+            }
+            SpecializationArg::Snapshot(inner) => format!("@{}", inner.short_name(db)),
+            SpecializationArg::Struct(args) => {
+                format!("{{ {} }}", args.iter().map(|arg| arg.short_name(db)).join(", "))
+            }
+            SpecializationArg::Array(ty, values) => format!(
+                "array::<{}>![{}]",
+                ty.short_name(db),
+                values.iter().map(|value| value.short_name(db)).join(", ")
+            ),
+            SpecializationArg::Enum { variant, payload } => {
+                let concrete_enum = variant.concrete_enum_id.long(db);
+                format!(
+                    "{}::{}({})",
+                    short_concrete_name(
+                        db,
+                        &concrete_enum.enum_id.full_path(db),
+                        &concrete_enum.generic_args
+                    ),
+                    variant.id.name(db).long(db),
+                    payload.short_name(db)
+                )
+            }
+            SpecializationArg::NotSpecialized => "NotSpecialized".to_string(),
+        }
+    }
+}
 impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {

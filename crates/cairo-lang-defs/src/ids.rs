@@ -1101,6 +1101,10 @@ impl<'db> GenericParamId<'db> {
     pub fn debug_name(&self, db: &'db dyn Database) -> SmolStrId<'db> {
         self.long(db).debug_name(db)
     }
+    /// The path of the generic item, then the param's name, or its declaration if anonymous.
+    pub fn full_path(&self, db: &'db dyn Database) -> String {
+        format!("{}::{}", self.generic_item(db).full_path(db), self.format(db).long(db))
+    }
     pub fn format(&self, db: &'db dyn Database) -> SmolStrId<'db> {
         let long_ids = self.long(db);
         let node = long_ids.1.0.0;
