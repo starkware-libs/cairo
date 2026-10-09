@@ -17,7 +17,9 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, extract_matches};
+use itertools::Itertools;
 use salsa::Database;
+use sha3::{Digest, Keccak256};
 use syntax::node::TypedStablePtr;
 
 use super::constant::{ConstValue, ConstValueId};
@@ -842,6 +844,24 @@ pub fn displayable_concrete<'db, 'a: 'db, Name: Display>(
 }
 
 /// The helper struct for `with_generic_args_formatter`.
+/// The short name of a generic definition applied to generic arguments: the definition's path,
+/// then a hash of the arguments' short names, so the name's size is bounded by the path's.
+pub fn short_concrete_name<'db>(
+    db: &'db dyn Database,
+    path: &str,
+    generic_args: &[GenericArgumentId<'db>],
+) -> String {
+    if generic_args.is_empty() {
+        return path.to_string();
+    }
+    let mut hasher = Keccak256::new();
+    for arg in generic_args {
+        hasher.update(arg.short_name(db).as_bytes());
+    }
+    let hash = hasher.finalize().iter().map(|byte| format!("{byte:x}")).join("");
+    format!("{path}::<h0x{hash}>")
+}
+
 struct DisplayableConcrete<'a, 'db, Name> {
     db: &'db dyn Database,
     name: &'a Name,

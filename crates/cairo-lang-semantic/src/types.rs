@@ -36,7 +36,7 @@ use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
 use crate::items::enm::{EnumSemantic, SemanticEnumEx};
 use crate::items::extern_type::ExternTypeSemantic;
-use crate::items::generics::{GenericParamSemantic, displayable_concrete};
+use crate::items::generics::{GenericParamSemantic, displayable_concrete, short_concrete_name};
 use crate::items::imp::{ImplId, ImplLookupContext, ImplLookupContextId, ImplSemantic};
 use crate::items::structure::StructSemantic;
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver};
@@ -1317,22 +1317,11 @@ pub fn priv_type_is_var_free_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>
 
 pub fn priv_type_short_name(db: &dyn Database, ty: TypeId<'_>) -> String {
     match ty.long(db) {
-        TypeLongId::Concrete(concrete_type_id) => {
-            let mut result = concrete_type_id.generic_type(db).format(db);
-            let mut generic_args = concrete_type_id.generic_args(db).into_iter().peekable();
-            if generic_args.peek().is_some() {
-                result.push_str("::<h0x");
-                let mut hasher = Keccak256::new();
-                for arg in generic_args {
-                    hasher.update(arg.short_name(db).as_bytes());
-                }
-                for c in hasher.finalize() {
-                    result.push_str(&format!("{c:x}"));
-                }
-                result.push('>');
-            }
-            result
-        }
+        TypeLongId::Concrete(concrete_type_id) => short_concrete_name(
+            db,
+            &concrete_type_id.generic_type(db).format(db),
+            &concrete_type_id.generic_args(db),
+        ),
         TypeLongId::Tuple(types) => {
             let mut result = String::from("(h0x");
             let mut hasher = Keccak256::new();

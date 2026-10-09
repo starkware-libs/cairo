@@ -17,7 +17,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{ExternFunctionId, FreeFunctionId};
-use itertools::zip_eq;
+use itertools::{Itertools, zip_eq};
 use salsa::Database;
 use semantic::items::functions::GenericFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
@@ -211,6 +211,20 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
+    }
+    /// A name of bounded size, consistent across builds unlike the id: distinct functions have
+    /// distinct short names.
+    pub fn short_name(&self, db: &'db dyn Database) -> String {
+        match self.long(db) {
+            ConcreteFunctionWithBodyLongId::Semantic(semantic) => semantic.short_name(db),
+            ConcreteFunctionWithBodyLongId::Generated(generated) => {
+                generated.name_under(db, &generated.parent.short_name(db))
+            }
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
+                let specialized = specialized.long(db);
+                specialized.name_under(db, &specialized.base.short_name(db))
+            }
+        }
     }
     /// Returns the signature of the function as it is at the given [`LoweringStage`].
     pub fn signature(
@@ -504,30 +518,29 @@ impl<'db> GeneratedFunction<'db> {
         format!("{:?}", self.debug(db))
     }
 }
-impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
-    type Db = dyn Database;
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
+impl<'a> GeneratedFunction<'a> {
+    /// The function's name under the given name of its parent.
+    fn name_under(&self, db: &'a dyn Database, parent: &str) -> String {
         match self.key {
             GeneratedFunctionKey::Loop(expr_ptr) => {
-                write!(
-                    f,
-                    "{:?}::{}",
-                    self.parent.debug(db),
-                    generated_function_path(db, expr_ptr.0.lookup(db))
-                )
+                format!("{parent}::{}", generated_function_path(db, expr_ptr.0.lookup(db)))
             }
             GeneratedFunctionKey::TraitFunc(trait_func, loc) => {
                 let trait_id = trait_func.trait_id(db);
-                write!(
-                    f,
-                    "Generated `{}::{}` for {:?}::{}",
+                format!(
+                    "Generated `{}::{}` for {parent}::{}",
                     trait_id.full_path(db),
                     trait_func.name(db).long(db),
-                    self.parent.debug(db),
                     generated_function_path(db, loc.syntax_node(db)),
                 )
             }
         }
+    }
+}
+impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
+    type Db = dyn Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
+        write!(f, "{}", self.name_under(db, &format!("{:?}", self.parent.debug(db))))
     }
 }
 
@@ -553,14 +566,17 @@ impl<'db> SpecializedFunction<'db> {
     }
 }
 
+impl<'a> SpecializedFunction<'a> {
+    /// The function's name under the given name of its base.
+    fn name_under(&self, db: &'a dyn Database, base: &str) -> String {
+        let args = self.args.iter().map(|arg| format!("{:?}, ", arg.debug(db))).join("");
+        format!("{base}{{{args}}}")
+    }
+}
 impl<'a> DebugWithDb<'a> for SpecializedFunction<'a> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
-        write!(f, "{}{{", self.base.full_path(db))?;
-        for arg in self.args.iter() {
-            write!(f, "{:?}, ", arg.debug(db))?;
-        }
-        write!(f, "}}")
+        write!(f, "{}", self.name_under(db, &self.base.full_path(db)))
     }
 }
 
