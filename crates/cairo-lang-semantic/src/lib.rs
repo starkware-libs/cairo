@@ -17,7 +17,6 @@ pub mod lsp_helpers;
 pub mod path;
 pub mod plugin;
 pub mod resolve;
-pub mod stable_order;
 pub mod substitution;
 pub mod types;
 pub mod usage;
