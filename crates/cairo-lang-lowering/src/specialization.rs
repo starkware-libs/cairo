@@ -39,6 +39,30 @@ pub enum SpecializationArg<'db> {
     NotSpecialized,
 }
 
+impl<'db> SpecializationArg<'db> {
+    /// A name of bounded size that distinct args do not share, unlike the debug name, which
+    /// leaves out the types.
+    pub fn short_name(&self, db: &'db dyn Database) -> String {
+        match self {
+            SpecializationArg::Const { value, boxed } => {
+                format!("{}{}", value.key_name(db), if *boxed { ".into_box()" } else { "" })
+            }
+            SpecializationArg::Snapshot(inner) => format!("@{}", inner.short_name(db)),
+            SpecializationArg::Struct(args) => {
+                format!("{{ {} }}", args.iter().format_with(", ", |arg, f| f(&arg.short_name(db))))
+            }
+            SpecializationArg::Array(ty, values) => format!(
+                "array::<{}>![{}]",
+                ty.short_name(db),
+                values.iter().format_with(", ", |value, f| f(&value.short_name(db)))
+            ),
+            SpecializationArg::Enum { variant, payload } => {
+                format!("{}({})", variant.short_name(db), payload.short_name(db))
+            }
+            SpecializationArg::NotSpecialized => "NotSpecialized".to_string(),
+        }
+    }
+}
 impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {

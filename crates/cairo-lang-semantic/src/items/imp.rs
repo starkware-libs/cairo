@@ -50,7 +50,7 @@ use super::functions::{
 use super::generics::{
     GenericArgumentHead, GenericParamImpl, GenericParamsData, displayable_concrete,
     generic_params_data_cycle, generic_params_data_initial, generic_params_to_args,
-    semantic_generic_params,
+    semantic_generic_params, short_concrete_name,
 };
 use super::impl_alias::{
     ImplAliasData, impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
@@ -92,7 +92,6 @@ use crate::resolve::{
     AsSegments, ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
     ResolverData,
 };
-use crate::stable_order::StableOrd;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{
     ImplTypeId, ShallowGenericArg, TypeHead, TypesSemantic, add_type_based_diagnostics,
@@ -127,6 +126,11 @@ impl<'db> DebugWithDb<'db> for ConcreteImplLongId<'db> {
     }
 }
 impl<'db> ConcreteImplId<'db> {
+    /// The impl's path, then a hash of its generic arguments' short names.
+    pub fn short_name(&self, db: &'db dyn Database) -> String {
+        let long = self.long(db);
+        short_concrete_name(db, &long.impl_def_id.full_path(db), &long.generic_args)
+    }
     pub fn impl_def_id(&self, db: &'db dyn Database) -> ImplDefId<'db> {
         self.long(db).impl_def_id
     }
@@ -276,11 +280,39 @@ impl<'db> DebugWithDb<'db> for ImplLongId<'db> {
     }
 }
 
+/// Query implementation of [ImplId::short_name].
+#[salsa::tracked(returns(ref))]
+fn impl_short_name<'db>(db: &'db dyn Database, impl_id: ImplId<'db>) -> String {
+    match impl_id.long(db) {
+        ImplLongId::Concrete(id) => id.short_name(db),
+        ImplLongId::GenericParameter(param) => param.full_path(db),
+        ImplLongId::ImplVar(var) => format!("?{}", var.long(db).id.0),
+        ImplLongId::ImplImpl(id) => {
+            format!("{}::{}", id.impl_id.short_name(db), id.trait_impl_id.name(db).long(db))
+        }
+        ImplLongId::SelfImpl(concrete_trait) => concrete_trait.short_name(db),
+        ImplLongId::GeneratedImpl(id) => {
+            let generated = id.long(db);
+            format!(
+                "{} {}",
+                generated.concrete_trait.short_name(db),
+                generated.impl_items.short_name(db)
+            )
+        }
+    }
+}
+
 define_short_id!(ImplId, ImplLongId<'db>);
 semantic_object_for_id!(ImplId, ImplLongId<'a>);
 impl<'db> ImplId<'db> {
     pub fn concrete_trait(&self, db: &'db dyn Database) -> Maybe<ConcreteTraitId<'db>> {
         db.impl_concrete_trait(*self)
+    }
+
+    /// A name of bounded size, consistent across builds unlike the id: distinct impls have
+    /// distinct short names. Memoized.
+    pub fn short_name(&self, db: &'db dyn Database) -> &'db str {
+        impl_short_name(db, *self)
     }
 
     /// Returns true if the `impl` does not depend on any generics.
@@ -336,6 +368,16 @@ pub struct GeneratedImplLongId<'db> {
     Clone, Debug, Default, PartialEq, Eq, Hash, SemanticObject, salsa::SalsaValue, HeapSize,
 )]
 pub struct GeneratedImplItems<'db>(pub OrderedHashMap<TraitTypeId<'db>, TypeId<'db>>);
+
+impl<'db> GeneratedImplItems<'db> {
+    /// The items as `{type name: type short name, ...}`.
+    pub fn short_name(&self, db: &'db dyn Database) -> String {
+        let items = self.0.iter().format_with(", ", |(trait_type, ty), f| {
+            f(&format_args!("{}: {}", trait_type.name(db).long(db), ty.short_name(db)))
+        });
+        format!("{{{items}}}")
+    }
+}
 
 pub enum GeneratedImplAssociatedTypes<'db> {
     /// The associated types are not yet resolved.
@@ -1692,10 +1734,10 @@ pub struct ImplLookupContext<'db> {
 define_short_id!(ImplLookupContextId, ImplLookupContext<'db>);
 
 impl<'db> ImplLookupContext<'db> {
-    /// Interns the context with its impls sorted by stable order, so that contexts with the same
-    /// impls are interned once regardless of the order the impls were added in.
+    /// Interns the context with its impls sorted by name, so that contexts with the same impls
+    /// are interned once regardless of the order the impls were added in.
     pub fn intern(mut self, db: &'db dyn Database) -> ImplLookupContextId<'db> {
-        self.inner_impls.sort_by(|a, b| a.stable_cmp(b, db));
+        self.inner_impls.sort_by_cached_key(|imp| uninferred_impl_name(db, (), *imp));
         Intern::intern(self, db)
     }
 
@@ -1847,6 +1889,32 @@ impl<'db> ImplLookupContext<'db> {
 
             false
         });
+    }
+}
+
+/// The name of an impl candidate: of bounded size and consistent across builds unlike the
+/// candidate's id, with distinct candidates named distinctly. Memoized.
+#[salsa::tracked(returns(ref))]
+fn uninferred_impl_name<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    imp: UninferredImpl<'db>,
+) -> String {
+    match imp {
+        UninferredImpl::Def(id) => id.full_path(db),
+        UninferredImpl::ImplAlias(id) => id.full_path(db),
+        UninferredImpl::GenericParam(id) => id.full_path(db),
+        UninferredImpl::ImplImpl(id) => {
+            format!("{}::{}", id.impl_id.short_name(db), id.trait_impl_id.name(db).long(db))
+        }
+        UninferredImpl::GeneratedImpl(id) => {
+            let generated = id.long(db);
+            format!(
+                "{} {}",
+                generated.concrete_trait.short_name(db),
+                generated.impl_items.short_name(db)
+            )
+        }
     }
 }
 

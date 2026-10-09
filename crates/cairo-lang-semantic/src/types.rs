@@ -36,7 +36,9 @@ use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
 use crate::items::enm::{EnumSemantic, SemanticEnumEx};
 use crate::items::extern_type::ExternTypeSemantic;
-use crate::items::generics::{GenericParamSemantic, displayable_concrete};
+use crate::items::generics::{
+    GenericParamSemantic, displayable_concrete, names_hash, short_concrete_name,
+};
 use crate::items::imp::{ImplId, ImplLookupContext, ImplLookupContextId, ImplSemantic};
 use crate::items::structure::StructSemantic;
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver};
@@ -137,6 +139,43 @@ impl<'db> TypeId<'db> {
     /// Short name of the type argument.
     pub fn short_name(&self, db: &dyn Database) -> String {
         db.priv_type_short_name(*self)
+    }
+
+    /// A name of bounded size that distinct types do not share, unlike `short_name` which names
+    /// impl parameters by their local names. Memoized.
+    pub fn key_name(&self, db: &'db dyn Database) -> &'db str {
+        type_key_name(db, *self)
+    }
+}
+
+/// Query implementation of [TypeId::key_name].
+#[salsa::tracked(returns(ref))]
+fn type_key_name<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> String {
+    match ty.long(db) {
+        TypeLongId::Concrete(concrete_type_id) => short_concrete_name(
+            db,
+            &concrete_type_id.generic_type(db).format(db),
+            &concrete_type_id.generic_args(db),
+        ),
+        TypeLongId::Tuple(types) => {
+            let hash = names_hash(|hasher| {
+                for ty in types {
+                    hasher.update(ty.key_name(db));
+                    hasher.update([0]);
+                }
+            });
+            format!("({hash})")
+        }
+        TypeLongId::Snapshot(ty) => format!("@{}", ty.key_name(db)),
+        TypeLongId::GenericParameter(param) => param.full_path(db),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            format!("[{}; {}]", type_id.key_name(db), size.key_name(db))
+        }
+        TypeLongId::ImplType(impl_type) => {
+            format!("{}::{}", impl_type.impl_id().short_name(db), impl_type.ty().name(db).long(db))
+        }
+        TypeLongId::Var(var) | TypeLongId::NumericLiteral(var) => format!("?{}", var.id.0),
+        TypeLongId::Coupon(_) | TypeLongId::Closure(_) | TypeLongId::Missing(_) => ty.format(db),
     }
 }
 impl<'db> TypeLongId<'db> {
