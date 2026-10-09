@@ -305,10 +305,8 @@ fn solve_candidate<'db>(
         }
     }
 
-    // Add the defining module of the candidate to the lookup.
-    let mut lookup_context = lookup_context.long(db).clone();
-    lookup_context.insert_lookup_scope(db, &candidate);
-    let lookup_context = lookup_context.intern(db);
+    // Add the defining scope of the candidate to the lookup.
+    let lookup_context = lookup_context.extend_lookup_scope(db, &candidate);
     if res == CanConformResult::Rejected {
         return Err(super::ErrorSet);
     } else if CanConformResult::Accepted == res {
