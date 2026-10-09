@@ -439,6 +439,7 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "serde",
+ "smol_str",
  "thiserror",
  "tracing",
  "typetag",
