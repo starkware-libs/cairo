@@ -195,6 +195,32 @@ pub enum ConstValue<'db> {
     /// A missing value, used in cases where the value is not known due to diagnostics.
     Missing(#[dont_rewrite] DiagnosticAdded),
 }
+impl<'db> ConstValueId<'db> {
+    /// A name that distinct values do not share, unlike the debug name which leaves out types and
+    /// names params and impls locally.
+    pub fn key_name(&self, db: &'db dyn Database) -> String {
+        match self.long(db) {
+            ConstValue::Int(value, ty) => format!("{value}: {}", ty.key_name(db)),
+            ConstValue::Struct(members, ty) => format!(
+                "{} {{{}}}",
+                ty.key_name(db),
+                members.iter().format_with(", ", |member, f| f(&member.key_name(db)))
+            ),
+            ConstValue::Enum(variant, payload) => {
+                format!("{}({})", variant.short_name(db), payload.key_name(db))
+            }
+            ConstValue::NonZero(value) => format!("NonZero({})", value.key_name(db)),
+            ConstValue::Generic(param) => param.key_path(db),
+            ConstValue::ImplConstant(constant) => format!(
+                "{}::{}",
+                constant.impl_id().short_name(db),
+                constant.trait_constant_id().name(db).long(db)
+            ),
+            ConstValue::Var(var, ty) => format!("?{}: {}", var.id.0, ty.key_name(db)),
+            ConstValue::Missing(_) => "<missing>".to_string(),
+        }
+    }
+}
 impl<'db> ConstValue<'db> {
     /// Returns true if the const does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
