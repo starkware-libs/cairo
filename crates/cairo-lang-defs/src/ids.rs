@@ -36,7 +36,7 @@ use cairo_lang_syntax::node::helpers::{
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNodeId, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require};
 use itertools::Itertools;
 use salsa::Database;
@@ -1100,6 +1100,17 @@ impl<'db> GenericParamId<'db> {
     }
     pub fn debug_name(&self, db: &'db dyn Database) -> SmolStrId<'db> {
         self.long(db).debug_name(db)
+    }
+    /// The path of the generic item, then the param's name, or its declaration if anonymous,
+    /// numbered among the item's anonymous params of its kind, as declarations may repeat.
+    pub fn full_path(&self, db: &'db dyn Database) -> String {
+        let path = format!("{}::{}", self.generic_item(db).full_path(db), self.format(db).long(db));
+        match self.long(db).1.0.0.raw_id(db) {
+            SyntaxNodeId::Child { index, .. } if self.name(db).is_none() => {
+                format!("{path}#{index}")
+            }
+            _ => path,
+        }
     }
     pub fn format(&self, db: &'db dyn Database) -> SmolStrId<'db> {
         let long_ids = self.long(db);

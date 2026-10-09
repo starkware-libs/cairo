@@ -31,7 +31,7 @@ use super::functions::{
 use super::generics::{
     GenericParamsData, displayable_concrete, generic_params_data_cycle,
     generic_params_data_initial, generic_params_to_args, semantic_generic_params,
-    semantic_generic_params_ex,
+    semantic_generic_params_ex, short_concrete_name,
 };
 use super::imp::{GenericsHeadFilter, ImplLongId, TraitFilter};
 use crate::db::get_resolver_data_options;
@@ -80,6 +80,11 @@ impl<'db> ConcreteTraitId<'db> {
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
         format!("{:?}", self.debug(db))
+    }
+    /// The trait's path, then a hash of its generic arguments' key names.
+    pub fn short_name(&self, db: &'db dyn Database) -> String {
+        let long = self.long(db);
+        short_concrete_name(db, &long.trait_id.full_path(db), &long.generic_args)
     }
     pub fn filter(&self, db: &'db dyn Database) -> TraitFilter<'db> {
         let generics_filter = match self.generic_args(db).first() {

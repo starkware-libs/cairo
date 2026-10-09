@@ -83,13 +83,20 @@ fn test_generic_item_id(
             SyntaxKind::GenericParamType
             | SyntaxKind::GenericParamConst
             | SyntaxKind::GenericParamImplNamed
-            | SyntaxKind::GenericParamImplAnonymous => {
+            | SyntaxKind::GenericParamImplAnonymous
+            | SyntaxKind::GenericParamNegativeImpl => {
                 let param_id =
                     GenericParamLongId(module_id, ast::GenericParamPtr(node.stable_ptr(db)))
                         .intern(db);
                 let generic_item = param_id.generic_item(db);
-                writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
-                    .unwrap();
+                writeln!(
+                    output,
+                    "{:?} -> {:?}: {}",
+                    param_id.debug(db),
+                    generic_item.debug(db),
+                    param_id.full_path(db)
+                )
+                .unwrap();
             }
             _ => {}
         }

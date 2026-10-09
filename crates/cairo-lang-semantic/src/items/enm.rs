@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    EnumId, LanguageElementId, LookupItemId, ModuleItemId, VariantId, VariantLongId,
+    EnumId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
+    TopLevelLanguageElementId, VariantId, VariantLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_filesystem::ids::SmolStrId;
@@ -16,7 +17,7 @@ use salsa::Database;
 use super::attribute::SemanticQueryAttrs;
 use super::generics::{
     GenericParamsData, generic_params_data_cycle, generic_params_data_initial,
-    semantic_generic_params,
+    semantic_generic_params, short_concrete_name,
 };
 use crate::corelib::unit_ty;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -129,6 +130,21 @@ pub struct ConcreteVariant<'db> {
     /// The index of the variant from within the variant list.
     #[dont_rewrite]
     pub idx: usize,
+}
+impl<'db> ConcreteVariant<'db> {
+    /// The enum's short name, then the variant's name.
+    pub fn short_name(&self, db: &'db dyn Database) -> String {
+        let concrete_enum = self.concrete_enum_id.long(db);
+        format!(
+            "{}::{}",
+            short_concrete_name(
+                db,
+                &concrete_enum.enum_id.full_path(db),
+                &concrete_enum.generic_args
+            ),
+            self.id.name(db).long(db)
+        )
+    }
 }
 
 /// Selector pattern of a match arm of a match on numeric values.

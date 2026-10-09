@@ -21,14 +21,50 @@ impl MyImpl<A> of MyTrait<A> {
 type MyAlias<A> = MyStruct::<A>;
 
 //! > output
-GenericParamType(test::f0::A) -> FreeFunctionId(test::f0)
-GenericParamType(test::m::f0::A) -> FreeFunctionId(test::m::f0)
-GenericParamType(test::f1::A) -> ExternFunctionId(test::f1)
-GenericParamType(test::MyStruct::A) -> StructId(test::MyStruct)
-GenericParamType(test::MyEnum::A) -> EnumId(test::MyEnum)
-GenericParamConst(test::MyType::A) -> ExternTypeId(test::MyType)
-GenericParamType(test::MyTrait::A) -> TraitId(test::MyTrait)
-GenericParamType(test::MyTrait::foo::B) -> TraitFunctionId(test::MyTrait::foo)
-GenericParamType(test::MyImpl::A) -> ImplDefId(test::MyImpl)
-GenericParamType(test::MyImpl::foo::B) -> ImplFunctionId(test::MyImpl::foo)
-GenericParamType(test::MyAlias::A) -> ModuleTypeAliasId(test::MyAlias)
+GenericParamType(test::f0::A) -> FreeFunctionId(test::f0): test::f0::A
+GenericParamType(test::m::f0::A) -> FreeFunctionId(test::m::f0): test::m::f0::A
+GenericParamType(test::f1::A) -> ExternFunctionId(test::f1): test::f1::A
+GenericParamType(test::MyStruct::A) -> StructId(test::MyStruct): test::MyStruct::A
+GenericParamType(test::MyEnum::A) -> EnumId(test::MyEnum): test::MyEnum::A
+GenericParamConst(test::MyType::A) -> ExternTypeId(test::MyType): test::MyType::A
+GenericParamType(test::MyTrait::A) -> TraitId(test::MyTrait): test::MyTrait::A
+GenericParamType(test::MyTrait::foo::B) -> TraitFunctionId(test::MyTrait::foo): test::MyTrait::foo::B
+GenericParamType(test::MyImpl::A) -> ImplDefId(test::MyImpl): test::MyImpl::A
+GenericParamType(test::MyImpl::foo::B) -> ImplFunctionId(test::MyImpl::foo): test::MyImpl::foo::B
+GenericParamType(test::MyAlias::A) -> ModuleTypeAliasId(test::MyAlias): test::MyAlias::A
+
+//! > ==========================================================================
+
+//! > Test ParamId::full_path() of anonymous params.
+
+//! > test_runner_name
+test_generic_item_id
+
+//! > module_code
+fn anon<T, U, +Drop<T>, +Drop<T>, -Copy<T>, impl X: Into<T, U>, +Into<Array<T>, U>, -Drop<T>>() {}
+trait MyTrait<T> {
+    fn foo<+Drop<T>>();
+}
+impl I<T, +Drop<T>> of MyTrait<T> {
+    fn foo<+Drop<T>>() {}
+}
+trait Tr2<T> {
+    type Ty<+Drop<T>>;
+}
+
+//! > output
+GenericParamType(test::anon::T) -> FreeFunctionId(test::anon): test::anon::T
+GenericParamType(test::anon::U) -> FreeFunctionId(test::anon): test::anon::U
+GenericParamImpl(test::anon::_) -> FreeFunctionId(test::anon): test::anon::+Drop<T>#0
+GenericParamImpl(test::anon::_) -> FreeFunctionId(test::anon): test::anon::+Drop<T>#1
+GenericParam-Impl(test::anon::_) -> FreeFunctionId(test::anon): test::anon::-Copy<T>#0
+GenericParamImpl(test::anon::X) -> FreeFunctionId(test::anon): test::anon::X
+GenericParamImpl(test::anon::_) -> FreeFunctionId(test::anon): test::anon::+Into<Array<T>, U>#2
+GenericParam-Impl(test::anon::_) -> FreeFunctionId(test::anon): test::anon::-Drop<T>#1
+GenericParamType(test::MyTrait::T) -> TraitId(test::MyTrait): test::MyTrait::T
+GenericParamImpl(test::MyTrait::foo::_) -> TraitFunctionId(test::MyTrait::foo): test::MyTrait::foo::+Drop<T>#0
+GenericParamType(test::I::T) -> ImplDefId(test::I): test::I::T
+GenericParamImpl(test::I::_) -> ImplDefId(test::I): test::I::+Drop<T>#0
+GenericParamImpl(test::I::foo::_) -> ImplFunctionId(test::I::foo): test::I::foo::+Drop<T>#0
+GenericParamType(test::Tr2::T) -> TraitId(test::Tr2): test::Tr2::T
+GenericParamImpl(test::Tr2::Ty::_) -> TraitTypeId(test::Tr2::Ty): test::Tr2::Ty::+Drop<T>#0
