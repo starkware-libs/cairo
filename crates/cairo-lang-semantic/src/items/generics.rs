@@ -17,7 +17,9 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, extract_matches};
+use itertools::Itertools;
 use salsa::Database;
+use sha3::{Digest, Keccak256};
 use syntax::node::TypedStablePtr;
 
 use super::constant::{ConstValue, ConstValueId};
@@ -99,6 +101,21 @@ impl<'db> GenericArgumentId<'db> {
     /// Short name of the generic argument.
     pub fn short_name(&self, db: &dyn Database) -> String {
         if let GenericArgumentId::Type(ty) = self { ty.short_name(db) } else { self.format(db) }
+    }
+    /// Adds a name that distinct arguments do not share, unlike `short_name` which names impl
+    /// parameters by their local names.
+    fn add_key_name(&self, db: &'db dyn Database, names: &mut NamesHasher) {
+        use NegativeImplLongId::*;
+        match self {
+            GenericArgumentId::Type(ty) => names.add(ty.key_name(db)),
+            GenericArgumentId::Constant(value) => names.add(value.key_name(db)),
+            GenericArgumentId::Impl(imp) => names.add(imp.short_name(db)),
+            GenericArgumentId::NegImpl(imp) => match imp.long(db) {
+                Solved(concrete_trait) => names.add(format!("-{}", concrete_trait.short_name(db))),
+                GenericParameter(param) => names.add(param.key_path(db)),
+                NegativeImplVar(var) => names.add(format!("?{}", var.long(db).id.0)),
+            },
+        }
     }
 
     /// A utility function for extracting the generic parameters arguments from a GenericArgumentId.
@@ -839,6 +856,40 @@ pub fn displayable_concrete<'db, 'a: 'db, Name: Display>(
     generic_args: &'a [GenericArgumentId<'db>],
 ) -> impl Display + 'a + 'db {
     DisplayableConcrete { db, name, generic_args }
+}
+
+/// The short name of a generic definition applied to generic arguments: the definition's path,
+/// then a hash of the arguments' key names, so the name's size is bounded by the path's. Distinct
+/// instantiations have distinct short names.
+pub fn short_concrete_name<'db>(
+    db: &'db dyn Database,
+    path: &str,
+    generic_args: &[GenericArgumentId<'db>],
+) -> String {
+    if generic_args.is_empty() {
+        return path.to_string();
+    }
+    let hash = names_hash(|names| generic_args.iter().for_each(|arg| arg.add_key_name(db, names)));
+    format!("{path}::<{hash}>")
+}
+
+/// Hashes names, each delimited from the next.
+pub struct NamesHasher(Keccak256);
+impl NamesHasher {
+    pub fn add(&mut self, name: impl AsRef<[u8]>) {
+        self.0.update(name);
+        self.0.update([0]);
+    }
+}
+
+/// A hash of the names `add_names` adds: distinct sequences of names have distinct hashes.
+pub fn names_hash(add_names: impl FnOnce(&mut NamesHasher)) -> String {
+    let mut names = NamesHasher(Keccak256::new());
+    add_names(&mut names);
+    format!(
+        "h0x{}",
+        names.0.finalize().iter().format_with("", |byte, f| f(&format_args!("{byte:02x}")))
+    )
 }
 
 /// The helper struct for `with_generic_args_formatter`.

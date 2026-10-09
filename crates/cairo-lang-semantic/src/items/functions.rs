@@ -21,7 +21,7 @@ use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::{displayable_concrete, generic_params_to_args};
+use super::generics::{displayable_concrete, generic_params_to_args, short_concrete_name};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -423,6 +423,22 @@ impl<'db> GenericFunctionWithBodyId<'db> {
         }
     }
 
+    /// Like `full_path`, with the short names of the impl or trait the function is in.
+    pub fn short_path(&self, db: &'db dyn Database) -> String {
+        match self {
+            GenericFunctionWithBodyId::Free(free) => free.key_path(db),
+            GenericFunctionWithBodyId::Impl(imp) => format!(
+                "{}::{}",
+                imp.concrete_impl_id.short_name(db),
+                imp.function_body.name(db).long(db)
+            ),
+            GenericFunctionWithBodyId::Trait(trt) => format!(
+                "{}::{}",
+                trt.concrete_trait(db).short_name(db),
+                trt.trait_function(db).name(db).long(db)
+            ),
+        }
+    }
     pub fn full_path(&self, db: &dyn Database) -> String {
         match self {
             GenericFunctionWithBodyId::Free(free) => free.full_path(db),
@@ -609,6 +625,10 @@ impl<'db> ConcreteFunctionWithBody<'db> {
     pub fn full_path(&self, db: &dyn Database) -> String {
         format!("{:?}", self.debug(db))
     }
+    /// The function's short path, then a hash of its generic arguments' key names.
+    pub fn short_name(&self, db: &'db dyn Database) -> String {
+        short_concrete_name(db, &self.generic_function.short_path(db), &self.generic_args)
+    }
 }
 
 impl<'db> DebugWithDb<'db> for ConcreteFunctionWithBody<'db> {
@@ -626,6 +646,11 @@ impl<'db> DebugWithDb<'db> for ConcreteFunctionWithBody<'db> {
 define_short_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'db>);
 semantic_object_for_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'a>);
 impl<'db> ConcreteFunctionWithBodyId<'db> {
+    /// A name of bounded size, consistent across builds unlike the id: distinct functions have
+    /// distinct short names.
+    pub fn short_name(&self, db: &'db dyn Database) -> String {
+        self.long(db).short_name(db)
+    }
     pub fn function_with_body_id(&self, db: &'db dyn Database) -> FunctionWithBodyId<'db> {
         self.long(db).function_with_body_id(db)
     }
