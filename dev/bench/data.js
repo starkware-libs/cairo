@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791506856149,
+  "lastUpdate": 1791507289658,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -42683,6 +42683,68 @@ window.BENCHMARK_DATA = {
           {
             "name": "max_bytes/ls-new-item-edit",
             "value": 628605233,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bruce0X",
+            "username": "Bruce039",
+            "email": "109469941+Bruce039@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "d6e57592278df7a035e3e6cc12a2f95e0acd9d3f",
+          "message": "formatter: keep lists broken when an item has a comment on its own line (#10391)\n\nCo-authored-by: Ori Ziv <oriz@starkware.co>\nCo-authored-by: Claude Fable 5.1 <noreply@anthropic.com>",
+          "timestamp": "2026-10-08T07:39:09Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/d6e57592278df7a035e3e6cc12a2f95e0acd9d3f"
+        },
+        "date": 1791507289385,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit",
+            "value": 1364,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit",
+            "value": 629446077,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-body-edit",
+            "value": 11096,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-body-edit",
+            "value": 629853327,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit-plain",
+            "value": 1364,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit-plain",
+            "value": 629425619,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-new-item-edit",
+            "value": 26385,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-new-item-edit",
+            "value": 630491705,
             "unit": "bytes"
           }
         ]
