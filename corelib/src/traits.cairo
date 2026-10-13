@@ -925,8 +925,8 @@ pub trait Not<T> {
 }
 
 // The following two traits are for implementing the `[]` operator. Only one should be implemented
-// for each type. Both are not consuming of `self`, the first gets a snapshot of the object and
-// the second gets a reference.
+// for each type. Neither trait consumes `self`: the first takes a snapshot of the object
+// and the second takes a reference.
 #[deprecated(
     feature: "deprecated-index-traits", note: "Use `core::ops::IndexView`.", since: "2.7.0",
 )]
