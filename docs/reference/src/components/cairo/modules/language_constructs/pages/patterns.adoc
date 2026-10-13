@@ -341,7 +341,7 @@ a = 10;  // OK: a is mutable
 b = 20;  // OK: b is mutable
 ----
 
-See xref:let-statement.adoc#_mutability[Mutability] for details.
+See xref:let-statement.adoc#mutability[Mutability] for details.
 
 == Examples
 

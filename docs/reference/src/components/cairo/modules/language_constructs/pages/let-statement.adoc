@@ -136,4 +136,4 @@ let x = 'hello';        // x is a short string (felt252)
 let x: u32 = 42_u32;   // x is now u32
 ----
 
-See xref:variables.adoc#_shadowing[Shadowing in Variables] for more details.
+See xref:variables.adoc#shadowing[Shadowing in Variables] for more details.
