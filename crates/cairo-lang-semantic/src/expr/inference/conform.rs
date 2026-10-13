@@ -464,8 +464,8 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
             let neg_impl_id = self.rewrite(neg_impl1).no_err();
             return self.assign_neg_impl(*var, neg_impl_id);
         }
-        // we do not care about multiple negative impls, so we do not check they are of the same
-        // variant, we just conform the traits.
+        // we do not care about multiple negative impls, so we do not check
+        // whether they have the same variant; we just conform the traits.
         let trt0 = neg_impl0
             .concrete_trait(self.db)
             .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;

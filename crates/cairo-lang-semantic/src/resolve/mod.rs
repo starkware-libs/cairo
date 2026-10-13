@@ -259,8 +259,8 @@ pub struct ResolverMacroData<'db> {
     /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
     ///    placeholder and is not a part of the macro expansion template.
     pub callsite_module_id: ModuleId<'db>,
-    /// This is the mappings of the macro expansion. It is used to determine if a part of the
-    /// code came from a macro argument or from the macro expansion template.
+    /// These mappings identify whether a part of the code came from a macro argument or from the
+    /// macro expansion template.
     pub expansion_mappings: Arc<[CodeMapping]>,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
     /// climb to the callsite environment.
