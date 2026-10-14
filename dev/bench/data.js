@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791938818022,
+  "lastUpdate": 1791939297104,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -44493,6 +44493,68 @@ window.BENCHMARK_DATA = {
           {
             "name": "max_bytes/ls-new-item-edit",
             "value": 630491809,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "zerozebrazone",
+            "username": "zerozebrazone",
+            "email": "zerozebrazone@outlook.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "22f75293c818dc440e4682043a37634f7320199a",
+          "message": "docs: clarify comments on trait usage and macro mappings (#10450)\n\nSigned-off-by: zerozebrazone <zerozebrazone@outlook.com>",
+          "timestamp": "2026-10-13T06:34:59Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/22f75293c818dc440e4682043a37634f7320199a"
+        },
+        "date": 1791939296827,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit",
+            "value": 1364,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit",
+            "value": 629446277,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-body-edit",
+            "value": 11096,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-body-edit",
+            "value": 629853283,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit-plain",
+            "value": 1364,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit-plain",
+            "value": 629425471,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-new-item-edit",
+            "value": 26385,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-new-item-edit",
+            "value": 630491521,
             "unit": "bytes"
           }
         ]
