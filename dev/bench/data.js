@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791939297104,
+  "lastUpdate": 1791939442732,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -38891,6 +38891,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/d6e57592278df7a035e3e6cc12a2f95e0acd9d3f"
         },
         "date": 1791852415679,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "zerozebrazone",
+            "username": "zerozebrazone",
+            "email": "zerozebrazone@outlook.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "22f75293c818dc440e4682043a37634f7320199a",
+          "message": "docs: clarify comments on trait usage and macro mappings (#10450)\n\nSigned-off-by: zerozebrazone <zerozebrazone@outlook.com>",
+          "timestamp": "2026-10-13T06:34:59Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/22f75293c818dc440e4682043a37634f7320199a"
+        },
+        "date": 1791939442453,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
