@@ -33,7 +33,7 @@ fn main() {
 }
 ----
 
-Note: the snapshot operator `@` (see xref:memory-model.adoc##snapshots-and-desnap[Snapshots and desnap])
+Note: the snapshot operator `@` (see xref:memory-model.adoc#snapshots-and-desnap[Snapshots and desnap])
 is considered not moving a value.
 
 == Clone
