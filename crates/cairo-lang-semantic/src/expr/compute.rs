@@ -834,7 +834,7 @@ fn expand_inline_macro<'db>(
         // rules.
         rule.err?;
         let expanded_code = expand_macro_rule(ctx.db, rule, &capture_trees)
-            .map_err(|err| err.report(ctx.diagnostics))?;
+            .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr(ctx.db).untyped()))?;
 
         let macro_defsite_resolver_data =
             ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
