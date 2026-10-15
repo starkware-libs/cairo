@@ -11,7 +11,10 @@ use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
 
 use super::format_for_debug;
-use crate::casm_run::contract_address::calculate_contract_address;
+use crate::casm_run::contract_address::{
+    calculate_contract_address, calculate_contract_address_blake_escaped,
+    is_pedersen_reachable_address,
+};
 use crate::casm_run::{RunFunctionResult, run_function};
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{CairoHintProcessor, StarknetState, build_hints_dict};
@@ -484,4 +487,55 @@ fn test_calculate_contract_address() {
         .unwrap(),
         deployed_contract_address
     );
+}
+
+/// The five frozen Blake-escaped derivation vectors (0/1/2/3/7 escape steps), shared with the
+/// sequencer and `cairo_native`. `deploy_from_zero = true` (deployer = 0), `class_hash = 0x4242`,
+/// `calldata = [42, 2 ** 63, 1337]`.
+#[test]
+fn test_calculate_contract_address_blake_escaped() {
+    let deployer_address = Felt252::ZERO;
+    let class_hash = Felt252::from(0x4242);
+    let calldata = vec![Felt252::from(42), Felt252::TWO.pow(63_u32), Felt252::from(1337)];
+
+    for (salt, expected) in [
+        (777, "0x781e95f4b806dfe5b550756620c77a108d974a5b5d1198b1d45901ac1f89e9f"),
+        (771, "0x566c3e328f3fd5a311267250cadc3c1c4de799db54180fcf862fe90b622571d"),
+        (776, "0x1cd7f5c31ef1b147b816048b025a6cc345e7e023aa8ed97222a883e31dc8435"),
+        (775, "0x4f7ba32369d7f68c42a7619242a52a5be9e803459f5afae1772d9377b161c4c"),
+        (774, "0x47d0c1ff356a1d540cd9f2efa122b60168b1007ef0603af0857bc6100e4b8e8"),
+    ] {
+        let salt = Felt252::from(salt);
+        assert_eq!(
+            calculate_contract_address_blake_escaped(
+                &salt,
+                &class_hash,
+                &calldata,
+                &deployer_address,
+            ),
+            Felt252::from_hex(expected).unwrap(),
+            "wrong Blake-escaped address for salt {salt}",
+        );
+        // Negative check: the Pedersen path must give a different address, guarding against
+        // accidentally wiring `deploy_v2` to the old derivation.
+        assert_ne!(
+            calculate_contract_address(&salt, &class_hash, &calldata, &deployer_address),
+            Felt252::from_hex(expected).unwrap(),
+            "Pedersen derivation unexpectedly matched the Blake-escaped address for salt {salt}",
+        );
+    }
+}
+
+/// The frozen `pedersen_reachable` truth table, shared with the sequencer and `cairo_native`.
+#[test]
+fn test_is_pedersen_reachable_address() {
+    for (address, expected) in
+        [(0x1_u64, true), (0x2_u64, true), (0x5_u64, false), (0x1234567890abcdef_u64, true)]
+    {
+        assert_eq!(
+            is_pedersen_reachable_address(&Felt252::from(address)),
+            expected,
+            "wrong pedersen_reachable for {address:#x}",
+        );
+    }
 }

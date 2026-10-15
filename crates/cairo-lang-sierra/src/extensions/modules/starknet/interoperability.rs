@@ -170,6 +170,41 @@ impl SyscallGenericLibfunc for DeployLibfunc {
     }
 }
 
+/// Libfunc for deploying a declared class system call, deriving the deployed contract's address
+/// with the Blake-escaped derivation instead of Pedersen.
+///
+/// Identical request/response layout to [`DeployLibfunc`]; the only difference is the on-chain
+/// address derivation (see the `deploy_v2_syscall` corelib doc).
+#[derive(Default)]
+pub struct DeployV2Libfunc {}
+impl SyscallGenericLibfunc for DeployV2Libfunc {
+    const STR_ID: &'static str = "deploy_v2_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // Class hash
+            context.get_concrete_type(ClassHashType::id(), &[])?,
+            // Contract address salt
+            context.get_concrete_type(Felt252Type::id(), &[])?,
+            // Constructor call data
+            felt252_span_ty(context)?,
+            // Deploy from zero
+            get_bool_type(context)?,
+        ])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            context.get_concrete_type(ContractAddressType::id(), &[])?,
+            felt252_span_ty(context)?,
+        ])
+    }
+}
+
 /// Libfunc for a library call system call.
 #[derive(Default)]
 pub struct LibraryCallLibfunc {}
