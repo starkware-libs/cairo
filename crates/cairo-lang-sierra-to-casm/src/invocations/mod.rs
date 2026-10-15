@@ -2,7 +2,7 @@ use std::iter::zip;
 
 use assert_matches::assert_matches;
 use cairo_lang_casm::ap_change::ApChange;
-use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Label, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::cell_ref;
 use cairo_lang_casm::instructions::Instruction;
@@ -478,11 +478,11 @@ impl CompiledInvocationBuilder<'_> {
     }
 
     /// Builds a `CompiledInvocation` from a CASM builder and branch extractions.
-    /// Per branch requires `(name, result_variables, target_statement_id)`.
+    /// Per branch requires `(label, result_variables, target_statement_id)`.
     fn build_from_casm_builder<const BRANCH_COUNT: usize>(
         self,
         casm_builder: CasmBuilder,
-        branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
+        branch_extractions: [(Label, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
         cost_validation: CostValidationInfo<BRANCH_COUNT>,
     ) -> CompiledInvocation {
         self.build_from_casm_builder_ex(
@@ -494,18 +494,18 @@ impl CompiledInvocationBuilder<'_> {
     }
 
     /// Builds a `CompiledInvocation` from a CASM builder and branch extractions.
-    /// Per branch requires `(name, result_variables, target_statement_id)`.
+    /// Per branch requires `(label, result_variables, target_statement_id)`.
     ///
     /// `pre_instructions` - Instructions to execute before the ones created by the builder.
     fn build_from_casm_builder_ex<const BRANCH_COUNT: usize>(
         self,
         casm_builder: CasmBuilder,
-        branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
+        branch_extractions: [(Label, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
         cost_validation: CostValidationInfo<BRANCH_COUNT>,
         pre_instructions: InstructionsWithRelocations,
     ) -> CompiledInvocation {
         let CasmBuildResult { instructions, branches } =
-            casm_builder.build(branch_extractions.map(|(name, _, _)| name));
+            casm_builder.build(branch_extractions.map(|(label, _, _)| label));
         let expected_ap_changes = core_libfunc_ap_change(self.libfunc, &self);
         let actual_ap_changes = branches
             .iter()

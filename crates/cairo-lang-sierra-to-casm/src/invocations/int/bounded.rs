@@ -1,6 +1,6 @@
 use std::ops::Shl;
 
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::bounded_int::{
     BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm, BoundedIntGuaranteeVerifyConcreteLibfunc,
@@ -138,6 +138,7 @@ pub fn build_div_rem(
             let q_is_small = q_is_small.unwrap();
             let b_or_q_bound_rc_value = b_or_q_bound_rc_value.unwrap();
             casm_build_extend! {casm_builder,
+                label QIsSmall, VerifyBQ;
                 // Note that for an honest prover, `min{q, b} < root`, as otherwise
                 // `lhs_upper > a >= q * b >= root ** 2` (and on the other hand,
                 // by the definition of `root`: `root ** 2 >= lhs_upper`).
@@ -171,7 +172,7 @@ pub fn build_div_rem(
     }
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
+        [(Label::FALLTHROUGH, &[&[range_check], &[q], &[r]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck,
@@ -196,6 +197,7 @@ fn build_constrain(
         deref value;
     };
     casm_build_extend! {casm_builder,
+        label Under, Over;
         let orig_range_check = range_check;
         const under_fixer = (BigInt::one().shl(128) - boundary) as BigInt;
         const rc_bound_imm = BigInt::one().shl(128) as BigInt;
@@ -217,8 +219,8 @@ fn build_constrain(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[value]], None),
-            ("Over", &[&[range_check], &[value]], Some(target_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[value]], None),
+            (Over, &[&[range_check], &[value]], Some(target_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -240,6 +242,7 @@ fn build_trim(
     let mut casm_builder = CasmBuilder::with_capacity(2, 1);
     add_input_variables!(casm_builder, deref value; );
     casm_build_extend! {casm_builder,
+        label Target;
         const trimmed_value = trimmed_value.clone();
         maybe_tempvar diff = value - trimmed_value;
         jump Target if diff != 0;
@@ -247,7 +250,7 @@ fn build_trim(
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[], None), ("Target", &[&[value]], Some(target_statement_id))],
+        [(Label::FALLTHROUGH, &[], None), (Target, &[&[value]], Some(target_statement_id))],
         Default::default(),
     ))
 }
@@ -270,7 +273,7 @@ fn build_guarantee_verify(
     validate_lt(&mut casm_builder, range_check, value, &libfunc.range.upper);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check]], None)],
+        [(Label::FALLTHROUGH, &[&[range_check]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck,
@@ -322,7 +325,7 @@ fn build_u128_to_u32_guarantees(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[w0], &[w1], &[w2], &[w3]], None)],
+        [(Label::FALLTHROUGH, &[&[w0], &[w1], &[w2], &[w3]], None)],
         Default::default(),
     ))
 }
