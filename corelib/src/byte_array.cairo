@@ -727,7 +727,7 @@ impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
 #[derive(Copy, Drop)]
 pub struct ByteSpan {
     /// A span representing the array of all `bytes31` words in the byte-span, excluding the last
-    /// bytes_31 word that is stored in [Self::last_word].
+    /// bytes_31 word that is stored in [Self::remainder_word].
     /// Invariant: every byte stored in `data` is part of the span except for the bytes appearing
     /// before `first_char_start_offset` in the first word.
     data: Span<bytes31>,
