@@ -11,7 +11,7 @@ jobs:
       - name: Build for unknown Linux
         run: ./scripts/release_tar.sh x86_64-unknown-linux-musl
       - name: Archive artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-x86_64-unknown-linux-musl
           path: target/x86_64-unknown-linux-musl.tar.gz
