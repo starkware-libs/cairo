@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792024462443,
+  "lastUpdate": 1792024552434,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -39191,6 +39191,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/22f75293c818dc440e4682043a37634f7320199a"
         },
         "date": 1791939442453,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "mikeua",
+            "username": "mikeua",
+            "email": "pavlovsky.mike@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "ca912f7e562da2fe796a87b5871914f2566b1024",
+          "message": "docs(reference): fix broken cross-reference anchors (#10449)\n\nCo-authored-by: mikeua <2239742+mikeua@users.noreply.github.com>",
+          "timestamp": "2026-10-14T04:41:07Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/ca912f7e562da2fe796a87b5871914f2566b1024"
+        },
+        "date": 1792024552141,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
