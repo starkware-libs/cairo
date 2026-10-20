@@ -46,7 +46,7 @@
 //! It replaces this:
 //!
 //! ```
-//! fn add_last_numbers(mut array: Array<u32>) -> Option<u32> {
+//! fn add_first_numbers(mut array: Array<u32>) -> Option<u32> {
 //!     let a = array.pop_front();
 //!     let b = array.pop_front();
 //!
@@ -61,7 +61,7 @@
 //! With this:
 //!
 //! ```
-//! fn add_last_numbers(mut array: Array<u32>) -> Option<u32> {
+//! fn add_first_numbers(mut array: Array<u32>) -> Option<u32> {
 //!     Some(array.pop_front()? + array.pop_front()?)
 //!  }
 //! ```
