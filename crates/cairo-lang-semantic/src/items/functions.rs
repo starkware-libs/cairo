@@ -197,7 +197,19 @@ impl<'db> GenericFunctionId<'db> {
     pub fn is_must_use(&self, db: &dyn Database) -> Maybe<bool> {
         match self {
             GenericFunctionId::Free(id) => id.has_attr(db, MUST_USE_ATTR),
-            GenericFunctionId::Impl(id) => id.function.has_attr(db, MUST_USE_ATTR),
+            GenericFunctionId::Impl(id) => {
+                // `id.function` is the *trait* function this impl function implements, so
+                // checking it alone only honours `#[must_use]` written on the trait
+                // declaration. The impl's own function element must be consulted as well,
+                // otherwise `#[must_use]` on an impl method is silently a no-op.
+                if id.function.has_attr(db, MUST_USE_ATTR)? {
+                    return Ok(true);
+                }
+                match id.impl_function(db)? {
+                    Some(impl_function) => impl_function.has_attr(db, MUST_USE_ATTR),
+                    None => Ok(false),
+                }
+            }
             GenericFunctionId::Extern(_) => Ok(false),
         }
     }
