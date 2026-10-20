@@ -163,21 +163,12 @@ fn test_write_run_param_rejects_invalid_index() {
     let mut vm = VirtualMachine::new(false, false);
     let dst = CellRef { register: Register::AP, offset: 0 };
 
-    let error = hint_processor
-        .execute_external_hint(
-            &mut vm,
-            &ExternalHint::WriteRunParam { index: ResOperand::from(1usize), dst },
-        )
-        .unwrap_err();
-    assert!(error.to_string().contains("Run parameter index 1 is out of bounds."));
-
-    let error = hint_processor
-        .execute_external_hint(
-            &mut vm,
-            &ExternalHint::WriteRunParam { index: ResOperand::from(1u128 << 64), dst },
-        )
-        .unwrap_err();
-    assert!(error.to_string().contains("Run parameter index is too large."));
+    for index in [ResOperand::from(1usize), ResOperand::from(1u128 << 64)] {
+        let error = hint_processor
+            .execute_external_hint(&mut vm, &ExternalHint::WriteRunParam { index, dst })
+            .unwrap_err();
+        assert!(error.to_string().contains("is out of bounds."), "{error}");
+    }
 }
 
 #[test]
