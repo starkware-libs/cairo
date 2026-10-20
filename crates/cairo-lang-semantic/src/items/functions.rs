@@ -197,7 +197,14 @@ impl<'db> GenericFunctionId<'db> {
     pub fn is_must_use(&self, db: &dyn Database) -> Maybe<bool> {
         match self {
             GenericFunctionId::Free(id) => id.has_attr(db, MUST_USE_ATTR),
-            GenericFunctionId::Impl(id) => id.function.has_attr(db, MUST_USE_ATTR),
+            GenericFunctionId::Impl(id) => {
+                // Honor the attribute on either the trait function or the impl function.
+                if id.function.has_attr(db, MUST_USE_ATTR)? {
+                    return Ok(true);
+                }
+                let Some(impl_function) = id.impl_function(db)? else { return Ok(false) };
+                impl_function.has_attr(db, MUST_USE_ATTR)
+            }
             GenericFunctionId::Extern(_) => Ok(false),
         }
     }
