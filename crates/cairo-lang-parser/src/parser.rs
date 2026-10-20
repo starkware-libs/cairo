@@ -32,6 +32,14 @@ use crate::validation::{
 #[path = "parser_test.rs"]
 mod test;
 
+/// The maximum depth of nested expressions the recursive-descent parser will descend into.
+///
+/// Every nesting level costs a native stack frame, so without a bound a deeply nested input can
+/// abort the process with a stack overflow instead of producing a diagnostic. The limit is far
+/// above any realistic hand-written or generated source: exceeding it is far more likely to be
+/// machine-generated input than a legitimate program.
+pub const MAX_EXPR_DEPTH: usize = 400;
+
 #[derive(PartialEq)]
 enum MacroParsingContext {
     /// The code being parsed is a part of a macro rule.
@@ -76,6 +84,13 @@ pub struct Parser<'a, 'mt> {
     trivia_greens: UnorderedHashMap<&'a str, TriviaGreen<'a>>,
     /// The green id of an empty trivia list, built once and used for every trivia-less terminal.
     empty_trivia: TriviaGreen<'a>,
+    /// How many expression levels the parser is currently descended into. Recursive-descent
+    /// parsing of nested expressions costs one native stack frame per level, so unbounded input
+    /// can exhaust the stack before any diagnostic is produced. Bounded by [`MAX_EXPR_DEPTH`].
+    expr_depth: usize,
+    /// Set once the expression nesting limit has been reported, so the diagnostic is emitted a
+    /// single time per file instead of once per abandoned nesting level.
+    expr_depth_exceeded: bool,
 }
 
 impl<'a> Parser<'a, '_> {
@@ -189,6 +204,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             macro_parsing_context: MacroParsingContext::None,
             trivia_greens: Default::default(),
             empty_trivia: Trivia::new_green(db, &[]),
+            expr_depth: 0,
+            expr_depth_exceeded: false,
         };
         parser.ensure_next_k_exists(2);
         parser
@@ -1500,7 +1517,27 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or TryParseFailure if an expression can't be parsed.
     pub fn try_parse_expr(&mut self) -> TryParseResult<ExprGreen<'a>> {
-        self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow, AndLetBehavior::Simple)
+        // Every nested expression level costs native stack frames, so bound the descent here —
+        // the single choke point every expression path goes through, including the parenthesis
+        // recursion via `expect_parenthesized_expr`. Without this a deeply nested input aborts
+        // the process with a stack overflow before any diagnostic can be produced.
+        if self.expr_depth >= MAX_EXPR_DEPTH {
+            if !self.expr_depth_exceeded {
+                self.expr_depth_exceeded = true;
+                let offset = self.offset;
+                self.add_diagnostic(
+                    ParserDiagnosticKind::ExprNestingTooDeep,
+                    TextSpan::new(offset, offset),
+                );
+            }
+            return Err(TryParseFailure::SkipToken);
+        }
+
+        self.expr_depth += 1;
+        let result =
+            self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow, AndLetBehavior::Simple);
+        self.expr_depth -= 1;
+        result
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or a node with kind ExprMissing if an expression can't be parsed.
