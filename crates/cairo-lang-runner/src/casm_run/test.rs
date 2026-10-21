@@ -1,9 +1,12 @@
 use cairo_lang_casm::assembler::AssembledCairoProgram;
+use cairo_lang_casm::hints::ExternalHint;
 use cairo_lang_casm::inline::CasmContext;
+use cairo_lang_casm::operand::{CellRef, Register, ResOperand};
 use cairo_lang_casm::{casm, cell_ref};
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CairoProgramDebugInfo};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
+use cairo_vm::vm::vm_core::VirtualMachine;
 use indoc::indoc;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -14,7 +17,7 @@ use super::format_for_debug;
 use crate::casm_run::contract_address::calculate_contract_address;
 use crate::casm_run::{RunFunctionResult, run_function};
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
-use crate::{CairoHintProcessor, StarknetState, build_hints_dict};
+use crate::{Arg, CairoHintProcessor, StarknetState, build_hints_dict};
 
 /// Creates a new `AssembledCairoProgram` from the given `CasmContext`.
 fn assembled(casm: CasmContext) -> AssembledCairoProgram {
@@ -142,6 +145,30 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         ret_memory.take(n_returns).map(|cell| cell.unwrap()).collect_vec(),
         expected.iter().copied().map(Felt252::from).collect_vec()
     );
+}
+
+#[test]
+fn test_write_run_param_rejects_invalid_index() {
+    let mut hint_processor = CairoHintProcessor {
+        runner: None,
+        user_args: vec![vec![Arg::from(Felt252::from(7))]],
+        string_to_hint: Default::default(),
+        starknet_state: StarknetState::default(),
+        run_resources: RunResources::default(),
+        syscalls_used_resources: Default::default(),
+        no_temporary_segments: true,
+        markers: Default::default(),
+        panic_traceback: Default::default(),
+    };
+    let mut vm = VirtualMachine::new(false, false);
+    let dst = CellRef { register: Register::AP, offset: 0 };
+
+    for index in [ResOperand::from(1usize), ResOperand::from(1u128 << 64)] {
+        let error = hint_processor
+            .execute_external_hint(&mut vm, &ExternalHint::WriteRunParam { index, dst })
+            .unwrap_err();
+        assert!(error.to_string().contains("is out of bounds."), "{error}");
+    }
 }
 
 #[test]

@@ -1364,8 +1364,16 @@ impl CairoHintProcessor<'_> {
                 },
             )?,
             ExternalHint::WriteRunParam { index, dst } => {
-                let index = get_val(vm, index)?.to_usize().expect("Got a bad index.");
-                let mut stack = vec![(cell_ref_to_relocatable(dst, vm), &self.user_args[index])];
+                let index = get_val(vm, index)?;
+                let values = index
+                    .to_usize()
+                    .and_then(|index| self.user_args.get(index))
+                    .ok_or_else(|| {
+                        HintError::CustomHint(Box::from(format!(
+                            "Run parameter index {index} is out of bounds."
+                        )))
+                    })?;
+                let mut stack = vec![(cell_ref_to_relocatable(dst, vm), values)];
                 while let Some((mut buffer, values)) = stack.pop() {
                     for value in values {
                         match value {
