@@ -8,6 +8,7 @@
 //! 1. There is no flow that uses the "value" of `dest` after the convergence.
 //! 2. All the `src_i` variables get the same "value".
 
+use cairo_lang_utils::stack::with_sufficient_stack;
 use itertools::Itertools;
 
 use crate::utils::{Rebuilder, RebuilderEx};
@@ -98,7 +99,9 @@ fn set_used_impl(
     if !variable_used[var.index()] {
         variable_used[var.index()] = true;
         for src in dest_to_srcs[var.index()].iter() {
-            set_used_impl(dest_to_srcs, var_representatives, variable_used, *src);
+            with_sufficient_stack(|| {
+                set_used_impl(dest_to_srcs, var_representatives, variable_used, *src)
+            });
         }
     }
 }
@@ -115,7 +118,9 @@ fn map_var_id_impl(
     }
     let new_var = if let Ok(single_var) = dest_to_srcs[var.index()]
         .iter()
-        .map(|src| map_var_id_impl(dest_to_srcs, var_representatives, *src))
+        .map(|src| {
+            with_sufficient_stack(|| map_var_id_impl(dest_to_srcs, var_representatives, *src))
+        })
         .unique()
         .exactly_one()
     {
