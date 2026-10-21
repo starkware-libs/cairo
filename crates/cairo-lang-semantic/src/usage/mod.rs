@@ -5,6 +5,7 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::stack::with_sufficient_stack;
 
 use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
@@ -191,6 +192,16 @@ impl<'db> Usages<'db> {
     }
 
     fn handle_expr(
+        &mut self,
+        arenas: &Arenas<'db>,
+        curr_expr_id: ExprId,
+        current: &mut Usage<'db>,
+    ) {
+        with_sufficient_stack(|| self.handle_expr_inner(arenas, curr_expr_id, current))
+    }
+
+    /// See [Self::handle_expr].
+    fn handle_expr_inner(
         &mut self,
         arenas: &Arenas<'db>,
         curr_expr_id: ExprId,

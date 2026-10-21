@@ -6,7 +6,9 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
 use cairo_lang_semantic::path::ContextualizePath;
-use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function, setup_test_module};
+use cairo_lang_semantic::test_utils::{
+    setup_test_expr, setup_test_function, setup_test_function_from_content, setup_test_module,
+};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
@@ -304,4 +306,48 @@ fn test_per_stage_signature(
             .insert(tag.into(), format_signature(db, &lowered.signature, test_function.module_id));
     }
     TestRunnerResult::success(outputs)
+}
+
+/// Compiles the given function body on a thread with a small stack, to verify deeply nested
+/// expressions do not overflow the stack.
+fn lower_on_small_stack(body: String) {
+    std::thread::Builder::new()
+        .stack_size(1 << 20)
+        .spawn(move || {
+            let db = LoweringDatabaseForTesting::default();
+            let code = format!(
+                "fn f(x: felt252) -> felt252 {{ x }}\n#[target_function] fn foo(a: felt252, b: \
+                 bool) -> felt252 {{ {body} }}"
+            );
+            let (test_function, semantic_diagnostics) =
+                setup_test_function_from_content(&db, &code, None, None).split();
+            assert_eq!(semantic_diagnostics, "");
+            let function_id =
+                ConcreteFunctionWithBodyId::from_semantic(&db, test_function.concrete_function_id);
+            db.lowered_body(function_id, LoweringStage::Final).unwrap();
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+}
+
+#[test]
+fn test_deeply_nested_expressions() {
+    const DEPTH: usize = 3000;
+    // `a + 1 + 1 + ...`, a left-deep chain of calls.
+    lower_on_small_stack(format!("a{}", " + 1".repeat(DEPTH)));
+    // `1 + (1 + (... + a))`, a right-deep chain of calls.
+    lower_on_small_stack(format!("{}a{}", "1 + (".repeat(DEPTH), ")".repeat(DEPTH)));
+    // `(((a + 1) + 1) + 1)`, nested parentheses.
+    lower_on_small_stack(format!("{}a{}", "(".repeat(DEPTH), " + 1)".repeat(DEPTH)));
+    // `--...-a`, a chain of unary operators.
+    lower_on_small_stack(format!("{}a", "-".repeat(DEPTH)));
+    // `if b && b && ... { 1 } else { 0 }`, a chain of logical operators.
+    lower_on_small_stack(format!("if b{} {{ 1 }} else {{ 0 }}", " && b".repeat(DEPTH)));
+    // `f(f(f(a)))`, nested function calls.
+    lower_on_small_stack(format!("{}a{}", "f(".repeat(DEPTH), ")".repeat(DEPTH)));
+    // `{{{a}}}`, nested blocks.
+    lower_on_small_stack(format!("{}a{}", "{ ".repeat(DEPTH), " }".repeat(DEPTH)));
+    // `if b { if b { ... } else { 0 } } else { 0 }`, nested ifs.
+    lower_on_small_stack(format!("{}a{}", "if b { ".repeat(DEPTH), " } else { 0 }".repeat(DEPTH)));
 }
