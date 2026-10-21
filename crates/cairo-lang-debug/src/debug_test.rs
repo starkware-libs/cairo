@@ -10,7 +10,7 @@ trait TestGroup: salsa::Database {}
 impl TestGroup for DummyDb {}
 
 // Structs.
-#[salsa::interned(revisions = usize::MAX)]
+#[salsa::interned]
 struct Dummy {
     id: usize,
 }
