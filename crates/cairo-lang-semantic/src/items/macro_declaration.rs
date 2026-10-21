@@ -83,8 +83,8 @@ impl<'db> CaptureTree<'db> {
 struct MatcherContext<'db> {
     /// The captured values per macro parameter name, nested by the repetition structure of the
     /// pattern - see [`CaptureTree`]. Includes placeholders whose repetition matched zero times.
-    /// As param name uniqueness is not verified, a name the pattern uses at conflicting nesting
-    /// positions only holds the values of the first.
+    /// A reused name is rejected at declaration time, but every rule is matched before its error
+    /// is honored; the tree then only holds the values of the name's first use.
     capture_trees: CaptureTrees<'db>,
 
     /// The number of pattern repetitions currently being matched inside, which is the nesting
@@ -243,40 +243,43 @@ fn priv_macro_declaration_data<'db>(
     ));
     let resolver = Resolver::new(db, module_id, inference_id);
 
-    // TODO(Dean): Verify uniqueness of param names.
     // TODO(Dean): Verify consistency bracket terminals.
     let mut rules = vec![];
     for rule_syntax in macro_declaration_syntax.rules(db).elements(db) {
         let pattern = rule_syntax.lhs(db);
         let expansion = rule_syntax.rhs(db).elements(db);
         let pattern_elements = get_macro_elements(db, pattern.clone());
-        // Collect the repetition path (outermost-to-innermost pattern rep IDs) for every
-        // placeholder defined in the pattern.
-        let mut placeholder_paths: OrderedHashMap<SmolStrId<'db>, Vec<usize>> = Default::default();
-        let mut next_rep_id = 0;
-        collect_placeholder_paths(
-            db,
-            pattern_elements.elements(db),
-            &mut vec![],
-            &mut next_rep_id,
-            &mut placeholder_paths,
-        );
-
-        let mut ctx = ExpansionCheckCtx {
-            db,
-            known_path: &[],
-            curr_rep_depth: 0,
-            placeholder_paths: &placeholder_paths,
-            diagnostics: &mut diagnostics,
-            rule_err: Ok(()),
-            enclosing_block_reported: false,
-        };
-        ctx.check_node(expansion.as_syntax_node());
+        let placeholders = PatternPlaceholders::collect(db, pattern_elements.elements(db));
+        // A pattern with a parse error holds nameless placeholders, which would be reported as
+        // reusing one name.
+        let pattern_is_parsed = !pattern.as_syntax_node().contains_missing(db);
+        let mut rule_err = Ok(());
+        if pattern_is_parsed {
+            for (name, ptr) in placeholders.reused_names.iter() {
+                rule_err = Err(diagnostics
+                    .report(*ptr, SemanticDiagnosticKind::DuplicateMacroPlaceholder(*name)));
+            }
+        }
+        // A reused name leaves its capture depth ambiguous, so the expansion is only checked
+        // against a pattern without one.
+        if rule_err.is_ok() {
+            let mut ctx = ExpansionCheckCtx {
+                db,
+                known_path: &[],
+                curr_rep_depth: 0,
+                placeholder_paths: &placeholders.paths,
+                diagnostics: &mut diagnostics,
+                rule_err: Ok(()),
+                enclosing_block_reported: false,
+            };
+            ctx.check_node(expansion.as_syntax_node());
+            rule_err = ctx.rule_err;
+        }
         // Skipping expanding an inline macro if it had a parser error.
-        if pattern.as_syntax_node().contains_missing(db) {
+        if !pattern_is_parsed {
             continue;
         }
-        rules.push(MacroRuleData { pattern, expansion, err: ctx.rule_err });
+        rules.push(MacroRuleData { pattern, expansion, err: rule_err });
     }
     let resolver_data = Arc::new(resolver.data);
     Ok(MacroDeclarationData { diagnostics: diagnostics.build(), attributes, resolver_data, rules })
@@ -316,38 +319,69 @@ fn extract_placeholder<'db>(
     None
 }
 
-/// Assigns a unique ID to every `$()` repetition block in the pattern (left-to-right DFS order)
-/// and records, for each placeholder, its path: the ordered list of ancestor repetition IDs from
-/// outermost to innermost. The resulting map is used by [`ExpansionCheckCtx`] to validate the
-/// expansion.
-fn collect_placeholder_paths<'db>(
-    db: &'db dyn Database,
-    elements: impl IntoIterator<Item = ast::MacroElement<'db>>,
-    current_path: &mut Vec<usize>,
-    next_rep_id: &mut usize,
-    result: &mut OrderedHashMap<SmolStrId<'db>, Vec<usize>>,
-) {
-    for element in elements {
-        match element {
-            ast::MacroElement::Param(param) => {
-                result.insert(
-                    param.name(db).as_syntax_node().get_text_without_trivia(db),
-                    current_path.clone(),
-                );
+/// The placeholders a macro rule's pattern defines, collected by [`Self::collect`].
+#[derive(Default)]
+struct PatternPlaceholders<'db> {
+    /// The path of every placeholder the pattern defines: the IDs of the `$()` repetitions it is
+    /// nested in, outermost first, IDs assigned in left-to-right DFS order. Used by
+    /// [`ExpansionCheckCtx`] to validate the expansion. A reused name holds the path of its last
+    /// use.
+    paths: OrderedHashMap<SmolStrId<'db>, Vec<usize>>,
+    /// Every name the pattern uses for more than one placeholder, pointing at its second use.
+    reused_names: OrderedHashMap<SmolStrId<'db>, SyntaxStablePtrId<'db>>,
+}
+
+impl<'db> PatternPlaceholders<'db> {
+    /// Collects the placeholders of `elements`, the elements of a macro rule's pattern, including
+    /// the ones nested in its repetitions and subtrees.
+    fn collect(
+        db: &'db dyn Database,
+        elements: impl IntoIterator<Item = ast::MacroElement<'db>>,
+    ) -> Self {
+        let mut res = Self::default();
+        res.collect_elements(db, elements, &mut vec![], &mut 0);
+        res
+    }
+
+    /// Recursive part of [`Self::collect`]: `current_path` is the path of the elements being
+    /// traversed, and `next_rep_id` the counter assigning repetition IDs.
+    fn collect_elements(
+        &mut self,
+        db: &'db dyn Database,
+        elements: impl IntoIterator<Item = ast::MacroElement<'db>>,
+        current_path: &mut Vec<usize>,
+        next_rep_id: &mut usize,
+    ) {
+        for element in elements {
+            match element {
+                ast::MacroElement::Param(param) => {
+                    let name = param.name(db).as_syntax_node().get_text_without_trivia(db);
+                    if self.paths.insert(name, current_path.clone()).is_some() {
+                        self.reused_names.entry(name).or_insert(param.stable_ptr(db).untyped());
+                    }
+                }
+                ast::MacroElement::Repetition(rep) => {
+                    let rep_id = *next_rep_id;
+                    *next_rep_id += 1;
+                    current_path.push(rep_id);
+                    self.collect_elements(
+                        db,
+                        rep.elements(db).elements(db),
+                        current_path,
+                        next_rep_id,
+                    );
+                    assert_eq!(current_path.pop(), Some(rep_id));
+                }
+                ast::MacroElement::Subtree(subtree) => {
+                    self.collect_elements(
+                        db,
+                        get_macro_elements(db, subtree.subtree(db)).elements(db),
+                        current_path,
+                        next_rep_id,
+                    );
+                }
+                ast::MacroElement::Token(_) => {}
             }
-            ast::MacroElement::Repetition(rep) => {
-                let rep_id = *next_rep_id;
-                *next_rep_id += 1;
-                current_path.push(rep_id);
-                let inner = rep.elements(db).elements(db);
-                collect_placeholder_paths(db, inner, current_path, next_rep_id, result);
-                assert_eq!(current_path.pop(), Some(rep_id));
-            }
-            ast::MacroElement::Subtree(subtree) => {
-                let inner = get_macro_elements(db, subtree.subtree(db)).elements(db);
-                collect_placeholder_paths(db, inner, current_path, next_rep_id, result);
-            }
-            ast::MacroElement::Token(_) => {}
         }
     }
 }
