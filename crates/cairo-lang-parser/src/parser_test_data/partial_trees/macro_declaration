@@ -460,3 +460,279 @@ error[E1010]: Macro parameter must have a kind.
     │       │       └── semicolon (kind: TokenSemicolon): ';'
     │       └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test macro definition with non-comma repetition separators.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+macro macro_name {
+    ($($x:ident);*) => { 0 };
+
+    ($($x:ident).+) => { 0 };
+
+    ($($x:ident)::*) => { 0 };
+
+    ($($x:ident),*) => { 0 };
+}
+
+//! > top_level_kind
+MacroRule
+
+//! > ignored_kinds
+MacroParam
+BracedMacro
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: MacroRule
+    ├── lhs (kind: ParenthesizedMacro)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── elements (kind: MacroElements)
+    │   │   └── child #0 (kind: MacroRepetition)
+    │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       ├── elements (kind: MacroElements)
+    │   │       │   └── child #0 (kind: MacroParam) <ignored>
+    │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │       ├── separator (kind: MacroRepetitionSeparator)
+    │   │       │   └── token (kind: TokenSemicolon): ';'
+    │   │       └── operator (kind: TokenMul): '*'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    ├── rhs (kind: BracedMacro) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+└── Top level kind: MacroRule
+    ├── lhs (kind: ParenthesizedMacro)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── elements (kind: MacroElements)
+    │   │   └── child #0 (kind: MacroRepetition)
+    │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       ├── elements (kind: MacroElements)
+    │   │       │   └── child #0 (kind: MacroParam) <ignored>
+    │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │       ├── separator (kind: MacroRepetitionSeparator)
+    │   │       │   └── token (kind: TokenDot): '.'
+    │   │       └── operator (kind: TokenPlus): '+'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    ├── rhs (kind: BracedMacro) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+└── Top level kind: MacroRule
+    ├── lhs (kind: ParenthesizedMacro)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── elements (kind: MacroElements)
+    │   │   └── child #0 (kind: MacroRepetition)
+    │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       ├── elements (kind: MacroElements)
+    │   │       │   └── child #0 (kind: MacroParam) <ignored>
+    │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │       ├── separator (kind: MacroRepetitionSeparator)
+    │   │       │   └── token (kind: TokenColonColon): '::'
+    │   │       └── operator (kind: TokenMul): '*'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    ├── rhs (kind: BracedMacro) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+└── Top level kind: MacroRule
+    ├── lhs (kind: ParenthesizedMacro)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── elements (kind: MacroElements)
+    │   │   └── child #0 (kind: MacroRepetition)
+    │   │       ├── dollar (kind: TokenDollar): '$'
+    │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       ├── elements (kind: MacroElements)
+    │   │       │   └── child #0 (kind: MacroParam) <ignored>
+    │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │       ├── separator (kind: MacroRepetitionSeparator)
+    │   │       │   └── token (kind: TokenComma): ','
+    │   │       └── operator (kind: TokenMul): '*'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    ├── rhs (kind: BracedMacro) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test macro definition with a multi-token repetition separator.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+macro macro_name {
+    ($($x:ident);;*) => { 0 };
+}
+
+//! > top_level_kind
+MacroRule
+
+//! > ignored_kinds
+MacroParam
+BracedMacro
+
+//! > expected_diagnostics
+error[E1031]: Missing macro repetition operator. Expected `?`, `+`, or `*` after `$(...)`.
+ --> dummy_file.cairo:2:18
+    ($($x:ident);;*) => { 0 };
+                 ^
+
+//! > expected_tree
+└── Top level kind: MacroRule
+    ├── lhs (kind: ParenthesizedMacro)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── elements (kind: MacroElements)
+    │   │   ├── child #0 (kind: MacroRepetition)
+    │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   └── child #0 (kind: MacroParam) <ignored>
+    │   │   │   ├── rparen (kind: TokenRParen): ')'
+    │   │   │   ├── separator (kind: MacroRepetitionSeparator)
+    │   │   │   │   └── token (kind: TokenSemicolon): ';'
+    │   │   │   └── operator: Missing []
+    │   │   ├── child #1 (kind: TokenTreeLeaf)
+    │   │   │   └── leaf (kind: TokenSemicolon): ';'
+    │   │   └── child #2 (kind: TokenTreeLeaf)
+    │   │       └── leaf (kind: TokenMul): '*'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    ├── rhs (kind: BracedMacro) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test macro definition repetition operators are not taken as separators.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+macro macro_name {
+    ($($x:ident)**) => { 0 };
+
+    ($($x:ident)++) => { 0 };
+
+    ($($x:ident)??) => { 0 };
+}
+
+//! > top_level_kind
+MacroRule
+
+//! > ignored_kinds
+MacroParam
+BracedMacro
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: MacroRule
+    ├── lhs (kind: ParenthesizedMacro)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── elements (kind: MacroElements)
+    │   │   ├── child #0 (kind: MacroRepetition)
+    │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   └── child #0 (kind: MacroParam) <ignored>
+    │   │   │   ├── rparen (kind: TokenRParen): ')'
+    │   │   │   ├── separator (kind: OptionMacroRepetitionSeparatorEmpty) []
+    │   │   │   └── operator (kind: TokenMul): '*'
+    │   │   └── child #1 (kind: TokenTreeLeaf)
+    │   │       └── leaf (kind: TokenMul): '*'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    ├── rhs (kind: BracedMacro) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+└── Top level kind: MacroRule
+    ├── lhs (kind: ParenthesizedMacro)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── elements (kind: MacroElements)
+    │   │   ├── child #0 (kind: MacroRepetition)
+    │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   └── child #0 (kind: MacroParam) <ignored>
+    │   │   │   ├── rparen (kind: TokenRParen): ')'
+    │   │   │   ├── separator (kind: OptionMacroRepetitionSeparatorEmpty) []
+    │   │   │   └── operator (kind: TokenPlus): '+'
+    │   │   └── child #1 (kind: TokenTreeLeaf)
+    │   │       └── leaf (kind: TokenPlus): '+'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    ├── rhs (kind: BracedMacro) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+└── Top level kind: MacroRule
+    ├── lhs (kind: ParenthesizedMacro)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── elements (kind: MacroElements)
+    │   │   ├── child #0 (kind: MacroRepetition)
+    │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   └── child #0 (kind: MacroParam) <ignored>
+    │   │   │   ├── rparen (kind: TokenRParen): ')'
+    │   │   │   ├── separator (kind: OptionMacroRepetitionSeparatorEmpty) []
+    │   │   │   └── operator (kind: TokenQuestionMark): '?'
+    │   │   └── child #1 (kind: TokenTreeLeaf)
+    │   │       └── leaf (kind: TokenQuestionMark): '?'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    ├── rhs (kind: BracedMacro) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test macro definition with a delimiter after a repetition.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+macro macro_name {
+    ($($x:ident)[]*) => { 0 };
+}
+
+//! > top_level_kind
+MacroRule
+
+//! > ignored_kinds
+MacroParam
+BracedMacro
+
+//! > expected_diagnostics
+error[E1031]: Missing macro repetition operator. Expected `?`, `+`, or `*` after `$(...)`.
+ --> dummy_file.cairo:2:17
+    ($($x:ident)[]*) => { 0 };
+                ^
+
+//! > expected_tree
+└── Top level kind: MacroRule
+    ├── lhs (kind: ParenthesizedMacro)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── elements (kind: MacroElements)
+    │   │   ├── child #0 (kind: MacroRepetition)
+    │   │   │   ├── dollar (kind: TokenDollar): '$'
+    │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   ├── elements (kind: MacroElements)
+    │   │   │   │   └── child #0 (kind: MacroParam) <ignored>
+    │   │   │   ├── rparen (kind: TokenRParen): ')'
+    │   │   │   ├── separator (kind: OptionMacroRepetitionSeparatorEmpty) []
+    │   │   │   └── operator: Missing []
+    │   │   ├── child #1 (kind: MacroWrapper)
+    │   │   │   └── subtree (kind: BracketedMacro)
+    │   │   │       ├── lbrack (kind: TokenLBrack): '['
+    │   │   │       ├── elements (kind: MacroElements) []
+    │   │   │       └── rbrack (kind: TokenRBrack): ']'
+    │   │   └── child #2 (kind: TokenTreeLeaf)
+    │   │       └── leaf (kind: TokenMul): '*'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── fat_arrow (kind: TokenMatchArrow): '=>'
+    ├── rhs (kind: BracedMacro) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
