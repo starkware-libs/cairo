@@ -493,6 +493,12 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     ty.contextualized_path(db, self.context_module)
                 )
             }
+            SemanticDiagnosticKind::CircuitInputIndicesNotContiguous { expected, actual } => {
+                format!(
+                    "Circuit input indices must be contiguous and start at 0. Expected index \
+                     {expected}, found {actual}."
+                )
+            }
             SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
                     r#"Redefinition of parameter name "{}"{}"#,
@@ -1376,6 +1382,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::EnumVariantRedefinition { .. } => error_code!(E2051),
             SemanticDiagnosticKind::InfiniteSizeType(..) => error_code!(E2052),
             SemanticDiagnosticKind::ArrayOfZeroSizedElements(..) => error_code!(E2053),
+            SemanticDiagnosticKind::CircuitInputIndicesNotContiguous { .. } => {
+                error_code!(E2204)
+            }
             SemanticDiagnosticKind::ParamNameRedefinition { .. } => error_code!(E2054),
             SemanticDiagnosticKind::ConditionNotBool(..) => error_code!(E2055),
             SemanticDiagnosticKind::IncompatibleArms { .. } => error_code!(E2056),
@@ -1704,6 +1713,10 @@ pub enum SemanticDiagnosticKind<'db> {
     },
     InfiniteSizeType(semantic::TypeId<'db>),
     ArrayOfZeroSizedElements(semantic::TypeId<'db>),
+    CircuitInputIndicesNotContiguous {
+        expected: usize,
+        actual: usize,
+    },
     ParamNameRedefinition {
         function_title_id: Option<FunctionTitleId<'db>>,
         param_name: SmolStrId<'db>,
