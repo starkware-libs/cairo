@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792544210856,
+  "lastUpdate": 1792544354728,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -40991,6 +40991,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/50efe3095193bbbbaf2869d756043e9fa1ff1e02"
         },
         "date": 1792457772796,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "zoupingcenter",
+            "username": "zoupingcenter",
+            "email": "zoupingcenter@outlook.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "5854c229d5bbeb50c886c12c79729f5c800a2832",
+          "message": "docs(corelib): fix Option examples naming (#10455)\n\nSigned-off-by: zoupingcenter <zoupingcenter@outlook.com>",
+          "timestamp": "2026-10-20T05:37:19Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/5854c229d5bbeb50c886c12c79729f5c800a2832"
+        },
+        "date": 1792544354408,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
