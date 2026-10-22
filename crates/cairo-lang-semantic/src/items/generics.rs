@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt::{Display, Write};
 use std::hash::Hash;
 use std::sync::Arc;
@@ -17,7 +18,9 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, extract_matches};
+use itertools::Itertools;
 use salsa::Database;
+use sha3::{Digest, Keccak256};
 use syntax::node::TypedStablePtr;
 
 use super::constant::{ConstValue, ConstValueId};
@@ -99,6 +102,21 @@ impl<'db> GenericArgumentId<'db> {
     /// Short name of the generic argument.
     pub fn short_name(&self, db: &dyn Database) -> String {
         if let GenericArgumentId::Type(ty) = self { ty.short_name(db) } else { self.format(db) }
+    }
+    /// A name of bounded size that distinct arguments do not share, unlike `short_name` which
+    /// names impl parameters by their local names.
+    fn key_name(&self, db: &'db dyn Database) -> Cow<'db, str> {
+        use NegativeImplLongId::*;
+        match self {
+            GenericArgumentId::Type(ty) => ty.key_name(db).into(),
+            GenericArgumentId::Constant(value) => value.key_name(db).into(),
+            GenericArgumentId::Impl(imp) => imp.short_name(db).into(),
+            GenericArgumentId::NegImpl(imp) => match imp.long(db) {
+                Solved(concrete_trait) => format!("-{}", concrete_trait.short_name(db)).into(),
+                GenericParameter(param) => param.full_path(db).into(),
+                NegativeImplVar(var) => format!("?{}", var.long(db).id.0).into(),
+            },
+        }
     }
 
     /// A utility function for extracting the generic parameters arguments from a GenericArgumentId.
@@ -842,6 +860,30 @@ pub fn displayable_concrete<'db, 'a: 'db, Name: Display>(
 }
 
 /// The helper struct for `with_generic_args_formatter`.
+/// The short name of a generic definition applied to generic arguments: the definition's path,
+/// then a hash of the arguments' names, so the name's size is bounded by the path's. Distinct
+/// instantiations have distinct short names.
+pub fn short_concrete_name<'db>(
+    db: &'db dyn Database,
+    path: &str,
+    generic_args: &[GenericArgumentId<'db>],
+) -> String {
+    if generic_args.is_empty() {
+        return path.to_string();
+    }
+    format!("{path}::<{}>", names_hash(generic_args.iter().map(|arg| arg.key_name(db))))
+}
+
+/// A hash of a sequence of names: distinct sequences have distinct hashes.
+pub fn names_hash(names: impl IntoIterator<Item = impl AsRef<str>>) -> String {
+    let mut hasher = Keccak256::new();
+    for name in names {
+        hasher.update(name.as_ref().as_bytes());
+        hasher.update([0]);
+    }
+    format!("h0x{}", hasher.finalize().iter().map(|byte| format!("{byte:x}")).join(""))
+}
+
 struct DisplayableConcrete<'a, 'db, Name> {
     db: &'db dyn Database,
     name: &'a Name,
