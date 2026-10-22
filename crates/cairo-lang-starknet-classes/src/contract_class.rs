@@ -111,23 +111,14 @@ impl ExtractedSierraProgram {
         let list_name = list_selector.to_string();
         let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
         for libfunc in &self.program.libfunc_declarations {
-            match allowed_libfuncs.allowed_libfuncs.get(&libfunc.long_id.generic_id) {
-                Some(None) => {}
-                Some(Some(required)) if self.sierra_version.supports(*required) => {}
-                Some(Some(required)) => {
-                    return Err(AllowedLibfuncsError::UnsupportedLibfuncAtVersion {
-                        invalid_libfunc: libfunc.long_id.generic_id.to_string(),
-                        required_version: *required,
-                        class_version: self.sierra_version,
-                    });
-                }
-                None => {
-                    return Err(AllowedLibfuncsError::UnsupportedLibfunc {
-                        invalid_libfunc: libfunc.long_id.generic_id.to_string(),
-                        allowed_libfuncs_list_name: list_name,
-                    });
-                }
-            }
+            let libfunc = &libfunc.long_id.generic_id;
+            let Some(versions) = allowed_libfuncs.allowed_libfuncs.get(libfunc) else {
+                return Err(AllowedLibfuncsError::UnsupportedLibfunc {
+                    invalid_libfunc: libfunc.to_string(),
+                    allowed_libfuncs_list_name: list_name,
+                });
+            };
+            versions.validate(libfunc, self.sierra_version)?;
         }
         Ok(())
     }
