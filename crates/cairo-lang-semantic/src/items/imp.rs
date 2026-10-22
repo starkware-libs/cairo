@@ -1807,76 +1807,16 @@ impl<'db> ImplLookupContext<'db> {
         res.insert_module(module_id, db);
         res
     }
-    pub fn insert_lookup_scope(&mut self, db: &'db dyn Database, imp: &UninferredImpl<'db>) {
-        match imp {
-            UninferredImpl::Def(impl_def_id) => {
-                self.insert_module(impl_def_id.parent_module(db), db)
-            }
-            UninferredImpl::ImplAlias(impl_alias_id) => {
-                self.insert_module(impl_alias_id.parent_module(db), db)
-            }
-            UninferredImpl::GenericParam(param) => self.insert_module(param.parent_module(db), db),
-            UninferredImpl::ImplImpl(impl_impl_id) => self.insert_impl(impl_impl_id.impl_id, db),
-            UninferredImpl::GeneratedImpl(_) => {
-                // GeneratedImpls do not extend the lookup context.
-            }
-        };
-    }
     /// Inserts a module into the lookup context, extending the inner impls with the module's
     /// impls.
     pub fn insert_module(&mut self, module_id: ModuleId<'db>, db: &'db dyn Database) {
-        // Make sure to use the module as perceived by the user, as it contains all the macros.
-        let module_id = db.module_perceived_module(module_id);
-        let crate_global_impls = db.crate_global_impls(self.crate_id);
-        if let Ok(module_impls) = db.module_global_impls((), module_id) {
-            module_impls.locals.iter().for_each(|imp| {
-                if let Ok(trait_id) = imp.trait_id(db)
-                    && let Some(set) = crate_global_impls.get(&trait_id)
-                    && set.contains(imp)
-                {
-                    return;
-                }
-
-                self.inner_impls.insert(*imp);
-            });
-            // If the module is not in the lookup context's crate, we add its global impls
-            if !crate_dependencies(db, self.crate_id).contains(&module_id.owning_crate(db)) {
-                module_impls.globals_by_trait.iter().for_each(|(_, imps)| {
-                    imps.iter().for_each(|imp| {
-                        if let Ok(trait_id) = imp.trait_id(db)
-                            && let Some(set) = crate_global_impls.get(&trait_id)
-                            && set.contains(imp)
-                        {
-                            return;
-                        }
-
-                        self.inner_impls.insert(*imp);
-                    });
-                });
-            }
-        }
+        self.inner_impls.extend(module_impls(db, self.crate_id, module_id));
     }
 
     /// Inserts an impl into the lookup context, extending the inner impls with the impl's
     /// trait impls.
     pub fn insert_impl(&mut self, impl_id: ImplId<'db>, db: &'db dyn Database) {
-        let mut uninferred_impls = Vec::new();
-        let Ok(concrete_trait) = impl_id.concrete_trait(db) else {
-            return;
-        };
-        let Ok(trait_impls) = db.trait_impls(concrete_trait.trait_id(db)) else {
-            return;
-        };
-        for (_, trait_impl_id) in trait_impls.iter() {
-            uninferred_impls.push(UninferredImpl::ImplImpl(ImplImplId::new(
-                impl_id,
-                *trait_impl_id,
-                db,
-            )));
-        }
-        for uninferred_impl in uninferred_impls {
-            self.inner_impls.insert(uninferred_impl);
-        }
+        self.inner_impls.extend(impl_impls(db, impl_id));
     }
 
     /// Strips the lookup context of all impls that are not reachable in the dependency graph from
@@ -1922,6 +1862,104 @@ fn uninferred_impl_name<'db>(
     }
 }
 
+impl<'db> ImplLookupContextId<'db> {
+    /// Returns the context extended with the scope an impl candidate is defined in.
+    pub fn extend_lookup_scope(self, db: &'db dyn Database, imp: &UninferredImpl<'db>) -> Self {
+        match imp {
+            UninferredImpl::Def(id) => lookup_context_with_module(db, self, id.parent_module(db)),
+            UninferredImpl::ImplAlias(id) => {
+                lookup_context_with_module(db, self, id.parent_module(db))
+            }
+            UninferredImpl::GenericParam(id) => {
+                lookup_context_with_module(db, self, id.parent_module(db))
+            }
+            UninferredImpl::ImplImpl(id) => lookup_context_with_impl(db, self, id.impl_id),
+            // GeneratedImpls do not extend the lookup context.
+            UninferredImpl::GeneratedImpl(_) => self,
+        }
+    }
+}
+
+/// The lookup context extended with a module's impls.
+#[salsa::tracked(returns(copy))]
+fn lookup_context_with_module<'db>(
+    db: &'db dyn Database,
+    lookup_context: ImplLookupContextId<'db>,
+    module_id: ModuleId<'db>,
+) -> ImplLookupContextId<'db> {
+    let crate_id = lookup_context.long(db).crate_id;
+    extended_lookup_context(db, lookup_context, module_impls(db, crate_id, module_id))
+}
+
+/// The lookup context extended with an impl's trait impls.
+#[salsa::tracked(returns(copy))]
+fn lookup_context_with_impl<'db>(
+    db: &'db dyn Database,
+    lookup_context: ImplLookupContextId<'db>,
+    impl_id: ImplId<'db>,
+) -> ImplLookupContextId<'db> {
+    extended_lookup_context(db, lookup_context, impl_impls(db, impl_id))
+}
+
+/// The lookup context extended with the given impls, or the context itself if it already includes
+/// them all.
+fn extended_lookup_context<'db>(
+    db: &'db dyn Database,
+    lookup_context: ImplLookupContextId<'db>,
+    impls: impl IntoIterator<Item = UninferredImpl<'db>>,
+) -> ImplLookupContextId<'db> {
+    let context = lookup_context.long(db);
+    let new_impls: Vec<_> =
+        impls.into_iter().filter(|imp| !context.inner_impls.contains(imp)).collect();
+    if new_impls.is_empty() {
+        return lookup_context;
+    }
+    let mut extended = context.clone();
+    extended.inner_impls.extend(new_impls);
+    extended.intern(db)
+}
+
+/// The impls a module contributes to lookup contexts that include it: its local impls, and its
+/// global impls if its crate is not a dependency of `crate_id`.
+fn module_impls<'db>(
+    db: &'db dyn Database,
+    crate_id: CrateId<'db>,
+    module_id: ModuleId<'db>,
+) -> Vec<UninferredImpl<'db>> {
+    // Make sure to use the module as perceived by the user, as it contains all the macros.
+    let module_id = db.module_perceived_module(module_id);
+    let Ok(module_impls) = db.module_global_impls((), module_id) else {
+        return vec![];
+    };
+    let crate_global_impls = db.crate_global_impls(crate_id);
+    let is_global = |imp: &UninferredImpl<'db>| {
+        imp.trait_id(db).is_ok_and(|trait_id| {
+            crate_global_impls.get(&trait_id).is_some_and(|set| set.contains(imp))
+        })
+    };
+    let mut impls: Vec<_> =
+        module_impls.locals.iter().copied().filter(|imp| !is_global(imp)).collect();
+    if !crate_dependencies(db, crate_id).contains(&module_id.owning_crate(db)) {
+        let globals = module_impls.globals_by_trait.values().flatten().copied();
+        impls.extend(globals.filter(|imp| !is_global(imp)));
+    }
+    impls
+}
+
+/// The impl items of kind impl of an impl, as impl candidates.
+fn impl_impls<'db>(
+    db: &'db dyn Database,
+    impl_id: ImplId<'db>,
+) -> impl Iterator<Item = UninferredImpl<'db>> {
+    let trait_impls = impl_id
+        .concrete_trait(db)
+        .and_then(|concrete_trait| db.trait_impls(concrete_trait.trait_id(db)));
+    trait_impls.into_iter().flat_map(move |trait_impls| {
+        trait_impls.values().map(move |trait_impl_id| {
+            UninferredImpl::ImplImpl(ImplImplId::new(impl_id, *trait_impl_id, db))
+        })
+    })
+}
 /// A candidate impl for later inference.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub enum UninferredImpl<'db> {
