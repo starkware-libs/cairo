@@ -185,18 +185,6 @@ enum StarknetLibfuncs {
 }
 
 enum ConstsLibfuncs {
-    Felt252,
-    U8,
-    U16,
-    U32,
-    U64,
-    U128,
-    I8,
-    I16,
-    I32,
-    I64,
-    I128,
-    Byte31,
     StorageBase,
     ClassHash,
     ContractAddress,
@@ -549,46 +537,9 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
     }
 }
 
-#[allow(extern_outside_corelib)]
-extern fn felt252_const<const VALUE: felt252>() -> felt252 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn u8_const<const VALUE: u8>() -> u8 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn u16_const<const VALUE: u16>() -> u16 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn u32_const<const VALUE: u32>() -> u32 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn u64_const<const VALUE: u64>() -> u64 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn u128_const<const VALUE: u128>() -> u128 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn i8_const<const VALUE: i8>() -> i8 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn i16_const<const VALUE: i16>() -> i16 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn i32_const<const VALUE: i32>() -> i32 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn i64_const<const VALUE: i64>() -> i64 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn i128_const<const VALUE: i128>() -> i128 nopanic;
-#[allow(extern_outside_corelib)]
-extern fn bytes31_const<const VALUE: felt252>() -> bytes31 nopanic;
-
 #[feature("deprecated-starknet-consts")]
 fn consts_libfuncs(libfuncs: ConstsLibfuncs) {
     match libfuncs {
-        ConstsLibfuncs::Felt252 => use_and_panic(felt252_const::<0>()),
-        ConstsLibfuncs::U8 => use_and_panic(u8_const::<0>()),
-        ConstsLibfuncs::U16 => use_and_panic(u16_const::<0>()),
-        ConstsLibfuncs::U32 => use_and_panic(u32_const::<0>()),
-        ConstsLibfuncs::U64 => use_and_panic(u64_const::<0>()),
-        ConstsLibfuncs::U128 => use_and_panic(u128_const::<0>()),
-        ConstsLibfuncs::I8 => use_and_panic(i8_const::<0>()),
-        ConstsLibfuncs::I16 => use_and_panic(i16_const::<0>()),
-        ConstsLibfuncs::I32 => use_and_panic(i32_const::<0>()),
-        ConstsLibfuncs::I64 => use_and_panic(i64_const::<0>()),
-        ConstsLibfuncs::I128 => use_and_panic(i128_const::<0>()),
-        ConstsLibfuncs::Byte31 => use_and_panic(bytes31_const::<0>()),
         ConstsLibfuncs::StorageBase => use_and_panic(
             starknet::storage_access::storage_base_address_const::<0>(),
         ),
