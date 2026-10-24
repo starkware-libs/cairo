@@ -229,3 +229,16 @@ impl TupleNextHash<
         state.update_with(head).update_with(rest)
     }
 }
+
+impl ByteArrayHash<S, +HashStateTrait<S>, +Drop<S>> of Hash<ByteArray, S> {
+    fn update_state(mut state: S, value: ByteArray) -> S {
+        state = state.update(value.data.len().into());
+
+        for word_index in 0..value.data.len() {
+            let word_in_data = (*value.data.at(word_index)).into();
+            state = state.update(word_in_data);
+        };
+
+        state.update(value.pending_word_len.into()).update(value.pending_word)
+    }
+}
