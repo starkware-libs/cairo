@@ -7,7 +7,6 @@ use cairo_lang_utils::HeapSize;
 struct TestStruct {
     a: Vec<i32>,
     b: String,
-    #[allow(dead_code)]
     c: Arc<String>, // Should be skipped
 }
 
@@ -15,7 +14,6 @@ struct TestStruct {
 enum TestEnum {
     Variant1 {
         a: Vec<i32>,
-        #[allow(dead_code)]
         b: String,
     },
     Variant2(String, Arc<Vec<i32>>),
