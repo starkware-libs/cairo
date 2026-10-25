@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792888616497,
+  "lastUpdate": 1792889220685,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -37681,6 +37681,128 @@ window.BENCHMARK_DATA = {
           {
             "name": "cairo-to-sierra-total_bytes/nested_loops",
             "value": 331678487,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Mabera",
+            "username": "HusseinAdeiza",
+            "email": "88774572+HusseinAdeiza@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "68a61f6c6251900e0080e09c812ffaeb37fd358e",
+          "message": "fix(semantic): honour #[must_use] on impl methods (#10458)\n\nSigned-off-by: Hussein Adeiza <HusseinAdeiza@users.noreply.github.com>\nCo-authored-by: Hussein Adeiza <HusseinAdeiza@users.noreply.github.com>",
+          "timestamp": "2026-10-21T08:31:41Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/68a61f6c6251900e0080e09c812ffaeb37fd358e"
+        },
+        "date": 1792889220389,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "cairo-to-testing-max_bytes/fib",
+            "value": 90834713,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-testing-total_bytes/fib",
+            "value": 216518129,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/corelib",
+            "value": 272625458,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/corelib",
+            "value": 847415248,
+            "unit": "bytes"
+          },
+          {
+            "name": "sierra-to-casm-max_bytes/corelib",
+            "value": 12009599,
+            "unit": "bytes"
+          },
+          {
+            "name": "sierra-to-casm-total_bytes/corelib",
+            "value": 42660356,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/cairo_level_tests",
+            "value": 496821700,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/cairo_level_tests",
+            "value": 1772343129,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/staking",
+            "value": 1135195983,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/staking",
+            "value": 5777372498,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/big_array",
+            "value": 611829941,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/big_array",
+            "value": 1096333607,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/large_struct",
+            "value": 92167836,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/large_struct",
+            "value": 200544696,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/wide_enum",
+            "value": 76529003,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/wide_enum",
+            "value": 170688868,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/deep_nesting",
+            "value": 78345094,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/deep_nesting",
+            "value": 156524352,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-max_bytes/nested_loops",
+            "value": 99412839,
+            "unit": "bytes"
+          },
+          {
+            "name": "cairo-to-sierra-total_bytes/nested_loops",
+            "value": 331669503,
             "unit": "bytes"
           }
         ]
