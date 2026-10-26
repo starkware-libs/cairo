@@ -1185,12 +1185,14 @@ fn non_contiguous_circuit_input<'db>(
                     }
                     continue;
                 }
-                stack.extend(generic_args.iter().filter_map(|arg| match arg {
-                    GenericArgumentId::Type(ty) => Some(*ty),
-                    _ => None,
-                }));
+                stack.extend(
+                    generic_args
+                        .iter()
+                        .filter_map(|arg| try_extract_matches!(arg, GenericArgumentId::Type)),
+                );
             }
             TypeLongId::Tuple(types) => stack.extend(types.iter().copied()),
+            TypeLongId::Missing(_) => return None,
             _ => {}
         }
     }

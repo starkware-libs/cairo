@@ -161,3 +161,27 @@ fn reused_input() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Missing circuit input types do not cause contiguity diagnostics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+use core::circuit::{CircuitElement, CircuitInput, CircuitInputs, circuit_add};
+
+fn main() {
+    let a = CircuitElement::<CircuitInput<0>> {};
+    let b = CircuitElement::<CircuitInpt<1>> {};
+    let c = CircuitElement::<CircuitInput<2>> {};
+    let sum = circuit_add(a, b);
+    let _acc = (sum, c).new_inputs();
+}
+
+//! > expected_diagnostics
+error[E0006]: Type not found.
+ --> lib.cairo:5:30
+    let b = CircuitElement::<CircuitInpt<1>> {};
+                             ^^^^^^^^^^^
