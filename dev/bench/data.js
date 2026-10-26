@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792976074214,
+  "lastUpdate": 1792976225722,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -42491,6 +42491,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/68a61f6c6251900e0080e09c812ffaeb37fd358e"
         },
         "date": 1792889820885,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Mabera",
+            "username": "HusseinAdeiza",
+            "email": "88774572+HusseinAdeiza@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "68a61f6c6251900e0080e09c812ffaeb37fd358e",
+          "message": "fix(semantic): honour #[must_use] on impl methods (#10458)\n\nSigned-off-by: Hussein Adeiza <HusseinAdeiza@users.noreply.github.com>\nCo-authored-by: Hussein Adeiza <HusseinAdeiza@users.noreply.github.com>",
+          "timestamp": "2026-10-21T08:31:41Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/68a61f6c6251900e0080e09c812ffaeb37fd358e"
+        },
+        "date": 1792976225442,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
