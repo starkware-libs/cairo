@@ -1,4 +1,6 @@
 /target
+corelib/target/
+corelib/.snfoundry_cache/
 /.vscode
 .idea/
 .spr.yml

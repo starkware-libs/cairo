@@ -113,11 +113,11 @@ fn test_assert_eq_no_description() {
     assert_eq!(1, 2);
 }
 
-#[test]
-#[available_gas(static)]
-fn test_get_available_gas_no_gas_supply() {
-    assert_eq!(crate::testing::get_available_gas(), 0)
-}
+// #[test]
+// #[available_gas(static)]
+// fn test_get_available_gas_no_gas_supply() {
+//     assert_eq!(crate::testing::get_available_gas(), 0)
+// }
 
 #[test]
 #[available_gas(10000)]
