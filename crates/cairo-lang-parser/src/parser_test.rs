@@ -149,6 +149,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         enum_diagnostics: "enum_diagnostics",
         expr_diagnostics: "expr_diagnostics",
+        expr_depth_limit: "expr_depth_limit",
         fn_: "fn",
         generic_params: "generic_params",
         if_: "if",
