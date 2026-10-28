@@ -1,6 +1,6 @@
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
-use cairo_lang_utils::small_ordered_map::{Entry, SmallOrderedMap};
+use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use num_bigint::BigInt;
 use num_traits::{One, ToPrimitive, Zero};
 
@@ -21,6 +21,15 @@ mod test;
 /// Variables for CASM builder, representing a `CellExpression`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Var(usize);
+
+/// Labels for CASM builder, representing a code location.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Label(usize);
+impl Label {
+    /// The label of the fallthrough branch - the end of the built code.
+    /// Can only be used as a branch in `CasmBuilder::build`.
+    pub const FALLTHROUGH: Label = Label(usize::MAX);
+}
 
 /// The kind of an assert_eq action.
 ///
@@ -93,7 +102,7 @@ impl State {
 /// Represents a relocation to a label.
 struct LabelRelocation {
     /// The label to which the instruction should be relocated.
-    label: &'static str,
+    label: Label,
     /// The index of the instruction that needs to be relocated.
     instruction_index: usize,
     /// The code offset of the instruction to be relocated.
@@ -110,8 +119,9 @@ pub struct CasmBuildResult<const BRANCH_COUNT: usize> {
 
 /// Information about the state of a label.
 struct LabelInfo {
-    /// The state at a point of jumping into the label.
-    state: State,
+    /// The state at a point of jumping into the label. If not set, the label was not yet jumped to
+    /// or placed.
+    state: Option<State>,
     /// The offset of the label. If not set means not yet reached (and not read-only).
     offset: Offset,
 }
@@ -133,8 +143,8 @@ impl Offset {
 /// Wrong usages of it would panic instead of returning a result, as this builder assumes we are in
 /// a post validation of parameters stage.
 pub struct CasmBuilder {
-    /// The information about the labels, per label.
-    label_info: SmallOrderedMap<&'static str, LabelInfo>,
+    /// The information about the labels, indexed by the label id.
+    label_info: Vec<LabelInfo>,
     /// The state at the last added statement.
     main_state: State,
     /// The added instructions.
@@ -153,10 +163,10 @@ pub struct CasmBuilder {
 }
 impl CasmBuilder {
     /// Finalizes the builder, with the requested labels as the returning branches.
-    /// "Fallthrough" is a special case for the fallthrough case.
+    /// `Label::FALLTHROUGH` is a special case for the fallthrough case.
     pub fn build<const BRANCH_COUNT: usize>(
         mut self,
-        branch_names: [&str; BRANCH_COUNT],
+        branches: [Label; BRANCH_COUNT],
     ) -> CasmBuildResult<BRANCH_COUNT> {
         assert!(
             self.current_hints.is_empty(),
@@ -165,8 +175,7 @@ impl CasmBuilder {
         let mut branch_relocations: [Vec<usize>; BRANCH_COUNT] =
             core::array::from_fn(|_| Vec::new());
         for LabelRelocation { label, instruction_index, instruction_offset } in self.relocations {
-            // Use cached offset if available (backward jump), otherwise lookup
-            let label_offset = self.label_info[&label].offset;
+            let label_offset = self.label_info[label.0].offset;
             // Check if this is an internal label (offset set) or external branch
             if label_offset.is_set() {
                 relocate_instruction(
@@ -175,26 +184,28 @@ impl CasmBuilder {
                 );
             } else {
                 // External branch - find which branch index
-                let idx = branch_names.iter().position(|name| name == &label).unwrap();
+                let idx = branches.iter().position(|branch| *branch == label).unwrap();
                 branch_relocations[idx].push(instruction_index);
             }
         }
-        self.label_info.retain(|_, info| !info.offset.is_set());
-        if self.reachable {
-            self.label_info
-                .insert("Fallthrough", LabelInfo { state: self.main_state, offset: Offset::UNSET });
-        }
-
+        let mut fallthrough_state = self.reachable.then_some(self.main_state);
         let branches = core::array::from_fn(|i| {
-            let label = branch_names[i];
-            let info = self
-                .label_info
-                .remove(&label)
-                .unwrap_or_else(|| panic!("Requested a non existing final label: {label:?}."));
-            info.state.validate_finality();
-            (info.state, core::mem::take(&mut branch_relocations[i]))
+            let label = branches[i];
+            let state = if label == Label::FALLTHROUGH {
+                fallthrough_state.take()
+            } else {
+                let info = &mut self.label_info[label.0];
+                if info.offset.is_set() { None } else { info.state.take() }
+            }
+            .unwrap_or_else(|| panic!("Requested a non existing final label: {label:?}."));
+            state.validate_finality();
+            (state, core::mem::take(&mut branch_relocations[i]))
         });
-        assert!(self.label_info.is_empty(), "Did not use all branches.");
+        assert!(
+            fallthrough_state.is_none()
+                && self.label_info.iter().all(|info| info.state.is_none() || info.offset.is_set()),
+            "Did not use all branches."
+        );
         CasmBuildResult { instructions: self.instructions, branches }
     }
 
@@ -432,8 +443,15 @@ impl CasmBuilder {
         self.add_var(CellExpression::DoubleDeref(cell, full_offset))
     }
 
+    /// Allocates a new label, to be later placed using `label`, or used as a branch in `build`.
+    pub fn alloc_label(&mut self) -> Label {
+        let label = Label(self.label_info.len());
+        self.label_info.push(LabelInfo { state: None, offset: Offset::UNSET });
+        label
+    }
+
     /// Adds a statement to jump to `label`.
-    pub fn jump(&mut self, label: &'static str) {
+    pub fn jump(&mut self, label: Label) {
         self.push_labeled_instruction(
             label,
             InstructionBody::Jump(JumpInstruction {
@@ -449,7 +467,7 @@ impl CasmBuilder {
 
     /// Adds a statement to jump to `label` if `condition != 0`.
     /// `condition` must be a cell reference.
-    pub fn jump_nz(&mut self, condition: Var, label: &'static str) {
+    pub fn jump_nz(&mut self, condition: Var, label: Label) {
         let cell = self.as_adjusted_cell_ref(condition);
         self.push_labeled_instruction(
             label,
@@ -462,37 +480,36 @@ impl CasmBuilder {
         self.set_or_test_label(label, self.main_state.clone());
     }
 
-    /// Adds a label here named `name`.
-    pub fn label(&mut self, name: &'static str) {
-        // Single lookup: merge state if reachable and set offset
-        let info = match self.label_info.entry(name) {
-            Entry::Occupied(e) => {
-                let info = e.into_mut();
-                if self.reachable {
-                    info.state.intersect(&self.main_state, false);
-                }
-                info
-            }
-            Entry::Vacant(e) => {
-                // Label defined before any jumps to it - use current state
-                if !self.reachable {
-                    panic!("No known value for state on reaching {name}.");
-                }
-                e.insert(LabelInfo { state: self.main_state.clone(), offset: Offset::UNSET })
-            }
-        };
+    /// Places `label` here.
+    pub fn label(&mut self, label: Label) {
+        let info = &mut self.label_info[label.0];
+        assert!(!info.offset.is_set(), "Label {label:?} was placed more than once.");
         info.offset = Offset(self.next_instruction_offset);
-        self.main_state = info.state.clone();
+        match &mut info.state {
+            Some(state) => {
+                if self.reachable {
+                    state.intersect(&self.main_state, false);
+                }
+                self.main_state = state.clone();
+            }
+            None => {
+                // Label placed before any jumps to it - use current state.
+                assert!(self.reachable, "No known value for state on reaching {label:?}.");
+                info.state = Some(self.main_state.clone());
+            }
+        }
         self.reachable = true;
     }
 
-    /// Adds a label `name` in distance `offset` from the current point.
+    /// Places `label` in distance `offset` from the current point.
     /// Useful for calling code outside of the builder's context.
-    pub fn future_label(&mut self, name: &'static str, offset: usize) {
-        self.label_info
-            .get_mut(&name)
-            .expect("This is always at the end of code, something must have built this.")
-            .offset = Offset(self.next_instruction_offset + offset);
+    pub fn future_label(&mut self, label: Label, offset: usize) {
+        let info = &mut self.label_info[label.0];
+        assert!(
+            info.state.is_some(),
+            "This is always at the end of code, something must have built this."
+        );
+        info.offset = Offset(self.next_instruction_offset + offset);
     }
 
     /// Rescoping the values, while ignoring all vars not stated in `vars` and giving the vars on
@@ -509,7 +526,7 @@ impl CasmBuilder {
 
     /// Adds a call command to 'label'. All AP based variables are passed to the called function
     /// state and dropped from the calling function state.
-    pub fn call(&mut self, label: &'static str) {
+    pub fn call(&mut self, label: Label) {
         self.main_state.validate_finality();
         // Vars to be passed to the called function state.
         let mut function_vars = SmallOrderedMap::<Var, CellExpression>::default();
@@ -686,7 +703,7 @@ impl CasmBuilder {
     /// Additionally pushes a label relocation for the instruction.
     fn push_labeled_instruction(
         &mut self,
-        label: &'static str,
+        label: Label,
         body: InstructionBody,
         inc_ap_supported: bool,
     ) {
@@ -700,16 +717,12 @@ impl CasmBuilder {
     }
 
     /// Sets or tests a label's state.
-    fn set_or_test_label(&mut self, label: &'static str, state: State) {
-        match self.label_info.entry(label) {
-            Entry::Occupied(e) => {
-                let info = e.into_mut();
-                info.state.intersect(&state, info.offset.is_set());
-            }
-            Entry::Vacant(e) => {
-                e.insert(LabelInfo { state, offset: Offset::UNSET });
-            }
-        };
+    fn set_or_test_label(&mut self, label: Label, state: State) {
+        let info = &mut self.label_info[label.0];
+        match &mut info.state {
+            Some(existing) => existing.intersect(&state, info.offset.is_set()),
+            None => info.state = Some(state),
+        }
     }
 }
 
@@ -764,6 +777,13 @@ macro_rules! casm_build_extend {
     ($builder:expr,) => {};
     ($builder:expr, tempvar $var:ident; $($tok:tt)*) => {
         let $var = $builder.alloc_var(false);
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:expr, label $($label:ident),+; $($tok:tt)*) => {
+        $(
+            #[allow(non_snake_case)]
+            let $label = $builder.alloc_label();
+        )+
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, localvar $var:ident; $($tok:tt)*) => {
@@ -941,15 +961,15 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, jump $target:ident; $($tok:tt)*) => {
-        $builder.jump(core::stringify!($target));
+        $builder.jump($target);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
-        $builder.jump_nz($condition, core::stringify!($target));
+        $builder.jump_nz($condition, $target);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, let ($($var_name:ident),*) = call $target:ident; $($tok:tt)*) => {
-        $builder.call(core::stringify!($target));
+        $builder.call($target);
 
         let __var_count = {0i16 $(+ (stringify!($var_name), 1i16).1)*};
         let mut __var_index = 0;
@@ -967,7 +987,7 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, $label:ident: $($tok:tt)*) => {
-        $builder.label(core::stringify!($label));
+        $builder.label($label);
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, fail; $($tok:tt)*) => {

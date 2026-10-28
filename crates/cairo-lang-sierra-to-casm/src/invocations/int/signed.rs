@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
@@ -66,6 +66,7 @@ pub fn build_sint_overflowing_operation(
         }
     }
     casm_build_extend! {casm_builder,
+        label IsInRange, IsAbove, Below, Above;
         const positive_range_fixer = -BigInt::from(min_value);
         const range_size = BigInt::from(max_value) - BigInt::from(min_value) + BigInt::from(1);
         // Shift the valid range to [0, range_size).
@@ -113,9 +114,9 @@ pub fn build_sint_overflowing_operation(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[value]], None),
-            ("Below", &[&[range_check], &[fixed_below]], Some(*underflow_handle_statement_id)),
-            ("Above", &[&[range_check], &[fixed_above]], Some(*overflow_handle_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[value]], None),
+            (Below, &[&[range_check], &[fixed_below]], Some(*underflow_handle_statement_id)),
+            (Above, &[&[range_check], &[fixed_above]], Some(*overflow_handle_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {

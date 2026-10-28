@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuilder, Label, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::{casm_build_extend, cell_ref};
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
@@ -57,6 +57,7 @@ fn build_withdraw_gas(
     let requested_count = builder.token_usages(CostTokenType::Const);
 
     casm_build_extend! {casm_builder,
+        label HasEnoughGas, Failure;
         let orig_range_check = range_check;
         tempvar has_enough_gas;
         const requested_count_imm = requested_count;
@@ -78,8 +79,8 @@ fn build_withdraw_gas(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[updated_gas]], None),
-            ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[updated_gas]], None),
+            (Failure, &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -157,7 +158,7 @@ fn build_calculate_unspent_gas(
     };
     Ok(builder.build_from_casm_builder_ex(
         casm_builder,
-        [("Fallthrough", outputs, None)],
+        [(Label::FALLTHROUGH, outputs, None)],
         CostValidationInfo { builtin_infos: vec![], extra_costs },
         pre_instructions,
     ))
@@ -195,6 +196,7 @@ fn build_withdraw_gas_given_cost_table(
         add_get_total_requested_count_code(&builder, &mut casm_builder, builtin_cost)?;
 
     casm_build_extend! {casm_builder,
+        label HasEnoughGas, Failure;
         let orig_range_check = range_check;
         tempvar has_enough_gas;
         hint TestLessThanOrEqual {
@@ -216,8 +218,8 @@ fn build_withdraw_gas_given_cost_table(
     Ok(builder.build_from_casm_builder_ex(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[updated_gas]], None),
-            ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[updated_gas]], None),
+            (Failure, &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -295,7 +297,7 @@ fn build_get_builtin_costs(
     let (pre_instructions, cost_builtin_ptr) = add_cost_builtin_ptr_fetch_code(&mut casm_builder);
     Ok(builder.build_from_casm_builder_ex(
         casm_builder,
-        [("Fallthrough", &[&[cost_builtin_ptr]], None)],
+        [(Label::FALLTHROUGH, &[&[cost_builtin_ptr]], None)],
         Default::default(),
         pre_instructions,
     ))

@@ -1,7 +1,7 @@
 use std::iter;
 
 use cairo_lang_casm::ap_change::ApplyApChange;
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::{AssertEqInstruction, Instruction, InstructionBody};
 use cairo_lang_casm::operand::{CellRef, ResOperand};
@@ -156,7 +156,7 @@ fn build_enum_from_bounded_int(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[variant_selector]], None)],
+        [(Label::FALLTHROUGH, &[&[variant_selector]], None)],
         CostValidationInfo::default(),
     ))
 }

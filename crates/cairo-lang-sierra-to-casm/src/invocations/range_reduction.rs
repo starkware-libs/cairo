@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::utils::Range;
@@ -10,7 +10,7 @@ use super::{
     get_non_fallthrough_statement_id,
 };
 use crate::invocations::int::u128_bound;
-use crate::invocations::misc::validate_under_limit;
+use crate::invocations::misc::validate_under_limit_k2;
 use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 
 /// Builds a libfunc that tries to convert a numeric value in the felt252 range to `out_range`.
@@ -21,7 +21,7 @@ use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 /// Assumption: out_range.size() <= 2**128.
 ///
 /// Note: The function doesn't generate optimal code in the range `prime % u128::MAX <=
-/// out_range.size() <= 2**128` since in such a case `K=1` can be used in `validate_under_limit`.
+/// out_range.size() <= 2**128` since in such a case `validate_under_limit_k1` can be used.
 pub fn build_felt252_range_reduction(
     builder: CompiledInvocationBuilder<'_>,
     out_range: &Range,
@@ -29,7 +29,7 @@ pub fn build_felt252_range_reduction(
 ) -> Result<CompiledInvocation, InvocationError> {
     let prime: BigInt = Felt252::prime().into();
     if verify_optimal_range {
-        // `validate_under_limit` is better with `K == 1` for other range.
+        // `validate_under_limit_k1` is better for other range.
         assert!(
             out_range.size() < (&prime % u128::MAX),
             "build_felt252_range_reduction is suboptimal for this range."
@@ -47,6 +47,7 @@ pub fn build_felt252_range_reduction(
         deref value;
     };
     casm_build_extend! {casm_builder,
+        label InRange, Done;
         let orig_range_check = range_check;
         const range_size = out_range.size();
         const minus_range_lower = -out_range.lower.clone();
@@ -63,7 +64,7 @@ pub fn build_felt252_range_reduction(
     // Assert that `value - out_range.upper < prime - out_range.size()`.
     let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     // Note that if `verify_optimal_range = true` then `out_range.size() < prime % u128::MAX`
-    // and therefore `validate_under_limit<2>` is guaranteed to work:
+    // and therefore `validate_under_limit_k2` is guaranteed to work:
     //
     // Let `x` be such that `out_range.size() == (prime % u128::MAX) - 1 - x`.
     // We have:
@@ -73,14 +74,15 @@ pub fn build_felt252_range_reduction(
     //   * `B = limit % (u128::MAX - 1) = 2**123 + 17*2**64 + 1 + x`.
     // Since `x >= 0`, the `A <= B` condition is satisfied.
     //
-    // The other cases would work if the inner assertions of `validate_under_limit` pass
+    // The other cases would work if the inner assertions of `validate_under_limit_k2` pass
     // (the only such case currently used is the `felt252` to `i128` cast).
-    validate_under_limit::<2>(
+    validate_under_limit_k2(
         &mut casm_builder,
         &(prime - out_range.size()),
         validated_value,
         range_check,
         &auxiliary_vars,
+        Done,
     );
     casm_build_extend! {casm_builder,
     InRange:
@@ -104,8 +106,8 @@ pub fn build_felt252_range_reduction(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[value]], None),
-            ("Done", &[&[range_check]], Some(failure_handle_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[value]], None),
+            (Done, &[&[range_check]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {

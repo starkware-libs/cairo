@@ -1,11 +1,11 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use num_bigint::{BigInt, ToBigInt};
 use starknet_types_core::felt::Felt as Felt252;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::misc::validate_under_limit;
+use crate::invocations::misc::{validate_under_limit_k1, validate_under_limit_k2};
 use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 
 /// Handles the storage_address_from_base_and_offset libfunc.
@@ -21,7 +21,7 @@ pub fn build_storage_address_from_base_and_offset(
     casm_build_extend!(casm_builder, let res = base + offset;);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[res]], None)],
+        [(Label::FALLTHROUGH, &[&[res]], None)],
         Default::default(),
     ))
 }
@@ -39,6 +39,7 @@ pub fn build_storage_base_address_from_felt252(
     };
     let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
+        label IsSmall;
         const limit = addr_bound.clone();
         let orig_range_check = range_check;
         // Allocating all vars in the beginning for easier AP-Alignment between the two branches,
@@ -49,7 +50,7 @@ pub fn build_storage_base_address_from_felt252(
         jump IsSmall if is_small != 0;
         assert res = addr - limit;
     }
-    validate_under_limit::<1>(
+    validate_under_limit_k1(
         &mut casm_builder,
         &(Felt252::prime().to_bigint().unwrap() - addr_bound.clone()),
         res,
@@ -57,17 +58,25 @@ pub fn build_storage_base_address_from_felt252(
         &auxiliary_vars[..4],
     );
     casm_build_extend! {casm_builder,
+        label Done;
         jump Done;
         IsSmall:
         assert res = addr;
     }
-    validate_under_limit::<2>(&mut casm_builder, &addr_bound, res, range_check, &auxiliary_vars);
+    validate_under_limit_k2(
+        &mut casm_builder,
+        &addr_bound,
+        res,
+        range_check,
+        &auxiliary_vars,
+        Done,
+    );
     casm_build_extend! {casm_builder,
         Done:
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[res]], None)],
+        [(Label::FALLTHROUGH, &[&[range_check], &[res]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck,
