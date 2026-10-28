@@ -24,6 +24,7 @@ use cairo_lang_semantic::{
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::stack::with_sufficient_stack;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{Intern, extract_matches};
 use context::handle_lowering_flow_error;
@@ -898,6 +899,15 @@ fn lower_expr_to_var_usage<'db>(
 
 /// Lowers a semantic expression.
 fn lower_expr<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    builder: &mut BlockBuilder<'db>,
+    expr_id: semantic::ExprId,
+) -> LoweringResult<'db, LoweredExpr<'db>> {
+    with_sufficient_stack(|| lower_expr_inner(ctx, builder, expr_id))
+}
+
+/// See [lower_expr].
+fn lower_expr_inner<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
     expr_id: semantic::ExprId,

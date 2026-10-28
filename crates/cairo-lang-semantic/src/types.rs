@@ -15,6 +15,7 @@ use cairo_lang_syntax::node::helpers::generated_function_path;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::stack::with_sufficient_stack;
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, extract_matches, try_extract_matches};
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
@@ -581,6 +582,17 @@ pub fn resolve_type_ex<'db>(
         .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
 }
 fn maybe_resolve_type<'db>(
+    db: &'db dyn Database,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    resolver: &mut Resolver<'db>,
+    ty_syntax: &ast::Expr<'db>,
+    ctx: ResolutionContext<'db, '_>,
+) -> Maybe<TypeId<'db>> {
+    with_sufficient_stack(|| maybe_resolve_type_inner(db, diagnostics, resolver, ty_syntax, ctx))
+}
+
+/// See [maybe_resolve_type].
+fn maybe_resolve_type_inner<'db>(
     db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     resolver: &mut Resolver<'db>,
