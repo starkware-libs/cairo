@@ -185,7 +185,8 @@ fn use_macro() {
     │   │   │   │   │   │       │           └── kind (kind: ParamIdent)
     │   │   │   │   │   │       │               └── ident (kind: TokenIdentifier): 'ident'
     │   │   │   │   │   │       ├── rparen (kind: TokenRParen): ')'
-    │   │   │   │   │   │       ├── separator (kind: TokenComma): ','
+    │   │   │   │   │   │       ├── separator (kind: MacroRepetitionSeparator)
+    │   │   │   │   │   │       │   └── token (kind: TokenComma): ','
     │   │   │   │   │   │       └── operator (kind: TokenPlus): '+'
     │   │   │   │   │   └── rparen (kind: TokenRParen): ')'
     │   │   │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
@@ -212,7 +213,8 @@ fn use_macro() {
     │   │   │   │   │   │       │           └── kind (kind: ParamExpr)
     │   │   │   │   │   │       │               └── expr (kind: TokenIdentifier): 'expr'
     │   │   │   │   │   │       ├── rparen (kind: TokenRParen): ')'
-    │   │   │   │   │   │       ├── separator (kind: TokenComma): ','
+    │   │   │   │   │   │       ├── separator (kind: MacroRepetitionSeparator)
+    │   │   │   │   │   │       │   └── token (kind: TokenComma): ','
     │   │   │   │   │   │       └── operator (kind: TokenMul): '*'
     │   │   │   │   │   └── rparen (kind: TokenRParen): ')'
     │   │   │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
@@ -239,7 +241,7 @@ fn use_macro() {
     │   │   │   │   │   │       │           └── kind (kind: ParamExpr)
     │   │   │   │   │   │       │               └── expr (kind: TokenIdentifier): 'expr'
     │   │   │   │   │   │       ├── rparen (kind: TokenRParen): ')'
-    │   │   │   │   │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
+    │   │   │   │   │   │       ├── separator (kind: OptionMacroRepetitionSeparatorEmpty) []
     │   │   │   │   │   │       └── operator (kind: TokenQuestionMark): '?'
     │   │   │   │   │   └── rparen (kind: TokenRParen): ')'
     │   │   │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
@@ -266,7 +268,7 @@ fn use_macro() {
     │   │   │   │   │   │       │           └── kind (kind: ParamIdent)
     │   │   │   │   │   │       │               └── ident (kind: TokenIdentifier): 'ident'
     │   │   │   │   │   │       ├── rparen (kind: TokenRParen): ')'
-    │   │   │   │   │   │       ├── separator (kind: OptionTerminalCommaEmpty) []
+    │   │   │   │   │   │       ├── separator (kind: OptionMacroRepetitionSeparatorEmpty) []
     │   │   │   │   │   │       └── operator (kind: TokenPlus): '+'
     │   │   │   │   │   └── rparen (kind: TokenRParen): ')'
     │   │   │   │   ├── fat_arrow (kind: TokenMatchArrow): '=>'
@@ -293,7 +295,8 @@ fn use_macro() {
     │   │   │       │   │       │           └── kind (kind: ParamExpr)
     │   │   │       │   │       │               └── expr (kind: TokenIdentifier): 'expr'
     │   │   │       │   │       ├── rparen (kind: TokenRParen): ')'
-    │   │   │       │   │       ├── separator (kind: TokenComma): ','
+    │   │   │       │   │       ├── separator (kind: MacroRepetitionSeparator)
+    │   │   │       │   │       │   └── token (kind: TokenComma): ','
     │   │   │       │   │       └── operator (kind: TokenMul): '*'
     │   │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │   │       ├── fat_arrow (kind: TokenMatchArrow): '=>'
@@ -317,7 +320,8 @@ fn use_macro() {
     │   │   │       │   │           │       │       ├── name (kind: TokenIdentifier): 'x'
     │   │   │       │   │           │       │       └── kind (kind: OptionParamKindEmpty) []
     │   │   │       │   │           │       ├── rparen (kind: TokenRParen): ')'
-    │   │   │       │   │           │       ├── separator (kind: TokenComma): ','
+    │   │   │       │   │           │       ├── separator (kind: MacroRepetitionSeparator)
+    │   │   │       │   │           │       │   └── token (kind: TokenComma): ','
     │   │   │       │   │           │       └── operator (kind: TokenMul): '*'
     │   │   │       │   │           └── rparen (kind: TokenRParen): ')'
     │   │   │       │   └── rbrace (kind: TokenRBrace): '}'
