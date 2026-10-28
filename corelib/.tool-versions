@@ -1,1 +1,2 @@
-scarb nightly-2024-12-22
+scarb 2.21.0
+starknet-foundry 0.64.1
