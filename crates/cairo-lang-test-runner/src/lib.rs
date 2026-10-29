@@ -51,10 +51,9 @@ impl<'db> TestRunner<'db> {
     /// # Arguments
     ///
     /// * `path` - The path to compile and run its tests
-    /// * `filter` - Run only tests containing the filter string
-    /// * `include_ignored` - Include ignored tests as well
-    /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the Starknet plugin to run the tests
+    /// * `allow_warnings` - Allows the compilation to succeed with warnings
+    /// * `config` - The run configuration, including the test filter and the ignored tests settings
     pub fn new(
         path: &Path,
         starknet: bool,
@@ -217,7 +216,9 @@ impl<'db> TestCompiler<'db> {
     /// # Arguments
     ///
     /// * `path` - The path to compile and run its tests
-    /// * `starknet` - Add the Starknet plugin to run the tests
+    /// * `allow_warnings` - Allows the compilation to succeed with warnings
+    /// * `gas_enabled` - Whether to enable gas calculation
+    /// * `config` - The compilation configuration, including whether to add the Starknet plugin
     pub fn try_new(
         path: &Path,
         allow_warnings: bool,
