@@ -1174,29 +1174,49 @@ impl<'a> FormatterImpl<'a> {
                 },
             );
 
-            // Create a virtual file ID for the formatted statements.
-            let file_id = FileLongId::Virtual(VirtualFile {
-                parent: None,
-                name: SmolStrId::from(db, "parser_input"),
-                content: SmolStrId::from(db, format!("{}{merged_uses}", merge_info.leading_trivia)),
-                code_mappings: [].into(),
-                kind: FileKind::Module,
-                original_item_removed: false,
-            })
-            .intern(db);
-
-            let mut ignored_diags = DiagnosticsBuilder::<ParserDiagnostic<'_>>::default();
-            let contents = db.file_content(file_id).unwrap();
+            let mut merged_uses = merged_uses.to_string();
+            // The merged statements are reordered by the sorting that follows, so emit them in
+            // sorted order here, letting the leading trivia stay with the first statement.
+            if self.config.sort_module_level_items {
+                let mut nodes = self.parse_items(merged_uses).to_vec();
+                nodes.sort_by(|a, b| {
+                    compare_use_paths(
+                        &ast::ItemUse::from_syntax_node(db, *a).use_path(db),
+                        &ast::ItemUse::from_syntax_node(db, *b).use_path(db),
+                        db,
+                    )
+                });
+                merged_uses = nodes.iter().map(|node| node.get_text(db)).collect();
+            }
 
             // Add merged children to the new_children list.
-            let items = Parser::parse_file(db, &mut ignored_diags, file_id, contents).items(db);
-            new_children.extend(chain!(
-                items.as_syntax_node().get_children(db).iter().copied(),
-                merge_info.trailing_nodes
-            ));
+            let items = self.parse_items(format!("{}{merged_uses}", merge_info.leading_trivia));
+            new_children.extend(chain!(items.iter().copied(), merge_info.trailing_nodes));
         }
 
         *children = new_children;
+    }
+
+    /// Parses `content` as a virtual file and returns its module items.
+    fn parse_items(&self, content: String) -> &'a [SyntaxNode<'a>] {
+        let db = self.db;
+        // Create a virtual file ID for the formatted statements.
+        let file_id = FileLongId::Virtual(VirtualFile {
+            parent: None,
+            name: SmolStrId::from(db, "parser_input"),
+            content: SmolStrId::from(db, content),
+            code_mappings: [].into(),
+            kind: FileKind::Module,
+            original_item_removed: false,
+        })
+        .intern(db);
+
+        let mut ignored_diags = DiagnosticsBuilder::<ParserDiagnostic<'_>>::default();
+        let contents = db.file_content(file_id).unwrap();
+        Parser::parse_file(db, &mut ignored_diags, file_id, contents)
+            .items(db)
+            .as_syntax_node()
+            .get_children(db)
     }
 
     /// Returns whether the node has only whitespace trivia.
