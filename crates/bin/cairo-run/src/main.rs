@@ -137,7 +137,10 @@ fn main() -> anyhow::Result<()> {
             println!("].")
         }
     }
-    if let Some(gas) = result.gas_counter {
+    // Without `--available-gas` the counter starts at 0, so whatever is left in it is meaningless.
+    if let Some(gas) = result.gas_counter
+        && args.available_gas.is_some()
+    {
         println!("Remaining gas: {gas}");
     }
     if args.print_full_memory {
