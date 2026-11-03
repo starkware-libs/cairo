@@ -278,7 +278,7 @@ error[E2311]: Trait has no implementation in context: Into::<u256, u32>.
 //! > Test shadowing of a function with a variable.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: warnings_only)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > cairo_code
 fn bar() -> u32 {
@@ -288,12 +288,23 @@ fn foo() {
     let bar: u8 = 3;
     let _f: u32 = bar(2);
 }
+fn foo_in_loop() {
+    let bar: u8 = 3;
+    loop {
+        let _f: u32 = bar();
+    }
+}
 
 //! > expected_diagnostics
-warning[E2184]: Function `bar` is shadowed by a local variable.
+error[E2184]: Function `bar` is shadowed by a local variable.
  --> lib.cairo:6:19
     let _f: u32 = bar(2);
                   ^^^
+
+error[E2184]: Function `bar` is shadowed by a local variable.
+ --> lib.cairo:11:23
+        let _f: u32 = bar();
+                      ^^^
 
 //! > ==========================================================================
 
