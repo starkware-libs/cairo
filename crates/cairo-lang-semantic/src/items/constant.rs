@@ -981,7 +981,16 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 );
             }
             id if id == self.div_fn => &args[0].v / &args[1].v,
-            id if id == self.rem_fn => &args[0].v % &args[1].v,
+            id if id == self.rem_fn => {
+                // The operation overflows for signed `MIN % -1`, as the quotient is out of range.
+                if let Err(err) = validate_literal(db, args[0].ty, &(&args[0].v / &args[1].v)) {
+                    return to_missing(self.diagnostics.report(
+                        expr.stable_ptr.untyped(),
+                        SemanticDiagnosticKind::LiteralError(err),
+                    ));
+                }
+                &args[0].v % &args[1].v
+            }
             id if id == self.bitand_fn => &args[0].v & &args[1].v,
             id if id == self.bitor_fn => &args[0].v | &args[1].v,
             id if id == self.bitxor_fn => &args[0].v ^ &args[1].v,
