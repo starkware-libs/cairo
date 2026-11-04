@@ -296,15 +296,17 @@ fn foo_in_loop() {
 }
 
 //! > expected_diagnostics
-error[E2184]: Function `bar` is shadowed by a local variable.
+error[E2138]: Call expression requires a function, found `u8`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u8, ?2>.
  --> lib.cairo:6:19
     let _f: u32 = bar(2);
-                  ^^^
+                  ^^^^^^
 
-error[E2184]: Function `bar` is shadowed by a local variable.
+error[E2138]: Call expression requires a function, found `u8`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u8, ?2>.
  --> lib.cairo:11:23
         let _f: u32 = bar();
-                      ^^^
+                      ^^^^^
 
 //! > ==========================================================================
 
@@ -366,6 +368,133 @@ error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<
 
 //! > ==========================================================================
 
+//! > Test shadowing of a function with a variable before and after a closure.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn bar() -> u32 {
+    2
+}
+fn foo() {
+    let bar: u8 = 3;
+    let _a: u32 = bar(2);
+    let _c = || 1;
+    let _b: u32 = bar(2);
+}
+fn foo_literal() {
+    let bar = 3;
+    let _a: u32 = bar(2);
+    let _c = || 1;
+    let _b: u32 = bar(2);
+}
+
+//! > expected_diagnostics
+error[E2138]: Call expression requires a function, found `u8`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u8, ?2>.
+ --> lib.cairo:6:19
+    let _a: u32 = bar(2);
+                  ^^^^^^
+
+error[E2138]: Call expression requires a function, found `u8`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u8, ?5>.
+ --> lib.cairo:8:19
+    let _b: u32 = bar(2);
+                  ^^^^^^
+
+error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<felt252, (felt252,)>.
+ --> lib.cairo:12:19
+    let _a: u32 = bar(2);
+                  ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test shadowing of a function with a variable through `$callsite`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro call_bar {
+    () => {
+        $callsite::bar(1)
+    };
+}
+fn bar(_a: felt252) -> u32 {
+    2
+}
+fn foo() {
+    let bar: u8 = 3;
+    let _a: u32 = call_bar!();
+}
+
+//! > expected_diagnostics
+error[E2138]: Call expression requires a function, found `u8`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u8, ?2>.
+ --> lib.cairo:11:19
+    let _a: u32 = call_bar!();
+                  ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test shadowing of an enum variant with a variable.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+}
+use MyEnum::A;
+fn foo(A: u8) {
+    let _e: MyEnum = A(2);
+    let _f: MyEnum = MyEnum::A(2);
+}
+
+//! > expected_diagnostics
+error[E2138]: Call expression requires a function, found `u8`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u8, ?1>.
+ --> lib.cairo:6:22
+    let _e: MyEnum = A(2);
+                     ^^^^
+
+//! > ==========================================================================
+
+//! > Test calling a non-callable variable.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let x: u8 = 3;
+    let arg = 2;
+    let _a: u32 = x(arg);
+    let _b: u32 = x(undefined_var);
+}
+
+//! > expected_diagnostics
+error[E2138]: Call expression requires a function, found `u8`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u8, ?3>.
+ --> lib.cairo:4:19
+    let _a: u32 = x(arg);
+                  ^^^^^^
+
+error[E2138]: Call expression requires a function, found `u8`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u8, ?3>.
+ --> lib.cairo:5:19
+    let _b: u32 = x(undefined_var);
+                  ^^^^^^^^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:5:21
+    let _b: u32 = x(undefined_var);
+                    ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Closure ref argument.
 
 //! > test_runner_name
@@ -385,6 +514,52 @@ error[E2185]: Arguments to closure functions cannot be references
  --> lib.cairo:6:23
     let _f: u32 = bar(ref a);
                       ^^^^^
+
+//! > ==========================================================================
+
+//! > Closure invalid argument followed by other arguments.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo_ref() {
+    let bar = |a, _b, _c| -> u32 {
+        a
+    };
+    let mut a = 5;
+    let b = 6;
+    let _f: u32 = bar(ref a, b, undefined_var);
+}
+fn foo_named() {
+    let bar = |a, _b, _c| -> u32 {
+        a
+    };
+    let a = 5;
+    let b = 6;
+    let _f: u32 = bar(x: a, b, undefined_var);
+}
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:7:33
+    let _f: u32 = bar(ref a, b, undefined_var);
+                                ^^^^^^^^^^^^^
+
+error[E2185]: Arguments to closure functions cannot be references
+ --> lib.cairo:7:23
+    let _f: u32 = bar(ref a, b, undefined_var);
+                      ^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:15:32
+    let _f: u32 = bar(x: a, b, undefined_var);
+                               ^^^^^^^^^^^^^
+
+error[E2121]: Named arguments are not supported in this context.
+ --> lib.cairo:15:23
+    let _f: u32 = bar(x: a, b, undefined_var);
+                      ^^^^
 
 //! > ==========================================================================
 

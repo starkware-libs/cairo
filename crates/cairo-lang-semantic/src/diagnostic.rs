@@ -1165,12 +1165,6 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 "Closures are not allowed in this context.".into()
             }
             SemanticDiagnosticKind::MaybeMissingColonColon => "Are you missing a `::`?.".into(),
-            SemanticDiagnosticKind::CallingShadowedFunction { shadowed_function_name } => {
-                format!(
-                    "Function `{}` is shadowed by a local variable.",
-                    shadowed_function_name.long(db)
-                )
-            }
             SemanticDiagnosticKind::RefClosureArgument => {
                 "Arguments to closure functions cannot be references".into()
             }
@@ -1515,7 +1509,6 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::CompilerTraitReImplementation { .. } => error_code!(E2181),
             SemanticDiagnosticKind::ClosureInGlobalScope => error_code!(E2182),
             SemanticDiagnosticKind::MaybeMissingColonColon => error_code!(E2183),
-            SemanticDiagnosticKind::CallingShadowedFunction { .. } => error_code!(E2184),
             SemanticDiagnosticKind::RefClosureArgument => error_code!(E2185),
             SemanticDiagnosticKind::RefClosureParam => error_code!(E2186),
             SemanticDiagnosticKind::MustBeNextToTypeOrTrait { .. } => error_code!(E2187),
@@ -1936,9 +1929,6 @@ pub enum SemanticDiagnosticKind<'db> {
     },
     ClosureInGlobalScope,
     MaybeMissingColonColon,
-    CallingShadowedFunction {
-        shadowed_function_name: SmolStrId<'db>,
-    },
     RefClosureArgument,
     RefClosureParam,
     MustBeNextToTypeOrTrait {
