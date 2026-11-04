@@ -200,12 +200,18 @@ const VALID_LE: () = assert(1_usize <= 1);
 const VALID_GT: () = assert(2_usize > 1);
 const VALID_GE: () = assert(1_usize >= 1);
 const VALID_DIVREM: () = assert(DivRem::div_rem(5_u8, 2) == (2, 1));
+const VALID_SIGNED_REM: () = assert(-128_i8 % 3 == -2);
 // The quotient of signed `MIN / -1` overflows the type, and should emit a clean diagnostic
 // rather than silently storing an out-of-range value (which later ICEs in sierra-gen).
 const DIVREM_SIGNED_MIN_OVERFLOW: (i8, i8) = DivRem::div_rem(-128_i8, -1);
-const VALID_SIGNED_REM: () = assert(-128_i8 % 3 == -2);
+const DIV_SIGNED_MIN_OVERFLOW: i8 = -128_i8 / -1;
 // Same for `MIN % -1`, which panics at runtime even though the remainder itself fits.
 const REM_SIGNED_MIN_OVERFLOW: i8 = -128_i8 % -1;
+const REM_SIGNED_MIN_OVERFLOW_I128: i128 = -170141183460469231731687303715884105728_i128 % -1;
+// Divisors of `-1` and `1` that do not overflow are still accepted.
+const VALID_SIGNED_REM_MINUS_ONE: () = assert(-127_i8 % -1 == 0);
+const VALID_SIGNED_DIV_MINUS_ONE: () = assert(-127_i8 / -1 == 127);
+const VALID_SIGNED_REM_ONE: () = assert(-128_i8 % 1 == 0);
 
 const MATCH_VALUE: () = assert(match 1_u8 {
     _ => 1,
@@ -297,31 +303,41 @@ note: In `test::assert`:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2008]: The value does not fit within the range of type core::integer::i8.
- --> lib.cairo:69:46
+ --> lib.cairo:70:46
 const DIVREM_SIGNED_MIN_OVERFLOW: (i8, i8) = DivRem::div_rem(-128_i8, -1);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2008]: The value does not fit within the range of type core::integer::i8.
- --> lib.cairo:72:37
+ --> lib.cairo:71:37
+const DIV_SIGNED_MIN_OVERFLOW: i8 = -128_i8 / -1;
+                                    ^^^^^^^^^^^^
+
+error[E2008]: The value does not fit within the range of type core::integer::i8.
+ --> lib.cairo:73:37
 const REM_SIGNED_MIN_OVERFLOW: i8 = -128_i8 % -1;
                                     ^^^^^^^^^^^^
 
+error[E2008]: The value does not fit within the range of type core::integer::i128.
+ --> lib.cairo:74:44
+const REM_SIGNED_MIN_OVERFLOW_I128: i128 = -170141183460469231731687303715884105728_i128 % -1;
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 error[E2129]: Constant calculation depth exceeded.
- --> lib.cairo:98:43
+ --> lib.cairo:104:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
 error[E2130]: Failed to calculate constant.
- --> lib.cairo:105:37
+ --> lib.cairo:111:37
 const NON_ZERO_ZERO: NonZero<u64> = my_unwrap(ZERO.try_into());
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: In `test::my_unwrap::<core::zeroable::NonZero::<core::integer::u64>>`:
-  --> lib.cairo:111:17
+  --> lib.cairo:117:17
         None => core::panic_with_felt252('bad value'),
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2128]: Failed to calculate constant.
- --> lib.cairo:117:9
+ --> lib.cairo:123:9
         core::panic_with_felt252('should fail')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
