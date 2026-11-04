@@ -2,7 +2,10 @@ use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleId};
-use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
+use cairo_lang_defs::plugin::{
+    InlineMacroExprPlugin, InlinePluginResult, MacroPlugin, MacroPluginMetadata, NamedPlugin,
+    PluginDiagnostic, PluginResult,
+};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
     CrateSettings, Edition, ExperimentalFeaturesConfig, init_dev_corelib, init_files_group,
@@ -12,8 +15,8 @@ use cairo_lang_filesystem::ids::{
     BlobId, CrateId, CrateLongId, FileKind, FileLongId, SmolStrId, VirtualFile,
 };
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -53,12 +56,36 @@ impl MacroPlugin for TargetFunctionPlugin {
     }
 }
 
-/// Adds [TargetFunctionPlugin] to the given suite, and returns it.
+/// A test-only inline macro plugin that generates no code and reports only a warning.
+#[derive(Debug, Default)]
+pub struct WarnOnlyMacro;
+impl NamedPlugin for WarnOnlyMacro {
+    const NAME: &'static str = "warn_only";
+}
+impl InlineMacroExprPlugin for WarnOnlyMacro {
+    fn generate_code<'db>(
+        &self,
+        db: &'db dyn Database,
+        syntax: &ast::ExprInlineMacro<'db>,
+        _metadata: &MacroPluginMetadata<'_>,
+    ) -> InlinePluginResult<'db> {
+        InlinePluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic::warning(
+                syntax.stable_ptr(db),
+                "warn_only! generates no code.".into(),
+            )],
+        }
+    }
+}
+
+/// Adds the test-only plugins to the given suite, and returns it.
 ///
 /// Every testing database that runs golden test files must use this, otherwise `#[target_function]`
 /// markers in the test code would produce "Unsupported attribute." diagnostics.
-pub fn with_target_function_plugin(mut suite: PluginSuite) -> PluginSuite {
+pub fn with_test_plugins(mut suite: PluginSuite) -> PluginSuite {
     suite.add_plugin::<TargetFunctionPlugin>();
+    suite.add_inline_macro_plugin::<WarnOnlyMacro>();
     suite
 }
 
@@ -102,7 +129,7 @@ impl SemanticDatabaseForTesting {
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
 
-        res.set_default_plugins_from_suite(with_target_function_plugin(suite));
+        res.set_default_plugins_from_suite(with_test_plugins(suite));
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
