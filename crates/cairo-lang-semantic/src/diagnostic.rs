@@ -1288,7 +1288,6 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             | SemanticDiagnosticKind::UnstableFeature { .. }
             | SemanticDiagnosticKind::DeprecatedFeature { .. }
             | SemanticDiagnosticKind::UnusedImport { .. }
-            | SemanticDiagnosticKind::CallingShadowedFunction { .. }
             | SemanticDiagnosticKind::UnusedConstant
             | SemanticDiagnosticKind::UnusedUse
             | SemanticDiagnosticKind::PatternMissingArgs(_)
