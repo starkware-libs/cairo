@@ -514,7 +514,7 @@ pub fn add_destructs<'db>(
                                                 outputs: vec![first_panic_var, new_arr_var],
                                             }
                                         )],
-                                        stmts.into_iter().map(Statement::Call),
+                                        stmts.drain(..).map(Statement::Call),
                                         [Statement::StructConstruct(StatementStructConstruct {
                                             inputs: [new_panic_var, new_arr_var]
                                                 .into_iter()
@@ -524,7 +524,6 @@ pub fn add_destructs<'db>(
                                         })]
                                     ),
                                 );
-                                stmts = vec![];
                             }
                             _ => unreachable!("Expected a struct construct or a call statement."),
                         }
