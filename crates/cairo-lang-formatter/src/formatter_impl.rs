@@ -1179,13 +1179,7 @@ impl<'a> FormatterImpl<'a> {
             // sorted order here, letting the leading trivia stay with the first statement.
             if self.config.sort_module_level_items {
                 let mut nodes = self.parse_items(merged_uses).to_vec();
-                nodes.sort_by(|a, b| {
-                    compare_use_paths(
-                        &ast::ItemUse::from_syntax_node(db, *a).use_path(db),
-                        &ast::ItemUse::from_syntax_node(db, *b).use_path(db),
-                        db,
-                    )
-                });
+                sort_use_items(&mut nodes, db);
                 merged_uses = nodes.iter().map(|node| node.get_text(db)).collect();
             }
 
@@ -1282,13 +1276,7 @@ impl<'a> FormatterImpl<'a> {
                 SortKind::UseItem => {
                     // Sort `UseItem` items based on their use paths.
                     let mut sorted_section = section_nodes.to_vec();
-                    sorted_section.sort_by(|a, b| {
-                        compare_use_paths(
-                            &ast::ItemUse::from_syntax_node(self.db, *a).use_path(self.db),
-                            &ast::ItemUse::from_syntax_node(self.db, *b).use_path(self.db),
-                            self.db,
-                        )
-                    });
+                    sort_use_items(&mut sorted_section, self.db);
                     sorted_children.extend(sorted_section);
                 }
                 SortKind::Immovable => {
@@ -1377,6 +1365,17 @@ impl<'a> FormatterImpl<'a> {
             self.line_state.prevent_next_space = true;
         }
     }
+}
+
+/// Sorts `use` item nodes based on their use paths.
+fn sort_use_items<'a>(nodes: &mut [SyntaxNode<'a>], db: &'a dyn Database) {
+    nodes.sort_by(|a, b| {
+        compare_use_paths(
+            &ast::ItemUse::from_syntax_node(db, *a).use_path(db),
+            &ast::ItemUse::from_syntax_node(db, *b).use_path(db),
+            db,
+        )
+    });
 }
 
 /// Compares two `UsePath` nodes to determine their ordering.
