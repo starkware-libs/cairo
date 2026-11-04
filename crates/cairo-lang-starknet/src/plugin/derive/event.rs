@@ -271,8 +271,6 @@ fn handle_enum<'db>(
         }
         append_variants.push(append_variant);
         let into_impl = RewriteNode::interpolate_patched(
-            // The variant index (not the name) is used so that the impl name can't collide with
-            // one generated for another enum, as identifiers may contain underscores.
             &formatdoc! {"
                 impl $enum_name$IntoEvent{idx} of Into<$ty$, $enum_name$> {{
                     fn into(self: $ty$) -> $enum_name$ {{
