@@ -372,17 +372,17 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventERC20IntoEvent of Into<erc20_comp::Event, Event> {
+impl Event_ERC20_IntoEvent of Into<erc20_comp::Event, Event> {
     fn into(self: erc20_comp::Event) -> Event {
         Event::ERC20(self)
     }
 }
-impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
+impl Event_Ownable_IntoEvent of Into<ownable_comp::Event, Event> {
     fn into(self: ownable_comp::Event) -> Event {
         Event::Ownable(self)
     }
 }
-impl EventMintableIntoEvent of Into<mintable_comp::Event, Event> {
+impl Event_Mintable_IntoEvent of Into<mintable_comp::Event, Event> {
     fn into(self: mintable_comp::Event) -> Event {
         Event::Mintable(self)
     }
@@ -1376,17 +1376,17 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventERC20IntoEvent of Into<erc20_comp::Event, Event> {
+impl Event_ERC20_IntoEvent of Into<erc20_comp::Event, Event> {
     fn into(self: erc20_comp::Event) -> Event {
         Event::ERC20(self)
     }
 }
-impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
+impl Event_Ownable_IntoEvent of Into<ownable_comp::Event, Event> {
     fn into(self: ownable_comp::Event) -> Event {
         Event::Ownable(self)
     }
 }
-impl EventMintableIntoEvent of Into<mintable_comp::Event, Event> {
+impl Event_Mintable_IntoEvent of Into<mintable_comp::Event, Event> {
     fn into(self: mintable_comp::Event) -> Event {
         Event::Mintable(self)
     }

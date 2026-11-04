@@ -2002,7 +2002,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventCompEventIntoEvent of Into<super::comp::Event, Event> {
+impl Event_CompEvent_IntoEvent of Into<super::comp::Event, Event> {
     fn into(self: super::comp::Event) -> Event {
         Event::CompEvent(self)
     }

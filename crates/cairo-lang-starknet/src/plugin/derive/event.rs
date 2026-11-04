@@ -272,7 +272,7 @@ fn handle_enum<'db>(
         append_variants.push(append_variant);
         let into_impl = RewriteNode::interpolate_patched(
             indoc! {"
-                impl $enum_name$$variant_name$IntoEvent of Into<$ty$, $enum_name$> {
+                impl $enum_name$_$variant_name$_IntoEvent of Into<$ty$, $enum_name$> {
                     fn into(self: $ty$) -> $enum_name$ {
                         $enum_name$::$variant_name$(self)
                     }
