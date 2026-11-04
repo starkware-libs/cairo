@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793753543909,
+  "lastUpdate": 1793753696377,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -44891,6 +44891,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/086b5382fd25dedeb4b984579de01ed0c71489ca"
         },
         "date": 1793667323056,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "elonfliter",
+            "username": "elonfliter",
+            "email": "elonfliter@outlook.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "60deffa168ef9090bf65754083b373a8abcf9c22",
+          "message": "docs: fix argument lists that name parameters that no longer exist (#10457)\n\nSigned-off-by: elonfliter <elonfliter@outlook.com>",
+          "timestamp": "2026-11-03T15:38:44Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/60deffa168ef9090bf65754083b373a8abcf9c22"
+        },
+        "date": 1793753696112,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
