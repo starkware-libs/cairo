@@ -17,7 +17,7 @@ use cairo_lang_defs::ids::{
     StatementUseLongId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
-use cairo_lang_diagnostics::{DiagnosticNote, Maybe, skip_diagnostic};
+use cairo_lang_diagnostics::{DiagnosticNote, Maybe, Severity, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{
@@ -873,21 +873,25 @@ fn expand_inline_macro<'db>(
                 edition: ctx.resolver.settings.edition,
             },
         );
-        let mut diag_added = None;
+        // Only an error may back the `Err` below - a plugin reporting just warnings and no code
+        // would otherwise fail the expression with no error for the compilation to stop on.
+        let mut error_added = None;
         for diagnostic in result.diagnostics {
-            diag_added = match diagnostic.inner_span {
-                None => Some(
-                    ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)),
-                ),
-                Some((offset, width)) => Some(ctx.diagnostics.report_with_inner_span(
+            let is_error = diagnostic.severity == Severity::Error;
+            let diag_added = match diagnostic.inner_span {
+                None => ctx.diagnostics.report(diagnostic.stable_ptr, PluginDiagnostic(diagnostic)),
+                Some((offset, width)) => ctx.diagnostics.report_with_inner_span(
                     diagnostic.stable_ptr,
                     (offset, width),
                     PluginDiagnostic(diagnostic),
-                )),
+                ),
+            };
+            if is_error {
+                error_added = Some(diag_added);
             }
         }
         let Some(code) = result.code else {
-            return Err(diag_added.unwrap_or_else(|| {
+            return Err(error_added.unwrap_or_else(|| {
                 ctx.diagnostics.report(
                     syntax.stable_ptr(ctx.db),
                     InlineMacroNotFound(macro_path.identifier(db)),
