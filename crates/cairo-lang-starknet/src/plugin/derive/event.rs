@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_starknet_classes::abi::EventFieldKind;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
 use salsa::Database;
 
 use crate::plugin::aux_data::StarknetEventAuxData;
