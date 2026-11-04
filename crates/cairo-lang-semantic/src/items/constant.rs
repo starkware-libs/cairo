@@ -980,8 +980,6 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                         .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::DivisionByZero),
                 );
             }
-            id if id == self.div_fn => &args[0].v / &args[1].v,
-            id if id == self.rem_fn => &args[0].v % &args[1].v,
             id if id == self.bitand_fn => &args[0].v & &args[1].v,
             id if id == self.bitor_fn => &args[0].v | &args[1].v,
             id if id == self.bitxor_fn => &args[0].v ^ &args[1].v,
@@ -989,7 +987,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             id if id == self.le_fn => return bool_value(args[0].v <= args[1].v),
             id if id == self.gt_fn => return bool_value(args[0].v > args[1].v),
             id if id == self.ge_fn => return bool_value(args[0].v >= args[1].v),
-            id if id == self.div_rem_fn => {
+            id if (id == self.div_rem_fn || id == self.div_fn || id == self.rem_fn) => {
                 // No need for non-zero check as this is type checked to begin with.
                 let (q, r) = args[0].v.div_rem(&args[1].v);
                 let ty = args[0].ty;
@@ -1000,11 +998,20 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                         SemanticDiagnosticKind::LiteralError(err),
                     ));
                 }
-                return ConstValue::Struct(
-                    vec![ConstValueId::from_int(db, ty, &q), ConstValueId::from_int(db, ty, &r)],
-                    expr.ty,
-                )
-                .intern(db);
+                if id == self.div_rem_fn {
+                    return ConstValue::Struct(
+                        vec![
+                            ConstValueId::from_int(db, ty, &q),
+                            ConstValueId::from_int(db, ty, &r),
+                        ],
+                        expr.ty,
+                    )
+                    .intern(db);
+                } else if id == self.div_fn {
+                    q
+                } else {
+                    r
+                }
             }
             _ => return to_missing(skip_diagnostic()),
         };
