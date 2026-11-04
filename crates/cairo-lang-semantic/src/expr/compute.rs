@@ -3,6 +3,7 @@
 //! It is invoked by queries for function bodies and other code blocks.
 
 use core::panic;
+use std::cell::Cell;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -101,9 +102,8 @@ use crate::types::{
 };
 use crate::usage::Usages;
 use crate::{
-    ConcreteEnumId, ConcreteStructId, ConcreteVariant, GenericArgumentId, GenericParam, LocalItem,
-    Member, Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature,
-    StatementItemKind,
+    ConcreteEnumId, ConcreteStructId, ConcreteVariant, GenericArgumentId, LocalItem, Member,
+    Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
 };
 
 /// The information of a macro expansion.
@@ -267,9 +267,6 @@ pub struct ComputationContext<'ctx, 'mt> {
     function_id: ContextFunction<'ctx>,
     inner_ctx: Option<InnerContext<'ctx>>,
     cfg_set: Arc<CfgSet>,
-    /// Whether to look for closures when calling variables.
-    /// TODO(TomerStarkware): Remove this once we disallow calling shadowed functions.
-    are_closures_in_context: bool,
     /// Whether variables defined in the current macro scope should be injected into the parent
     /// scope.
     macro_defined_var_unhygienic: bool,
@@ -299,7 +296,6 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             variable_tracker,
             inner_ctx: None,
             cfg_set,
-            are_closures_in_context: false,
             macro_defined_var_unhygienic: false,
         }
     }
@@ -1506,89 +1502,115 @@ fn compute_expr_function_call_semantic<'db>(
     let path = syntax.path(db);
     let args_syntax = syntax.arguments(db).arguments(db);
     // Check if this is a variable.
-    let mut is_shadowed_by_variable = false;
-    if let Some((identifier, is_callsite_prefixed)) = try_extract_identifier_from_path(db, &path) {
-        let variable_name = identifier.text(ctx.db);
-        if let Some(var) = get_binded_expr_by_name(
+    if let Some((identifier, is_callsite_prefixed)) = try_extract_identifier_from_path(db, &path)
+        && let Some(var) = get_binded_expr_by_name(
             ctx,
-            variable_name,
+            identifier.text(db),
             is_callsite_prefixed,
-            path.stable_ptr(ctx.db).into(),
-        ) {
-            is_shadowed_by_variable = true;
-            // if closures are not in context, we want to call the function instead of the variable.
-            if ctx.are_closures_in_context {
-                let info = db.core_info();
-                // TODO(TomerStarkware): find the correct trait based on captured variables.
-                let fn_once_trait = info.fn_once_trt;
-                let fn_trait = info.fn_trt;
-                let self_expr = ExprAndId { expr: var.clone(), id: ctx.arenas.exprs.alloc(var) };
-                let mut closure_call_data = |call_trait: TraitId<'db>| {
-                    compute_method_function_call_data(
-                        ctx,
-                        &[call_trait],
-                        SmolStrId::from(ctx.db, "call"),
-                        self_expr.clone(),
-                        syntax.stable_ptr(db).untyped(),
-                        None,
-                        |ty, _, inference_errors| {
-                            if call_trait == fn_once_trait {
-                                Some(CallExpressionRequiresFunction { ty, inference_errors })
-                            } else {
-                                None
-                            }
-                        },
-                        |_, _, _| {
-                            unreachable!(
-                                "There is one explicit trait, FnOnce trait. No implementations of \
-                                 the trait, caused by both lack of implementation or multiple \
-                                 implementations of the trait, are handled in \
-                                 NoImplementationOfTrait function."
-                            )
-                        },
+            path.stable_ptr(db).into(),
+        )
+    {
+        let info = db.core_info();
+        // TODO(TomerStarkware): find the correct trait based on captured variables.
+        let fn_once_trait = info.fn_once_trt;
+        let fn_trait = info.fn_trt;
+        let var_ty = ctx.reduce_ty(var.ty());
+        let self_expr = ExprAndId { expr: var.clone(), id: ctx.arenas.exprs.alloc(var) };
+        // Set to the inference errors of finding a `call` function if the variable is not callable,
+        // which is reported below according to whether the variable shadows a function.
+        let not_callable_errors = Cell::new(None);
+        let mut closure_call_data = |call_trait: TraitId<'db>| {
+            compute_method_function_call_data(
+                ctx,
+                &[call_trait],
+                SmolStrId::from(ctx.db, "call"),
+                self_expr.clone(),
+                syntax.stable_ptr(db).untyped(),
+                None,
+                |_, _, inference_errors| {
+                    if call_trait == fn_once_trait {
+                        not_callable_errors.set(Some(inference_errors));
+                    }
+                    None
+                },
+                |_, _, _| {
+                    unreachable!(
+                        "There is one explicit trait, FnOnce trait. No implementations of the \
+                         trait, caused by both lack of implementation or multiple implementations \
+                         of the trait, are handled in NoImplementationOfTrait function."
                     )
+                },
+            )
+        };
+        // A numeric literal is never callable, but trait solving would only fail once the literal's
+        // type is inferred.
+        let call_data = if matches!(var_ty.long(db), TypeLongId::NumericLiteral(_)) {
+            not_callable_errors.set(Some(TraitInferenceErrors { traits_and_errors: vec![] }));
+            Err(skip_diagnostic())
+        } else {
+            closure_call_data(fn_trait).or_else(|_| closure_call_data(fn_once_trait))
+        };
+        let (call_function_id, _, fixed_closure, closure_mutability) = match call_data {
+            Ok(call_data) => call_data,
+            Err(diag_added) => {
+                let Some(inference_errors) = not_callable_errors.take() else {
+                    return Err(diag_added);
                 };
-                let (call_function_id, _, fixed_closure, closure_mutability) =
-                    closure_call_data(fn_trait).or_else(|_| closure_call_data(fn_once_trait))?;
-
-                let args_iter = args_syntax.elements(db);
-                // Normal parameters
-                let mut args = vec![];
-                let mut arg_types = vec![];
-                for arg_syntax in args_iter {
-                    let stable_ptr = arg_syntax.stable_ptr(db);
-                    let arg = compute_named_argument_clause(ctx, arg_syntax, None);
-                    if arg.mutability != Mutability::Immutable {
-                        return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
-                    }
-                    if arg.name.is_some() {
-                        return Err(ctx
-                            .diagnostics
-                            .report(stable_ptr, NamedArgumentsAreNotSupported));
-                    }
-                    args.push(arg.expr.id);
-                    arg_types.push(arg.expr.ty());
-                }
-                let args_expr = Expr::Tuple(ExprTuple {
-                    items: args,
-                    ty: TypeLongId::Tuple(arg_types).intern(db),
-                    stable_ptr: syntax.stable_ptr(db).into(),
-                });
-                let args_expr =
-                    ExprAndId { expr: args_expr.clone(), id: ctx.arenas.exprs.alloc(args_expr) };
-                let call_ptr = syntax.stable_ptr(db);
-                return expr_function_call(
-                    ctx,
-                    call_function_id,
-                    vec![
-                        NamedArg::new(fixed_closure, closure_mutability),
-                        NamedArg::value(args_expr),
-                    ],
-                    call_ptr,
-                    call_ptr.into(),
+                // Using separate diagnostics, as the path is not required to resolve.
+                let shadows_function = matches!(
+                    ctx.resolver.resolve_generic_path(
+                        &mut SemanticDiagnostics::new(ctx.resolver.module_id),
+                        &path,
+                        NotFoundItemType::Function,
+                        ResolutionContext::Statement(&mut ctx.environment),
+                    ),
+                    Ok(ResolvedGenericItem::GenericFunction(_))
                 );
+                return Err(if shadows_function {
+                    ctx.diagnostics.report(
+                        path.stable_ptr(db),
+                        CallingShadowedFunction { shadowed_function_name: identifier.text(db) },
+                    )
+                } else {
+                    ctx.diagnostics.report(
+                        syntax.stable_ptr(db),
+                        CallExpressionRequiresFunction { ty: var_ty, inference_errors },
+                    )
+                });
             }
+        };
+
+        let args_iter = args_syntax.elements(db);
+        // Normal parameters
+        let mut args = vec![];
+        let mut arg_types = vec![];
+        for arg_syntax in args_iter {
+            let stable_ptr = arg_syntax.stable_ptr(db);
+            let arg = compute_named_argument_clause(ctx, arg_syntax, None);
+            if arg.mutability != Mutability::Immutable {
+                return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
+            }
+            if arg.name.is_some() {
+                return Err(ctx.diagnostics.report(stable_ptr, NamedArgumentsAreNotSupported));
+            }
+            args.push(arg.expr.id);
+            arg_types.push(arg.expr.ty());
         }
+        let args_expr = Expr::Tuple(ExprTuple {
+            items: args,
+            ty: TypeLongId::Tuple(arg_types).intern(db),
+            stable_ptr: syntax.stable_ptr(db).into(),
+        });
+        let args_expr =
+            ExprAndId { expr: args_expr.clone(), id: ctx.arenas.exprs.alloc(args_expr) };
+        let call_ptr = syntax.stable_ptr(db);
+        return expr_function_call(
+            ctx,
+            call_function_id,
+            vec![NamedArg::new(fixed_closure, closure_mutability), NamedArg::value(args_expr)],
+            call_ptr,
+            call_ptr.into(),
+        );
     }
 
     let item = ctx
@@ -1646,20 +1668,6 @@ fn compute_expr_function_call_semantic<'db>(
             }))
         }
         ResolvedConcreteItem::Function(function) => {
-            if is_shadowed_by_variable {
-                return Err(ctx.diagnostics.report(
-                    path.stable_ptr(ctx.db),
-                    CallingShadowedFunction {
-                        shadowed_function_name: path
-                            .segments(db)
-                            .elements(db)
-                            .next()
-                            .unwrap()
-                            .identifier(db),
-                    },
-                ));
-            }
-
             // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
             let mut args_iter = args_syntax.elements(db);
             // Normal parameters
@@ -1784,17 +1792,6 @@ pub fn compute_root_expr<'db>(
 ) -> Maybe<ExprId> {
     // Conform TypeEqual constraints for Associated type bounds.
     let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
-    for param in &ctx.resolver.data.generic_params {
-        let Ok(GenericParam::Impl(imp)) = ctx.db.generic_param_semantic(*param) else {
-            continue;
-        };
-        let Ok(concrete_trait_id) = imp.concrete_trait else {
-            continue;
-        };
-        if crate::corelib::fn_traits(ctx.db).contains(&concrete_trait_id.trait_id(ctx.db)) {
-            ctx.are_closures_in_context = true;
-        }
-    }
     let constrains =
         ctx.db.generic_params_type_constraints(ctx.resolver.data.generic_params.clone());
     inference.conform_generic_params_type_constraints(constrains);
@@ -2441,7 +2438,6 @@ fn compute_expr_closure_semantic<'db>(
     syntax: &ast::ExprClosure<'db>,
     params_tuple_ty: Option<TypeId<'db>>,
 ) -> Maybe<Expr<'db>> {
-    ctx.are_closures_in_context = true;
     let db = ctx.db;
     let (params, ret_ty, body) = ctx.run_in_subscope(|new_ctx| {
         let params = function_signature_params(

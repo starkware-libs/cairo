@@ -330,10 +330,10 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<felt252, ()>.
+error[E2184]: Function `bar` is shadowed by a local variable.
  --> lib.cairo:7:19
     let _x: u32 = bar();
-                  ^^^^^
+                  ^^^
 
 error[E2311]: Trait has no implementation in context: Into::<u32, u16>.
  --> lib.cairo:12:11
@@ -363,6 +363,105 @@ error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<
  --> lib.cairo:8:19
     let _f: u32 = bar(2);
                   ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test shadowing of a function with a variable before and after a closure.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn bar() -> u32 {
+    2
+}
+fn foo() {
+    let bar: u8 = 3;
+    let _a: u32 = bar(2);
+    let _c = || 1;
+    let _b: u32 = bar(2);
+}
+fn foo_literal() {
+    let bar = 3;
+    let _a: u32 = bar(2);
+    let _c = || 1;
+    let _b: u32 = bar(2);
+}
+
+//! > expected_diagnostics
+error[E2184]: Function `bar` is shadowed by a local variable.
+ --> lib.cairo:6:19
+    let _a: u32 = bar(2);
+                  ^^^
+
+error[E2184]: Function `bar` is shadowed by a local variable.
+ --> lib.cairo:8:19
+    let _b: u32 = bar(2);
+                  ^^^
+
+error[E2184]: Function `bar` is shadowed by a local variable.
+ --> lib.cairo:12:19
+    let _a: u32 = bar(2);
+                  ^^^
+
+error[E2184]: Function `bar` is shadowed by a local variable.
+ --> lib.cairo:14:19
+    let _b: u32 = bar(2);
+                  ^^^
+
+//! > ==========================================================================
+
+//! > Test shadowing of a function with a variable through `$callsite`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro call_bar {
+    () => {
+        $callsite::bar(1)
+    };
+}
+fn bar(_a: felt252) -> u32 {
+    2
+}
+fn foo() {
+    let bar: u8 = 3;
+    let _a: u32 = call_bar!();
+}
+
+//! > expected_diagnostics
+error[E2184]: Function `bar` is shadowed by a local variable.
+ --> lib.cairo:11:19
+    let _a: u32 = call_bar!();
+                  ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test calling a non-callable variable.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let x: u8 = 3;
+    let y = 3;
+    let _a: u32 = x(2);
+    let _b: u32 = y(2);
+}
+
+//! > expected_diagnostics
+error[E2138]: Call expression requires a function, found `u8`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u8, ?3>.
+ --> lib.cairo:4:19
+    let _a: u32 = x(2);
+                  ^^^^
+
+error[E2138]: Call expression requires a function, found `{numeric}`.
+ --> lib.cairo:5:19
+    let _b: u32 = y(2);
+                  ^^^^
 
 //! > ==========================================================================
 
