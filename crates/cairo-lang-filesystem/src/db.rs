@@ -519,7 +519,7 @@ fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Optio
     }
 }
 
-/// Tracked function to return the content of a file as a string.
+/// Tracked function to compute the [FileSummary] of a file.
 #[salsa::tracked(returns(ref))]
 fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<FileSummary> {
     let content = db.file_content(file)?;
@@ -543,7 +543,7 @@ fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<
     })
 }
 
-/// Returns a reference to the content of a file as a string.
+/// Returns a reference to the [FileSummary] of a file.
 /// This is a wrapper around the tracked function `file_summary_helper` to return a
 /// reference to a type unsupported by salsa tracked functions.
 fn file_summary<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<&'db FileSummary> {
