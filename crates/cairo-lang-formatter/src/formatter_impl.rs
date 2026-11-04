@@ -1307,7 +1307,15 @@ impl<'a> FormatterImpl<'a> {
                 | ast::Trivium::SingleLineInnerComment(_) => {
                     // A leading comment may still be printed right after the previous token, so it
                     // must be separated from it - e.g. `/` followed by `// c` would become `/// c`.
-                    if !is_leading || self.line_state.line_buffer.ends_with_token() == Some(true) {
+                    // A trailing comment is always separated, unless the line already ends with a
+                    // space, e.g. the unbroken break point after `=`.
+                    let ends_with_token = self.line_state.line_buffer.ends_with_token();
+                    let needs_space = if is_leading {
+                        ends_with_token == Some(true)
+                    } else {
+                        ends_with_token != Some(false)
+                    };
+                    if needs_space {
                         self.line_state.line_buffer.push_space();
                     }
                     self.line_state
