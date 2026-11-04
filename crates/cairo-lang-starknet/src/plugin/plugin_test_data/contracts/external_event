@@ -98,12 +98,12 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_AwesomeEvent_IntoEvent of Into<AwesomeEvent, Event> {
+impl EventIntoEvent0 of Into<AwesomeEvent, Event> {
     fn into(self: AwesomeEvent) -> Event {
         Event::AwesomeEvent(self)
     }
 }
-impl Event_BestEventEver_IntoEvent of Into<BestEventEver, Event> {
+impl EventIntoEvent1 of Into<BestEventEver, Event> {
     fn into(self: BestEventEver) -> Event {
         Event::BestEventEver(self)
     }

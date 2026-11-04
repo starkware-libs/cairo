@@ -10195,7 +10195,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_CompEvent_IntoEvent of Into<super::component::Event, Event> {
+impl EventIntoEvent0 of Into<super::component::Event, Event> {
     fn into(self: super::component::Event) -> Event {
         Event::CompEvent(self)
     }
@@ -15464,7 +15464,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_CompEvent_IntoEvent of Into<super::test_component::Event, Event> {
+impl EventIntoEvent0 of Into<super::test_component::Event, Event> {
     fn into(self: super::test_component::Event) -> Event {
         Event::CompEvent(self)
     }
@@ -17728,7 +17728,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_CompEvent_IntoEvent of Into<super::component::Event, Event> {
+impl EventIntoEvent0 of Into<super::component::Event, Event> {
     fn into(self: super::component::Event) -> Event {
         Event::CompEvent(self)
     }
@@ -19416,23 +19416,18 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_SomeCase_IntoEvent of Into<SomeCase, Event> {
+impl EventIntoEvent0 of Into<SomeCase, Event> {
     fn into(self: SomeCase) -> Event {
         Event::SomeCase(self)
     }
 }
-impl Event_SomeCase_IntoEvent of Into<SomeCase, Event> {
+impl EventIntoEvent1 of Into<SomeCase, Event> {
     fn into(self: SomeCase) -> Event {
         Event::SomeCase(self)
     }
 }
 
 //! > expected_diagnostics
-error[E2118]: The name `Event_SomeCase_IntoEvent` is defined multiple times.
- --> lib.cairo:7:16
-#[derive(Drop, starknet::Event)]
-               ^^^^^^^^^^^^^^^
-
 error[E2051]: Redefinition of variant "SomeCase" on enum "Event".
  --> lib.cairo:10:5
     SomeCase: SomeCase,

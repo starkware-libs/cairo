@@ -344,7 +344,7 @@ impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
         core::option::Option::None
     }
 }
-impl NestedEventEnum_B_IntoEvent of Into<B, NestedEventEnum> {
+impl NestedEventEnumIntoEvent0 of Into<B, NestedEventEnum> {
     fn into(self: B) -> NestedEventEnum {
         NestedEventEnum::B(self)
     }
@@ -457,22 +457,22 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
         core::option::Option::None
     }
 }
-impl MyEventEnum_A_IntoEvent of Into<A, MyEventEnum> {
+impl MyEventEnumIntoEvent0 of Into<A, MyEventEnum> {
     fn into(self: A) -> MyEventEnum {
         MyEventEnum::A(self)
     }
 }
-impl MyEventEnum_B_IntoEvent of Into<B, MyEventEnum> {
+impl MyEventEnumIntoEvent1 of Into<B, MyEventEnum> {
     fn into(self: B) -> MyEventEnum {
         MyEventEnum::B(self)
     }
 }
-impl MyEventEnum_C_IntoEvent of Into<NestedEventEnum, MyEventEnum> {
+impl MyEventEnumIntoEvent2 of Into<NestedEventEnum, MyEventEnum> {
     fn into(self: NestedEventEnum) -> MyEventEnum {
         MyEventEnum::C(self)
     }
 }
-impl MyEventEnum_D_IntoEvent of Into<NestedEventEnum, MyEventEnum> {
+impl MyEventEnumIntoEvent3 of Into<NestedEventEnum, MyEventEnum> {
     fn into(self: NestedEventEnum) -> MyEventEnum {
         MyEventEnum::D(self)
     }
@@ -525,7 +525,7 @@ impl EvIsEvent of starknet::Event<Ev> {
         core::option::Option::None
     }
 }
-impl Ev_AB_IntoEvent of Into<A, Ev> {
+impl EvIntoEvent0 of Into<A, Ev> {
     fn into(self: A) -> Ev {
         Ev::AB(self)
     }
@@ -578,7 +578,7 @@ impl EvAIsEvent of starknet::Event<EvA> {
         core::option::Option::None
     }
 }
-impl EvA_B_IntoEvent of Into<B, EvA> {
+impl EvAIntoEvent0 of Into<B, EvA> {
     fn into(self: B) -> EvA {
         EvA::B(self)
     }

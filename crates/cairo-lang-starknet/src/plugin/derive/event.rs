@@ -195,7 +195,7 @@ fn handle_enum<'db>(
     let mut deserialize_nested_variants = vec![];
     let mut variants = vec![];
     let mut event_into_impls = vec![];
-    for variant in enum_ast.variants(db).elements(db) {
+    for (idx, variant) in enum_ast.variants(db).elements(db).enumerate() {
         let ty = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => RewriteNode::text("()"),
             ast::OptionTypeClause::TypeClause(tc) => RewriteNode::from_ast_trimmed(&tc.ty(db)),
@@ -271,12 +271,14 @@ fn handle_enum<'db>(
         }
         append_variants.push(append_variant);
         let into_impl = RewriteNode::interpolate_patched(
-            indoc! {"
-                impl $enum_name$_$variant_name$_IntoEvent of Into<$ty$, $enum_name$> {
-                    fn into(self: $ty$) -> $enum_name$ {
+            // The variant index (not the name) is used so that the impl name can't collide with
+            // one generated for another enum, as identifiers may contain underscores.
+            &formatdoc! {"
+                impl $enum_name$IntoEvent{idx} of Into<$ty$, $enum_name$> {{
+                    fn into(self: $ty$) -> $enum_name$ {{
                         $enum_name$::$variant_name$(self)
-                    }
-                }
+                    }}
+                }}
                 "},
             &[
                 ("enum_name".to_string(), enum_name.clone()),

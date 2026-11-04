@@ -338,7 +338,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_ABC_IntoEvent of Into<super::test_component::Event, Event> {
+impl EventIntoEvent0 of Into<super::test_component::Event, Event> {
     fn into(self: super::test_component::Event) -> Event {
         Event::ABC(self)
     }
@@ -736,7 +736,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_ABC_IntoEvent of Into<super::test_component::Event, Event> {
+impl EventIntoEvent0 of Into<super::test_component::Event, Event> {
     fn into(self: super::test_component::Event) -> Event {
         Event::ABC(self)
     }
@@ -1122,7 +1122,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_ABC_IntoEvent of Into<super::test_component::Event, Event> {
+impl EventIntoEvent0 of Into<super::test_component::Event, Event> {
     fn into(self: super::test_component::Event) -> Event {
         Event::ABC(self)
     }
@@ -1521,7 +1521,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_ABC_IntoEvent of Into<super::test_component::Event, Event> {
+impl EventIntoEvent0 of Into<super::test_component::Event, Event> {
     fn into(self: super::test_component::Event) -> Event {
         Event::ABC(self)
     }
@@ -1982,7 +1982,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_ABC_IntoEvent of Into<super::test_component::Event, Event> {
+impl EventIntoEvent0 of Into<super::test_component::Event, Event> {
     fn into(self: super::test_component::Event) -> Event {
         Event::ABC(self)
     }
@@ -2378,7 +2378,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_ABC_IntoEvent of Into<super::test_component::Event, Event> {
+impl EventIntoEvent0 of Into<super::test_component::Event, Event> {
     fn into(self: super::test_component::Event) -> Event {
         Event::ABC(self)
     }
@@ -2765,7 +2765,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_ABC_IntoEvent of Into<super::test_component::Event, Event> {
+impl EventIntoEvent0 of Into<super::test_component::Event, Event> {
     fn into(self: super::test_component::Event) -> Event {
         Event::ABC(self)
     }
@@ -3314,7 +3314,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_ABC_IntoEvent of Into<test_component::Event, Event> {
+impl EventIntoEvent0 of Into<test_component::Event, Event> {
     fn into(self: test_component::Event) -> Event {
         Event::ABC(self)
     }
@@ -4225,7 +4225,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl Event_Comp1Event_IntoEvent of Into<super::component1::Event, Event> {
+impl EventIntoEvent0 of Into<super::component1::Event, Event> {
     fn into(self: super::component1::Event) -> Event {
         Event::Comp1Event(self)
     }
