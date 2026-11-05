@@ -33,6 +33,16 @@ enum MyEventEnum {
     D: NestedEventEnum,
 }
 
+#[derive(starknet::Event, PartialEq, Drop)]
+enum Ev {
+    AB: A,
+}
+
+#[derive(starknet::Event, PartialEq, Drop)]
+enum EvA {
+    B: B,
+}
+
 //! > generated_cairo_code
 lib.cairo:
 
@@ -63,6 +73,16 @@ enum MyEventEnum {
     C: NestedEventEnum,
     #[flat]
     D: NestedEventEnum,
+}
+
+#[derive(starknet::Event, PartialEq, Drop)]
+enum Ev {
+    AB: A,
+}
+
+#[derive(starknet::Event, PartialEq, Drop)]
+enum EvA {
+    B: B,
 }
 
 lib.cairo:1:1
@@ -324,7 +344,7 @@ impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
         core::option::Option::None
     }
 }
-impl NestedEventEnumBIntoEvent of Into<B, NestedEventEnum> {
+impl NestedEventEnumIntoEvent0 of Into<B, NestedEventEnum> {
     fn into(self: B) -> NestedEventEnum {
         NestedEventEnum::B(self)
     }
@@ -437,24 +457,130 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
         core::option::Option::None
     }
 }
-impl MyEventEnumAIntoEvent of Into<A, MyEventEnum> {
+impl MyEventEnumIntoEvent0 of Into<A, MyEventEnum> {
     fn into(self: A) -> MyEventEnum {
         MyEventEnum::A(self)
     }
 }
-impl MyEventEnumBIntoEvent of Into<B, MyEventEnum> {
+impl MyEventEnumIntoEvent1 of Into<B, MyEventEnum> {
     fn into(self: B) -> MyEventEnum {
         MyEventEnum::B(self)
     }
 }
-impl MyEventEnumCIntoEvent of Into<NestedEventEnum, MyEventEnum> {
+impl MyEventEnumIntoEvent2 of Into<NestedEventEnum, MyEventEnum> {
     fn into(self: NestedEventEnum) -> MyEventEnum {
         MyEventEnum::C(self)
     }
 }
-impl MyEventEnumDIntoEvent of Into<NestedEventEnum, MyEventEnum> {
+impl MyEventEnumIntoEvent3 of Into<NestedEventEnum, MyEventEnum> {
     fn into(self: NestedEventEnum) -> MyEventEnum {
         MyEventEnum::D(self)
+    }
+}
+
+
+
+lib.cairo:30:1
+#[derive(starknet::Event, PartialEq, Drop)]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl EvPartialEq<> of core::traits::PartialEq::<Ev> {
+    fn eq(lhs: @Ev, rhs: @Ev) -> bool {
+        match lhs {
+            Ev::AB(x) => match rhs {
+                Ev::AB(y) => core::traits::PartialEq::<A>::eq(x, y),
+            },
+        }
+    }
+}
+impl EvDrop<> of core::traits::Drop::<Ev>;
+
+
+lib.cairo:30:10
+#[derive(starknet::Event, PartialEq, Drop)]
+         ^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EvIsEvent of starknet::Event<Ev> {
+    fn append_keys_and_data(
+        self: @Ev, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
+    ) {
+        match self {
+            Ev::AB(val) => {
+                core::array::ArrayTrait::append(ref keys, selector!("AB"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Ev> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("AB") {
+            return core::option::Option::Some(Ev::AB(starknet::Event::deserialize(ref keys, ref data)?));
+        }
+        core::option::Option::None
+    }
+}
+impl EvIntoEvent0 of Into<A, Ev> {
+    fn into(self: A) -> Ev {
+        Ev::AB(self)
+    }
+}
+
+
+
+lib.cairo:35:1
+#[derive(starknet::Event, PartialEq, Drop)]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl EvAPartialEq<> of core::traits::PartialEq::<EvA> {
+    fn eq(lhs: @EvA, rhs: @EvA) -> bool {
+        match lhs {
+            EvA::B(x) => match rhs {
+                EvA::B(y) => core::traits::PartialEq::<B>::eq(x, y),
+            },
+        }
+    }
+}
+impl EvADrop<> of core::traits::Drop::<EvA>;
+
+
+lib.cairo:35:10
+#[derive(starknet::Event, PartialEq, Drop)]
+         ^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EvAIsEvent of starknet::Event<EvA> {
+    fn append_keys_and_data(
+        self: @EvA, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
+    ) {
+        match self {
+            EvA::B(val) => {
+                core::array::ArrayTrait::append(ref keys, selector!("B"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<EvA> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("B") {
+            return core::option::Option::Some(EvA::B(starknet::Event::deserialize(ref keys, ref data)?));
+        }
+        core::option::Option::None
+    }
+}
+impl EvAIntoEvent0 of Into<B, EvA> {
+    fn into(self: B) -> EvA {
+        EvA::B(self)
     }
 }
 

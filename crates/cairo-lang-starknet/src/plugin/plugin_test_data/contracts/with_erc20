@@ -228,7 +228,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
+impl EventIntoEvent0 of Into<erc20_comp::Event, Event> {
     fn into(self: erc20_comp::Event) -> Event {
         Event::ERC20Token(self)
     }
@@ -473,7 +473,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventERC20TokenIntoEvent of Into<erc20_comp::Event, Event> {
+impl EventIntoEvent0 of Into<erc20_comp::Event, Event> {
     fn into(self: erc20_comp::Event) -> Event {
         Event::ERC20Token(self)
     }
