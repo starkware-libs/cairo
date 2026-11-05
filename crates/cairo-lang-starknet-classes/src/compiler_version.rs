@@ -8,6 +8,7 @@ mod test;
 pub struct VersionId {
     pub major: usize,
     pub minor: usize,
+    #[serde(default)]
     pub patch: usize,
 }
 impl VersionId {

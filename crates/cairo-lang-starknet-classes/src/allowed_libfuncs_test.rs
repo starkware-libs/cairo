@@ -52,6 +52,7 @@ fn allowed_versions_representations() {
         r#"{ "allowed_libfuncs": {
             "always": null,
             "stable": { "major": 1, "minor": 8, "patch": 0 },
+            "no_patch": { "major": 1, "minor": 8 },
             "deprecated": { "deprecated": { "major": 1, "minor": 10, "patch": 0 } },
             "range": { "stable": { "major": 1, "minor": 8, "patch": 0 },
                        "deprecated": { "major": 1, "minor": 10, "patch": 0 } }
@@ -61,6 +62,7 @@ fn allowed_versions_representations() {
     let get = |name: &str| list.allowed_libfuncs[&GenericLibfuncId::from_string(name)];
     assert_eq!(get("always"), AllowedVersions { stable: None, deprecated: None });
     assert_eq!(get("stable"), AllowedVersions { stable: Some(v(1, 8)), deprecated: None });
+    assert_eq!(get("no_patch"), get("stable"));
     assert_eq!(get("deprecated"), AllowedVersions { stable: None, deprecated: Some(v(1, 10)) });
     assert_eq!(get("range"), AllowedVersions { stable: Some(v(1, 8)), deprecated: Some(v(1, 10)) });
 
