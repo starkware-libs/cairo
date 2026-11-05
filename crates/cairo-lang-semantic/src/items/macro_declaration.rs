@@ -10,7 +10,7 @@ use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, SmolStrId};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::ast::{MacroElement, MacroParam};
+use cairo_lang_syntax::node::ast::MacroParam;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -27,11 +27,10 @@ use crate::resolve::{Resolver, ResolverData};
 /// A unique identifier for a repetition block inside a macro rule.
 /// Each `$( ... )` group in the macro pattern gets a new `RepetitionId`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct RepetitionId(usize);
+struct RepetitionId(usize);
 
-/// The captures collected during macro pattern matching.
-/// Each macro parameter name maps to a flat list of matched strings.
-type Captures<'db> = OrderedHashMap<SmolStrId<'db>, Vec<CapturedValue<'db>>>;
+/// The values a macro rule's pattern captured, per placeholder name - see [`CaptureTree`].
+pub type CaptureTrees<'db> = OrderedHashMap<SmolStrId<'db>, CaptureTree<'db>>;
 
 /// The values captured for a single placeholder, nested by the repetition structure of the pattern
 /// that matched them: a placeholder nested in `d` `$()` repetitions has each value as a `Leaf`
@@ -50,6 +49,20 @@ pub enum CaptureTree<'db> {
 }
 
 impl<'db> CaptureTree<'db> {
+    /// The subtree for the group being expanded, given its index in every entered `$()` expansion
+    /// block, outermost first. A `Leaf` reached while indices remain is returned as is: the
+    /// placeholder repeats less deeply than the block, so its value is broadcast to every group.
+    /// `None` if an index is out of range, which
+    /// [`SemanticDiagnosticKind::MacroPlaceholderRepDriverMismatch`] rejects at declaration time.
+    fn at(&self, group_indices: &[usize]) -> Option<&Self> {
+        let mut node = self;
+        for &index in group_indices {
+            let Self::Seq(groups) = node else { return Some(node) };
+            node = groups.get(index)?;
+        }
+        Some(node)
+    }
+
     /// The groups of the `Seq` at nesting `level` that is open for new content - the last group of
     /// every level above it. `None` if a `Leaf` is in the way or a level has no group yet, which
     /// means the pattern uses the name at conflicting nesting positions.
@@ -64,48 +77,35 @@ impl<'db> CaptureTree<'db> {
     }
 }
 
-/// Context used during macro pattern matching and expansion.
-/// Tracks captured values, active repetition scopes, and repetition ownership per placeholder.
+/// Context used during macro pattern matching.
+/// Tracks captured values and the active repetition scopes they were captured in.
 #[derive(Default, Clone, Debug)]
-pub struct MatcherContext<'db> {
-    /// The captured values per macro parameter name.
-    /// These are flat lists, even for repeated placeholders.
-    pub captures: Captures<'db>,
-
+struct MatcherContext<'db> {
     /// The captured values per macro parameter name, nested by the repetition structure of the
     /// pattern - see [`CaptureTree`]. Includes placeholders whose repetition matched zero times.
-    /// Mirrors [`Self::captures`] for now; as param name uniqueness is not verified, a name the
-    /// pattern uses at conflicting nesting positions only holds the values of the first.
-    pub capture_trees: OrderedHashMap<SmolStrId<'db>, CaptureTree<'db>>,
+    /// As param name uniqueness is not verified, a name the pattern uses at conflicting nesting
+    /// positions only holds the values of the first.
+    capture_trees: CaptureTrees<'db>,
 
-    /// Maps each placeholder to the `RepetitionId` of the repetition block
-    /// they are part of. This helps the expansion phase know which iterators to advance together.
-    pub placeholder_to_rep_id: OrderedHashMap<SmolStrId<'db>, RepetitionId>,
-
-    /// Stack of currently active repetition blocks. Used to assign placeholders
-    /// to their correct `RepetitionId` while recursing into nested repetitions.
-    pub current_repetition_stack: Vec<RepetitionId>,
+    /// The number of pattern repetitions currently being matched inside, which is the nesting
+    /// depth of the values captured now.
+    repetition_depth: usize,
 
     /// Counter for generating unique `RepetitionId`s.
-    pub next_repetition_id: usize,
-
-    /// Tracks the current index for each active repetition during expansion.
-    pub repetition_indices: OrderedHashMap<RepetitionId, usize>,
+    next_repetition_id: usize,
 
     /// Count how many times each repetition matched.
-    pub repetition_match_counts: OrderedHashMap<RepetitionId, usize>,
+    repetition_match_counts: OrderedHashMap<RepetitionId, usize>,
 
     /// Store the repetition operator for each repetition.
-    pub repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator<'db>>,
+    repetition_operators: OrderedHashMap<RepetitionId, ast::MacroRepetitionOperator<'db>>,
 }
 
 impl<'db> MatcherContext<'db> {
-    /// Records `value` as the next capture of `name`, in both [`Self::captures`] and
-    /// [`Self::capture_trees`].
+    /// Records `value` as the next capture of `name` in [`Self::capture_trees`].
     fn record_capture(&mut self, name: SmolStrId<'db>, value: CapturedValue<'db>) {
-        self.captures.entry(name).or_default().push(value.clone());
         // The leaves of a placeholder are the elements of the `Seq` one level above its own depth.
-        let Some(level) = self.current_repetition_stack.len().checked_sub(1) else {
+        let Some(level) = self.repetition_depth.checked_sub(1) else {
             self.capture_trees.entry(name).or_insert(CaptureTree::Leaf(value));
             return;
         };
@@ -121,14 +121,14 @@ impl<'db> MatcherContext<'db> {
     }
 
     /// Opens a group in the tree of every placeholder nested in `repetition`, which is about to be
-    /// matched. Called once per encounter of the repetition, before it is pushed onto
-    /// [`Self::current_repetition_stack`], so a zero-match repetition still leaves an empty group.
+    /// matched. Called once per encounter of the repetition, before [`Self::repetition_depth`] is
+    /// incremented, so a zero-match repetition still leaves an empty group.
     fn open_repetition_groups(
         &mut self,
         db: &'db dyn Database,
         repetition: &ast::MacroRepetition<'db>,
     ) {
-        let depth = self.current_repetition_stack.len();
+        let depth = self.repetition_depth;
         let mut names = OrderedHashSet::default();
         collect_pattern_placeholder_names(db, repetition.elements(db).elements(db), &mut names);
         for name in names {
@@ -483,7 +483,7 @@ pub fn is_macro_rule_match<'db>(
     db: &'db dyn Database,
     rule: &MacroRuleData<'db>,
     input: &ast::TokenTreeNode<'db>,
-) -> Option<(Captures<'db>, OrderedHashMap<SmolStrId<'db>, RepetitionId>)> {
+) -> Option<CaptureTrees<'db>> {
     let mut ctx = MatcherContext::default();
 
     let matcher_elements = get_macro_elements(db, rule.pattern.clone());
@@ -499,7 +499,7 @@ pub fn is_macro_rule_match<'db>(
     if !validate_repetition_operator_constraints(&ctx) {
         return None;
     }
-    Some((ctx.captures, ctx.placeholder_to_rep_id))
+    Some(ctx.capture_trees)
 }
 
 /// Helper function for [expand_macro_rule].
@@ -566,9 +566,6 @@ fn is_macro_rule_match_ex<'db>(
                                 stable_ptr: input_token.stable_ptr(db).untyped(),
                             },
                         );
-                        if let Some(rep_id) = ctx.current_repetition_stack.last() {
-                            ctx.placeholder_to_rep_id.insert(placeholder_name, *rep_id);
-                        }
                         continue;
                     }
                     PlaceholderKind::Expr => {
@@ -590,9 +587,6 @@ fn is_macro_rule_match_ex<'db>(
                                 stable_ptr: peek_token.stable_ptr(db).untyped(),
                             },
                         );
-                        if let Some(rep_id) = ctx.current_repetition_stack.last() {
-                            ctx.placeholder_to_rep_id.insert(placeholder_name, *rep_id);
-                        }
                         let expr_length = expr_text.len();
                         let mut current_length = 0;
 
@@ -640,7 +634,7 @@ fn is_macro_rule_match_ex<'db>(
                 let rep_id = RepetitionId(ctx.next_repetition_id);
                 ctx.next_repetition_id += 1;
                 ctx.open_repetition_groups(db, &repetition);
-                ctx.current_repetition_stack.push(rep_id);
+                ctx.repetition_depth += 1;
                 let elements = repetition.elements(db);
                 let operator = repetition.operator(db);
                 let separator_token = repetition.separator(db);
@@ -682,14 +676,7 @@ fn is_macro_rule_match_ex<'db>(
                 }
                 ctx.repetition_match_counts.insert(rep_id, match_count);
                 ctx.repetition_operators.insert(rep_id, operator.clone());
-                for placeholder_name in ctx.captures.keys() {
-                    ctx.placeholder_to_rep_id.insert(*placeholder_name, rep_id);
-                }
-
-                for i in 0..match_count {
-                    ctx.repetition_indices.insert(rep_id, i);
-                }
-                ctx.current_repetition_stack.pop();
+                ctx.repetition_depth -= 1;
                 continue;
             }
         }
@@ -725,10 +712,13 @@ pub struct MacroExpansionResult {
 /// The reason the expansion of a macro rule could not be performed.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MacroExpansionFailure<'db> {
-    /// A `$( ... )` block in the expansion holds no placeholder, so there is nothing to determine
-    /// how many times it should be repeated.
-    RepetitionWithoutPlaceholder,
-    /// A placeholder in the expansion has no captured value at the current repetition indices.
+    /// No placeholder of a `$( ... )` block in the expansion repeats at the block's depth, so the
+    /// number of groups to expand it over is unknown.
+    MissingRepetitionDriver,
+    /// The placeholders of a `$( ... )` block in the expansion disagree on the number of groups to
+    /// expand it over.
+    ConflictingRepetitionDrivers,
+    /// A placeholder in the expansion has no captured value for the group being expanded.
     MissingCapture(SmolStrId<'db>),
 }
 
@@ -756,137 +746,149 @@ impl<'db> MacroExpansionError<'db> {
 pub fn expand_macro_rule<'db>(
     db: &'db dyn Database,
     rule: &MacroRuleData<'db>,
-    matcher_ctx: &mut MatcherContext<'db>,
+    capture_trees: &CaptureTrees<'db>,
 ) -> Result<MacroExpansionResult, MacroExpansionError<'db>> {
-    let node = rule.expansion.as_syntax_node();
-    let mut res_buffer = String::new();
-    let mut code_mappings = Vec::new();
-    expand_macro_rule_ex(db, node, matcher_ctx, &mut res_buffer, &mut code_mappings)?;
-    Ok(MacroExpansionResult { text: res_buffer.into(), code_mappings: code_mappings.into() })
+    let mut ctx = ExpansionContext {
+        db,
+        capture_trees,
+        group_indices: vec![],
+        res_buffer: String::new(),
+        code_mappings: vec![],
+    };
+    ctx.expand_node(rule.expansion.as_syntax_node())?;
+    Ok(MacroExpansionResult {
+        text: ctx.res_buffer.into(),
+        code_mappings: ctx.code_mappings.into(),
+    })
 }
 
-/// Helper function for [expand_macro_rule]. Traverses the macro expansion and replaces the
-/// placeholders with the provided values while collecting the result in res_buffer.
-fn expand_macro_rule_ex<'db>(
+/// The state of an in-progress expansion of a macro rule, performed by [`expand_macro_rule`].
+struct ExpansionContext<'db, 'a> {
     db: &'db dyn Database,
-    node: SyntaxNode<'db>,
-    matcher_ctx: &mut MatcherContext<'db>,
-    res_buffer: &mut String,
-    code_mappings: &mut Vec<CodeMapping>,
-) -> Result<(), MacroExpansionError<'db>> {
-    match node.kind(db) {
-        SyntaxKind::MacroParam => {
-            let path_node = MacroParam::from_syntax_node(db, node);
-            if let Some(name) = extract_placeholder(db, &path_node) {
-                let rep_index = matcher_ctx
-                    .placeholder_to_rep_id
-                    .get(&name)
-                    .and_then(|rep_id| matcher_ctx.repetition_indices.get(rep_id))
-                    .copied();
-                let value = matcher_ctx
-                    .captures
-                    .get(&name)
-                    .and_then(|v| rep_index.map_or_else(|| v.first(), |i| v.get(i)))
-                    .ok_or(MacroExpansionError {
-                        stable_ptr: path_node.stable_ptr(db).untyped(),
-                        failure: MacroExpansionFailure::MissingCapture(name),
-                    })?;
-                let start = TextWidth::from_str(res_buffer).as_offset();
-                let span = TextSpan::new_with_width(start, TextWidth::from_str(&value.text));
-                res_buffer.push_str(&value.text);
-                code_mappings.push(CodeMapping {
-                    span,
-                    origin: CodeOrigin::Span(value.stable_ptr.lookup(db).span_without_trivia(db)),
-                });
-                return Ok(());
+    /// The values the rule's pattern captured from the call.
+    capture_trees: &'a CaptureTrees<'db>,
+    /// The index of the group being expanded, one per `$()` expansion block currently entered,
+    /// outermost first. Selects the captures every placeholder is expanded to - see
+    /// [`CaptureTree::at`].
+    group_indices: Vec<usize>,
+    /// The expansion so far.
+    res_buffer: String,
+    /// The origin of every placeholder expanded into [`Self::res_buffer`].
+    code_mappings: Vec<CodeMapping>,
+}
+
+impl<'db> ExpansionContext<'db, '_> {
+    /// Expands `node` of a macro rule's expansion, appending it to [`Self::res_buffer`].
+    fn expand_node(&mut self, node: SyntaxNode<'db>) -> Result<(), MacroExpansionError<'db>> {
+        let db = self.db;
+        match node.kind(db) {
+            SyntaxKind::MacroParam => {
+                let param = MacroParam::from_syntax_node(db, node);
+                // `$defsite` / `$callsite` are not placeholders; they are emitted as written, by
+                // the fallthrough below.
+                if let Some(name) = extract_placeholder(db, &param) {
+                    return self.expand_placeholder(&param, name);
+                }
+            }
+            SyntaxKind::MacroRepetition => {
+                return self.expand_repetition(&ast::MacroRepetition::from_syntax_node(db, node));
+            }
+            _ => {}
+        }
+        if node.kind(db).is_terminal() {
+            self.res_buffer.push_str(node.get_text(db));
+            return Ok(());
+        }
+        for child in node.get_children(db).iter() {
+            self.expand_node(*child)?;
+        }
+        Ok(())
+    }
+
+    /// Expands the placeholder `name`, used by `param`, to the value it captured in the group being
+    /// expanded.
+    fn expand_placeholder(
+        &mut self,
+        param: &MacroParam<'db>,
+        name: SmolStrId<'db>,
+    ) -> Result<(), MacroExpansionError<'db>> {
+        let db = self.db;
+        let capture_trees = self.capture_trees;
+        let Some(CaptureTree::Leaf(value)) =
+            capture_trees.get(&name).and_then(|tree| tree.at(&self.group_indices))
+        else {
+            // Rejected at declaration time by `UndefinedMacroPlaceholder` or
+            // `MacroPlaceholderRepDepthMismatch`.
+            return Err(MacroExpansionError {
+                stable_ptr: param.stable_ptr(db).untyped(),
+                failure: MacroExpansionFailure::MissingCapture(name),
+            });
+        };
+        let start = TextWidth::from_str(&self.res_buffer).as_offset();
+        let span = TextSpan::new_with_width(start, TextWidth::from_str(&value.text));
+        self.res_buffer.push_str(&value.text);
+        self.code_mappings.push(CodeMapping {
+            span,
+            origin: CodeOrigin::Span(value.stable_ptr.lookup(db).span_without_trivia(db)),
+        });
+        Ok(())
+    }
+
+    /// Expands `repetition`, a `$()` block of a macro rule's expansion, once per group of the
+    /// captures driving it, emitting its separator between consecutive groups.
+    fn expand_repetition(
+        &mut self,
+        repetition: &ast::MacroRepetition<'db>,
+    ) -> Result<(), MacroExpansionError<'db>> {
+        let db = self.db;
+        let group_count = self.group_count(repetition)?;
+        let elements = repetition.elements(db);
+        for index in 0..group_count {
+            self.group_indices.push(index);
+            let expanded = elements
+                .elements(db)
+                .try_for_each(|element| self.expand_node(element.as_syntax_node()));
+            self.group_indices.pop();
+            expanded?;
+            if index + 1 < group_count
+                && let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db)
+            {
+                self.res_buffer.push_str(sep.as_syntax_node().get_text(db));
             }
         }
-        SyntaxKind::MacroRepetition => {
-            let repetition = ast::MacroRepetition::from_syntax_node(db, node);
-            let elements = repetition.elements(db);
-            let first_param = find_first_repetition_param(db, elements.elements(db)).ok_or(
-                MacroExpansionError {
-                    stable_ptr: repetition.stable_ptr(db).untyped(),
-                    failure: MacroExpansionFailure::RepetitionWithoutPlaceholder,
-                },
-            )?;
-            let placeholder_name = first_param.name(db).text(db);
-            // If the placeholder isn't mapped to any repetition, it means it doesn't belong to any
-            // consumed repetition.
-            let Some(rep_id) = matcher_ctx.placeholder_to_rep_id.get(&placeholder_name).copied()
+        Ok(())
+    }
+
+    /// The number of groups `repetition` is expanded over: the group count of the placeholders
+    /// whose captures still repeat at its depth. Placeholders reaching a `Leaf` are broadcast.
+    fn group_count(
+        &self,
+        repetition: &ast::MacroRepetition<'db>,
+    ) -> Result<usize, MacroExpansionError<'db>> {
+        let db = self.db;
+        let mut group_count: Option<usize> = None;
+        let names = repetition
+            .as_syntax_node()
+            .descendants(db)
+            .filter_map(|node| MacroParam::cast(db, node))
+            .filter_map(|param| extract_placeholder(db, &param));
+        let error = |failure| MacroExpansionError {
+            stable_ptr: repetition.stable_ptr(db).untyped(),
+            failure,
+        };
+        for name in names {
+            let Some(CaptureTree::Seq(groups)) =
+                self.capture_trees.get(&name).and_then(|tree| tree.at(&self.group_indices))
             else {
-                return Ok(());
+                continue;
             };
-            let repetition_len =
-                matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
-            for i in 0..repetition_len {
-                matcher_ctx.repetition_indices.insert(rep_id, i);
-                for element in elements.elements(db) {
-                    expand_macro_rule_ex(
-                        db,
-                        element.as_syntax_node(),
-                        matcher_ctx,
-                        res_buffer,
-                        code_mappings,
-                    )?;
-                }
-
-                if i + 1 < repetition_len
-                    && let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db)
-                {
-                    res_buffer.push_str(sep.as_syntax_node().get_text(db));
-                }
+            if group_count.is_some_and(|count| count != groups.len()) {
+                return Err(error(MacroExpansionFailure::ConflictingRepetitionDrivers));
             }
-
-            matcher_ctx.repetition_indices.swap_remove(&rep_id);
-            return Ok(());
+            group_count = Some(groups.len());
         }
-        _ => {
-            if node.kind(db).is_terminal() {
-                res_buffer.push_str(node.get_text(db));
-                return Ok(());
-            }
-
-            for child in node.get_children(db).iter() {
-                expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
-            }
-            return Ok(());
-        }
+        group_count.ok_or_else(|| error(MacroExpansionFailure::MissingRepetitionDriver))
     }
-    if node.kind(db).is_terminal() {
-        res_buffer.push_str(node.get_text(db));
-        return Ok(());
-    }
-    for child in node.get_children(db).iter() {
-        expand_macro_rule_ex(db, *child, matcher_ctx, res_buffer, code_mappings)?;
-    }
-    Ok(())
-}
-
-/// Returns the first param within the given macro elements.
-fn find_first_repetition_param<'db>(
-    db: &'db dyn Database,
-    elements: impl IntoIterator<Item = MacroElement<'db>>,
-) -> Option<MacroParam<'db>> {
-    for element in elements {
-        match element {
-            ast::MacroElement::Param(param) => return Some(param),
-            ast::MacroElement::Subtree(subtree) => {
-                let inner_elements = get_macro_elements(db, subtree.subtree(db)).elements(db);
-                if let Some(param) = find_first_repetition_param(db, inner_elements) {
-                    return Some(param);
-                }
-            }
-            ast::MacroElement::Repetition(repetition) => {
-                let inner_elements = repetition.elements(db).elements(db);
-                if let Some(param) = find_first_repetition_param(db, inner_elements) {
-                    return Some(param);
-                }
-            }
-            ast::MacroElement::Token(_) => {}
-        }
-    }
-    None
 }
 
 /// Implementation of [MacroDeclarationSemantic::macro_declaration_diagnostics].
