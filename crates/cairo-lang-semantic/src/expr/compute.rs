@@ -36,6 +36,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::stack::with_sufficient_stack;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{
@@ -751,6 +752,14 @@ fn wrap_maybe_with_missing<'db>(
 
 /// Computes the semantic model of an expression, or returns a SemanticDiagnosticKind on error.
 pub fn maybe_compute_expr_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    syntax: &ast::Expr<'db>,
+) -> Maybe<Expr<'db>> {
+    with_sufficient_stack(|| maybe_compute_expr_semantic_inner(ctx, syntax))
+}
+
+/// See [maybe_compute_expr_semantic].
+pub fn maybe_compute_expr_semantic_inner<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::Expr<'db>,
 ) -> Maybe<Expr<'db>> {
@@ -2843,6 +2852,18 @@ fn get_method_function_candidates<'db>(
 /// Note that this pattern will always be "registered" in the arena, so it can be looked up in the
 /// language server.
 pub fn compute_pattern_semantic<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    syntax: &ast::Pattern<'db>,
+    ty: TypeId<'db>,
+    or_pattern_variables_map: &UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>>,
+) -> PatternAndId<'db> {
+    with_sufficient_stack(|| {
+        compute_pattern_semantic_inner(ctx, syntax, ty, or_pattern_variables_map)
+    })
+}
+
+/// See [compute_pattern_semantic].
+pub fn compute_pattern_semantic_inner<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
