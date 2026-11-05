@@ -75,7 +75,7 @@ pub fn sierra_gen_group_input(db: &dyn Database) -> SierraGenGroupInput {
 }
 
 /// Wrapper for the concrete libfunc long id, providing a unique id for each libfunc.
-#[salsa::interned(revisions = usize::MAX)]
+#[salsa::interned]
 struct ConcreteLibfuncIdLongWrapper {
     id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
 }
@@ -84,7 +84,7 @@ struct ConcreteLibfuncIdLongWrapper {
 struct ConcreteLibfuncHandle(u64);
 
 /// Wrapper for Sierra type long ID, providing a unique ID for each type.
-#[salsa::interned(revisions = usize::MAX)]
+#[salsa::interned]
 struct SierraGeneratorTypeLongIdWrapper<'db> {
     id: SierraGeneratorTypeLongId<'db>,
 }
