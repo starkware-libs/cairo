@@ -247,9 +247,8 @@ fn test_contract_libfuncs_coverage(name: &str) {
     .unwrap()
     .allowed_libfuncs
     .into_iter()
-    .filter_map(|(libfunc, version)| match version {
-        Some(version) => current_version.supports(version).then_some(libfunc),
-        None => Some(libfunc),
+    .filter_map(|(libfunc, versions)| {
+        versions.validate(&libfunc, current_version).is_ok().then_some(libfunc)
     })
     .collect();
 
