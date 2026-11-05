@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793840030947,
+  "lastUpdate": 1793840180636,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -45201,6 +45201,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "ls_reexec/structural edit (end)",
             "value": 1510,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Ravan",
+            "username": "Ravan002",
+            "email": "95362051+Ravan002@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "879db423c17dd72cb7168b954049a14b8cd6b05c",
+          "message": "fix(formatter): don't double the space before a comment after `=` (#10474)",
+          "timestamp": "2026-11-04T12:39:21Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/879db423c17dd72cb7168b954049a14b8cd6b05c"
+        },
+        "date": 1793840180307,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1910,
             "unit": "queries"
           },
           {
