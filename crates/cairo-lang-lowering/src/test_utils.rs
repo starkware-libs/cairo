@@ -8,7 +8,7 @@ use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
-use cairo_lang_semantic::test_utils::with_target_function_plugin;
+use cairo_lang_semantic::test_utils::with_test_plugins;
 use salsa::Database;
 
 use crate::Lowered;
@@ -33,7 +33,7 @@ impl LoweringDatabaseForTesting {
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
 
-        res.set_default_plugins_from_suite(with_target_function_plugin(get_default_plugin_suite()));
+        res.set_default_plugins_from_suite(with_test_plugins(get_default_plugin_suite()));
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);

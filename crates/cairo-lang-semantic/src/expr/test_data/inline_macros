@@ -2965,3 +2965,26 @@ fn foo() -> felt252 {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test plugin macro generating no code with only a warning.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() -> felt252 {
+    warn_only!()
+}
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: warn_only! generates no code.
+ --> lib.cairo:2:5
+    warn_only!()
+    ^^^^^^^^^^^^
+
+error[E2156]: Inline macro `warn_only` not found.
+ --> lib.cairo:2:5
+    warn_only!()
+    ^^^^^^^^^^^^
