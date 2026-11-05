@@ -672,7 +672,7 @@ impl MyImpl of MyTrait {
 
 //! > ==========================================================================
 
-//! > Test impl candidates are tried in stable order.
+//! > Test impl candidates are tried in the order of their names.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -697,7 +697,7 @@ fn bar() {
 }
 
 //! > expected_diagnostics
-error[E2313]: Trait `t::Tr::<u32>` has multiple implementations, in: `m::L2`, `L1`
+error[E2313]: Trait `t::Tr::<u32>` has multiple implementations, in: `L1`, `m::L2`
  --> lib.cairo:16:19
     t::Tr::<u32>::f();
                   ^
