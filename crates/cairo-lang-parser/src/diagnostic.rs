@@ -4,6 +4,8 @@ use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use salsa::Database;
 
+use crate::parser::MAX_EXPR_DEPTH;
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ParserDiagnostic<'a> {
     pub file_id: FileId<'a>,
@@ -128,6 +130,7 @@ pub enum ParserDiagnosticKind {
     ExpectedSemicolonOrBody,
     LowPrecedenceOperatorInIfLet { op: SyntaxKind },
     MissingMacroRepetitionOperator,
+    ExprNestingTooDeep,
 }
 
 impl<'a> DiagnosticEntry<'a> for ParserDiagnostic<'a> {
@@ -244,6 +247,9 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                 "Missing macro repetition operator. Expected `?`, `+`, or `*` after `$(...)`."
                     .to_string()
             }
+            ParserDiagnosticKind::ExprNestingTooDeep => {
+                format!("Expression nesting depth exceeds the maximum of {MAX_EXPR_DEPTH}.")
+            }
         }
     }
 
@@ -285,6 +291,7 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             ParserDiagnosticKind::ExpectedSemicolonOrBody => error_code!(E1029),
             ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { .. } => error_code!(E1030),
             ParserDiagnosticKind::MissingMacroRepetitionOperator => error_code!(E1031),
+            ParserDiagnosticKind::ExprNestingTooDeep => error_code!(E1032),
         })
     }
 
