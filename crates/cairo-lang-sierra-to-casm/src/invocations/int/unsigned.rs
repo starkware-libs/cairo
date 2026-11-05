@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
@@ -29,6 +29,7 @@ fn build_small_uint_overflowing_add(
         deref b;
     };
     casm_build_extend! {casm_builder,
+            label NoOverflow, Target;
             let orig_range_check = range_check;
             tempvar no_overflow;
             let deferred_a_plus_b = a + b;
@@ -55,8 +56,8 @@ fn build_small_uint_overflowing_add(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[a_plus_b]], None),
-            ("Target", &[&[range_check], &[fixed_a_plus_b]], Some(failure_handle_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[a_plus_b]], None),
+            (Target, &[&[range_check], &[fixed_a_plus_b]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -118,7 +119,7 @@ pub fn build_sqrt(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[root]], None)],
+        [(Label::FALLTHROUGH, &[&[range_check], &[root]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck,

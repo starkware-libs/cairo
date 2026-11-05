@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::hints::StarknetHint;
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
@@ -176,15 +176,18 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
         offset += output_size as usize;
     }
 
-    casm_build_extend!(casm_builder, jump Failure if failure_flag != 0;);
+    casm_build_extend! {casm_builder,
+        label Failure;
+        jump Failure if failure_flag != 0;
+    };
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &success_vars, None),
+            (Label::FALLTHROUGH, &success_vars, None),
             (
-                "Failure",
+                Failure,
                 &[
                     &updated_gas_builtin,
                     &failure_final_system[..],

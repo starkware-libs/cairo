@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::hints::ExternalHint;
 use cairo_lang_sierra::extensions::GenericLibfunc;
@@ -19,7 +19,7 @@ pub fn build(
     }
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[], None)],
+        [(Label::FALLTHROUGH, &[], None)],
         Default::default(),
     ))
 }

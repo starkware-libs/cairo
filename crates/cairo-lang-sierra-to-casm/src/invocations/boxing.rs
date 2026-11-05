@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_build_extend, cell_ref};
@@ -52,7 +52,7 @@ fn build_into_box(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[addr]], None)],
+        [(Label::FALLTHROUGH, &[&[addr]], None)],
         Default::default(),
     ))
 }

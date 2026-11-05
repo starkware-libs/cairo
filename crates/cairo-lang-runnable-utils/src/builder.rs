@@ -332,7 +332,10 @@ pub fn create_entry_code_from_params(
         helper.process_builtins(param_types);
     }
     helper.process_params(param_types);
-    casm_build_extend!(helper.ctx, let () = call FUNCTION;);
+    casm_build_extend! {helper.ctx,
+        label FUNCTION;
+        let () = call FUNCTION;
+    };
     helper.process_output(return_types);
 
     if helper.has_post_calculation_loop {
@@ -346,7 +349,7 @@ pub fn create_entry_code_from_params(
     casm_build_extend! (helper.ctx, ret;);
     // Point `FUNCTION` to offset `code_offset` from this point which is the beginning of the Sierra
     // based code.
-    helper.ctx.future_label("FUNCTION", code_offset);
+    helper.ctx.future_label(FUNCTION, code_offset);
     Ok((helper.ctx.build([]).instructions, helper.builtins))
 }
 
@@ -612,6 +615,7 @@ impl EntryCodeHelper {
     fn validate_segment_arena(&mut self) {
         let segment_arena = self.builtin_vars.remove(&BuiltinName::segment_arena).unwrap();
         casm_build_extend! {self.ctx,
+            label STILL_LEFT_PRE, DONE_VALIDATION, LOOP_START, STILL_LEFT_LOOP;
             tempvar n_segments = segment_arena[-2];
             tempvar n_finalized = segment_arena[-1];
             assert n_segments = n_finalized;

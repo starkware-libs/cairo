@@ -1,11 +1,11 @@
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuilder, Label, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::ec::{EcConcreteLibfunc, EcPointType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::misc::validate_under_limit;
+use crate::invocations::misc::validate_under_limit_k1;
 use crate::invocations::{
     BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
 };
@@ -115,7 +115,7 @@ fn build_ec_zero(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[zero, zero]], None)],
+        [(Label::FALLTHROUGH, &[&[zero, zero]], None)],
         Default::default(),
     ))
 }
@@ -142,6 +142,7 @@ fn build_ec_point_try_new_nz(
     };
     compute_ec_equation(&mut casm_builder, x, y, [aux0, aux1, aux2], y2, expected_y2);
     casm_build_extend! {casm_builder,
+        label NotOnCurve;
         tempvar diff = y2 - expected_y2;
         jump NotOnCurve if diff != 0;
     };
@@ -149,7 +150,7 @@ fn build_ec_point_try_new_nz(
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(failure_handle))],
+        [(Label::FALLTHROUGH, &[&[x, y]], None), (NotOnCurve, &[], Some(failure_handle))],
         Default::default(),
     ))
 }
@@ -184,6 +185,7 @@ fn build_ec_point_from_x_nz(
     compute_lhs(&mut casm_builder, y, lhs);
 
     casm_build_extend! {casm_builder,
+        label VerifyNotOnCurve, OnCurve, NotOnCurve;
         tempvar diff = lhs - rhs;
         // If `(x, y)` is on the curve, return it.
         jump VerifyNotOnCurve if diff != 0;
@@ -206,7 +208,7 @@ fn build_ec_point_from_x_nz(
     // Check that y < PRIME / 2 to enforce a deterministic behavior (otherwise, the prover can
     // choose either y or -y).
     let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
-    validate_under_limit::<1>(
+    validate_under_limit_k1(
         &mut casm_builder,
         // Note that `1/2 (mod PRIME) = (PRIME + 1) / 2 = ceil(PRIME / 2)`.
         // Thus, `y < 1/2 (mod PRIME)` if and only if `y < PRIME / 2`.
@@ -222,8 +224,8 @@ fn build_ec_point_from_x_nz(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[x, y]], None),
-            ("NotOnCurve", &[&[range_check]], Some(not_on_curve)),
+            (Label::FALLTHROUGH, &[&[range_check], &[x, y]], None),
+            (NotOnCurve, &[&[range_check]], Some(not_on_curve)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -250,7 +252,7 @@ fn build_ec_point_unwrap(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[x], &[y]], None)],
+        [(Label::FALLTHROUGH, &[&[x], &[y]], None)],
         Default::default(),
     ))
 }
@@ -264,6 +266,7 @@ fn build_ec_point_is_zero(
     let mut casm_builder = CasmBuilder::with_capacity(1, 1);
     add_input_variables!(casm_builder, deref x; deref y; );
     casm_build_extend! {casm_builder,
+        label Target;
         // To check whether `(x, y) = (0, 0)` (the zero point), it is enough to check
         // whether `y = 0`, since there is no point on the curve with y = 0.
         jump Target if y != 0;
@@ -272,7 +275,7 @@ fn build_ec_point_is_zero(
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[], None), ("Target", &[&[x, y]], Some(target_statement_id))],
+        [(Label::FALLTHROUGH, &[], None), (Target, &[&[x, y]], Some(target_statement_id))],
         Default::default(),
     ))
 }
@@ -295,7 +298,7 @@ fn build_ec_neg(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[x, neg_y]], None)],
+        [(Label::FALLTHROUGH, &[&[x, neg_y]], None)],
         Default::default(),
     ))
 }
@@ -333,7 +336,7 @@ fn build_ec_state_init(
     // The third entry in the EC state is a pointer to the sampled random EC point.
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[random_x, random_y, random_ptr]], None)],
+        [(Label::FALLTHROUGH, &[&[random_x, random_y, random_ptr]], None)],
         Default::default(),
     ))
 }
@@ -356,6 +359,7 @@ fn build_ec_state_add(
     };
 
     casm_build_extend! {casm_builder,
+        label NotSameX;
         // If the X coordinate is the same, either the points are equal or their sum is the point at
         // infinity. Either way, we can't compute the slope in this case.
         tempvar denominator = px - sx;
@@ -373,7 +377,7 @@ fn build_ec_state_add(
         add_ec_points_inner(&mut casm_builder, (px, py), sx, numerator, denominator);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[result_x, result_y, random_ptr]], None)],
+        [(Label::FALLTHROUGH, &[&[result_x, result_y, random_ptr]], None)],
         Default::default(),
     ))
 }
@@ -394,6 +398,7 @@ fn build_ec_state_finalize(
     // We want to return the point `(x, y) - (random_x, random_y)`, or in other words,
     // `(x, y) + (random_x, -random_y)`.
     casm_build_extend! {casm_builder,
+        label NotSameX, SumIsInfinity;
         tempvar random_x = random_ptr[0];
         tempvar random_y = random_ptr[1];
         // If the X coordinate is the same, either the points are equal or their sum is the point at
@@ -420,7 +425,7 @@ fn build_ec_state_finalize(
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&result_x_y], None), ("SumIsInfinity", &[], Some(failure_handle))],
+        [(Label::FALLTHROUGH, &[&result_x_y], None), (SumIsInfinity, &[], Some(failure_handle))],
         Default::default(),
     ))
 }
@@ -457,7 +462,7 @@ fn build_ec_state_add_mul(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[ec_builtin], &[result_x, result_y, random_ptr]], None)],
+        [(Label::FALLTHROUGH, &[&[ec_builtin], &[result_x, result_y, random_ptr]], None)],
         Default::default(),
     ))
 }

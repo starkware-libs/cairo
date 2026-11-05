@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -36,7 +36,7 @@ fn build_bitwise(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[bitwise], &[and], &[xor], &[or]], None)],
+        [(Label::FALLTHROUGH, &[&[bitwise], &[and], &[xor], &[or]], None)],
         Default::default(),
     ))
 }
