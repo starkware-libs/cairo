@@ -24,13 +24,15 @@ from typing import List
 
 def is_doc_comment(line: str) -> bool:
     stripped = line.lstrip()
-    return stripped.startswith("///") or stripped.startswith("//!")
+    return stripped.startswith("//!") or (
+        stripped.startswith("///") and not stripped.startswith("////")
+    )
 
 
 def extract_comment_text(line: str) -> str:
     """Extract the text content after /// or //! and whether it was indented."""
     stripped = line.lstrip()
-    if stripped.startswith("///") or stripped.startswith("//!"):
+    if is_doc_comment(line):
         return stripped[3:]
     return ""
 
