@@ -40,6 +40,16 @@ pub enum AllowedLibfuncsError {
         required_version: VersionId,
         class_version: VersionId,
     },
+    #[error(
+        "Libfunc {invalid_libfunc} is deprecated since version {deprecated_version} while class \
+         version is {class_version}.\n Run with '--allowed-libfuncs-list-name \
+         {BUILTIN_ALL_LIBFUNCS_LIST}' to allow all libfuncs."
+    )]
+    DeprecatedLibfuncAtVersion {
+        invalid_libfunc: String,
+        deprecated_version: VersionId,
+        class_version: VersionId,
+    },
 }
 
 /// A selector for the allowed libfunc list.
@@ -77,33 +87,88 @@ impl Display for ListSelector {
     }
 }
 
+/// The Sierra version range in which a libfunc is allowed.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AllowedVersions {
+    /// The first Sierra version the libfunc is stable in; `None` for all versions.
+    pub stable: Option<VersionId>,
+    /// The first Sierra version the libfunc is deprecated in; `None` if not deprecated.
+    pub deprecated: Option<VersionId>,
+}
+impl AllowedVersions {
+    /// Validates that the libfunc is allowed in a class of the given Sierra version.
+    pub fn validate(
+        &self,
+        libfunc: &GenericLibfuncId,
+        class_version: VersionId,
+    ) -> Result<(), AllowedLibfuncsError> {
+        if let Some(required_version) = self.stable
+            && !class_version.supports(required_version)
+        {
+            return Err(AllowedLibfuncsError::UnsupportedLibfuncAtVersion {
+                invalid_libfunc: libfunc.to_string(),
+                required_version,
+                class_version,
+            });
+        }
+        if let Some(deprecated_version) = self.deprecated
+            && class_version.supports(deprecated_version)
+        {
+            return Err(AllowedLibfuncsError::DeprecatedLibfuncAtVersion {
+                invalid_libfunc: libfunc.to_string(),
+                deprecated_version,
+                class_version,
+            });
+        }
+        Ok(())
+    }
+}
+
 /// Represents a list of allowed Sierra libfuncs.
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 pub struct AllowedLibfuncs {
     #[serde(deserialize_with = "deserialize_libfuncs_map::<_>")]
-    pub allowed_libfuncs: HashMap<GenericLibfuncId, Option<VersionId>>,
+    pub allowed_libfuncs: HashMap<GenericLibfuncId, AllowedVersions>,
 }
 
 /// Deserializes a map of allowed libfuncs from a file.
 fn deserialize_libfuncs_map<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
-) -> Result<HashMap<GenericLibfuncId, Option<VersionId>>, D::Error> {
+) -> Result<HashMap<GenericLibfuncId, AllowedVersions>, D::Error> {
+    /// The representations of a single libfunc entry.
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum EntryRepr {
+        /// `null` or the legacy stable-since form, which is just a version.
+        Stable(Option<VersionId>),
+        /// The full `{stable, deprecated}` form.
+        Full(AllowedVersions),
+    }
     /// Struct combining the old and new representations of the allowed libfuncs map.
     #[derive(Deserialize)]
     #[serde(untagged)]
     enum FileRepr {
         Old(HashSet<SmolStr>),
-        New(HashMap<SmolStr, Option<VersionId>>),
+        New(HashMap<SmolStr, EntryRepr>),
     }
 
     let versions = FileRepr::deserialize(deserializer)?;
     Ok(match versions {
-        FileRepr::New(m) => {
-            m.into_iter().map(|(id, v)| (GenericLibfuncId::from_string(id), v)).collect()
-        }
-        FileRepr::Old(s) => {
-            s.into_iter().map(|id| (GenericLibfuncId::from_string(id), None)).collect()
-        }
+        FileRepr::New(m) => m
+            .into_iter()
+            .map(|(id, entry)| {
+                let versions = match entry {
+                    EntryRepr::Stable(stable) => AllowedVersions { stable, deprecated: None },
+                    EntryRepr::Full(versions) => versions,
+                };
+                (GenericLibfuncId::from_string(id), versions)
+            })
+            .collect(),
+        FileRepr::Old(s) => s
+            .into_iter()
+            .map(|id| (GenericLibfuncId::from_string(id), AllowedVersions::default()))
+            .collect(),
     })
 }
 
