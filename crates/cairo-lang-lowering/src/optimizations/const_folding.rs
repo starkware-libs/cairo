@@ -1395,7 +1395,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 ))
             }
         } else if id == self.array_snapshot_pop_back || id == self.array_snapshot_pop_front {
-            let var_info = self.var_info.get(&info.inputs[0].var_id)?;
+            let var_info = self.var_info.get(&info.inputs[0].var_id)?.clone();
             let desnapped = try_extract_matches!(var_info.as_ref(), VarInfo::Snapshot)?;
             let element_var_infos = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?;
             let split = if id == self.array_snapshot_pop_front {
@@ -1414,13 +1414,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     },
                 ));
             };
-            let (popped, remaining) = (popped.clone(), remaining.to_vec());
             let arm = &info.arms[0];
-            self.var_info
-                .insert(arm.var_ids[0], Rc::new(VarInfo::Array(remaining)).wrap_with_snapshots(1));
+            self.var_info.insert(
+                arm.var_ids[0],
+                Rc::new(VarInfo::Array(remaining.to_vec())).wrap_with_snapshots(1),
+            );
             if let Some(popped) = popped {
-                self.var_info
-                    .insert(arm.var_ids[1], VarInfo::Box(VarInfo::Snapshot(popped).into()).into());
+                self.var_info.insert(
+                    arm.var_ids[1],
+                    VarInfo::Box(VarInfo::Snapshot(popped.clone()).into()).into(),
+                );
             }
             None
         } else {
