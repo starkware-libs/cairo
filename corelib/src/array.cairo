@@ -644,6 +644,21 @@ pub trait ToSpanTrait<C, T> {
     fn span(self: @C) -> Span<T>;
 }
 
+impl SpanToSpan<T> of ToSpanTrait<Span<T>, T> {
+    /// Returns the span itself. Useful for generic code over `ToSpanTrait`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let span: Span<u32> = array![1, 2, 3].span();
+    /// assert!(span.span() == span);
+    /// ```
+    #[inline]
+    fn span(self: @Span<T>) -> Span<T> {
+        *self
+    }
+}
+
 impl ArrayToSpan<T> of ToSpanTrait<Array<T>, T> {
     /// Returns a `Span<T>` corresponding to a view into an `Array<T>`.
     #[inline]
