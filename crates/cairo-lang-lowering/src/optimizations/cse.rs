@@ -189,8 +189,7 @@ pub fn cse<'db>(lowered: &mut Lowered<'db>) {
         "Some blocks were not processed: [{}]",
         block_expression_map
             .iter_sorted_by_key(|(k, _)| k.0)
-            .map(|(k, _)| format!("{k:?}"))
-            .join(", ")
+            .format_with(", ", |(k, _), f| f(&format_args!("{k:?}")))
     );
     let CseContext { var_replacements: renamed_vars, .. } = ctx;
     let mut renamer = VarRenamer { renamed_vars };

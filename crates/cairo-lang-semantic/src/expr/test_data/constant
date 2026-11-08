@@ -3,19 +3,14 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let _x = MY_CONST + my_module::CONST_IN_MODULE;
-    let (_y, _z) = FELT_TUPLE;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const MY_CONST: felt252 = 0x1234;
 
 const FELT_TUPLE: (felt252, felt252) = (1, 2);
+
+mod my_module {
+    const CONST_IN_MODULE: felt252 = 1;
+}
 
 const FELT_FIXED_SIZE_ARRAY: [felt252; 3] = [1, 2, 3];
 
@@ -24,8 +19,109 @@ const OTHER_CONST_REF: felt252 = my_module::CONST_IN_MODULE;
 const FIVE: u32 = 5;
 const NON_ZERO_FIVE: NonZero<u32> = FIVE.try_into().unwrap();
 
-mod my_module {
-    const CONST_IN_MODULE: felt252 = 1;
+const MATCH_WILDCARD: () = assert(match 3_u8 {
+    2 => 0,
+    _ => 5,
+} == 5, 'match_wildcard');
+
+const MATCH_LITERAL_PATTERN: () = assert(
+    match 3_u8 {
+        1 => 0,
+        3 => 5,
+        _ => 0,
+    } == 5, 'match_literal_pattern',
+);
+
+const MATCH_TUPLE_PATTERN: () = assert(
+    match (1_u8, 2_u8) {
+        (_, y) => y,
+    } == 2, 'match_tuple_pattern',
+);
+
+const MATCH_ARRAY_PATTERN: () = assert(
+    match [1_u8, 2_u8] {
+        [x, _] => x,
+    } == 1, 'match_array_pattern',
+);
+
+const LET_TUPLE_BIND: () = assert({
+    let (x, y) = (1_u8, 2_u8);
+    x + y
+} == 3, 'let_tuple_bind');
+
+const LET_ELSE_MATCH: () = assert(
+    {
+        let Some(x) = Option::<u8>::Some(3) else {
+            core::panic_with_felt252('impossible')
+        };
+        x
+    } == 3,
+    'let_else_match',
+);
+
+const IF_LET_MATCH: () = assert(
+    if let Some(x) = Option::<u8>::Some(4) {
+        x
+    } else {
+        0
+    } == 4, 'if_let_match',
+);
+
+const IF_LET_CHAIN_0: () = assert(
+    if let Some(x) = Option::<u8>::Some(3) && let Some(y) = Option::<u8>::Some(2) {
+        x + y
+    } else {
+        0
+    } == 5,
+    'if_let_chain',
+);
+
+const IF_LET_CHAIN_1: () = assert(
+    if let Some(x) = Option::<u8>::Some(3) && let Some(y) = Option::<u8>::None {
+        x + y
+    } else {
+        0
+    } == 0,
+    'if_let_chain',
+);
+
+const IF_LET_CHAIN_2: () = assert(
+    if let Some(x) = Option::<u8>::None && let Some(y) = Option::<u8>::Some(2) {
+        x + y
+    } else {
+        0
+    } == 0,
+    'if_let_chain',
+);
+
+const IF_LET_CHAIN_3: () = assert(
+    if let Some(x) = Option::<u8>::Some(3) && x == 3 {
+        1
+    } else {
+        0
+    } == 1, 'if_let_chain',
+);
+
+const IF_LET_CHAIN_4: () = assert(
+    if let Some(x) = Option::<u8>::Some(3) && x == 2 {
+        1
+    } else {
+        0
+    } == 0, 'if_let_chain',
+);
+
+const PARTIAL_STRUCT1: () = assert({
+    let u256 { low, .. } = 1337;
+    low
+} == 1337, 'partial_struct');
+
+const PARTIAL_STRUCT2: () = assert({
+    let u256 { high, .. } = 1337;
+    high
+} == 0, 'partial_struct');
+fn foo() {
+    let _x = MY_CONST + my_module::CONST_IN_MODULE;
+    let (_y, _z) = FELT_TUPLE;
 }
 
 //! > expected_diagnostics
@@ -37,13 +133,7 @@ mod my_module {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const MY_CONST: MissingType = {
     return foo();
     Option::<felt252>::Some(0)?
@@ -76,11 +166,56 @@ const FUNC_CALC_SUCCESS: () = assert(true);
 const FUNC_CALC_FAILURE: () = assert(false);
 const VALID_EQ: () = assert(1 == 1);
 const VALID_NE: () = assert(1 != 2);
+const VALID_EQ_FELT_CROSS_FORM: () = assert(
+    -1_felt252 == 0x800000000000011000000000000000000000000000000000000000000000000,
+);
+const VALID_MATCH_FELT_CROSS_FORM: () = assert(
+    match -1_felt252 {
+        0x800000000000011000000000000000000000000000000000000000000000000 => true,
+        _ => false,
+    },
+);
+const NZ_FELT_NEG_ONE: NonZero<felt252> = (-1_felt252).try_into().unwrap();
+const NZ_FELT_FIELD_NEG_ONE: NonZero<felt252> =
+    0x800000000000011000000000000000000000000000000000000000000000000
+    .try_into()
+    .unwrap();
+const VALID_EQ_NONZERO_FELT_CROSS_FORM: () = assert(NZ_FELT_NEG_ONE == NZ_FELT_FIELD_NEG_ONE);
+const VALID_MATCH_NONZERO_FELT_CROSS_FORM: () = assert(
+    match NZ_FELT_NEG_ONE {
+        0x800000000000011000000000000000000000000000000000000000000000000 => true,
+        _ => false,
+    },
+);
+const VALID_EQ_TUPLE_FELT_CROSS_FORM: () = assert(
+    (-1_felt252, 5) == (0x800000000000011000000000000000000000000000000000000000000000000, 5),
+);
+const VALID_EQ_ENUM_FELT_CROSS_FORM: () = assert(
+    Option::<
+        felt252,
+    >::Some(-1) == Option::Some(0x800000000000011000000000000000000000000000000000000000000000000),
+);
 const VALID_LT: () = assert(1_usize < 2);
 const VALID_LE: () = assert(1_usize <= 1);
 const VALID_GT: () = assert(2_usize > 1);
 const VALID_GE: () = assert(1_usize >= 1);
 const VALID_DIVREM: () = assert(DivRem::div_rem(5_u8, 2) == (2, 1));
+const VALID_SIGNED_REM: () = assert(-128_i8 % 3 == -2);
+// The quotient of signed `MIN / -1` overflows the type, and should emit a clean diagnostic
+// rather than silently storing an out-of-range value (which later ICEs in sierra-gen).
+const DIVREM_SIGNED_MIN_OVERFLOW: (i8, i8) = DivRem::div_rem(-128_i8, -1);
+const DIV_SIGNED_MIN_OVERFLOW: i8 = -128_i8 / -1;
+// Same for `MIN % -1`, which panics at runtime even though the remainder itself fits.
+const REM_SIGNED_MIN_OVERFLOW: i8 = -128_i8 % -1;
+const REM_SIGNED_MIN_OVERFLOW_I128: i128 = -170141183460469231731687303715884105728_i128 % -1;
+// Divisors of `-1` and `1` that do not overflow are still accepted.
+const VALID_SIGNED_REM_MINUS_ONE: () = assert(-127_i8 % -1 == 0);
+const VALID_SIGNED_DIV_MINUS_ONE: () = assert(-127_i8 / -1 == 127);
+const VALID_SIGNED_REM_ONE: () = assert(-128_i8 % 1 == 0);
+
+const MATCH_VALUE: () = assert(match 1_u8 {
+    _ => 1,
+} == 1);
 use core::num::traits::Pow;
 
 const VALID_POW_MIN2_0: () = assert((-2_i8).pow(0) == 1);
@@ -119,6 +254,14 @@ const fn my_unwrap<T>(v: Option<T>) -> T {
     }
 }
 
+const LET_ELSE_FAIL: u8 = {
+    let None = Option::<u8>::Some(5) else {
+        core::panic_with_felt252('should fail')
+    };
+    0
+};
+fn foo() {}
+
 //! > expected_diagnostics
 error[E0006]: Type not found.
  --> lib.cairo:1:17
@@ -135,7 +278,7 @@ error[E2125]: The '?' operator is not supported outside of functions.
     Option::<felt252>::Some(0)?
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: core::traits::Add::<core::bool>.
+error[E2315]: Mismatched types. The type `bool` cannot be created from a numeric literal.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^^^^^
@@ -159,19 +302,44 @@ note: In `test::assert`:
         core::panic_with_felt252('failed assertion')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+error[E2008]: The value does not fit within the range of type core::integer::i8.
+ --> lib.cairo:70:46
+const DIVREM_SIGNED_MIN_OVERFLOW: (i8, i8) = DivRem::div_rem(-128_i8, -1);
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2008]: The value does not fit within the range of type core::integer::i8.
+ --> lib.cairo:71:37
+const DIV_SIGNED_MIN_OVERFLOW: i8 = -128_i8 / -1;
+                                    ^^^^^^^^^^^^
+
+error[E2008]: The value does not fit within the range of type core::integer::i8.
+ --> lib.cairo:73:37
+const REM_SIGNED_MIN_OVERFLOW: i8 = -128_i8 % -1;
+                                    ^^^^^^^^^^^^
+
+error[E2008]: The value does not fit within the range of type core::integer::i128.
+ --> lib.cairo:74:44
+const REM_SIGNED_MIN_OVERFLOW_I128: i128 = -170141183460469231731687303715884105728_i128 % -1;
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 error[E2129]: Constant calculation depth exceeded.
- --> lib.cairo:59:43
+ --> lib.cairo:104:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
 error[E2130]: Failed to calculate constant.
- --> lib.cairo:66:37
+ --> lib.cairo:111:37
 const NON_ZERO_ZERO: NonZero<u64> = my_unwrap(ZERO.try_into());
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: In `test::my_unwrap::<core::zeroable::NonZero::<core::integer::u64>>`:
-  --> lib.cairo:72:17
+  --> lib.cairo:117:17
         None => core::panic_with_felt252('bad value'),
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2128]: Failed to calculate constant.
+ --> lib.cairo:123:9
+        core::panic_with_felt252('should fail')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -180,17 +348,11 @@ note: In `test::my_unwrap::<core::zeroable::NonZero::<core::integer::u64>>`:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const DEFAULT_VAR: bool = 1;
 
 //! > expected_diagnostics
-error[E2311]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+error[E2315]: Mismatched types. The type `bool` cannot be created from a numeric literal.
  --> lib.cairo:1:27
 const DEFAULT_VAR: bool = 1;
                           ^
@@ -202,13 +364,7 @@ const DEFAULT_VAR: bool = 1;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const FULLY_UNKNOWN: _ = 1_u8;
 const FIXED_SIZED_TYPE_UNKNOWN: [_; 2] = [1_u8, 2_u8];
 
@@ -230,13 +386,7 @@ const FIXED_SIZED_TYPE_UNKNOWN: [_; 2] = [1_u8, 2_u8];
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const B: u8 = -1;
 
 //! > expected_diagnostics
@@ -252,13 +402,7 @@ const B: u8 = -1;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const A: i8 = A;
 const B: i8 = C;
 const C: i8 = B;
@@ -286,15 +430,7 @@ const C: i8 = B;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> (felt252, felt252, u256, i8) {
-    (FELT_WRAPAROUND_OVER, FELT_WRAPAROUND_UNDER, U256_CALCULATION, BASIC_CALCULATION)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const UNSIGNED_VAR: u8 = 256;
 const SIGNED_VAR: i8 = 128;
 const IN_RANGE_NEGATIVE1: i8 = -0x80;
@@ -329,6 +465,9 @@ const COMPLEX_STRUCT: ComplexStruct = ComplexStruct {
 };
 
 const CONST_MEMBER: u8 = COMPLEX_STRUCT.a;
+fn foo() -> (felt252, felt252, u256, i8) {
+    (FELT_WRAPAROUND_OVER, FELT_WRAPAROUND_UNDER, U256_CALCULATION, BASIC_CALCULATION)
+}
 
 //! > expected_diagnostics
 error[E2008]: The value does not fit within the range of type core::integer::u8.
@@ -378,16 +517,13 @@ error[E2008]: The value does not fit within the range of type core::zeroable::No
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> () {
     {
         const X: u8 = 2;
     }
     let y = X;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
@@ -412,7 +548,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> () {
     const A: u8 = 1;
     const A: u8 = 2;
@@ -429,9 +565,6 @@ fn foo() -> () {
         const F: u8 = 12;
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2072]: Multiple definitions of constant "A".
@@ -501,16 +634,13 @@ warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(param: u8) -> () {
     const A: u8 = param;
     let local: u8 = 1;
     const B: u8 = local;
     const _C: u8 = A + B;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2127]: This expression is not supported as constant.
@@ -530,13 +660,7 @@ error[E2127]: This expression is not supported as constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const ADDRESS: starknet::ContractAddress = my_unwrap((-1).try_into());
 const CLASS_HASH: starknet::ClassHash = my_unwrap((-1).try_into());
 
@@ -569,12 +693,61 @@ note: In `test::my_unwrap::<core::starknet::class_hash::ClassHash>`:
 
 //! > ==========================================================================
 
+//! > Starknet downcast at the type's upper boundary.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// `2 ** 251` is one past the valid range of `ClassHash`/`ContractAddress`.
+const ADDRESS: starknet::ContractAddress = my_unwrap(
+    0x800000000000000000000000000000000000000000000000000000000000000.try_into(),
+);
+const CLASS_HASH: starknet::ClassHash = my_unwrap(
+    0x800000000000000000000000000000000000000000000000000000000000000.try_into(),
+);
+
+// To avoid getting corelib filesystem paths.
+const fn my_unwrap<T>(v: Option<T>) -> T {
+    match v {
+        Some(v) => v,
+        None => core::panic_with_felt252('bad value'),
+    }
+}
+
+//! > expected_diagnostics
+error[E2130]: Failed to calculate constant.
+ --> lib.cairo:2:44-4:1
+  const ADDRESS: starknet::ContractAddress = my_unwrap(
+ ____________________________________________^
+|     0x800000000000000000000000000000000000000000000000000000000000000.try_into(),
+| );
+|_^
+note: In `test::my_unwrap::<core::starknet::contract_address::ContractAddress>`:
+  --> lib.cairo:13:17
+        None => core::panic_with_felt252('bad value'),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2130]: Failed to calculate constant.
+ --> lib.cairo:5:41-7:1
+  const CLASS_HASH: starknet::ClassHash = my_unwrap(
+ _________________________________________^
+|     0x800000000000000000000000000000000000000000000000000000000000000.try_into(),
+| );
+|_^
+note: In `test::my_unwrap::<core::starknet::class_hash::ClassHash>`:
+  --> lib.cairo:13:17
+        None => core::panic_with_felt252('bad value'),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Multiple `if let` conditions.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     const A: Option<Option<Option<felt252>>> = Some(Some(Some(1_felt252)));
     const _B: felt252 = if let Some(a) = A && let Some(b) = a && let Some(c) = b {
@@ -583,9 +756,6 @@ fn foo() {
         0
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -596,13 +766,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 /// Copy of `assert` to avoid getting paths from the corelib.
 const fn assert(cond: bool) {
     if !cond {
@@ -626,13 +790,7 @@ const V_AS_I128: () = assert(V.try_into() == Some(-1_i128));
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const fn assert(cond: bool) {
     if !cond {
         core::panic_with_felt252('failed assertion')
@@ -658,13 +816,7 @@ const OR_SHORT_CIRCUIT: () = assert(true || boom());
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Foo {
     const VALUE: felt252;
 }
@@ -679,7 +831,7 @@ impl AnotherFoo<impl F: Foo> of Foo {
 error[E2127]: This expression is not supported as constant.
  --> lib.cairo:8:28
     const VALUE: felt252 = F::VALUE + 1;
-                           ^^^^^^^^^^^^
+                           ^^^^^^^^
 
 //! > ==========================================================================
 
@@ -688,13 +840,7 @@ error[E2127]: This expression is not supported as constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Foo {
     const VALUE: felt252;
 }
@@ -714,19 +860,14 @@ impl AnotherFoo<impl F: Foo> of Foo {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
 extern const fn f() -> felt252 nopanic;
 const X: felt252 = f();
 
 //! > expected_diagnostics
 error[E2127]: This expression is not supported as constant.
- --> lib.cairo:2:20
+ --> lib.cairo:3:20
 const X: felt252 = f();
                    ^^^
 
@@ -737,18 +878,13 @@ const X: felt252 = f();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    const X: S = S { a: 1 };
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S {
     a: felt252,
     b: felt252,
+}
+fn foo() {
+    const X: S = S { a: 1 };
 }
 
 //! > expected_diagnostics
@@ -761,3 +897,220 @@ warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:6:11
     const X: S = S { a: 1 };
           ^
+
+//! > ==========================================================================
+
+//! > Equality comparison with non-concrete impl const arg is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+trait Foo {
+    const VALUE: felt252;
+}
+impl AnotherFoo<impl F: Foo> of Foo {
+    const VALUE: felt252 = if F::VALUE == 42 {
+        1
+    } else {
+        0
+    };
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:31
+    const VALUE: felt252 = if F::VALUE == 42 {
+                              ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Non-equality comparison with non-concrete impl const arg is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+trait Foo {
+    const VALUE: felt252;
+}
+impl AnotherFoo<impl F: Foo> of Foo {
+    const VALUE: felt252 = if F::VALUE != 42 {
+        1
+    } else {
+        0
+    };
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:31
+    const VALUE: felt252 = if F::VALUE != 42 {
+                              ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Boolean not with non-concrete impl const arg is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+trait BoolConst {
+    const VALUE: bool;
+}
+impl AnotherBoolConst<impl F: BoolConst> of BoolConst {
+    const VALUE: bool = !F::VALUE;
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:26
+    const VALUE: bool = !F::VALUE;
+                         ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test nested const fn inside const fn emits parser diagnostics without ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+const fn outer() -> felt252 {
+    const fn inner() -> felt252 { 7 }
+    inner()
+}
+const X: felt252 = outer();
+fn foo() -> felt252 {
+    X
+}
+
+//! > expected_diagnostics
+error[E1004]: Unexpected token, expected ':' followed by a type.
+ --> lib.cairo:2:13
+    const fn inner() -> felt252 { 7 }
+            ^
+
+error[E1001]: Missing token '='.
+ --> lib.cairo:4:2
+}
+ ^
+
+error[E1002]: Missing tokens. Expected an expression.
+ --> lib.cairo:4:2
+}
+ ^
+
+error[E1001]: Missing token ';'.
+ --> lib.cairo:4:2
+}
+ ^
+
+error[E1013]: 'fn' is a reserved identifier.
+ --> lib.cairo:2:11
+    const fn inner() -> felt252 { 7 }
+          ^^
+
+error[E1001]: Missing token '}'.
+ --> lib.cairo:5:28
+const X: felt252 = outer();
+                           ^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:7:5
+    X
+    ^
+
+//! > ==========================================================================
+
+//! > Boolean and with non-concrete impl const lhs is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+trait BoolConst {
+    const VALUE: bool;
+}
+impl AnotherBoolConst<impl F: BoolConst> of BoolConst {
+    const VALUE: bool = F::VALUE && true;
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:25
+    const VALUE: bool = F::VALUE && true;
+                        ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Boolean or with non-concrete impl const lhs is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+trait BoolConst {
+    const VALUE: bool;
+}
+impl AnotherBoolConst<impl F: BoolConst> of BoolConst {
+    const VALUE: bool = F::VALUE || false;
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:25
+    const VALUE: bool = F::VALUE || false;
+                        ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Const comparison through a user `PartialEq` impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[derive(Drop, Copy)]
+struct S {
+    a: u8,
+    b: u8,
+}
+impl SPartialEq of PartialEq<S> {
+    fn eq(lhs: @S, rhs: @S) -> bool {
+        lhs.a == rhs.a
+    }
+}
+impl SPartialOrd of PartialOrd<S> {
+    fn lt(lhs: S, rhs: S) -> bool {
+        lhs.a < rhs.a
+    }
+}
+const SNAPSHOT_EQ: bool = @S { a: 1, b: 2 } == @S { a: 1, b: 3 };
+const TUPLE_EQ: bool = (S { a: 1, b: 2 },) == (S { a: 1, b: 3 },);
+const OPTION_NE: bool = Some(S { a: 1, b: 2 }) != Some(S { a: 1, b: 3 });
+const CORE_TUPLE_EQ: bool = @(1_u8, Some(2_u16)) == @(1_u8, Some(2_u16));
+const SNAPSHOT_LT: bool = @S { a: 1, b: 2 } < @S { a: 2, b: 2 };
+const CORE_SNAPSHOT_LT: bool = @1_u8 < @2_u8;
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:16:27
+const SNAPSHOT_EQ: bool = @S { a: 1, b: 2 } == @S { a: 1, b: 3 };
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:17:24
+const TUPLE_EQ: bool = (S { a: 1, b: 2 },) == (S { a: 1, b: 3 },);
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:18:25
+const OPTION_NE: bool = Some(S { a: 1, b: 2 }) != Some(S { a: 1, b: 3 });
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:20:27
+const SNAPSHOT_LT: bool = @S { a: 1, b: 2 } < @S { a: 2, b: 2 };
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

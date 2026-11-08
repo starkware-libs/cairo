@@ -3,15 +3,13 @@
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Felt252Dict<felt252>) {
     || {
         let _ = a;
     };
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -22,7 +20,7 @@ Main:
 Parameters: v0: core::dict::Felt252Dict::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:2:5: 2:7}) <- struct_construct(v0)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
@@ -41,7 +39,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     || {
     ^^
 
-Parameters: v0: {closure@lib.cairo:2:5: 2:7}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v0)
@@ -51,7 +49,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@lib.cairo:2:5: 2:7}
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v4: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
@@ -64,7 +62,7 @@ Generated core::ops::function::FnOnce::call lowering for source location:
     || {
     ^^
 
-Parameters: v0: {closure@lib.cairo:2:5: 2:7}, v1: ()
+Parameters: v0: test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v0)
@@ -75,7 +73,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@lib.cairo:2:5: 2:7}, v4: ()
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: test::foo::{closure#0}, v4: ()
 blk0 (root):
 Statements:
   (v5: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
@@ -90,18 +88,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
-fn foo(a: PanicDestructable) {
-    || {
-        let PanicDestructable { } = a;
-    };
-    panic!("Panic");
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct PanicDestructable {}
 
 impl MyPanicDestruct of PanicDestruct<PanicDestructable> {
@@ -110,6 +97,13 @@ impl MyPanicDestruct of PanicDestruct<PanicDestructable> {
     fn panic_destruct(self: PanicDestructable, ref panic: Panic) nopanic {
         let PanicDestructable { } = self;
     }
+}
+#[target_function]
+fn foo(a: PanicDestructable) {
+    || {
+        let PanicDestructable { } = a;
+    };
+    panic!("Panic");
 }
 
 //! > semantic_diagnostics
@@ -121,7 +115,7 @@ Main:
 Parameters: v0: test::PanicDestructable
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:11:5: 11:7}) <- struct_construct(v0)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
   (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v3: core::felt252) <- 345232009571
   (v4: core::internal::bounded_int::BoundedInt::<0, 30>) <- 5
@@ -158,7 +152,7 @@ Generated core::traits::PanicDestruct::panic_destruct lowering for source locati
     || {
     ^^
 
-Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: core::panics::Panic
+Parameters: v0: test::foo::{closure#0}, v1: core::panics::Panic
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -168,7 +162,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: core::panics::Panic
+Parameters: v0: test::foo::{closure#0}, v1: core::panics::Panic
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -181,7 +175,7 @@ Generated core::ops::function::FnOnce::call lowering for source location:
     || {
     ^^
 
-Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: ()
+Parameters: v0: test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
@@ -193,9 +187,11 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: ()
+Parameters: v0: test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
+  (v2: test::PanicDestructable) <- struct_destructure(v0)
+  () <- struct_destructure(v2)
 End:
   Return()
 
@@ -206,20 +202,16 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[inline(never)]
+fn identity<T>(t: T) -> T {
+    t
+}
+#[target_function]
 fn foo(a: u32) {
     let c = || a;
     identity(c);
     identity(c);
-}
-
-//! > function_name
-foo
-
-//! > module_code
-#[inline(never)]
-fn identity<T>(t: T) -> T {
-    t
 }
 
 //! > semantic_diagnostics
@@ -231,9 +223,9 @@ Main:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:6:13: 6:15}) <- struct_construct(v0)
-  (v2: {closure@lib.cairo:6:13: 6:15}) <- test::identity::<{closure@lib.cairo:6:13: 6:15}>(v1)
-  (v3: {closure@lib.cairo:6:13: 6:15}) <- test::identity::<{closure@lib.cairo:6:13: 6:15}>(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
+  (v2: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
+  (v3: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
   (v4: ()) <- struct_construct()
 End:
   Return(v4)
@@ -243,9 +235,9 @@ Final lowering:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:6:13: 6:15}) <- struct_construct(v0)
-  (v2: {closure@lib.cairo:6:13: 6:15}) <- test::identity::<{closure@lib.cairo:6:13: 6:15}>(v1)
-  (v3: {closure@lib.cairo:6:13: 6:15}) <- test::identity::<{closure@lib.cairo:6:13: 6:15}>(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct(v0)
+  (v2: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
+  (v3: test::foo::{closure#0}) <- test::identity::<test::foo::{closure#0}>(v1)
 End:
   Return()
 
@@ -254,7 +246,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let c = || a;
             ^^
 
-Parameters: v0: {closure@lib.cairo:6:13: 6:15}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- struct_destructure(v0)
@@ -264,7 +256,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:6:13: 6:15}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -275,10 +267,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let c = || a;
             ^^
 
-Parameters: v0: @{closure@lib.cairo:6:13: 6:15}, v2: ()
+Parameters: v0: @test::foo::{closure#0}, v2: ()
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:6:13: 6:15}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v1)
   () <- struct_destructure(v2)
 End:
@@ -286,10 +278,10 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:6:13: 6:15}, v1: ()
+Parameters: v0: @test::foo::{closure#0}, v1: ()
 blk0 (root):
 Statements:
-  (v2: {closure@lib.cairo:6:13: 6:15}) <- desnap(v0)
+  (v2: test::foo::{closure#0}) <- desnap(v0)
   (v3: core::integer::u32) <- struct_destructure(v2)
 End:
   Return(v3)
@@ -301,7 +293,12 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[inline(never)]
+fn bar(a: felt252) -> felt252 {
+    a + 1
+}
+#[target_function]
 fn foo(a: u32) {
     let f = |a: felt252| {
         let mut b = @0;
@@ -314,15 +311,6 @@ fn foo(a: u32) {
     let _ = f(0);
 }
 
-//! > function_name
-foo
-
-//! > module_code
-#[inline(never)]
-fn bar(a: felt252) -> felt252 {
-    a + 1
-}
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -332,11 +320,11 @@ Main:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:6:13: 6:25}) <- struct_construct()
-  (v2: {closure@lib.cairo:6:13: 6:25}, v3: @{closure@lib.cairo:6:13: 6:25}) <- snapshot(v1)
+  (v1: test::foo::{closure#0}) <- struct_construct()
+  (v2: test::foo::{closure#0}, v3: @test::foo::{closure#0}) <- snapshot(v1)
   (v4: core::felt252) <- 0
   (v5: (core::felt252,)) <- struct_construct(v4)
-  (v6: ()) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:6:13: 6:25}(v3, v5)
+  (v6: ()) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v3, v5)
   (v7: ()) <- struct_construct()
 End:
   Return(v7)
@@ -371,7 +359,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let f = |a: felt252| {
             ^^^^^^^^^^^^
 
-Parameters: v0: {closure@lib.cairo:6:13: 6:25}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -381,7 +369,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:6:13: 6:25}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -392,10 +380,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let f = |a: felt252| {
             ^^^^^^^^^^^^
 
-Parameters: v0: @{closure@lib.cairo:6:13: 6:25}, v2: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::felt252,)
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:6:13: 6:25}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- 0
@@ -432,7 +420,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:6:13: 6:25}, v1: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v1: (core::felt252,)
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 2
@@ -462,7 +450,11 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+fn apply<F, +Drop<F>, impl func: core::ops::FnOnce<F, (felt252,)>, +Drop<func::Output>>(f: F) {
+    f(2);
+}
+#[target_function]
 fn foo() {
     let uninlined_closure = |mut a| {
         // Making sure the closure is long enough to not be inlined.
@@ -478,14 +470,6 @@ fn foo() {
     apply(uninlined_closure);
 }
 
-//! > function_name
-foo
-
-//! > module_code
-fn apply<F, +Drop<F>, impl func: core::ops::FnOnce<F, (felt252,)>, +Drop<func::Output>>(f: F) {
-    f(2);
-}
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -495,8 +479,8 @@ Main:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: {closure@lib.cairo:5:29: 5:36}) <- struct_construct()
-  (v1: ()) <- test::apply::<{closure@lib.cairo:5:29: 5:36}, Generated core::traits::Drop::<{closure@lib.cairo:5:29: 5:36}>, core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:29: 5:36}, (core::felt252,), core::traits::DestructFromDrop::<{closure@lib.cairo:5:29: 5:36}, Generated core::traits::Drop::<{closure@lib.cairo:5:29: 5:36}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:5:29: 5:36}, (core::felt252,)>>, core::felt252Drop>(v0)
+  (v0: test::foo::{closure#0}) <- struct_construct()
+  (v1: ()) <- test::apply::<test::foo::{closure#0}, Generated core::traits::Drop::<test::foo::{closure#0}>, core::ops::function::FnOnceImpl::<test::foo::{closure#0}, (core::felt252,), core::traits::DestructFromDrop::<test::foo::{closure#0}, Generated core::traits::Drop::<test::foo::{closure#0}>>, Generated core::ops::function::Fn::<test::foo::{closure#0}, (core::felt252,)>>, core::felt252Drop>(v0)
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
@@ -514,7 +498,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let uninlined_closure = |mut a| {
                             ^^^^^^^
 
-Parameters: v0: {closure@lib.cairo:5:29: 5:36}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -524,7 +508,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:5:29: 5:36}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -535,10 +519,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let uninlined_closure = |mut a| {
                             ^^^^^^^
 
-Parameters: v0: @{closure@lib.cairo:5:29: 5:36}, v2: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::felt252,)
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:5:29: 5:36}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- core::Felt252Add::add(v3, v3)
@@ -571,7 +555,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:5:29: 5:36}, v1: (core::felt252,)
+Parameters: v0: @test::foo::{closure#0}, v1: (core::felt252,)
 blk0 (root):
 Statements:
   (v2: core::felt252) <- struct_destructure(v1)
@@ -610,7 +594,8 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: Array<felt252>) -> u32 {
     let inner = |x| {
         let nested = |y| {
@@ -620,9 +605,6 @@ fn foo(a: Array<felt252>) -> u32 {
     };
     inner(42)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -634,11 +616,11 @@ Parameters: v0: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
-  (v3: {closure@lib.cairo:2:17: 2:20}) <- struct_construct(v2)
-  (v4: {closure@lib.cairo:2:17: 2:20}, v5: @{closure@lib.cairo:2:17: 2:20}) <- snapshot(v3)
+  (v3: test::foo::{closure#0}) <- struct_construct(v2)
+  (v4: test::foo::{closure#0}, v5: @test::foo::{closure#0}) <- snapshot(v3)
   (v6: core::integer::u32) <- 42
   (v7: (core::integer::u32,)) <- struct_construct(v6)
-  (v8: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:2:17: 2:20}(v5, v7)
+  (v8: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v5, v7)
 End:
   Return(v8)
 
@@ -675,7 +657,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let inner = |x| {
                 ^^^
 
-Parameters: v0: {closure@lib.cairo:2:17: 2:20}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
   (v1: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
@@ -685,7 +667,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:2:17: 2:20}
+Parameters: v0: test::foo::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -696,7 +678,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
         let nested = |y| {
                      ^^^
 
-Parameters: v0: {closure@lib.cairo:3:22: 3:25}
+Parameters: v0: test::foo::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
   (v1: @core::array::Array::<core::felt252>) <- struct_destructure(v0)
@@ -706,7 +688,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:3:22: 3:25}
+Parameters: v0: test::foo::{closure#0}::{closure#0}
 blk0 (root):
 Statements:
 End:
@@ -717,10 +699,10 @@ Generated core::ops::function::Fn::call lowering for source location:
         let nested = |y| {
                      ^^^
 
-Parameters: v0: @{closure@lib.cairo:3:22: 3:25}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:3:22: 3:25}) <- desnap(v0)
+  (v1: test::foo::{closure#0}::{closure#0}) <- desnap(v0)
   (v3: @core::array::Array::<core::felt252>) <- struct_destructure(v1)
   (v4: core::integer::u32) <- struct_destructure(v2)
   (v5: core::integer::u32) <- core::array::ArrayImpl::<core::felt252>::len(v3)
@@ -730,10 +712,10 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@lib.cairo:3:22: 3:25}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v3: {closure@lib.cairo:3:22: 3:25}) <- desnap(v1)
+  (v3: test::foo::{closure#0}::{closure#0}) <- desnap(v1)
   (v4: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
   (v5: core::integer::u32) <- core::array::array_len::<core::felt252>(v4)
   (v6: core::integer::u32) <- struct_destructure(v2)
@@ -762,25 +744,25 @@ Generated core::ops::function::Fn::call lowering for source location:
     let inner = |x| {
                 ^^^
 
-Parameters: v0: @{closure@lib.cairo:2:17: 2:20}, v2: (core::integer::u32,)
+Parameters: v0: @test::foo::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:2:17: 2:20}) <- desnap(v0)
+  (v1: test::foo::{closure#0}) <- desnap(v0)
   (v3: @core::array::Array::<core::felt252>) <- struct_destructure(v1)
   (v4: core::integer::u32) <- struct_destructure(v2)
-  (v5: {closure@lib.cairo:3:22: 3:25}) <- struct_construct(v3)
-  (v6: {closure@lib.cairo:3:22: 3:25}, v7: @{closure@lib.cairo:3:22: 3:25}) <- snapshot(v5)
+  (v5: test::foo::{closure#0}::{closure#0}) <- struct_construct(v3)
+  (v6: test::foo::{closure#0}::{closure#0}, v7: @test::foo::{closure#0}::{closure#0}) <- snapshot(v5)
   (v8: (core::integer::u32,)) <- struct_construct(v4)
-  (v9: core::integer::u32) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:3:22: 3:25}(v7, v8)
+  (v9: core::integer::u32) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}::{closure#0}(v7, v8)
 End:
   Return(v9)
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: @{closure@lib.cairo:2:17: 2:20}, v2: (core::integer::u32,)
+Parameters: v0: core::RangeCheck, v1: @test::foo::{closure#0}, v2: (core::integer::u32,)
 blk0 (root):
 Statements:
-  (v3: {closure@lib.cairo:2:17: 2:20}) <- desnap(v1)
+  (v3: test::foo::{closure#0}) <- desnap(v1)
   (v4: @core::array::Array::<core::felt252>) <- struct_destructure(v3)
   (v5: core::integer::u32) <- core::array::array_len::<core::felt252>(v4)
   (v6: core::integer::u32) <- struct_destructure(v2)
@@ -803,3 +785,328 @@ Statements:
   (v14: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v13)
 End:
   Return(v9, v14)
+
+//! > ==========================================================================
+
+//! > Test closure with `return` inside a loop does not add loop early-return machinery.
+
+//! > test_runner_name
+test_generated_function
+
+//! > cairo_code
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    let mut i = n;
+    loop {
+        let f = || -> felt252 {
+            return 7;
+        };
+        i = i + f();
+        if i == 100 {
+            break i;
+        };
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252, v1: core::felt252) <- test::foo::{loop#0}(v0)
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
+blk0 (root):
+Statements:
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v0, v1, v2)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk1,
+    PanicResult::Err(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v9: core::felt252, v10: core::felt252) <- struct_destructure(v6)
+  (v11: (core::felt252,)) <- struct_construct(v10)
+  (v12: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v11)
+End:
+  Return(v3, v8, v12)
+
+blk2:
+Statements:
+  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+End:
+  Return(v3, v4, v13)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+        let f = || -> felt252 {
+                ^^
+
+Parameters: v0: test::foo::{loop#0}::{closure#0}
+blk0 (root):
+Statements:
+  () <- struct_destructure(v0)
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
+
+
+Final lowering:
+Parameters: v0: test::foo::{loop#0}::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+        let f = || -> felt252 {
+                ^^
+
+Parameters: v0: @test::foo::{loop#0}::{closure#0}, v2: ()
+blk0 (root):
+Statements:
+  (v1: test::foo::{loop#0}::{closure#0}) <- desnap(v0)
+  () <- struct_destructure(v1)
+  () <- struct_destructure(v2)
+  (v3: core::felt252) <- 7
+End:
+  Return(v3)
+
+
+Final lowering:
+Parameters: v0: @test::foo::{loop#0}::{closure#0}, v1: ()
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 7
+End:
+  Return(v2)
+
+
+Generated loop lowering for source location:
+      loop {
+ _____^
+| ...
+|     }
+|_____^
+
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: test::foo::{loop#0}::{closure#0}) <- struct_construct()
+  (v2: test::foo::{loop#0}::{closure#0}, v3: @test::foo::{loop#0}::{closure#0}) <- snapshot(v1)
+  (v4: ()) <- struct_construct()
+  (v5: core::felt252) <- Generated `core::ops::function::Fn::call` for test::foo::{loop#0}::{closure#0}(v3, v4)
+  (v6: core::felt252) <- core::Felt252Add::add(v0, v5)
+  (v7: core::felt252, v8: @core::felt252) <- snapshot(v6)
+  (v9: core::felt252) <- 100
+  (v10: core::felt252, v11: @core::felt252) <- snapshot(v9)
+  (v12: core::bool) <- core::Felt252PartialEq::eq(v8, v11)
+End:
+  Match(match_enum(v12) {
+    bool::False(v14) => blk2,
+    bool::True(v13) => blk1,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v7, v7)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v16: core::felt252, v15: core::felt252) <- test::foo::{loop#0}(v7)
+End:
+  Return(v16, v15)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v3, v4) => blk1,
+    Option::None(v5, v6) => blk4,
+  })
+
+blk1:
+Statements:
+  (v7: core::felt252) <- 7
+  (v8: core::felt252) <- core::felt252_add(v2, v7)
+  (v9: core::felt252) <- 100
+  (v10: core::felt252) <- core::felt252_sub(v8, v9)
+End:
+  Match(match core::felt252_is_zero(v10) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v13: (core::felt252, core::felt252)) <- struct_construct(v8, v8)
+  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v13)
+End:
+  Return(v3, v12, v14)
+
+blk3:
+Statements:
+  (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v3, v15, v8)
+End:
+  Return(v16, v17, v18)
+
+blk4:
+Statements:
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v20: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v19)
+End:
+  Return(v5, v6, v20)
+
+
+Final lowering of specialized call "test::foo::{loop#0}":
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v3, v4) => blk1,
+    Option::None(v5, v6) => blk4,
+  })
+
+blk1:
+Statements:
+  (v7: core::felt252) <- 7
+  (v8: core::felt252) <- core::felt252_add(v2, v7)
+  (v9: core::felt252) <- 100
+  (v10: core::felt252) <- core::felt252_sub(v8, v9)
+End:
+  Match(match core::felt252_is_zero(v10) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v13: (core::felt252, core::felt252)) <- struct_construct(v8, v8)
+  (v14: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Ok(v13)
+End:
+  Return(v3, v12, v14)
+
+blk3:
+Statements:
+  (v15: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- test::foo::{loop#0}(v3, v15, v8)
+End:
+  Return(v16, v17, v18)
+
+blk4:
+Statements:
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v20: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v19)
+End:
+  Return(v5, v6, v20)
+
+//! > ==========================================================================
+
+//! > Test closure desnapping a snapshot-only captured variable.
+
+//! > test_runner_name
+test_generated_function
+
+//! > cairo_code
+#[target_function]
+fn foo(a: felt252) -> felt252 {
+    let f = || *(@a);
+    f()
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Main:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: test::foo::{closure#0}) <- struct_construct(v2)
+  (v4: test::foo::{closure#0}, v5: @test::foo::{closure#0}) <- snapshot(v3)
+  (v6: ()) <- struct_construct()
+  (v7: core::felt252) <- Generated `core::ops::function::Fn::call` for test::foo::{closure#0}(v5, v6)
+End:
+  Return(v7)
+
+
+Final lowering:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+
+Generated core::traits::Destruct::destruct lowering for source location:
+    let f = || *(@a);
+            ^^
+
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+  (v1: @core::felt252) <- struct_destructure(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)
+
+
+Final lowering:
+Parameters: v0: test::foo::{closure#0}
+blk0 (root):
+Statements:
+End:
+  Return()
+
+
+Generated core::ops::function::Fn::call lowering for source location:
+    let f = || *(@a);
+            ^^
+
+Parameters: v0: @test::foo::{closure#0}, v2: ()
+blk0 (root):
+Statements:
+  (v1: test::foo::{closure#0}) <- desnap(v0)
+  (v3: @core::felt252) <- struct_destructure(v1)
+  () <- struct_destructure(v2)
+  (v4: core::felt252) <- desnap(v3)
+End:
+  Return(v4)
+
+
+Final lowering:
+Parameters: v0: @test::foo::{closure#0}, v1: ()
+blk0 (root):
+Statements:
+  (v2: test::foo::{closure#0}) <- desnap(v0)
+  (v3: @core::felt252) <- struct_destructure(v2)
+  (v4: core::felt252) <- desnap(v3)
+End:
+  Return(v4)

@@ -24,7 +24,9 @@ fn test_resolve_path() {
         db,
         indoc! {"
             use core::Box;
+            #[allow(extern_outside_corelib)]
             extern type S<T>;
+            #[allow(extern_outside_corelib)]
             extern fn bar<T>(value: S::<felt252>) -> S::<()> nopanic;
 
             fn foo<Q>(value: S::<felt252>, b: Q, c: Box::<Q>) {
@@ -46,9 +48,9 @@ fn test_resolve_path() {
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
          FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt252, Q)>, args: \
-         [Value(Var(ParamId(test::value)))], coupon_arg: None, ty: test::S::<()> }) }), \
-         Let(StatementLet { pattern: Variable(_c), expr: Var(ParamId(test::b)), else_clause: None \
-         })], tail: None, ty: () }))"
+         [Value(Var(ParamId(test::foo::value)))], coupon_arg: None, ty: test::S::<()> }) }), \
+         Let(StatementLet { pattern: Variable(_c), expr: Var(ParamId(test::foo::b)), else_clause: \
+         None })], tail: None, ty: () }))"
     );
 }
 

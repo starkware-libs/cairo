@@ -3,16 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    MyTrait::foo(5_u64);
-    MyTrait::foo(3_u32);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn foo(t: T) -> T {
         t
@@ -24,6 +15,10 @@ impl MyImplU32 of MyTrait<u32> {
         t + 1
     }
 }
+fn foo() {
+    MyTrait::foo(5_u64);
+    MyTrait::foo(3_u32);
+}
 
 //! > expected_diagnostics
 
@@ -34,13 +29,7 @@ impl MyImplU32 of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<T> {
     fn inner(x: T, y: T) -> T;
     fn foo<+Copy<T>>(x: T) -> T {
@@ -64,13 +53,7 @@ impl MyImplU32 of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn foo(mut x: u32) -> u32 {
         x += 1;
@@ -91,13 +74,7 @@ error[E2033]: Parameter of trait function `MyTrait::foo` can't be defined as mut
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn default_impl() {
         bar::<Self>();

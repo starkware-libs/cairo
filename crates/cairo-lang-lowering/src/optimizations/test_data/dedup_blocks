@@ -3,14 +3,12 @@
 //! > test_runner_name
 test_dedup_blocks
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut a: Array<u32>) {
     a.pop_front().unwrap();
     a.pop_front().unwrap();
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -105,7 +103,8 @@ End:
 //! > test_runner_name
 test_dedup_blocks
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut a: Array<felt252>) -> felt252 {
     if let Some(val) = a.pop_front() {
         return val + 5;
@@ -115,9 +114,6 @@ fn foo(mut a: Array<felt252>) -> felt252 {
     }
     1
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -228,7 +224,14 @@ End:
 //! > test_runner_name
 test_dedup_blocks
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    V0: felt252,
+    V1: felt252,
+    V2: felt252,
+    V3: felt252,
+}
+#[target_function]
 fn foo(t: MyEnum) -> felt252 {
     let mut w = 8;
     let v = match t {
@@ -242,17 +245,6 @@ fn foo(t: MyEnum) -> felt252 {
     };
     v + w
 }
-
-//! > module_code
-enum MyEnum {
-    V0: felt252,
-    V1: felt252,
-    V2: felt252,
-    V3: felt252,
-}
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

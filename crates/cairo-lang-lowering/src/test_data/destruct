@@ -3,20 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(flag: bool, x: u128) -> Option<A> {
-    let a = A { x };
-    if flag {
-        Some(a)
-    } else {
-        None
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {
     x: u128,
 }
@@ -30,6 +17,15 @@ impl ADestruct of Destruct<A> {
             Ok(v) => v,
             Err(v) => v,
         };
+    }
+}
+#[target_function]
+fn foo(flag: bool, x: u128) -> Option<A> {
+    let a = A { x };
+    if flag {
+        Some(a)
+    } else {
+        None
     }
 }
 
@@ -70,17 +66,13 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(d: Felt252Dict<felt252>) {
-    get_total_signed_weight(d);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn get_total_signed_weight(used_keys: Felt252Dict<felt252>) -> u128 {
     1_u128
+}
+#[target_function]
+fn foo(d: Felt252Dict<felt252>) {
+    get_total_signed_weight(d);
 }
 
 //! > semantic_diagnostics
@@ -102,17 +94,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: A, b: B) {
-    may_panic();
-    may_panic();
-    panic_with_felt252('123');
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn may_panic() {
     panic_with_felt252('123');
@@ -134,6 +116,12 @@ impl BPanicDestruct of PanicDestruct<B> {
     fn panic_destruct(self: B, ref panic: Panic) nopanic {
         let B { a: _ } = self;
     }
+}
+#[target_function]
+fn foo(a: A, b: B) {
+    may_panic();
+    may_panic();
+    panic_with_felt252('123');
 }
 
 //! > semantic_diagnostics
@@ -198,18 +186,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: bool, d: A) -> A {
-    if a {
-        may_panic();
-    }
-    return d;
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn may_panic() {
     panic_with_felt252('123');
@@ -221,6 +198,13 @@ impl APanicDestruct of PanicDestruct<A> {
     fn panic_destruct(self: A, ref panic: Panic) nopanic {
         let A { } = self;
     }
+}
+#[target_function]
+fn foo(a: bool, d: A) -> A {
+    if a {
+        may_panic();
+    }
+    return d;
 }
 
 //! > semantic_diagnostics
@@ -276,15 +260,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: Option<()>) {
-    bar::<(), MyDestruct>(a.expect('Should be Some.'))
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline]
 fn bar<T, +Destruct<T>>(a: T) {}
 
@@ -295,7 +271,12 @@ pub impl MyDestruct of Destruct<()> {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn my_fn() nopanic;
+#[target_function]
+fn foo(a: Option<()>) {
+    bar::<(), MyDestruct>(a.expect('Should be Some.'))
+}
 
 //! > semantic_diagnostics
 
@@ -334,19 +315,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let _a = A {};
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct A {}
 impl ADestruct of Destruct<A> {
     #[inline(always)]
     fn destruct(self: A) nopanic {}
+}
+#[target_function]
+fn foo() {
+    let _a = A {};
 }
 
 //! > semantic_diagnostics
@@ -368,3 +345,68 @@ error[E3005]: Cannot inline a function that might call itself.
 
 //! > lowering_flat
 Parameters:
+
+//! > ==========================================================================
+
+//! > Panic destruct is not duplicated when arms converge on a shared panic.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > cairo_code
+struct Wrap {
+    d: Felt252Dict<u64>,
+}
+
+impl WrapPanicDestruct of core::traits::PanicDestruct<Wrap> {
+    fn panic_destruct(self: Wrap, ref panic: core::panics::Panic) nopanic {
+        let Wrap { d } = self;
+        d.squash();
+    }
+}
+#[target_function]
+fn foo(flag: bool) {
+    let d: Felt252Dict<u64> = Default::default();
+    let _w = Wrap { d };
+    if flag {
+        let _a = 1_u8;
+    } else {
+        let _b = 2_u8;
+    }
+    core::panic_with_felt252('x');
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: core::bool
+blk0 (root):
+Statements:
+  (v4: core::SegmentArena, v5: core::dict::Felt252Dict::<core::integer::u64>) <- core::dict::felt252_dict_new::<core::integer::u64>(v1)
+End:
+  Match(match_enum(v3) {
+    bool::False(v6) => blk1,
+    bool::True(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v2)
+End:
+  Goto(blk3, {v8 -> v9})
+
+blk2:
+Statements:
+  (v10: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v2)
+End:
+  Goto(blk3, {v10 -> v9})
+
+blk3:
+Statements:
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<120>()
+  (v12: core::RangeCheck, v13: core::SegmentArena, v14: core::gas::GasBuiltin, v15: core::dict::SquashedFelt252Dict::<core::integer::u64>) <- core::dict::Felt252DictImpl::<core::integer::u64, core::integer::U64Felt252DictValue>::squash(v0, v4, v9, v5)
+  (v16: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v11)
+End:
+  Return(v12, v13, v14, v16)

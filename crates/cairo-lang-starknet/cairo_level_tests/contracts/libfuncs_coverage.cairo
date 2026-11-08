@@ -35,6 +35,7 @@ enum Libfuncs {
     Conversions: ConversionsLibfuncs,
     Ec: EcLibfuncs,
     Sha256: ByteArray,
+    Sha512: ByteArray,
     Blake2s: (Box<[u32; 8]>, u32, Box<[u32; 16]>),
     ArrayU128: ArrayLibfuncs<u128>,
     ArrayU256: ArrayLibfuncs<u256>,
@@ -226,6 +227,7 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Conversions(libfuncs) => conversions_libfuncs(libfuncs),
         Libfuncs::Ec(libfuncs) => ec_libfuncs(libfuncs),
         Libfuncs::Sha256(input) => use_and_panic(core::sha256::compute_sha256_byte_array(@input)),
+        Libfuncs::Sha512(input) => use_and_panic(core::sha512::compute_sha512_byte_array(@input)),
         Libfuncs::Blake2s((
             state, byte_count, msg,
         )) => use_and_panic(
@@ -547,17 +549,29 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
     }
 }
 
+#[allow(extern_outside_corelib)]
 extern fn felt252_const<const VALUE: felt252>() -> felt252 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u8_const<const VALUE: u8>() -> u8 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u16_const<const VALUE: u16>() -> u16 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u32_const<const VALUE: u32>() -> u32 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u64_const<const VALUE: u64>() -> u64 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn u128_const<const VALUE: u128>() -> u128 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i8_const<const VALUE: i8>() -> i8 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i16_const<const VALUE: i16>() -> i16 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i32_const<const VALUE: i32>() -> i32 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i64_const<const VALUE: i64>() -> i64 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn i128_const<const VALUE: i128>() -> i128 nopanic;
+#[allow(extern_outside_corelib)]
 extern fn bytes31_const<const VALUE: felt252>() -> bytes31 nopanic;
 
 #[feature("deprecated-starknet-consts")]

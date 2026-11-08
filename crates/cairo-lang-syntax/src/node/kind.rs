@@ -11,11 +11,12 @@ use serde::{Deserialize, Serialize};
     Eq,
     Serialize,
     Deserialize,
-    salsa::Update,
+    salsa::SalsaValue,
     cairo_lang_proc_macros::HeapSize,
 )]
 pub enum SyntaxKind {
     Trivia,
+    ExprMissing,
     ExprList,
     Arg,
     ArgClauseNamed,
@@ -23,13 +24,11 @@ pub enum SyntaxKind {
     ArgClauseFieldInitShorthand,
     ExprFieldInitShorthand,
     ArgList,
-    ExprMissing,
     PathSegmentSimple,
     OptionTerminalColonColonEmpty,
     PathSegmentWithGenericArgs,
     ExprPath,
     OptionTerminalDollarEmpty,
-    PathSegmentMissing,
     ExprPathInner,
     ExprParenthesized,
     ExprUnary,
@@ -83,8 +82,8 @@ pub enum SyntaxKind {
     OptionTypeClauseEmpty,
     ReturnTypeClause,
     OptionReturnTypeClauseEmpty,
-    StatementList,
     StatementMissing,
+    StatementList,
     StatementLet,
     LetElseClause,
     OptionLetElseClauseEmpty,
@@ -109,8 +108,8 @@ pub enum SyntaxKind {
     MemberList,
     Variant,
     VariantList,
-    ModuleItemList,
     ModuleItemMissing,
+    ModuleItemList,
     Attribute,
     AttributeList,
     VisibilityDefault,
@@ -622,7 +621,6 @@ impl SyntaxKind {
         matches!(
             *self,
             SyntaxKind::ExprMissing
-                | SyntaxKind::PathSegmentMissing
                 | SyntaxKind::WrappedArgListMissing
                 | SyntaxKind::StatementMissing
                 | SyntaxKind::ModuleItemMissing
@@ -632,6 +630,7 @@ impl SyntaxKind {
                 | SyntaxKind::WrappedTokenTreeMissing
                 | SyntaxKind::MacroRepetitionOperatorMissing
                 | SyntaxKind::MacroParamKindMissing
+                | SyntaxKind::TokenMissing
         )
     }
 }

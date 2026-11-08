@@ -1,4 +1,4 @@
-// Test two level of inline module nesting.
+// Test two levels of inline module nesting.
 mod inner {
     pub mod inner {
         pub fn fib_inner(a: felt252, b: felt252, n: felt252) -> felt252 {

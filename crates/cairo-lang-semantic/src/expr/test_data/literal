@@ -3,13 +3,10 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _a = 'a'_Pedersen;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2008]: A numeric literal of type core::pedersen::Pedersen cannot be created.
@@ -19,21 +16,226 @@ error[E2008]: A numeric literal of type core::pedersen::Pedersen cannot be creat
 
 //! > ==========================================================================
 
+//! > Inferred-type numeric literal whose value is out of range.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let _x: u8 = 256;
+}
+
+//! > expected_diagnostics
+error[E2008]: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:2:18
+    let _x: u8 = 256;
+                 ^^^
+
+//! > ==========================================================================
+
 //! > Numeric literal with a non-type suffix.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x = 1_boolean;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2011]: Not a type.
  --> lib.cairo:2:14
     let _x = 1_boolean;
              ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Numeric literal with a compound suffix (multiple underscore segments).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let _x = 1_u32_u8;
+}
+
+//! > expected_diagnostics
+error[E2006]: Unknown type.
+ --> lib.cairo:2:14
+    let _x = 1_u32_u8;
+             ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Negative numeric literal with a compound suffix (multiple underscore segments).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let _x = -1_u32_u8;
+}
+
+//! > expected_diagnostics
+error[E2006]: Unknown type.
+ --> lib.cairo:2:14
+    let _x = -1_u32_u8;
+             ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Unsuffixed numeric literal defaults to felt252.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    let x = 5;
+    let _y: felt252 = x;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Unsuffixed numeric literal infers from explicit type ascription.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    let x: u32 = 5;
+    let _y: u32 = x;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Array of unsuffixed literals unifies with one suffixed element.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    let _arr: Array<u32> = array![0, 1, 2_u32];
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Unsuffixed literals support `Drop` and `Copy` without explicit suffix.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    let mut total: u32 = 0;
+    for (k, v) in array![0, 1, 2].into_iter().enumerate() {
+        total = total + k + v;
+    };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Numeric literal cannot be bound to a non-numeric type via let ascription.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let _x: ByteArray = 252;
+}
+
+//! > expected_diagnostics
+error[E2315]: Mismatched types. The type `ByteArray` cannot be created from a numeric literal.
+ --> lib.cairo:2:25
+    let _x: ByteArray = 252;
+                        ^^^
+
+//! > ==========================================================================
+
+//! > Numeric literal cannot be bound to `bool`.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let _x: bool = 5;
+}
+
+//! > expected_diagnostics
+error[E2315]: Mismatched types. The type `bool` cannot be created from a numeric literal.
+ --> lib.cairo:2:20
+    let _x: bool = 5;
+                   ^
+
+//! > ==========================================================================
+
+//! > Issue #6486: diagnostic for an integer-literal tail in a unit-returning function points at the
+
+//! > tail/function-body span, not at the literal's `let` binding.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn incorrect_return_type() {
+    let x = 5;
+    x
+}
+
+//! > expected_diagnostics
+error[E2315]: Mismatched types. The type `()` cannot be created from a numeric literal.
+ --> lib.cairo:3:5
+    x
+    ^
+
+//! > ==========================================================================
+
+//! > Numeric literal suffix with generic type emits E2008 instead of ICE (#9975).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let _a = 42_Option;
+    let _b = 42_Result;
+    let _c = 42_PanicResult;
+    let _d = 42_Span;
+}
+
+//! > expected_diagnostics
+error[E2008]: A numeric literal of type core::option::Option cannot be created.
+ --> lib.cairo:2:14
+    let _a = 42_Option;
+             ^^^^^^^^^
+
+error[E2008]: A numeric literal of type core::result::Result cannot be created.
+ --> lib.cairo:3:14
+    let _b = 42_Result;
+             ^^^^^^^^^
+
+error[E2008]: A numeric literal of type core::panics::PanicResult cannot be created.
+ --> lib.cairo:4:14
+    let _c = 42_PanicResult;
+             ^^^^^^^^^^^^^^
+
+error[E2008]: A numeric literal of type core::array::Span cannot be created.
+ --> lib.cairo:5:14
+    let _d = 42_Span;
+             ^^^^^^^

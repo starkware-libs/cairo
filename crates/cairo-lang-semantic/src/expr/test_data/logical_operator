@@ -3,26 +3,23 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: u128, b: u128, c: u128) -> bool {
     a && b || c
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
-error[E2039]: Expected type "core::bool", found: "core::integer::u128".
+error[E2039]: Expected type "bool", found: "u128".
  --> lib.cairo:2:5
     a && b || c
     ^
 
-error[E2039]: Expected type "core::bool", found: "core::integer::u128".
+error[E2039]: Expected type "bool", found: "u128".
  --> lib.cairo:2:10
     a && b || c
          ^
 
-error[E2039]: Expected type "core::bool", found: "core::integer::u128".
+error[E2039]: Expected type "bool", found: "u128".
  --> lib.cairo:2:15
     a && b || c
               ^
@@ -34,26 +31,21 @@ error[E2039]: Expected type "core::bool", found: "core::integer::u128".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar<S, T>(a: S, b: bool, c: T) -> bool {
+    a && Default::default() || c
+}
 fn foo(a: bool, b: bool, c: bool) -> bool {
     bar(a, b, c)
 }
 
-//! > function_name
-foo
-
-//! > module_code
-fn bar<S, T>(a: S, b: bool, c: T) -> bool {
-    a && Default::default() || c
-}
-
 //! > expected_diagnostics
-error[E2039]: Expected type "core::bool", found: "S".
+error[E2039]: Expected type "bool", found: "S".
  --> lib.cairo:2:5
     a && Default::default() || c
     ^
 
-error[E2039]: Expected type "core::bool", found: "T".
+error[E2039]: Expected type "bool", found: "T".
  --> lib.cairo:2:32
     a && Default::default() || c
                                ^

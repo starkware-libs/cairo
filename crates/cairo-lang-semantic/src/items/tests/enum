@@ -3,19 +3,14 @@
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function_code
+//! > cairo_code
+enum A<T> {
+    Variant0: T,
+}
 fn foo(a: A<felt252>) -> felt252 {
     match a {
         A::Variant0(t) => { t },
     }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum A<T> {
-    Variant0: T,
 }
 
 //! > expected_diagnostics
@@ -27,19 +22,13 @@ enum A<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     Variant: A,
 }
 
 //! > expected_diagnostics
-error[E2052]: Recursive type "test::A" has infinite size.
+error[E2052]: Recursive type "A" has infinite size.
  --> lib.cairo:2:5
     Variant: A,
     ^^^^^^^^^^
@@ -51,13 +40,7 @@ error[E2052]: Recursive type "test::A" has infinite size.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 enum A {
     Variant: A,
@@ -72,13 +55,7 @@ enum A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[phantom]
 struct A {}
 
@@ -99,13 +76,7 @@ error[E2020]: Non-phantom type containing phantom type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum A {
     Variant: Array<()>,
 }
@@ -123,8 +94,10 @@ error[E2053]: Cannot have array of type "()" that is zero sized.
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function_code
-fn foo() {}
+//! > cairo_code
+enum E {
+    aa: i32,
+}
 fn bar<E>() -> i32 {
     let E::aa(b) = makeE();
     b
@@ -133,22 +106,14 @@ fn makeE() -> E {
     E::aa(3)
 }
 
-//! > function_name
-foo
-
-//! > module_code
-enum E {
-    aa: i32,
-}
-
 //! > expected_diagnostics
 error[E2086]: Invalid path.
- --> lib.cairo:6:12
+ --> lib.cairo:5:12
     let E::aa(b) = makeE();
            ^^
 
 error[E0006]: Identifier not found.
- --> lib.cairo:7:5
+ --> lib.cairo:6:5
     b
     ^
 
@@ -159,8 +124,12 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function_code
-fn foo() {}
+//! > cairo_code
+enum A {
+    T: i32,
+    E: (),
+}
+use A::{E, T};
 fn bar<T, E>() -> i32 {
     let T(a) = A::T(2);
     let E = A::E(());
@@ -168,28 +137,70 @@ fn bar<T, E>() -> i32 {
     a
 }
 
-//! > function_name
-foo
-
-//! > module_code
-enum A {
-    T: i32,
-    E: (),
-}
-use A::{E, T};
-
 //! > expected_diagnostics
 error[E2009]: Not a variant. Use the full name Enum::Variant.
- --> lib.cairo:8:9
+ --> lib.cairo:7:9
     let T(a) = A::T(2);
         ^
 
 error[E0006]: Identifier not found.
- --> lib.cairo:11:5
+ --> lib.cairo:10:5
     a
     ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:9:9
+ --> lib.cairo:8:9
     let E = A::E(());
         ^
+
+//! > ==========================================================================
+
+//! > Test no ICE when a malformed module-level macro call re-enters the enum definition. The unresolved variant type's error must survive the cycle recovery.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+enum MyEnum {
+    A: P,
+}
+MyEnum::A(());
+
+//! > expected_diagnostics
+error[E1012]: Expected a '!' after the identifier 'A' to start an inline macro.
+Did you mean to write `A!(...)'?
+ --> lib.cairo:4:9
+MyEnum::A(());
+        ^
+
+error[E0006]: Type not found.
+ --> lib.cairo:2:8
+    A: P,
+       ^
+
+//! > ==========================================================================
+
+//! > Test no ICE when an item-level macro call names an enum variant whose type is a generic enum with a trait bound.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+enum W<T, +Drop<T>> {
+    X: T,
+}
+enum E {
+    A: W<felt252>,
+}
+E::A!(());
+
+//! > expected_diagnostics
+error[E2028]: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:1:11
+enum W<T, +Drop<T>> {
+          ^^^^^^^^
+
+error[E2156]: Inline macro `E::A` not found.
+ --> lib.cairo:7:1
+E::A!(());
+^^^^^^^^^^

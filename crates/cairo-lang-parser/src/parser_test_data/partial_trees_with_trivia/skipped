@@ -1,0 +1,126 @@
+//! > Test identical skipped text yielding different trivia by recovery path
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo<#[;]>() -> felt252 {
+    5
+}
+#[;]
+
+//! > top_level_kind
+
+//! > ignored_kinds
+FunctionSignature
+
+//! > expected_diagnostics
+error[E1000]: Skipped tokens. Expected: generic param.
+ --> dummy_file.cairo:1:8
+fn foo<#[;]>() -> felt252 {
+       ^^^^
+
+error[E1003]: Missing tokens. Expected a path segment.
+ --> dummy_file.cairo:4:3
+#[;]
+  ^
+
+error[E1001]: Missing token ']'.
+ --> dummy_file.cairo:4:3
+#[;]
+  ^
+
+error[E1023]: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:4:3
+#[;]
+  ^
+
+error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:4:3
+#[;]
+  ^^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: FunctionWithBody)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
+    │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
+    │   │   │   ├── function_kw (kind: TerminalFunction)
+    │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   ├── token (kind: TokenFunction): 'fn'
+    │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │   │   ├── name (kind: TerminalIdentifier)
+    │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   ├── token (kind: TokenIdentifier): 'foo'
+    │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   │   ├── generic_params (kind: WrappedGenericParamList)
+    │   │   │   │   ├── langle (kind: TerminalLT)
+    │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   │   ├── token (kind: TokenLT): '<'
+    │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   │   │   ├── generic_params (kind: GenericParamList) []
+    │   │   │   │   └── rangle (kind: TerminalGT)
+    │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │   │   │   │       │   ├── child #0 (kind: TokenSkipped): '#'
+    │   │   │   │       │   ├── child #1 (kind: TokenSkipped): '['
+    │   │   │   │       │   ├── child #2 (kind: TokenSkipped): ';'
+    │   │   │   │       │   └── child #3 (kind: TokenSkipped): ']'
+    │   │   │   │       ├── token (kind: TokenGT): '>'
+    │   │   │   │       └── trailing_trivia (kind: Trivia) []
+    │   │   │   └── signature (kind: FunctionSignature) <ignored>
+    │   │   └── body (kind: ExprBlock)
+    │   │       ├── lbrace (kind: TerminalLBrace)
+    │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   ├── token (kind: TokenLBrace): '{'
+    │   │       │   └── trailing_trivia (kind: Trivia)
+    │   │       │       └── child #0 (kind: TokenNewline).
+    │   │       ├── statements (kind: StatementList)
+    │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── attributes (kind: AttributeList) []
+    │   │       │       ├── expr (kind: TerminalLiteralNumber)
+    │   │       │       │   ├── leading_trivia (kind: Trivia)
+    │   │       │       │   │   └── child #0 (kind: TokenWhitespace).
+    │   │       │       │   ├── token (kind: TokenLiteralNumber): '5'
+    │   │       │       │   └── trailing_trivia (kind: Trivia)
+    │   │       │       │       └── child #0 (kind: TokenNewline).
+    │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   │       └── rbrace (kind: TerminalRBrace)
+    │   │           ├── leading_trivia (kind: Trivia) []
+    │   │           ├── token (kind: TokenRBrace): '}'
+    │   │           └── trailing_trivia (kind: Trivia)
+    │   │               └── child #0 (kind: TokenNewline).
+    │   └── child #1: Missing []
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia)
+        │   ├── child #0 (kind: TriviumSkippedNode)
+        │   │   └── node (kind: AttributeList)
+        │   │       └── child #0 (kind: Attribute)
+        │   │           ├── hash (kind: TerminalHash)
+        │   │           │   ├── leading_trivia (kind: Trivia) []
+        │   │           │   ├── token (kind: TokenHash): '#'
+        │   │           │   └── trailing_trivia (kind: Trivia) []
+        │   │           ├── lbrack (kind: TerminalLBrack)
+        │   │           │   ├── leading_trivia (kind: Trivia) []
+        │   │           │   ├── token (kind: TokenLBrack): '['
+        │   │           │   └── trailing_trivia (kind: Trivia) []
+        │   │           ├── attr (kind: ExprPath)
+        │   │           │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+        │   │           │   └── segments (kind: ExprPathInner)
+        │   │           │       └── item #0 (kind: PathSegmentSimple)
+        │   │           │           └── ident (kind: TerminalIdentifier)
+        │   │           │               ├── leading_trivia (kind: Trivia) []
+        │   │           │               ├── token: Missing
+        │   │           │               └── trailing_trivia (kind: Trivia) []
+        │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+        │   │           └── rbrack (kind: TerminalRBrack)
+        │   │               ├── leading_trivia (kind: Trivia) []
+        │   │               ├── token: Missing
+        │   │               └── trailing_trivia (kind: Trivia) []
+        │   ├── child #1 (kind: TokenSkipped): ';'
+        │   └── child #2 (kind: TokenSkipped): ']'
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []

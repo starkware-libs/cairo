@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
-use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
+use cairo_lang_filesystem::ids::{CrateId, SmolStrId, Tracked};
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR, UNUSED,
     UNUSED_IMPORTS, UNUSED_VARIABLES,
@@ -19,7 +19,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 
 /// The kind of a feature for an item.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub enum FeatureKind<'db> {
     /// The feature of the item is stable.
     Stable,
@@ -78,7 +78,7 @@ pub trait HasFeatureKind<'db> {
 }
 
 /// Diagnostics for feature markers.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum FeatureMarkerDiagnostic {
     /// Multiple markers on the same item.
     MultipleMarkers,
@@ -128,7 +128,7 @@ fn add_diag<'db>(
 
 /// The feature configuration on an item.
 /// May be accumulated, or overridden by inner items.
-#[derive(Clone, Debug, Default, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, salsa::SalsaValue)]
 pub struct FeatureConfig<'db> {
     /// The current set of allowed features.
     pub allowed_features: OrderedHashSet<SmolStrId<'db>>,
@@ -261,37 +261,54 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
     syntax: &impl QueryAttrs<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> FeatureConfig<'db> {
-    let mut current_module_id = element_id.parent_module(db);
-    let crate_id = current_module_id.owning_crate(db);
-    let mut config_stack = vec![feature_config_from_ast_item(db, crate_id, syntax, diagnostics)];
-    let mut config = loop {
-        match current_module_id {
-            ModuleId::CrateRoot(crate_id) => {
-                let all_declarations_pub = db
-                    .crate_config(crate_id)
-                    .map(|config| config.settings.edition.ignore_visibility())
-                    .unwrap_or_else(|| default_crate_settings(db).edition.ignore_visibility());
-                let mut allowed_lints = OrderedHashSet::default();
-                if all_declarations_pub {
-                    let _already_allowed =
-                        allowed_lints.insert(SmolStrId::from(db, UNUSED_IMPORTS));
-                }
-                break FeatureConfig { allowed_features: OrderedHashSet::default(), allowed_lints };
+    let parent_module_id = element_id.parent_module(db);
+    let crate_id = parent_module_id.owning_crate(db);
+    let mut config = module_feature_config(db, (), parent_module_id).clone();
+    config.override_with(feature_config_from_ast_item(db, crate_id, syntax, diagnostics));
+    config
+}
+
+/// Returns the merged feature config for a module: its own attributes accumulated with those of
+/// all its ancestor modules, walking parents up to the crate root.
+///
+/// Memoized per `ModuleId`, so the parent walk runs once per module instead of once per item
+/// inside it.
+#[salsa::tracked(returns(ref))]
+fn module_feature_config<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> FeatureConfig<'db> {
+    let crate_id = module_id.owning_crate(db);
+    let (parent_module_id, mut config) = match module_id {
+        ModuleId::CrateRoot(crate_id) => {
+            let all_declarations_pub = db
+                .crate_config(crate_id)
+                .map(|config| config.settings.edition.ignore_visibility())
+                .unwrap_or_else(|| default_crate_settings(db).edition.ignore_visibility());
+            let mut allowed_lints = OrderedHashSet::default();
+            if all_declarations_pub {
+                let _already_allowed = allowed_lints.insert(SmolStrId::from(db, UNUSED_IMPORTS));
             }
-            ModuleId::Submodule(id) => {
-                current_module_id = id.parent_module(db);
-                let module = &current_module_id.module_data(db).unwrap().submodules(db)[&id];
-                // TODO(orizi): Add parent module diagnostics.
-                let ignored = &mut SemanticDiagnostics::new(current_module_id);
-                config_stack.push(feature_config_from_ast_item(db, crate_id, module, ignored));
-            }
-            ModuleId::MacroCall { id, .. } => {
-                current_module_id = id.parent_module(db);
-            }
+            return FeatureConfig { allowed_features: OrderedHashSet::default(), allowed_lints };
+        }
+        ModuleId::Submodule(id) => {
+            let parent_module_id = id.parent_module(db);
+            let module = &parent_module_id.module_data(db).unwrap().submodules(db)[&id];
+            // TODO(orizi): Add parent module diagnostics.
+            let ignored = &mut SemanticDiagnostics::new(module_id);
+            (parent_module_id, feature_config_from_ast_item(db, crate_id, module, ignored))
+        }
+        ModuleId::MacroCall { id, .. } => {
+            let parent_module_id = id.parent_module(db);
+            let macro_call = &parent_module_id.module_data(db).unwrap().macro_calls(db)[&id];
+            // TODO(orizi): Add parent module diagnostics.
+            let ignored = &mut SemanticDiagnostics::new(module_id);
+            (parent_module_id, feature_config_from_ast_item(db, crate_id, macro_call, ignored))
         }
     };
-    for module_config in config_stack.into_iter().rev() {
-        config.override_with(module_config);
-    }
+    let parent_config = module_feature_config(db, (), parent_module_id);
+    config.allowed_features.extend(parent_config.allowed_features.iter().copied());
+    config.allowed_lints.extend(parent_config.allowed_lints.iter().copied());
     config
 }

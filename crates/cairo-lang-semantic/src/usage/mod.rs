@@ -1,7 +1,6 @@
 //! Introduces [Usages], which is responsible for computing variables usage in semantic blocks\
 //! of a function.
 
-use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -10,8 +9,8 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
 use crate::{
-    ConcreteStructId, Condition, Expr, ExprClosure, ExprFor, ExprFunctionCall, ExprFunctionCallArg,
-    ExprId, ExprLoop, ExprVarMemberPath, ExprWhile, FixedSizeArrayItems, FunctionBody, Parameter,
+    Condition, Expr, ExprClosure, ExprFor, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprLoop,
+    ExprVarMemberPath, ExprWhile, FixedSizeArrayItems, FunctionBody, MemberAccessKind, Parameter,
     Pattern, PatternArena, PatternId, Statement, StatementBreak, StatementExpr, StatementLet,
     StatementReturn, VarId,
 };
@@ -25,11 +24,7 @@ mod test;
 #[debug_db(ExprFormatter<'db>)]
 pub enum MemberPath<'db> {
     Var(VarId<'db>),
-    Member {
-        parent: Box<MemberPath<'db>>,
-        member_id: MemberId<'db>,
-        concrete_struct_id: ConcreteStructId<'db>,
-    },
+    Member { parent: Box<MemberPath<'db>>, kind: MemberAccessKind<'db> },
 }
 impl<'db> MemberPath<'db> {
     pub fn base_var(&self) -> VarId<'db> {
@@ -43,12 +38,8 @@ impl<'db> From<&ExprVarMemberPath<'db>> for MemberPath<'db> {
     fn from(value: &ExprVarMemberPath<'db>) -> Self {
         match value {
             ExprVarMemberPath::Var(expr) => MemberPath::Var(expr.var),
-            ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } => {
-                MemberPath::Member {
-                    parent: Box::new(parent.as_ref().into()),
-                    member_id: *member_id,
-                    concrete_struct_id: *concrete_struct_id,
-                }
+            ExprVarMemberPath::Member { parent, kind, .. } => {
+                MemberPath::Member { parent: Box::new(parent.as_ref().into()), kind: kind.clone() }
             }
         }
     }
@@ -85,24 +76,11 @@ impl<'db> Usage<'db> {
         self.has_early_return |= usage.has_early_return;
     }
 
-    /// Removes usage that was introduced current block and usage that is already covered
+    /// Removes usage that was introduced in the current block and usage that is already covered
     /// by containing variables.
     pub fn finalize_as_scope(&mut self) {
-        // Prune introductions from usages.
-        for member_path in prune_and_get_candidates(&mut self.usage, |k| {
-            self.introductions.contains(&k.base_var())
-        }) {
-            // Prune usages that are members of other usages.
-            let mut current_path = &member_path;
-            while let MemberPath::Member { parent, .. } = current_path {
-                current_path = parent.as_ref();
-                if self.usage.contains_key(current_path) {
-                    self.usage.swap_remove(&member_path);
-                    break;
-                }
-            }
-        }
-        // Prune usages and introdictions from snap_usage.
+        // Prune usages and introductions from snap_usage. Runs before the `changes` pass so that
+        // the promotion below always promotes the top-most snapshotted ancestor.
         for member_path in prune_and_get_candidates(&mut self.snap_usage, |k| {
             self.usage.contains_key(k) || self.introductions.contains(&k.base_var())
         }) {
@@ -123,7 +101,9 @@ impl<'db> Usage<'db> {
             self.introductions.contains(&k.base_var())
         }) {
             // Prune changes that are members of other changes.
-            // Also if a child is changed and its parent is used, then we change the parent.
+            // Also if a child is changed and an ancestor is used as a snapshot, promote the
+            // ancestor into `usage`/`changes` so the whole ancestor is read and written back,
+            // instead of returning the child of a stale snapshot.
             // TODO(TomerStarkware): Deconstruct the parent, and snap_use other members.
             let mut current_path = &member_path;
             while let MemberPath::Member { parent, .. } = current_path {
@@ -138,6 +118,21 @@ impl<'db> Usage<'db> {
                 }
                 if self.changes.contains_key(current_path) {
                     self.changes.swap_remove(&member_path);
+                    break;
+                }
+            }
+        }
+        // Prune introductions from usages. Runs after the `changes` pass so that members of an
+        // ancestor promoted above are pruned as well.
+        for member_path in prune_and_get_candidates(&mut self.usage, |k| {
+            self.introductions.contains(&k.base_var())
+        }) {
+            // Prune usages that are members of other usages.
+            let mut current_path = &member_path;
+            while let MemberPath::Member { parent, .. } = current_path {
+                current_path = parent.as_ref();
+                if self.usage.contains_key(current_path) {
+                    self.usage.swap_remove(&member_path);
                     break;
                 }
             }
@@ -190,6 +185,8 @@ impl<'db> Usages<'db> {
         usage.introductions.extend(param_ids.iter().map(|param| VarId::Param(param.id)));
         self.handle_expr(arenas, body, &mut usage);
         usage.finalize_as_scope();
+        // Closure is a different function - no early return is relevant for outer scope.
+        usage.has_early_return = false;
         usage
     }
 

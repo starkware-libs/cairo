@@ -1,18 +1,21 @@
+use std::iter::repeat;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::{
-    NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
+    NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe, MaybeAsRef};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::functions::{FunctionsSemantic, ImplGenericFunctionId};
+use cairo_lang_semantic::items::generics::names_hash;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::items::structure::StructSemantic;
-use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
+use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::ast::ExprPtr;
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::helpers::generated_function_path;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
@@ -23,12 +26,12 @@ use semantic::items::functions::GenericFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
 
-use crate::Location;
 use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
 use crate::specialization::SpecializationArg;
+use crate::{Location, LoweringStage};
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum FunctionWithBodyLongId<'db> {
     Semantic(defs::ids::FunctionWithBodyId<'db>),
     Generated { parent: defs::ids::FunctionWithBodyId<'db>, key: GeneratedFunctionKey<'db> },
@@ -65,8 +68,13 @@ impl<'db> FunctionWithBodyId<'db> {
     ) -> cairo_lang_defs::ids::FunctionWithBodyId<'db> {
         self.long(db).base_semantic_function(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        Ok(db.function_with_body_lowering(*self)?.signature.clone())
+    /// Returns the signature of the generic, pre-monomorphization function.
+    ///
+    /// [`LoweringStage`] deliberately does not apply here: the staged lowerings all run on
+    /// concrete (monomorphized) functions, so the only lowering this id has is
+    /// `function_with_body_lowering`.
+    pub fn signature(&self, db: &'db dyn Database) -> Maybe<&'db Signature<'db>> {
+        Ok(&db.function_with_body_lowering(*self)?.signature)
     }
     pub fn to_concrete(&self, db: &'db dyn Database) -> Maybe<ConcreteFunctionWithBodyId<'db>> {
         Ok(self.long(db).to_concrete(db)?.intern(db))
@@ -82,7 +90,7 @@ impl<'db> SemanticFunctionWithBodyIdEx<'db> for cairo_lang_defs::ids::FunctionWi
 }
 
 /// Concrete function with body.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum ConcreteFunctionWithBodyLongId<'db> {
     Semantic(semantic::ConcreteFunctionWithBodyId<'db>),
     Generated(GeneratedFunction<'db>),
@@ -117,11 +125,6 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     }
 }
 
-impl<'db> UnstableSalsaId for ConcreteFunctionWithBodyId<'db> {
-    fn get_internal_id(&self) -> salsa::Id {
-        self.as_intern_id()
-    }
-}
 impl<'db> ConcreteFunctionWithBodyLongId<'db> {
     /// Returns the generic `FunctionWithLongId` if one exists, otherwise returns the specialized
     /// function.
@@ -177,11 +180,21 @@ impl<'db> ConcreteFunctionWithBodyLongId<'db> {
         }
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
+        format!("{:?}", self.debug(db))
+    }
+}
+impl<'db> DebugWithDb<'db> for ConcreteFunctionWithBodyLongId<'db> {
+    type Db = dyn Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
-            ConcreteFunctionWithBodyLongId::Semantic(semantic) => semantic.full_path(db),
-            ConcreteFunctionWithBodyLongId::Generated(generated) => generated.full_path(db),
+            ConcreteFunctionWithBodyLongId::Semantic(semantic) => {
+                write!(f, "{:?}", semantic.debug(db))
+            }
+            ConcreteFunctionWithBodyLongId::Generated(generated) => {
+                write!(f, "{:?}", generated.debug(db))
+            }
             ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
-                specialized.long(db).full_path(db)
+                write!(f, "{:?}", specialized.debug(db))
             }
         }
     }
@@ -202,13 +215,38 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn full_path(&self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        match self.generic_or_specialized(db) {
-            GenericOrSpecialized::Generic(id) => {
-                let generic_signature = id.signature(db)?;
-                self.substitution(db)?.substitute(db, generic_signature)
+    /// A name of bounded size, consistent across builds unlike the id: distinct functions have
+    /// distinct key names.
+    pub fn key_name(&self, db: &'db dyn Database) -> String {
+        match self.long(db) {
+            ConcreteFunctionWithBodyLongId::Semantic(semantic) => semantic.key_name(db),
+            ConcreteFunctionWithBodyLongId::Generated(generated) => {
+                generated.name_under(db, &generated.parent.key_name(db), |trait_id| {
+                    trait_id.key_path(db)
+                })
             }
-            GenericOrSpecialized::Specialized(specialized) => specialized.long(db).signature(db),
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
+                specialized.long(db).key_name(db)
+            }
+        }
+    }
+    /// Returns the signature of the function as it is at the given [`LoweringStage`].
+    pub fn signature(
+        &self,
+        db: &'db dyn Database,
+        stage: LoweringStage,
+    ) -> Maybe<&'db Signature<'db>> {
+        if stage != LoweringStage::Monomorphized {
+            return Ok(&db.lowered_body(*self, stage)?.signature);
+        }
+        // The `Monomorphized` signature is derived from the semantic one, to prevent cycles.
+        monomorphized_signature(db, *self).maybe_as_ref()
+    }
+    /// Returns the generic function if `self` is not a specialized function.
+    pub fn generic(&self, db: &'db dyn Database) -> Option<FunctionWithBodyId<'db>> {
+        match self.generic_or_specialized(db) {
+            GenericOrSpecialized::Generic(id) => Some(id),
+            GenericOrSpecialized::Specialized(_) => None,
         }
     }
     pub fn from_no_generics_free(
@@ -239,8 +277,71 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     }
 }
 
+/// The `Monomorphized` signature of a concrete function: for a generic function, the generic
+/// signature with the function's substitution applied; for a specialized function, computed from
+/// its base signature and specialization args.
+#[salsa::tracked(returns(ref))]
+fn monomorphized_signature<'db>(
+    db: &'db dyn Database,
+    function: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<Signature<'db>> {
+    match function.generic_or_specialized(db) {
+        GenericOrSpecialized::Generic(id) => {
+            let generic_signature = id.signature(db)?.clone();
+            function.substitution(db)?.substitute(db, generic_signature)
+        }
+        GenericOrSpecialized::Specialized(specialized) => {
+            let function = specialized.long(db);
+            let mut base_sign = function.base.signature(db, LoweringStage::Monomorphized)?.clone();
+
+            let mut params = vec![];
+            let mut stack: Vec<_> =
+                zip_eq(base_sign.params.into_iter().rev(), function.args.iter().rev()).collect();
+
+            while let Some((param_ty, arg)) = stack.pop() {
+                match arg {
+                    SpecializationArg::Const { .. } => {}
+                    SpecializationArg::Snapshot(inner) => {
+                        let desnap_ty = *extract_matches!(param_ty.long(db), TypeLongId::Snapshot);
+                        stack.push((desnap_ty, inner.as_ref()));
+                    }
+                    SpecializationArg::Enum { variant, payload } => {
+                        stack.push((variant.ty, payload.as_ref()));
+                    }
+                    SpecializationArg::Array(ty, values) => {
+                        stack.extend(repeat(*ty).zip(values.iter().rev()));
+                    }
+                    SpecializationArg::Struct(args) => match param_ty.long(db) {
+                        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
+                            let Ok(members) = db.concrete_struct_members(*concrete_struct) else {
+                                continue;
+                            };
+                            let tys = members.values().map(|m| m.ty);
+                            stack.extend(zip_eq(tys.rev(), args.iter().rev()));
+                        }
+                        TypeLongId::Tuple(tys) => {
+                            stack.extend(zip_eq(tys.iter().rev().copied(), args.iter().rev()));
+                        }
+                        TypeLongId::FixedSizeArray { type_id, .. } => {
+                            stack.extend(repeat(*type_id).zip(args.iter().rev()));
+                        }
+                        _ => unreachable!("Expected a struct, tuple, or fixed-size array type"),
+                    },
+                    SpecializationArg::NotSpecialized => {
+                        params.push(param_ty);
+                    }
+                }
+            }
+
+            base_sign.params = params;
+
+            Ok(base_sign)
+        }
+    }
+}
+
 /// Function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum FunctionLongId<'db> {
     /// An original function from the user code.
     Semantic(semantic::FunctionId<'db>),
@@ -297,15 +398,21 @@ impl<'db> FunctionLongId<'db> {
             }
         }))
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        match self {
-            FunctionLongId::Semantic(semantic) => Ok(EnrichedSemanticSignature::from_semantic(
-                db,
-                db.concrete_function_signature(*semantic)?,
-            )
-            .into()),
-            FunctionLongId::Generated(generated) => generated.body(db).signature(db),
-            FunctionLongId::Specialized(specialized) => specialized.long(db).signature(db),
+    /// Returns the signature of the function as it is at the given [`LoweringStage`].
+    pub fn signature(
+        &self,
+        db: &'db dyn Database,
+        stage: LoweringStage,
+    ) -> Maybe<&'db Signature<'db>> {
+        if let Some(body) = self.body(db)? {
+            body.signature(db, stage)
+        } else if let FunctionLongId::Semantic(semantic) = self {
+            semantic_function_signature(db, *semantic).maybe_as_ref()
+        } else {
+            unreachable!(
+                "Generated and specialized functions always have a body: {}",
+                self.full_path(db)
+            );
         }
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
@@ -322,12 +429,27 @@ impl<'db> FunctionLongId<'db> {
         }
     }
 }
+
+/// The stage-invariant signature of a bodyless (e.g. `extern`) semantic function, converted to
+/// the lowered [`Signature`] representation.
+#[salsa::tracked(returns(ref))]
+fn semantic_function_signature<'db>(
+    db: &'db dyn Database,
+    function: semantic::FunctionId<'db>,
+) -> Maybe<Signature<'db>> {
+    Ok(EnrichedSemanticSignature::from_semantic(db, db.concrete_function_signature(function)?)
+        .into())
+}
 impl<'db> FunctionId<'db> {
     pub fn body(&self, db: &'db dyn Database) -> Maybe<Option<ConcreteFunctionWithBodyId<'db>>> {
         self.long(db).body(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        self.long(db).signature(db)
+    pub fn signature(
+        &self,
+        db: &'db dyn Database,
+        stage: LoweringStage,
+    ) -> Maybe<&'db Signature<'db>> {
+        self.long(db).signature(db, stage)
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
@@ -378,7 +500,7 @@ impl<'a> DebugWithDb<'a> for FunctionLongId<'a> {
 }
 
 /// A key for generated functions.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, HeapSize, salsa::SalsaValue)]
 pub enum GeneratedFunctionKey<'db> {
     /// Generated loop functions are identified by the loop's AST pointer (ExprPtr).
     Loop(ExprPtr<'db>),
@@ -386,7 +508,7 @@ pub enum GeneratedFunctionKey<'db> {
 }
 
 /// Generated function.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub struct GeneratedFunction<'db> {
     pub parent: semantic::ConcreteFunctionWithBodyId<'db>,
     pub key: GeneratedFunctionKey<'db>,
@@ -400,40 +522,34 @@ impl<'db> GeneratedFunction<'db> {
         format!("{:?}", self.debug(db))
     }
 }
-impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
-    type Db = dyn Database;
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
+impl<'a> GeneratedFunction<'a> {
+    /// The function's name under the given name of its parent, with traits named by `trait_path`.
+    fn name_under(
+        &self,
+        db: &'a dyn Database,
+        parent: &str,
+        trait_path: impl FnOnce(TraitId<'a>) -> String,
+    ) -> String {
         match self.key {
             GeneratedFunctionKey::Loop(expr_ptr) => {
-                let mut func_ptr = expr_ptr.untyped();
-                while !matches!(
-                    func_ptr.kind(db),
-                    SyntaxKind::FunctionWithBody | SyntaxKind::TraitItemFunction
-                ) {
-                    func_ptr = func_ptr.parent(db)
-                }
-
-                let span = expr_ptr.0.lookup(db).span(db);
-                let function_start = func_ptr.lookup(db).span(db).start.as_u32();
-                write!(
-                    f,
-                    "{:?}[{}-{}]",
-                    self.parent.debug(db),
-                    span.start.as_u32() - function_start,
-                    span.end.as_u32() - function_start
-                )
+                format!("{parent}::{}", generated_function_path(db, expr_ptr.0.lookup(db)))
             }
             GeneratedFunctionKey::TraitFunc(trait_func, loc) => {
-                let trait_id = trait_func.trait_id(db);
-                write!(
-                    f,
-                    "Generated `{}::{}` for {{closure@{:?}}}",
-                    trait_id.full_path(db),
+                format!(
+                    "Generated `{}::{}` for {parent}::{}",
+                    trait_path(trait_func.trait_id(db)),
                     trait_func.name(db).long(db),
-                    loc.debug(db),
+                    generated_function_path(db, loc.syntax_node(db)),
                 )
             }
         }
+    }
+}
+impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
+    type Db = dyn Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
+        let parent = format!("{:?}", self.parent.debug(db));
+        write!(f, "{}", self.name_under(db, &parent, |trait_id| trait_id.full_path(db)))
     }
 }
 
@@ -444,7 +560,7 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
 /// than the original one.
 ///
 /// Specialized functions are identified by the base function and the arguments.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub struct SpecializedFunction<'db> {
     /// The base function.
     pub base: crate::ids::ConcreteFunctionWithBodyId<'db>,
@@ -457,69 +573,13 @@ impl<'db> SpecializedFunction<'db> {
     pub fn full_path(&self, db: &dyn Database) -> String {
         format!("{:?}", self.debug(db))
     }
+}
 
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        let mut base_sign = self.base.signature(db)?;
-
-        let mut params = vec![];
-        let mut stack = vec![];
-        for (param, arg) in zip_eq(base_sign.params.iter().rev(), self.args.iter().rev()) {
-            stack.push((param.clone(), arg));
-        }
-
-        while let Some((param, arg)) = stack.pop() {
-            match arg {
-                SpecializationArg::Const { .. } => {}
-                SpecializationArg::Snapshot(inner) => {
-                    let desnap_ty = *extract_matches!(param.ty.long(db), TypeLongId::Snapshot);
-                    stack.push((
-                        LoweredParam { ty: desnap_ty, stable_ptr: param.stable_ptr },
-                        inner.as_ref(),
-                    ));
-                }
-                SpecializationArg::Enum { variant, payload } => {
-                    let lowered_param =
-                        LoweredParam { ty: variant.ty, stable_ptr: param.stable_ptr };
-                    stack.push((lowered_param, payload.as_ref()));
-                }
-                SpecializationArg::Array(ty, values) => {
-                    for arg in values.iter().rev() {
-                        let lowered_param = LoweredParam { ty: *ty, stable_ptr: param.stable_ptr };
-                        stack.push((lowered_param, arg));
-                    }
-                }
-                SpecializationArg::Struct(specialization_args) => {
-                    // Get element types based on the actual type.
-                    let element_types: Vec<TypeId<'db>> = match param.ty.long(db) {
-                        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
-                            let Ok(members) = db.concrete_struct_members(*concrete_struct) else {
-                                continue;
-                            };
-                            members.values().map(|member| member.ty).collect()
-                        }
-                        TypeLongId::Tuple(element_types) => element_types.clone(),
-                        TypeLongId::FixedSizeArray { type_id, .. } => {
-                            vec![*type_id; specialization_args.len()]
-                        }
-                        _ => unreachable!("Expected a struct, tuple, or fixed-size array type"),
-                    };
-                    for (elem_ty, arg) in
-                        zip_eq(element_types.iter().rev(), specialization_args.iter().rev())
-                    {
-                        let lowered_param =
-                            LoweredParam { ty: *elem_ty, stable_ptr: param.stable_ptr };
-                        stack.push((lowered_param, arg));
-                    }
-                }
-                SpecializationArg::NotSpecialized => {
-                    params.push(param.clone());
-                }
-            }
-        }
-
-        base_sign.params = params;
-
-        Ok(base_sign)
+impl<'a> SpecializedFunction<'a> {
+    /// The base's key name, then a hash of the args' key names.
+    fn key_name(&self, db: &'a dyn Database) -> String {
+        let hash = names_hash(|names| self.args.iter().for_each(|arg| names.add(arg.key_name(db))));
+        format!("{}{{{hash}}}", self.base.key_name(db))
     }
 }
 impl<'a> DebugWithDb<'a> for SpecializedFunction<'a> {
@@ -534,7 +594,7 @@ impl<'a> DebugWithDb<'a> for SpecializedFunction<'a> {
 }
 
 /// Signature for lowering a function.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct EnrichedSemanticSignature<'db> {
     /// Input params.
@@ -591,28 +651,21 @@ impl<'db> EnrichedSemanticSignature<'db> {
 }
 semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, EnrichedSemanticSignature<'a>);
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::Update)]
-#[debug_db(dyn Database)]
-/// Represents a parameter of a lowered function.
-pub struct LoweredParam<'db> {
-    pub ty: semantic::TypeId<'db>,
-    #[dont_rewrite]
-    pub stable_ptr: ast::ExprPtr<'db>,
-}
-semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, LoweredParam<'a>);
-
 /// Lowered signature of a function.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Signature<'db> {
-    /// Input params.
-    pub params: Vec<LoweredParam<'db>>, // Vec<semantic::ExprVarMemberPath<'db>>,
-    /// Extra returns - e.g. ref params.
-    pub extra_rets: Vec<semantic::ExprVarMemberPath<'db>>,
+    /// Types of the input params.
+    pub params: Vec<semantic::TypeId<'db>>,
+    /// Types of the extra returns, returned before `return_type` - e.g. ref params.
+    pub extra_rets: Vec<semantic::TypeId<'db>>,
     /// Return type.
     pub return_type: semantic::TypeId<'db>,
-    /// Explicit implicit requirements.
-    pub implicits: Vec<semantic::TypeId<'db>>,
+    /// The implicit requirements declared in the function's signature.
+    ///
+    /// Only meaningful before `LowerImplicits` ran - from `LoweringStage::Final` on the implicits
+    /// appear explicitly in `params` and `extra_rets`, and this is empty.
+    pub declared_implicits: Vec<semantic::TypeId<'db>>,
     /// Panicable.
     #[dont_rewrite]
     pub panicable: bool,
@@ -626,14 +679,10 @@ semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, 
 impl<'db> From<EnrichedSemanticSignature<'db>> for Signature<'db> {
     fn from(signature: EnrichedSemanticSignature<'db>) -> Self {
         Signature {
-            params: signature
-                .params
-                .iter()
-                .map(|param| LoweredParam { ty: param.ty(), stable_ptr: param.stable_ptr() })
-                .collect(),
-            extra_rets: signature.extra_rets,
+            params: signature.params.iter().map(|param| param.ty()).collect(),
+            extra_rets: signature.extra_rets.iter().map(|param| param.ty()).collect(),
             return_type: signature.return_type,
-            implicits: signature.implicits,
+            declared_implicits: signature.implicits,
             panicable: signature.panicable,
             location: signature.location,
         }

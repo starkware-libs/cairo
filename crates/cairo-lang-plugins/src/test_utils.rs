@@ -69,7 +69,7 @@ pub fn expand_module_text<'db>(
     output
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 struct TestDiagnosticEntry<'a>(pub PluginDiagnostic<'a>);
 impl<'a> DiagnosticEntry<'a> for TestDiagnosticEntry<'a> {
     fn format(&self, _db: &dyn Database) -> String {

@@ -25,16 +25,16 @@
 //! [`Mul`]: crate::traits::Mul
 //! [`Div`]: crate::traits::Div
 //! [`Rem`]: crate::traits::Rem
-//! [`DivRem`]: crate::traits::DivRem
-//! [`CheckedAdd`]: crate::num::traits::ops::checked::CheckedAdd
-//! [`CheckedSub`]: crate::num::traits::ops::checked::CheckedSub
-//! [`CheckedMul`]: crate::num::traits::ops::checked::CheckedMul
-//! [`WrappingAdd`]: crate::num::traits::ops::wrapping::WrappingAdd
-//! [`WrappingSub`]: crate::num::traits::ops::wrapping::WrappingSub
-//! [`WrappingMul`]: crate::num::traits::ops::wrapping::WrappingMul
-//! [`OverflowingAdd`]: crate::num::traits::ops::overflowing::OverflowingAdd
-//! [`OverflowingSub`]: crate::num::traits::ops::overflowing::OverflowingSub
-//! [`OverflowingMul`]: crate::num::traits::ops::overflowing::OverflowingMul
+//! [`DivRem`]: crate::num::traits::DivRem
+//! [`CheckedAdd`]: crate::num::traits::CheckedAdd
+//! [`CheckedSub`]: crate::num::traits::CheckedSub
+//! [`CheckedMul`]: crate::num::traits::CheckedMul
+//! [`WrappingAdd`]: crate::num::traits::WrappingAdd
+//! [`WrappingSub`]: crate::num::traits::WrappingSub
+//! [`WrappingMul`]: crate::num::traits::WrappingMul
+//! [`OverflowingAdd`]: crate::num::traits::OverflowingAdd
+//! [`OverflowingSub`]: crate::num::traits::OverflowingSub
+//! [`OverflowingMul`]: crate::num::traits::OverflowingMul
 //!
 //! # Examples
 //!
@@ -68,8 +68,9 @@
 use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
+use crate::internal::OptionRev;
 #[feature("bounded-int-utils")]
-use crate::internal::bounded_int::{downcast, upcast};
+use crate::internal::bounded_int::{self, downcast, upcast};
 use crate::option::OptionTrait;
 use crate::result::ResultTrait;
 use crate::traits::{BitAnd, BitNot, BitOr, BitXor, Default, Felt252DictValue, Into, TryInto};
@@ -102,7 +103,6 @@ extern const fn u128s_from_felt252(
     a: felt252,
 ) -> U128sFromFelt252Result implicits(RangeCheck) nopanic;
 
-#[panic_with('u128_from Overflow', u128_from_felt252)]
 const fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128s_from_felt252(a) {
         U128sFromFelt252Result::Narrow(x) => Some(x),
@@ -195,7 +195,6 @@ impl U128Add of Add<u128> {
     }
 }
 
-#[panic_with('u128_sub Overflow', u128_sub)]
 fn u128_checked_sub(lhs: u128, rhs: u128) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128_overflowing_sub(lhs, rhs) {
         Ok(r) => Some(r),
@@ -223,7 +222,6 @@ impl U128Mul of Mul<u128> {
     }
 }
 
-#[panic_with('u128 is 0', u128_as_non_zero)]
 const fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
     match u128_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -316,7 +314,6 @@ impl NumericLiteralu8 of NumericLiteral<u8>;
 
 extern const fn u8_to_felt252(a: u8) -> felt252 nopanic;
 
-#[panic_with('u8_from Overflow', u8_from_felt252)]
 extern const fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) nopanic;
 
 extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
@@ -410,7 +407,6 @@ extern const fn u8_is_zero(a: u8) -> IsZeroResult<u8> implicits() nopanic;
 
 pub extern fn u8_safe_divmod(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
-#[panic_with('u8 is 0', u8_as_non_zero)]
 const fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
     match u8_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -472,7 +468,6 @@ impl NumericLiteralu16 of NumericLiteral<u16>;
 
 extern const fn u16_to_felt252(a: u16) -> felt252 nopanic;
 
-#[panic_with('u16_from Overflow', u16_from_felt252)]
 extern const fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) nopanic;
 
 extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
@@ -572,7 +567,6 @@ pub extern fn u16_safe_divmod(
     lhs: u16, rhs: NonZero<u16>,
 ) -> (u16, u16) implicits(RangeCheck) nopanic;
 
-#[panic_with('u16 is 0', u16_as_non_zero)]
 const fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
     match u16_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -634,7 +628,6 @@ impl NumericLiteralu32 of NumericLiteral<u32>;
 
 extern const fn u32_to_felt252(a: u32) -> felt252 nopanic;
 
-#[panic_with('u32_from Overflow', u32_from_felt252)]
 extern const fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) nopanic;
 
 extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
@@ -734,7 +727,6 @@ pub extern fn u32_safe_divmod(
     lhs: u32, rhs: NonZero<u32>,
 ) -> (u32, u32) implicits(RangeCheck) nopanic;
 
-#[panic_with('u32 is 0', u32_as_non_zero)]
 const fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
     match u32_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -796,7 +788,6 @@ impl NumericLiteralu64 of NumericLiteral<u64>;
 
 extern const fn u64_to_felt252(a: u64) -> felt252 nopanic;
 
-#[panic_with('u64_from Overflow', u64_from_felt252)]
 extern const fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) nopanic;
 
 extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
@@ -896,7 +887,6 @@ pub extern fn u64_safe_divmod(
     lhs: u64, rhs: NonZero<u64>,
 ) -> (u64, u64) implicits(RangeCheck) nopanic;
 
-#[panic_with('u64 is 0', u64_as_non_zero)]
 const fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
     match u64_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -1049,7 +1039,6 @@ impl U256Add of Add<u256> {
     }
 }
 
-#[panic_with('u256_sub Overflow', u256_sub)]
 fn u256_checked_sub(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflowing_sub(lhs, rhs);
     if overflow {
@@ -1138,7 +1127,6 @@ fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(Ra
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 
-#[panic_with('u256 is 0', u256_as_non_zero)]
 const fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
     match u256_is_zero(a) {
         IsZeroResult::Zero => None,
@@ -1210,10 +1198,9 @@ pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
 
 /// Helper function for implementation of `u256_wide_mul`.
 /// Used for adding two u128s and receiving a BoundedInt for the carry result.
-#[feature("bounded-int-utils")]
 pub(crate) fn u128_add_with_bounded_int_carry(
     a: u128, b: u128,
-) -> (u128, crate::internal::bounded_int::BoundedInt<0, 1>) nopanic {
+) -> (u128, bounded_int::BoundedInt<0, 1>) nopanic {
     match u128_overflowing_add(a, b) {
         Ok(v) => (v, 0),
         Err(v) => (v, 1),
@@ -1981,16 +1968,15 @@ impl I8Sub of Sub<i8> {
 
 impl I8Neg of Neg<i8> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i8) -> i8 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i8_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i8_neg Underflow'),
+        }
     }
 }
 
-#[deprecated(feature: "corelib-internal-use", note: "Use `crate::num::traits::WideMul` instead")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
 impl I8Mul of Mul<i8> {
     fn mul(lhs: i8, rhs: i8) -> i8 {
@@ -2071,16 +2057,15 @@ impl I16Sub of Sub<i16> {
 
 impl I16Neg of Neg<i16> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i16) -> i16 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i16_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i16_neg Underflow'),
+        }
     }
 }
 
-#[deprecated(feature: "corelib-internal-use", note: "Use `crate::num::traits::WideMul` instead")]
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
 
 impl I16Mul of Mul<i16> {
@@ -2162,12 +2147,11 @@ impl I32Sub of Sub<i32> {
 
 impl I32Neg of Neg<i32> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i32) -> i32 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i32_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i32_neg Underflow'),
+        }
     }
 }
 
@@ -2253,12 +2237,11 @@ impl I64Sub of Sub<i64> {
 
 impl I64Neg of Neg<i64> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i64) -> i64 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i64_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i64_neg Underflow'),
+        }
     }
 }
 
@@ -2349,30 +2332,40 @@ impl I128Sub of Sub<i128> {
 
 impl I128Neg of Neg<i128> {
     #[inline]
-    #[feature("bounded-int-utils")]
     fn neg(a: i128) -> i128 {
-        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
-            crate::panic_with_felt252('i128_neg Underflow');
-        };
-        upcast(core::internal::bounded_int::NegateHelper::negate(a))
+        match bounded_int::trim_min(a) {
+            OptionRev::Some(a) => upcast(bounded_int::NegateHelper::negate(a)),
+            OptionRev::None => crate::panic_with_felt252('i128_neg Underflow'),
+        }
     }
 }
 
 impl I128Mul of Mul<i128> {
     fn mul(lhs: i128, rhs: i128) -> i128 {
         let (lhs_u127, lhs_neg) = lhs.abs_and_sign();
-        #[feature("bounded-int-utils")]
-        let (rhs_u127, res_neg) = match core::internal::bounded_int::constrain::<i128, 0>(rhs) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), !lhs_neg),
+        let (rhs_u127, res_neg) = match bounded_int::constrain::<i128, 0>(rhs) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), !lhs_neg),
             Err(ge0) => (upcast(ge0), lhs_neg),
         };
-        let res_as_u128 = lhs_u127 * rhs_u127;
-        let res_as_felt252: felt252 = if res_neg {
-            -res_as_u128.into()
+        let (res_high, res_as_u128) = u128_wide_mul(lhs_u127, rhs_u127);
+        if res_high != 0 {
+            crate::panic_with_felt252('i128_mul Overflow');
+        }
+        if res_neg {
+            match downcast::<
+                _, bounded_int::BoundedInt<0, 0x80000000000000000000000000000000>,
+            >(res_as_u128) {
+                Some(magnitude) => upcast(bounded_int::NegateHelper::negate(magnitude)),
+                None => crate::panic_with_felt252('i128_mul Overflow'),
+            }
         } else {
-            res_as_u128.into()
-        };
-        res_as_felt252.try_into().expect('i128_mul Overflow')
+            match downcast::<
+                _, bounded_int::BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>,
+            >(res_as_u128) {
+                Some(magnitude) => upcast(magnitude),
+                None => crate::panic_with_felt252('i128_mul Overflow'),
+            }
+        }
     }
 }
 
@@ -2634,6 +2627,24 @@ mod op_eq_by_op {
     }
 }
 
+/// Non-deprecated `*Assign` analog of `op_eq_by_op`: derives an assignment operator from the
+/// corresponding binary operator.
+mod op_assign_by_op {
+    use crate::ops::{DivAssign, RemAssign};
+
+    pub impl DivAssignImpl<T, +Div<T>> of DivAssign<T, T> {
+        fn div_assign(ref self: T, rhs: T) {
+            self = Div::div(self, rhs);
+        }
+    }
+
+    pub impl RemAssignImpl<T, +Rem<T>> of RemAssign<T, T> {
+        fn rem_assign(ref self: T, rhs: T) {
+            self = Rem::rem(self, rhs);
+        }
+    }
+}
+
 impl I8AddEq = op_eq_by_op::AddEqImpl<i8>;
 impl I8SubEq = op_eq_by_op::SubEqImpl<i8>;
 impl I8MulEq = op_eq_by_op::MulEqImpl<i8>;
@@ -2647,12 +2658,18 @@ impl I16RemEq = op_eq_by_op::RemEqImpl<i16>;
 impl I32AddEq = op_eq_by_op::AddEqImpl<i32>;
 impl I32SubEq = op_eq_by_op::SubEqImpl<i32>;
 impl I32MulEq = op_eq_by_op::MulEqImpl<i32>;
+impl I32DivAssign = op_assign_by_op::DivAssignImpl<i32>;
+impl I32RemAssign = op_assign_by_op::RemAssignImpl<i32>;
 impl I64AddEq = op_eq_by_op::AddEqImpl<i64>;
 impl I64SubEq = op_eq_by_op::SubEqImpl<i64>;
 impl I64MulEq = op_eq_by_op::MulEqImpl<i64>;
+impl I64DivAssign = op_assign_by_op::DivAssignImpl<i64>;
+impl I64RemAssign = op_assign_by_op::RemAssignImpl<i64>;
 impl I128AddEq = op_eq_by_op::AddEqImpl<i128>;
 impl I128SubEq = op_eq_by_op::SubEqImpl<i128>;
 impl I128MulEq = op_eq_by_op::MulEqImpl<i128>;
+impl I128DivAssign = op_assign_by_op::DivAssignImpl<i128>;
+impl I128RemAssign = op_assign_by_op::RemAssignImpl<i128>;
 impl U8AddEq = op_eq_by_op::AddEqImpl<u8>;
 impl U8SubEq = op_eq_by_op::SubEqImpl<u8>;
 impl U8MulEq = op_eq_by_op::MulEqImpl<u8>;
@@ -3360,50 +3377,45 @@ pub(crate) trait AbsAndSign<Signed, Unsigned> {
 }
 
 impl I8ToU8 of AbsAndSign<i8, u8> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i8) -> (u8, bool) {
-        match core::internal::bounded_int::constrain::<i8, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i8, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I16ToU16 of AbsAndSign<i16, u16> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i16) -> (u16, bool) {
-        match core::internal::bounded_int::constrain::<i16, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i16, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I32ToU32 of AbsAndSign<i32, u32> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i32) -> (u32, bool) {
-        match core::internal::bounded_int::constrain::<i32, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i32, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I64ToU64 of AbsAndSign<i64, u64> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i64) -> (u64, bool) {
-        match core::internal::bounded_int::constrain::<i64, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i64, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I128ToU128 of AbsAndSign<i128, u128> {
-    #[feature("bounded-int-utils")]
     fn abs_and_sign(self: i128) -> (u128, bool) {
-        match core::internal::bounded_int::constrain::<i128, 0>(self) {
-            Ok(lt0) => (upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true),
+        match bounded_int::constrain::<i128, 0>(self) {
+            Ok(lt0) => (upcast(bounded_int::NegateHelper::negate(lt0)), true),
             Err(ge0) => (upcast(ge0), false),
         }
     }

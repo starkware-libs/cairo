@@ -8,7 +8,9 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, SmolStrId, Tracked};
-use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES};
+use cairo_lang_syntax::attribute::consts::{
+    DEPRECATED_ATTR, EXTERN_OUTSIDE_CORELIB, UNUSED_IMPORTS, UNUSED_VARIABLES,
+};
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -163,13 +165,13 @@ pub fn init_semantic_group(db: &mut dyn Database) {
     semantic_group_input(db).set_analyzer_plugin_overrides(db).to(Some(OrderedHashMap::default()));
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn default_analyzer_plugins(db: &dyn Database) -> Arc<Vec<AnalyzerPluginId<'_>>> {
     let inp = db.default_analyzer_plugins_input();
     Arc::new(inp.iter().map(|plugin| plugin.clone().intern(db)).collect_vec())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn analyzer_plugin_overrides(
     db: &dyn Database,
 ) -> Arc<OrderedHashMap<CrateId<'_>, Arc<Vec<AnalyzerPluginId<'_>>>>> {
@@ -186,7 +188,7 @@ fn analyzer_plugin_overrides(
     )
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn module_semantic_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -303,7 +305,15 @@ fn module_semantic_diagnostics<'db>(
         let analyzer_plugin = analyzer_plugin_id.long(db);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
-            diagnostics.report(diag.stable_ptr, SemanticDiagnosticKind::PluginDiagnostic(diag));
+            match diag.inner_span {
+                None => diagnostics
+                    .report(diag.stable_ptr, SemanticDiagnosticKind::PluginDiagnostic(diag)),
+                Some(inner_span) => diagnostics.report_with_inner_span(
+                    diag.stable_ptr,
+                    inner_span,
+                    SemanticDiagnosticKind::PluginDiagnostic(diag),
+                ),
+            };
         }
     }
 
@@ -347,9 +357,9 @@ fn crate_analyzer_plugins<'db>(
         .unwrap_or_else(|| db.default_analyzer_plugins())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn declared_allows(db: &dyn Database, crate_id: CrateId<'_>) -> Arc<OrderedHashSet<String>> {
-    let base_lints = [DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES];
+    let base_lints = [DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES, EXTERN_OUTSIDE_CORELIB];
 
     let crate_analyzer_plugins = db.crate_analyzer_plugins(crate_id);
 
@@ -413,7 +423,7 @@ fn add_unused_import_diagnostics<'db>(
         })();
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn file_semantic_diagnostics<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
@@ -427,7 +437,7 @@ fn file_semantic_diagnostics<'db>(
     Ok(diagnostics.build())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn lookup_resolved_generic_item_by_ptr<'db>(
     db: &'db dyn Database,
     id: LookupItemId<'db>,
@@ -438,7 +448,7 @@ pub fn lookup_resolved_generic_item_by_ptr<'db>(
         .find_map(|resolver_data| resolver_data.resolved_items.generic.get(&ptr).cloned())
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn lookup_resolved_concrete_item_by_ptr<'db>(
     db: &'db dyn Database,
     id: LookupItemId<'db>,
@@ -645,7 +655,7 @@ pub fn module_fully_accessible_modules<'db>(
 }
 
 /// Cache for the semantic data of a crate.
-#[derive(PartialEq, Eq, Clone, salsa::Update)]
+#[derive(PartialEq, Eq, Clone, salsa::SalsaValue)]
 pub struct ModuleSemanticDataCacheAndLoadingData<'db> {
     /// Semantic data of the modules in the crate.
     pub modules_semantic_data: Arc<OrderedHashMap<ModuleId<'db>, ModuleSemanticData<'db>>>,
@@ -655,7 +665,7 @@ pub struct ModuleSemanticDataCacheAndLoadingData<'db> {
     pub loading_data: Arc<SemanticCacheLoadingData<'db>>,
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn cached_crate_semantic_data<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,

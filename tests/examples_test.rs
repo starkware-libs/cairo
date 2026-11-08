@@ -105,6 +105,7 @@ fn checked_compile_to_sierra(
 #[case::hash_chain_gas("hash_chain_gas")]
 #[case::pedersen_test("pedersen_test")]
 #[case::match_or("match_or")]
+#[case::trim_unused_params("trim_unused_params")]
 fn cairo_to_sierra(#[case] name: &str, example_dir_data: &ExampleDirData) {
     compare_contents_or_fix(
         name,
@@ -143,6 +144,7 @@ fn cairo_to_sierra_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirDat
 #[case::hash_chain_gas("hash_chain_gas", true)]
 #[case::pedersen_test("pedersen_test", false)]
 #[case::match_or("match_or", false)]
+#[case::trim_unused_params("trim_unused_params", false)]
 fn cairo_to_casm(
     #[case] name: &str,
     #[case] gas_usage_check: bool,
@@ -289,6 +291,11 @@ fn run_function(
     &[3].map(Felt252::from), Some(100000), Some(10480 + 3 * token_gas_cost(CostTokenType::Pedersen)),
     RunResultValue::Success(vec![Felt252::from_hex_unchecked(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
+#[case::trim_unused_params(
+    "trim_unused_params",
+    &[5].map(Felt252::from), None, None,
+    RunResultValue::Success(vec![Felt252::from(17)])
+)]
 fn run_function_test(
     #[case] name: &str,
     #[case] params: &[Felt252],

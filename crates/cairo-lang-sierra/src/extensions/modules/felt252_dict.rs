@@ -13,6 +13,7 @@ use crate::extensions::lib_func::{
     SignatureAndTypeGenericLibfunc, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
     WrapSignatureAndTypeGenericLibfunc,
 };
+use crate::extensions::structure::StructType;
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
@@ -26,7 +27,7 @@ use crate::program::{ConcreteTypeLongId, GenericArg};
 /// Type representing a dictionary from a felt252 to types of size one.
 ///
 /// This is currently only bounded for all numeric types, Nullable, and Enum types with 2 or less
-/// variants, as these are the types that has proper default as 0, and therefore can be properly
+/// variants, as these are the types that have proper default as 0, and therefore can be properly
 /// used as a value in the dictionary.
 #[derive(Default)]
 pub struct Felt252DictTypeWrapped {}
@@ -69,21 +70,17 @@ fn specialize_with_dict_value_param(
         id if *id == Uint128Type::id() => generic_args.is_empty(),
         id if *id == NullableType::id() => generic_args.len() == 1,
         id if *id == EnumType::id() => {
-            // Checking the enum type is valid.
-            !generic_args.is_empty()
-            // Zero is not a valid value for enums with 3 or more variants, so they cannot be
-            // used in a dict (whose default value is zero).
-            // (the additional argument is the user type).
-            && generic_args.len() <= 3
-                // All contained types must be 0-sized, so the total size will be exactly 1.
+            // Only `bool`-like enums are allowed: exactly 2 variants (plus the user type
+            // argument), both unit structs, so the enum is exactly 1 cell and zero is a valid
+            // value (the dict default).
+            generic_args.len() == 3
                 && generic_args.iter().skip(1).all(|arg| {
-                    let GenericArg::Type(ty) = arg else {
-                        return false;
-                    };
-                    let Ok(info) = context.get_type_info(ty) else {
-                        return false;
-                    };
-                    info.zero_sized
+                    let GenericArg::Type(ty) = arg else { return false };
+                    context.get_type_info(ty).is_ok_and(|info| {
+                        info.zero_sized
+                            && info.long_id.generic_id == StructType::id()
+                            && info.long_id.generic_args.len() == 1
+                    })
                 })
         }
         _ => false,

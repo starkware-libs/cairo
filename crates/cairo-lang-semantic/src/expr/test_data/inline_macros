@@ -3,13 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const a: felt252 = consteval_int!(func_call(24));
 
 const b: felt252 = consteval_int!('some string');
@@ -104,19 +98,134 @@ const out_of_range: u8 = consteval_int!(120 + 160);
 
 //! > ==========================================================================
 
+//! > Test consteval_int! division/modulo by zero
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+const div_lit: felt252 = consteval_int!(1 / 0);
+
+const mod_lit: felt252 = consteval_int!(1 % 0);
+
+const div_computed: felt252 = consteval_int!(5 / (3 - 3));
+
+const mod_computed: felt252 = consteval_int!(5 % (7 * 0));
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:26
+const div_lit: felt252 = consteval_int!(1 / 0);
+                         ^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Division by zero in consteval_int macro
+ --> lib.cairo:1:41
+const div_lit: felt252 = consteval_int!(1 / 0);
+                                        ^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:3:26
+const mod_lit: felt252 = consteval_int!(1 % 0);
+                         ^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Modulo by zero in consteval_int macro
+ --> lib.cairo:3:41
+const mod_lit: felt252 = consteval_int!(1 % 0);
+                                        ^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:5:31
+const div_computed: felt252 = consteval_int!(5 / (3 - 3));
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Division by zero in consteval_int macro
+ --> lib.cairo:5:46
+const div_computed: felt252 = consteval_int!(5 / (3 - 3));
+                                             ^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:7:31
+const mod_computed: felt252 = consteval_int!(5 % (7 * 0));
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Modulo by zero in consteval_int macro
+ --> lib.cairo:7:46
+const mod_computed: felt252 = consteval_int!(5 % (7 * 0));
+                                             ^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int! division/modulo with non-zero divisor (happy path)
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+const div_ok: felt252 = consteval_int!(10 / 2);
+
+const mod_ok: felt252 = consteval_int!(10 % 3);
+
+const div_negative: felt252 = consteval_int!(-7 / 2);
+
+const mod_negative: felt252 = consteval_int!(-7 % 3);
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:25
+const div_ok: felt252 = consteval_int!(10 / 2);
+                        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:3:25
+const mod_ok: felt252 = consteval_int!(10 % 3);
+                        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:5:31
+const div_negative: felt252 = consteval_int!(-7 / 2);
+                              ^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:7:31
+const mod_negative: felt252 = consteval_int!(-7 % 3);
+                              ^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int! remapped diagnostic span skips leading trivia
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() -> u8 {
+    // A comment before the macro.
+    consteval_int!(120 + 160)
+}
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:3:5
+    consteval_int!(120 + 160)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2008]: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:3:5
+    consteval_int!(120 + 160)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test bad array! macros
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x = array!(0);
     let _x = array![0_felt252, 1_u8];
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2200]: Plugin diagnostic: Macro `array` does not support this bracket type.
@@ -124,7 +233,7 @@ error[E2200]: Plugin diagnostic: Macro `array` does not support this bracket typ
     let _x = array!(0);
                    ^
 
-error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "u8".
  --> lib.cairo:3:32
     let _x = array![0_felt252, 1_u8];
                                ^^^^
@@ -136,7 +245,7 @@ error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "core:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut f: core::fmt::Formatter = Default::default();
     let ba: ByteArray = "hello";
@@ -193,9 +302,6 @@ fn foo() {
     write!(f, "{");
     write!(f, "{x");
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2200]: Plugin diagnostic: Macro `write` does not support this bracket type.
@@ -320,12 +426,79 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 
 //! > ==========================================================================
 
+//! > Test write! named placeholder span is correct after escape sequences
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let mut f: core::fmt::Formatter = Default::default();
+    write!(f, "prefix\n{name}").unwrap();
+    write!(f, "\x41{hex_name}").unwrap();
+    write!(f, "\101{oct_name}").unwrap();
+    write!(f, "\u{41}{uni_name}").unwrap();
+    write!(f, "\u0041{uni4_name}").unwrap();
+    write!(f, "\\u{esc_bs_name}").unwrap();
+    write!(f, "{double_quotes}\"").unwrap();
+    write!(f, "\u{7B}uni_brace}").unwrap();
+    write!(f, "\u007Buni4_brace}").unwrap();
+}
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:3:25
+    write!(f, "prefix\n{name}").unwrap();
+                        ^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:4:21
+    write!(f, "\x41{hex_name}").unwrap();
+                    ^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:5:21
+    write!(f, "\101{oct_name}").unwrap();
+                    ^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:6:23
+    write!(f, "\u{41}{uni_name}").unwrap();
+                      ^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:7:23
+    write!(f, "\u0041{uni4_name}").unwrap();
+                      ^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:8:20
+    write!(f, "\\u{esc_bs_name}").unwrap();
+                   ^^^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:9:17
+    write!(f, "{double_quotes}\"").unwrap();
+                ^^^^^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:10:32
+    write!(f, "\u{7B}uni_brace}").unwrap();
+                               ^^^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:11:33
+    write!(f, "\u007Buni4_brace}").unwrap();
+                                ^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Test bad writeln! macros
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut f: core::fmt::Formatter = Default::default();
     let ba: ByteArray = "hello";
@@ -383,9 +556,6 @@ fn foo() {
     writeln!(f, "{x");
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
 error[E2200]: Plugin diagnostic: Macro `writeln` does not support this bracket type.
  --> lib.cairo:6:13
@@ -395,11 +565,6 @@ error[E2200]: Plugin diagnostic: Macro `writeln` does not support this bracket t
 error[E2200]: Plugin diagnostic: Macro expected formatter argument.
  --> lib.cairo:9:13
     writeln!();
-            ^
-
-error[E2200]: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:12:13
-    writeln!(f);
             ^
 
 error[E2200]: Plugin diagnostic: Formatter argument must not be a string literal.
@@ -514,11 +679,11 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let ba: ByteArray = "hello";
 
-    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+    // Bad brackets.
     format!["{}", ba];
 
     // No params.
@@ -549,24 +714,21 @@ fn foo() {
     format!;
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
 error[E1006]: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:12
     format!;
            ^
 
-error[E2200]: Plugin diagnostic: Macro `write` does not support this bracket type.
+error[E2200]: Plugin diagnostic: Macro `format` does not support this bracket type.
  --> lib.cairo:5:12
     format!["{}", ba];
            ^
 
 error[E2200]: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:12
+ --> lib.cairo:8:5
     format!();
-           ^
+    ^^^^^^^^^
 
 error[E2200]: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:11:13
@@ -615,11 +777,11 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let ba: ByteArray = "hello";
 
-    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+    // Bad brackets.
     print!["{}", ba];
 
     // No params.
@@ -650,24 +812,21 @@ fn foo() {
     print!;
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
 error[E1006]: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:11
     print!;
           ^
 
-error[E2200]: Plugin diagnostic: Macro `write` does not support this bracket type.
+error[E2200]: Plugin diagnostic: Macro `print` does not support this bracket type.
  --> lib.cairo:5:11
     print!["{}", ba];
           ^
 
 error[E2200]: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:11
+ --> lib.cairo:8:5
     print!();
-          ^
+    ^^^^^^^^
 
 error[E2200]: Plugin diagnostic: Format string argument must be a string literal.
  --> lib.cairo:11:12
@@ -716,11 +875,11 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let ba: ByteArray = "hello";
 
-    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+    // Bad brackets.
     println!["{}", ba];
 
     // No params.
@@ -751,23 +910,15 @@ fn foo() {
     println!;
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
 error[E1006]: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:13
     println!;
             ^
 
-error[E2200]: Plugin diagnostic: Macro `writeln` does not support this bracket type.
+error[E2200]: Plugin diagnostic: Macro `println` does not support this bracket type.
  --> lib.cairo:5:13
     println!["{}", ba];
-            ^
-
-error[E2200]: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:13
-    println!();
             ^
 
 error[E2200]: Plugin diagnostic: Format string argument must be a string literal.
@@ -817,7 +968,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let ba: ByteArray = "hello";
 
@@ -848,9 +999,6 @@ fn foo() {
     // Unused arguments.
     panic!("{2}{0}", ba, 2, 1);
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2200]: Plugin diagnostic: Macro `panic` does not support this bracket type.
@@ -905,13 +1053,10 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x = foo!(0);
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2156]: Inline macro `foo` not found.
@@ -926,14 +1071,11 @@ error[E2156]: Inline macro `foo` not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     // This comment should not appear in the macro name
     array![0_felt252];
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -944,22 +1086,64 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    add_one!(xyz);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro add_one {
     ($x:ident) => {
         1
     };
 }
+fn foo() {
+    add_one!(xyz);
+}
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test user defined macro matching a $defsite variant pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro unwrap_or_zero {
+    ($opt: expr) => {
+        match $opt {
+            $defsite::Option::Some(x) => x,
+            $defsite::Option::None => 0,
+        }
+    };
+}
+fn foo() -> felt252 {
+    unwrap_or_zero!(Option::<felt252>::Some(7))
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test a bare resolver-modifier in pattern position is rejected, not bound as a variable.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro bare_modifier_pattern {
+    ($opt: expr) => {
+        match $opt {
+            $defsite => 0,
+        }
+    };
+}
+fn foo() -> felt252 {
+    bare_modifier_pattern!(7)
+}
+
+//! > expected_diagnostics
+error[E2179]: Expected path after modifier.
+ --> lib.cairo:9:5
+    bare_modifier_pattern!(7)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -968,23 +1152,18 @@ macro add_one {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    let x = 1;
-    let y = 1;
-    assert_eq!(x, y);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro assert_eq {
     ($x:ident, $y:ident) => {
         if $x != $y {
             $defsite::panic!("Panic!");
         }
     };
+}
+fn foo() {
+    let x = 1;
+    let y = 1;
+    assert_eq!(x, y);
 }
 
 //! > expected_diagnostics
@@ -996,19 +1175,14 @@ macro assert_eq {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    add_one!(x z);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro add_one {
     ($x:ident) => {
         1
     };
+}
+fn foo() {
+    add_one!(x z);
 }
 
 //! > expected_diagnostics
@@ -1024,19 +1198,14 @@ error[E2158]: No matching rule found in inline macro `add_one`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    a_macro!(x);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro a_macro {
     ($x:ident) => {
         $defsite
     };
+}
+fn foo() {
+    a_macro!(x);
 }
 
 //! > expected_diagnostics
@@ -1052,19 +1221,14 @@ error[E2179]: Expected path after modifier.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    test_macro!(x);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro test_macro {
     ($x:ident) => {
         let y = $undefined;
     };
+}
+fn foo() {
+    test_macro!(x);
 }
 
 //! > expected_diagnostics
@@ -1080,23 +1244,18 @@ error[E2193]: Undefined macro placeholder: 'undefined'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    add_nums!(1_u8, 2_u16);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro add_nums {
     ($x:expr, $y:expr) => {
         $x + $y
     };
 }
+fn foo() {
+    add_nums!(1_u8, 2_u16);
+}
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u16".
+error[E2041]: Unexpected argument type. Expected: "u8", found: "u16".
  --> lib.cairo:7:21
     add_nums!(1_u8, 2_u16);
                     ^^^^^
@@ -1108,17 +1267,7 @@ error[E2041]: Unexpected argument type. Expected: "core::integer::u8", found: "c
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let z = 1;
-    bas_use_z_from_callsite!();
-    consume_z(z);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro bas_use_z_from_callsite {
     () => {
         z
@@ -1126,6 +1275,11 @@ macro bas_use_z_from_callsite {
 }
 
 fn consume_z(_z: felt252) {}
+fn foo() {
+    let z = 1;
+    bas_use_z_from_callsite!();
+    consume_z(z);
+}
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.
@@ -1140,17 +1294,7 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let z = 1;
-    wrap_bas_use_z_from_callsite!();
-    consume_z(z);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro bas_use_z_from_callsite {
     () => {
         $callsite::z
@@ -1164,6 +1308,11 @@ macro wrap_bas_use_z_from_callsite {
     () => {
         $defsite::bas_use_z_from_callsite!()
     };
+}
+fn foo() {
+    let z = 1;
+    wrap_bas_use_z_from_callsite!();
+    consume_z(z);
 }
 
 //! > expected_diagnostics
@@ -1179,15 +1328,7 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    call_bar!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro call_bar {
     () => {
         bar()
@@ -1195,6 +1336,9 @@ macro call_bar {
 }
 
 fn bar() {}
+fn foo() {
+    call_bar!();
+}
 
 //! > expected_diagnostics
 error[E0006]: Function not found.
@@ -1209,19 +1353,14 @@ error[E0006]: Function not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    test_macro!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro test_macro {
     ($x:expr) => {
         1
     };
+}
+fn foo() {
+    test_macro!();
 }
 
 //! > expected_diagnostics
@@ -1237,19 +1376,14 @@ error[E2158]: No matching rule found in inline macro `test_macro`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    test_macro!(1 2);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro test_macro {
     ($($x:expr)?) => {
         1
     };
+}
+fn foo() {
+    test_macro!(1 2);
 }
 
 //! > expected_diagnostics
@@ -1265,19 +1399,14 @@ error[E2158]: No matching rule found in inline macro `test_macro`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    test_macro!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro test_macro {
     ($($x:expr), +) => {
         1
     };
+}
+fn foo() {
+    test_macro!();
 }
 
 //! > expected_diagnostics
@@ -1293,19 +1422,14 @@ error[E2158]: No matching rule found in inline macro `test_macro`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    test_macro!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro test_macro {
     ($($x:expr), *) => {
         1
     };
+}
+fn foo() {
+    test_macro!();
 }
 
 //! > expected_diagnostics
@@ -1317,19 +1441,14 @@ macro test_macro {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    test_macro!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro test_macro {
     ($($x:expr), *) => {
         1 +
     };
+}
+fn foo() {
+    test_macro!();
 }
 
 //! > expected_diagnostics
@@ -1345,19 +1464,14 @@ error[E2117]: Parser error in macro-expanded code: Missing tokens. Expected an e
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    test_macro!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro test_macro {
     ($x:expr) => {
         1
     };
+}
+fn foo() {
+    test_macro!();
 }
 
 //! > crate_settings
@@ -1390,13 +1504,7 @@ error[E2158]: No matching rule found in inline macro `test_macro`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 unknown_item_macro!();
 
 //! > expected_diagnostics
@@ -1412,14 +1520,9 @@ unknown_item_macro!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 foo!();
+fn foo() {}
 
 //! > expected_diagnostics
 error[E2156]: Inline macro `foo` not found.
@@ -1434,19 +1537,14 @@ foo!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    statement_list_returning_macro!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro statement_list_returning_macro {
     () => {
         let _a = 1;
     };
+}
+fn foo() {
+    statement_list_returning_macro!();
 }
 
 //! > expected_diagnostics
@@ -1458,20 +1556,15 @@ macro statement_list_returning_macro {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let _x = statement_list_returning_macro!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro statement_list_returning_macro {
     () => {
         let a = 1;
         let b = 2;
     };
+}
+fn foo() {
+    let _x = statement_list_returning_macro!();
 }
 
 //! > expected_diagnostics
@@ -1492,19 +1585,14 @@ error[E2117]: Parser error in macro-expanded code: Skipped tokens. Expected: end
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    only_statements!()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro only_statements {
     () => {
         let _a = 1;
     };
+}
+fn foo() {
+    only_statements!()
 }
 
 //! > expected_diagnostics
@@ -1520,19 +1608,14 @@ error[E2133]: Missing semicolon
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    assert_eq3!(1 + 2);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro assert_eq3 {
     ($x:expr) => {
         assert!($x == 3);
     };
+}
+fn foo() {
+    assert_eq3!(1 + 2);
 }
 
 //! > expected_diagnostics
@@ -1544,20 +1627,15 @@ macro assert_eq3 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    empty_path!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro empty_path {
     () => {
         $defsite;
         $callsite;
     };
+}
+fn foo() {
+    empty_path!();
 }
 
 //! > expected_diagnostics
@@ -1573,15 +1651,12 @@ error[E2179]: Expected path after modifier.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     $path();
     $defsite::some::path();
     $callsite::other::path();
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2177]: `$` is not supported in this context.
@@ -1606,19 +1681,14 @@ error[E2177]: `$` is not supported in this context.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    super_path!();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro super_path {
     () => {
         super::some::path();
     };
+}
+fn foo() {
+    super_path!();
 }
 
 //! > expected_diagnostics
@@ -1634,15 +1704,7 @@ error[E2098]: `super` used in macro call top level.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> u8 {
-    use_module_path!()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro use_module_path {
     () => {
         use $defsite::a::b;
@@ -1656,6 +1718,9 @@ mod a {
         const C: u8 = 1;
     }
 }
+fn foo() -> u8 {
+    use_module_path!()
+}
 
 //! > expected_diagnostics
 
@@ -1666,15 +1731,7 @@ mod a {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> u8 {
-    use_self_path!()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro use_self_path {
     () => {
         use $defsite::a::b::{self, C1};
@@ -1689,6 +1746,9 @@ mod a {
         const C2: u8 = 2;
     }
 }
+fn foo() -> u8 {
+    use_self_path!()
+}
 
 //! > expected_diagnostics
 
@@ -1699,15 +1759,7 @@ mod a {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> u8 {
-    use_self_path!()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro use_self_path {
     () => {
         use $defsite::C;
@@ -1716,6 +1768,9 @@ macro use_self_path {
 }
 
 const C: u8 = 1;
+fn foo() -> u8 {
+    use_self_path!()
+}
 
 //! > expected_diagnostics
 
@@ -1726,27 +1781,7 @@ const C: u8 = 1;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    // Test macro-generated function.
-    fn_item();
-
-    // Test macro-generated struct.
-    let s = StructItem { a: 42 };
-    let _ = s.a;
-
-    // Test macro-generated enum.
-    let e = EnumItem::A;
-    match e {
-        EnumItem::A => {},
-        EnumItem::B => {},
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro define_items {
     () => {
         expose! {
@@ -1763,6 +1798,21 @@ macro define_items {
 }
 
 define_items!();
+fn foo() {
+    // Test macro-generated function.
+    fn_item();
+
+    // Test macro-generated struct.
+    let s = StructItem { a: 42 };
+    let _ = s.a;
+
+    // Test macro-generated enum.
+    let e = EnumItem::A;
+    match e {
+        EnumItem::A => {},
+        EnumItem::B => {},
+    }
+}
 
 //! > expected_diagnostics
 
@@ -1773,15 +1823,7 @@ define_items!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let _num = item_level();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro macro_item_level {
     () => {
         expose! {
@@ -1790,9 +1832,12 @@ macro macro_item_level {
     };
 }
 macro_item_level!();
+fn foo() {
+    let _num = item_level();
+}
 
 //! > expected_diagnostics
-error[E2311]: Mismatched types. The type `core::felt252` cannot be created from a string literal.
+error[E2311]: Mismatched types. The type `felt252` cannot be created from a string literal.
  --> lib.cairo:8:1
 macro_item_level!();
 ^^^^^^^^^^^^^^^^^^^^
@@ -1812,15 +1857,7 @@ associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = true
 
-//! > function_code
-fn foo() {
-    bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod with_bar {
     pub fn bar() {}
 }
@@ -1834,6 +1871,9 @@ macro import_with_bar {
 }
 
 import_with_bar!();
+fn foo() {
+    bar();
+}
 
 //! > expected_diagnostics
 
@@ -1852,13 +1892,7 @@ associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = true
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro define_foo_caller {
     () => {
         use $callsite::*;
@@ -1896,15 +1930,7 @@ associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = true
 
-//! > function_code
-fn foo() {
-    bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     macro define_bar {
         () => {
@@ -1915,6 +1941,9 @@ mod a {
     define_bar!();
 }
 use a::*;
+fn foo() {
+    bar();
+}
 
 //! > expected_diagnostics
 
@@ -1933,15 +1962,7 @@ associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = true
 
-//! > function_code
-fn foo() {
-    bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     pub fn bar() {}
 }
@@ -1955,6 +1976,9 @@ macro import_a_star {
 }
 
 import_a_star!();
+fn foo() {
+    bar();
+}
 
 //! > expected_diagnostics
 
@@ -1965,15 +1989,7 @@ import_a_star!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     pub fn bar() {}
 }
@@ -1987,6 +2003,9 @@ macro import {
 }
 
 import!(a::bar);
+fn foo() {
+    bar();
+}
 
 //! > expected_diagnostics
 
@@ -1997,15 +2016,7 @@ import!(a::bar);
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    a::bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     macro define_bar {
         () => {
@@ -2015,6 +2026,9 @@ mod a {
         };
     }
     define_bar!();
+}
+fn foo() {
+    a::bar();
 }
 
 //! > expected_diagnostics
@@ -2026,15 +2040,7 @@ mod a {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    BarTrait::<a::Bar>::bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     pub struct Bar {}
     macro impl_bar_trait {
@@ -2049,6 +2055,9 @@ mod a {
 trait BarTrait<T> {
     fn bar() {}
 }
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
 
 //! > expected_diagnostics
 
@@ -2059,15 +2068,7 @@ trait BarTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    BarTrait::<a::Bar>::bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     macro define_ty {
         ($ty: ident) => {
@@ -2084,6 +2085,9 @@ mod a {
 trait BarTrait<T> {
     fn bar() {}
 }
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
 
 //! > expected_diagnostics
 
@@ -2094,15 +2098,7 @@ trait BarTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    BarTrait::<a::Bar>::bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 mod a {
     macro define_ty {
         ($ty: ident) => {
@@ -2124,6 +2120,9 @@ mod a {
 trait BarTrait<T> {
     fn bar() {}
 }
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
 
 //! > expected_diagnostics
 
@@ -2134,13 +2133,7 @@ trait BarTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro define_bar {
     () => {
         expose!(fn bar() {});
@@ -2162,13 +2155,7 @@ define_bar!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro define_bar {
     () => {
         expose!(fn bar() {});
@@ -2196,13 +2183,7 @@ define_bar_twice!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro define_bar {
     () => {
         fn bar() {}
@@ -2226,13 +2207,7 @@ fn bar() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar() {}
 
 macro define_bar {
@@ -2255,13 +2230,7 @@ define_bar!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro inner_macro {
     () => {
         expose!(fn bar() {});
@@ -2291,15 +2260,7 @@ outer_macro!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
-fn foo() {
-    bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro define_bar {
     () => {
         expose! (
@@ -2308,6 +2269,9 @@ macro define_bar {
     };
 }
 define_bar!();
+fn foo() {
+    bar();
+}
 
 //! > expected_diagnostics
 
@@ -2318,21 +2282,16 @@ define_bar!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro define_bar {
     () => {
         fn bar() {}
     };
 }
 define_bar!();
+fn foo() {
+    bar();
+}
 
 //! > expected_diagnostics
 error[E0006]: Function not found.
@@ -2347,16 +2306,662 @@ error[E0006]: Function not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     not::a::path::format!("");
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2156]: Inline macro `not::a::path::format` not found.
  --> lib.cairo:2:5
     not::a::path::format!("");
     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test macro with empty inner repetition body (would loop infinitely without no-progress guard).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > cairo_code
+macro test_macro {
+    ($()*) => { 1 };
+}
+fn foo() {
+    test_macro!();
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro with repetition over empty subtrees (would fail to match without the subtree progress fix).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > cairo_code
+macro test_macro {
+    ($(())*) => { 1 };
+}
+fn foo() {
+    test_macro!(() ());
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test repetition placeholder used outside repetition in expansion.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($x:expr),*) => { $x };
+}
+fn foo() {
+    m!();
+}
+
+//! > expected_diagnostics
+error[E2198]: Macro placeholder 'x' requires 1 repetition level(s) in the expansion, but is used at level 0.
+ --> lib.cairo:2:25
+    ($($x:expr),*) => { $x };
+                        ^^
+
+//! > ==========================================================================
+
+//! > Test rep placeholder used inside a nested repetition in expansion (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($($x:expr),*) => { $($x)* };
+}
+fn foo() {
+    m!(1, 2, 3);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test depth-0 placeholder used inside a repetition driven by a depth-1 var (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($x:expr, $($y:expr),*) => { $($x + $y),* };
+}
+fn foo() {
+    m!(1 + 2, 3, 4);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test cross-repetition placeholder mixing in expansion (E2199).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($x:expr),* ; $($y:expr),*) => { $($x + $y),* };
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'y' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:47
+    ($($x:expr),* ; $($y:expr),*) => { $($x + $y),* };
+                                              ^^
+
+//! > ==========================================================================
+
+//! > Test cross-repetition placeholder mixing with mismatched outer context (prefix check).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'y' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:54
+    ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
+                                                     ^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int with typed literal.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+const a: felt252 = consteval_int!(1_u32);
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:20
+const a: felt252 = consteval_int!(1_u32);
+                   ^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Literals with suffix are not supported in consteval_int macro
+ --> lib.cairo:1:35
+const a: felt252 = consteval_int!(1_u32);
+                                  ^^^^^
+
+//! > ==========================================================================
+
+//! > Test consteval_int with typed literal in subexpression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+const a: felt252 = consteval_int!(1_u32 + 2);
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:20
+const a: felt252 = consteval_int!(1_u32 + 2);
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: Literals with suffix are not supported in consteval_int macro
+ --> lib.cairo:1:35
+const a: felt252 = consteval_int!(1_u32 + 2);
+                                  ^^^^^^
+
+//! > ==========================================================================
+
+//! > Regression for #9936: unsupported macro param kind emits a diagnostic, not an ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[feature("user_defined_inline_macros")]
+macro mymac {
+    ($x:literal) => { 5_u32 };
+}
+fn foo() -> u32 {
+    mymac!(0)
+}
+
+//! > expected_diagnostics
+error[E1008]: Missing tokens. Expected a macro rule parameter kind.
+ --> lib.cairo:3:9
+    ($x:literal) => { 5_u32 };
+        ^
+
+error[E2158]: No matching rule found in inline macro `mymac`.
+ --> lib.cairo:6:5
+    mymac!(0)
+    ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Regression for #9938: item-scope macro invocation without arg brackets does not ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[feature("user_defined_inline_macros")]
+macro m {
+    ($x:ident) => { 1 };
+}
+m!
+
+//! > expected_diagnostics
+error[E1006]: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:5:3
+m!
+  ^
+
+error[E1001]: Missing token ';'.
+ --> lib.cairo:5:3
+m!
+  ^
+
+//! > ==========================================================================
+
+//! > Regression for #9993: macro call with `$(...)` without an operator does not ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[feature("user_defined_inline_macros")]
+macro mymac {
+    ($x:ident) => { 1 };
+}
+fn foo() {
+    mymac!($(x));
+}
+
+//! > expected_diagnostics
+error[E2158]: No matching rule found in inline macro `mymac`.
+ --> lib.cairo:6:5
+    mymac!($(x));
+    ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > A `#[feature]` on an item-scope macro call propagates into the expanded items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+#[feature("user_defined_inline_macros")]
+macro make_const {
+    () => { const C: felt252 = consteval_int!(4 + 5); };
+}
+
+#[feature("deprecated-consteval-int-macro")]
+make_const!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Without the feature on the call, the expanded `consteval_int!` is still deprecated.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+#[feature("user_defined_inline_macros")]
+macro make_const {
+    () => { const C: felt252 = consteval_int!(4 + 5); };
+}
+
+make_const!();
+
+//! > expected_diagnostics
+warning[E2200]: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:6:1
+make_const!();
+^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test distinct module names for repeated item-level macro calls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+trait MyTrait {
+    fn foo();
+}
+
+macro make_impl {
+    () => {
+        impl ConflictImpl of $callsite::MyTrait {
+            fn foo() {}
+        }
+    };
+}
+
+make_impl!();
+make_impl!();
+fn foo() {
+    MyTrait::foo();
+}
+
+//! > expected_diagnostics
+error[E2313]: Trait `MyTrait` has multiple implementations, in: `test::make_impl!_#156::ConflictImpl`, `test::make_impl!_#171::ConflictImpl`
+ --> lib.cairo:16:14
+    MyTrait::foo();
+             ^^^
+
+//! > ==========================================================================
+
+//! > Test item-level macro module naming for a macro invoked via a qualified path.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+trait MyTrait {
+    fn foo();
+}
+
+mod helpers {
+    pub macro make_impl {
+        () => {
+            impl ConflictImpl of $callsite::MyTrait {
+                fn foo() {}
+            }
+        };
+    }
+}
+
+helpers::make_impl!();
+helpers::make_impl!();
+fn foo() {
+    MyTrait::foo();
+}
+
+//! > expected_diagnostics
+error[E2313]: Trait `MyTrait` has multiple implementations, in: `test::make_impl!_#204::ConflictImpl`, `test::make_impl!_#228::ConflictImpl`
+ --> lib.cairo:18:14
+    MyTrait::foo();
+             ^^^
+
+//! > ==========================================================================
+
+//! > Test an expansion block zipping two sibling pattern repetitions (rejected, deliberately stricter than rustc).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($a:ident),* ; $($b:ident),*) => { $($a + $b + )* 0 };
+}
+fn foo() -> felt252 {
+    m!(x, y; z, w)
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'b' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:49
+    ($($a:ident),* ; $($b:ident),*) => { $($a + $b + )* 0 };
+                                                ^^
+
+//! > ==========================================================================
+
+//! > Test placeholder-free repetition in an expansion, with an item-position call.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    () => { $(foo)* };
+}
+
+m!();
+fn foo() {}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:2:13
+    () => { $(foo)* };
+            ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test placeholder-free repetition in an expansion, with an expression-position call.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    () => { $(foo)* 0 };
+}
+fn foo() -> felt252 {
+    m!()
+}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:2:13
+    () => { $(foo)* 0 };
+            ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test item-position macro call whose expansion repeats its own placeholder (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro make_fns {
+    ($($name:ident),*) => { $(fn $name() {})* };
+}
+
+make_fns!(first, second);
+fn foo() {}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test item-position macro call with a parse error in its arguments reports only that error.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($x:ident) => { fn $x() {} };
+}
+
+m!([1);
+fn foo() {}
+
+//! > expected_diagnostics
+error[E1001]: Missing token ']'.
+ --> lib.cairo:5:6
+m!([1);
+     ^
+
+//! > ==========================================================================
+
+//! > Test placeholder-free repetition in a macro declared in another module.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+mod helpers {
+    pub macro m {
+        () => { $(foo)* };
+    }
+}
+
+helpers::m!();
+fn foo() {}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:3:17
+        () => { $(foo)* };
+                ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test placeholder-free repetition that is not the first element of the expansion.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($name:ident),*) => {
+        $(fn $name() {})*
+        $(fn extra() {})*
+    };
+}
+
+m!(first, second);
+fn foo() {}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:4:9
+        $(fn extra() {})*
+        ^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test repetition over a placeholder that does not repeat in the pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($base:ident, $($x:ident),*) => { $($base)* };
+}
+fn foo() {
+    m!(base, one, two);
+}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:2:39
+    ($base:ident, $($x:ident),*) => { $($base)* };
+                                      ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test expansion nested one level deeper than the placeholder repeats.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+macro m {
+    ($($x:expr),*) => { $($($x),*),* };
+}
+fn foo() {
+    m!(1, 2);
+}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:2:27
+    ($($x:expr),*) => { $($($x),*),* };
+                          ^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test nested placeholder-free expansion blocks reporting only the outer one.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The inner block fails for the same reason as the outer one, so reporting it too would double up
+// on a single defect.
+macro m {
+    () => { $( $(foo)* )* };
+}
+fn foo() {
+    m!();
+}
+
+//! > expected_diagnostics
+error[E2203]: Macro expansion block holds no placeholder that repeats at its depth, so the number of repetitions cannot be determined.
+ --> lib.cairo:4:13
+    () => { $( $(foo)* )* };
+            ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test an undefined placeholder inside an expansion repetition.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// The placeholder is reported as undefined only: whether it would repeat at the block's depth is
+// unknowable for a name the pattern does not bind, so the block is not also reported.
+macro m {
+    () => { $($undefined)* };
+}
+fn foo() {
+    m!();
+}
+
+//! > expected_diagnostics
+error[E2193]: Undefined macro placeholder: 'undefined'.
+ --> lib.cairo:4:15
+    () => { $($undefined)* };
+              ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test broadcasting a non-repeating placeholder over a repeating one (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($base:expr, $($x:expr),*) => { array![$($base + $x),*] };
+}
+fn foo() {
+    let _arr = m!(10, 1, 2);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion nesting matching the pattern nesting (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($([$($x:expr),*]),*) => { array![$(array![$($x),*]),*] };
+}
+fn foo() {
+    let _arr = m!([1, 2], [3, 4]);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test zero-match call of a rule whose expansion repeats (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > cairo_code
+macro m {
+    ($($x:expr),*) => { 0 $(+ $x)* };
+}
+fn foo() -> felt252 {
+    m!() + m!(1, 2)
+}
+
+//! > expected_diagnostics

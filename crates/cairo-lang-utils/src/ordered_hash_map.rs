@@ -3,9 +3,9 @@ use core::hash::{BuildHasher, Hash};
 use indexmap::IndexMap;
 use itertools::zip_eq;
 
-#[cfg(feature = "std")]
-type BHImpl = std::collections::hash_map::RandomState;
-#[cfg(not(feature = "std"))]
+// hashbrown's default hasher (foldhash) rather than std's SipHash. IndexMap/IndexSet iterate in
+// insertion order, so the iteration order -- and thus compilation determinism -- is independent of
+// the hasher.
 type BHImpl = hashbrown::DefaultHashBuilder;
 
 #[derive(Clone, Debug)]
@@ -36,38 +36,9 @@ impl<Key, Value, BH> core::ops::DerefMut for OrderedHashMap<Key, Value, BH> {
 }
 
 #[cfg(feature = "salsa")]
-unsafe impl<Key: salsa::Update + Eq + Hash, Value: salsa::Update, BH: BuildHasher> salsa::Update
-    for OrderedHashMap<Key, Value, BH>
+unsafe impl<Key: salsa::SalsaValue + Eq + Hash, Value: salsa::SalsaValue, BH: BuildHasher>
+    salsa::SalsaValue for OrderedHashMap<Key, Value, BH>
 {
-    // This code was taken from the salsa::Update trait implementation for IndexMap.
-    // It is defined privately in macro_rules! maybe_update_map in the db-ext-macro repo.
-    unsafe fn maybe_update(old_pointer: *mut Self, new_map: Self) -> bool {
-        let old_map: &mut Self = unsafe { &mut *old_pointer };
-
-        // To be considered "equal", the set of keys
-        // must be the same between the two maps.
-        let same_keys =
-            old_map.len() == new_map.len() && old_map.keys().all(|k| new_map.contains_key(k));
-
-        // If the set of keys has changed, then just pull in the new values
-        // from new_map and discard the old ones.
-        if !same_keys {
-            old_map.clear();
-            old_map.extend(new_map);
-            return true;
-        }
-
-        // Otherwise, recursively descend to the values.
-        // We do not invoke `K::update` because we assume
-        // that if the values are `Eq` they must not need
-        // updating (see the trait criteria).
-        let mut changed = false;
-        for (key, new_value) in new_map.into_iter() {
-            let old_value = old_map.get_mut(&key).unwrap();
-            changed |= unsafe { Value::maybe_update(old_value, new_value) };
-        }
-        changed
-    }
 }
 
 impl<Key, Value, BH: Default> Default for OrderedHashMap<Key, Value, BH> {
@@ -85,6 +56,13 @@ impl<Key, Value, BH> OrderedHashMap<Key, Value, BH> {
     /// Returns true if the map contains no elements.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+}
+
+impl<Key, Value, BH: BuildHasher + Default> OrderedHashMap<Key, Value, BH> {
+    /// Creates an empty `OrderedHashMap` with the specified capacity.
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(IndexMap::with_capacity_and_hasher(capacity, Default::default()))
     }
 }
 

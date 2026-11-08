@@ -14,6 +14,8 @@ use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use num_bigint::BigUint;
+// Only linked to enable its `vendored` feature.
+use openssl as _;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -649,8 +651,10 @@ impl FullNodeClient {
             }))
             .send()
             .await?;
-        if !res.status().is_success() {
-            return Err(anyhow::anyhow!("Request failed."));
+        let status = res.status();
+        if !status.is_success() {
+            let body = res.text().await.unwrap_or_default();
+            return Err(anyhow::anyhow!("Request failed with status {status}: {body}"));
         }
         Ok(res.json::<RpcResponse<Response>>().await?.result)
     }

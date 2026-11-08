@@ -11,7 +11,7 @@ use salsa::Database;
 use super::{DiagnosticEntry, DiagnosticsBuilder};
 
 // Test diagnostic.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 struct SimpleDiag<'db> {
     file_id: FileId<'db>,
 }

@@ -9,6 +9,7 @@ use num_bigint::BigInt;
 
 use super::misc::{build_identity, build_is_zero};
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::int::u128_bound;
 use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 use crate::references::ReferenceExpression;
 
@@ -151,7 +152,7 @@ fn build_qm31_unpack(
         tempvar sum = w0_plus_w1 + w2_plus_w3;
         // Additionally validating `sum + 2**128 - 2**36` is within [0, 2**128), and therefore:
         // sum is also within [-2**128 + 2**36, 2**36) - and specifically in [0, 2**36).
-        const fixer = (u128::MAX - PART_UPPER_BOUND);
+        const fixer = (u128_bound() - PART_UPPER_BOUND);
         tempvar rc_value = sum + fixer;
         assert rc_value = *(range_check++);
     };

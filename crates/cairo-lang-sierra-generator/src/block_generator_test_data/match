@@ -3,7 +3,8 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     match x {
         0 => 3,
@@ -14,14 +15,9 @@ fn foo(x: felt252) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }
@@ -66,7 +62,8 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     match x {
         0 => x,
@@ -74,14 +71,9 @@ fn foo(x: felt252) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 dup<felt252>([0]) -> ([0], [1])
@@ -126,7 +118,8 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(opt: Option<@felt252>) -> felt252 {
     match opt {
         Some(x) => *x,
@@ -134,14 +127,9 @@ fn foo(opt: Option<@felt252>) -> felt252 {
     }
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 enum_match<core::option::Option::<@core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
@@ -186,20 +174,16 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(mut a: Array<u32>) {
     a.pop_front().unwrap();
     a.pop_front().unwrap();
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 array_pop_front<u32>([0]) { fallthrough([1], [2]) label_test::foo::0([3]) }
@@ -282,26 +266,20 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+enum SingleVariant {
+    Only: felt252,
+}
+#[target_function]
 fn foo(x: SingleVariant) -> felt252 {
     match x {
         SingleVariant::Only(v) => v + 1,
     }
 }
 
-//! > module_code
-enum SingleVariant {
-    Only: felt252,
-}
-
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 enum_match<test::SingleVariant>([0]) -> ([1])

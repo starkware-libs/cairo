@@ -3,9 +3,10 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::cache::{
-    CrateDefCache, DefCacheLoadingData, DefCacheSavingContext, GenericParamCached,
-    GlobalUseIdCached, ImplAliasIdCached, ImplDefIdCached, LanguageElementCached, ModuleDataCached,
-    ModuleIdCached, ModuleItemIdCached, SyntaxStablePtrIdCached,
+    CacheBlobReader, CrateDefCache, DEF_CACHE_SECTION, DefCacheLoadingData, DefCacheSavingContext,
+    GenericParamCached, GlobalUseIdCached, ImplAliasIdCached, ImplDefIdCached,
+    LanguageElementCached, ModuleDataCached, ModuleIdCached, ModuleItemIdCached,
+    SyntaxStablePtrIdCached,
 };
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -29,7 +30,6 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::smol_str::SmolStr;
-use itertools::chain;
 use num_bigint::BigInt;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
@@ -47,7 +47,7 @@ use crate::items::imp::{
     NegativeImplId, NegativeImplLongId,
 };
 use crate::items::impl_alias::ImplAliasSemantic;
-use crate::items::macro_call::module_macro_modules;
+use crate::items::macro_call::crate_modules_including_generated;
 use crate::items::module::{ModuleItemInfo, ModuleSemantic, ModuleSemanticData};
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
 use crate::items::visibility::Visibility;
@@ -59,10 +59,13 @@ use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteFunctionWithBodyId,
     ConcreteImplId, ConcreteImplLongId, ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId,
     ConcreteTypeId, ConcreteVariant, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId,
-    GenericArgumentId, GenericParam, MatchArmSelector, TypeId, TypeLongId, ValueSelectorArm,
+    GenericArgumentId, GenericParam, MatchArmSelector, MemberAccessKind, TypeId, TypeLongId,
+    ValueSelectorArm,
 };
 
 type SemanticCache<'db> = (CrateSemanticCache, SemanticCacheLookups);
+
+pub const SEMANTIC_CACHE_SECTION: u8 = DEF_CACHE_SECTION + 1;
 
 /// Load the cached semantic of a crate if it has a cache file configuration.
 pub fn load_cached_crate_modules_semantic<'db>(
@@ -76,21 +79,8 @@ pub fn load_cached_crate_modules_semantic<'db>(
         return Default::default();
     };
 
-    let def_size = usize::from_be_bytes(content[..8].try_into().unwrap());
-
-    let semantic_start = 8 + def_size;
-    let semantic_size =
-        usize::from_be_bytes(content[semantic_start..semantic_start + 8].try_into().unwrap());
-
-    let content = &content[semantic_start + 8..semantic_start + 8 + semantic_size];
-
-    let (module_data, semantic_lookups): SemanticCache<'_> = postcard::from_bytes(content)
-        .unwrap_or_else(|e| {
-            panic!(
-                "failed to deserialize modules cache for crate `{}`: {e}",
-                crate_id.long(db).name().long(db),
-            )
-        });
+    let (module_data, semantic_lookups): SemanticCache<'_> =
+        CacheBlobReader::read_section(db, content, SEMANTIC_CACHE_SECTION, crate_id);
 
     let mut ctx = SemanticCacheLoadingContext::new(db, semantic_lookups, def_loading_data);
     Some(ModuleSemanticDataCacheAndLoadingData {
@@ -125,19 +115,17 @@ pub fn generate_crate_def_cache<'db>(
     crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
     ctx: &mut DefCacheSavingContext<'db>,
 ) -> Maybe<CrateDefCache<'db>> {
-    let modules = db.crate_modules(crate_id);
-
-    let mut modules_data = Vec::new();
-    for module_id in modules.iter() {
-        for module_id in chain!([module_id], module_macro_modules(db, true, *module_id)) {
-            let module_data = module_id.module_data(db)?;
-            modules_data.push((
-                ModuleIdCached::new(*module_id, ctx),
-                ModuleDataCached::new(db, module_data, ctx),
-            ));
-        }
-    }
-    Ok(CrateDefCache::new(modules_data))
+    Ok(CrateDefCache::new(
+        crate_modules_including_generated(db, crate_id)
+            .into_iter()
+            .map(|module_id| {
+                Ok((
+                    ModuleIdCached::new(module_id, ctx),
+                    ModuleDataCached::new(db, module_id.module_data(db)?, ctx),
+                ))
+            })
+            .collect::<Maybe<_>>()?,
+    ))
 }
 
 /// Semantic items in the semantic cache.
@@ -154,22 +142,24 @@ pub fn generate_crate_semantic_cache<'db>(
     crate_id: CrateId<'db>,
     ctx: &mut SemanticCacheSavingContext<'db>,
 ) -> Maybe<CrateSemanticCache> {
-    let modules = ctx.db.crate_modules(crate_id);
+    let all_modules = crate_modules_including_generated(ctx.db, crate_id);
 
-    let mut modules_data = Vec::new();
-    for module_id in modules.iter() {
-        for module_id in chain!([module_id], module_macro_modules(ctx.db, true, *module_id)) {
-            let module_data = ctx.db.priv_module_semantic_data(*module_id)?.clone();
-            modules_data.push((
+    let modules_data = all_modules
+        .iter()
+        .map(|module_id| {
+            Ok((
                 ModuleIdCached::new(*module_id, &mut ctx.defs_ctx),
-                ModuleSemanticDataCached::new(module_data, ctx),
-            ));
-        }
-    }
+                ModuleSemanticDataCached::new(
+                    ctx.db.priv_module_semantic_data(*module_id)?.clone(),
+                    ctx,
+                ),
+            ))
+        })
+        .collect::<Maybe<_>>()?;
 
     Ok(CrateSemanticCache {
         modules: modules_data,
-        impl_aliases: modules
+        impl_aliases: all_modules
             .iter()
             .flat_map(|id| match ctx.db.module_impl_aliases_ids(*id) {
                 Err(err) => vec![Err(err)],
@@ -236,7 +226,7 @@ impl<'db> SemanticCacheLoadingContext<'db> {
 }
 
 /// Data for loading cache into the database.
-#[derive(PartialEq, Eq, salsa::Update)]
+#[derive(PartialEq, Eq, salsa::SalsaValue)]
 pub struct SemanticCacheLoadingData<'db> {
     pub defs_loading_data: Arc<DefCacheLoadingData<'db>>,
 
@@ -322,7 +312,7 @@ impl<'db> DerefMut for SemanticCacheSavingData<'db> {
 }
 
 /// Saved interned items for the cache.
-#[derive(Serialize, Deserialize, Default, PartialEq, Eq, salsa::Update)]
+#[derive(Serialize, Deserialize, Default, PartialEq, Eq, salsa::SalsaValue)]
 pub struct SemanticCacheLookups {
     function_ids_lookup: Vec<SemanticFunctionCached>,
     type_ids_lookup: Vec<TypeCached>,
@@ -478,12 +468,55 @@ impl FeatureKindCached {
 }
 
 #[derive(Serialize, Deserialize)]
+pub enum MemberAccessKindCached {
+    Struct { concrete_struct_id: ConcreteStructCached, member_id: LanguageElementCached },
+    Index { tuple_ty: TypeIdCached, index: usize },
+}
+impl MemberAccessKindCached {
+    pub fn new<'db>(
+        kind: MemberAccessKind<'db>,
+        ctx: &mut SemanticCacheSavingContext<'db>,
+    ) -> Self {
+        match kind {
+            MemberAccessKind::Struct { concrete_struct_id, member_id } => {
+                MemberAccessKindCached::Struct {
+                    concrete_struct_id: ConcreteStructCached::new(concrete_struct_id, ctx),
+                    member_id: LanguageElementCached::new(member_id, &mut ctx.defs_ctx),
+                }
+            }
+            MemberAccessKind::Index { tuple_ty, index } => {
+                MemberAccessKindCached::Index { tuple_ty: TypeIdCached::new(tuple_ty, ctx), index }
+            }
+        }
+    }
+    pub fn get_embedded<'db>(
+        self,
+        data: &Arc<SemanticCacheLoadingData<'db>>,
+        db: &'db dyn Database,
+    ) -> MemberAccessKind<'db> {
+        match self {
+            MemberAccessKindCached::Struct { concrete_struct_id, member_id } => {
+                let (module_id, member_stable_ptr) =
+                    member_id.get_embedded(&data.defs_loading_data);
+                let member_id = MemberLongId(module_id, MemberPtr(member_stable_ptr)).intern(db);
+                MemberAccessKind::Struct {
+                    concrete_struct_id: concrete_struct_id.get_embedded(data, db),
+                    member_id,
+                }
+            }
+            MemberAccessKindCached::Index { tuple_ty, index } => {
+                MemberAccessKind::Index { tuple_ty: tuple_ty.get_embedded(data), index }
+            }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 pub enum ExprVarMemberPathCached {
     Var(ExprVarCached),
     Member {
         parent: Box<ExprVarMemberPathCached>,
-        member_id: LanguageElementCached,
-        concrete_struct_id: ConcreteStructCached,
+        kind: MemberAccessKindCached,
         stable_ptr: SyntaxStablePtrIdCached,
         ty: TypeIdCached,
     },
@@ -497,11 +530,10 @@ impl ExprVarMemberPathCached {
             ExprVarMemberPath::Var(var) => {
                 ExprVarMemberPathCached::Var(ExprVarCached::new(var, ctx))
             }
-            ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, stable_ptr, ty } => {
+            ExprVarMemberPath::Member { parent, kind, stable_ptr, ty } => {
                 ExprVarMemberPathCached::Member {
                     parent: Box::new(ExprVarMemberPathCached::new(*parent, ctx)),
-                    member_id: LanguageElementCached::new(member_id, &mut ctx.defs_ctx),
-                    concrete_struct_id: ConcreteStructCached::new(concrete_struct_id, ctx),
+                    kind: MemberAccessKindCached::new(kind, ctx),
                     stable_ptr: SyntaxStablePtrIdCached::new(
                         stable_ptr.untyped(),
                         &mut ctx.defs_ctx,
@@ -518,21 +550,11 @@ impl ExprVarMemberPathCached {
     ) -> ExprVarMemberPath<'db> {
         match self {
             ExprVarMemberPathCached::Var(var) => ExprVarMemberPath::Var(var.get_embedded(data, db)),
-            ExprVarMemberPathCached::Member {
-                parent,
-                member_id,
-                concrete_struct_id,
-                stable_ptr,
-                ty,
-            } => {
+            ExprVarMemberPathCached::Member { parent, kind, stable_ptr, ty } => {
                 let parent = Box::new(parent.get_embedded(data, db));
-                let (module_id, member_stable_ptr) =
-                    member_id.get_embedded(&data.defs_loading_data);
-                let member_id = MemberLongId(module_id, MemberPtr(member_stable_ptr)).intern(db);
                 ExprVarMemberPath::Member {
                     parent,
-                    member_id,
-                    concrete_struct_id: concrete_struct_id.get_embedded(data, db),
+                    kind: kind.get_embedded(data, db),
                     stable_ptr: ExprPtr(stable_ptr.get_embedded(&data.defs_loading_data)),
                     ty: ty.get_embedded(data),
                 }
@@ -763,32 +785,9 @@ impl ConstValueCached {
             }
         }
     }
-    pub fn get_embedded<'db>(
-        self,
-        data: &Arc<SemanticCacheLoadingData<'db>>,
-        db: &'db dyn Database,
-    ) -> ConstValue<'db> {
-        match self {
-            ConstValueCached::Int(value, ty) => ConstValue::Int(value, ty.get_embedded(data)),
-            ConstValueCached::Struct(values, ty) => ConstValue::Struct(
-                values.into_iter().map(|v| v.get_embedded(data)).collect(),
-                ty.get_embedded(data),
-            ),
-            ConstValueCached::Enum(variant, value) => {
-                ConstValue::Enum(variant.get_embedded(data, db), value.get_embedded(data))
-            }
-            ConstValueCached::NonZero(value) => ConstValue::NonZero(value.get_embedded(data)),
-            ConstValueCached::Generic(generic_param) => {
-                ConstValue::Generic(generic_param.get_embedded(&data.defs_loading_data, db))
-            }
-            ConstValueCached::ImplConstant(impl_constant_id) => {
-                ConstValue::ImplConstant(impl_constant_id.get_embedded(data, db))
-            }
-        }
-    }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ConstValueIdCached(usize);
 
 impl ConstValueIdCached {
@@ -838,17 +837,6 @@ impl ImplConstantCached {
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> ImplConstantId<'db> {
         ImplConstantId::new(self.impl_id.embed(ctx), self.trait_constant.embed(ctx), ctx.db)
     }
-    pub fn get_embedded<'db>(
-        self,
-        data: &Arc<SemanticCacheLoadingData<'db>>,
-        db: &'db dyn Database,
-    ) -> ImplConstantId<'db> {
-        ImplConstantId::new(
-            self.impl_id.get_embedded(data),
-            self.trait_constant.get_embedded(data, db),
-            db,
-        )
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -865,14 +853,6 @@ impl TraitConstantCached {
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> TraitConstantId<'db> {
         let (module_id, stable_ptr) = self.language_element.get_embedded(&ctx.defs_loading_data);
         TraitConstantLongId(module_id, TraitItemConstantPtr(stable_ptr)).intern(ctx.db)
-    }
-    pub fn get_embedded<'db>(
-        self,
-        data: &Arc<SemanticCacheLoadingData<'db>>,
-        db: &'db dyn Database,
-    ) -> TraitConstantId<'db> {
-        let (module_id, stable_ptr) = self.language_element.get_embedded(&data.defs_loading_data);
-        TraitConstantLongId(module_id, TraitItemConstantPtr(stable_ptr)).intern(db)
     }
 }
 
@@ -906,7 +886,7 @@ impl SemanticFunctionCached {
         }
     }
 }
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct SemanticFunctionIdCached(usize);
 impl SemanticFunctionIdCached {
     pub fn new<'db>(
@@ -1129,7 +1109,7 @@ impl ImplFunctionBodyCached {
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 enum GenericArgumentCached {
     Type(TypeIdCached),
-    Value(ConstValueCached),
+    Value(ConstValueIdCached),
     Impl(ImplIdCached),
     NegImpl(NegativeImplIdCached),
 }
@@ -1143,9 +1123,9 @@ impl GenericArgumentCached {
             GenericArgumentId::Type(type_id) => {
                 GenericArgumentCached::Type(TypeIdCached::new(type_id, ctx))
             }
-            GenericArgumentId::Constant(const_value_id) => GenericArgumentCached::Value(
-                ConstValueCached::new(const_value_id.long(ctx.db).clone(), ctx),
-            ),
+            GenericArgumentId::Constant(const_value_id) => {
+                GenericArgumentCached::Value(ConstValueIdCached::new(const_value_id, ctx))
+            }
             GenericArgumentId::Impl(impl_id) => {
                 GenericArgumentCached::Impl(ImplIdCached::new(impl_id, ctx))
             }
@@ -1157,9 +1137,7 @@ impl GenericArgumentCached {
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> GenericArgumentId<'db> {
         match self {
             GenericArgumentCached::Type(ty) => GenericArgumentId::Type(ty.embed(ctx)),
-            GenericArgumentCached::Value(value) => {
-                GenericArgumentId::Constant(value.embed(ctx).intern(ctx.db))
-            }
+            GenericArgumentCached::Value(value) => GenericArgumentId::Constant(value.embed(ctx)),
             GenericArgumentCached::Impl(imp) => GenericArgumentId::Impl(imp.embed(ctx)),
             GenericArgumentCached::NegImpl(negative_impl) => {
                 GenericArgumentId::NegImpl(negative_impl.embed(ctx))
@@ -1169,12 +1147,12 @@ impl GenericArgumentCached {
     pub fn get_embedded<'db>(
         self,
         data: &Arc<SemanticCacheLoadingData<'db>>,
-        db: &'db dyn Database,
+        _db: &'db dyn Database,
     ) -> GenericArgumentId<'db> {
         match self {
             GenericArgumentCached::Type(ty) => GenericArgumentId::Type(ty.get_embedded(data)),
             GenericArgumentCached::Value(value) => {
-                GenericArgumentId::Constant(value.get_embedded(data, db).intern(db))
+                GenericArgumentId::Constant(value.get_embedded(data))
             }
             GenericArgumentCached::Impl(imp) => GenericArgumentId::Impl(imp.get_embedded(data)),
             GenericArgumentCached::NegImpl(negative_impl) => {
@@ -1191,7 +1169,7 @@ enum TypeCached {
     Snapshot(TypeIdCached),
     GenericParameter(GenericParamCached),
     ImplType(ImplTypeCached),
-    FixedSizeArray(TypeIdCached, ConstValueCached),
+    FixedSizeArray(TypeIdCached, ConstValueIdCached),
     ClosureType(ClosureTypeCached),
     Coupon(SemanticFunctionIdCached),
 }
@@ -1214,7 +1192,7 @@ impl TypeCached {
             }
             TypeLongId::FixedSizeArray { type_id, size } => TypeCached::FixedSizeArray(
                 TypeIdCached::new(type_id, ctx),
-                ConstValueCached::new(size.long(ctx.db).clone(), ctx),
+                ConstValueIdCached::new(size, ctx),
             ),
             TypeLongId::Closure(closure_ty) => {
                 TypeCached::ClosureType(ClosureTypeCached::new(closure_ty, ctx))
@@ -1222,7 +1200,7 @@ impl TypeCached {
             TypeLongId::Coupon(func_id) => {
                 TypeCached::Coupon(SemanticFunctionIdCached::new(func_id, ctx))
             }
-            TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+            TypeLongId::Var(_) | TypeLongId::NumericLiteral(_) | TypeLongId::Missing(_) => {
                 unreachable!("type {:?} is not supported for caching", type_id.debug(ctx.db))
             }
         }
@@ -1238,17 +1216,16 @@ impl TypeCached {
                 generic_param.get_embedded(&ctx.defs_loading_data, ctx.db),
             ),
             TypeCached::ImplType(impl_type) => TypeLongId::ImplType(impl_type.embed(ctx)),
-            TypeCached::FixedSizeArray(type_id, size) => TypeLongId::FixedSizeArray {
-                type_id: type_id.embed(ctx),
-                size: size.embed(ctx).intern(ctx.db),
-            },
+            TypeCached::FixedSizeArray(type_id, size) => {
+                TypeLongId::FixedSizeArray { type_id: type_id.embed(ctx), size: size.embed(ctx) }
+            }
             TypeCached::ClosureType(closure_ty) => TypeLongId::Closure(closure_ty.embed(ctx)),
             TypeCached::Coupon(coupon) => TypeLongId::Coupon(coupon.embed(ctx)),
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct TypeIdCached(usize);
 
 impl TypeIdCached {
@@ -1437,7 +1414,7 @@ impl ImplCached {
         }
     }
 }
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ImplIdCached(usize);
 
 impl ImplIdCached {
@@ -1629,7 +1606,7 @@ impl NegativeImplCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 struct NegativeImplIdCached(usize);
 
 impl NegativeImplIdCached {

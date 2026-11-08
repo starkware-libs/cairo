@@ -3,10 +3,8 @@
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     if x == 0 {
         return 0;
@@ -54,10 +52,8 @@ BeginningOfBlock(blk1): v0
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) -> felt252 {
     {
         return y;
@@ -82,7 +78,7 @@ BeginningOfBlock(blk0): v0
 
 //! > lowering_diagnostics
 warning[E3000]: Unreachable code
- --> lib.cairo:5:5
+ --> lib.cairo:6:5
     x + 1
     ^^^^^
 
@@ -93,10 +89,8 @@ warning[E3000]: Unreachable code
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) -> felt252 {
     if x == 0 {
         return 1;
@@ -141,6 +135,6 @@ BeginningOfBlock(blk0): v1
 
 //! > lowering_diagnostics
 warning[E3000]: Unreachable code
- --> lib.cairo:7:5
+ --> lib.cairo:8:5
     x + y
     ^^^^^

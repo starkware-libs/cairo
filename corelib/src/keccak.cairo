@@ -103,8 +103,8 @@ fn keccak_add_u256_be(ref keccak_input: Array<u64>, v: u256) {
 /// use core::keccak::keccak_u256s_be_inputs;
 ///
 /// let input = array![0x1234_u256, 0x5678_u256].span();
-/// let hash = assert!(keccak_u256s_be_inputs(input) ==
-/// 0xfa31cb2326ed629f79d2da5beb78e2bd8ac7a1b8b86cae09eeb6a89a908b12a);
+/// let hash = keccak_u256s_be_inputs(input);
+/// assert!(hash == 0xfa31cb2326ed629f79d2da5beb78e2bd8ac7a1b8b86cae09eeb6a89a908b12a);
 /// ```
 pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array<u64> = Default::default();
@@ -176,7 +176,7 @@ fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes
     // The first word to append would be of the form
     //     0x1<`last_input_num_bytes` LSB bytes of `last_input_word`>.
     // For example, for `last_input_num_bytes == 4`:
-    //     0x1000000 + (last_input_word & 0xffffff)
+    //     0x100000000 + (last_input_word & 0xffffffff)
     let first_word_to_append = if last_input_num_bytes == 0 {
         // This case is handled separately to avoid unnecessary computations.
         1

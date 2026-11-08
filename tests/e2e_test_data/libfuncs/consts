@@ -554,7 +554,9 @@ test::foo@F0() -> (Tuple<Box<felt252>, BuiltinCosts>);
 WithOptsE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern type Const<T, const VALUE: T>;
+#[allow(extern_outside_corelib)]
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<felt252> nopanic;
 
 fn foo() -> (Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>) {
@@ -980,14 +982,18 @@ WithOptsE2ETestRunner
 use core::integer::u512;
 
 mod value {
+    #[allow(extern_outside_corelib)]
     extern type Const<T, const VALUE: T>;
 }
 mod struct4 {
+    #[allow(extern_outside_corelib)]
     extern type Const<T, C0, C1, C2, C3>;
 }
 mod nz {
+    #[allow(extern_outside_corelib)]
     extern type Const<T, C>;
 }
+#[allow(extern_outside_corelib)]
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<NonZero<u512>> nopanic;
 
 fn foo() -> Box<NonZero<u512>> {
@@ -1048,8 +1054,10 @@ WithOptsE2ETestRunner
 use core::ec::EcPoint;
 
 mod value {
+    #[allow(extern_outside_corelib)]
     extern type Const<T, const X: felt252, const Y: felt252>;
 }
+#[allow(extern_outside_corelib)]
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<EcPoint> nopanic;
 
 fn foo() -> Box<EcPoint> {
@@ -1098,8 +1106,10 @@ WithOptsE2ETestRunner
 use core::ec::EcPoint;
 
 mod value {
+    #[allow(extern_outside_corelib)]
     extern type Const<T, const X: felt252, const Y: felt252>;
 }
+#[allow(extern_outside_corelib)]
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<EcPoint> nopanic;
 
 fn foo() -> Box<EcPoint> {
@@ -1141,11 +1151,14 @@ WithOptsE2ETestRunner
 use core::ec::EcPoint;
 
 mod value {
+    #[allow(extern_outside_corelib)]
     extern type Const<T, const X: felt252, const Y: felt252>;
 }
 mod nz {
+    #[allow(extern_outside_corelib)]
     extern type Const<T, C>;
 }
+#[allow(extern_outside_corelib)]
 extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<NonZero<EcPoint>> nopanic;
 
 fn foo() -> Box<NonZero<EcPoint>> {

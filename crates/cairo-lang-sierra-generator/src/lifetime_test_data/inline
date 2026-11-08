@@ -3,21 +3,17 @@
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_code
-fn foo(a: felt252) -> felt252 {
-    bar(a)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
     if a == 0 {
         return 1;
     }
     0
+}
+#[target_function]
+fn foo(a: felt252) -> felt252 {
+    bar(a)
 }
 
 //! > lowering_format
@@ -61,25 +57,21 @@ BeginningOfBlock(blk2): v1
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_code
-fn foo(a: felt252) -> felt252 {
-    if a == 2 {
-        bar(a)
-    } else {
-        a
-    }
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
     if a == 0 {
         return 1;
     }
     0
+}
+#[target_function]
+fn foo(a: felt252) -> felt252 {
+    if a == 2 {
+        bar(a)
+    } else {
+        a
+    }
 }
 
 //! > lowering_format
@@ -142,15 +134,7 @@ BeginningOfBlock(blk4): v3
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(x: felt252) -> felt252 {
-    bar(x)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(x: felt252) -> felt252 {
     if x == 0 {
@@ -165,6 +149,10 @@ fn bar(x: felt252) -> felt252 {
 
 fn revoke_tempvars() {
     revoke_tempvars()
+}
+#[target_function]
+fn foo(x: felt252) -> felt252 {
+    bar(x)
 }
 
 //! > lowering_format
@@ -209,21 +197,17 @@ BeginningOfBlock(blk1): UninitializedLocal(v2)
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(data: Array<felt252>) -> Array<felt252> {
-    bar(data)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(data: Array<felt252>) -> Array<felt252> {
     gas::withdraw_gas().expect('Out of gas');
 
     let mut arr = Default::default();
     arr
+}
+#[target_function]
+fn foo(data: Array<felt252>) -> Array<felt252> {
+    bar(data)
 }
 
 //! > lowering_format

@@ -1,12 +1,12 @@
-use std::sync::Arc;
-
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_test_utils::test;
+use itertools::Itertools;
+use salsa::Database;
 
-use crate::lexer::{LexerTerminal, tokenize_all};
+use crate::lexer::{Lexer, LexerTerminal};
 use crate::utils::SimpleParserDatabase;
 
 // TODO(spapini): Use snapshot/regression tests.
@@ -266,9 +266,9 @@ fn test_lex_single_token() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     for (kind, text) in terminal_kind_and_text() {
-        let terminals = tokenize_all(db, (), Arc::from(text));
+        let terminals = tokenize_all(db, text);
         let terminal = &terminals[0];
-        // TODO(spapini): Remove calling new_root on non root elements.
+        // TODO(spapini): Remove calling new_detached_root on non root elements.
         assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
         assert_eq!(terminal.text.long(db), text, "Wrong token text.");
 
@@ -293,7 +293,7 @@ fn test_lex_double_token() {
             }
             for separator in separators {
                 let text = format!("{text0}{separator}{text1}");
-                let terminals = tokenize_all(db, (), Arc::from(text.as_str()));
+                let terminals = tokenize_all(db, &text);
                 let terminal = &terminals[0];
                 let token_text = terminal.text(db);
                 assert_eq!(
@@ -342,7 +342,7 @@ fn test_lex_token_with_trivia() {
         for leading_trivia in trivia_texts() {
             for trailing_trivia in trivia_texts() {
                 let text = format!("{leading_trivia}{expected_token_text} {trailing_trivia}");
-                let terminals = tokenize_all(db, (), Arc::from(text.as_str()));
+                let terminals = tokenize_all(db, &text);
                 let terminal = &terminals[0];
                 let token_text = terminal.text(db);
                 assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
@@ -364,7 +364,7 @@ fn test_lex_token_with_trivia() {
 fn test_cases() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
-    let res = tokenize_all(db, (), Arc::from("let x: &T = ` 6; //  5+ 3;"));
+    let res = tokenize_all(db, "let x: &T = ` 6; //  5+ 3;");
     assert_eq!(
         res.into_iter().collect::<Vec<_>>(),
         vec![
@@ -445,13 +445,38 @@ fn test_cases() {
     );
 }
 
+/// `///` is a doc comment and `//!` an inner doc comment, but `////` (4+ slashes) is a regular
+/// comment, matching `cairo-lang-doc` (which discards a doc comment whose content starts with `/`).
+#[test]
+fn test_doc_comment_classification() {
+    let db_val = SimpleParserDatabase::default();
+    let db = &db_val;
+    let text = "// regular\n/// doc\n//! inner\n//// regular\n///// regular\n";
+    let terminal = tokenize_all(db, text).into_iter().exactly_one().unwrap();
+    assert_eq!(
+        terminal.leading_trivia.into_iter().map(|t| t.0.long(db).kind).collect_vec(),
+        [
+            SyntaxKind::TokenSingleLineComment,
+            SyntaxKind::TokenNewline,
+            SyntaxKind::TokenSingleLineDocComment,
+            SyntaxKind::TokenNewline,
+            SyntaxKind::TokenSingleLineInnerComment,
+            SyntaxKind::TokenNewline,
+            SyntaxKind::TokenSingleLineComment,
+            SyntaxKind::TokenNewline,
+            SyntaxKind::TokenSingleLineComment,
+            SyntaxKind::TokenNewline
+        ]
+    );
+}
+
 #[test]
 fn test_bad_character() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
     let text = "`";
-    let terminals = tokenize_all(db, (), Arc::from(text));
+    let terminals = tokenize_all(db, text);
     let terminal = &terminals[0];
     let token_text = terminal.text(db);
     assert_eq!(
@@ -467,4 +492,19 @@ fn test_bad_character() {
         "Wrong eof token, with text: \"{text}\"."
     );
     assert_eq!(terminals.len(), 2, "Expected exactly 2 terminals (bad char + EOF).");
+}
+
+/// Tokenizes the entire text and returns a vector of terminals.
+pub fn tokenize_all<'db>(db: &'db dyn Database, text: &'db str) -> Vec<LexerTerminal<'db>> {
+    let mut lexer = Lexer::new(text);
+    let mut result = vec![];
+    loop {
+        let terminal = lexer.match_terminal(db);
+        let is_eof = terminal.kind == SyntaxKind::TerminalEndOfFile;
+        result.push(terminal);
+        if is_eof {
+            break;
+        }
+    }
+    result
 }

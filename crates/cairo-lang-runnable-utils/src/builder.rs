@@ -44,6 +44,8 @@ pub enum BuildError {
     FailedGasCalculation(#[from] CostError),
     #[error("Function with suffix `{suffix}` to run not found.")]
     MissingFunction { suffix: String },
+    #[error("Function `{name}` to run not found.")]
+    MissingFunctionByName { name: String },
     #[error(transparent)]
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error(transparent)]
@@ -155,6 +157,15 @@ impl RunnableBuilder {
                 if let Some(name) = &f.id.debug_name { name.ends_with(name_suffix) } else { false }
             })
             .ok_or_else(|| BuildError::MissingFunction { suffix: name_suffix.to_owned() })
+    }
+
+    /// Finds the function whose debug name is exactly `name`.
+    pub fn find_function_by_name(&self, name: &str) -> Result<&Function, BuildError> {
+        self.sierra_program
+            .funcs
+            .iter()
+            .find(|f| f.id.debug_name.as_deref() == Some(name))
+            .ok_or_else(|| BuildError::MissingFunctionByName { name: name.to_owned() })
     }
 
     /// Returns the type info of a given `ConcreteTypeId`.

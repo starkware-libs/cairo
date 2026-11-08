@@ -114,7 +114,7 @@ fn create_panic_block<'db>(
         ConcreteTypeId::Enum
     );
 
-    // The block consists of calling  panic_with_const_felt252::<'Out of gas'> and matching on its
+    // The block consists of calling panic_with_const_felt252::<'Out of gas'> and matching on its
     // `never` result.
     Ok(Block {
         statements: vec![Statement::Call(StatementCall {

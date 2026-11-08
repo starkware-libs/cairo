@@ -53,6 +53,26 @@ enum TwoVariantEnum {
     Second: B,
 }
 
+#[derive(Drop, Hash)]
+enum GenericEnum<T> {
+    Variant: T,
+    Other: felt252,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnumMulti<T> {
+    First: T,
+    Second: T,
+    Third: felt252,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnumMultiType<T, U> {
+    First: T,
+    Second: U,
+    Third: felt252,
+}
+
 //! > expanded_cairo_code
 #[derive(Copy, Debug, Default, Drop, Hash)]
 struct A {}
@@ -101,6 +121,26 @@ enum TwoVariantEnum {
     First: A,
     #[default]
     Second: B,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnum<T> {
+    Variant: T,
+    Other: felt252,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnumMulti<T> {
+    First: T,
+    Second: T,
+    Third: felt252,
+}
+
+#[derive(Drop, Hash)]
+enum GenericEnumMultiType<T, U> {
+    First: T,
+    Second: U,
+    Third: felt252,
 }
 impl ACopy<> of core::traits::Copy::<A>;
 impl ADebug<> of core::fmt::Debug::<A> {
@@ -204,10 +244,10 @@ impl TwoMemberStructHash<
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberStruct) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::InferDrop::<A> { value: value.a };
-        let b = core::internal::InferDrop::<B> { value: value.b };
-        let __hash_derive_state = core::hash::Hash::<A>::update_state(__hash_derive_state, a.value);
-        let __hash_derive_state = core::hash::Hash::<B>::update_state(__hash_derive_state, b.value);
+        let __hash_derive_member_a = core::internal::InferDrop::<A> { value: value.a };
+        let __hash_derive_member_b = core::internal::InferDrop::<B> { value: value.b };
+        let __hash_derive_state = core::hash::Hash::<A>::update_state(__hash_derive_state, __hash_derive_member_a.value);
+        let __hash_derive_state = core::hash::Hash::<B>::update_state(__hash_derive_state, __hash_derive_member_b.value);
         __hash_derive_state
     }
 }
@@ -229,11 +269,11 @@ impl TwoMemberStructSerde<> of core::serde::Serde::<TwoMemberStruct> {
         core::serde::Serde::<B>::serialize(self.b, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberStruct> {
-        let a = core::internal::InferDestruct::<A> { value: core::serde::Serde::<A>::deserialize(ref serialized)? };
-        let b = core::internal::InferDestruct::<B> { value: core::serde::Serde::<B>::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::InferDestruct::<A> { value: core::serde::Serde::<A>::deserialize(ref serialized)? };
+        let __serde_member_b = core::internal::InferDestruct::<B> { value: core::serde::Serde::<B>::deserialize(ref serialized)? };
         core::option::Option::Some(TwoMemberStruct {
-            a: a.value,
-            b: b.value,
+            a: __serde_member_a.value,
+            b: __serde_member_b.value,
         })
     }
 }
@@ -275,8 +315,8 @@ impl GenericStructHash<
     #[inline(always)]
     fn update_state(state: __State, value: GenericStruct<T>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
-        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
+        let __hash_derive_member_a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, __hash_derive_member_a.value);
         __hash_derive_state
     }
 }
@@ -313,11 +353,11 @@ impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl __
         __MEMBER_IMPL_b_Serde::serialize(self.b, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberGenericStruct<T, U, USomeTrait>> {
-        let a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
-        let b = core::internal::DestructWith::<U, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
+        let __serde_member_b = core::internal::DestructWith::<U, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
         core::option::Option::Some(TwoMemberGenericStruct {
-            a: a.value,
-            b: b.value,
+            a: __serde_member_a.value,
+            b: __serde_member_b.value,
         })
     }
 }
@@ -330,10 +370,10 @@ impl TwoMemberGenericStructHash<
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberGenericStruct<T, U, USomeTrait>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
-        let b = core::internal::DropWith::<U, __MEMBER_IMPL_b_Drop> { value: value.b };
-        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
-        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, b.value);
+        let __hash_derive_member_a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_member_b = core::internal::DropWith::<U, __MEMBER_IMPL_b_Drop> { value: value.b };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, __hash_derive_member_a.value);
+        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, __hash_derive_member_b.value);
         __hash_derive_state
     }
 }
@@ -370,11 +410,11 @@ impl TwoMemberSameTypeGenericStructSerde<T, impl __MEMBER_IMPL_a_Serde: core::se
         __MEMBER_IMPL_b_Serde::serialize(self.b, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<TwoMemberSameTypeGenericStruct<T>> {
-        let a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
-        let b = core::internal::DestructWith::<T, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::DestructWith::<T, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
+        let __serde_member_b = core::internal::DestructWith::<T, __MEMBER_IMPL_b_Destruct> { value: __MEMBER_IMPL_b_Serde::deserialize(ref serialized)? };
         core::option::Option::Some(TwoMemberSameTypeGenericStruct {
-            a: a.value,
-            b: b.value,
+            a: __serde_member_a.value,
+            b: __serde_member_b.value,
         })
     }
 }
@@ -387,10 +427,10 @@ impl TwoMemberSameTypeGenericStructHash<
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberSameTypeGenericStruct<T>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
-        let b = core::internal::DropWith::<T, __MEMBER_IMPL_b_Drop> { value: value.b };
-        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
-        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, b.value);
+        let __hash_derive_member_a = core::internal::DropWith::<T, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_member_b = core::internal::DropWith::<T, __MEMBER_IMPL_b_Drop> { value: value.b };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, __hash_derive_member_a.value);
+        let __hash_derive_state = __MEMBER_IMPL_b_Hash::update_state(__hash_derive_state, __hash_derive_member_b.value);
         __hash_derive_state
     }
 }
@@ -421,9 +461,9 @@ impl GenericStructNotDependentSerde<T> of core::serde::Serde::<GenericStructNotD
         core::serde::Serde::<u32>::serialize(self.a, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GenericStructNotDependent<T>> {
-        let a = core::internal::InferDestruct::<u32> { value: core::serde::Serde::<u32>::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::InferDestruct::<u32> { value: core::serde::Serde::<u32>::deserialize(ref serialized)? };
         core::option::Option::Some(GenericStructNotDependent {
-            a: a.value,
+            a: __serde_member_a.value,
         })
     }
 }
@@ -436,8 +476,8 @@ impl GenericStructNotDependentHash<
     #[inline(always)]
     fn update_state(state: __State, value: GenericStructNotDependent<T>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::InferDrop::<u32> { value: value.a };
-        let __hash_derive_state = core::hash::Hash::<u32>::update_state(__hash_derive_state, a.value);
+        let __hash_derive_member_a = core::internal::InferDrop::<u32> { value: value.a };
+        let __hash_derive_state = core::hash::Hash::<u32>::update_state(__hash_derive_state, __hash_derive_member_a.value);
         __hash_derive_state
     }
 }
@@ -468,9 +508,9 @@ impl GenericStructIndirectlyDependentSerde<T, impl __MEMBER_IMPL_a_Serde: core::
         __MEMBER_IMPL_a_Serde::serialize(self.a, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GenericStructIndirectlyDependent<T>> {
-        let a = core::internal::DestructWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
+        let __serde_member_a = core::internal::DestructWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Destruct> { value: __MEMBER_IMPL_a_Serde::deserialize(ref serialized)? };
         core::option::Option::Some(GenericStructIndirectlyDependent {
-            a: a.value,
+            a: __serde_member_a.value,
         })
     }
 }
@@ -483,8 +523,8 @@ impl GenericStructIndirectlyDependentHash<
     #[inline(always)]
     fn update_state(state: __State, value: GenericStructIndirectlyDependent<T>) -> __State {
         let __hash_derive_state = state;
-        let a = core::internal::DropWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Drop> { value: value.a };
-        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, a.value);
+        let __hash_derive_member_a = core::internal::DropWith::<Deref::<T>::Target, __MEMBER_IMPL_a_Drop> { value: value.a };
+        let __hash_derive_state = __MEMBER_IMPL_a_Hash::update_state(__hash_derive_state, __hash_derive_member_a.value);
         __hash_derive_state
     }
 }
@@ -536,12 +576,14 @@ impl TwoVariantEnumHash<
     fn update_state(state: __State, value: TwoVariantEnum) -> __State {
         match value {
             TwoVariantEnum::First(x) => {
+                let x = core::internal::InferDrop::<A> { value: x };
                 let state = core::hash::Hash::update_state(state, 0_felt252);
-                core::hash::Hash::<A>::update_state(state, x)
+                core::hash::Hash::<A>::update_state(state, x.value)
             },
             TwoVariantEnum::Second(x) => {
+                let x = core::internal::InferDrop::<B> { value: x };
                 let state = core::hash::Hash::update_state(state, 1_felt252);
-                core::hash::Hash::<B>::update_state(state, x)
+                core::hash::Hash::<B>::update_state(state, x.value)
             },
         }
     }
@@ -568,10 +610,7 @@ impl TwoVariantEnumPartialEq<> of core::traits::PartialEq::<TwoVariantEnum> {
         }
     }
 }
-impl TwoVariantEnumSerde<
-        
-    > of core::serde::Serde<TwoVariantEnum>
- {
+impl TwoVariantEnumSerde<> of core::serde::Serde::<TwoVariantEnum> {
     fn serialize(self: @TwoVariantEnum, ref output: core::array::Array<felt252>) {
         match self {
             TwoVariantEnum::First(x) => { core::serde::Serde::<felt252>::serialize(@0, ref output); core::serde::Serde::<A>::serialize(x, ref output); },
@@ -587,6 +626,85 @@ impl TwoVariantEnumSerde<
                 _ => { return core::option::Option::None; }
             }
         )
+    }
+}
+impl GenericEnumDrop<T, impl __MEMBER_IMPL_Variant_Drop: core::traits::Drop<T>> of core::traits::Drop::<GenericEnum<T>>;
+impl GenericEnumHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +core::traits::Drop<__State>,
+    T, impl __MEMBER_IMPL_Variant_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_Variant_Drop: core::traits::Drop<T>
+> of core::hash::Hash<GenericEnum<T>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: GenericEnum<T>) -> __State {
+        match value {
+            GenericEnum::Variant(x) => {
+                let x = core::internal::DropWith::<T, __MEMBER_IMPL_Variant_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 0_felt252);
+                __MEMBER_IMPL_Variant_Hash::update_state(state, x.value)
+            },
+            GenericEnum::Other(x) => {
+                let x = core::internal::InferDrop::<felt252> { value: x };
+                let state = core::hash::Hash::update_state(state, 1_felt252);
+                core::hash::Hash::<felt252>::update_state(state, x.value)
+            },
+        }
+    }
+}
+impl GenericEnumMultiDrop<T, impl __MEMBER_IMPL_First_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_Second_Drop: core::traits::Drop<T>> of core::traits::Drop::<GenericEnumMulti<T>>;
+impl GenericEnumMultiHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +core::traits::Drop<__State>,
+    T, impl __MEMBER_IMPL_First_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_First_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_Second_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_Second_Drop: core::traits::Drop<T>
+> of core::hash::Hash<GenericEnumMulti<T>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: GenericEnumMulti<T>) -> __State {
+        match value {
+            GenericEnumMulti::First(x) => {
+                let x = core::internal::DropWith::<T, __MEMBER_IMPL_First_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 0_felt252);
+                __MEMBER_IMPL_First_Hash::update_state(state, x.value)
+            },
+            GenericEnumMulti::Second(x) => {
+                let x = core::internal::DropWith::<T, __MEMBER_IMPL_Second_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 1_felt252);
+                __MEMBER_IMPL_Second_Hash::update_state(state, x.value)
+            },
+            GenericEnumMulti::Third(x) => {
+                let x = core::internal::InferDrop::<felt252> { value: x };
+                let state = core::hash::Hash::update_state(state, 2_felt252);
+                core::hash::Hash::<felt252>::update_state(state, x.value)
+            },
+        }
+    }
+}
+impl GenericEnumMultiTypeDrop<T, U, impl __MEMBER_IMPL_First_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_Second_Drop: core::traits::Drop<U>> of core::traits::Drop::<GenericEnumMultiType<T, U>>;
+impl GenericEnumMultiTypeHash<
+    __State,
+    impl __SHashState: core::hash::HashStateTrait<__State>,
+    +core::traits::Drop<__State>,
+    T, U, impl __MEMBER_IMPL_First_Hash: core::hash::Hash<T, __State, __SHashState>, impl __MEMBER_IMPL_First_Drop: core::traits::Drop<T>, impl __MEMBER_IMPL_Second_Hash: core::hash::Hash<U, __State, __SHashState>, impl __MEMBER_IMPL_Second_Drop: core::traits::Drop<U>
+> of core::hash::Hash<GenericEnumMultiType<T, U>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: GenericEnumMultiType<T, U>) -> __State {
+        match value {
+            GenericEnumMultiType::First(x) => {
+                let x = core::internal::DropWith::<T, __MEMBER_IMPL_First_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 0_felt252);
+                __MEMBER_IMPL_First_Hash::update_state(state, x.value)
+            },
+            GenericEnumMultiType::Second(x) => {
+                let x = core::internal::DropWith::<U, __MEMBER_IMPL_Second_Drop> { value: x };
+                let state = core::hash::Hash::update_state(state, 1_felt252);
+                __MEMBER_IMPL_Second_Hash::update_state(state, x.value)
+            },
+            GenericEnumMultiType::Third(x) => {
+                let x = core::internal::InferDrop::<felt252> { value: x };
+                let state = core::hash::Hash::update_state(state, 2_felt252);
+                core::hash::Hash::<felt252>::update_state(state, x.value)
+            },
+        }
     }
 }
 
@@ -616,6 +734,7 @@ struct NonSimplePath {}
 fn unsupportedItem() {}
 
 #[derive(Clone)]
+#[allow(extern_outside_corelib)]
 extern type NotCloneable;
 
 #[derive(Default)]
@@ -630,6 +749,13 @@ enum TooManyDefaultValues {
     First,
     #[default]
     Second,
+}
+
+#[derive(Default, Drop)]
+struct DefaultOnStructMember {
+    #[default]
+    a: felt252,
+    b: felt252,
 }
 
 //! > expanded_cairo_code
@@ -649,6 +775,7 @@ struct NonSimplePath {}
 fn unsupportedItem() {}
 
 #[derive(Clone)]
+#[allow(extern_outside_corelib)]
 extern type NotCloneable;
 
 #[derive(Default)]
@@ -664,11 +791,29 @@ enum TooManyDefaultValues {
     #[default]
     Second,
 }
+
+#[derive(Default, Drop)]
+struct DefaultOnStructMember {
+    #[default]
+    a: felt252,
+    b: felt252,
+}
 impl TooManyDefaultValuesDefault<> of core::traits::Default::<TooManyDefaultValues> {
     fn default() -> TooManyDefaultValues {
         TooManyDefaultValues::First(core::traits::Default::<()>::default())
     }
 }
+impl DefaultOnStructMemberDefault<> of core::traits::Default::<DefaultOnStructMember> {
+    fn default() -> DefaultOnStructMember {
+        let a = core::internal::InferDestruct::<felt252> { value: core::traits::Default::<felt252>::default() };
+        let b = core::internal::InferDestruct::<felt252> { value: core::traits::Default::<felt252>::default() };
+        DefaultOnStructMember {
+            a: a.value,
+            b: b.value,
+        }
+    }
+}
+impl DefaultOnStructMemberDrop<> of core::traits::Drop::<DefaultOnStructMember>;
 
 //! > expected_diagnostics
 error: Expected args.
@@ -708,12 +853,18 @@ error: `derive` may only be applied to `struct`s and `enum`s
 
 
 error: derive `Default` for enum only supported with a default variant.
- --> test_src/lib.cairo:19:10
+ --> test_src/lib.cairo:20:10
 #[derive(Default)]
          ^^^^^^^
 
 
 error: Multiple variants annotated with `#[default]`
- --> test_src/lib.cairo:29:5
+ --> test_src/lib.cairo:30:5
+    #[default]
+    ^^^^^^^^^^
+
+
+error: `#[default]` is not supported on struct members.
+ --> test_src/lib.cairo:36:5
     #[default]
     ^^^^^^^^^^

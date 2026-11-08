@@ -3,16 +3,17 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, init_files_group};
-use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileLongId, SmolStrId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{HasName, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
 use indoc::indoc;
+use itertools::Itertools;
 use salsa::{Database, Setter};
 
 use crate::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
@@ -53,15 +54,17 @@ cairo_lang_test_utils::test_file_test!(
     {
         generic_item_id: "generic_item_id",
     },
-    test_generic_item_id
+    test_generic_item_id,
+    ["discriminator"]
 );
 fn test_generic_item_id(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let mut db_val: DatabaseForTesting = DatabaseForTesting::default();
-    setup_test_module(&mut db_val, inputs["module_code"].as_str());
-    let module_id = ModuleId::CrateRoot(get_crate_id(&db_val));
+    let discriminator = args.get("discriminator").map(String::as_str);
+    setup_test_crate_module(&mut db_val, inputs["module_code"].as_str(), discriminator);
+    let module_id = ModuleId::CrateRoot(test_crate_id(&db_val, discriminator));
 
     let file_id = db_val.module_main_file(module_id).unwrap();
     let file_syntax = db_val.file_module_syntax(file_id).unwrap();
@@ -82,13 +85,20 @@ fn test_generic_item_id(
             SyntaxKind::GenericParamType
             | SyntaxKind::GenericParamConst
             | SyntaxKind::GenericParamImplNamed
-            | SyntaxKind::GenericParamImplAnonymous => {
+            | SyntaxKind::GenericParamImplAnonymous
+            | SyntaxKind::GenericParamNegativeImpl => {
                 let param_id =
                     GenericParamLongId(module_id, ast::GenericParamPtr(node.stable_ptr(db)))
                         .intern(db);
                 let generic_item = param_id.generic_item(db);
-                writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
-                    .unwrap();
+                writeln!(
+                    output,
+                    "{:?} -> {:?}: {}",
+                    param_id.debug(db),
+                    generic_item.debug(db),
+                    param_id.key_path(db)
+                )
+                .unwrap();
             }
             _ => {}
         }
@@ -102,17 +112,28 @@ fn test_generic_item_id(
 }
 
 pub fn get_crate_id<'db>(db: &'db dyn Database) -> CrateId<'db> {
-    CrateId::plain(db, SmolStrId::from(db, "test"))
+    test_crate_id(db, None)
+}
+
+/// The id of the `test` crate, with the given discriminator.
+fn test_crate_id<'db>(db: &'db dyn Database, discriminator: Option<&str>) -> CrateId<'db> {
+    let name = SmolStrId::from(db, "test");
+    CrateLongId::Real { name, discriminator: discriminator.map(Into::into) }.intern(db)
 }
 
 pub fn setup_test_module(db: &mut dyn Database, content: &str) {
-    let crate_id = get_crate_id(db);
+    setup_test_crate_module(db, content, None);
+}
+
+/// Sets up the `test` crate, with the given discriminator, with `content` as its root module.
+fn setup_test_crate_module(db: &mut dyn Database, content: &str, discriminator: Option<&str>) {
+    let crate_id = test_crate_id(db, discriminator);
     let directory = Directory::Real("src".into());
     set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(directory)));
-    let crate_id = get_crate_id(db);
+    let crate_id = test_crate_id(db, discriminator);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
     override_file_content!(db, file, Some(content.into()));
-    let crate_id = get_crate_id(db);
+    let crate_id = test_crate_id(db, discriminator);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
     let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db);
     assert_eq!(syntax_diagnostics, "");
@@ -465,4 +486,106 @@ fn test_plugin_chain() {
         "[FreeFunctionId(test::foo), FreeFunctionId(test::bar), ExternTypeId(test::B), \
          ExternTypeId(test::B)]"
     )
+}
+
+#[test]
+fn test_allowed_features_accumulated_with_item() {
+    let mut db = DatabaseForTesting::default();
+    defs_group_input(&db)
+        .set_default_macro_plugins(&mut db)
+        .to(Some(vec![MacroPluginLongId(Arc::new(ReportAllowedFeaturesPlugin))]));
+    setup_test_module(
+        &mut db,
+        indoc! {r#"
+            mod m1 {
+                fn f1() {}
+            }
+            #[feature("outer2")]
+            mod m2 {
+                fn f2() {}
+            }
+            mod m3 {
+                #[feature("inner3")]
+                fn f3() {}
+            }
+            #[feature("outer4")]
+            mod m4 {
+                #[feature("inner4")]
+                fn f4() {}
+            }
+            #[feature("outer5")]
+            mod m5 {
+                #[feature("mid5")]
+                mod m6 {
+                    #[feature("inner5")]
+                    fn f5() {}
+                }
+            }
+    "#},
+    );
+    let modules = db.crate_modules(get_crate_id(&db));
+    let diags = modules
+        .iter()
+        .flat_map(|m| {
+            m.module_data(&db)
+                .unwrap()
+                .plugin_diagnostics(&db)
+                .iter()
+                .map(|(_, diag)| &diag.message)
+        })
+        .sorted()
+        .join("");
+    assert_eq!(
+        diags,
+        indoc! {r#"
+            f1: []
+            f2: ["outer2"]
+            f3: ["inner3"]
+            f4: ["inner4", "outer4"]
+            f5: ["inner5", "mid5", "outer5"]
+            m1: []
+            m2: ["outer2"]
+            m3: []
+            m4: ["outer4"]
+            m5: ["outer5"]
+            m6: ["mid5", "outer5"]
+        "#}
+    );
+}
+
+/// Reports, as a warning for each item the sorted `allowed_features` for it.
+#[derive(Debug)]
+struct ReportAllowedFeaturesPlugin;
+impl MacroPlugin for ReportAllowedFeaturesPlugin {
+    fn generate_code<'db>(
+        &self,
+        db: &'db dyn Database,
+        item_ast: ast::ModuleItem<'db>,
+        metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult<'db> {
+        let name = match &item_ast {
+            ast::ModuleItem::Module(item) => item.name(db),
+            ast::ModuleItem::FreeFunction(item) => item.name(db),
+            _ => return PluginResult::default(),
+        }
+        .text(db);
+        let features = metadata
+            .allowed_features
+            .iter()
+            .map(|feature| feature.long(db).to_string())
+            .sorted()
+            .join(", ");
+        PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic::warning(
+                item_ast.stable_ptr(db),
+                format!("{}: [{features}]\n", name.long(db)),
+            )],
+            remove_original_item: false,
+        }
+    }
+
+    fn declared_attributes<'db>(&self, _db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![]
+    }
 }

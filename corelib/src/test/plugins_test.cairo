@@ -7,6 +7,13 @@ enum EnumForSerde {
     C: u64,
 }
 
+/// A field named `serialized` (not last) must not shadow the generated `deserialize` parameter.
+#[derive(Copy, Debug, Drop, Serde, PartialEq)]
+struct StructWithSerializedField {
+    serialized: u32,
+    other: u32,
+}
+
 #[derive(Drop, Debug, Default, PartialEq)]
 struct StructForDefault {
     a: felt252,
@@ -34,30 +41,22 @@ fn test_derive_serde_enum() {
     b.serialize(ref output);
     a.serialize(ref output);
     let mut serialized = output.span();
-    assert_eq(
-        @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
-        @a,
-        'expected a',
-    );
-    assert_eq(
-        @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
-        @a,
-        'expected a',
-    );
-    assert_eq(
-        @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
-        @c,
-        'expected c',
-    );
-    assert_eq(
-        @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
-        @b,
-        'expected b',
-    );
-    assert_eq(
-        @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
-        @a,
-        'expected a',
+    assert_eq!(Serde::deserialize(ref serialized), Some(a));
+    assert_eq!(Serde::deserialize(ref serialized), Some(a));
+    assert_eq!(Serde::deserialize(ref serialized), Some(c));
+    assert_eq!(Serde::deserialize(ref serialized), Some(b));
+    assert_eq!(Serde::deserialize(ref serialized), Some(a));
+    assert(serialized.is_empty(), 'expected empty');
+}
+
+#[test]
+fn test_derive_serde_struct_with_serialized_field() {
+    let mut output = array![];
+    StructWithSerializedField { serialized: 3, other: 5 }.serialize(ref output);
+    let mut serialized = output.span();
+    assert_eq!(
+        Serde::deserialize(ref serialized),
+        Some(StructWithSerializedField { serialized: 3, other: 5 }),
     );
     assert(serialized.is_empty(), 'expected empty');
 }
@@ -81,7 +80,7 @@ enum LongEnum5 {
     E,
 }
 #[derive(Copy, Debug, Drop, Serde, PartialEq)]
-enum longEnum10 {
+enum LongEnum10 {
     A,
     B,
     C,
@@ -94,7 +93,7 @@ enum longEnum10 {
     J,
 }
 #[derive(Copy, Debug, Drop, Serde, PartialEq)]
-enum longEnum15 {
+enum LongEnum15 {
     A,
     B,
     C,
@@ -115,36 +114,22 @@ enum longEnum15 {
 
 #[test]
 fn test_long_enum5_deserialize() {
-    let x = LongEnum5::E;
     let mut output = Default::default();
-    x.serialize(ref output);
+    LongEnum5::E.serialize(ref output);
     let mut serialized = output.span();
-    assert_eq(
-        @Serde::<LongEnum5>::deserialize(ref serialized).expect('failed to read'), @x, 'expected E',
-    );
+    assert_eq!(Serde::deserialize(ref serialized), Some(LongEnum5::E));
 }
 #[test]
 fn test_long_enum10_deserialize() {
-    let x = longEnum10::J;
     let mut output = Default::default();
-    x.serialize(ref output);
+    LongEnum10::J.serialize(ref output);
     let mut serialized = output.span();
-    assert_eq(
-        @Serde::<longEnum10>::deserialize(ref serialized).expect('failed to read'),
-        @x,
-        'expected J',
-    );
+    assert_eq!(Serde::deserialize(ref serialized), Some(LongEnum10::J));
 }
 #[test]
 fn test_long_enum15_deserialize() {
-    let x = longEnum15::O;
     let mut output = Default::default();
-    x.serialize(ref output);
+    LongEnum15::O.serialize(ref output);
     let mut serialized = output.span();
-    assert_eq(
-        @Serde::<longEnum15>::deserialize(ref serialized).expect('failed to read'),
-        @x,
-        'expected O',
-    );
+    assert_eq!(Serde::deserialize(ref serialized), Some(LongEnum15::O));
 }
-

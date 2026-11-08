@@ -884,6 +884,7 @@ test::foo@F0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u3
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn span_from_tuple<T>(struct_like: Box<@T>) -> @Array<felt252> nopanic;
 
 fn foo(x1: Box<@(felt252, felt252, felt252)>) -> @Array<felt252> {
@@ -923,6 +924,7 @@ test::foo@F0([0]: Box<Tuple<felt252, felt252, felt252>>) -> (Snapshot<Array<felt
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn tuple_from_span<T>(span: @Array<felt252>) -> Option<@Box<T>> nopanic;
 
 fn foo(span: @Array<felt252>) -> Option<@Box<(felt252, felt252, felt252)>> {

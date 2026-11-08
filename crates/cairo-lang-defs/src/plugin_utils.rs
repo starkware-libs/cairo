@@ -1,6 +1,7 @@
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::require;
 use itertools::Itertools;
 use salsa::Database;
@@ -58,13 +59,27 @@ impl<'db> PluginResultTrait<'db> for PluginResult<'db> {
     }
 }
 
-/// Returns diagnostics for an unsupported bracket type.
+/// Returns diagnostics for an unsupported bracket type, wrapped in the macro's
+/// [`InlineMacroCall::Result`].
 pub fn unsupported_bracket_diagnostic<'db, CallAst: InlineMacroCall<'db>>(
     db: &'db dyn Database,
     legacy_macro_ast: &CallAst,
     macro_ast: impl Into<SyntaxStablePtrId<'db>>,
 ) -> CallAst::Result {
-    CallAst::Result::diagnostic_only(PluginDiagnostic::error_with_inner_span(
+    CallAst::Result::diagnostic_only(unsupported_bracket_diagnostic_inner(
+        db,
+        legacy_macro_ast,
+        macro_ast,
+    ))
+}
+
+/// Returns diagnostics for an unsupported bracket type.
+fn unsupported_bracket_diagnostic_inner<'db, CallAst: InlineMacroCall<'db>>(
+    db: &'db dyn Database,
+    legacy_macro_ast: &CallAst,
+    macro_ast: impl Into<SyntaxStablePtrId<'db>>,
+) -> PluginDiagnostic<'db> {
+    PluginDiagnostic::error_with_inner_span(
         db,
         macro_ast,
         legacy_macro_ast.arguments(db).left_bracket_syntax_node(db),
@@ -72,9 +87,10 @@ pub fn unsupported_bracket_diagnostic<'db, CallAst: InlineMacroCall<'db>>(
             "Macro `{}` does not support this bracket type.",
             legacy_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db).long(db)
         ),
-    ))
+    )
 }
 
+/// Returns a diagnostic for a macro call that cannot be parsed as a legacy inline macro.
 pub fn not_legacy_macro_diagnostic(stable_ptr: SyntaxStablePtrId<'_>) -> PluginDiagnostic<'_> {
     PluginDiagnostic::error(
         stable_ptr,
@@ -82,6 +98,21 @@ pub fn not_legacy_macro_diagnostic(stable_ptr: SyntaxStablePtrId<'_>) -> PluginD
          parentheses, brackets, or braces."
             .to_string(),
     )
+}
+
+/// Extracts the parenthesized argument list of a legacy inline macro call. Returns a diagnostic on
+/// a non-legacy-macro call, or on a non-parenthesized bracket.
+pub fn extract_parenthesized_macro<'db>(
+    db: &'db dyn Database,
+    syntax: &ast::ExprInlineMacro<'db>,
+) -> Result<ast::ArgListParenthesized<'db>, PluginDiagnostic<'db>> {
+    let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
+        return Err(not_legacy_macro_diagnostic(syntax.stable_ptr(db).untyped()));
+    };
+    let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) else {
+        return Err(unsupported_bracket_diagnostic_inner(db, &syntax, syntax.stable_ptr(db)));
+    };
+    Ok(args)
 }
 
 /// Extracts a single unnamed argument.

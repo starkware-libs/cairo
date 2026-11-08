@@ -509,7 +509,7 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
 
     /// Helper function for `prepare_wallet()`.
     ///
-    /// Assumes that the values was already computed for the dependencies.
+    /// Assumes that the values were already computed for the dependencies.
     fn no_cache_compute_wallet_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
         &mut self,
         idx: StatementIdx,
@@ -804,6 +804,7 @@ impl PostCostTypeEx for ConstCost {
             (CostTokenType::Step, self.steps.into()),
             (CostTokenType::Hole, self.holes.into()),
             (CostTokenType::RangeCheck, self.range_checks.into()),
+            (CostTokenType::RangeCheck96, self.range_checks96.into()),
         ]
         .into_iter()
     }

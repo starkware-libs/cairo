@@ -3,18 +3,7 @@
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(ref arr: Array<felt252>) {
-    arr.append(5);
-    immovable(arr.span());
-    revoke_ap();
-    arr.append(6);
-}
-
-//! > module_code
+//! > cairo_code
 #[inline(never)]
 fn immovable<T>(t: T) -> T {
     t
@@ -23,6 +12,13 @@ fn immovable<T>(t: T) -> T {
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()
+}
+#[target_function]
+fn foo(ref arr: Array<felt252>) {
+    arr.append(5);
+    immovable(arr.span());
+    revoke_ap();
+    arr.append(6);
 }
 
 //! > lowering_format

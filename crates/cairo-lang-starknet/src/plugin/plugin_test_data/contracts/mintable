@@ -164,19 +164,19 @@ pub fn unsafe_new_contract_state() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
-impl ContractStateIERC20 of
+impl ContractStateERC20Impl of
     erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateTransfer of
+impl ContractStateOwnershipTransfer of
     ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateMint of
+impl ContractStateMintImpl of
     mintable_comp::UnsafeNewContractStateTraitForMint<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -184,7 +184,7 @@ impl ContractStateMint of
 }
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__ImplCtor__constructor(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -217,7 +217,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     ImplCtor::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -225,7 +225,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -235,7 +235,7 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = ImplGetSupply::get_total_supply_plus_1(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -333,7 +333,7 @@ impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ERC20(val) => {
@@ -357,19 +357,19 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ERC20") {
-            return Option::Some(Event::ERC20(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ERC20(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Ownable") {
-            return Option::Some(Event::Ownable(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::Ownable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Mintable") {
-            return Option::Some(Event::Mintable(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::Mintable(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventERC20IntoEvent of Into<erc20_comp::Event, Event> {
@@ -523,6 +523,44 @@ impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDi
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl GetSupplyForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of GetSupply<TContractState> {
+    fn get_total_supply_plus_1(self: @TContractState) -> u256 {
+        GetSupplyDispatcherTrait::get_total_supply_plus_1(GetSupplyLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForGetSupplyForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__GetSupplyForwardImpl__get_total_supply_plus_1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForGetSupplyForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_total_supply_plus_1"),
+            data,
+        )
+    )
+}
+
+mod __external_GetSupplyForwardImpl {
+    pub use super::__wrapper__GetSupplyForwardImpl__get_total_supply_plus_1 as get_total_supply_plus_1;
+}
+
+mod __l1_handler_GetSupplyForwardImpl {
+}
+
+mod __constructor_GetSupplyForwardImpl {
+}
 #[doc(group: "dispatchers")]
 impl GetSupplyDispatcherCopy<> of core::traits::Copy::<GetSupplyDispatcher>;
 #[doc(group: "dispatchers")]
@@ -533,9 +571,9 @@ impl GetSupplyDispatcherSerde<> of core::serde::Serde::<GetSupplyDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplyDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -639,9 +677,9 @@ impl GetSupplyLibraryDispatcherSerde<> of core::serde::Serde::<GetSupplyLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplyLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplyLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -745,9 +783,9 @@ impl GetSupplySafeLibraryDispatcherSerde<> of core::serde::Serde::<GetSupplySafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplySafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -851,9 +889,9 @@ impl GetSupplySafeDispatcherSerde<> of core::serde::Serde::<GetSupplySafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<GetSupplySafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(GetSupplySafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -1130,19 +1168,19 @@ pub fn unsafe_new_contract_state() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
-impl ContractStateIERC20 of
+impl ContractStateERC20Impl of
     erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateTransfer of
+impl ContractStateOwnershipTransfer of
     ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
 }
-impl ContractStateMint of
+impl ContractStateMintImpl of
     mintable_comp::UnsafeNewContractStateTraitForMint<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -1150,7 +1188,7 @@ impl ContractStateMint of
 }
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__ImplCtor__constructor(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1183,7 +1221,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     ImplCtor::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -1191,7 +1229,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1201,7 +1239,7 @@ fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) 
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = ImplGetSupply::get_total_supply_plus_1(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -1299,7 +1337,7 @@ impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ERC20(val) => {
@@ -1323,19 +1361,19 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ERC20") {
-            return Option::Some(Event::ERC20(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ERC20(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Ownable") {
-            return Option::Some(Event::Ownable(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::Ownable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Mintable") {
-            return Option::Some(Event::Mintable(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::Mintable(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventERC20IntoEvent of Into<erc20_comp::Event, Event> {

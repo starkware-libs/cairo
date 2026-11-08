@@ -5,12 +5,9 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
     PluginGeneratedFile,
 };
-use cairo_lang_defs::plugin_utils::{
-    not_legacy_macro_diagnostic, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
-};
+use cairo_lang_defs::plugin_utils::{extract_parenthesized_macro, try_extract_unnamed_arg};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
-use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::{OptionHelper, try_extract_matches};
 use indoc::indoc;
 use num_bigint::{BigInt, Sign};
@@ -113,7 +110,7 @@ fn generate_code_inner<'db>(
     db: &'db dyn Database,
     with_newline: bool,
 ) -> InlinePluginResult<'db> {
-    let info = match FormattingInfo::extract(db, syntax) {
+    let info = match FormattingInfo::extract(db, syntax, with_newline) {
         Ok(info) => info,
         Err(diagnostics) => return InlinePluginResult { code: None, diagnostics },
     };
@@ -148,8 +145,12 @@ struct FormattingInfo<'db> {
     formatter_arg_node: RewriteNode<'db>,
     /// The format string argument.
     format_string_arg: ast::Arg<'db>,
-    /// The format string content.
+    /// The decoded format string content.
     format_string: String,
+    /// The raw source text of the format string (the body between the surrounding `"` quotes).
+    /// Needed so that placeholder spans account for escape sequences that occupy more source
+    /// bytes than their decoded counterpart.
+    format_string_source: &'db str,
     /// The positional arguments for the format string.
     args: Vec<ast::Expr<'db>>,
     macro_ast: ast::ExprInlineMacro<'db>,
@@ -159,22 +160,13 @@ impl<'db> FormattingInfo<'db> {
     fn extract(
         db: &'db dyn Database,
         syntax: &ast::ExprInlineMacro<'db>,
+        with_newline: bool,
     ) -> Result<FormattingInfo<'db>, Vec<PluginDiagnostic<'db>>> {
-        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
-            return Err(vec![not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr(db))]);
+        let args = match extract_parenthesized_macro(db, syntax) {
+            Ok(args) => args,
+            Err(diag) => return Err(vec![diag]),
         };
-        let ast::WrappedArgList::ParenthesizedArgList(arguments) =
-            legacy_inline_macro.arguments(db)
-        else {
-            return Err(unsupported_bracket_diagnostic(
-                db,
-                &legacy_inline_macro,
-                syntax.stable_ptr(db),
-            )
-            .diagnostics);
-        };
-        let arguments_var = arguments.arguments(db);
-        let mut args_iter = arguments_var.elements(db);
+        let mut args_iter = args.arguments(db).elements(db);
         let error_with_inner_span = |inner_span: SyntaxNode<'_>, message: &str| {
             PluginDiagnostic::error_with_inner_span(
                 db,
@@ -185,7 +177,7 @@ impl<'db> FormattingInfo<'db> {
         };
         let Some(formatter_arg) = args_iter.next() else {
             return Err(vec![error_with_inner_span(
-                arguments.lparen(db).as_syntax_node(),
+                args.lparen(db).as_syntax_node(),
                 "Macro expected formatter argument.",
             )]);
         };
@@ -202,10 +194,23 @@ impl<'db> FormattingInfo<'db> {
             )]);
         }
         let Some(format_string_arg) = args_iter.next() else {
-            return Err(vec![error_with_inner_span(
-                arguments.lparen(db).as_syntax_node(),
-                "Macro expected format string argument.",
-            )]);
+            // `writeln!(f)` (no format string) writes just a newline; `write!(f)` still errors.
+            // There is no format string, so the arg node is unused here — reuse the formatter's.
+            return if with_newline {
+                Ok(FormattingInfo {
+                    formatter_arg_node: RewriteNode::from_ast_trimmed(&formatter_arg),
+                    format_string_arg: formatter_arg.clone(),
+                    format_string: String::new(),
+                    format_string_source: "",
+                    args: vec![],
+                    macro_ast: syntax.clone(),
+                })
+            } else {
+                Err(vec![error_with_inner_span(
+                    args.lparen(db).as_syntax_node(),
+                    "Macro expected format string argument.",
+                )])
+            };
         };
         let Some(format_string_expr) = try_extract_unnamed_arg(db, &format_string_arg) else {
             return Err(vec![error_with_inner_span(
@@ -213,14 +218,26 @@ impl<'db> FormattingInfo<'db> {
                 "Format string argument must be unnamed.",
             )]);
         };
-        let Some(format_string) = try_extract_matches!(format_string_expr, ast::Expr::String)
-            .and_then(|arg| arg.string_value(db))
+        let Some(format_string_terminal) =
+            try_extract_matches!(format_string_expr, ast::Expr::String)
         else {
             return Err(vec![error_with_inner_span(
                 format_string_arg.as_syntax_node(),
                 "Format string argument must be a string literal.",
             )]);
         };
+        let Some(format_string) = format_string_terminal.string_value(db) else {
+            return Err(vec![error_with_inner_span(
+                format_string_arg.as_syntax_node(),
+                "Format string argument must be a string literal.",
+            )]);
+        };
+        let format_string_source = format_string_terminal
+            .text(db)
+            .long(db)
+            .strip_prefix('"')
+            .and_then(|s| s.strip_suffix('"'))
+            .unwrap_or("");
         let mut diagnostics = vec![];
         let args: Vec<_> = args_iter
             .filter_map(|arg| {
@@ -238,8 +255,8 @@ impl<'db> FormattingInfo<'db> {
         Ok(FormattingInfo {
             formatter_arg_node: RewriteNode::from_ast_trimmed(&formatter_arg),
             format_string_arg: format_string_arg.clone(),
-            // `unwrap` is ok because the above `on_none` ensures it's not None.
             format_string,
+            format_string_source,
             args,
             macro_ast: syntax.clone(),
         })
@@ -254,10 +271,13 @@ impl<'db> FormattingInfo<'db> {
     ) {
         let mut next_arg_index = 0..self.args.len();
         let mut arg_used = vec![false; self.args.len()];
-        let mut format_iter = self.format_string.chars().enumerate().peekable();
+        let mut format_iter = self.format_string.chars().peekable();
         let mut pending_chars = String::new();
         let mut ident_count = 1;
         let mut missing_args = 0;
+        // Cursor over source-byte positions of `{` in the raw format string, advanced in lockstep
+        // with the decoded format string so named-placeholder spans land on the correct byte.
+        let mut source_braces = source_brace_positions(self.format_string_source).into_iter();
         let format_string_base = self
             .format_string_arg
             .as_syntax_node()
@@ -271,13 +291,17 @@ impl<'db> FormattingInfo<'db> {
                 &[("arg".to_string(), RewriteNode::from_ast_trimmed(arg))].into(),
             ));
         }
-        while let Some((idx, c)) = format_iter.next() {
+        while let Some(c) = format_iter.next() {
             if c == '{' {
-                if matches!(format_iter.peek(), Some(&(_, '{'))) {
+                if matches!(format_iter.peek(), Some(&'{')) {
                     pending_chars.push('{');
                     format_iter.next();
+                    // Step past both `{`s of the `{{` escape in the source cursor.
+                    source_braces.next();
+                    source_braces.next();
                     continue;
                 }
+                let brace_source_pos = source_braces.next();
                 let argument_info = match extract_placeholder_argument(&mut format_iter) {
                     Ok(argument_info) => argument_info,
                     Err(error_message) => {
@@ -337,8 +361,10 @@ impl<'db> FormattingInfo<'db> {
                         }
                     }
                     PlaceholderArgumentSource::Named(argument) => {
-                        let start = format_string_base
-                            .add_width(TextWidth::from_str(&self.format_string[..(idx + 1)]));
+                        let start = format_string_base.add_width(TextWidth::from_str(
+                            &self.format_string_source[..brace_source_pos
+                                .map_or(self.format_string_source.len(), |pos| pos + 1)],
+                        ));
                         let origin =
                             TextSpan::new_with_width(start, TextWidth::from_str(&argument));
                         self.append_formatted_arg(
@@ -357,7 +383,7 @@ impl<'db> FormattingInfo<'db> {
                     }
                 }
             } else if c == '}' {
-                if matches!(format_iter.peek(), Some(&(_, '}'))) {
+                if matches!(format_iter.peek(), Some(&'}')) {
                     pending_chars.push('}');
                     format_iter.next();
                 } else {
@@ -503,23 +529,50 @@ impl fmt::Display for FormattingTrait {
     }
 }
 
+/// Returns the byte positions of literal `{` characters in the raw source of a format string.
+/// `{` characters inside `\u{...}` unicode escapes are skipped, since they don't appear in the
+/// decoded string. The `\uNNNN` form (4 hex digits, no braces) is also recognized so the helper
+/// doesn't misread the following text.
+fn source_brace_positions(source: &str) -> Vec<usize> {
+    let mut positions = vec![];
+    let mut chars = source.char_indices();
+    while let Some((idx, c)) = chars.next() {
+        match c {
+            '\\' => {
+                if matches!(chars.next(), Some((_, 'u'))) {
+                    if matches!(chars.next(), Some((_, '{'))) {
+                        // `\u{...}`: consume the embedded `{...}`.
+                        chars.by_ref().take_while(|&(_, c)| c != '}').for_each(drop);
+                    } else {
+                        // `\uNNNN`: 4 hex digits, the first already consumed above.
+                        chars.by_ref().take(3).for_each(drop);
+                    }
+                }
+            }
+            '{' => positions.push(idx),
+            _ => {}
+        }
+    }
+    positions
+}
+
 /// Extracts a placeholder argument from a format string. On error, returns Err with a relevant
 /// error string.
 fn extract_placeholder_argument(
-    format_iter: &mut std::iter::Peekable<std::iter::Enumerate<std::str::Chars<'_>>>,
+    format_iter: &mut std::iter::Peekable<std::str::Chars<'_>>,
 ) -> Result<PlaceholderArgumentInfo, &'static str> {
     // The part before the ':' (if any), indicating the name of the parameter.
     let mut parameter_name = String::new();
     // The part after the ':' (if any), indicating the formatting specification.
     let mut formatting_spec = String::new();
     let mut placeholder_terminated = false;
-    for (_, c) in format_iter.by_ref() {
+    for c in format_iter.by_ref() {
         if c == '}' {
             placeholder_terminated = true;
             break;
         }
         if c == ':' {
-            for (_, c) in format_iter.by_ref() {
+            for c in format_iter.by_ref() {
                 if c == '}' {
                     placeholder_terminated = true;
                     break;

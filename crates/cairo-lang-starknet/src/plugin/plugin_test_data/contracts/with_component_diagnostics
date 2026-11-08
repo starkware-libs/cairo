@@ -161,16 +161,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -317,7 +317,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ABC(val) => {
@@ -329,13 +329,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ABC") {
-            return Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
@@ -559,16 +559,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -715,7 +715,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ABC(val) => {
@@ -727,13 +727,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ABC") {
-            return Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
@@ -945,16 +945,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -1101,7 +1101,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ABC(val) => {
@@ -1113,13 +1113,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ABC") {
-            return Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
@@ -1344,16 +1344,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -1500,7 +1500,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ABC(val) => {
@@ -1512,13 +1512,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ABC") {
-            return Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
@@ -1749,16 +1749,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -1961,7 +1961,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ABC(val) => {
@@ -1973,13 +1973,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ABC") {
-            return Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
@@ -2201,16 +2201,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -2357,7 +2357,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ABC(val) => {
@@ -2369,13 +2369,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ABC") {
-            return Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
@@ -2581,16 +2581,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -2744,7 +2744,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ABC(val) => {
@@ -2756,13 +2756,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ABC") {
-            return Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
@@ -2968,16 +2968,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -3096,7 +3096,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x8f9d2a9bd3a3fe28e42c16030ed25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__get_data(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3106,7 +3106,7 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = get_data(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -3160,16 +3160,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -3293,7 +3293,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::ABC(val) => {
@@ -3305,13 +3305,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ABC") {
-            return Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventABCIntoEvent of Into<test_component::Event, Event> {
@@ -3428,16 +3428,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -3553,7 +3553,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x1c59c1f2e69fc61b0f9162b5cdb7f
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__get_data(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3563,7 +3563,7 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = get_data(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -3840,16 +3840,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -3983,16 +3983,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -4121,7 +4121,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0xa09b926ceb282d29edce76bb84e4a
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__get_sum(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -4131,7 +4131,7 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = get_sum(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u32>::serialize(@res, ref arr);
@@ -4204,7 +4204,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::Comp1Event(val) => {
@@ -4216,13 +4216,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("Comp1Event") {
-            return Option::Some(Event::Comp1Event(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::Comp1Event(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventComp1EventIntoEvent of Into<super::component1::Event, Event> {

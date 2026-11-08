@@ -29,16 +29,22 @@ impl<'a> TerminalFalse<'a> {
 }
 
 impl<'a> TerminalLiteralNumber<'a> {
-    /// Interpret this terminal as a [`BigInt`] number.
-    pub fn numeric_value(&self, db: &'a dyn Database) -> Option<BigInt> {
-        self.numeric_value_and_suffix(db).map(|(value, _suffix)| value)
-    }
-
     /// Interpret this terminal as a [`BigInt`] number and get the suffix if this literal has one.
+    ///
+    /// Splits at `_` boundaries from right to left, returning the longest prefix that parses as a
+    /// valid number in the appropriate radix, with the remainder (after the `_`) as the suffix.
+    /// This handles ambiguity for radices where suffix chars are valid digits — e.g., `0x1_f32`
+    /// parses as hex `0x1F32` (no suffix) because `"1_f32"` is a valid hex number, while
+    /// `1_f32` in decimal returns value `1` with suffix `"f32"`. Also handles compound suffixes
+    /// like `1_u32_u8`: returns value `1` with suffix `"u32_u8"`.
+    ///
+    /// Returns `(BigInt::ZERO, Some(full_token_text))` as a sentinel for malformed literals where
+    /// no prefix parses (e.g., `0x_u32` where the hex body is empty). Callers treat `Some` suffix
+    /// as an error indicator.
     pub fn numeric_value_and_suffix(
         &self,
         db: &'a dyn Database,
-    ) -> Option<(BigInt, Option<SmolStrId<'a>>)> {
+    ) -> (BigInt, Option<SmolStrId<'a>>) {
         let text = self.text(db).long(db).as_str();
 
         let (text, radix) = if let Some(num_no_prefix) = text.strip_prefix("0x") {
@@ -51,24 +57,16 @@ impl<'a> TerminalLiteralNumber<'a> {
             (text, 10)
         };
 
-        // Catch an edge case, where literal seems to have a suffix that is valid numeric part
-        // according to the radix. Interpret this as an untyped number.
-        // Example: 0x1_f32 is interpreted as 0x1F32 without suffix.
-        if let Ok(value) = BigInt::from_str_radix(text, radix) {
-            Some((value, None))
-        } else {
-            let (text, suffix) = match text.rsplit_once('_') {
-                Some((text, suffix)) => {
-                    let suffix = if suffix.is_empty() { None } else { Some(suffix) };
-                    (text, suffix)
-                }
-                None => (text, None),
-            };
-            Some((
-                BigInt::from_str_radix(text, radix).ok()?,
-                suffix.map(|s| SmolStrId::from(db, s)),
-            ))
+        let mut index = text.len();
+        while index > 0 {
+            if let Ok(value) = BigInt::from_str_radix(&text[..index], radix) {
+                return (value, text.get((index + 1)..).map(|s| SmolStrId::from(db, s)));
+            }
+            index = text[..index].rfind('_').unwrap_or(0);
         }
+        // Malformed token (e.g., `0x_u32`): no numeric prefix found; return full text as suffix
+        // so callers that check `suffix.is_some()` correctly treat this as an error.
+        (BigInt::ZERO, Some(self.text(db)))
     }
 }
 

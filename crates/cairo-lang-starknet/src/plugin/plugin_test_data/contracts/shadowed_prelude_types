@@ -1,0 +1,223 @@
+//! > Test that user types shadowing prelude type names (Array/Span/Option) do not break codegen.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    // User types whose names shadow prelude types referenced by the generated code.
+    struct Array {}
+    struct Span {}
+    enum Option {}
+
+    #[external(v0)]
+    fn get_value(self: @ContractState, value: felt252) -> felt252 {
+        value
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    // User types whose names shadow prelude types referenced by the generated code.
+    struct Array {}
+    struct Span {}
+    enum Option {}
+
+    #[external(v0)]
+    fn get_value(self: @ContractState, value: felt252) -> felt252 {
+        value
+    }
+}
+
+lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+contract:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+#[phantom]
+pub struct Storage {
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBase {
+}
+#[doc(hidden)]
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBaseMut {
+}
+#[doc(hidden)]
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
+        }
+    }
+}
+
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+#[cfg(target: 'test')]
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2462d52c48bf7ed89c3a104e46620bb2516623714234b78744bf64278c9366d.try_into().unwrap();
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__get_value(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    let __arg_value = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    let mut contract_state = unsafe_new_contract_state();
+    let res = get_value(@contract_state, __arg_value);
+    let mut arr = core::array::ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+#[doc(hidden)]
+pub mod __external {
+    pub use super::__wrapper__get_value as get_value;
+}
+#[doc(hidden)]
+pub mod __l1_handler {
+}
+#[doc(hidden)]
+pub mod __constructor {
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+
+
+lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl EventDrop<> of core::traits::Drop::<Event>;
+
+
+lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        core::option::Option::None
+    }
+}
+
+
+
+lib.cairo:3:5
+    #[storage]
+    ^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+
+
+lib.cairo:3:5
+    #[storage]
+    ^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
+
+//! > expected_diagnostics

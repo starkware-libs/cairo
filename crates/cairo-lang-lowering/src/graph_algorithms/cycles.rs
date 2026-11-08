@@ -3,9 +3,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use salsa::Database;
 
 use crate::db::{LoweringGroup, get_direct_callees};
-use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId, GenericOrSpecialized,
-};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId};
 use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of
@@ -38,17 +36,14 @@ pub fn function_with_body_direct_function_with_body_callees<'db>(
         .collect::<Maybe<Vec<Option<_>>>>()?
         .into_iter()
         .flatten()
-        .map(|x| match x.generic_or_specialized(db) {
-            GenericOrSpecialized::Generic(id) => id,
-            GenericOrSpecialized::Specialized(_) => {
-                unreachable!("Specialization of functions only occurs post concretization.")
-            }
+        .map(|x| {
+            x.generic(db).expect("Specialization of functions only occurs post concretization.")
         })
         .collect())
 }
 
 /// Query implementation of [LoweringGroup::final_contains_call_cycle].
-#[salsa::tracked(cycle_result=final_contains_call_cycle_handle_cycle)]
+#[salsa::tracked(returns(copy), cycle_result=final_contains_call_cycle_handle_cycle)]
 pub fn final_contains_call_cycle<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
@@ -77,7 +72,7 @@ pub fn final_contains_call_cycle_handle_cycle<'db>(
 }
 
 /// Query implementation of [LoweringGroup::in_cycle].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn in_cycle<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
@@ -93,7 +88,7 @@ pub fn in_cycle<'db>(
 }
 
 /// Query implementation of [LoweringGroup::concrete_in_cycle].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn concrete_in_cycle<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,

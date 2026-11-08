@@ -144,7 +144,7 @@ fn build_enum_from_bounded_int(
     // handle which is `2 * (n - k) - 1`.
     // `2 * (n - k) - 1 = 2*n - 2*k - 1 = 2 * (2*n - 1) / 2 - 2*k = 2 * ((2*n - 1) / 2 - k)`
     // Define `(2*n - 1) / 2` as `m` - which is known in compilation time.
-    // Hence the variant selector is `2 * (m - k)` or  alternatively `-2 * (k - m)`
+    // Hence the variant selector is `2 * (m - k)` or alternatively `-2 * (k - m)`
 
     let m = (Felt252::from(n_variants * 2 - 1).field_div(&NonZeroFelt::TWO)).to_bigint();
     casm_build_extend! {casm_builder,
@@ -298,8 +298,8 @@ fn build_enum_match_short_ex(
 /// jmp rel <jump_offset_3000>
 /// ```
 /// Where in the first location of the enum_var there will be the jmp_table_idx (2*n-1 for
-/// branch index 0 (where n is the number of variants of this enum), 1 for branch index 1, 3 for
-/// branch index 2 and so on: (2 * k - 1) for branch index k).
+/// branch index 0 (where n is the number of variants of this enum), 2*n-3 for branch index 1, 2*n-5
+/// for branch index n-2 and so on: (2 * (n - k) - 1) for branch index k).
 ///
 /// Assumes that builder.invocation.branches.len() == output_expressions.len() > 2.
 fn build_enum_match_long(

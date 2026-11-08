@@ -3,21 +3,7 @@
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(x: felt252) -> felt252 {
-    let x2 = immovable(x + x);
-    revoke_ap();
-    let s = immovable(MyStruct { a: x, b: x2 });
-    let _s2 = immovable(MyStruct { a: s.a, b: 0 });
-    let s3 = immovable(MyStruct { a: x, b: 1 });
-    revoke_ap();
-    s3.a
-}
-
-//! > module_code
+//! > cairo_code
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()
@@ -33,6 +19,16 @@ impl MyStructDrop of Drop<MyStruct>;
 #[inline(never)]
 fn immovable<T>(t: T) -> T {
     t
+}
+#[target_function]
+fn foo(x: felt252) -> felt252 {
+    let x2 = immovable(x + x);
+    revoke_ap();
+    let s = immovable(MyStruct { a: x, b: x2 });
+    let _s2 = immovable(MyStruct { a: s.a, b: 0 });
+    let s3 = immovable(MyStruct { a: x, b: 1 });
+    revoke_ap();
+    s3.a
 }
 
 //! > lowering_format
@@ -66,17 +62,7 @@ v13, v2
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo() -> felt252 {
-    let a = immovable(MyStruct { a: 12 }.a);
-    internal::revoke_ap_tracking();
-    a
-}
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: felt252,
 }
@@ -86,6 +72,12 @@ impl MyStructDrop of Drop<MyStruct>;
 #[inline(never)]
 fn immovable<T>(t: T) -> T {
     t
+}
+#[target_function]
+fn foo() -> felt252 {
+    let a = immovable(MyStruct { a: 12 }.a);
+    internal::revoke_ap_tracking();
+    a
 }
 
 //! > lowering_format

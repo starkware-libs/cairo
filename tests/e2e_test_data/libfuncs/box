@@ -313,6 +313,7 @@ fn foo(value: Box<A>) -> (Box<u256>, Box<u256>) {
     struct_boxed_deconstruct(value)
 }
 
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<u256>, Box<u256>) nopanic;
 
 struct A {
@@ -360,6 +361,7 @@ fn foo(value: Box<Single>) -> (Box<Array<felt252>>,) {
     struct_boxed_deconstruct(value)
 }
 
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<Array<felt252>>,) nopanic;
 
 struct Single {
@@ -405,6 +407,7 @@ fn foo(value: Box<Many>) -> (Box<u256>, Box<felt252>, Box<Array<felt252>>, Box<u
     struct_boxed_deconstruct(value)
 }
 
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(
     value: Box<T>,
 ) -> (Box<u256>, Box<felt252>, Box<Array<felt252>>, Box<u256>) nopanic;
@@ -462,6 +465,7 @@ fn foo(value: Box<Empty>) -> () {
     struct_boxed_deconstruct(value)
 }
 
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> () nopanic;
 
 struct Empty {}
@@ -496,6 +500,7 @@ fn foo(value: Box<@A>) -> (Box<@u256>, Box<@u256>) {
     struct_boxed_deconstruct(value)
 }
 
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<@u256>, Box<@u256>) nopanic;
 
 struct A {
@@ -543,6 +548,7 @@ fn foo(value: Box<@Single>) -> (Box<@Array<felt252>>,) {
     struct_boxed_deconstruct(value)
 }
 
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<@Array<felt252>>,) nopanic;
 
 struct Single {
@@ -590,6 +596,7 @@ fn foo(value: Box<@Many>) -> (Box<@u256>, Box<@felt252>, Box<@Array<felt252>>, B
     struct_boxed_deconstruct(value)
 }
 
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(
     value: Box<T>,
 ) -> (Box<@u256>, Box<@felt252>, Box<@Array<felt252>>, Box<@u256>) nopanic;
@@ -655,6 +662,7 @@ fn foo() -> (Box<u256>, Box<u256>) {
     struct_boxed_deconstruct::<A>(b)
 }
 
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<u256>, Box<u256>) nopanic;
 
 struct A {
@@ -736,10 +744,12 @@ SmallE2ETestRunner
 
 //! > cairo_code
 mod a {
+    #[allow(extern_outside_corelib)]
     extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<u256>, Box<u256>) nopanic;
 }
 
 mod b {
+    #[allow(extern_outside_corelib)]
     extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<u128>, Box<u128>) nopanic;
 }
 
@@ -792,6 +802,7 @@ test::foo: SmallOrderedMap({Const: 400})
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<u128>, Box<u128>) nopanic;
 
 fn foo(a: Box<u256>) -> (u128, u128) {
@@ -842,6 +853,7 @@ test::foo: SmallOrderedMap({Const: 300})
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<()>, Box<()>, Box<u128>) nopanic;
 
 fn foo(a: Box<((), (), u128)>) -> u128 {
@@ -887,6 +899,7 @@ test::foo: SmallOrderedMap({Const: 100})
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
 fn foo(x: felt252) -> Box<felt252> {
     local_into_box(x)
@@ -922,6 +935,7 @@ test::foo@F0([0]: felt252) -> (Box<felt252>);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
 fn foo(x: ()) -> Box<()> {
     local_into_box(x)
@@ -957,6 +971,7 @@ test::foo@F0([0]: Unit) -> (Box<Unit>);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
 
 fn foo() -> Box<()> {
@@ -995,6 +1010,7 @@ test::foo: SmallOrderedMap({Const: 300})
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
 fn foo(x: (felt252, felt252, felt252)) -> Box<(felt252, felt252, felt252)> {
     local_into_box(x)
@@ -1031,6 +1047,7 @@ test::foo@F0([0]: Tuple<felt252, felt252, felt252>) -> (Box<Tuple<felt252, felt2
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
 
 #[inline(never)]
@@ -1147,7 +1164,9 @@ test::foo@F0([0]: test::LargeStruct) -> (Box<test::LargeStruct>);
 SmallE2ETestRunner
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+#[allow(extern_outside_corelib)]
 extern fn struct_boxed_deconstruct<T>(value: Box<T>) -> (Box<u128>, Box<u128>, Box<u128>) nopanic;
 
 fn foo(a: (u128, u128, u128)) -> Box<u128> {

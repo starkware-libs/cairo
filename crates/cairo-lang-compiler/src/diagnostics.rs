@@ -160,7 +160,7 @@ impl<'a> DiagnosticsReporter<'a> {
                 self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                     Severity::Error,
                     None,
-                    "Failed to get main module file".to_string(),
+                    "Failed to get main module file.\n".to_string(),
                 ));
                 continue;
             };
@@ -171,7 +171,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                             Severity::Error,
                             None,
-                            format!("{} not found\n", path.display()),
+                            format!("{} not found.\n", path.display()),
                         ))
                     }
                     FileLongId::Virtual(_) => panic!("Missing virtual file."),
@@ -232,7 +232,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if a diagnostics group contains any diagnostics and reports them to the provided
     /// callback as strings. Returns `true` if diagnostics were found.
-    fn check_diag_group<'db, TEntry: DiagnosticEntry<'db> + salsa::Update>(
+    fn check_diag_group<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue>(
         &mut self,
         db: &'db dyn Database,
         group: Diagnostics<'db, TEntry>,

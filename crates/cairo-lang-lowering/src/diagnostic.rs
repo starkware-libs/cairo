@@ -4,7 +4,6 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::corelib::LiteralError;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use salsa::Database;
@@ -36,14 +35,14 @@ impl<'db> LoweringDiagnosticsBuilder<'db> for LoweringDiagnostics<'db> {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct LoweringDiagnostic<'db> {
     pub location: Location<'db>,
     pub kind: LoweringDiagnosticKind<'db>,
 }
 
 impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
-    fn format(&self, db: &'db dyn Database) -> String {
+    fn format(&self, _db: &'db dyn Database) -> String {
         match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
             LoweringDiagnosticKind::VariableMoved { .. } => "Variable was previously moved.".into(),
@@ -67,10 +66,11 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
             LoweringDiagnosticKind::NoPanicFunctionCycle => {
                 "Call cycle of `nopanic` functions is not allowed.".into()
             }
-            LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
-            LoweringDiagnosticKind::UnsupportedPattern => {
-                "Inner patterns are not allowed in this context.".into()
-            }
+            LoweringDiagnosticKind::RefutablePattern => "Refutable pattern in irrefutable \
+                                                          binding. Refutable patterns are only \
+                                                          supported in `match`, `if let`, \
+                                                          `while let`, and `let ... else`."
+                .into(),
             LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => {
                 "Fixed size array inner type must implement the `Copy` trait when the array size \
@@ -116,8 +116,7 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
             LoweringDiagnosticKind::MemberPathLoop => error_code!(E3006),
             LoweringDiagnosticKind::UnexpectedError => error_code!(E3007),
             LoweringDiagnosticKind::NoPanicFunctionCycle => error_code!(E3008),
-            LoweringDiagnosticKind::LiteralError(_) => error_code!(E3009),
-            LoweringDiagnosticKind::UnsupportedPattern => error_code!(E3010),
+            LoweringDiagnosticKind::RefutablePattern => error_code!(E3010),
             LoweringDiagnosticKind::Unsupported => error_code!(E3011),
             LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => error_code!(E3012),
             LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => error_code!(E3013),
@@ -204,7 +203,7 @@ impl<'db> MatchError<'db> {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum LoweringDiagnosticKind<'db> {
     Unreachable { block_end_ptr: SyntaxStablePtrId<'db> },
     VariableMoved { inference_error: InferenceError<'db> },
@@ -215,55 +214,29 @@ pub enum LoweringDiagnosticKind<'db> {
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
     NoPanicFunctionCycle,
-    LiteralError(LiteralError<'db>),
     FixedSizeArrayNonCopyableType,
     EmptyRepeatedElementFixedSizeArray,
-    UnsupportedPattern,
+    RefutablePattern,
     Unsupported,
 }
 
 /// Error in a match-like construct.
 /// contains which construct the error occurred in and the error itself.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MatchError<'db> {
     pub kind: MatchKind<'db>,
     pub error: MatchDiagnostic,
 }
 
 /// The type of branch construct the error occurred in.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MatchKind<'db> {
     Match,
     IfLet,
     WhileLet(semantic::ExprId, SyntaxStablePtrId<'db>),
 }
 
-unsafe impl<'db> salsa::Update for MatchKind<'db> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = unsafe { &mut *old_pointer };
-        match (old_value, &new_value) {
-            (MatchKind::Match, MatchKind::Match) | (MatchKind::IfLet, MatchKind::IfLet) => false,
-            (MatchKind::WhileLet(expr, end_ptr), MatchKind::WhileLet(new_expr, new_end_ptr)) => {
-                if unsafe { SyntaxStablePtrId::maybe_update(end_ptr, *new_end_ptr) } {
-                    *expr = *new_expr;
-                    true
-                } else if expr != new_expr {
-                    *end_ptr = *new_end_ptr;
-                    *expr = *new_expr;
-                    true
-                } else {
-                    false
-                }
-            }
-            (old_value, new_value) => {
-                *old_value = *new_value;
-                true
-            }
-        }
-    }
-}
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MatchDiagnostic {
     /// TODO(TomerStarkware): Get rid of the string and pass the type information directly.
     UnsupportedMatchedType(String),

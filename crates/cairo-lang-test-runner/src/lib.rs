@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::mpsc::channel;
+use std::sync::mpsc::sync_channel;
 
 use anyhow::{Context, Result, bail};
 use cairo_lang_compiler::db::RootDatabase;
@@ -51,10 +51,9 @@ impl<'db> TestRunner<'db> {
     /// # Arguments
     ///
     /// * `path` - The path to compile and run its tests
-    /// * `filter` - Run only tests containing the filter string
-    /// * `include_ignored` - Include ignored tests as well
-    /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the Starknet plugin to run the tests
+    /// * `allow_warnings` - Allows the compilation to succeed with warnings
+    /// * `config` - The run configuration, including the test filter and the ignored tests settings
     pub fn new(
         path: &Path,
         starknet: bool,
@@ -76,6 +75,7 @@ impl<'db> TestRunner<'db> {
                 contract_crate_ids: None,
                 executable_crate_ids: None,
                 add_functions_debug_info: false,
+                add_type_names: false,
                 replace_ids: false,
             },
         )?;
@@ -216,7 +216,9 @@ impl<'db> TestCompiler<'db> {
     /// # Arguments
     ///
     /// * `path` - The path to compile and run its tests
-    /// * `starknet` - Add the Starknet plugin to run the tests
+    /// * `allow_warnings` - Allows the compilation to succeed with warnings
+    /// * `gas_enabled` - Whether to enable gas calculation
+    /// * `config` - The compilation configuration, including whether to add the Starknet plugin
     pub fn try_new(
         path: &Path,
         allow_warnings: bool,
@@ -383,7 +385,8 @@ pub fn run_tests(
     let suffix = if named_tests.len() != 1 { "s" } else { "" };
     println!("running {} test{}", named_tests.len(), suffix);
 
-    let (tx, rx) = channel::<_>();
+    const CAPACITY_FACTOR: usize = 4;
+    let (tx, rx) = sync_channel::<_>(rayon::current_num_threads().max(1) * CAPACITY_FACTOR);
     rayon::spawn(move || {
         named_tests.into_par_iter().for_each(|(name, test)| {
             let result =
@@ -435,7 +438,7 @@ fn run_single_test(
     if test.ignored {
         return Ok(None);
     }
-    let func = runner.find_function(name)?;
+    let func = runner.find_function_by_name(name)?;
 
     let (hint_processor, ctx) =
         runner.prepare_starknet_context(func, vec![], test.available_gas, Default::default())?;
@@ -553,7 +556,7 @@ fn print_resource_map(m: impl ExactSizeIterator<Item = (String, usize)>, resourc
     if m.len() != 0 {
         println!(
             "    {resource_type}: ({})",
-            m.into_iter().sorted().map(|(k, v)| format!(r#""{k}": {v}"#)).join(", ")
+            m.into_iter().sorted().format_with(", ", |(k, v), f| f(&format_args!(r#""{k}": {v}"#)))
         );
     }
 }

@@ -57,7 +57,7 @@ const SHA256_INITIAL_STATE: [u32; 8] = [
 ///
 /// # Returns
 ///
-/// * The SHA-256 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
+/// * The SHA-256 hash of `input` followed by the `last_input_num_bytes` least significant bytes of
 /// `last_input_word`, interpreted in big-endian order.
 ///
 /// # Examples
@@ -90,7 +90,7 @@ pub type u2 = BoundedInt<0, 3>;
 ///
 /// # Returns
 ///
-/// * The SHA-256 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
+/// * The SHA-256 hash of `input` followed by the `last_input_num_bytes` least significant bytes of
 /// `last_input_word`, interpreted in big-endian order.
 ///
 /// # Examples

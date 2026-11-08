@@ -3,13 +3,11 @@
 //! > test_runner_name
 test_cse
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u32, y: u32) -> ((u32, u32), (u32, u32)) {
     ((x, y), (x, y))
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -41,15 +39,13 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function_code
+//! > cairo_code
 use core::option::Option;
 
+#[target_function]
 fn foo(x: u32) -> (Option<u32>, Option<u32>) {
     (Option::Some(x), Option::Some(x))
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -81,13 +77,11 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u32) -> (@u32, @u32) {
     (@x, @x)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -119,13 +113,11 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: @u32) -> (u32, u32) {
     (*x, *x)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -157,15 +149,13 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(tuple: (u32, u32)) -> (u32, u32, u32, u32) {
     let (a, b) = tuple;
     let (c, d) = tuple;
     (a, b, c, d)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -197,7 +187,8 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u32, y: u32) -> u32 {
     let tuple1 = (x, y);
     let tuple2 = (x, y); // Duplicate struct construct
@@ -209,9 +200,6 @@ fn foo(x: u32, y: u32) -> u32 {
     let val2 = *snap2; // Using duplicate snapshots
     a + b + c + d + val1 + val2
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -260,15 +248,13 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: u32, y: u32, z: u32) -> ((u32, u32), (u32, u32)) {
     let tuple1 = (x, y); // Different inputs
     let tuple2 = (x, z); // Should NOT be eliminated
     (tuple1, tuple2)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

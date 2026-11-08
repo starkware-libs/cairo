@@ -3,13 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn abc() {}
 
 fn abc(a: felt252) {}

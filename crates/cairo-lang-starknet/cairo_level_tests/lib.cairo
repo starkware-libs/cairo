@@ -13,6 +13,8 @@ mod contracts;
 #[cfg(test)]
 mod deployment;
 #[cfg(test)]
+mod embeddable_name_collision_test;
+#[cfg(test)]
 mod erc20_test;
 #[cfg(test)]
 mod events;
@@ -26,6 +28,8 @@ mod keccak;
 mod l2_to_l1_messages;
 #[cfg(test)]
 mod multi_component_test;
+#[cfg(test)]
+mod proxy_test;
 #[cfg(test)]
 mod renamed_storage_test;
 #[cfg(test)]

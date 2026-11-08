@@ -3,22 +3,20 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(s: Point) {
-    bar(&s.x);
-    baz(&s.y);
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct Point {
     x: u32,
     y: u32,
 }
+#[allow(extern_outside_corelib)]
 extern fn bar(x: &u32) nopanic;
+#[allow(extern_outside_corelib)]
 extern fn baz(y: &u32) nopanic;
+#[target_function]
+fn foo(s: Point) {
+    bar(&s.x);
+    baz(&s.y);
+}
 
 //! > semantic_diagnostics
 
@@ -45,17 +43,14 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar(x: &u32, y: &&u32, z: &&&u32) nopanic;
+#[target_function]
 fn foo() {
     let x = 3;
     bar(&x, &&x, &&&x);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-extern fn bar(x: &u32, y: &&u32, z: &&&u32) nopanic;
 
 //! > semantic_diagnostics
 
@@ -82,18 +77,15 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar(x: &u32) nopanic;
+#[target_function]
 fn foo() {
     let mut x = 1;
     bar(&x);
     bar(&x);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-extern fn bar(x: &u32) nopanic;
 
 //! > semantic_diagnostics
 
@@ -116,16 +108,13 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar(x: &@u32) nopanic;
+#[target_function]
 fn foo(x: @u32) {
     bar(&x)
 }
-
-//! > function_name
-foo
-
-//! > module_code
-extern fn bar(x: &@u32) nopanic;
 
 //! > semantic_diagnostics
 
@@ -148,19 +137,16 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern fn bar(x: &u32) nopanic;
+#[target_function]
 fn foo(opt: Option<u32>) {
     match opt {
         Option::Some(x) => bar(&x),
         Option::None => (),
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-extern fn bar(x: &u32) nopanic;
 
 //! > semantic_diagnostics
 

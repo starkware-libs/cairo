@@ -57,7 +57,7 @@ The error type `E` is often:
 - An enum describing a small, fixed set of error cases.
 
 For a detailed API overview of `Result`, see
-`corelib/src/result.cairo`.
+link:{cairo-repo}/corelib/src/result.cairo[corelib/src/result.cairo].
 
 == Optional values as errors: `Option`
 
@@ -80,7 +80,7 @@ fn first_even(values: Span<u32>) -> Option<u32> {
 
 When more information about the failure is needed, `Option<T>` can be
 converted into `Result<T, E>` using helpers like `ok_or` and
-`ok_or_else` from `corelib/src/option.cairo`.
+`ok_or_else` from link:{cairo-repo}/corelib/src/option.cairo[corelib/src/option.cairo].
 
 == Unrecoverable errors and `Panic`
 

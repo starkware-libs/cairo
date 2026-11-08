@@ -144,4 +144,3 @@ pub fn print_byte_array_as_string(self: @ByteArray) {
     self.serialize(ref serialized);
     print(serialized)
 }
-

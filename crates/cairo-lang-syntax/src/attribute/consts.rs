@@ -39,6 +39,10 @@ pub const UNUSED_VARIABLES: &str = "unused_variables";
 /// Also included in the [`UNUSED`] lint group.
 pub const UNUSED_IMPORTS: &str = "unused_imports";
 
+/// An argument to the `allow` attribute that suppresses the warning for declaring an extern type or
+/// function outside the core library.
+pub const EXTERN_OUTSIDE_CORELIB: &str = "extern_outside_corelib";
+
 /// An attribute to allow additional attributes on an item.
 pub const ALLOW_ATTR_ATTR: &str = "allow_attr";
 

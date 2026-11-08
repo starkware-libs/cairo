@@ -8,6 +8,8 @@ use std::sync::Mutex;
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -18,6 +20,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::debug_info::SerializableTypeNamesDebugInfo;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::{
     SierraProgramWithDebug, find_all_free_function_ids, try_get_function_with_body_id,
@@ -58,6 +61,9 @@ pub struct CompilerConfig<'a> {
     /// Adds a mapping used by [cairo-debugger](https://github.com/software-mansion-labs/cairo-debugger)
     /// to [Annotations] in [DebugInfo] in the compiled tests.
     pub add_functions_debug_info: bool,
+
+    /// Adds struct/enum names and their member/variant names to [Annotations] in [DebugInfo].
+    pub add_type_names: bool,
 }
 
 /// Compiles a Cairo project at the given path.
@@ -203,19 +209,47 @@ pub fn ensure_diagnostics(
 /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
 /// would be faster as the queries were already computed.
 fn warmup_diagnostics_blocking(db: &dyn CloneableDatabase, crates: Vec<CrateInput>) {
-    crates.into_par_iter().for_each_with(db.dyn_clone(), |db, crate_input| {
-        let db = db.as_ref();
-        let crate_id = crate_input.into_crate_long_id(db).intern(db);
-        db.crate_modules(crate_id).into_par_iter().for_each_with(
-            db.dyn_clone(),
-            |db, module_id| {
-                for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
-                    db.file_syntax_diagnostics(file_id);
-                }
-                let _ = db.module_semantic_diagnostics(*module_id);
-                let _ = db.module_lowering_diagnostics(*module_id);
-            },
-        );
+    let discovery_db = db.dyn_clone();
+    let warmup_db = db.dyn_clone();
+    rayon::join(
+        move || {
+            // Warming up the modules to speed up `crate_modules` call.
+            let db = discovery_db.as_ref();
+            db.crates().into_par_iter().for_each_with(db.dyn_clone(), |db, crate_id| {
+                warmup_module_discovery_blocking(db.as_ref(), ModuleId::CrateRoot(*crate_id));
+            });
+        },
+        move || {
+            crates.into_par_iter().for_each_with(warmup_db, |db, crate_input| {
+                let db = db.as_ref();
+                let crate_id = crate_input.into_crate_long_id(db).intern(db);
+                db.crate_modules(crate_id).into_par_iter().for_each_with(
+                    db.dyn_clone(),
+                    |db, module_id| {
+                        for file_id in
+                            db.module_files(*module_id).unwrap_or_default().iter().copied()
+                        {
+                            db.file_syntax_diagnostics(file_id);
+                        }
+                        let _ = db.module_semantic_diagnostics(*module_id);
+                        let _ = db.module_lowering_diagnostics(*module_id);
+                    },
+                );
+            });
+        },
+    );
+}
+
+/// Expands the module tree under `module_id` in parallel: each module's files (including plugin
+/// expansion, the expensive part of discovery) are computed concurrently across the submodule
+/// fan-out, so the serial walk in `crate_modules` afterwards hits warm memos instead of expanding
+/// every module of the crate on a single thread.
+fn warmup_module_discovery_blocking(db: &dyn CloneableDatabase, module_id: ModuleId<'_>) {
+    let Ok(submodules) = db.module_submodules_ids(module_id) else {
+        return;
+    };
+    submodules.into_par_iter().for_each_with(db.dyn_clone(), |db, submodule_id| {
+        warmup_module_discovery_blocking(db.as_ref(), ModuleId::Submodule(*submodule_id));
     });
 }
 
@@ -363,6 +397,13 @@ pub fn compile_prepared_db_program_artifact_for_functions<'db>(
         annotations.extend(Annotations::from(
             sierra_program_with_debug.debug_info.functions_info.extract_serializable_debug_info(db),
         ))
+    }
+
+    if compiler_config.add_type_names {
+        annotations.extend(Annotations::from(SerializableTypeNamesDebugInfo::extract_type_names(
+            db,
+            &sierra_program_with_debug.program,
+        )))
     }
 
     let debug_info = DebugInfo {

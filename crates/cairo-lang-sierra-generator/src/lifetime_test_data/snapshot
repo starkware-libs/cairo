@@ -3,10 +3,8 @@
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: felt252) -> @felt252 {
     @a
 }

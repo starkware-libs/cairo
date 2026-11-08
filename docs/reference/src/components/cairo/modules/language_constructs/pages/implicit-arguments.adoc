@@ -171,4 +171,4 @@ Starknet contract plugin for entry-point functions.
 == See also
 
 * xref:functions.adoc[Functions] — Function declarations
-* xref:panic.adoc#_nopanic_notation[Nopanic] — Non-panicking functions
+* xref:panic.adoc#nopanic-notation[Nopanic] — Non-panicking functions

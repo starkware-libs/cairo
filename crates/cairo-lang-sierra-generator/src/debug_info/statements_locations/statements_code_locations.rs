@@ -1,3 +1,5 @@
+#![expect(clippy::disallowed_types)]
+
 use std::collections::HashMap;
 
 use cairo_lang_sierra::debug_info::Annotations;

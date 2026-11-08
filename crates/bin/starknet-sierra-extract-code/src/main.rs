@@ -23,7 +23,7 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let contract_class: ContractClass = serde_json::from_str(
         &fs::read_to_string(&args.file)
-            .with_context(|| format!("Failed to read {}.", &args.file))?,
+            .with_context(|| format!("Failed to read {}.", args.file))?,
     )
     .with_context(|| "deserialization Failed.")?;
     let sierra_program = contract_class

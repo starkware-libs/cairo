@@ -3,23 +3,18 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function_code
+//! > cairo_code
+// Function needs to be a real libfunc for the test
+#[allow(extern_outside_corelib)]
+extern fn span_from_tuple<T, +Copy<T>>(x: Box<@T>) -> @Array<felt252> nopanic;
+#[target_function]
 fn foo() -> @Array<felt252> {
     span_from_tuple(BoxTrait::new(@(10, 20, 30)))
 }
 
-//! > function_name
-foo
-
-//! > module_code
-// Function needs to be a real libfunc for the test
-extern fn span_from_tuple<T, +Copy<T>>(x: Box<@T>) -> @Array<felt252> nopanic;
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
@@ -27,3 +22,141 @@ const_as_box<Const<Tuple<felt252, felt252, felt252>, Const<felt252, 10>, Const<f
 span_from_tuple<Tuple<felt252, felt252, felt252>>([0]) -> ([1])
 store_temp<Snapshot<Array<felt252>>>([1]) -> ([1])
 return([1])
+
+//! > ==========================================================================
+
+//! > Test that a user-defined phantom type in a container is rejected in a function signature.
+
+//! > test_runner_name
+test_function_generator
+
+//! > cairo_code
+#[phantom]
+enum Ph {}
+#[target_function]
+fn foo(x: Option<Ph>) -> felt252 {
+    match x {
+        Option::Some(p) => match p {},
+        Option::None => 0,
+    }
+}
+
+//! > semantic_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:4:8
+fn foo(x: Option<Ph>) -> felt252 {
+       ^^^^^^^^^^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:6:34
+        Option::Some(p) => match p {},
+                                 ^
+
+//! > lowering_diagnostics
+
+//! > sierra_code
+None
+
+//! > ==========================================================================
+
+//! > Test that a user-defined phantom type in a container is rejected when used as a value.
+
+//! > test_runner_name
+test_function_generator
+
+//! > cairo_code
+#[phantom]
+enum Ph {}
+
+#[inline(never)]
+fn identity<T>(t: T) -> T {
+    t
+}
+#[target_function]
+fn foo() -> felt252 {
+    let x: Option<(Ph,)> = identity(None);
+    match x {
+        Option::Some(t) => {
+            let (p,) = t;
+            match p {}
+        },
+        Option::None => 0,
+    }
+}
+
+//! > semantic_diagnostics
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:10:37
+    let x: Option<(Ph,)> = identity(None);
+                                    ^^^^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:13:24
+            let (p,) = t;
+                       ^
+
+error[E2019]: Phantom types cannot be instantiated.
+ --> lib.cairo:14:19
+            match p {}
+                  ^
+
+//! > lowering_diagnostics
+
+//! > sierra_code
+None
+
+//! > ==========================================================================
+
+//! > Test that a phantom type appearing only after generic substitution compiles via its regular representation.
+
+//! > test_runner_name
+test_function_generator
+
+//! > cairo_code
+#[phantom]
+enum Ph {}
+
+#[inline(never)]
+fn identity<T>(t: T) -> T {
+    t
+}
+
+fn bar<Ph>() -> felt252 {
+    let x: Option<Ph> = identity(None);
+    match x {
+        Option::Some(ph) => {
+            drop_ph(ph);
+            1
+        },
+        Option::None => 0,
+    }
+}
+
+#[allow(extern_outside_corelib)]
+extern fn drop_ph<Ph>(ph: Ph) nopanic;
+#[target_function]
+fn foo() -> felt252 {
+    bar::<Ph>()
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+struct_construct<Unit>() -> ([0])
+enum_init<core::option::Option::<test::Ph>, 1>([0]) -> ([1])
+store_temp<core::option::Option::<test::Ph>>([1]) -> ([1])
+function_call<user@test::identity::<core::option::Option::<test::Ph>>>([1]) -> ([2])
+enum_match<core::option::Option::<test::Ph>>([2]) { fallthrough([3]) label_test::foo::1([4]) }
+branch_align() -> ()
+enum_match<test::Ph>([3]) { }
+label_test::foo::3:
+label_test::foo::1:
+branch_align() -> ()
+drop<Unit>([4]) -> ()
+const_as_immediate<Const<felt252, 0>>() -> ([5])
+store_temp<felt252>([5]) -> ([5])
+return([5])
+label_test::foo::2:

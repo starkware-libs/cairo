@@ -1,0 +1,65 @@
+//! > Test differently sized externally provided consts, used across an ap revoking call.
+
+//! > test_runner_name
+test_function_generator
+
+//! > cairo_code
+#[target_function]
+fn foo(n: felt252) -> (u16, u256) {
+    let single_slot = seven::__externally_provided_const__();
+    let multi_slot = eight::__externally_provided_const__();
+    // The recursive call revokes ap, so both consts are used across a revocation.
+    if n != 0 {
+        foo(n - 1);
+    }
+    (single_slot, multi_slot)
+}
+
+mod seven {
+    #[allow(extern_outside_corelib)]
+    pub extern fn __externally_provided_const__() -> u16 nopanic;
+}
+
+mod eight {
+    #[allow(extern_outside_corelib)]
+    pub extern fn __externally_provided_const__() -> u256 nopanic;
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+disable_ap_tracking() -> ()
+const_as_immediate<Const<u16, 7777>>() -> ([1])
+const_as_immediate<Const<core::integer::u256, Const<u128, 8888>, Const<u128, 0>>>() -> ([2])
+dup<felt252>([0]) -> ([0], [3])
+felt252_is_zero([3]) { fallthrough() label_test::foo::1([4]) }
+branch_align() -> ()
+drop<felt252>([0]) -> ()
+struct_construct<Unit>() -> ([5])
+enum_init<core::bool, 1>([5]) -> ([6])
+store_temp<core::bool>([6]) -> ([6])
+bool_not_impl([6]) -> ([7])
+drop<core::bool>([7]) -> ()
+struct_construct<Tuple<u16, core::integer::u256>>([1], [2]) -> ([8])
+store_temp<Tuple<u16, core::integer::u256>>([8]) -> ([8])
+return([8])
+label_test::foo::1:
+branch_align() -> ()
+drop<NonZero<felt252>>([4]) -> ()
+struct_construct<Unit>() -> ([9])
+enum_init<core::bool, 0>([9]) -> ([10])
+store_temp<core::bool>([10]) -> ([10])
+bool_not_impl([10]) -> ([11])
+drop<core::bool>([11]) -> ()
+const_as_immediate<Const<felt252, 1>>() -> ([12])
+felt252_sub([0], [12]) -> ([13])
+store_temp<felt252>([13]) -> ([13])
+function_call<user@test::foo>([13]) -> ([14])
+drop<Tuple<u16, core::integer::u256>>([14]) -> ()
+struct_construct<Tuple<u16, core::integer::u256>>([1], [2]) -> ([15])
+store_temp<Tuple<u16, core::integer::u256>>([15]) -> ([15])
+return([15])
+label_test::foo::2:

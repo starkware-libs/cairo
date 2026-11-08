@@ -1,13 +1,14 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic, PluginResult};
 use cairo_lang_defs::plugin_utils::not_legacy_macro_diagnostic;
+use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::ast::{Attribute, OptionTypeClause};
 use cairo_lang_syntax::node::helpers::{
-    BodyItems, GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
+    GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -259,7 +260,7 @@ fn handle_contract_item<'db, 'a>(
                 db,
                 diagnostics,
                 item_impl,
-                metadata,
+                metadata.cfg_set,
                 &mut data.specific.entry_points_code,
             );
         }
@@ -332,7 +333,8 @@ pub(super) fn generate_contract_specific_code<'db, 'a>(
 
     let test_class_hash_node = generate_test_class_hash(db, module_ast);
 
-    let deploy_function_node = generate_constructor_deploy_function(db, diagnostics, body);
+    let deploy_function_node =
+        generate_constructor_deploy_function(db, diagnostics, body, metadata.cfg_set);
 
     generation_data.specific.test_config =
         RewriteNode::new_modified(vec![test_class_hash_node, deploy_function_node]);
@@ -364,10 +366,11 @@ fn generate_constructor_deploy_function<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     body: &ast::ModuleBody<'db>,
+    cfg_set: &CfgSet,
 ) -> RewriteNode<'db> {
     let mut deploy_function_node = RewriteNode::empty();
 
-    for item in body.iter_items(db) {
+    for item in body.iter_items_in_cfg(db, cfg_set) {
         if let ast::ModuleItem::FreeFunction(func) = item
             && let Some((EntryPointKind::Constructor, _)) = func.entry_point_kind(db, diagnostics)
         {
@@ -403,8 +406,9 @@ fn generate_deploy_function<'db>(
         let type_text = ty.as_syntax_node().get_text_without_trivia(db).long(db);
 
         param_declarations.push(format!("{name}: {type_text}"));
-        calldata_serialization
-            .push(format!("core::serde::Serde::<{type_text}>::serialize(@{name}, ref calldata);",));
+        calldata_serialization.push(format!(
+            "core::serde::Serde::<{type_text}>::serialize(@{name}, ref __deploy_calldata__);",
+        ));
     }
 
     let param_declarations_str = param_declarations.join(",\n");
@@ -414,19 +418,20 @@ fn generate_deploy_function<'db>(
         "
         #[cfg(target: 'test')]
         pub fn deploy_for_test(
-            class_hash: starknet::ClassHash,
-            deployment_params: starknet::deployment::DeploymentParams,
+            __deploy_class_hash__: starknet::ClassHash,
+            __deploy_params__: starknet::deployment::DeploymentParams,
             {param_declarations_str}
         ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {{
-            let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+            let mut __deploy_calldata__: core::array::Array<felt252> = \
+         core::array::ArrayTrait::new();
 
             {calldata_serialization_str}
 
             starknet::syscalls::deploy_syscall(
-                class_hash,
-                deployment_params.salt,
-                core::array::ArrayTrait::span(@calldata),
-                deployment_params.deploy_from_zero,
+                __deploy_class_hash__,
+                __deploy_params__.salt,
+                core::array::ArrayTrait::span(@__deploy_calldata__),
+                __deploy_params__.deploy_from_zero,
             )
         }}
     "
@@ -464,11 +469,11 @@ fn handle_contract_free_function<'db>(
 }
 
 /// Handles an impl inside a contract module.
-fn handle_contract_impl<'db, 'a>(
+fn handle_contract_impl<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     imp: &ast::ItemImpl<'db>,
-    metadata: &'a MacroPluginMetadata<'a>,
+    cfg_set: &CfgSet,
     data: &mut EntryPointsGenerationData<'db>,
 ) {
     let Some((abi_config, abi_attr)) = impl_abi_config(db, diagnostics, imp) else {
@@ -479,7 +484,7 @@ fn handle_contract_impl<'db, 'a>(
     };
     let impl_name = imp.name(db);
     let impl_name_node = RewriteNode::from_ast_trimmed(&impl_name);
-    for item in impl_body.iter_items_in_cfg(db, metadata.cfg_set) {
+    for item in impl_body.iter_items_in_cfg(db, cfg_set) {
         if abi_config == ImplAbiConfig::Embed {
             forbid_attributes_in_impl(db, diagnostics, &item, "#[abi(embed_v0)]");
         } else if abi_config == ImplAbiConfig::External {
@@ -613,23 +618,25 @@ fn handle_embed_impl_alias<'db>(
         return;
     }
     let impl_name = impl_final_part.identifier_ast(db);
-    let impl_module = RewriteNode::interspersed(
-        elements.map(|e| RewriteNode::from_ast_trimmed(&e)),
-        RewriteNode::text("::"),
+    let impl_path_prefix = RewriteNode::new_modified(
+        elements
+            .flat_map(|e| [RewriteNode::from_ast_trimmed(&e), RewriteNode::text("::")])
+            .collect(),
     );
     data.generated_wrapper_functions.push(
         RewriteNode::interpolate_patched(
             &formatdoc! {"
-            impl ContractState$impl_name$ of
-                $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
+            impl ContractState$alias_name$ of
+                $impl_path_prefix$UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
                 fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
                     unsafe_new_contract_state()
                 }}
             }}
         "},
             &[
+                ("alias_name".to_string(), RewriteNode::from_ast_trimmed(&alias_ast.name(db))),
                 ("impl_name".to_string(), RewriteNode::from_ast_trimmed(&impl_name)),
-                ("impl_module".to_string(), impl_module),
+                ("impl_path_prefix".to_string(), impl_path_prefix),
             ]
             .into(),
         )

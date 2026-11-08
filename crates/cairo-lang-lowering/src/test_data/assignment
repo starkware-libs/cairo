@@ -3,7 +3,8 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(a: bool) -> felt252 {
     let mut x = 2;
     if a {
@@ -14,9 +15,6 @@ fn foo(a: bool) -> felt252 {
     }
     x
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

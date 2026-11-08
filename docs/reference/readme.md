@@ -3,9 +3,9 @@
 The documentation is written in [AsciiDoc](https://asciidoc.org/) (`.adoc`).
 You can view it in several ways:
 
-* View in IDE
-* Convert to HTML
-* Convert to PDF
+- View in IDE
+- Convert to HTML
+- Convert to PDF
 
 ---
 
@@ -13,8 +13,8 @@ You can view it in several ways:
 
 Install an AsciiDoc plugin for your IDE:
 
-* **VS Code**: *AsciiDoc by asciidoctor*
-* **IntelliJ IDEA**: *AsciiDoc Plugin*
+- **VS Code**: _AsciiDoc by asciidoctor_
+- **IntelliJ IDEA**: _AsciiDoc Plugin_
 
 After installing the plugin, open any `.adoc` file in `docs/reference/src/components/cairo/modules`.
 

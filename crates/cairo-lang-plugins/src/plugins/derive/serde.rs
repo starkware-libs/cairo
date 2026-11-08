@@ -12,15 +12,7 @@ pub fn handle_serde(info: &PluginTypeInfo<'_>, member_access_desnaps: bool) -> S
     let ty = &info.name;
     let full_typename = info.full_typename();
     let header = match &info.type_variant {
-        TypeVariant::Enum => {
-            let impl_additional_generics =
-                info.impl_generics(&[SERDE_TRAIT], |trt, ty| format!("{trt}<{ty}>")).join(", ");
-            formatdoc! {"
-            impl {ty}Serde<
-                    {impl_additional_generics}
-                > of {SERDE_TRAIT}<{full_typename}>
-            "}
-        }
+        TypeVariant::Enum => info.impl_header(SERDE_TRAIT, &[SERDE_TRAIT]),
         TypeVariant::Struct => info.impl_header(SERDE_TRAIT, &[SERDE_TRAIT, DESTRUCT_TRAIT]),
     };
     let serialize_body = indent_by(
@@ -84,13 +76,13 @@ pub fn handle_serde(info: &PluginTypeInfo<'_>, member_access_desnaps: bool) -> S
                         {}
                     }})",
                     info.members_info.iter().map(|member|format!(
-                        "let {member} = {destruct_with} {{ value: {imp}::deserialize(ref serialized)? }};",
+                        "let __serde_member_{member} = {destruct_with} {{ value: {imp}::deserialize(ref serialized)? }};",
                         member=member.name,
                         destruct_with=member.destruct_with(),
                         imp=member.impl_name(SERDE_TRAIT),
                     )).join("\n"),
                     info.members_info.iter().map(|member|format!(
-                        "{member}: {member}.value,", member=member.name
+                        "{member}: __serde_member_{member}.value,", member=member.name
                     )).join("\n    "),
                 }
             }

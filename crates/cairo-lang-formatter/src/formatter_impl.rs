@@ -4,7 +4,7 @@ use std::fmt;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
-use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_parser::macro_helpers::token_tree_as_wrapped_arg_list;
 use cairo_lang_parser::parser::Parser;
@@ -32,10 +32,19 @@ struct UseTree {
 }
 
 /// Represents a terminal node in a `UseTree`, corresponding to a specific `use` path.
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 struct Leaf {
     name: String,
     alias: Option<String>,
+}
+impl std::fmt::Display for Leaf {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(alias) = &self.alias {
+            write!(f, "{} as {alias}", self.name)
+        } else {
+            write!(f, "{}", self.name)
+        }
+    }
 }
 
 impl UseTree {
@@ -64,17 +73,7 @@ impl UseTree {
     }
 
     /// Merge and organize the `use` paths in a hierarchical structure.
-    pub fn create_merged_use_items(self, allow_duplicate_uses: bool) -> Vec<String> {
-        let mut leaf_paths: Vec<String> = self
-            .leaves
-            .into_iter()
-            .map(
-                |Leaf { name, alias }| {
-                    if let Some(alias) = alias { format!("{name} as {alias}") } else { name }
-                },
-            )
-            .collect();
-
+    pub fn create_merged_use_items(mut self, allow_duplicate_uses: bool) -> Vec<String> {
         let mut nested_paths = vec![];
         for (segment, subtree) in self.children {
             let subtree_merged_use_items = subtree.create_merged_use_items(allow_duplicate_uses);
@@ -84,15 +83,16 @@ impl UseTree {
         }
 
         if !allow_duplicate_uses {
-            leaf_paths.sort();
-            leaf_paths.dedup();
+            self.leaves.sort_by(|a, b| {
+                compare_names(&a.name, &b.name).then_with(|| a.alias.cmp(&b.alias))
+            });
+            self.leaves.dedup();
         }
-
-        match leaf_paths.len() {
-            0 => {}
-            1 if nested_paths.is_empty() => return leaf_paths,
-            1 => nested_paths.extend(leaf_paths),
-            _ => nested_paths.push(format!("{{{}}}", leaf_paths.join(", "))),
+        match self.leaves.as_slice() {
+            [] => {}
+            [leaf] if nested_paths.is_empty() => return vec![leaf.to_string()],
+            [leaf] => nested_paths.push(leaf.to_string()),
+            leaves => nested_paths.push(format!("{{{}}}", leaves.iter().format(", "))),
         }
 
         nested_paths
@@ -113,33 +113,20 @@ impl UseTree {
         }
     }
 
-    /// Formats `use` items, creates a virtual file, and parses it into a syntax node.
-    pub fn generate_syntax_node_from_use(
+    /// Writes the tree's merged `use` statements into `f`, one line per statement, each prefixed
+    /// by `decorations` (the shared attributes and visibility). The caller concatenates the
+    /// output of every decoration group into a single virtual file and reparses it.
+    fn format_merged_uses(
         mut self,
-        db: &dyn Database,
         allow_duplicate_uses: bool,
         decorations: String,
-    ) -> SyntaxNode<'_> {
-        let mut formatted_use_items = String::new();
+        f: &mut dyn FnMut(&dyn fmt::Display) -> fmt::Result,
+    ) -> fmt::Result {
         self.organize_self_imports();
-        for statement in self.create_merged_use_items(allow_duplicate_uses) {
-            formatted_use_items.push_str(&format!("{decorations}use {statement};\n"));
-        }
-
-        // Create a virtual file ID for the formatted statements.
-        let file_id = FileLongId::Virtual(VirtualFile {
-            parent: None,
-            name: SmolStrId::from(db, "parser_input"),
-            content: SmolStrId::from(db, formatted_use_items),
-            code_mappings: [].into(),
-            kind: FileKind::Module,
-            original_item_removed: false,
-        })
-        .intern(db);
-
-        let mut diagnostics = DiagnosticsBuilder::<ParserDiagnostic<'_>>::default();
-        let contents = db.file_content(file_id).unwrap();
-        Parser::parse_file(db, &mut diagnostics, file_id, contents).as_syntax_node()
+        f(&self
+            .create_merged_use_items(allow_duplicate_uses)
+            .into_iter()
+            .format_with("", |stmt, f| f(&format_args!("{decorations} use {stmt};\n"))))
     }
 }
 
@@ -252,9 +239,9 @@ impl BreakLinePointProperties {
     pub fn set_single_breakpoint(&mut self) {
         self.is_single_breakpoint = true;
     }
+    /// Makes all the breakpoints of the list break together, instead of only one of them.
     pub fn set_line_by_line(&mut self) {
         self.is_single_breakpoint = false;
-        self.is_optional = true;
     }
     pub fn unset_comma_if_broken(&mut self) {
         self.is_comma_if_broken = false;
@@ -346,7 +333,7 @@ impl fmt::Display for LineBuilder {
         if self.is_only_indents() {
             write!(f, "")
         } else {
-            write!(f, "{}", self.children.iter().map(|child| child.to_string()).join(""))
+            write!(f, "{}", self.children.iter().format(""))
         }
     }
 }
@@ -579,8 +566,8 @@ impl LineBuilder {
             };
             let cur_indent = base_indent + added_indent;
             trees.push(LineBuilder::new(cur_indent));
-            for j in current_line_start..*current_line_end {
-                match &self.children[j] {
+            for child in &self.children[current_line_start..*current_line_end] {
+                match child {
                     LineComponent::Indent(_) => {}
                     LineComponent::Space => {
                         // Ignore spaces at the start of a line
@@ -600,10 +587,10 @@ impl LineBuilder {
                             is_trailing: *is_trailing,
                         });
                     }
-                    _ => trees.last_mut().unwrap().push_child(self.children[j].clone()),
+                    _ => trees.last_mut().unwrap().push_child(child.clone()),
                 }
                 // Indent the comment only if it directly follows the break point.
-                if !self.children[j].is_trivia() {
+                if !child.is_trivia() {
                     comment_only_added_indent = 0;
                 }
             }
@@ -644,7 +631,12 @@ impl LineBuilder {
     /// several lines (separated by '\n'), where each line length is
     /// less than max_line_width (if possible).
     pub fn build(&self, max_line_width: usize, tab_size: usize) -> String {
-        self.break_line_tree(max_line_width, tab_size).iter().join("\n") + "\n"
+        let mut lines = self.break_line_tree(max_line_width, tab_size);
+        // Removing extra trailing newlines.
+        while lines.last().is_some_and(|line| line.is_empty()) {
+            lines.pop();
+        }
+        lines.iter().join("\n") + "\n"
     }
     /// Returns the highest protected zone precedence (minimum number) from within all the protected
     /// zones which are direct children of this builder, or None if there are no protected zones
@@ -687,6 +679,24 @@ impl LineBuilder {
     /// Returns whether or not the line contains a protected zone.
     fn contains_protected_zone(&self) -> bool {
         self.children.iter().any(|child| matches!(child, LineComponent::ProtectedZone { .. }))
+    }
+    /// Returns whether the line currently ends with a non-empty token, looking into protected zones
+    /// and skipping break points that add no space if not broken.
+    /// Returns None if nothing that decides it was found.
+    fn ends_with_token(&self) -> Option<bool> {
+        for child in self.pending_break_line_points.iter().rev().chain(self.children.iter().rev()) {
+            match child {
+                LineComponent::Token(s) => return Some(!s.is_empty()),
+                LineComponent::ProtectedZone { builder, .. } => {
+                    if let Some(res) = builder.ends_with_token() {
+                        return Some(res);
+                    }
+                }
+                LineComponent::BreakLinePoint(properties) if !properties.space_if_not_broken => {}
+                _ => return Some(false),
+            }
+        }
+        None
     }
     /// Returns whether the line contains only indents.
     fn is_only_indents(&self) -> bool {
@@ -780,9 +790,10 @@ impl fmt::Display for CommentLine {
     }
 }
 
-/// Formats a comment to fit in the line width. There are no merges of lines, as this is not clear
-/// when to merge two lines the user chose to write on separate lines, so all original line breaks
-/// are preserved.
+/// Formats a comment to fit in the line width. Line breaks the user wrote are preserved, as it is
+/// not clear when to merge two lines the user chose to write separately; the only merges are of
+/// continuation lines that the formatter itself broke off an over-long open line (see the
+/// `is_open_line` check below).
 fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usize) -> String {
     let mut formatted_comment = String::new();
     let mut prev_comment_line = CommentLine::from_string("".to_string());
@@ -794,11 +805,13 @@ fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usiz
     let mut last_line_broken = false;
     for line in content.lines() {
         let orig_comment_line = CommentLine::from_string(line.to_string());
+        // Saturate: the prefix (indent + slashes + exclamations + leading spaces) can exceed
+        // `max_line_width` for a deeply-indented or many-slash comment, which would underflow.
         let max_comment_width = max_line_width
-            - cur_indent
-            - orig_comment_line.n_slashes
-            - orig_comment_line.n_exclamations
-            - orig_comment_line.n_leading_spaces;
+            .saturating_sub(cur_indent)
+            .saturating_sub(orig_comment_line.n_slashes)
+            .saturating_sub(orig_comment_line.n_exclamations)
+            .saturating_sub(orig_comment_line.n_leading_spaces);
         // The current line is initialized with the previous line only if it was broken (to avoid
         // merging user separated lines).
         let mut current_line = if last_line_broken
@@ -937,6 +950,9 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
+    /// Whether the node being formatted came from a macro call's token tree, where a trailing
+    /// separator is matcher-visible and therefore kept exactly as written.
+    in_macro_token_tree: bool,
 }
 impl<'a> FormatterImpl<'a> {
     pub fn new(db: &'a dyn Database, config: FormatterConfig) -> Self {
@@ -947,6 +963,7 @@ impl<'a> FormatterImpl<'a> {
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
             is_last_element_comment: false,
+            in_macro_token_tree: false,
         }
     }
     /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
@@ -970,13 +987,16 @@ impl<'a> FormatterImpl<'a> {
             let file_id = syntax_node.stable_ptr(self.db).file_id(self.db);
 
             if let Some(wrapped_arg_list) = as_wrapped_arg_list {
-                let new_syntax_node = SyntaxNode::new_root_with_offset(
+                let new_syntax_node = SyntaxNode::new_detached_root_with_offset(
                     self.db,
                     file_id,
                     wrapped_arg_list.0,
                     Some(syntax_node.offset(self.db)),
                 );
+                let outer_in_macro_token_tree = self.in_macro_token_tree;
+                self.in_macro_token_tree = true;
                 self.format_node(&new_syntax_node);
+                self.in_macro_token_tree = outer_in_macro_token_tree;
                 return;
             }
         }
@@ -996,8 +1016,28 @@ impl<'a> FormatterImpl<'a> {
             if spacing_data.add_space_before && !self.line_state.prevent_next_space {
                 self.line_state.line_buffer.push_space();
             }
-            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+            // The trailing trivia is formatted separately, so a trailing comment ends the line
+            // instead of swallowing the tokens that follow it.
+            let text_span = TextSpan {
+                end: syntax_node.span_end_without_trivia(self.db),
+                ..syntax_node.span(self.db)
+            };
+            self.line_state
+                .line_buffer
+                .push_str(syntax_node.get_text_of_span(self.db, text_span).trim());
             self.line_state.prevent_next_space = spacing_data.prevent_space_after;
+            self.is_current_line_whitespaces = false;
+            self.is_last_element_comment = false;
+            if let Some(last_terminal) = syntax_node
+                .tokens(self.db)
+                .filter(|t| t.width(self.db) != TextWidth::default())
+                .last()
+            {
+                let [_, _, trailing] = last_terminal.get_children(self.db) else {
+                    panic!("Terminal node should have 3 children.");
+                };
+                self.format_trivia(ast::Trivia::from_syntax_node(self.db, *trailing), false);
+            }
         } else if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node);
         } else {
@@ -1010,7 +1050,7 @@ impl<'a> FormatterImpl<'a> {
             self.line_state.line_buffer.close_sub_builder();
         }
         if let Some(mut trailing_break_point) = node_break_points.trailing() {
-            if self.is_last_element_comment {
+            if self.is_last_element_comment || self.in_macro_token_tree {
                 trailing_break_point.unset_comma_if_broken();
             }
             self.append_break_line_point(Some(trailing_break_point));
@@ -1040,6 +1080,16 @@ impl<'a> FormatterImpl<'a> {
         // Format each child node, inserting breaks where specified.
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
+                if child.kind(self.db) == SyntaxKind::StatementList
+                    && let Some(rbrace) = children.get(i + 1)
+                    && !self.has_only_whitespace_trivia(
+                        &ast::TerminalRBrace::from_syntax_node(self.db, *rbrace)
+                            .leading_trivia(self.db)
+                            .as_syntax_node(),
+                    )
+                {
+                    self.line_state.line_buffer.push_space();
+                }
                 continue;
             }
 
@@ -1060,58 +1110,90 @@ impl<'a> FormatterImpl<'a> {
     /// them into a clean, structured format.
     fn merge_use_items(&mut self, children: &mut Vec<SyntaxNode<'a>>) {
         let mut new_children = Vec::new();
+        let db = self.db;
 
-        for (section_kind, section_nodes) in extract_sections(children, self.db) {
+        for (section_kind, section_nodes) in extract_sections(children, db) {
             if section_kind != SortKind::UseItem {
                 new_children.extend(section_nodes.iter().cloned());
                 continue;
             }
-
-            let mut decoration_to_use_tree: OrderedHashMap<String, UseTree> =
-                OrderedHashMap::default();
+            /// Accumulated state for merging a run of `use` items within a single section.
+            struct MergeInfo<'a> {
+                /// The leading trivia of the first mergeable `use` item.
+                leading_trivia: &'a str,
+                /// The merged paths, keyed by their shared decorations (attributes + visibility).
+                decoration_to_use_tree: OrderedHashMap<String, UseTree>,
+                /// Items that are not part of the merge to be emitted after the merged block.
+                trailing_nodes: Vec<SyntaxNode<'a>>,
+            }
+            let mut merge_info = None::<MergeInfo<'a>>;
 
             for node in section_nodes {
+                let mut push_non_merge_node = || match &mut merge_info {
+                    Some(info) => info.trailing_nodes.push(*node),
+                    None => new_children.push(*node),
+                };
                 if !self.has_only_whitespace_trivia(node)
-                    || node.should_ignore_node_format(self.db).is_some()
+                    || node.should_ignore_node_format(db).is_some()
                 {
-                    new_children.push(*node);
+                    push_non_merge_node();
                     continue;
                 }
 
-                let use_item = ast::ItemUse::from_syntax_node(self.db, *node);
-
-                if !matches!(use_item.dollar(self.db), ast::OptionTerminalDollar::Empty(_)) {
-                    new_children.push(*node);
+                let use_item = ast::ItemUse::from_syntax_node(db, *node);
+                if !matches!(use_item.dollar(db), ast::OptionTerminalDollar::Empty(_)) {
+                    push_non_merge_node();
                     continue;
                 }
-
+                let merge_info = merge_info.get_or_insert_with(|| {
+                    let span = TextSpan::new(node.offset(db), node.span_start_without_trivia(db));
+                    MergeInfo {
+                        leading_trivia: node.get_text_of_span(db, span),
+                        decoration_to_use_tree: Default::default(),
+                        trailing_nodes: Default::default(),
+                    }
+                });
                 let decorations = chain!(
-                    use_item.attributes(self.db).elements(self.db).map(|attr| attr
-                        .as_syntax_node()
-                        .get_text_without_trivia(self.db)
-                        .long(self.db)
-                        .as_str()),
-                    [use_item.visibility(self.db).as_syntax_node().get_text(self.db)],
+                    use_item.attributes(db).elements(db).map(|e| e.as_syntax_node()),
+                    [use_item.visibility(db).as_syntax_node()]
                 )
+                .map(|n| n.get_text_without_trivia(db).long(db).as_str())
                 .join("\n");
 
-                let tree = decoration_to_use_tree.entry(decorations).or_default();
-                tree.insert_path(self.db, use_item.use_path(self.db));
+                let tree = merge_info.decoration_to_use_tree.entry(decorations).or_default();
+                tree.insert_path(db, use_item.use_path(db));
             }
 
-            // Generate merged syntax nodes from the `decoration_to_use_tree`.
-            for (decorations, tree) in decoration_to_use_tree {
-                let merged_node = tree.generate_syntax_node_from_use(
-                    self.db,
-                    self.config.allow_duplicate_uses,
-                    decorations,
-                );
+            let Some(merge_info) = merge_info else {
+                continue;
+            };
+            let merged_uses = merge_info.decoration_to_use_tree.into_iter().format_with(
+                "",
+                |(decorations, tree), f| {
+                    tree.format_merged_uses(self.config.allow_duplicate_uses, decorations, f)
+                },
+            );
 
-                // Add merged children to the new_children list.
-                if let Some(child) = merged_node.get_children(self.db).iter().next() {
-                    new_children.extend(child.get_children(self.db).iter().copied());
-                }
-            }
+            // Create a virtual file ID for the formatted statements.
+            let file_id = FileLongId::Virtual(VirtualFile {
+                parent: None,
+                name: SmolStrId::from(db, "parser_input"),
+                content: SmolStrId::from(db, format!("{}{merged_uses}", merge_info.leading_trivia)),
+                code_mappings: [].into(),
+                kind: FileKind::Module,
+                original_item_removed: false,
+            })
+            .intern(db);
+
+            let mut ignored_diags = DiagnosticsBuilder::<ParserDiagnostic<'_>>::default();
+            let contents = db.file_content(file_id).unwrap();
+
+            // Add merged children to the new_children list.
+            let items = Parser::parse_file(db, &mut ignored_diags, file_id, contents).items(db);
+            new_children.extend(chain!(
+                items.as_syntax_node().get_children(db).iter().copied(),
+                merge_info.trailing_nodes
+            ));
         }
 
         *children = new_children;
@@ -1207,7 +1289,11 @@ impl<'a> FormatterImpl<'a> {
         };
         // The first newlines is the leading trivia correspond exactly to empty lines.
         self.format_trivia(ast::Trivia::from_syntax_node(self.db, *leading), true);
-        if !syntax_node.should_skip_terminal(self.db) {
+        // A trailing separator in a macro call's token tree is kept as written - see
+        // `in_macro_token_tree` - so the layout-driven skip of a trailing comma does not apply.
+        if !syntax_node.should_skip_terminal(self.db)
+            || (self.in_macro_token_tree && syntax_node.kind(self.db) == SyntaxKind::TerminalComma)
+        {
             self.format_token(token);
         }
         self.format_trivia(ast::Trivia::from_syntax_node(self.db, *trailing), false);
@@ -1219,7 +1305,17 @@ impl<'a> FormatterImpl<'a> {
                 ast::Trivium::SingleLineComment(_)
                 | ast::Trivium::SingleLineDocComment(_)
                 | ast::Trivium::SingleLineInnerComment(_) => {
-                    if !is_leading {
+                    // A leading comment may still be printed right after the previous token, so it
+                    // must be separated from it - e.g. `/` followed by `// c` would become `/// c`.
+                    // A trailing comment is always separated, unless the line already ends with a
+                    // space, e.g. the unbroken break point after `=`.
+                    let ends_with_token = self.line_state.line_buffer.ends_with_token();
+                    let needs_space = if is_leading {
+                        ends_with_token == Some(true)
+                    } else {
+                        ends_with_token != Some(false)
+                    };
+                    if needs_space {
                         self.line_state.line_buffer.push_space();
                     }
                     self.line_state
@@ -1276,13 +1372,8 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
     match (a, b) {
         // Case for multi vs multi.
         (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
-            let empty_string = "".into();
             let get_min_child = |multi: &ast::UsePathMulti<'a>| {
-                multi.use_paths(db).elements(db).min_by_key(|child| match child {
-                    UsePath::Leaf(leaf) => leaf.extract_ident(db),
-                    UsePath::Single(single) => single.extract_ident(db),
-                    _ => &empty_string,
-                })
+                multi.use_paths(db).elements(db).min_by(|a, b| compare_use_paths(a, b, db))
             };
             match (get_min_child(a_multi), get_min_child(b_multi)) {
                 (Some(a_min), Some(b_min)) => compare_use_paths(&a_min, &b_min, db),
@@ -1339,10 +1430,15 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
     }
 }
 
-/// Compares two names, with special handling for "super" and "crate".
+/// Compares two names, with special handling for the glob `*` (first), `self` (first) and
+/// `super`/`crate` (last) — matching the ordering of `compare_use_paths`.
 fn compare_names(a: &str, b: &str) -> Ordering {
     match (a, b) {
+        ("*", "*") => Ordering::Equal,
+        ("*", _) => Ordering::Less,
+        (_, "*") => Ordering::Greater,
         ("super" | "crate", "super" | "crate") => a.cmp(b),
+        ("self", "self") => Ordering::Equal,
         ("super" | "crate", _) | (_, "self") => Ordering::Greater,
         (_, "super" | "crate") | ("self", _) => Ordering::Less,
         _ => a.cmp(b),

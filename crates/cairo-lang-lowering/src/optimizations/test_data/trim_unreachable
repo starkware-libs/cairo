@@ -3,7 +3,10 @@
 //! > test_runner_name
 test_trim_unreachable
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+enum NeverWithDrop {}
+#[target_function]
 fn foo(x: Option<NeverWithDrop>, a: u32) {
     match x {
         Some(i_am_never) => {
@@ -13,13 +16,6 @@ fn foo(x: Option<NeverWithDrop>, a: u32) {
         None => {},
     }
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-enum NeverWithDrop {}
 
 //! > semantic_diagnostics
 
@@ -91,7 +87,10 @@ End:
 //! > test_runner_name
 test_trim_unreachable
 
-//! > function_code
+//! > cairo_code
+#[derive(Drop)]
+enum NeverWithDrop {}
+#[target_function]
 fn foo(never_ty: NeverWithDrop, a: u32) {
     if a == 0 {
         let _b: u16 = a.try_into().unwrap_or(0);
@@ -99,13 +98,6 @@ fn foo(never_ty: NeverWithDrop, a: u32) {
 
     match never_ty {}
 }
-
-//! > function_name
-foo
-
-//! > module_code
-#[derive(Drop)]
-enum NeverWithDrop {}
 
 //! > semantic_diagnostics
 

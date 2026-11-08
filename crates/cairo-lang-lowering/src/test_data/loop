@@ -3,7 +3,8 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> bool {
     loop {
         // Some statements to prevent the loop function from being inlined.
@@ -19,9 +20,6 @@ fn foo() -> bool {
         break true;
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -43,7 +41,8 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() {
     loop {
         // Some statements to prevent the loop function from being inlined.
@@ -61,9 +60,6 @@ fn foo() {
         break;
     };
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 

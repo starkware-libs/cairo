@@ -1,14 +1,9 @@
-use cairo_lang_debug::DebugWithDb;
-use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::LoweringStage;
-use crate::db::LoweringGroup;
-use crate::fmt::LoweredFormatter;
-use crate::ids::ConcreteFunctionWithBodyId;
-use crate::optimizations::strategy::{ApplyOptimization, OptimizationPhase};
-use crate::test_utils::LoweringDatabaseForTesting;
+use crate::optimizations::strategy::OptimizationPhase;
+use crate::test_runner::run_lowering_phases_test;
 
 cairo_lang_test_utils::test_file_test!(
     return_optimizer,
@@ -23,35 +18,14 @@ fn test_return_optimizer(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
-    let function_id =
-        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-
-    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-
-    let mut before = db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().clone();
-    [
-        OptimizationPhase::ApplyInlining { enable_const_folding: true },
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReorderStatements,
-    ]
-    .apply(db, function_id, &mut before)
-    .unwrap();
-
-    let mut after = before.clone();
-    OptimizationPhase::ReturnOptimization.apply(db, function_id, &mut after).unwrap();
-
-    TestRunnerResult::success(OrderedHashMap::from([
-        ("semantic_diagnostics".into(), semantic_diagnostics),
-        (
-            "before".into(),
-            format!("{:?}", before.debug(&LoweredFormatter::new(db, &before.variables))),
-        ),
-        (
-            "after".into(),
-            format!("{:?}", after.debug(&LoweredFormatter::new(db, &after.variables))),
-        ),
-        ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
-    ]))
+    run_lowering_phases_test(
+        inputs,
+        LoweringStage::PreOptimizations,
+        &[
+            OptimizationPhase::ApplyInlining { enable_const_folding: true },
+            OptimizationPhase::ReorganizeBlocks,
+            OptimizationPhase::ReorderStatements,
+        ],
+        &[OptimizationPhase::ReturnOptimization],
+    )
 }

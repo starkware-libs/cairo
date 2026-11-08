@@ -3,7 +3,8 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     if x == 0 {
         return 1;
@@ -11,14 +12,9 @@ fn foo(x: felt252) -> felt252 {
     2
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }

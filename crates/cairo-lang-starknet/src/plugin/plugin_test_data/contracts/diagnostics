@@ -153,16 +153,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -311,25 +311,25 @@ use starknet::storage::Map as LegacyMap;
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a.try_into().unwrap();
 #[cfg(target: 'test')]
 pub fn deploy_for_test(
-    class_hash: starknet::ClassHash,
-    deployment_params: starknet::deployment::DeploymentParams,
+    __deploy_class_hash__: starknet::ClassHash,
+    __deploy_params__: starknet::deployment::DeploymentParams,
     
 ) -> starknet::SyscallResult<(starknet::ContractAddress, core::array::Span<felt252>)> {
-    let mut calldata: core::array::Array<felt252> = core::array::ArrayTrait::new();
+    let mut __deploy_calldata__: core::array::Array<felt252> = core::array::ArrayTrait::new();
 
     
 
     starknet::syscalls::deploy_syscall(
-        class_hash,
-        deployment_params.salt,
-        core::array::ArrayTrait::span(@calldata),
-        deployment_params.deploy_from_zero,
+        __deploy_class_hash__,
+        __deploy_params__.salt,
+        core::array::ArrayTrait::span(@__deploy_calldata__),
+        __deploy_params__.deploy_from_zero,
     )
 }
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__invalid_constructor_name(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -339,7 +339,7 @@ fn __wrapper__invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     invalid_constructor_name(ref contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -392,16 +392,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -547,7 +547,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x547f368ac55821b57d7da42588a29
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo_v0(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -560,7 +560,7 @@ fn __wrapper__foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     foo_v0(ref contract_state, __arg_x);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -568,7 +568,7 @@ fn __wrapper__foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -581,7 +581,7 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     foo(ref contract_state, __arg_x);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -589,7 +589,7 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo_v1(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -602,7 +602,7 @@ fn __wrapper__foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     foo_v1(ref contract_state, __arg_x);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -657,16 +657,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -821,7 +821,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x16fce813e4d7f676441c2cffa36b5
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -834,7 +834,7 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     foo(ref contract_state, __arg_x);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -887,16 +887,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -924,7 +924,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
+error[E2311]: Trait has no implementation in context: Serde::<crate::MyType>.
  --> lib.cairo:5:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
@@ -1034,7 +1034,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2c31752790f50b7f25195fc7cc9dc
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1044,7 +1044,7 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = foo(ref contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
@@ -1098,16 +1098,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -1135,10 +1135,10 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:6:40
+error[E2042]: Unexpected return type. Expected: "(felt252, felt252)", found: "()".
+ --> lib.cairo:6:59
     fn foo(ref self: ContractState) -> (felt252, felt252) {}
-                                       ^^^^^^^^^^^^^^^^^^
+                                                          ^^
 
 //! > ==========================================================================
 
@@ -1245,7 +1245,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2bcbd7e08add1bbb62c174729940b
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1258,7 +1258,7 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     foo(ref contract_state, __arg_x);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -1311,16 +1311,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -1363,7 +1363,7 @@ error[E0006]: Type not found.
     #[external(v0)]
     ^^^^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: core::serde::Serde::<<missing>>.
+error[E2311]: Trait has no implementation in context: Serde::<<missing>>.
  --> lib.cairo:5:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
@@ -1372,8 +1372,8 @@ error[E3002]: Variable not dropped.
  --> lib.cairo:6:40
     fn foo<T>(ref self: ContractState, x: T) {}
                                        ^
-note: Trait has no implementation in context: core::traits::Drop::<T>.
-note: Trait has no implementation in context: core::traits::Destruct::<T>.
+note: Trait has no implementation in context: Drop::<T>.
+note: Trait has no implementation in context: Destruct::<T>.
 
 //! > ==========================================================================
 
@@ -1484,7 +1484,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x51e947dc07c2918ff505d4f848310
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1501,7 +1501,7 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = foo(ref contract_state, __arg_x, __arg_y);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
@@ -1555,16 +1555,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -1592,10 +1592,10 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:8:10
+error[E2042]: Unexpected return type. Expected: "(felt252, felt252)", found: "()".
+ --> lib.cairo:8:29
     ) -> (felt252, felt252) {}
-         ^^^^^^^^^^^^^^^^^^
+                            ^^
 
 //! > ==========================================================================
 
@@ -1714,7 +1714,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x291a42fae50c99636dc1d6bc0c4e2
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper____validate__(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper____validate__(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1724,7 +1724,7 @@ fn __wrapper____validate__(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     __validate__(ref contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -1732,7 +1732,7 @@ fn __wrapper____validate__(mut data: Span::<felt252>) -> Span::<felt252> {
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper____validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper____validate_declare__(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1742,7 +1742,7 @@ fn __wrapper____validate_declare__(mut data: Span::<felt252>) -> Span::<felt252>
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     __validate_declare__(ref contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -1750,7 +1750,7 @@ fn __wrapper____validate_declare__(mut data: Span::<felt252>) -> Span::<felt252>
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper____validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper____validate_deploy__(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1760,7 +1760,7 @@ fn __wrapper____validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> 
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     __validate_deploy__(ref contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -1768,7 +1768,7 @@ fn __wrapper____validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> 
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper____execute__(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper____execute__(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1778,7 +1778,7 @@ fn __wrapper____execute__(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     __execute__(ref contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -1834,16 +1834,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -2088,16 +2088,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -2322,16 +2322,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -2615,16 +2615,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -3028,6 +3028,82 @@ impl InterfaceTraitSafeDispatcherImpl of InterfaceTraitSafeDispatcherTrait<Inter
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl InterfaceTraitForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of InterfaceTrait<TContractState> {
+    fn foo_external1(self: @TContractState) {
+        InterfaceTraitDispatcherTrait::foo_external1(InterfaceTraitLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn foo_l1_handler1(self: @TContractState) {
+        InterfaceTraitDispatcherTrait::foo_l1_handler1(InterfaceTraitLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn foo_constructor1(self: @TContractState) {
+        InterfaceTraitDispatcherTrait::foo_constructor1(InterfaceTraitLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForInterfaceTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceTraitForwardImpl__foo_external1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo_external1"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceTraitForwardImpl__foo_l1_handler1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo_l1_handler1"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceTraitForwardImpl__foo_constructor1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo_constructor1"),
+            data,
+        )
+    )
+}
+
+mod __external_InterfaceTraitForwardImpl {
+    pub use super::__wrapper__InterfaceTraitForwardImpl__foo_external1 as foo_external1;
+    pub use super::__wrapper__InterfaceTraitForwardImpl__foo_l1_handler1 as foo_l1_handler1;
+    pub use super::__wrapper__InterfaceTraitForwardImpl__foo_constructor1 as foo_constructor1;
+}
+
+mod __l1_handler_InterfaceTraitForwardImpl {
+}
+
+mod __constructor_InterfaceTraitForwardImpl {
+}
 
 
 lib.cairo:1:1
@@ -3045,9 +3121,9 @@ impl InterfaceTraitDispatcherSerde<> of core::serde::Serde::<InterfaceTraitDispa
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -3165,9 +3241,9 @@ impl InterfaceTraitLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceTra
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -3285,9 +3361,9 @@ impl InterfaceTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<Interfac
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -3405,9 +3481,9 @@ impl InterfaceTraitSafeDispatcherSerde<> of core::serde::Serde::<InterfaceTraitS
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -3676,7 +3752,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0xb2b80f78cee80a1a53222a998e318
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__Impl2__foo_external1(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl2__foo_external1(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3686,7 +3762,7 @@ fn __wrapper__Impl2__foo_external1(mut data: Span::<felt252>) -> Span::<felt252>
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     Impl2::foo_external1(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3694,7 +3770,7 @@ fn __wrapper__Impl2__foo_external1(mut data: Span::<felt252>) -> Span::<felt252>
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__Impl2__foo_l1_handler1(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl2__foo_l1_handler1(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3704,7 +3780,7 @@ fn __wrapper__Impl2__foo_l1_handler1(mut data: Span::<felt252>) -> Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     Impl2::foo_l1_handler1(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3712,7 +3788,7 @@ fn __wrapper__Impl2__foo_l1_handler1(mut data: Span::<felt252>) -> Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__Impl2__foo_constructor1(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl2__foo_constructor1(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3722,7 +3798,7 @@ fn __wrapper__Impl2__foo_constructor1(mut data: Span::<felt252>) -> Span::<felt2
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     Impl2::foo_constructor1(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3730,7 +3806,7 @@ fn __wrapper__Impl2__foo_constructor1(mut data: Span::<felt252>) -> Span::<felt2
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__Impl1__foo_external2(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl1__foo_external2(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3740,7 +3816,7 @@ fn __wrapper__Impl1__foo_external2(mut data: Span::<felt252>) -> Span::<felt252>
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     Impl1::foo_external2(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3748,7 +3824,7 @@ fn __wrapper__Impl1__foo_external2(mut data: Span::<felt252>) -> Span::<felt252>
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__Impl1__foo_l1_handler2(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl1__foo_l1_handler2(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3758,7 +3834,7 @@ fn __wrapper__Impl1__foo_l1_handler2(mut data: Span::<felt252>) -> Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     Impl1::foo_l1_handler2(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3766,7 +3842,7 @@ fn __wrapper__Impl1__foo_l1_handler2(mut data: Span::<felt252>) -> Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__Impl1__foo_constructor2(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl1__foo_constructor2(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -3776,7 +3852,7 @@ fn __wrapper__Impl1__foo_constructor2(mut data: Span::<felt252>) -> Span::<felt2
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     Impl1::foo_constructor2(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -3852,16 +3928,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -4036,16 +4112,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -4231,16 +4307,16 @@ starknet_derive:
 
 impl MyEventIsEvent of starknet::Event<MyEvent> {
     fn append_keys_and_data(
-        self: @MyEvent, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @MyEvent, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<MyEvent> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<MyEvent> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -4261,16 +4337,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -4486,9 +4562,9 @@ impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -4606,9 +4682,9 @@ impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -4726,9 +4802,9 @@ impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -4846,9 +4922,9 @@ impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -5173,9 +5249,9 @@ impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -5293,9 +5369,9 @@ impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -5413,9 +5489,9 @@ impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -5533,9 +5609,9 @@ impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -5826,9 +5902,9 @@ impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -5946,9 +6022,9 @@ impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -6066,9 +6142,9 @@ impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -6186,9 +6262,9 @@ impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -6486,9 +6562,9 @@ impl IContractDispatcherSerde<> of core::serde::Serde::<IContractDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -6606,9 +6682,9 @@ impl IContractLibraryDispatcherSerde<> of core::serde::Serde::<IContractLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -6726,9 +6802,9 @@ impl IContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<IContractSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -6846,9 +6922,9 @@ impl IContractSafeDispatcherSerde<> of core::serde::Serde::<IContractSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IContractSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IContractSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -7209,9 +7285,9 @@ impl InterfaceTraitDispatcherSerde<> of core::serde::Serde::<InterfaceTraitDispa
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -7329,9 +7405,9 @@ impl InterfaceTraitLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceTra
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -7449,9 +7525,9 @@ impl InterfaceTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<Interfac
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -7569,9 +7645,9 @@ impl InterfaceTraitSafeDispatcherSerde<> of core::serde::Serde::<InterfaceTraitS
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceTraitSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceTraitSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -8018,6 +8094,82 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl InterfaceForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Interface<TContractState> {
+    fn foo1(self: @TContractState) {
+        InterfaceDispatcherTrait::foo1(InterfaceLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn foo2(self: @TContractState) {
+        InterfaceDispatcherTrait::foo2(InterfaceLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn foo3(self: @TContractState) {
+        InterfaceDispatcherTrait::foo3(InterfaceLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo1"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo2<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo2"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo3"),
+            data,
+        )
+    )
+}
+
+mod __external_InterfaceForwardImpl {
+    pub use super::__wrapper__InterfaceForwardImpl__foo1 as foo1;
+    pub use super::__wrapper__InterfaceForwardImpl__foo2 as foo2;
+    pub use super::__wrapper__InterfaceForwardImpl__foo3 as foo3;
+}
+
+mod __l1_handler_InterfaceForwardImpl {
+}
+
+mod __constructor_InterfaceForwardImpl {
+}
 
 
 lib.cairo:7:1
@@ -8033,7 +8185,7 @@ trait UnsafeNewContractStateTraitForEmbeddableImpl<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__EmbeddableImpl__foo1<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForEmbeddableImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__EmbeddableImpl__foo1<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForEmbeddableImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -8043,7 +8195,7 @@ fn __wrapper__EmbeddableImpl__foo1<TContractState, impl UnsafeNewContractState: 
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     EmbeddableImpl::<TContractState>::foo1(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -8051,7 +8203,7 @@ fn __wrapper__EmbeddableImpl__foo1<TContractState, impl UnsafeNewContractState: 
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__EmbeddableImpl__foo2<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForEmbeddableImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__EmbeddableImpl__foo2<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForEmbeddableImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -8061,7 +8213,7 @@ fn __wrapper__EmbeddableImpl__foo2<TContractState, impl UnsafeNewContractState: 
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     EmbeddableImpl::<TContractState>::foo2(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -8069,7 +8221,7 @@ fn __wrapper__EmbeddableImpl__foo2<TContractState, impl UnsafeNewContractState: 
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__EmbeddableImpl__foo3<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForEmbeddableImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__EmbeddableImpl__foo3<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForEmbeddableImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -8079,7 +8231,7 @@ fn __wrapper__EmbeddableImpl__foo3<TContractState, impl UnsafeNewContractState: 
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     EmbeddableImpl::<TContractState>::foo3(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -8115,9 +8267,9 @@ impl InterfaceDispatcherSerde<> of core::serde::Serde::<InterfaceDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -8235,9 +8387,9 @@ impl InterfaceLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -8355,9 +8507,9 @@ impl InterfaceSafeLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -8475,9 +8627,9 @@ impl InterfaceSafeDispatcherSerde<> of core::serde::Serde::<InterfaceSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -8980,6 +9132,82 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl InterfaceForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Interface<TContractState> {
+    fn foo1(self: @TContractState) {
+        InterfaceDispatcherTrait::foo1(InterfaceLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn foo2(self: @TContractState) {
+        InterfaceDispatcherTrait::foo2(InterfaceLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn foo3(self: @TContractState) {
+        InterfaceDispatcherTrait::foo3(InterfaceLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo1"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo2<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo2"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo3"),
+            data,
+        )
+    )
+}
+
+mod __external_InterfaceForwardImpl {
+    pub use super::__wrapper__InterfaceForwardImpl__foo1 as foo1;
+    pub use super::__wrapper__InterfaceForwardImpl__foo2 as foo2;
+    pub use super::__wrapper__InterfaceForwardImpl__foo3 as foo3;
+}
+
+mod __l1_handler_InterfaceForwardImpl {
+}
+
+mod __constructor_InterfaceForwardImpl {
+}
 
 
 lib.cairo:1:1
@@ -8997,9 +9225,9 @@ impl InterfaceDispatcherSerde<> of core::serde::Serde::<InterfaceDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -9117,9 +9345,9 @@ impl InterfaceLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -9237,9 +9465,9 @@ impl InterfaceSafeLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -9357,9 +9585,9 @@ impl InterfaceSafeDispatcherSerde<> of core::serde::Serde::<InterfaceSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -9639,18 +9867,18 @@ impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
     #[external(v0)]
     fn foo1(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        MyImpl::foo1(component)
+        let __component__ = HasComponent::get_component(self);
+        MyImpl::foo1(__component__)
     }
     #[l1_handler]
     fn foo2(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        MyImpl::foo2(component)
+        let __component__ = HasComponent::get_component(self);
+        MyImpl::foo2(__component__)
     }
     #[constructor]
     fn foo3(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        MyImpl::foo3(component)
+        let __component__ = HasComponent::get_component(self);
+        MyImpl::foo3(__component__)
     }
 }
 
@@ -9669,16 +9897,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -9720,7 +9948,7 @@ pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContractState>,
-impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -9730,7 +9958,7 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyEmbeddableImpl::<TContractState, X, TContractStateDrop>::foo1(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -9739,7 +9967,7 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContractState>,
-impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -9749,7 +9977,7 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyEmbeddableImpl::<TContractState, X, TContractStateDrop>::foo2(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -9758,7 +9986,7 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__MyEmbeddableImpl__foo3<TContractState, impl X: HasComponent<TContractState>,
-impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -9768,7 +9996,7 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyEmbeddableImpl::<TContractState, X, TContractStateDrop>::foo3(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -9875,7 +10103,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x291a893aaae68e6364fac8003da0089f1c976946ebe457ce78ed62b5e680be2.try_into().unwrap();
 
-impl ContractStateMyEmbeddableImpl of
+impl ContractStateMyEmbeddedImpl of
     super::component::UnsafeNewContractStateTraitForMyEmbeddableImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -9946,7 +10174,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::CompEvent(val) => {
@@ -9958,13 +10186,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("CompEvent") {
-            return Option::Some(Event::CompEvent(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::CompEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventCompEventIntoEvent of Into<super::component::Event, Event> {
@@ -10191,16 +10419,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -10307,7 +10535,7 @@ mod component3 {
 }
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "@test::component3::ComponentState::<?2>", found: "test::component3::ComponentState::<TContractState>".
+error[E2041]: Unexpected argument type. Expected: "@ComponentState::<?2>", found: "ComponentState::<TContractState>".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:55:32
@@ -10334,7 +10562,7 @@ error[E2005]: Expected variable or constant, found impl.
             get_dep_component!(Comp1, Comp1).foo1();
                                ^^^^^
 
-error[E0002]: Method `foo1` not found on type `@test::component2::ComponentState::<TContractState>`. Did you import the correct trait and impl?
+error[E0002]: Method `foo1` not found on type `@crate::component2::ComponentState::<TContractState>`. Did you import the correct trait and impl?
  --> lib.cairo:59:46
             get_dep_component!(@self, Comp2).foo1();
                                              ^^^^
@@ -10344,7 +10572,7 @@ error[E2086]: Invalid path.
             get_dep_component!(@self, super::NotHasComponent).foo1();
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[E2041]: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
+error[E2041]: Unexpected argument type. Expected: "@ComponentState::<?14>", found: "felt252".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:62:32
@@ -10581,6 +10809,63 @@ impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSaf
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl Comp3TraitForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Comp3Trait<TContractState> {
+    fn foo3(ref self: TContractState) {
+        Comp3TraitDispatcherTrait::foo3(Comp3TraitLibraryDispatcher { class_hash: FCH::class_hash(@self) })
+    }
+    fn foo4(self: @TContractState) {
+        Comp3TraitDispatcherTrait::foo4(Comp3TraitLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__Comp3TraitForwardImpl__foo3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo3"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__Comp3TraitForwardImpl__foo4<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo4"),
+            data,
+        )
+    )
+}
+
+mod __external_Comp3TraitForwardImpl {
+    pub use super::__wrapper__Comp3TraitForwardImpl__foo3 as foo3;
+    pub use super::__wrapper__Comp3TraitForwardImpl__foo4 as foo4;
+}
+
+mod __l1_handler_Comp3TraitForwardImpl {
+}
+
+mod __constructor_Comp3TraitForwardImpl {
+}
 
 
 lib.cairo:30:1
@@ -10598,9 +10883,9 @@ impl Comp3TraitDispatcherSerde<> of core::serde::Serde::<Comp3TraitDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -10718,9 +11003,9 @@ impl Comp3TraitLibraryDispatcherSerde<> of core::serde::Serde::<Comp3TraitLibrar
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -10838,9 +11123,9 @@ impl Comp3TraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<Comp3TraitSa
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -10958,9 +11243,9 @@ impl Comp3TraitSafeDispatcherSerde<> of core::serde::Serde::<Comp3TraitSafeDispa
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -11265,16 +11550,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -11416,16 +11701,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -11546,13 +11831,13 @@ pub impl Comp3<
 > of super::Comp3Trait<TContractState> {
     
     fn foo3(ref self: TContractState) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        Comp3Impl::foo3(ref component)
+        let mut __component__ = HasComponent::get_component_mut(ref self);
+        Comp3Impl::foo3(ref __component__)
     }
     
     fn foo4(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        Comp3Impl::foo4(component)
+        let __component__ = HasComponent::get_component(self);
+        Comp3Impl::foo4(__component__)
     }
 }
 
@@ -11571,16 +11856,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -11625,7 +11910,7 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -11635,7 +11920,7 @@ fn __wrapper__Comp3__foo3<TContractState,
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     Comp3::<TContractState, Comp1, Comp2, _, _>::foo3(ref contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -11647,7 +11932,7 @@ fn __wrapper__Comp3__foo4<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -11657,7 +11942,7 @@ fn __wrapper__Comp3__foo4<TContractState,
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     Comp3::<TContractState, Comp1, Comp2, _, _>::foo4(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -11767,8 +12052,8 @@ error[E2079]: ref argument must be a variable.
             get_dep_component_mut!(ref Comp1, Comp1).foo1();
                                        ^^^^^
 
-error[E0002]: Method `foo1` could not be called on type `test::component2::ComponentState::<TContractState>`.
-Candidate `test::component1::Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `@test::component1::ComponentState::<?8>`.
+error[E0002]: Method `foo1` could not be called on type `crate::component2::ComponentState::<TContractState>`.
+Candidate `crate::component1::Comp1HelperTrait::foo1` inference failed with: Type mismatch: `crate::component2::ComponentState::<TContractState>` and `@crate::component1::ComponentState::<?8>`.
  --> lib.cairo:54:53
             get_dep_component_mut!(ref self, Comp2).foo1();
                                                     ^^^^
@@ -11962,6 +12247,44 @@ impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSaf
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl Comp3TraitForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Comp3Trait<TContractState> {
+    fn foo3(ref self: TContractState) {
+        Comp3TraitDispatcherTrait::foo3(Comp3TraitLibraryDispatcher { class_hash: FCH::class_hash(@self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__Comp3TraitForwardImpl__foo3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo3"),
+            data,
+        )
+    )
+}
+
+mod __external_Comp3TraitForwardImpl {
+    pub use super::__wrapper__Comp3TraitForwardImpl__foo3 as foo3;
+}
+
+mod __l1_handler_Comp3TraitForwardImpl {
+}
+
+mod __constructor_Comp3TraitForwardImpl {
+}
 
 
 lib.cairo:27:1
@@ -11979,9 +12302,9 @@ impl Comp3TraitDispatcherSerde<> of core::serde::Serde::<Comp3TraitDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -12099,9 +12422,9 @@ impl Comp3TraitLibraryDispatcherSerde<> of core::serde::Serde::<Comp3TraitLibrar
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -12219,9 +12542,9 @@ impl Comp3TraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<Comp3TraitSa
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -12339,9 +12662,9 @@ impl Comp3TraitSafeDispatcherSerde<> of core::serde::Serde::<Comp3TraitSafeDispa
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<Comp3TraitSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(Comp3TraitSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -12646,16 +12969,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -12797,16 +13120,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -12927,8 +13250,8 @@ pub impl Comp3<
 > of super::Comp3Trait<TContractState> {
     
     fn foo3(ref self: TContractState) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        Comp3Impl::foo3(ref component)
+        let mut __component__ = HasComponent::get_component_mut(ref self);
+        Comp3Impl::foo3(ref __component__)
     }
 }
 
@@ -12947,16 +13270,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -13001,7 +13324,7 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -13011,7 +13334,7 @@ fn __wrapper__Comp3__foo3<TContractState,
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     Comp3::<TContractState, Comp1, Comp2, _, _>::foo3(ref contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -13060,15 +13383,15 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error[E0002]: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::felt252>`.
-Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::felt252>>.
-Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::felt252>>.
-Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::StoragePath::<core::felt252>>.
-Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StoragePath::<core::felt252>>.
-Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::StoragePointer0Offset::<core::felt252>>.
-Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StoragePointer0Offset::<core::felt252>>.
-Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::StoragePointer::<core::felt252>>.
-Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StoragePointer::<core::felt252>>.
+error[E0002]: Method `write` could not be called on type `starknet::storage::storage_base::StorageBase::<felt252>`.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: StorageMapWriteAccess::<starknet::storage::storage_base::StorageBase::<felt252>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: StoragePointerWriteAccess::<starknet::storage::storage_base::StorageBase::<felt252>>.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: StorageMapWriteAccess::<starknet::storage::StoragePath::<felt252>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: StoragePointerWriteAccess::<starknet::storage::StoragePath::<felt252>>.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: StorageMapWriteAccess::<starknet::storage::StoragePointer0Offset::<felt252>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: StoragePointerWriteAccess::<starknet::storage::StoragePointer0Offset::<felt252>>.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: StorageMapWriteAccess::<starknet::storage::StoragePointer::<felt252>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: StoragePointerWriteAccess::<starknet::storage::StoragePointer::<felt252>>.
  --> lib.cairo:18:27
             self.a_member.write(0);
                           ^^^^^
@@ -13202,6 +13525,44 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl ContractTraitForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ContractTrait<TContractState> {
+    fn foo(self: @TContractState) {
+        ContractTraitDispatcherTrait::foo(ContractTraitLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ContractTraitForwardImpl__foo<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo"),
+            data,
+        )
+    )
+}
+
+mod __external_ContractTraitForwardImpl {
+    pub use super::__wrapper__ContractTraitForwardImpl__foo as foo;
+}
+
+mod __l1_handler_ContractTraitForwardImpl {
+}
+
+mod __constructor_ContractTraitForwardImpl {
+}
 
 
 lib.cairo:1:1
@@ -13219,9 +13580,9 @@ impl ContractTraitDispatcherSerde<> of core::serde::Serde::<ContractTraitDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -13339,9 +13700,9 @@ impl ContractTraitLibraryDispatcherSerde<> of core::serde::Serde::<ContractTrait
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -13459,9 +13820,9 @@ impl ContractTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<ContractT
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -13579,9 +13940,9 @@ impl ContractTraitSafeDispatcherSerde<> of core::serde::Serde::<ContractTraitSaf
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -13857,7 +14218,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3232c860888b3e1c54dda19284c63
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__ContractInterfaceImpl__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -13867,7 +14228,7 @@ fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<fe
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     ContractInterfaceImpl::foo(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -13920,16 +14281,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -14003,15 +14364,15 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error[E0002]: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::integer::u32>`.
-Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
-Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
-Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::StoragePath::<core::integer::u32>>.
-Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StoragePath::<core::integer::u32>>.
-Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::StoragePointer0Offset::<core::integer::u32>>.
-Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StoragePointer0Offset::<core::integer::u32>>.
-Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::StoragePointer::<core::integer::u32>>.
-Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::StoragePointer::<core::integer::u32>>.
+error[E0002]: Method `write` could not be called on type `starknet::storage::storage_base::StorageBase::<u32>`.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: StorageMapWriteAccess::<starknet::storage::storage_base::StorageBase::<u32>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: StoragePointerWriteAccess::<starknet::storage::storage_base::StorageBase::<u32>>.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: StorageMapWriteAccess::<starknet::storage::StoragePath::<u32>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: StoragePointerWriteAccess::<starknet::storage::StoragePath::<u32>>.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: StorageMapWriteAccess::<starknet::storage::StoragePointer0Offset::<u32>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: StoragePointerWriteAccess::<starknet::storage::StoragePointer0Offset::<u32>>.
+Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: StorageMapWriteAccess::<starknet::storage::StoragePointer::<u32>>.
+Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: StoragePointerWriteAccess::<starknet::storage::StoragePointer::<u32>>.
  --> lib.cairo:34:40
             self.component_member.data.write();
                                        ^^^^^
@@ -14161,6 +14522,44 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl ContractTraitForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ContractTrait<TContractState> {
+    fn foo(self: @TContractState) {
+        ContractTraitDispatcherTrait::foo(ContractTraitLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ContractTraitForwardImpl__foo<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo"),
+            data,
+        )
+    )
+}
+
+mod __external_ContractTraitForwardImpl {
+    pub use super::__wrapper__ContractTraitForwardImpl__foo as foo;
+}
+
+mod __l1_handler_ContractTraitForwardImpl {
+}
+
+mod __constructor_ContractTraitForwardImpl {
+}
 
 
 lib.cairo:9:1
@@ -14178,9 +14577,9 @@ impl ContractTraitDispatcherSerde<> of core::serde::Serde::<ContractTraitDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -14298,9 +14697,9 @@ impl ContractTraitLibraryDispatcherSerde<> of core::serde::Serde::<ContractTrait
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -14418,9 +14817,9 @@ impl ContractTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<ContractT
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -14538,9 +14937,9 @@ impl ContractTraitSafeDispatcherSerde<> of core::serde::Serde::<ContractTraitSaf
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -14837,16 +15236,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -14962,7 +15361,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x29df08f1d7a448905745936c947da
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__ContractInterfaceImpl__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -14972,7 +15371,7 @@ fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<fe
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     ContractInterfaceImpl::foo(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -15044,7 +15443,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::CompEvent(val) => {
@@ -15056,13 +15455,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("CompEvent") {
-            return Option::Some(Event::CompEvent(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::CompEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventCompEventIntoEvent of Into<super::test_component::Event, Event> {
@@ -15166,7 +15565,7 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error[E0007]: Type "core::starknet::storage::storage_base::StorageBase::<test::u256Pair>" has no member "a"
+error[E0007]: Type "starknet::storage::storage_base::StorageBase::<crate::u256Pair>" has no member "a"
  --> lib.cairo:59:28
             self.u256_pair.a.read()
                            ^
@@ -15362,6 +15761,44 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl ContractTraitForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ContractTrait<TContractState> {
+    fn foo(self: @TContractState) -> u256 {
+        ContractTraitDispatcherTrait::foo(ContractTraitLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ContractTraitForwardImpl__foo<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo"),
+            data,
+        )
+    )
+}
+
+mod __external_ContractTraitForwardImpl {
+    pub use super::__wrapper__ContractTraitForwardImpl__foo as foo;
+}
+
+mod __l1_handler_ContractTraitForwardImpl {
+}
+
+mod __constructor_ContractTraitForwardImpl {
+}
 
 
 lib.cairo:43:1
@@ -15379,9 +15816,9 @@ impl ContractTraitDispatcherSerde<> of core::serde::Serde::<ContractTraitDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -15499,9 +15936,9 @@ impl ContractTraitLibraryDispatcherSerde<> of core::serde::Serde::<ContractTrait
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -15619,9 +16056,9 @@ impl ContractTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<ContractT
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -15739,9 +16176,9 @@ impl ContractTraitSafeDispatcherSerde<> of core::serde::Serde::<ContractTraitSaf
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ContractTraitSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ContractTraitSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -16017,7 +16454,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0xc5af418eb5eed4ff51ca2888dc884
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__ContractInterfaceImpl__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -16027,7 +16464,7 @@ fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<fe
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = ContractInterfaceImpl::foo(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -16081,16 +16518,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -16316,6 +16753,44 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl InterfaceForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Interface<TContractState> {
+    fn func(self: @TContractState) {
+        InterfaceDispatcherTrait::func(InterfaceLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__func<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("func"),
+            data,
+        )
+    )
+}
+
+mod __external_InterfaceForwardImpl {
+    pub use super::__wrapper__InterfaceForwardImpl__func as func;
+}
+
+mod __l1_handler_InterfaceForwardImpl {
+}
+
+mod __constructor_InterfaceForwardImpl {
+}
 
 
 lib.cairo:1:1
@@ -16333,9 +16808,9 @@ impl InterfaceDispatcherSerde<> of core::serde::Serde::<InterfaceDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -16453,9 +16928,9 @@ impl InterfaceLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -16573,9 +17048,9 @@ impl InterfaceSafeLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -16693,9 +17168,9 @@ impl InterfaceSafeDispatcherSerde<> of core::serde::Serde::<InterfaceSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -16975,8 +17450,8 @@ impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
     
     fn func(self: @TContractState) {
-        let component = HasComponent::get_component(self);
-        MyImpl::func(component)
+        let __component__ = HasComponent::get_component(self);
+        MyImpl::func(__component__)
     }
 }
 
@@ -16995,16 +17470,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -17046,7 +17521,7 @@ pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__MyEmbeddableImpl__func<TContractState, impl X: HasComponent<TContractState>,
-impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -17056,7 +17531,7 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyEmbeddableImpl::<TContractState, X, TContractStateDrop>::func(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -17161,7 +17636,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3168f720317a98a00e5727dec4873607cd97bfa1e65fef0524f5661f2b767ed.try_into().unwrap();
 
-impl ContractStateMyImpl of
+impl ContractStateMyEmbeddedImpl of
     super::component::UnsafeNewContractStateTraitForMyImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -17232,7 +17707,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::CompEvent(val) => {
@@ -17244,13 +17719,13 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("CompEvent") {
-            return Option::Some(Event::CompEvent(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::CompEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventCompEventIntoEvent of Into<super::component::Event, Event> {
@@ -17313,8 +17788,8 @@ error[E3002]: Variable not dropped.
  --> lib.cairo:15:13
         let _ = self.field.read();
             ^
-note: Trait has no implementation in context: core::traits::Drop::<test::test_contract::InvalidStorageStruct>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::test_contract::InvalidStorageStruct>.
+note: Trait has no implementation in context: Drop::<InvalidStorageStruct>.
+note: Trait has no implementation in context: Destruct::<InvalidStorageStruct>.
 
 //! > diagnostics
 
@@ -17529,7 +18004,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3140ea2161c9eba12d890be5ea892
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo_v0(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -17539,7 +18014,7 @@ fn __wrapper__foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     foo_v0(ref contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -17614,16 +18089,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -17683,7 +18158,7 @@ error[E0006]: Type not found.
     #[external(v0)]
     ^^^^^^^^^^^^^^^
 
-error[E2311]: Trait has no implementation in context: core::serde::Serde::<<missing>>.
+error[E2311]: Trait has no implementation in context: Serde::<<missing>>.
  --> lib.cairo:6:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
@@ -17778,7 +18253,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x1f8613d56d66d984da05cc17f5069
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -17791,7 +18266,7 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     foo(ref contract_state, __arg_value);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -17844,16 +18319,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -17907,12 +18382,12 @@ pub mod my_contract {
 }
 
 //! > expected_diagnostics
-error[E2031]: Parameter type of impl function `Impl::foo` is incompatible with `Interface::foo`. Expected: `core::integer::u256`, actual: `core::felt252`.
+error[E2031]: Parameter type of impl function `Impl::foo` is incompatible with `Interface::foo`. Expected: `u256`, actual: `felt252`.
  --> lib.cairo:15:48
         fn foo(ref self: ContractState, value: felt252) {}
                                                ^^^^^^^
 
-error[E2041]: Unexpected argument type. Expected: "core::integer::u256", found: "core::felt252".
+error[E2041]: Unexpected argument type. Expected: "u256", found: "felt252".
  --> lib.cairo:13:5
     #[abi(embed_v0)]
     ^^^^^^^^^^^^^^^^
@@ -18046,6 +18521,44 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+pub impl InterfaceForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Interface<TContractState> {
+    fn foo(ref self: TContractState, value: u256) {
+        InterfaceDispatcherTrait::foo(InterfaceLibraryDispatcher { class_hash: FCH::class_hash(@self) }, value)
+    }
+}
+
+pub trait UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo"),
+            data,
+        )
+    )
+}
+
+pub mod __external_InterfaceForwardImpl {
+    pub use super::__wrapper__InterfaceForwardImpl__foo as foo;
+}
+
+pub mod __l1_handler_InterfaceForwardImpl {
+}
+
+pub mod __constructor_InterfaceForwardImpl {
+}
 
 
 lib.cairo:1:1
@@ -18063,9 +18576,9 @@ impl InterfaceDispatcherSerde<> of core::serde::Serde::<InterfaceDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -18183,9 +18696,9 @@ impl InterfaceLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceLibraryD
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -18303,9 +18816,9 @@ impl InterfaceSafeLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceSafe
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -18423,9 +18936,9 @@ impl InterfaceSafeDispatcherSerde<> of core::serde::Serde::<InterfaceSafeDispatc
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(InterfaceSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -18694,7 +19207,7 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2e3d710211a1db4f11c437acdeb9f
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__Impl__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl__foo(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -18707,7 +19220,7 @@ fn __wrapper__Impl__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     Impl::foo(ref contract_state, __arg_value);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -18760,16 +19273,16 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 
@@ -18846,14 +19359,14 @@ starknet_derive:
 
 impl SomeCaseIsEvent of starknet::Event<SomeCase> {
     fn append_keys_and_data(
-        self: @SomeCase, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @SomeCase, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
             core::serde::Serde::serialize(self.value, ref data);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<SomeCase> {
-        Option::Some(SomeCase {value: core::serde::Serde::deserialize(ref data)?, })
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<SomeCase> {
+        core::option::Option::Some(SomeCase {value: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 
@@ -18873,7 +19386,7 @@ starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::SomeCase(val) => {
@@ -18891,16 +19404,16 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("SomeCase") {
-            return Option::Some(Event::SomeCase(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::SomeCase(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("SomeCase") {
-            return Option::Some(Event::SomeCase(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::SomeCase(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventSomeCaseIntoEvent of Into<SomeCase, Event> {

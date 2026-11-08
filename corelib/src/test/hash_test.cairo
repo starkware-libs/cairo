@@ -61,6 +61,13 @@ struct StructForHash {
     third: (felt252, felt252),
 }
 
+/// A field named `value` (not last) must not shadow the generated `update_state` parameter.
+#[derive(Hash)]
+struct StructWithValueFieldForHash {
+    value: felt252,
+    other: felt252,
+}
+
 #[test]
 fn test_user_defined_hash() {
     assert_eq(
@@ -84,6 +91,13 @@ fn test_user_defined_hash() {
             .finalize(),
         @PoseidonTrait::new().update(10).update(6).update(17).finalize(),
         'Bad hash of StructForHash',
+    );
+    assert_eq(
+        @PoseidonTrait::new()
+            .update_with(StructWithValueFieldForHash { value: 10, other: 17 })
+            .finalize(),
+        @PoseidonTrait::new().update(10).update(17).finalize(),
+        'Bad hash of value-field struct',
     );
 }
 

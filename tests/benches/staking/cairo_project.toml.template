@@ -1,0 +1,291 @@
+[crate_roots]
+"openzeppelin 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/src"
+"openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/access/src"
+"openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/account/src"
+"openzeppelin_finance 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/finance/src"
+"openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/governance/src"
+"openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/introspection/src"
+"openzeppelin_merkle_tree 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/merkle_tree/src"
+"openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/presets/src"
+"openzeppelin_security 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/security/src"
+"openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/token/src"
+"openzeppelin_upgrades 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/upgrades/src"
+"openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)" = "{OZ_SRC}/packages/utils/src"
+"staking 1.14.5 (path+file://{STAKING_SRC}/workspace/apps/staking/contracts/Scarb.toml)" = "{STAKING_SRC}/workspace/apps/staking/contracts/src"
+"starkware_utils 1.0.0 (git+https://github.com/starkware-libs/starkware-starknet-utils?rev=c19a9487eb7377a147a63189bc8dd4c126b61522#c19a9487eb7377a147a63189bc8dd4c126b61522)" = "{UTILS_SRC}/packages/utils/src"
+
+[config.global]
+edition = "2024_07"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin"
+edition = "2024_07"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin]
+discriminator = "openzeppelin 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_access]
+discriminator = "openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_account]
+discriminator = "openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_finance]
+discriminator = "openzeppelin_finance 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_governance]
+discriminator = "openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_introspection]
+discriminator = "openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_merkle_tree]
+discriminator = "openzeppelin_merkle_tree 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_presets]
+discriminator = "openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_security]
+discriminator = "openzeppelin_security 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_token]
+discriminator = "openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_upgrades]
+discriminator = "openzeppelin_upgrades 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_utils]
+discriminator = "openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_access"
+edition = "2024_07"
+
+[config.override."openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_access]
+discriminator = "openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_introspection]
+discriminator = "openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_account"
+edition = "2024_07"
+
+[config.override."openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_account]
+discriminator = "openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_introspection]
+discriminator = "openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_utils]
+discriminator = "openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_finance 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_finance"
+edition = "2024_07"
+
+[config.override."openzeppelin_finance 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_finance 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_access]
+discriminator = "openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_finance 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_finance]
+discriminator = "openzeppelin_finance 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_finance 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_token]
+discriminator = "openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_governance"
+edition = "2024_07"
+
+[config.override."openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_access]
+discriminator = "openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_account]
+discriminator = "openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_governance]
+discriminator = "openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_introspection]
+discriminator = "openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_token]
+discriminator = "openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_governance 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_utils]
+discriminator = "openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_introspection"
+edition = "2024_07"
+
+[config.override."openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_introspection]
+discriminator = "openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_merkle_tree 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_merkle_tree"
+edition = "2024_07"
+
+[config.override."openzeppelin_merkle_tree 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_merkle_tree 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_merkle_tree]
+discriminator = "openzeppelin_merkle_tree 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_presets"
+edition = "2024_07"
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_access]
+discriminator = "openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_account]
+discriminator = "openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_finance]
+discriminator = "openzeppelin_finance 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_introspection]
+discriminator = "openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_presets]
+discriminator = "openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_token]
+discriminator = "openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_upgrades]
+discriminator = "openzeppelin_upgrades 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_presets 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_utils]
+discriminator = "openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_security 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_security"
+edition = "2024_07"
+
+[config.override."openzeppelin_security 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_security 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_security]
+discriminator = "openzeppelin_security 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_token"
+edition = "2024_07"
+
+[config.override."openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_access]
+discriminator = "openzeppelin_access 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_account]
+discriminator = "openzeppelin_account 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_introspection]
+discriminator = "openzeppelin_introspection 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_token]
+discriminator = "openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_token 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_utils]
+discriminator = "openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_upgrades 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_upgrades"
+edition = "2024_07"
+
+[config.override."openzeppelin_upgrades 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_upgrades 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_upgrades]
+discriminator = "openzeppelin_upgrades 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)"]
+name = "openzeppelin_utils"
+edition = "2024_07"
+
+[config.override."openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)".dependencies.openzeppelin_utils]
+discriminator = "openzeppelin_utils 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."staking 1.14.5 (path+file://{STAKING_SRC}/workspace/apps/staking/contracts/Scarb.toml)"]
+name = "staking"
+edition = "2024_07"
+
+[config.override."staking 1.14.5 (path+file://{STAKING_SRC}/workspace/apps/staking/contracts/Scarb.toml)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."staking 1.14.5 (path+file://{STAKING_SRC}/workspace/apps/staking/contracts/Scarb.toml)".dependencies.openzeppelin]
+discriminator = "openzeppelin 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."staking 1.14.5 (path+file://{STAKING_SRC}/workspace/apps/staking/contracts/Scarb.toml)".dependencies.staking]
+discriminator = "staking 1.14.5 (path+file://{STAKING_SRC}/workspace/apps/staking/contracts/Scarb.toml)"
+
+[config.override."staking 1.14.5 (path+file://{STAKING_SRC}/workspace/apps/staking/contracts/Scarb.toml)".dependencies.starkware_utils]
+discriminator = "starkware_utils 1.0.0 (git+https://github.com/starkware-libs/starkware-starknet-utils?rev=c19a9487eb7377a147a63189bc8dd4c126b61522#c19a9487eb7377a147a63189bc8dd4c126b61522)"
+
+[config.override."starkware_utils 1.0.0 (git+https://github.com/starkware-libs/starkware-starknet-utils?rev=c19a9487eb7377a147a63189bc8dd4c126b61522#c19a9487eb7377a147a63189bc8dd4c126b61522)"]
+name = "starkware_utils"
+edition = "2024_07"
+
+[config.override."starkware_utils 1.0.0 (git+https://github.com/starkware-libs/starkware-starknet-utils?rev=c19a9487eb7377a147a63189bc8dd4c126b61522#c19a9487eb7377a147a63189bc8dd4c126b61522)".experimental_features]
+negative_impls = true
+associated_item_constraints = false
+coupons = false
+
+[config.override."starkware_utils 1.0.0 (git+https://github.com/starkware-libs/starkware-starknet-utils?rev=c19a9487eb7377a147a63189bc8dd4c126b61522#c19a9487eb7377a147a63189bc8dd4c126b61522)".dependencies.openzeppelin]
+discriminator = "openzeppelin 2.0.0 (registry+https://scarbs.xyz/)"
+
+[config.override."starkware_utils 1.0.0 (git+https://github.com/starkware-libs/starkware-starknet-utils?rev=c19a9487eb7377a147a63189bc8dd4c126b61522#c19a9487eb7377a147a63189bc8dd4c126b61522)".dependencies.starkware_utils]
+discriminator = "starkware_utils 1.0.0 (git+https://github.com/starkware-libs/starkware-starknet-utils?rev=c19a9487eb7377a147a63189bc8dd4c126b61522#c19a9487eb7377a147a63189bc8dd4c126b61522)"

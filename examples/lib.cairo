@@ -17,3 +17,4 @@ mod hash_chain;
 mod hash_chain_gas;
 mod match_or;
 mod pedersen_test;
+mod trim_unused_params;

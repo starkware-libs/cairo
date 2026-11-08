@@ -7,7 +7,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{TypeSizeInformation, TypesSemantic};
 use cairo_lang_semantic::{ConcreteTypeId, ConcreteVariant, GenericArgumentId, TypeId, TypeLongId};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{Intern, extract_matches};
 use itertools::{Itertools, chain, zip_eq};
 use salsa::Database;
 
@@ -22,7 +22,7 @@ use crate::{
 };
 
 // A const argument for a specialized function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue, HeapSize)]
 pub enum SpecializationArg<'db> {
     Const {
         value: ConstValueId<'db>,
@@ -39,6 +39,29 @@ pub enum SpecializationArg<'db> {
     NotSpecialized,
 }
 
+impl<'db> SpecializationArg<'db> {
+    /// A name that distinct args do not share, unlike the debug name, which leaves out the types.
+    pub fn key_name(&self, db: &'db dyn Database) -> String {
+        match self {
+            SpecializationArg::Const { value, boxed } => {
+                format!("{}{}", value.key_name(db), if *boxed { ".into_box()" } else { "" })
+            }
+            SpecializationArg::Snapshot(inner) => format!("@{}", inner.key_name(db)),
+            SpecializationArg::Struct(args) => {
+                format!("{{ {} }}", args.iter().format_with(", ", |arg, f| f(&arg.key_name(db))))
+            }
+            SpecializationArg::Array(ty, values) => format!(
+                "array::<{}>![{}]",
+                ty.key_name(db),
+                values.iter().format_with(", ", |value, f| f(&value.key_name(db)))
+            ),
+            SpecializationArg::Enum { variant, payload } => {
+                format!("{}({})", variant.key_name(db), payload.key_name(db))
+            }
+            SpecializationArg::NotSpecialized => "NotSpecialized".to_string(),
+        }
+    }
+}
 impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
@@ -102,9 +125,9 @@ enum SpecializationArgBuildingState<'db, 'a> {
 /// Returns the lowering of a specialized function.
 pub fn specialized_function_lowered<'db>(
     db: &'db dyn Database,
-    specialized: SpecializedFunctionId<'db>,
+    specialized_id: SpecializedFunctionId<'db>,
 ) -> Maybe<Lowered<'db>> {
-    let specialized = specialized.long(db);
+    let specialized = specialized_id.long(db);
     let base = db.lowered_body(specialized.base, LoweringStage::Monomorphized)?;
     let base_semantic = specialized.base.base_semantic_function(db);
 
@@ -293,7 +316,7 @@ pub fn specialized_function_lowered<'db>(
     }
 
     let outputs: Vec<VariableId> =
-        chain!(base.signature.extra_rets.iter().map(|ret| ret.ty()), [base.signature.return_type])
+        chain!(base.signature.extra_rets.iter().copied(), [base.signature.return_type])
             .map(|ty| variables.new_var(VarRequest { ty, location }))
             .collect_vec();
     let mut block_builder = BlocksBuilder::new();
@@ -308,8 +331,9 @@ pub fn specialized_function_lowered<'db>(
         is_specialization_base_call: true,
     }));
     block_builder.alloc(Block { statements, end: BlockEnd::Return(ret_usage, location) });
+    let concrete_id = ids::ConcreteFunctionWithBodyLongId::Specialized(specialized_id).intern(db);
     Ok(Lowered {
-        signature: specialized.signature(db)?,
+        signature: concrete_id.signature(db, LoweringStage::Monomorphized)?.clone(),
         variables: variables.variables,
         blocks: block_builder.build().unwrap(),
         parameters,
@@ -318,7 +342,7 @@ pub fn specialized_function_lowered<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_should_specialize].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn priv_should_specialize<'db>(
     db: &'db dyn Database,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,

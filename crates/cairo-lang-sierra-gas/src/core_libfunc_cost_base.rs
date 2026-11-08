@@ -615,6 +615,18 @@ pub fn core_libfunc_cost(
             CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerify(_) => {
                 vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
+            CircuitConcreteLibfunc::U96LimbsLessThanGuaranteeVerifyV2(libfunc) => {
+                let limb_count: i32 = libfunc.limb_count.into_or_panic();
+                vec![
+                    ConstCost {
+                        steps: 2 * limb_count + 1,
+                        holes: 0,
+                        range_checks: 0,
+                        range_checks96: 1,
+                    }
+                    .into(),
+                ]
+            }
             CircuitConcreteLibfunc::U96SingleLimbLessThanGuaranteeVerify(_) => {
                 vec![ConstCost::steps(0).into()]
             }

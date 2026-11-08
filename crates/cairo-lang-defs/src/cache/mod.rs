@@ -11,6 +11,7 @@ use cairo_lang_filesystem::ids::{
     VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{
     FunctionWithBodyPtr, GenericParamPtr, ItemConstantPtr, ItemEnumPtr, ItemExternFunctionPtr,
     ItemExternTypePtr, ItemImplAliasPtr, ItemImplPtr, ItemInlineMacroPtr, ItemMacroDeclarationPtr,
@@ -21,9 +22,10 @@ use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, SyntaxNodeId, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use salsa::Database;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::db::{
     ModuleData, ModuleDataCacheAndLoadingData, ModuleFilesData, ModuleNamedItemsData,
@@ -39,6 +41,12 @@ use crate::ids::{
     SubmoduleLongId, TraitId, TraitLongId, UseId, UseLongId,
 };
 use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
+
+/// The index of the `external` section in a crate cache blob.
+pub const EXTERNAL_CACHE_SECTION: u8 = 0;
+
+/// The index of the `def` section in a crate cache blob.
+pub const DEF_CACHE_SECTION: u8 = EXTERNAL_CACHE_SECTION + 1;
 
 /// Metadata for a cached crate.
 #[derive(Serialize, Deserialize)]
@@ -94,17 +102,8 @@ pub fn load_cached_crate_modules<'db>(
         return Default::default();
     };
 
-    let size = usize::from_be_bytes(content[..8].try_into().unwrap());
-
-    let content = &content[8..size + 8];
-
-    let (metadata, module_data, defs_lookups): DefCache<'_> = postcard::from_bytes(content)
-        .unwrap_or_else(|e| {
-            panic!(
-                "failed to deserialize modules cache for crate `{}`: {e}",
-                crate_id.long(db).name().long(db),
-            )
-        });
+    let (metadata, module_data, defs_lookups): DefCache<'_> =
+        CacheBlobReader::read_section(db, content, DEF_CACHE_SECTION, crate_id);
 
     validate_metadata(crate_id, &metadata, db);
 
@@ -123,6 +122,81 @@ pub fn load_cached_crate_modules<'db>(
             .into(),
         ctx.data.into(),
     ))
+}
+
+/// An error produced while encoding or decoding a crate cache blob.
+#[derive(Debug, Error)]
+pub enum CacheError {
+    #[error("Cache encoding/decoding failed: {0}")]
+    Postcard(#[from] postcard::Error),
+}
+
+/// Serializes `section` and appends it to a cache blob as one length-prefixed section: a big-endian
+/// `u64` byte length followed by the payload. Sections are read back in write order by
+/// [`CacheBlobReader`].
+pub fn write_cache_section<T: Serialize>(
+    blob: &mut Vec<u8>,
+    section: &T,
+) -> Result<(), CacheError> {
+    let section = postcard::to_allocvec(section)?;
+    blob.extend(section.len().to_be_bytes());
+    blob.extend(section);
+    Ok(())
+}
+
+/// A cursor over the length-prefixed sections of a crate cache blob (see [`write_cache_section`]).
+///
+/// A blob is a sequence of sections in the order `[external, def, semantic, lowering]`; each
+/// consumer advances past the sections preceding the one it needs with [`Self::next_section`].
+/// Use [`Self::read_section`] to read and parse a specific section only.
+/// Each section should have its index as a const in the cache mod, see [`EXTERNAL_CACHE_SECTION`]
+/// et al.
+#[derive(Debug, Clone, Copy)]
+pub struct CacheBlobReader<'a> {
+    content: &'a [u8],
+}
+
+impl<'a> CacheBlobReader<'a> {
+    pub fn new(content: &'a [u8]) -> Self {
+        Self { content }
+    }
+
+    /// Returns the next section's payload and advances the cursor past it. Panics if the blob is
+    /// truncated mid-section.
+    pub fn next_section(&mut self) -> &'a [u8] {
+        let size = usize::from_be_bytes(
+            self.content
+                .get(..8)
+                .unwrap_or_else(|| panic!("cache blob is truncated"))
+                .try_into()
+                .unwrap(),
+        );
+        let section =
+            self.content.get(8..8 + size).unwrap_or_else(|| panic!("cache blob is truncated"));
+        self.content = &self.content[8 + size..];
+        section
+    }
+
+    /// Returns the section's parse to T result. Panics if the
+    /// blob is truncated mid-section.
+    pub fn read_section<'db, T: for<'b> Deserialize<'b>>(
+        db: &'db dyn Database,
+        content: &'a [u8],
+        section: u8,
+        crate_id: CrateId<'db>,
+    ) -> T {
+        let mut reader = CacheBlobReader::new(content);
+        for _ in 0..section {
+            reader.next_section();
+        }
+        let content = reader.next_section();
+        postcard::from_bytes(content).unwrap_or_else(|e| {
+            panic!(
+                "failed to deserialize cache section {section} for crate `{}`: {e}",
+                crate_id.long(db).name().long(db),
+            )
+        })
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -226,7 +300,7 @@ impl DerefMut for DefCacheLoadingContext<'_> {
 }
 
 /// Data for loading cache into the database.
-#[derive(PartialEq, Eq, salsa::Update)]
+#[derive(PartialEq, Eq, salsa::SalsaValue)]
 pub struct DefCacheLoadingData<'db> {
     green_ids: OrderedHashMap<GreenIdCached, GreenId<'db>>,
     reverse_green_ids: OrderedHashMap<GreenId<'db>, GreenIdCached>,
@@ -331,6 +405,14 @@ impl<'db> DefCacheSavingContext<'db> {
     pub fn new(db: &'db dyn Database, self_crate_id: CrateId<'db>) -> Self {
         Self { db, data: DefCacheSavingData::default(), self_crate_id }
     }
+
+    /// The external-file content table, written as its own blob section (read back by the
+    /// `external_file_contents` query).
+    pub fn external_file_contents(
+        &self,
+    ) -> &OrderedHashMap<ExternalFileKey, ExternalFileContentCached> {
+        &self.data.external_file_contents
+    }
 }
 
 /// Data for saving cache from the database.
@@ -356,6 +438,9 @@ pub struct DefCacheSavingData<'db> {
 
     syntax_nodes: OrderedHashMap<SyntaxNode<'db>, SyntaxNodeCached>,
     file_ids: OrderedHashMap<FileId<'db>, FileIdCached>,
+
+    /// External (plugin-generated) file content, written as its own blob section in cache.
+    external_file_contents: OrderedHashMap<ExternalFileKey, ExternalFileContentCached>,
 
     pub lookups: DefCacheLookups,
 }
@@ -645,7 +730,7 @@ impl<'db> ModuleDataCached<'db> {
 }
 
 /// Saved interned items for the cache.
-#[derive(Serialize, Deserialize, Default, PartialEq, Eq, salsa::Update)]
+#[derive(Serialize, Deserialize, Default, PartialEq, Eq, salsa::SalsaValue)]
 pub struct DefCacheLookups {
     green_ids_lookup: Vec<GreenNodeCached>,
     crate_ids_lookup: Vec<CrateCached>,
@@ -792,7 +877,7 @@ impl CrateCached {
         }
     }
 }
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub enum CrateIdCached {
     SelfCrate,
     Other(usize),
@@ -970,7 +1055,7 @@ impl ConstantCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ConstantIdCached(usize);
 
 impl ConstantIdCached {
@@ -1013,7 +1098,7 @@ impl SubmoduleCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct SubmoduleIdCached(usize);
 
 impl SubmoduleIdCached {
@@ -1056,7 +1141,7 @@ impl UseCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct UseIdCached(usize);
 
 impl UseIdCached {
@@ -1102,7 +1187,7 @@ impl FreeFunctionCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct FreeFunctionIdCached(usize);
 
 impl FreeFunctionIdCached {
@@ -1145,7 +1230,7 @@ impl StructCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct StructIdCached(usize);
 
 impl StructIdCached {
@@ -1188,7 +1273,7 @@ impl EnumCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct EnumIdCached(usize);
 
 impl EnumIdCached {
@@ -1234,7 +1319,7 @@ impl ModuleTypeAliasCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ModuleTypeAliasIdCached(usize);
 
 impl ModuleTypeAliasIdCached {
@@ -1277,7 +1362,7 @@ impl ImplAliasCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ImplAliasIdCached(usize);
 
 impl ImplAliasIdCached {
@@ -1320,7 +1405,7 @@ impl TraitCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct TraitIdCached(usize);
 
 impl TraitIdCached {
@@ -1363,7 +1448,7 @@ impl ImplDefCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ImplDefIdCached(usize);
 
 impl ImplDefIdCached {
@@ -1408,7 +1493,7 @@ impl ExternTypeCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ExternTypeIdCached(usize);
 
 impl ExternTypeIdCached {
@@ -1454,7 +1539,7 @@ impl ExternFunctionCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct ExternFunctionIdCached(usize);
 
 impl ExternFunctionIdCached {
@@ -1500,7 +1585,7 @@ impl MacroDeclarationCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct MacroDeclarationIdCached(usize);
 
 impl MacroDeclarationIdCached {
@@ -1546,7 +1631,7 @@ impl MacroCallCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct MacroCallIdCached(usize);
 impl MacroCallIdCached {
     fn new<'db>(id: MacroCallId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1588,7 +1673,7 @@ impl GlobalUseCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct GlobalUseIdCached(usize);
 
 impl GlobalUseIdCached {
@@ -1616,12 +1701,17 @@ impl GlobalUseIdCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq, salsa::Update, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq, salsa::SalsaValue, Debug)]
 struct SyntaxNodeCached(usize);
 
 #[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq, Debug)]
 enum SyntaxNodeIdCached {
-    Root(FileIdCached, GreenIdCached),
+    /// A file root (any kind: on-disk, virtual, or external). On load the root is re-derived via
+    /// `db.file_syntax` — the canonical tree, never a detached duplicate — rather than rebuilt from
+    /// stored green, and without re-entering module data (so cache load can't cycle).
+    Root(FileIdCached),
+    /// A non-root node, identified by its `parent` plus the child's `key_fields`, `kind`, and
+    /// `index`.
     Child {
         parent: SyntaxNodeCached,
         kind: SyntaxKind,
@@ -1631,19 +1721,12 @@ enum SyntaxNodeIdCached {
 }
 
 impl SyntaxNodeIdCached {
-    fn new<'db>(
-        ctx: &mut DefCacheSavingContext<'db>,
-        id: &SyntaxNodeId<'db>,
-        syntax_node: SyntaxNode<'db>,
-    ) -> Self {
+    fn new<'db>(ctx: &mut DefCacheSavingContext<'db>, id: &SyntaxNodeId<'db>) -> Self {
         match id {
-            SyntaxNodeId::Root(file_id) => {
-                let green = syntax_node.green_node(ctx.db).clone().intern(ctx.db);
-                Self::Root(FileIdCached::new(*file_id, ctx), GreenIdCached::new(green, ctx))
-            }
-            SyntaxNodeId::Child { parent, key_fields, index } => Self::Child {
+            SyntaxNodeId::Root(file_id) => Self::Root(FileIdCached::new(*file_id, ctx)),
+            SyntaxNodeId::Child { parent, kind, key_fields, index } => Self::Child {
                 parent: SyntaxNodeCached::new(*parent, ctx),
-                kind: syntax_node.kind(ctx.db),
+                kind: *kind,
                 key_fields: key_fields.into_iter().map(|id| GreenIdCached::new(*id, ctx)).collect(),
                 index: *index,
             },
@@ -1679,7 +1762,7 @@ impl SyntaxNodeCached {
         let green = syntax_node.green_node(db);
         GreenIdCached::new(green.clone().intern(db), ctx);
 
-        let id = SyntaxNodeIdCached::new(ctx, syntax_node.raw_id(db), syntax_node);
+        let id = SyntaxNodeIdCached::new(ctx, syntax_node.raw_id(db));
         let cached_node = SyntaxNodeCached(ctx.syntax_node_lookup.len());
         ctx.syntax_node_lookup.push(id);
         ctx.syntax_nodes.insert(syntax_node, cached_node);
@@ -1691,10 +1774,18 @@ impl SyntaxNodeCached {
         }
         let id_cached = ctx.syntax_node_lookup[self.0].clone();
         match &id_cached {
-            SyntaxNodeIdCached::Root(file_id, green_id) => {
+            SyntaxNodeIdCached::Root(file_id) => {
+                // Re-derive the canonical tree via `file_syntax`; walking `get_children` below
+                // lands the cached stable ptrs on those canonical nodes. See
+                // `SyntaxNodeIdCached::Root`.
                 let fid = file_id.embed(ctx);
-                let green = green_id.embed(ctx);
-                let syntax = cairo_lang_syntax::node::SyntaxNode::new_root(ctx.db, fid, green);
+                let syntax = ctx.db.file_syntax(fid).unwrap_or_else(|_| {
+                    panic!(
+                        "defs cache: cannot re-derive syntax for file {:?}; its content must be \
+                         available to load the cache",
+                        fid.long(ctx.db)
+                    )
+                });
                 ctx.syntax_nodes.insert(*self, syntax);
             }
             SyntaxNodeIdCached::Child { parent, .. } => {
@@ -1702,12 +1793,12 @@ impl SyntaxNodeCached {
                 let children = parent_node.get_children(ctx.db);
                 // For each child, create the cached syntax node ID and insert into syntax_nodes map
                 for child in children {
-                    let SyntaxNodeId::Child { index, key_fields, .. } = child.raw_id(ctx.db) else {
+                    let SyntaxNodeId::Child { kind, index, key_fields, .. } = child.raw_id(ctx.db)
+                    else {
                         panic!("Unexpected SyntaxNodeId type root when creating child");
                     };
-                    let kind = child.kind(ctx.db);
                     let Some(child_id) =
-                        SyntaxNodeIdCached::from_raw(ctx, *parent, kind, *index, key_fields)
+                        SyntaxNodeIdCached::from_raw(ctx, *parent, *kind, *index, key_fields)
                     else {
                         continue;
                     };
@@ -1815,7 +1906,7 @@ impl GreenNodeCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::SalsaValue, Debug)]
 struct GreenIdCached(usize);
 
 impl GreenIdCached {
@@ -1872,14 +1963,116 @@ impl FileCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update, Debug)]
+/// Portable, parse-free identity for an external file — the key into the external-file content
+/// table. Computed during cache load by reading only already-materialized fields, so it never
+/// parses or re-runs plugins (which would cycle back into the cache).
+#[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq, Debug)]
+pub enum ExternalFileKey {
+    /// An on-disk file, identified by its path.
+    OnDisk(PathBuf),
+    /// A virtual file: parent (key + span), name, and a content hash (hashed, not stored, so a
+    /// shared ancestor isn't duplicated across keys).
+    Virtual { parent: Option<(Box<ExternalFileKey>, TextSpan)>, name: String, content_hash: u64 },
+    /// A plugin-generated file: the parent file's key, the stable-ptr offset within it, and name.
+    Generated { parent: Box<ExternalFileKey>, offset: u32, name: String },
+}
+
+impl ExternalFileKey {
+    /// Computes the key for `file_id`; see the type docs for why this is parse/plugin/mint-free.
+    pub(crate) fn new<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Self {
+        match file_id.long(db) {
+            FileLongId::OnDisk(path) => ExternalFileKey::OnDisk(path.clone()),
+            FileLongId::Virtual(vf) => ExternalFileKey::Virtual {
+                parent: vf.parent.map(|parent| {
+                    (Box::new(ExternalFileKey::new(db, parent.file_id)), parent.span)
+                }),
+                name: vf.name.long(db).to_string(),
+                content_hash: {
+                    let mut hasher = xxhash_rust::xxh3::Xxh3::default();
+                    vf.content.long(db).as_str().hash(&mut hasher);
+                    hasher.finish()
+                },
+            },
+            FileLongId::External(external_id) => {
+                let long_id = PluginGeneratedFileId::from_intern_id(*external_id).long(db);
+                ExternalFileKey::Generated {
+                    parent: Box::new(ExternalFileKey::new(db, long_id.stable_ptr.file_id(db))),
+                    offset: long_id.stable_ptr.0.offset(db).as_u32(),
+                    name: long_id.name.clone(),
+                }
+            }
+        }
+    }
+}
+
+/// An external file's content, enough to rebuild its `VirtualFile` on load. `parent` and `name` are
+/// not stored — they come from the runtime `PluginGeneratedFileLongId` at lookup.
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug)]
+pub struct ExternalFileContentCached {
+    content: String,
+    code_mappings: Vec<CodeMapping>,
+    kind: FileKind,
+    original_item_removed: bool,
+}
+
+impl ExternalFileContentCached {
+    fn new<'db>(virtual_file: &VirtualFile<'db>, db: &'db dyn Database) -> Self {
+        Self {
+            content: virtual_file.content.to_string(db),
+            code_mappings: virtual_file.code_mappings.to_vec(),
+            kind: virtual_file.kind,
+            original_item_removed: virtual_file.original_item_removed,
+        }
+    }
+
+    /// Rebuilds the `VirtualFile`; `parent` and `name` come from the runtime stable ptr / long id.
+    pub(crate) fn to_virtual_file<'db>(
+        &self,
+        db: &'db dyn Database,
+        name: &str,
+        parent: Option<SpanInFile<'db>>,
+    ) -> VirtualFile<'db> {
+        VirtualFile {
+            parent,
+            name: SmolStrId::from(db, name),
+            content: SmolStrId::from(db, self.content.clone()),
+            code_mappings: self.code_mappings.clone().into(),
+            kind: self.kind,
+            original_item_removed: self.original_item_removed,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::SalsaValue, Debug)]
 pub struct FileIdCached(usize);
 impl FileIdCached {
     fn new<'db>(id: FileId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(cached_id) = ctx.file_ids.get(&id) {
             return *cached_id;
         }
-        let cached = FileCached::new(id.long(ctx.db), ctx);
+        let long_id = id.long(ctx.db);
+        // For external (plugin-generated) files, also cache their content so `ext_as_virtual` can
+        // serve it from the blob instead of re-running plugins.
+        if let FileLongId::External(external_id) = long_id {
+            // Distinct `FileId`s can map to the same `ExternalFileKey` (the key is coarser), so
+            // dedup against the keys already stored in `external_file_contents`.
+            let key = ExternalFileKey::new(ctx.db, id);
+            let virtual_file = cairo_lang_filesystem::db::ext_as_virtual(ctx.db, *external_id);
+            let content = ExternalFileContentCached::new(virtual_file, ctx.db);
+            match ctx.external_file_contents.entry(key) {
+                Entry::Vacant(entry) => {
+                    entry.insert(content);
+                }
+                // Two distinct external files collapsing to one key must carry identical content,
+                // else the load would serve the wrong bytes. Holds today (generated files have
+                // distinct parent+offset); guard it so a future key change fails loud, not silent.
+                Entry::Occupied(entry) => debug_assert!(
+                    *entry.get() == content,
+                    "external file content key collision with differing content"
+                ),
+            }
+        }
+        let cached = FileCached::new(long_id, ctx);
         let cached_id = FileIdCached(ctx.file_ids_lookup.len());
         ctx.file_ids_lookup.push(cached);
         ctx.file_ids.insert(id, cached_id);
@@ -1932,7 +2125,7 @@ impl VirtualFileCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct SyntaxStablePtrIdCached(SyntaxNodeCached);
 
 impl SyntaxStablePtrIdCached {

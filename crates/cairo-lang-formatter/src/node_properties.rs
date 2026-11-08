@@ -430,6 +430,11 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 SyntaxKind::ParenthesizedMacro => Some(2),
                 _ => Some(1),
             },
+            // If the match arm's expression is a block, the pattern should be broken only after the
+            // block was broken.
+            // This does not hold for an arm whose expression is not a block, where we prefer
+            // breaking the pattern first.
+            Some(SyntaxKind::PatternListOr) if is_pattern_of_block_match_arm(db, self) => Some(10),
             _ => match self.kind(db) {
                 SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprList
@@ -529,7 +534,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         true,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -543,7 +548,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -559,7 +564,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -570,10 +575,11 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     }
                 }
                 SyntaxKind::ParamList => {
+                    let is_optional = !list_contains_comment(db, self);
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        is_optional,
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -587,7 +593,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         true,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -629,7 +635,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -674,7 +680,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         6,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -688,7 +694,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                     let leading_break_point = BreakLinePointProperties::new(
                         21,
                         BreakLinePointIndentation::IndentedWithTail,
-                        true,
+                        !list_contains_comment(db, self),
                         false,
                     );
                     let mut trailing_break_point = leading_break_point.clone();
@@ -850,21 +856,30 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             | SyntaxKind::PatternStructParamList
             | SyntaxKind::StructArgList
             | SyntaxKind::GenericArgList
-            | SyntaxKind::GenericParamList
-            | SyntaxKind::ParamList => BreakLinePointsPositions::List {
+            | SyntaxKind::GenericParamList => BreakLinePointsPositions::List {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
+                    !list_contains_comment(db, self),
                     true,
+                ),
+                breaking_frequency: 2,
+            },
+            SyntaxKind::ParamList => BreakLinePointsPositions::List {
+                properties: BreakLinePointProperties::new(
+                    5,
+                    BreakLinePointIndentation::NotIndented,
+                    !list_contains_comment(db, self),
                     true,
                 ),
                 breaking_frequency: 2,
             },
             SyntaxKind::ArgList => {
+                let has_comment = list_contains_comment(db, self);
                 let mut properties = BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    true,
+                    !has_comment,
                     true,
                 );
                 if self.parent_kind(db) == Some(SyntaxKind::ArgListBracketed) {
@@ -884,13 +899,17 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                         }
                     }
                 }
+                if has_comment {
+                    properties.set_line_by_line();
+                }
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
             }
             SyntaxKind::ExprList => {
+                let has_comment = list_contains_comment(db, self);
                 let mut properties = BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
-                    true,
+                    !has_comment,
                     true,
                 );
 
@@ -918,6 +937,9 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                             properties.set_line_by_line();
                         }
                     }
+                }
+                if has_comment {
+                    properties.set_line_by_line();
                 }
 
                 BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
@@ -1076,18 +1098,71 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
     }
 }
 
+/// Given a `PatternListOr` node, returns whether its corresponding match arm's expression is a
+/// block.
+fn is_pattern_of_block_match_arm(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    if let Some(match_arm) = node.grandparent(db)
+        && let Some(match_arm) = ast::MatchArm::cast(db, match_arm)
+        && match_arm.expression(db).as_syntax_node().kind(db) == SyntaxKind::ExprBlock
+    {
+        true
+    } else {
+        false
+    }
+}
+
 /// For statement lists, returns if we want these as a single line.
 fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
     // Currently, we only want single line blocks for match arms or generic args, with a single
-    // statement, with no single line comments.
+    // statement, with no single line comments, including one before the closing brace.
     matches!(
         node.grandparent_kind(db),
         Some(SyntaxKind::MatchArm | SyntaxKind::GenericArgNamed | SyntaxKind::GenericArgUnnamed)
     ) && node.get_children(db).len() == 1
-        && node.descendants(db).all(|d| {
-            d.kind(db) != SyntaxKind::Trivia
-                || ast::Trivia::from_syntax_node(db, d)
-                    .elements(db)
-                    .all(|t| !matches!(t, ast::Trivium::SingleLineComment(_)))
+        && !contains_single_line_comment(db, node)
+        && !node.parent(db).and_then(|block| ast::ExprBlock::cast(db, block)).is_some_and(|block| {
+            contains_single_line_comment(db, &block.rbrace(db).leading_trivia(db).as_syntax_node())
         })
+}
+
+/// Returns whether a list has a single-line comment attached to its structure: around an item or a
+/// separator, or next to the enclosing delimiters. Comments nested inside an item do not count.
+fn list_contains_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    let leading_comment =
+        |terminal: &SyntaxNode<'_>| contains_single_line_comment(db, &terminal.get_children(db)[0]);
+    let trailing_comment =
+        |terminal: &SyntaxNode<'_>| contains_single_line_comment(db, &terminal.get_children(db)[2]);
+    let edge_comment = |child: &SyntaxNode<'_>| {
+        let mut terminals = child.tokens(db);
+        let Some(first) = terminals.next() else {
+            return false;
+        };
+        leading_comment(&first) || trailing_comment(&terminals.last().unwrap_or(first))
+    };
+    node.get_children(db).iter().any(edge_comment)
+        || node.parent(db).is_some_and(|parent| {
+            let siblings = parent.get_children(db);
+            let position = siblings.iter().position(|child| child == node).unwrap();
+            siblings[position + 1..]
+                .iter()
+                .find_map(|child| child.tokens(db).next())
+                .is_some_and(|terminal| leading_comment(&terminal))
+                || siblings[..position]
+                    .iter()
+                    .rev()
+                    .find_map(|child| child.tokens(db).last())
+                    .is_some_and(|terminal| trailing_comment(&terminal))
+        })
+}
+
+/// Returns whether a node contains a single-line comment.
+fn contains_single_line_comment(db: &dyn Database, node: &SyntaxNode<'_>) -> bool {
+    node.descendants(db).any(|descendant| {
+        matches!(
+            descendant.kind(db),
+            SyntaxKind::TokenSingleLineComment
+                | SyntaxKind::TokenSingleLineDocComment
+                | SyntaxKind::TokenSingleLineInnerComment
+        )
+    })
 }

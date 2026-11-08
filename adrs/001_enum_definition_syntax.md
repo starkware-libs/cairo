@@ -9,6 +9,7 @@ Accepted 2021-08-04
 ## Context
 
 Proposed syntax for enum (i.e. sum-type):
+
 ```
 // Definition.
 enum MyEnum {
@@ -28,6 +29,7 @@ MyEnum::Variant0(value0)
 ```
 
 This is a deviation from the Rust syntax
+
 ```
 enum MyEnum {
     Variant0,
@@ -38,22 +40,25 @@ enum MyEnum {
 ```
 
 Advantages of the suggestion:
-* More similar to struct. Simplicity.
-* May be less code in the compiler (possibly shared with struct, for example, the syntax and
+
+- More similar to struct. Simplicity.
+- May be less code in the compiler (possibly shared with struct, for example, the syntax and
   parsing).
-* Every variant has a type. This allows functions to express that they only access a
+- Every variant has a type. This allows functions to express that they only access a
   specific variant. For example, when the variant is defined as `Variant0: Type0`, we can always
   refer to `Type0`, it's a real type.
 
 Disadvantages:
-* Straying away from Rust.
-* Unfamiliar syntax for most users.
-* Tuple types need an extra parenthesis. On `Variant0: (A, B)`, the construction is using
+
+- Straying away from Rust.
+- Unfamiliar syntax for most users.
+- Tuple types need an extra parenthesis. On `Variant0: (A, B)`, the construction is using
   `Variant0((a, b))`.
 
 ## Open questions
 
 Pattern matching might be made less verbose. Suggestions:
+
 ```
 MyEnum::Variant0(value0) =>
 Variant0(value0) =>

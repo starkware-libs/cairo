@@ -24,4 +24,3 @@ mod hello_starknet {
         }
     }
 }
-

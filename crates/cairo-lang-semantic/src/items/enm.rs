@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    EnumId, LanguageElementId, LookupItemId, ModuleItemId, VariantId, VariantLongId,
+    EnumId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
+    TopLevelLanguageElementId, VariantId, VariantLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_filesystem::ids::SmolStrId;
@@ -14,7 +15,10 @@ use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use salsa::Database;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::{GenericParamsData, semantic_generic_params};
+use super::generics::{
+    GenericParamsData, concrete_key_name, generic_params_data_cycle, generic_params_data_initial,
+    semantic_generic_params,
+};
 use crate::corelib::unit_ty;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -30,7 +34,7 @@ use crate::{ConcreteEnumId, GenericParam, SemanticDiagnostic, semantic};
 mod test;
 
 // Declaration
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct EnumDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -70,7 +74,7 @@ fn enum_declaration_data<'db>(
 }
 
 /// Returns the generic parameters data of an enum.
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn enum_generic_params_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
@@ -99,7 +103,7 @@ fn enum_generic_params_data<'db>(
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct EnumDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -108,7 +112,7 @@ struct EnumDefinitionData<'db> {
     resolver_data: Arc<ResolverData<'db>>,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Variant<'db> {
     pub enum_id: EnumId<'db>,
@@ -118,7 +122,7 @@ pub struct Variant<'db> {
     pub idx: usize,
 }
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct ConcreteVariant<'db> {
     pub concrete_enum_id: ConcreteEnumId<'db>,
     pub id: VariantId<'db>,
@@ -126,6 +130,17 @@ pub struct ConcreteVariant<'db> {
     /// The index of the variant from within the variant list.
     #[dont_rewrite]
     pub idx: usize,
+}
+impl<'db> ConcreteVariant<'db> {
+    /// The enum's key name, then the variant's name.
+    pub fn key_name(&self, db: &'db dyn Database) -> String {
+        let concrete_enum = self.concrete_enum_id.long(db);
+        format!(
+            "{}::{}",
+            concrete_key_name(db, &concrete_enum.enum_id.key_path(db), &concrete_enum.generic_args),
+            self.id.name(db).long(db)
+        )
+    }
 }
 
 /// Selector pattern of a match arm of a match on numeric values.
@@ -145,7 +160,7 @@ pub enum MatchArmSelector<'db> {
 }
 
 /// Returns the definition data of an enum.
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=enum_definition_data_cycle, cycle_initial=enum_definition_data_initial)]
 fn enum_definition_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
@@ -215,8 +230,28 @@ fn enum_definition_data<'db>(
     })
 }
 
+/// Cycle handling for [enum_definition_data].
+fn enum_definition_data_cycle<'db>(
+    _db: &'db dyn Database,
+    _cycle: &salsa::Cycle<'_>,
+    _last_provisional_value: &Maybe<EnumDefinitionData<'db>>,
+    value: Maybe<EnumDefinitionData<'db>>,
+    _enum_id: EnumId<'db>,
+) -> Maybe<EnumDefinitionData<'db>> {
+    value
+}
+
+/// Cycle handling for [enum_definition_data].
+fn enum_definition_data_initial<'db>(
+    _db: &'db dyn Database,
+    _id: salsa::Id,
+    _enum_id: EnumId<'db>,
+) -> Maybe<EnumDefinitionData<'db>> {
+    Err(skip_diagnostic())
+}
+
 /// Query implementation of [EnumSemantic::enum_definition_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn enum_definition_diagnostics<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,

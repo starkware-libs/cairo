@@ -6,7 +6,7 @@ use cairo_lang_utils::require;
 use crate::analysis::StatementLocation;
 use crate::{Block, Statement};
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct BlockId(pub usize);
 impl BlockId {
     pub fn root() -> Self {
@@ -34,9 +34,18 @@ pub struct BlocksBuilder<'db>(pub Vec<Block<'db>>);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Blocks<'db>(Vec<Block<'db>>);
 
+// SAFETY: The blocks hold owned lowered-IR objects composed of interned ids and owned data, all
+// of which are safe to retain across revisions; the contained `id_arena` ids are foreign types,
+// so this cannot be derived.
+unsafe impl<'db> salsa::SalsaValue for Blocks<'db> {}
+
 impl<'db> BlocksBuilder<'db> {
     pub fn new() -> Self {
         Self(vec![])
+    }
+    /// Creates a new builder with pre-allocated capacity for `n` blocks.
+    pub fn with_capacity(n: usize) -> Self {
+        Self(Vec::with_capacity(n))
     }
     pub fn alloc(&mut self, block: Block<'db>) -> BlockId {
         let id = BlockId(self.0.len());

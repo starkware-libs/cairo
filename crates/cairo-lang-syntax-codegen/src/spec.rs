@@ -15,12 +15,13 @@ pub enum Variants {
 }
 #[derive(Clone)]
 pub enum NodeKind {
-    Enum { variants: Variants, missing_variant: Option<Variant> },
+    Enum { variants: Variants, missing_variant: bool },
     Struct { members: Vec<Member> },
     Terminal { is_keyword: bool, members: Vec<Member> },
     List { element_type: String },
     SeparatedList { element_type: String, separator_type: String },
     Token { is_keyword: bool },
+    Missing,
 }
 #[derive(Clone)]
 pub struct Member {
@@ -75,15 +76,16 @@ impl StructBuilder {
 pub struct EnumBuilder {
     name: String,
     variants: Vec<Variant>,
-    missing_variant: Option<Variant>,
+    include_missing_variant: bool,
 }
 impl EnumBuilder {
     pub fn new(name: &str) -> Self {
-        Self { name: name.into(), variants: Vec::new(), missing_variant: None }
+        Self { name: name.into(), variants: Vec::new(), include_missing_variant: false }
     }
-    pub fn missing(mut self, name: &str) -> EnumBuilder {
-        let kind_name = self.name.clone() + name;
-        self.missing_variant = Some(Variant { name: name.to_string(), kind: kind_name });
+    /// Adds a `Missing` variant to the enum, whose kind is an empty `{enum_name}Missing` node,
+    /// created automatically by [`NodesAggregator::add_enum`].
+    pub fn include_missing(mut self) -> EnumBuilder {
+        self.include_missing_variant = true;
         self
     }
     pub fn node(self, name: &str) -> EnumBuilder {
@@ -95,14 +97,15 @@ impl EnumBuilder {
         self
     }
     pub fn build(mut self) -> Node {
-        if let Some(member) = &self.missing_variant {
-            self.variants.push(member.clone());
+        if self.include_missing_variant {
+            self.variants
+                .push(Variant { name: "Missing".into(), kind: self.name.clone() + "Missing" });
         }
         Node {
             name: self.name,
             kind: NodeKind::Enum {
                 variants: Variants::List(self.variants),
-                missing_variant: self.missing_variant,
+                missing_variant: self.include_missing_variant,
             },
         }
     }
@@ -125,8 +128,12 @@ impl NodesAggregator {
         self
     }
 
-    /// Adds an enum node.
+    /// Adds an enum node, as well as the empty node for its `Missing` variant if it has one.
     pub fn add_enum(mut self, builder: EnumBuilder) -> Self {
+        if builder.include_missing_variant {
+            self.nodes
+                .push(Node { name: builder.name.clone() + "Missing", kind: NodeKind::Missing });
+        }
         self.nodes.push(builder.build());
         self
     }
@@ -217,7 +224,7 @@ impl NodesAggregator {
     pub fn add_all_tokens_enum(mut self, name: &str) -> Self {
         self.nodes.push(Node {
             name: name.into(),
-            kind: NodeKind::Enum { variants: Variants::AllTokens, missing_variant: None },
+            kind: NodeKind::Enum { variants: Variants::AllTokens, missing_variant: false },
         });
         self
     }

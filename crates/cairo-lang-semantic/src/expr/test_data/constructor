@@ -3,18 +3,13 @@
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function_code
-fn foo() {
-    let _x = MyStruct { a, b, a: 3 };
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     a: usize,
     b: usize,
+}
+fn foo() {
+    let _x = MyStruct { a, b, a: 3 };
 }
 
 //! > expected_diagnostics

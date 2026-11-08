@@ -15,7 +15,6 @@ macro_rules! trace {
 }
 
 pub mod branch_inversion;
-pub mod cancel_ops;
 pub mod config;
 pub mod const_folding;
 pub mod cse;
@@ -31,5 +30,7 @@ pub mod scrub_units;
 pub mod split_structs;
 pub mod strategy;
 pub mod trim_unreachable;
+pub mod trim_unused_params;
 pub mod validate;
 pub mod var_renamer;
+pub mod variable_forwarding;

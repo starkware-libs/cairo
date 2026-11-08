@@ -1,26 +1,26 @@
-use std::collections::HashMap;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
+use cairo_lang_semantic::path::ContextualizePath;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function, setup_test_module};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::Itertools;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::{Itertools, chain};
 use pretty_assertions::assert_eq;
 
-use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
-use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
+use crate::ids::{ConcreteFunctionWithBodyId, LocationId, Signature};
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
+use crate::{BlockEnd, Lowered, LoweringStage};
 
 cairo_lang_test_utils::test_file_test!(
     lowering,
@@ -50,6 +50,7 @@ cairo_lang_test_utils::test_file_test!(
         members: "members",
         panic: "panic",
         rebindings: "rebindings",
+        refutable_pattern: "refutable_pattern",
         repr_ptr: "repr_ptr",
         snapshot: "snapshot",
         struct_: "struct",
@@ -60,14 +61,18 @@ cairo_lang_test_utils::test_file_test!(
         for_: "for",
     },
     test_function_lowering,
-    ["expect_diagnostics"]
+    ["expect_diagnostics", "no_gas"]
 );
 
 fn test_function_lowering(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
+    let db = &mut if args.get("no_gas").map(|s| s.trim()) == Some("true") {
+        LoweringDatabaseForTesting::with_no_gas()
+    } else {
+        LoweringDatabaseForTesting::default()
+    };
     let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
@@ -123,7 +128,7 @@ fn test_location_and_diagnostics() {
         format!("{:?}", location.debug(db)),
         indoc::indoc! {"
 lib.cairo:1:1-3:4
-  fn test_func() { let mut a = 5; {
+  #[target_function] fn test_func() { let mut a = 5; {
  _^
 | a = a * 3
 | }; }
@@ -147,7 +152,7 @@ a = a * 3
         indoc::indoc! {"
 error[E3005]: Cannot inline a function that might call itself.
  --> lib.cairo:1:1-3:4
-  fn test_func() { let mut a = 5; {
+  #[target_function] fn test_func() { let mut a = 5; {
  _^
 | a = a * 3
 | }; }
@@ -202,7 +207,7 @@ fn test_sizes() {
     let db: &LoweringDatabaseForTesting = db;
     let type_aliases = test_module.module_id.module_data(db).unwrap().type_aliases(db);
     assert_eq!(type_aliases.len(), type_to_size.len());
-    let alias_expected_size = HashMap::<_, _>::from_iter(
+    let alias_expected_size = UnorderedHashMap::<_, _>::from_iter(
         type_to_size.iter().enumerate().map(|(i, (_, size))| (format!("T{i}"), *size)),
     );
     for (alias_id, alias) in type_aliases.iter() {
@@ -212,4 +217,91 @@ fn test_sizes() {
         let expected_size = alias_expected_size[alias_name];
         assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db));
     }
+}
+
+/// Formats `signature` as a single line:
+/// `(ty1, ty2) -> return_type refs(ty1, ty2)`
+///
+/// The `refs` clause is omitted when there are no extra returns.
+fn format_signature(
+    db: &dyn salsa::Database,
+    signature: &Signature<'_>,
+    module_id: ModuleId<'_>,
+) -> String {
+    let ty_of = |ty: &semantic::TypeId<'_>| ty.contextualized_path(db, module_id);
+    let params = signature.params.iter().map(ty_of).join(", ");
+    let mut res = format!("({params}) -> {}", ty_of(&signature.return_type));
+    if !signature.extra_rets.is_empty() {
+        res += &format!(" refs({})", signature.extra_rets.iter().map(ty_of).join(", "));
+    }
+    res
+}
+
+/// Asserts that `signature` describes the parameters and the returned values of the blocks of
+/// `lowered`, at the given stage.
+fn assert_signature_matches_lowered(lowered: &Lowered<'_>, stage: LoweringStage) {
+    let signature = &lowered.signature;
+    let ty_of = |var_id| lowered.variables[var_id].ty;
+    assert_eq!(
+        signature.params,
+        lowered.parameters.iter().map(|param| ty_of(*param)).collect_vec(),
+        "Signature params do not match the lowering's parameters at {stage:?}."
+    );
+    let mut all_rets = lowered.blocks.iter().filter_map(|(_, block)| match &block.end {
+        BlockEnd::Return(vars, _) => Some(vars.iter().map(|var| ty_of(var.var_id)).collect_vec()),
+        _ => None,
+    });
+    let rets = all_rets.next().expect("Expected at least one returning block.");
+    assert!(
+        all_rets.all(|other| other == rets),
+        "Returning blocks disagree on the returned types."
+    );
+    assert_eq!(
+        chain!(signature.extra_rets.iter().copied(), [signature.return_type]).collect_vec(),
+        rets,
+        "Signature returns do not match the lowering's returned values at {stage:?}."
+    );
+}
+
+cairo_lang_test_utils::test_file_test!(
+    per_stage_signature,
+    "src/test_data",
+    {
+        signature: "signature",
+    },
+    test_per_stage_signature,
+    []
+);
+
+/// Prints the stored signature at each [LoweringStage], and cross-checks it against the
+/// parameters and returned values of the lowering's blocks at that stage.
+fn test_per_stage_signature(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
+    assert_eq!(semantic_diagnostics, "");
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+
+    // The `ids.rs` signature API must report the stored signature, per stage, from both the
+    // with-body id and the callable id.
+    let callable_id = function_id.function_id(db).unwrap();
+
+    let mut outputs = OrderedHashMap::default();
+    for (tag, stage) in [
+        ("monomorphized", LoweringStage::Monomorphized),
+        ("pre_optimizations", LoweringStage::PreOptimizations),
+        ("post_baseline", LoweringStage::PostBaseline),
+        ("final", LoweringStage::Final),
+    ] {
+        let lowered = db.lowered_body(function_id, stage).unwrap();
+        assert_signature_matches_lowered(lowered, stage);
+        assert_eq!(function_id.signature(db, stage).unwrap(), &lowered.signature);
+        assert_eq!(callable_id.signature(db, stage).unwrap(), &lowered.signature);
+        outputs
+            .insert(tag.into(), format_signature(db, &lowered.signature, test_function.module_id));
+    }
+    TestRunnerResult::success(outputs)
 }

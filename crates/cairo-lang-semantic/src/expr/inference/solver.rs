@@ -1,11 +1,11 @@
-use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{GenericParamId, LanguageElementId};
+use cairo_lang_defs::ids::{GenericParamId, LanguageElementId, ModuleId};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::ordered_hash_map::Entry;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain, zip_eq};
 use salsa::Database;
 
@@ -19,48 +19,27 @@ use super::{
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::imp::{
     ImplId, ImplImplId, ImplLongId, ImplLookupContext, ImplLookupContextId, ImplSemantic,
-    UninferredImpl, UninferredImplById, find_candidates_at_context,
-    find_closure_generated_candidate,
+    UninferredImpl, find_candidates_at_context, find_closure_generated_candidate,
+    find_integer_literal_generated_candidate,
 };
 use crate::items::trt::TraitSemantic;
+use crate::path::ContextualizePath;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
-use crate::types::{ImplTypeById, ImplTypeId};
+use crate::types::ImplTypeId;
 use crate::{
     ConcreteImplLongId, ConcreteTraitId, GenericArgumentId, GenericParam, TypeId, TypeLongId,
 };
 
 /// A generic solution set for an inference constraint system.
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, salsa::SalsaValue)]
 pub enum SolutionSet<'db, T> {
     None,
     Unique(T),
     Ambiguous(Ambiguity<'db>),
 }
 
-// Somewhat taken from the salsa::Update derive macro.
-unsafe impl<'db, T: salsa::Update> salsa::Update for SolutionSet<'db, T> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_pointer = unsafe { &mut *old_pointer };
-        match (old_pointer, new_value) {
-            (SolutionSet::None, SolutionSet::None) => false,
-            (SolutionSet::Unique(u1), SolutionSet::Unique(u2)) => unsafe {
-                salsa::plumbing::UpdateDispatch::<T>::maybe_update(u1, u2)
-            },
-            (SolutionSet::Ambiguous(ambiguity), SolutionSet::Ambiguous(ambiguity2)) => unsafe {
-                salsa::plumbing::UpdateDispatch::<Ambiguity<'db>>::maybe_update(
-                    ambiguity, ambiguity2,
-                )
-            },
-            (old_pointer, new_value) => {
-                *old_pointer = new_value;
-                true
-            }
-        }
-    }
-}
-
 /// Describes the kinds of inference ambiguities.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, SemanticObject, salsa::SalsaValue)]
 pub enum Ambiguity<'db> {
     MultipleImplsFound {
         concrete_trait_id: ConcreteTraitId<'db>,
@@ -77,26 +56,41 @@ pub enum Ambiguity<'db> {
 }
 
 impl<'db> Ambiguity<'db> {
-    pub fn format(&self, db: &dyn Database) -> String {
+    pub fn format(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
         match self {
             Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
-                let impls_str = impls.iter().map(|imp| format!("`{}`", imp.format(db))).join(", ");
+                let mut impl_paths = impls
+                    .iter()
+                    .map(|imp| imp.contextualized_path(db, context_module))
+                    .collect_vec();
+                // If contextualization renders distinct impls identically (e.g. impls generated
+                // by different macro expansions), fall back to full paths to keep them apart.
+                if !impl_paths.iter().all_unique() {
+                    impl_paths = impls.iter().map(|imp| imp.format(db)).collect_vec();
+                }
                 format!(
-                    "Trait `{:?}` has multiple implementations, in: {impls_str}",
-                    concrete_trait_id.debug(db)
+                    "Trait `{}` has multiple implementations, in: {}",
+                    concrete_trait_id.contextualized_path(db, context_module),
+                    impl_paths.iter().format_with(", ", |path, f| f(&format_args!("`{path}`")))
                 )
             }
             Ambiguity::FreeVariable { impl_id, var: _ } => {
-                format!("Candidate impl {:?} has an unused generic parameter.", impl_id.debug(db),)
+                format!(
+                    "Candidate impl {} has an unused generic parameter.",
+                    impl_id.contextualized_path(db, context_module),
+                )
             }
             Ambiguity::WillNotInfer(concrete_trait_id) => {
                 format!(
-                    "Cannot infer trait {:?}. First generic argument must be known.",
-                    concrete_trait_id.debug(db)
+                    "Cannot infer trait {}. First generic argument must be known.",
+                    concrete_trait_id.contextualized_path(db, context_module)
                 )
             }
             Ambiguity::NegativeImplWithUnsupportedExtractedArgs(garg) => {
-                format!("Negative impl has an unsupported generic argument {:?}.", garg.debug(db),)
+                format!(
+                    "Negative impl has an unsupported generic argument {}.",
+                    garg.contextualized_path(db, context_module),
+                )
             }
             Ambiguity::NegativeImplWithUnsupportedGenericParam(gparam) => {
                 format!("Negative impl has an unsupported generic argument {:?}.", gparam.debug(db),)
@@ -106,12 +100,12 @@ impl<'db> Ambiguity<'db> {
 }
 
 /// Implementation of [SemanticSolver::canonic_trait_solutions].
-/// Assumes the lookup context is already enriched by [enrich_lookup_context].
+/// Assumes the lookup context is already enriched by [ImplLookupContextId::enriched].
 pub fn canonic_trait_solutions<'db>(
     db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
     lookup_context: ImplLookupContextId<'db>,
-    impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+    impl_type_bounds: OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>,
 ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     let mut concrete_trait_id = canonical_trait.id;
     let impl_type_bounds = Arc::new(impl_type_bounds);
@@ -139,13 +133,13 @@ pub fn canonic_trait_solutions<'db>(
 }
 
 /// Query implementation of [SemanticSolver::canonic_trait_solutions].
-/// Assumes the lookup context is already enriched by [enrich_lookup_context].
-#[salsa::tracked(cycle_result=canonic_trait_solutions_cycle)]
+/// Assumes the lookup context is already enriched by [ImplLookupContextId::enriched].
+#[salsa::tracked(returns(clone), cycle_result=canonic_trait_solutions_cycle)]
 pub fn canonic_trait_solutions_tracked<'db>(
     db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
     lookup_context: ImplLookupContextId<'db>,
-    impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+    impl_type_bounds: OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>,
 ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     canonic_trait_solutions(db, canonical_trait, lookup_context, impl_type_bounds)
 }
@@ -156,26 +150,41 @@ pub fn canonic_trait_solutions_cycle<'db>(
     _id: salsa::Id,
     _canonical_trait: CanonicalTrait<'db>,
     _lookup_context: ImplLookupContextId<'db>,
-    _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+    _impl_type_bounds: OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>,
 ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
 }
 
-/// Adds the defining module of the trait and the generic arguments to the lookup context.
-pub fn enrich_lookup_context<'db>(
-    db: &'db dyn Database,
-    concrete_trait_id: ConcreteTraitId<'db>,
-    lookup_context: &mut ImplLookupContext<'db>,
-) {
-    lookup_context.insert_module(concrete_trait_id.trait_id(db).parent_module(db), db);
-    let generic_args = concrete_trait_id.generic_args(db);
-    // Add the defining module of the generic args to the lookup.
-    for generic_arg in generic_args {
-        if let GenericArgumentId::Type(ty) = generic_arg {
-            enrich_lookup_context_with_ty(db, *ty, lookup_context);
+impl<'db> ImplLookupContextId<'db> {
+    /// Returns this context enriched for `concrete_trait_id`: with the defining modules of the
+    /// trait and its generic arguments added, stripped for the trait. Memoized, as enrichment
+    /// scans module and crate impls - a pure function of the two interned ids - and the same
+    /// (context, trait) pair recurs constantly during solving.
+    pub fn enriched(
+        self,
+        db: &'db dyn Database,
+        concrete_trait_id: ConcreteTraitId<'db>,
+    ) -> ImplLookupContextId<'db> {
+        #[salsa::tracked(returns(copy))]
+        fn query<'db>(
+            db: &'db dyn Database,
+            lookup_context: ImplLookupContextId<'db>,
+            concrete_trait_id: ConcreteTraitId<'db>,
+        ) -> ImplLookupContextId<'db> {
+            let mut context = lookup_context.long(db).clone();
+            let trait_id = concrete_trait_id.trait_id(db);
+            context.insert_module(trait_id.parent_module(db), db);
+            // Add the defining module of the generic args to the lookup.
+            for generic_arg in concrete_trait_id.generic_args(db) {
+                if let GenericArgumentId::Type(ty) = generic_arg {
+                    enrich_lookup_context_with_ty(db, *ty, &mut context);
+                }
+            }
+            context.strip_for_trait_id(db, trait_id);
+            context.intern(db)
         }
+        query(db, self, concrete_trait_id)
     }
-    lookup_context.strip_for_trait_id(db, concrete_trait_id.trait_id(db));
 }
 
 /// Adds the defining module of the type to the lookup context.
@@ -202,19 +211,29 @@ fn solve_canonical_trait<'db>(
     db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
     lookup_context: ImplLookupContextId<'db>,
-    impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+    impl_type_bounds: Arc<OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>>,
 ) -> SolutionSet<'db, CanonicalImpl<'db>> {
     let filter = canonical_trait.id.filter(db);
-    let mut candidates = find_candidates_at_context(db, lookup_context, filter).unwrap_or_default();
-    find_closure_generated_candidate(db, canonical_trait.id)
-        .map(|candidate| candidates.insert(UninferredImplById(candidate)));
+    // For `NumericLiteral` target types with Drop/Copy/Destruct/PanicDestruct, only the
+    // synthetic candidate should match. Otherwise concrete-headed candidates like `felt252Drop`
+    // would "claim" the integer literal and default its type via trait resolution.
+    let candidates = if let Some(integer_literal_candidate) =
+        find_integer_literal_generated_candidate(db, canonical_trait.id)
+    {
+        OrderedHashSet::from_iter([integer_literal_candidate])
+    } else {
+        let mut set = find_candidates_at_context(db, lookup_context, filter).unwrap_or_default();
+        find_closure_generated_candidate(db, canonical_trait.id)
+            .map(|candidate| set.insert(candidate));
+        set
+    };
 
     let mut unique_solution: Option<CanonicalImpl<'_>> = None;
     for candidate in candidates.into_iter() {
         let Ok(candidate_solution_set) = solve_candidate(
             db,
             &canonical_trait,
-            candidate.0,
+            candidate,
             lookup_context,
             impl_type_bounds.clone(),
         ) else {
@@ -248,7 +267,7 @@ fn solve_candidate<'db>(
     canonical_trait: &CanonicalTrait<'db>,
     candidate: UninferredImpl<'db>,
     lookup_context: ImplLookupContextId<'db>,
-    impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+    impl_type_bounds: Arc<OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>>,
 ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
     let Ok(candidate_concrete_trait) = candidate.concrete_trait(db) else {
         return Err(super::ErrorSet);
@@ -286,10 +305,8 @@ fn solve_candidate<'db>(
         }
     }
 
-    // Add the defining module of the candidate to the lookup.
-    let mut lookup_context = lookup_context.long(db).clone();
-    lookup_context.insert_lookup_scope(db, &candidate);
-    let lookup_context = lookup_context.intern(db);
+    // Add the defining scope of the candidate to the lookup.
+    let lookup_context = lookup_context.extend_lookup_scope(db, &candidate);
     if res == CanConformResult::Rejected {
         return Err(super::ErrorSet);
     } else if CanConformResult::Accepted == res {
@@ -427,7 +444,7 @@ impl<'db> LiteInference<'db> {
         &mut self,
         params: &[GenericParam<'db>],
         lookup_context: ImplLookupContextId<'db>,
-        impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
+        impl_type_bounds: Arc<OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>>,
     ) -> InferenceResult<SolutionSet<'db, Vec<GenericArgumentId<'db>>>> {
         let mut generic_args = Vec::with_capacity(params.len());
         for param in params {
@@ -468,11 +485,10 @@ impl<'db> LiteInference<'db> {
                         id: imp_concrete_trait_id,
                         mappings: ImplVarTraitItemMappings::default(),
                     };
-                    let mut inner_context = lookup_context.long(self.db).clone();
-                    enrich_lookup_context(self.db, imp_concrete_trait_id, &mut inner_context);
+                    let inner_context = lookup_context.enriched(self.db, imp_concrete_trait_id);
                     let Ok(solution) = self.db.canonic_trait_solutions(
                         canonical_trait,
-                        inner_context.intern(self.db),
+                        inner_context,
                         (*impl_type_bounds).clone(),
                     ) else {
                         return Err(super::ErrorSet);
@@ -562,7 +578,7 @@ impl<'db> LiteInference<'db> {
         }
         let target_long_ty = target_ty.long(self.db);
 
-        if let TypeLongId::Var(_) = target_long_ty {
+        if let TypeLongId::Var(_) | TypeLongId::NumericLiteral(_) = target_long_ty {
             return CanConformResult::InferenceRequired;
         }
 
@@ -692,6 +708,7 @@ impl<'db> LiteInference<'db> {
             }
             (
                 TypeLongId::Var(_)
+                | TypeLongId::NumericLiteral(_)
                 | TypeLongId::ImplType(_)
                 | TypeLongId::Missing(_)
                 | TypeLongId::Coupon(_),
@@ -885,7 +902,7 @@ pub trait SemanticSolver<'db>: Database {
         &'db self,
         canonical_trait: CanonicalTrait<'db>,
         lookup_context: ImplLookupContextId<'db>,
-        impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+        impl_type_bounds: OrderedHashMap<ImplTypeId<'db>, TypeId<'db>>,
     ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
         canonic_trait_solutions_tracked(
             self.as_dyn_database(),

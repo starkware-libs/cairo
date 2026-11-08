@@ -34,6 +34,15 @@ hello = "src"
 //! - B
 //! - `multiple elements item` gets prefix only once
 //!
+//! bold list items
+//! - **bold item**
+//! - *italic item*
+//! - **bold** then plain
+//!
+//! bold ordered items
+//! 1. **bold item**
+//! 2. plain
+//!
 //! not a list
 //! 0. First item
 //! 5. Second item
@@ -69,6 +78,15 @@ unordered list
 - A
 - B
 - `multiple elements item` gets prefix only once
+
+bold list items
+- **bold item**
+- _italic item_
+- **bold** then plain
+
+bold ordered items
+1. **bold item**
+2. plain
 
 not a list
 0. First item
@@ -142,6 +160,36 @@ Content("\n")
 Content("- ")
 Content("`multiple elements item`")
 Content(" gets prefix only once")
+Content("\n")
+Content("\n")
+Content("bold list items")
+Content("\n")
+Content("- ")
+Content("**")
+Content("bold item")
+Content("**")
+Content("\n")
+Content("- ")
+Content("_")
+Content("italic item")
+Content("_")
+Content("\n")
+Content("- ")
+Content("**")
+Content("bold")
+Content("**")
+Content(" then plain")
+Content("\n")
+Content("\n")
+Content("bold ordered items")
+Content("\n")
+Content("1. ")
+Content("**")
+Content("bold item")
+Content("**")
+Content("\n")
+Content("2. ")
+Content("plain")
 Content("\n")
 Content("\n")
 Content("not a list")

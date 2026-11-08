@@ -1,11 +1,17 @@
+#![expect(clippy::disallowed_types)]
+
 use std::collections::HashSet;
 use std::fs;
 use std::io::BufReader;
 
-use cairo_lang_sierra::ids::GenericLibfuncId;
+use cairo_lang_sierra::ProgramParser;
+use cairo_lang_sierra::ids::{ConcreteTypeId, GenericLibfuncId};
+use cairo_lang_sierra::program_registry::ProgramRegistryError;
+use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use indoc::indoc;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
@@ -13,22 +19,188 @@ use test_case::test_case;
 use crate::allowed_libfuncs::{
     BUILTIN_AUDITED_LIBFUNCS_LIST, ListSelector, lookup_allowed_libfuncs_list,
 };
-use crate::casm_contract_class::{BigUintAsHex, CasmContractClass};
-use crate::compiler_version::current_sierra_version_id;
-use crate::contract_class::ContractClass;
+use crate::casm_contract_class::{
+    BigUintAsHex, CasmContractClass, StarknetSierraCompilationError, TypeResolver,
+};
+use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id};
+use crate::contract_class::{
+    ContractClass, ContractEntryPoint, ContractEntryPoints, ExtractedSierraProgram,
+};
 use crate::felt252_serde::{Felt252SerdeError, sierra_from_felt252s};
 use crate::test_utils::get_example_file_path;
+
+/// Loads the example contract class of `name` from its checked-in JSON.
+fn load_example_contract_class(name: &str) -> ContractClass {
+    let f =
+        std::fs::File::open(get_example_file_path(&format!("{name}.contract_class.json"))).unwrap();
+    serde_json::from_reader(BufReader::new(f)).unwrap()
+}
 
 #[test_case("test_contract__test_contract")]
 #[test_case("new_syntax_test_contract__counter_contract")]
 fn test_casm_contract_from_contract_class_failure(name: &str) {
-    let f =
-        std::fs::File::open(get_example_file_path(&format!("{name}.contract_class.json"))).unwrap();
-    let mut contract_class: ContractClass = serde_json::from_reader(BufReader::new(f)).unwrap();
+    let mut contract_class = load_example_contract_class(name);
     contract_class.sierra_program[17] = BigUintAsHex { value: Felt252::prime() };
     assert_eq!(
         contract_class.extract_sierra_program(false).err(),
         Some(Felt252SerdeError::InvalidInputForDeserialization)
+    );
+}
+
+/// Compiles the libfuncs-coverage example contract to CASM, after swapping `builtin_a` and
+/// `builtin_b` in its entry point's signature, yielding a builtin order the frontend can never
+/// emit. Signatures are validated before compilation, so the body is not updated to match.
+fn compile_with_swapped_builtins(
+    builtin_a: &str,
+    builtin_b: &str,
+) -> Result<CasmContractClass, StarknetSierraCompilationError> {
+    let contract_class = load_example_contract_class("libfuncs_coverage__libfuncs_coverage");
+    let mut extracted = contract_class.extract_sierra_program(false).unwrap();
+    let program = &mut extracted.program;
+    let type_resolver = TypeResolver { type_decl: &program.type_declarations };
+    let func_idx = contract_class.entry_points_by_type.external[0].function_idx;
+    let position = |types: &[ConcreteTypeId], name: &str| {
+        types.iter().position(|ty| type_resolver.get_generic_id(ty).0 == name).unwrap()
+    };
+    let func = &program.funcs[func_idx];
+    let param_a = position(&func.signature.param_types, builtin_a);
+    let param_b = position(&func.signature.param_types, builtin_b);
+    let ret_a = position(&func.signature.ret_types, builtin_a);
+    let ret_b = position(&func.signature.ret_types, builtin_b);
+    let func = &mut program.funcs[func_idx];
+    func.signature.param_types.swap(param_a, param_b);
+    func.params.swap(param_a, param_b);
+    func.signature.ret_types.swap(ret_a, ret_b);
+    CasmContractClass::from_contract_class(contract_class, extracted, false, usize::MAX)
+}
+
+/// A no-op swap keeps the canonical order, and the contract compiles (sanity check for
+/// `compile_with_swapped_builtins`).
+#[test]
+fn test_entry_point_noop_swap_accepted() {
+    assert!(compile_with_swapped_builtins("Bitwise", "Bitwise").is_ok());
+}
+
+/// An entry point with two builtins swapped (EcOp before Bitwise, violating the canonical order)
+/// is rejected.
+#[test]
+fn test_entry_point_non_canonical_builtin_order_rejected() {
+    assert_eq!(
+        compile_with_swapped_builtins("Bitwise", "EcOp").unwrap_err(),
+        StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
+    );
+}
+
+/// Gas and system builtins are only allowed in their fixed trailing slots — a `System` (or
+/// `GasBuiltin`) appearing mid-list is rejected.
+#[test]
+fn test_entry_point_mid_list_gas_or_system_rejected() {
+    let contract_class = load_example_contract_class("libfuncs_coverage__libfuncs_coverage");
+    let extracted = contract_class.extract_sierra_program(false).unwrap();
+    for mid in ["System", "GasBuiltin"] {
+        let mid_ty = extracted
+            .program
+            .type_declarations
+            .iter()
+            .find(|decl| decl.long_id.generic_id.0 == mid)
+            .unwrap()
+            .id
+            .clone();
+        assert_eq!(
+            compile_with_swapped_builtins("EcOp", mid).unwrap_err(),
+            StarknetSierraCompilationError::InvalidBuiltinType(mid_ty),
+        );
+    }
+}
+
+#[test]
+fn test_entry_point_using_builtin_before_gas_rejected() {
+    let program = ProgramParser::new()
+        .parse(indoc! {"
+            type [0] = felt252;
+            type [1] = Array<[0]>;
+            type [2] = Snapshot<[1]>;
+            type [3] = Struct<ut@core::array::Span::<core::felt252>, [2]>;
+            type [4] = Struct<ut@Tuple, [3]>;
+            type [5] = Enum<ut@core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, [4], [1]>;
+            type [6] = Pedersen;
+            type [7] = GasBuiltin;
+            type [8] = System;
+            type [9] = Const<[0], 1>;
+
+            libfunc const_as_immediate<[9]> = const_as_immediate<[9]>;
+            libfunc dup<[0]> = dup<[0]>;
+            libfunc store_temp<[0]> = store_temp<[0]>;
+            libfunc pedersen = pedersen;
+            libfunc drop<[0]> = drop<[0]>;
+            libfunc struct_construct<[4]> = struct_construct<[4]>;
+            libfunc enum_init<[5], 0> = enum_init<[5], 0>;
+            libfunc store_temp<[6]> = store_temp<[6]>;
+            libfunc store_temp<[7]> = store_temp<[7]>;
+            libfunc store_temp<[8]> = store_temp<[8]>;
+            libfunc store_temp<[5]> = store_temp<[5]>;
+            // Required for the `Const` cost of the entry point to be enforceable.
+            libfunc redeposit_gas = redeposit_gas;
+
+            const_as_immediate<[9]>() -> ([4]);
+            dup<[0]>([4]) -> ([4], [5]);
+            store_temp<[0]>([4]) -> ([4]);
+            store_temp<[0]>([5]) -> ([5]);
+            pedersen([0], [4], [5]) -> ([6], [7]);
+            drop<[0]>([7]) -> ();
+            struct_construct<[4]>([3]) -> ([8]);
+            enum_init<[5], 0>([8]) -> ([9]);
+            redeposit_gas([1]) -> ([1]);
+            store_temp<[6]>([6]) -> ([6]);
+            store_temp<[7]>([1]) -> ([1]);
+            store_temp<[8]>([2]) -> ([2]);
+            store_temp<[5]>([9]) -> ([9]);
+            return([6], [1], [2], [9]);
+
+            ep@0([0]: [6], [1]: [7], [2]: [8], [3]: [3]) -> ([6], [7], [8], [5]);
+        "})
+        .unwrap();
+    let contract_class = ContractClass {
+        sierra_program: vec![],
+        sierra_program_debug_info: None,
+        contract_class_version: String::new(),
+        entry_points_by_type: ContractEntryPoints {
+            external: vec![ContractEntryPoint { selector: 0u32.into(), function_idx: 0 }],
+            l1_handler: vec![],
+            constructor: vec![],
+        },
+        abi: None,
+    };
+    let extracted = ExtractedSierraProgram {
+        program,
+        sierra_version: current_sierra_version_id(),
+        compiler_version: current_compiler_version_id(),
+    };
+    assert_eq!(
+        CasmContractClass::from_contract_class(contract_class, extracted, false, usize::MAX)
+            .unwrap_err(),
+        StarknetSierraCompilationError::UnexpectedEntryPointCost,
+    );
+}
+
+#[test]
+fn test_entry_point_out_of_range_type_id_rejected() {
+    let contract_class = load_example_contract_class("libfuncs_coverage__libfuncs_coverage");
+    let mut extracted = contract_class.extract_sierra_program(false).unwrap();
+    let program = &mut extracted.program;
+    // An id one past the last declaration is guaranteed undeclared.
+    let out_of_range = ConcreteTypeId::new(program.type_declarations.len() as u64);
+    let func_idx = contract_class.entry_points_by_type.external[0].function_idx;
+    // Point the entry point's input (the `Span<felt252>` calldata param) at the undeclared type id.
+    *program.funcs[func_idx].signature.param_types.last_mut().unwrap() = out_of_range.clone();
+    assert_eq!(
+        CasmContractClass::from_contract_class(contract_class, extracted, false, usize::MAX)
+            .unwrap_err(),
+        StarknetSierraCompilationError::CompilationError(Box::new(
+            CompilationError::ProgramRegistryError(Box::new(ProgramRegistryError::MissingType(
+                out_of_range
+            ))),
+        )),
     );
 }
 
@@ -47,14 +219,12 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
 #[test_case("with_erc20__erc20_contract")]
 #[test_case("with_ownable__ownable_balance")]
 #[test_case("ownable_erc20__ownable_erc20_contract")]
+#[test_case("proxy__proxy")]
 #[test_case("upgradable_counter__counter_contract")]
 #[test_case("mintable__mintable_erc20_ownable")]
 #[test_case("multi_component__contract_with_4_components")]
 fn test_casm_contract_from_contract_class_from_contracts_crate(name: &str) {
-    let contract_path = get_example_file_path(&format!("{name}.contract_class.json"));
-    let contract: ContractClass =
-        serde_json::from_reader(BufReader::new(std::fs::File::open(contract_path).unwrap()))
-            .unwrap();
+    let contract = load_example_contract_class(name);
     let add_pythonic_hints = true;
     let program = contract.extract_sierra_program(false).unwrap();
     let casm_contract =
@@ -95,7 +265,7 @@ fn test_contract_libfuncs_coverage(name: &str) {
 
     let missing_libfuncs = libfunc_to_cover.difference(&used_libfuncs).collect_vec();
     let extra_libfuncs = used_libfuncs.difference(&libfunc_to_cover).collect_vec();
-    const MISSING_THRESHOLD: usize = 6;
+    const MISSING_THRESHOLD: usize = 9;
     if missing_libfuncs.len() > MISSING_THRESHOLD || !extra_libfuncs.is_empty() {
         println!("Missing {} libfuncs:", missing_libfuncs.len());
         for libfunc_name in missing_libfuncs.into_iter().map(|id| id.to_string()).sorted() {

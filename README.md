@@ -25,9 +25,9 @@
 
 - [About](#about)
 - [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Compiling and running Cairo files](#compiling-and-running-cairo-files)
-  - [Compiling Starknet Contracts](#compiling-starknet-contracts)
+    - [Prerequisites](#prerequisites)
+    - [Compiling and running Cairo files](#compiling-and-running-cairo-files)
+    - [Compiling Starknet Contracts](#compiling-starknet-contracts)
 - [Support](#support)
 - [Project assistance](#project-assistance)
 - [Contributing](#contributing)
@@ -49,11 +49,13 @@
 
 - Install [Rust](https://www.rust-lang.org/tools/install)
 - Set up Rust:
+
 ```bash
 rustup override set stable && rustup update
 ```
 
 Ensure Rust was installed correctly by running the following from the root project directory:
+
 ```bash
 cargo test
 ```
@@ -61,16 +63,19 @@ cargo test
 ### Compiling and running Cairo files
 
 Compile Cairo to Sierra:
+
 ```bash
 cargo run --bin cairo-compile -- --single-file /path/to/input.cairo /path/to/output.sierra --replace-ids
 ```
 
 Compile Sierra to casm (Cairo assembly):
+
 ```bash
 cargo run --bin sierra-compile -- /path/to/input.sierra /path/to/output.casm
 ```
 
 Run Cairo code directly:
+
 ```bash
 cargo run --bin cairo-run -- --single-file /path/to/file.cairo
 ```
@@ -82,21 +87,25 @@ For running tests specifically, see here: [cairo-test](./crates/cairo-lang-test-
 ### Compiling Starknet Contracts
 
 Compile a Starknet contract from a crate/project path to a Sierra ContractClass:
+
 ```bash
 cargo run --bin starknet-compile -- /path/to/input/crate /path/to/output.json
 ```
 
 If multiple contracts are defined in the same crate/project, specify `--contract-path`:
+
 ```bash
 cargo run --bin starknet-compile -- /path/to/input/crate /path/to/output.json --contract-path path::to::contract
 ```
 
 For a single-file `.cairo` input, use `--single-file`:
+
 ```bash
 cargo run --bin starknet-compile -- --single-file /path/to/input.cairo /path/to/output.json
 ```
 
 Compile a Sierra ContractClass to a CASM CompiledClass:
+
 ```bash
 cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm
 ```

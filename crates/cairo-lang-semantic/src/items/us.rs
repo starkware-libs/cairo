@@ -26,7 +26,7 @@ use crate::expr::inference::InferenceId;
 use crate::items::macro_call::module_macro_modules;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct UseData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -75,7 +75,7 @@ fn priv_use_semantic_data<'db>(
 }
 
 /// Query implementation of [UseSemantic::priv_use_semantic_data].
-#[salsa::tracked(cycle_result=priv_use_semantic_data_cycle)]
+#[salsa::tracked(returns(clone), cycle_result=priv_use_semantic_data_cycle)]
 fn priv_use_semantic_data_tracked<'db>(
     db: &'db dyn Database,
     use_id: UseId<'db>,
@@ -203,7 +203,7 @@ fn use_semantic_diagnostics<'db>(
 }
 
 /// Query implementation of [UseSemantic::use_semantic_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn use_semantic_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     use_id: UseId<'db>,
@@ -220,7 +220,7 @@ fn use_resolver_data<'db>(
 }
 
 /// Query implementation of [UseSemantic::use_resolver_data].
-#[salsa::tracked(cycle_result=use_resolver_data_cycle)]
+#[salsa::tracked(returns(clone), cycle_result=use_resolver_data_cycle)]
 fn use_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     use_id: UseId<'db>,
@@ -250,7 +250,7 @@ pub trait SemanticUseEx<'a>: Database {
 
 impl<'a, T: Database + ?Sized> SemanticUseEx<'a> for T {}
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct UseGlobalData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -302,7 +302,7 @@ fn priv_global_use_semantic_data<'db>(
 }
 
 /// Query implementation of [UseSemantic::priv_global_use_semantic_data].
-#[salsa::tracked(cycle_fn=priv_global_use_semantic_data_tracked_cycle_fn, cycle_initial=priv_global_use_semantic_data_tracked_initial)]
+#[salsa::tracked(returns(clone), cycle_fn=priv_global_use_semantic_data_tracked_cycle_fn, cycle_initial=priv_global_use_semantic_data_tracked_initial)]
 fn priv_global_use_semantic_data_tracked<'db>(
     db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
@@ -353,7 +353,7 @@ fn priv_global_use_imported_module<'db>(
 }
 
 /// Query implementation of [UseSemantic::priv_global_use_imported_module].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn priv_global_use_imported_module_tracked<'db>(
     db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
@@ -370,7 +370,7 @@ fn global_use_semantic_diagnostics<'db>(
 }
 
 /// Query implementation of [UseSemantic::global_use_semantic_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn global_use_semantic_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
@@ -382,7 +382,7 @@ fn global_use_semantic_diagnostics_tracked<'db>(
 pub type ImportedModules<'db> = OrderedHashMap<ModuleId<'db>, ImportInfo<'db>>;
 
 /// Information about a module that is imported by a module, using global uses and macro calls.
-#[derive(Debug, Default, Clone, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ImportInfo<'db> {
     /// The modules that directly imported this module.
     pub user_modules: Vec<ModuleId<'db>>,

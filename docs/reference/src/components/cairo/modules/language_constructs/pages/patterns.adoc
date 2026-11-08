@@ -16,9 +16,9 @@ structures).
 
 Cairo supports two categories of patterns:
 
-* **Refutable patterns** — May fail to match (used in `match` arms and `let ... else`
-  statements)
-* **Irrefutable patterns** — Always match (used in `let` statements)
+* **Refutable patterns** — May fail to match (used in `match` arms, `if let`, `while let`,
+  and `let ... else` statements)
+* **Irrefutable patterns** — Always match (used in plain `let` statements)
 
 == Pattern Types
 
@@ -328,19 +328,20 @@ match result {
 
 == Mutability in Patterns
 
-Patterns in `let mut` statements bind mutable variables:
+The `mut` keyword applies to an individual binding, not to the pattern as a whole.
+To bind several mutable variables, mark each binding with `mut`:
 
 [source,cairo]
 ----
 let mut x = 5;
 x = 10;  // OK: x is mutable
 
-let mut (a, b) = (1, 2);
+let (mut a, mut b) = (1, 2);
 a = 10;  // OK: a is mutable
 b = 20;  // OK: b is mutable
 ----
 
-See xref:let-statement.adoc#_mutability[Mutability] for details.
+See xref:let-statement.adoc#mutability[Mutability] for details.
 
 == Examples
 

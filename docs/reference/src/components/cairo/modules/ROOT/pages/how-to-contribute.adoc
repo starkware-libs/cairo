@@ -5,12 +5,12 @@ First off, thanks for taking the time to contribute! Contributions are what make
 Please read xref:../../appendices/pages/contribution-guidelines.adoc[our contribution guidelines], and thank you for being
 involved!
 
-## Support
+== Support
 
 - We encourage developers to ask and answer questions on https://stackoverflow.com/questions/tagged/cairo-lang[stackoverflow].
 - Contact options listed on link:https://github.com/starkware-libs[this GitHub profile]
 
-## Project assistance
+== Project assistance
 
 If you want to say **thank you** and/or support active development of Cairo:
 
@@ -21,6 +21,6 @@ personal blog.
 
 Together, we can make Cairo **better**!
 
-## Authors & contributors
+== Authors & contributors
 
 For a full list of all authors and contributors, see link:https://github.com/starkware-libs/cairo/contributors[the contributors page].

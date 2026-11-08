@@ -1,0 +1,5 @@
+[crate_roots]
+foo = "."
+
+[config.global]
+edition = "2024_07"

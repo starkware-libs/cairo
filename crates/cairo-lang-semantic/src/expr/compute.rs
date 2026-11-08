@@ -7,7 +7,9 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
-use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_flat};
+use cairo_lang_defs::db::{
+    DefsGroup, get_all_path_leaves, get_all_path_stars, validate_attributes_flat,
+};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId, MemberId,
@@ -38,6 +40,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{
     self as utils, Intern, OptionHelper, extract_matches, require, try_extract_matches,
+    with_finally,
 };
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
@@ -54,7 +57,7 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable, PatternWrappingInfo,
 };
 use crate::corelib::{
-    self, CorelibSemantic, core_binary_operator, core_bool_ty, core_unary_operator,
+    self, CorelibSemantic, LiteralError, core_binary_operator, core_bool_ty, core_unary_operator,
     false_literal_expr, get_usize_ty, never_ty, true_literal_expr, try_extract_box_inner_type,
     try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, validate_literal,
 };
@@ -86,24 +89,25 @@ use crate::items::visibility;
 use crate::keyword::MACRO_CALL_SITE;
 use crate::lsp_helpers::LspHelpers;
 use crate::resolve::{
-    AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
-    ResolvedGenericItem, Resolver, ResolverMacroData,
+    AsSegments, EnrichedMember, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext,
+    ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverMacroData,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
-use crate::substitution::SemanticRewriter;
+use crate::substitution::{HasDb, SemanticRewriter};
 use crate::types::{
-    ClosureTypeLongId, ConcreteTypeId, add_type_based_diagnostics, are_coupons_enabled,
+    ClosureTypeLongId, ConcreteTypeId, add_value_type_based_diagnostics, are_coupons_enabled,
     extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex, resolve_type_ex,
     verify_fixed_size_array_size, wrap_in_snapshots,
 };
 use crate::usage::Usages;
 use crate::{
-    ConcreteEnumId, ConcreteVariant, GenericArgumentId, GenericParam, LocalItem, Member,
-    Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
+    ConcreteEnumId, ConcreteStructId, ConcreteVariant, GenericArgumentId, GenericParam, LocalItem,
+    Member, Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature,
+    StatementItemKind,
 };
 
 /// The information of a macro expansion.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, salsa::SalsaValue)]
 struct MacroExpansionInfo<'db> {
     /// The code mappings for this expansion.
     mappings: Arc<[CodeMapping]>,
@@ -125,7 +129,7 @@ impl ExpansionOffset {
     pub fn mapped(self, mappings: &[CodeMapping]) -> Option<Self> {
         let mapping = mappings
             .iter()
-            .find(|mapping| mapping.span.start <= self.0 && self.0 <= mapping.span.end)?;
+            .find(|mapping| (mapping.span.start..mapping.span.end).contains(&self.0))?;
         Some(Self::new(match mapping.origin {
             CodeOrigin::Start(offset) => offset.add_width(self.0 - mapping.span.start),
             CodeOrigin::Span(span) | CodeOrigin::CallSite(span) => span.start,
@@ -440,29 +444,61 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
         self.resolver.inference().rewrite(ty).no_err()
     }
 
-    /// Applies inference rewriter to all the expressions in the computation context, and adds
-    /// errors on types from the final expressions.
-    pub fn apply_inference_rewriter_to_exprs(&mut self) {
+    /// Applies inference rewriter to all the rewritable things in the computation context.
+    pub fn apply_inference_rewriter(&mut self) {
         let mut analyzed_types = UnorderedHashSet::<_>::default();
+        if let ContextFunction::Function(Ok(function_id)) = self.function_id
+            && let Ok(sig) = self.db.concrete_function_signature(function_id)
+        {
+            analyzed_types.extend(sig.params.iter().map(|p| p.ty));
+            analyzed_types.extend(sig.implicits.iter().copied());
+            analyzed_types.insert(sig.return_type);
+        }
+        let inference = &mut self.resolver.inference();
         for (_id, expr) in &mut self.arenas.exprs {
-            self.resolver.inference().internal_rewrite(expr).no_err();
+            if let Expr::Literal(literal) = expr {
+                handle_literal_rewrite(inference, self.diagnostics, literal);
+            } else {
+                inference.internal_rewrite(expr).no_err();
+            }
             // Adding an error only once per type.
             if analyzed_types.insert(expr.ty()) {
-                add_type_based_diagnostics(self.db, self.diagnostics, expr.ty(), &*expr);
+                add_value_type_based_diagnostics(self.db, self.diagnostics, expr.ty(), &*expr);
+            }
+        }
+        for (_id, pattern) in &mut self.arenas.patterns {
+            if let Pattern::Literal(literal) = pattern {
+                handle_literal_rewrite(inference, self.diagnostics, &mut literal.literal);
+            } else {
+                inference.internal_rewrite(pattern).no_err();
+            }
+        }
+        for (_id, stmt) in &mut self.arenas.statements {
+            inference.internal_rewrite(stmt).no_err();
+        }
+
+        /// Rewrites a numeric `literal`'s type with the inference results, and - if its type was a
+        /// still-unresolved `NumericLiteral` var (a suffix-less literal, whose value was never
+        /// checked against a concrete type) - validates the value is in range, reporting
+        /// `OutOfRange`. An invalid literal type is not reported here; it is already reported at
+        /// conform time.
+        fn handle_literal_rewrite<'db>(
+            inference: &mut Inference<'db, '_>,
+            diagnostics: &mut SemanticDiagnostics<'db>,
+            literal: &mut ExprNumericLiteral<'db>,
+        ) {
+            let db = inference.get_db();
+            let was_unresolved = matches!(literal.ty.long(db), TypeLongId::NumericLiteral(_));
+            inference.internal_rewrite(literal).no_err();
+            if was_unresolved
+                && let Err(err @ LiteralError::OutOfRange(_)) =
+                    validate_literal(db, literal.ty, &literal.value)
+            {
+                diagnostics.report(literal.stable_ptr, SemanticDiagnosticKind::LiteralError(err));
             }
         }
     }
 
-    /// Applies inference rewriter to all the rewritable things in the computation context.
-    fn apply_inference_rewriter(&mut self) {
-        self.apply_inference_rewriter_to_exprs();
-        for (_id, pattern) in &mut self.arenas.patterns {
-            self.resolver.inference().internal_rewrite(pattern).no_err();
-        }
-        for (_id, stmt) in &mut self.arenas.statements {
-            self.resolver.inference().internal_rewrite(stmt).no_err();
-        }
-    }
     /// Returns whether the current context is inside a loop.
     fn is_inside_loop(&self) -> bool {
         let Some(inner_ctx) = &self.inner_ctx else {
@@ -615,7 +651,7 @@ pub type EnvVariables<'db> = OrderedHashMap<SmolStrId<'db>, Binding<'db>>;
 type EnvItems<'db> = OrderedHashMap<SmolStrId<'db>, StatementGenericItemData<'db>>;
 
 /// Struct that holds the resolved generic type of a statement item.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct StatementGenericItemData<'db> {
     resolved_generic_item: ResolvedGenericItem<'db>,
@@ -624,7 +660,7 @@ struct StatementGenericItemData<'db> {
 
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct Environment<'db> {
     parent: Option<Box<Environment<'db>>>,
     variables: EnvVariables<'db>,
@@ -773,7 +809,7 @@ fn expand_inline_macro<'db>(
     let macro_path = syntax.path(db);
     let crate_id = ctx.resolver.owning_crate_id;
     // Skipping expanding an inline macro if it had a parser error.
-    if syntax.as_syntax_node().descendants(db).any(|node| node.kind(db).is_missing()) {
+    if syntax.as_syntax_node().contains_missing(db) {
         return Err(skip_diagnostic());
     }
     // We call the resolver with a new diagnostics, since the diagnostics should not be reported
@@ -794,9 +830,13 @@ fn expand_inline_macro<'db>(
                 InlineMacroNoMatchingRule(macro_path.identifier(db)),
             ));
         };
+        // If the rule has declaration-time errors, skip expansion to avoid panics on malformed
+        // rules.
+        rule.err?;
         let mut matcher_ctx =
             MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
-        let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)?;
+        let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)
+            .map_err(|err| err.report(ctx.diagnostics))?;
 
         let macro_defsite_resolver_data =
             ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
@@ -875,31 +915,37 @@ fn compute_expr_inline_macro_semantic<'db>(
     syntax: &ast::ExprInlineMacro<'db>,
 ) -> Maybe<Expr<'db>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
-        name: SmolStrId::from(ctx.db, name),
-        content: SmolStrId::from(ctx.db, content),
-        code_mappings: info.mappings.clone(),
-        kind: FileKind::Expr,
-        original_item_removed: true,
-    })
-    .intern(ctx.db);
-    ctx.resolver.files.push(new_file_id);
-    let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
-    let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
-    if let Err(diag_added) = parser_diagnostics.check_error_free() {
-        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
-            ctx.diagnostics.report(
-                syntax.stable_ptr(ctx.db),
-                SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
-            );
-        }
-        return Err(diag_added);
-    }
-    let expr = ctx.run_in_macro_subscope(|ctx| compute_expr_semantic(ctx, &expr_syntax), info);
-    ctx.resolver.macro_call_data = prev_macro_call_data;
-    Ok(expr.expr)
+    with_finally(
+        ctx,
+        |ctx| {
+            let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
+            let new_file_id = FileLongId::Virtual(VirtualFile {
+                parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
+                name: SmolStrId::from(ctx.db, name),
+                content: SmolStrId::from(ctx.db, content),
+                code_mappings: info.mappings.clone(),
+                kind: FileKind::Expr,
+                original_item_removed: true,
+            })
+            .intern(ctx.db);
+            ctx.resolver.files.push(new_file_id);
+            let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
+            let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
+            if let Err(diag_added) = parser_diagnostics.check_error_free() {
+                for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
+                    ctx.diagnostics.report(
+                        syntax.stable_ptr(ctx.db),
+                        SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
+                    );
+                }
+                return Err(diag_added);
+            }
+            Ok(ctx.run_in_macro_subscope(|ctx| compute_expr_semantic(ctx, &expr_syntax), info).expr)
+        },
+        |ctx| {
+            ctx.resolver.macro_call_data = prev_macro_call_data;
+        },
+    )
 }
 
 /// Computes the semantic model of a tail expression, handling inline macros recursively and
@@ -914,27 +960,30 @@ fn compute_tail_semantic<'db>(
 
     let db = ctx.db;
     let expr = tail.expr(db);
-    let res = match &expr {
-        ast::Expr::InlineMacro(inline_macro_syntax) => {
-            match expand_macro_for_statement(ctx, inline_macro_syntax, true, statements_ids) {
-                Ok(Some(expr_and_id)) => expr_and_id,
-                Ok(None) => unreachable!("Tail expression should not be None"),
-                Err(diag_added) => {
-                    let expr = Expr::Missing(ExprMissing {
-                        ty: TypeId::missing(db, diag_added),
-                        stable_ptr: expr.stable_ptr(db),
-                        diag_added,
-                    });
-                    ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr }
+    with_finally(
+        ctx,
+        |ctx| match &expr {
+            ast::Expr::InlineMacro(inline_macro_syntax) => {
+                match expand_macro_for_statement(ctx, inline_macro_syntax, true, statements_ids) {
+                    Ok(Some(expr_and_id)) => expr_and_id,
+                    Ok(None) => unreachable!("Tail expression should not be None"),
+                    Err(diag_added) => {
+                        let expr = Expr::Missing(ExprMissing {
+                            ty: TypeId::missing(db, diag_added),
+                            stable_ptr: expr.stable_ptr(db),
+                            diag_added,
+                        });
+                        ExprAndId { id: ctx.arenas.exprs.alloc(expr.clone()), expr }
+                    }
                 }
             }
-        }
-        _ => compute_expr_semantic(ctx, &expr),
-    };
-
-    // Pop the statement's attributes from the context.
-    ctx.restore_features(feature_restore);
-    res
+            _ => compute_expr_semantic(ctx, &expr),
+        },
+        |ctx| {
+            // Pop the statement's attributes from the context.
+            ctx.restore_features(feature_restore);
+        },
+    )
 }
 
 /// Expands an inline macro used in statement position, computes its semantic model, and extends
@@ -946,55 +995,63 @@ fn expand_macro_for_statement<'db>(
     statements_ids: &mut Vec<StatementId>,
 ) -> Maybe<Option<ExprAndId<'db>>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
-        name: SmolStrId::from(ctx.db, name),
-        content: SmolStrId::from_arcstr(ctx.db, &content),
-        code_mappings: info.mappings.clone(),
-        kind: FileKind::StatementList,
-        original_item_removed: true,
-    })
-    .intern(ctx.db);
-    ctx.resolver.files.push(new_file_id);
-    let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
-    if let Err(diag_added) = parser_diagnostics.check_error_free() {
-        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
-            ctx.diagnostics.report(
-                syntax.stable_ptr(ctx.db),
-                SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
-            );
-        }
-        return Err(diag_added);
-    }
-    let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
-    let (parsed_statements, tail) = statements_and_tail(ctx.db, statement_list);
-    let result = ctx.run_in_macro_subscope(
+    with_finally(
+        ctx,
         |ctx| {
-            compute_statements_semantic_and_extend(ctx, parsed_statements, statements_ids);
-            if is_tail {
-                if let Some(tail_expr) = tail {
-                    Ok(Some(compute_tail_semantic(ctx, &tail_expr, statements_ids)))
-                } else {
-                    Err(ctx.diagnostics.report_after(syntax.stable_ptr(ctx.db), MissingSemicolon))
+            let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
+            let new_file_id = FileLongId::Virtual(VirtualFile {
+                parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
+                name: SmolStrId::from(ctx.db, name),
+                content: SmolStrId::from_arcstr(ctx.db, &content),
+                code_mappings: info.mappings.clone(),
+                kind: FileKind::StatementList,
+                original_item_removed: true,
+            })
+            .intern(ctx.db);
+            ctx.resolver.files.push(new_file_id);
+            let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
+            if let Err(diag_added) = parser_diagnostics.check_error_free() {
+                for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
+                    ctx.diagnostics.report(
+                        syntax.stable_ptr(ctx.db),
+                        SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
+                    );
                 }
-            } else {
-                if let Some(tail_expr) = tail {
-                    let expr = compute_expr_semantic(ctx, &tail_expr.expr(ctx.db));
-                    statements_ids.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
-                        semantic::StatementExpr {
-                            expr: expr.id,
-                            stable_ptr: tail_expr.stable_ptr(ctx.db).into(),
-                        },
-                    )));
-                }
-                Ok(None)
+                return Err(diag_added);
             }
+            let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
+            let (parsed_statements, tail) = statements_and_tail(ctx.db, statement_list);
+            ctx.run_in_macro_subscope(
+                |ctx| {
+                    compute_statements_semantic_and_extend(ctx, parsed_statements, statements_ids);
+                    if is_tail {
+                        if let Some(tail_expr) = tail {
+                            Ok(Some(compute_tail_semantic(ctx, &tail_expr, statements_ids)))
+                        } else {
+                            Err(ctx
+                                .diagnostics
+                                .report_after(syntax.stable_ptr(ctx.db), MissingSemicolon))
+                        }
+                    } else {
+                        if let Some(tail_expr) = tail {
+                            let expr = compute_expr_semantic(ctx, &tail_expr.expr(ctx.db));
+                            statements_ids.push(ctx.arenas.statements.alloc(
+                                semantic::Statement::Expr(semantic::StatementExpr {
+                                    expr: expr.id,
+                                    stable_ptr: tail_expr.stable_ptr(ctx.db).into(),
+                                }),
+                            ));
+                        }
+                        Ok(None)
+                    }
+                },
+                info,
+            )
         },
-        info,
-    );
-    ctx.resolver.macro_call_data = prev_macro_call_data;
-    result
+        |ctx| {
+            ctx.resolver.macro_call_data = prev_macro_call_data;
+        },
+    )
 }
 
 fn compute_expr_unary_semantic<'db>(
@@ -1007,7 +1064,7 @@ fn compute_expr_unary_semantic<'db>(
     match (&unary_op, &inner) {
         // If this is not an actual function call, but actually a minus literal (e.g. -1).
         (UnaryOperator::Minus(_), ast::Expr::Literal(literal)) => {
-            let (value, ty) = literal.numeric_value_and_suffix(db).unwrap_or_default();
+            let (value, ty) = literal.numeric_value_and_suffix(db);
 
             Ok(Expr::Literal(new_literal_expr(ctx, ty, -value, syntax.stable_ptr(db).into())?))
         }
@@ -1394,8 +1451,7 @@ fn compute_expr_fixed_size_array_semantic<'db>(
         };
         let expr_semantic = compute_expr_semantic(ctx, &expr);
         let size = size_const_id
-            .long(db)
-            .to_int()
+            .to_int(db)
             .ok_or_else(|| {
                 ctx.diagnostics.report(syntax.stable_ptr(db), FixedSizeArrayNonNumericSize)
             })?
@@ -1554,9 +1610,6 @@ fn compute_expr_function_call_semantic<'db>(
         ResolvedConcreteItem::Variant(variant) => {
             let concrete_enum_type =
                 TypeLongId::Concrete(ConcreteTypeId::Enum(variant.concrete_enum_id)).intern(db);
-            if concrete_enum_type.is_phantom(db) {
-                ctx.diagnostics.report(syntax.stable_ptr(db), CannotCreateInstancesOfPhantomTypes);
-            }
 
             let named_args: Vec<_> = args_syntax
                 .elements(db)
@@ -1691,6 +1744,39 @@ fn handle_possible_closure_expr<'db>(
     }
 }
 
+/// Returns the stable_ptr of the value-producing sub-expression of `expr_id`: drills through
+/// blocks to the tail, through matches to the first non-`never` arm, through ifs to the first
+/// non-`never` branch. Falls back to the expression's own stable_ptr.
+fn value_producer_stable_ptr<'db>(
+    db: &'db dyn Database,
+    arenas: &Arenas<'db>,
+    expr_id: ExprId,
+) -> SyntaxStablePtrId<'db> {
+    let never = never_ty(db);
+    match &arenas.exprs[expr_id] {
+        Expr::Block(ExprBlock { tail: Some(tail), .. }) => {
+            value_producer_stable_ptr(db, arenas, *tail)
+        }
+        Expr::Match(ExprMatch { arms, stable_ptr, .. }) => arms
+            .iter()
+            .find(|arm| arenas.exprs[arm.expression].ty() != never)
+            .map(|arm| value_producer_stable_ptr(db, arenas, arm.expression))
+            .unwrap_or_else(|| stable_ptr.untyped()),
+        Expr::If(ExprIf { if_block, else_block, stable_ptr, .. }) => {
+            if arenas.exprs[*if_block].ty() != never {
+                value_producer_stable_ptr(db, arenas, *if_block)
+            } else if let Some(else_block) = else_block
+                && arenas.exprs[*else_block].ty() != never
+            {
+                value_producer_stable_ptr(db, arenas, *else_block)
+            } else {
+                stable_ptr.untyped()
+            }
+        }
+        other => other.stable_ptr().untyped(),
+    }
+}
+
 pub fn compute_root_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::ExprBlock<'db>,
@@ -1723,16 +1809,7 @@ pub fn compute_root_expr<'db>(
         res_ty,
         return_type,
         ctx.diagnostics,
-        || {
-            ctx.signature
-                .map(|s| match s.stable_ptr.lookup(db).ret_ty(db) {
-                    OptionReturnTypeClause::Empty(_) => syntax.stable_ptr(db).untyped(),
-                    OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
-                        return_type_clause.ty(db).stable_ptr(db).untyped()
-                    }
-                })
-                .unwrap_or_else(|| syntax.stable_ptr(db).untyped())
-        },
+        || value_producer_stable_ptr(db, &ctx.arenas, res),
         |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
     );
 
@@ -2386,10 +2463,13 @@ fn compute_expr_closure_semantic<'db>(
                 syntax.stable_ptr(db).untyped(),
             );
         }
-
-        params.iter().filter(|param| param.mutability == Mutability::Reference).for_each(|param| {
-            new_ctx.diagnostics.report(param.stable_ptr(ctx.db), RefClosureParam);
-        });
+        for param in &params {
+            let stable_ptr = param.stable_ptr(ctx.db);
+            if param.mutability == Mutability::Reference {
+                new_ctx.diagnostics.report(stable_ptr, RefClosureParam);
+            }
+            add_value_type_based_diagnostics(ctx.db, new_ctx.diagnostics, param.ty, stable_ptr);
+        }
 
         new_ctx.variable_tracker.extend_from_environment(&new_ctx.environment);
 
@@ -2405,6 +2485,10 @@ fn compute_expr_closure_semantic<'db>(
                 new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr(db).untyped()))
             }
         };
+        if let OptionReturnTypeClause::ReturnTypeClause(ty_syntax) = syntax.ret_ty(db) {
+            let stable_ptr = ty_syntax.ty(db).stable_ptr(db);
+            add_value_type_based_diagnostics(ctx.db, new_ctx.diagnostics, return_type, stable_ptr);
+        }
 
         let old_inner_ctx = new_ctx
             .inner_ctx
@@ -2880,6 +2964,20 @@ fn maybe_compute_pattern_semantic<'db>(
                 }
             }
 
+            // A resolver-modifier path (`$defsite`/`$callsite`) is never a plain variable binding.
+            // If it didn't resolve to a variant above, surface the real resolution error (e.g.
+            // `Expected path after modifier`) instead of silently treating its trailing segment as
+            // a new binding.
+            if let ast::OptionTerminalDollar::TerminalDollar(_) = path.dollar(db) {
+                ctx.resolver.resolve_generic_path_with_args(
+                    ctx.diagnostics,
+                    path,
+                    NotFoundItemType::Identifier,
+                    ResolutionContext::Statement(&mut ctx.environment),
+                )?;
+                return Err(ctx.diagnostics.report(path.stable_ptr(ctx.db), Unsupported));
+            }
+
             // Paths with a single element are treated as identifiers, which will result in a
             // variable pattern if no matching enum variant is found. If a matching enum
             // variant exists, it is resolved to the corresponding concrete variant.
@@ -2958,7 +3056,13 @@ fn maybe_compute_pattern_semantic<'db>(
                             },
                         );
                     })?;
-                    check_struct_member_is_visible(ctx, &member, stable_ptr, member_name);
+                    check_struct_member_is_visible(
+                        ctx,
+                        member.id,
+                        member.visibility,
+                        stable_ptr,
+                        member_name,
+                    );
                     used_members.insert(member_name);
                     Some(member)
                 };
@@ -3466,10 +3570,6 @@ fn struct_ctor_expr<'db>(
         .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
         .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(db), NotAStruct))?;
 
-    if ty.is_phantom(db) {
-        ctx.diagnostics.report(ctor_syntax.stable_ptr(db), CannotCreateInstancesOfPhantomTypes);
-    }
-
     let members = db.concrete_struct_members(concrete_struct_id)?;
     let mut member_exprs: OrderedHashMap<MemberId<'_>, Option<ExprId>> = OrderedHashMap::default();
     let mut base_struct = None;
@@ -3488,7 +3588,8 @@ fn struct_ctor_expr<'db>(
                 };
                 check_struct_member_is_visible(
                     ctx,
-                    member,
+                    member.id,
+                    member.visibility,
                     arg_identifier.stable_ptr(db).untyped(),
                     arg_name,
                 );
@@ -3578,7 +3679,8 @@ fn struct_ctor_expr<'db>(
         if base_struct.is_some() {
             check_struct_member_is_visible(
                 ctx,
-                member,
+                member.id,
+                member.visibility,
                 base_struct.clone().unwrap().1.stable_ptr(db).untyped(),
                 member_name,
             );
@@ -3638,19 +3740,23 @@ fn new_literal_expr<'db>(
         let ty = try_get_core_ty_by_name(ctx.db, ty_str, vec![])
             .map_err(|err| ctx.diagnostics.report(stable_ptr.untyped(), err))?;
         if let Err(err) = validate_literal(ctx.db, ty, &value) {
-            ctx.diagnostics.report(stable_ptr, SemanticDiagnosticKind::LiteralError(err));
+            let is_invalid_type = matches!(err, LiteralError::InvalidTypeForLiteral(_));
+            let diag =
+                ctx.diagnostics.report(stable_ptr, SemanticDiagnosticKind::LiteralError(err));
+            // The type is malformed (generic type with zero args); returning Ok would ICE
+            // downstream queries via GenericSubstitution::new zip_eq mismatch.
+            if is_invalid_type {
+                return Err(diag);
+            }
         }
         return Ok(ExprNumericLiteral { value, ty, stable_ptr });
     };
-    let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
-
-    // Numeric trait.
-    let trait_id = ctx.db.core_info().numeric_literal_trt;
-    let generic_args = vec![GenericArgumentId::Type(ty)];
-    let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(ctx.db);
-    let lookup_context = ctx.resolver.impl_lookup_context();
+    // Use a deferred `NumericLiteral` placeholder type. It synthetically satisfies the standard
+    // memory traits (so its `Destruct`/`Drop` can be proven inside trait-solver sandboxes) and
+    // unifies with whatever concrete type later constraints pin it to; if no constraint pins it,
+    // finalization defaults it to `felt252`.
     let inference = &mut ctx.resolver.inference();
-    inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context);
+    let ty = inference.new_integer_literal_type(Some(stable_ptr.untyped()));
 
     Ok(ExprNumericLiteral { value, ty, stable_ptr })
 }
@@ -3662,7 +3768,7 @@ fn literal_to_semantic<'db>(
 ) -> Maybe<ExprNumericLiteral<'db>> {
     let db = ctx.db;
 
-    let (value, ty) = literal_syntax.numeric_value_and_suffix(db).unwrap_or_default();
+    let (value, ty) = literal_syntax.numeric_value_and_suffix(db);
 
     new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr(db).into())
 }
@@ -3763,10 +3869,24 @@ fn dot_expr<'db>(
     rhs_syntax: ast::Expr<'db>,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Maybe<Expr<'db>> {
+    let db = ctx.db;
     // Find MemberId.
     match rhs_syntax {
-        ast::Expr::Path(expr) => member_access_expr(ctx, lexpr, expr, stable_ptr),
+        ast::Expr::Path(expr) => {
+            let member_name = expr_as_identifier(ctx, &expr, db)?;
+            member_access_expr(ctx, lexpr, member_name, expr.stable_ptr(db).untyped(), stable_ptr)
+        }
         ast::Expr::FunctionCall(expr) => method_call_expr(ctx, lexpr, expr, stable_ptr),
+        ast::Expr::Literal(literal) => {
+            let literal_stable_ptr = literal.stable_ptr(db).untyped();
+            // A tuple index must be a plain non-negative decimal integer, with no base prefix
+            // (e.g. `0x1`) and no type suffix (e.g. `0_u8`).
+            let text = literal.text(db);
+            if !text.long(db).bytes().all(|b| b.is_ascii_digit()) {
+                return Err(ctx.diagnostics.report(literal_stable_ptr, InvalidMemberExpression));
+            }
+            member_access_expr(ctx, lexpr, text, literal_stable_ptr, stable_ptr)
+        }
         _ => Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(ctx.db), InvalidMemberExpression)),
     }
 }
@@ -3912,50 +4032,57 @@ fn method_call_expr<'db>(
     expr_function_call(ctx, function_id, named_args, expr.stable_ptr(db), stable_ptr)
 }
 
-/// Computes the semantic model of a member access expression (e.g. "expr.member").
+/// Computes the semantic model of a member access expression: either a named struct member
+/// (`expr.member`) or a positional tuple element (`t.0`).
 fn member_access_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     lexpr: ExprAndId<'db>,
-    rhs_syntax: ast::ExprPath<'db>,
+    member_name: SmolStrId<'db>,
+    rhs_stable_ptr: SyntaxStablePtrId<'db>,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
-    // Find MemberId.
-    let member_name = expr_as_identifier(ctx, &rhs_syntax, db)?;
-    let (n_snapshots, long_ty) =
-        finalized_snapshot_peeled_ty(ctx, lexpr.ty(), rhs_syntax.stable_ptr(db))?;
+    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, lexpr.ty(), rhs_stable_ptr)?;
 
     match &long_ty {
         TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
-            let Some(EnrichedTypeMemberAccess { member, deref_functions }) =
-                get_enriched_type_member_access(ctx, lexpr.clone(), stable_ptr, member_name)?
+            // Resolve the accessed member - a named struct member or a positional tuple element -
+            // following the `Deref` chain if needed.
+            let Some(EnrichedTypeMemberAccess {
+                member: EnrichedMember { kind, ty: member_ty, visibility },
+                deref_functions,
+            }) = get_enriched_type_member_access(ctx, lexpr.clone(), stable_ptr, member_name)?
             else {
                 return Err(ctx.diagnostics.report(
-                    rhs_syntax.stable_ptr(db),
-                    NoSuchTypeMember { ty: long_ty.intern(ctx.db), member_name },
+                    rhs_stable_ptr,
+                    NoSuchTypeMember { ty: long_ty.intern(db), member_name },
                 ));
             };
-            check_struct_member_is_visible(
-                ctx,
-                &member,
-                rhs_syntax.stable_ptr(db).untyped(),
-                member_name,
-            );
-            let member_path = match &long_ty {
-                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))
-                    if n_snapshots == 0 && deref_functions.is_empty() =>
-                {
-                    lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
-                        parent: Box::new(parent),
-                        member_id: member.id,
-                        stable_ptr,
-                        concrete_struct_id: *concrete_struct_id,
-                        ty: member.ty,
-                    })
-                }
-                _ => None,
+            if let MemberAccessKind::Struct { member_id, .. } = kind {
+                check_struct_member_is_visible(
+                    ctx,
+                    member_id,
+                    visibility.unwrap(),
+                    rhs_stable_ptr,
+                    member_name,
+                );
+            }
+
+            // A member is an assignable place only if it is directly on the (owned) aggregate -
+            // i.e. not behind a snapshot or a deref.
+            let member_path = if n_snapshots == 0 && deref_functions.is_empty() {
+                lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
+                    parent: Box::new(parent),
+                    kind: kind.clone(),
+                    stable_ptr,
+                    ty: member_ty,
+                })
+            } else {
+                None
             };
+
+            // Replay the deref functions to build the actual accessed expression.
             let mut derefed_expr: ExprAndId<'_> = lexpr;
             for (deref_function, mutability) in &deref_functions {
                 let cur_expr = expr_function_call(
@@ -3970,19 +4097,15 @@ fn member_access_expr<'db>(
                 derefed_expr =
                     ExprAndId { expr: cur_expr.clone(), id: ctx.arenas.exprs.alloc(cur_expr) };
             }
-            let (n_snapshots, long_ty) =
-                finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), rhs_syntax.stable_ptr(db))?;
-            let derefed_expr_concrete_struct_id = match long_ty {
-                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
-                    concrete_struct_id
-                }
-                _ => unreachable!(),
-            };
-            let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
+            // The member access is performed on the (possibly derefed) aggregate, so the resulting
+            // type and desnaps are governed by the snapshots of `derefed_expr`.
+            let (n_snapshots, _) =
+                finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), rhs_stable_ptr)?;
+
+            let ty = wrap_in_snapshots(db, member_ty, n_snapshots);
             let mut final_expr = Expr::MemberAccess(ExprMemberAccess {
                 expr: derefed_expr.id,
-                concrete_struct_id: derefed_expr_concrete_struct_id,
-                member: member.id,
+                kind,
                 ty,
                 member_path,
                 n_snapshots,
@@ -4003,29 +4126,61 @@ fn member_access_expr<'db>(
 
         TypeLongId::Snapshot(_) => {
             // TODO(spapini): Handle snapshot members.
-            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
+            Err(ctx.diagnostics.report(rhs_stable_ptr, Unsupported))
         }
-        TypeLongId::Closure(_) => {
-            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
-        }
-        TypeLongId::Var(_) => Err(ctx.diagnostics.report(
-            rhs_syntax.stable_ptr(db),
+        TypeLongId::Closure(_) => Err(ctx.diagnostics.report(rhs_stable_ptr, Unsupported)),
+        TypeLongId::Var(_) | TypeLongId::NumericLiteral(_) => Err(ctx.diagnostics.report(
+            rhs_stable_ptr,
             InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
         )),
         TypeLongId::ImplType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => {
-            Err(ctx.diagnostics.report(
-                rhs_syntax.stable_ptr(db),
-                TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
-            ))
+            Err(ctx
+                .diagnostics
+                .report(rhs_stable_ptr, TypeHasNoMembers { ty: long_ty.intern(db), member_name }))
         }
         TypeLongId::Missing(diag_added) => Err(*diag_added),
     }
 }
 
+/// Builds the enriched members for the named members of a struct, each reachable through
+/// `n_derefs` deref operations.
+fn struct_enriched_members<'db, 'm>(
+    concrete_struct_id: ConcreteStructId<'db>,
+    members: &'m OrderedHashMap<SmolStrId<'db>, Member<'db>>,
+    n_derefs: usize,
+) -> impl Iterator<Item = (SmolStrId<'db>, (EnrichedMember<'db>, usize))> + 'm {
+    members.iter().map(move |(name, member)| {
+        let member = EnrichedMember {
+            kind: MemberAccessKind::Struct { concrete_struct_id, member_id: member.id },
+            ty: member.ty,
+            visibility: Some(member.visibility),
+        };
+        (*name, (member, n_derefs))
+    })
+}
+
+/// Builds the enriched members for the positional elements of a tuple, keyed by their decimal
+/// index (`"0"`, `"1"`, ...), each reachable through `n_derefs` deref operations.
+fn tuple_index_members<'db, 'a>(
+    db: &'db dyn Database,
+    tys: &'a [TypeId<'db>],
+    n_derefs: usize,
+) -> impl Iterator<Item = (SmolStrId<'db>, (EnrichedMember<'db>, usize))> + 'a {
+    let tuple_ty = TypeLongId::Tuple(tys.to_vec()).intern(db);
+    tys.iter().enumerate().map(move |(index, ty)| {
+        let member = EnrichedMember {
+            kind: MemberAccessKind::Index { tuple_ty, index },
+            ty: *ty,
+            visibility: None,
+        };
+        (SmolStrId::from(db, index.to_string()), (member, n_derefs))
+    })
+}
+
 /// Returns the member and the deref operations needed for its access.
 ///
-/// Enriched members include both direct members (in case of a struct), and members of derefed types
-/// if the type implements the Deref trait into a struct.
+/// Enriched members include both direct members (in case of a struct or a tuple), and members of
+/// derefed types if the type implements the Deref trait into a struct or a tuple.
 fn get_enriched_type_member_access<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     expr: ExprAndId<'db>,
@@ -4060,20 +4215,28 @@ fn get_enriched_type_member_access<'db>(
         }
         Entry::Vacant(_) => {
             let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, stable_ptr)?;
-            let members =
-                if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
+            let members = match long_ty {
+                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
                     let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
                     if let Some(member) = members.get(&accessed_member_name) {
                         // Found direct member access - so directly returning it.
                         return Ok(Some(EnrichedTypeMemberAccess {
-                            member: member.clone(),
+                            member: EnrichedMember {
+                                kind: MemberAccessKind::Struct {
+                                    concrete_struct_id,
+                                    member_id: member.id,
+                                },
+                                ty: member.ty,
+                                visibility: Some(member.visibility),
+                            },
                             deref_functions: vec![],
                         }));
                     }
-                    members.iter().map(|(k, v)| (*k, (v.clone(), 0))).collect()
-                } else {
-                    Default::default()
-                };
+                    struct_enriched_members(concrete_struct_id, members, 0).collect()
+                }
+                TypeLongId::Tuple(tys) => tuple_index_members(ctx.db, &tys, 0).collect(),
+                _ => Default::default(),
+            };
 
             EnrichedMembers {
                 members,
@@ -4103,21 +4266,34 @@ fn enrich_members<'db>(
 ) -> Maybe<()> {
     let EnrichedMembers { members: enriched, deref_chain, explored_derefs } = enriched_members;
 
-    // Add members of derefed types.
+    // Add members of derefed types. A struct contributes its named members; a tuple contributes
+    // its positional elements (a tuple cannot itself have a `Deref` impl, but a type may `Deref`
+    // into a tuple).
     for deref_info in deref_chain.iter().skip(*explored_derefs).cloned() {
         *explored_derefs += 1;
         let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, deref_info.target_ty, stable_ptr)?;
-        if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
-            let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-            for (member_name, member) in members.iter() {
-                // Insert member if there is not already a member with the same name.
-                enriched.entry(*member_name).or_insert_with(|| (member.clone(), *explored_derefs));
+        match &long_ty {
+            TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
+                let members = ctx.db.concrete_struct_members(*concrete_struct_id)?;
+                for (name, value) in
+                    struct_enriched_members(*concrete_struct_id, members, *explored_derefs)
+                {
+                    // Insert member if there is not already a member with the same name.
+                    enriched.entry(name).or_insert(value);
+                }
             }
-            // If member is contained we can stop the calculation post the lookup.
-            if members.contains_key(&accessed_member_name) {
-                // Found member, so exploration isn't done.
-                break;
+            TypeLongId::Tuple(tys) => {
+                for (name, value) in tuple_index_members(ctx.db, tys, *explored_derefs) {
+                    // Insert member if there is not already a member with the same name.
+                    enriched.entry(name).or_insert(value);
+                }
             }
+            _ => continue,
+        };
+
+        // If the member is found we can stop the calculation post the lookup.
+        if enriched.contains_key(&accessed_member_name) {
+            break;
         }
     }
     Ok::<(), cairo_lang_diagnostics::DiagnosticAdded>(())
@@ -4252,18 +4428,23 @@ pub fn get_binded_expr_by_name<'db>(
     is_callsite_prefixed: bool,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Option<Expr<'db>> {
+    let db = ctx.db;
     let mut maybe_env = Some(&mut *ctx.environment);
-    let mut cur_offset =
-        ExpansionOffset::new(stable_ptr.lookup(ctx.db).as_syntax_node().offset(ctx.db));
+    // Computed lazily, preventing unneeded querying.
+    let mut cur_offset: Option<ExpansionOffset> = None;
     let mut found_callsite_scope = false;
     while let Some(env) = maybe_env {
         // If a variable is from an expanded macro placeholder, we need to look for it in the parent
         // env.
         if let Some(macro_info) = &env.macro_info
-            && let Some(new_offset) = cur_offset.mapped(&macro_info.mappings)
+            && let Some(new_offset) = cur_offset
+                .get_or_insert_with(|| {
+                    ExpansionOffset::new(stable_ptr.lookup(db).as_syntax_node().offset(db))
+                })
+                .mapped(&macro_info.mappings)
         {
             maybe_env = env.parent.as_deref_mut();
-            cur_offset = new_offset;
+            cur_offset = Some(new_offset);
             continue;
         }
         if (!is_callsite_prefixed || found_callsite_scope)
@@ -4479,360 +4660,394 @@ pub fn compute_and_append_statement_semantic<'db>(
 ) -> Maybe<()> {
     // Push the statement's attributes into the context, restored after the computation is resolved.
     let feature_restore = ctx.add_features_from_statement(&syntax);
-
-    let db = ctx.db;
-    let _ = match &syntax {
-        ast::Statement::Let(let_syntax) => {
-            let rhs_syntax = &let_syntax.rhs(db);
-            let (rhs_expr, ty) = match let_syntax.type_clause(db) {
-                ast::OptionTypeClause::Empty(_) => {
-                    let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
-                    let inferred_type = rhs_expr.ty();
-                    (rhs_expr, inferred_type)
-                }
-                ast::OptionTypeClause::TypeClause(type_clause) => {
-                    let var_type_path = type_clause.ty(db);
-                    let explicit_type = resolve_type_ex(
-                        db,
-                        ctx.diagnostics,
-                        ctx.resolver,
-                        &var_type_path,
-                        ResolutionContext::Statement(&mut ctx.environment),
-                    );
-
-                    let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
-                    let inferred_type = ctx.reduce_ty(rhs_expr.ty());
-                    if !inferred_type.is_missing(db) {
-                        let inference = &mut ctx.resolver.inference();
-                        let _ = inference.conform_ty_for_diag(
-                            inferred_type,
-                            explicit_type,
-                            ctx.diagnostics,
-                            || rhs_syntax.stable_ptr(db).untyped(),
-                            |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
-                        );
-                    }
-                    (rhs_expr, explicit_type)
-                }
-            };
-            let rhs_expr_id = rhs_expr.id;
-
-            let else_clause = match let_syntax.let_else_clause(db) {
-                ast::OptionLetElseClause::Empty(_) => None,
-                ast::OptionLetElseClause::LetElseClause(else_clause) => {
-                    let else_block_syntax = else_clause.else_block(db);
-                    let else_block_stable_ptr = else_block_syntax.stable_ptr(db);
-
-                    let else_block =
-                        compute_expr_semantic(ctx, &ast::Expr::Block(else_block_syntax));
-
-                    if else_block.ty() != never_ty(db) {
-                        // Report the error, but continue processing.
-                        ctx.diagnostics.report(else_block_stable_ptr, NonNeverLetElseType);
-                    }
-
-                    Some(else_block.id)
-                }
-            };
-
-            let pattern = compute_pattern_semantic(
-                ctx,
-                &let_syntax.pattern(db),
-                ty,
-                &UnorderedHashMap::default(),
-            );
-            let variables = pattern.variables(&ctx.arenas.patterns);
-            let mut variable_names_in_pattern = UnorderedHashSet::<_>::default();
-            for v in variables {
-                if !variable_names_in_pattern.insert(v.name) {
-                    ctx.diagnostics
-                        .report(v.stable_ptr, VariableDefinedMultipleTimesInPattern(v.name));
-                }
-                let var_def = Binding::LocalVar(v.var.clone());
-                if let Some(old_var) = ctx.environment.variables.insert(v.name, var_def.clone()) {
-                    if matches!(old_var, Binding::LocalItem(_)) {
-                        return Err(ctx
-                            .diagnostics
-                            .report(v.stable_ptr, MultipleDefinitionforBinding(v.name)));
-                    }
-                    add_unused_binding_warning(
-                        ctx.diagnostics,
-                        ctx.db,
-                        &ctx.environment.used_variables,
-                        v.name,
-                        &old_var,
-                        &ctx.resolver.data.feature_config,
-                    );
-                }
-                if ctx.macro_defined_var_unhygienic
-                    && let Some(macro_info) = &mut ctx.environment.macro_info
-                {
-                    macro_info.vars_to_expose.push((v.name, var_def.clone()));
-                }
-                let _ = ctx.variable_tracker.insert(var_def);
-            }
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Let(
-                semantic::StatementLet {
-                    pattern: pattern.id,
-                    expr: rhs_expr_id,
-                    else_clause,
-                    stable_ptr: syntax.stable_ptr(db),
-                },
-            )));
-            Ok(()) as Maybe<()>
-        }
-        ast::Statement::Expr(stmt_expr_syntax) => {
-            let expr_syntax = stmt_expr_syntax.expr(db);
-            if let ast::Expr::InlineMacro(inline_macro_syntax) = &expr_syntax {
-                expand_macro_for_statement(ctx, inline_macro_syntax, false, statements)?;
-            } else {
-                let expr = compute_expr_semantic(ctx, &expr_syntax);
-                if matches!(stmt_expr_syntax.semicolon(db), ast::OptionTerminalSemicolon::Empty(_))
-                    && !matches!(
-                        expr_syntax,
-                        ast::Expr::Block(_)
-                            | ast::Expr::If(_)
-                            | ast::Expr::Match(_)
-                            | ast::Expr::Loop(_)
-                            | ast::Expr::While(_)
-                            | ast::Expr::For(_)
-                    )
-                {
-                    ctx.diagnostics.report_after(expr_syntax.stable_ptr(db), MissingSemicolon);
-                }
-                let ty: TypeId<'_> = expr.ty();
-                if let TypeLongId::Concrete(concrete) = ty.long(db)
-                    && concrete.is_must_use(db)?
-                {
-                    ctx.diagnostics.report(expr_syntax.stable_ptr(db), UnhandledMustUseType(ty));
-                }
-                if let Expr::FunctionCall(expr_function_call) = &expr.expr {
-                    let generic_function_id =
-                        expr_function_call.function.long(db).function.generic_function;
-                    if generic_function_id.is_must_use(db)? {
-                        ctx.diagnostics
-                            .report(expr_syntax.stable_ptr(db), UnhandledMustUseFunction);
-                    }
-                }
-                statements.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
-                    semantic::StatementExpr { expr: expr.id, stable_ptr: syntax.stable_ptr(db) },
-                )));
-            }
-            Ok(())
-        }
-        ast::Statement::Continue(continue_syntax) => {
-            if !ctx.is_inside_loop() {
-                return Err(ctx
-                    .diagnostics
-                    .report(continue_syntax.stable_ptr(db), ContinueOnlyAllowedInsideALoop));
-            }
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Continue(
-                semantic::StatementContinue { stable_ptr: syntax.stable_ptr(db) },
-            )));
-            Ok(())
-        }
-        ast::Statement::Return(return_syntax) => {
-            let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(db) {
-                ast::OptionExprClause::Empty(empty_clause) => {
-                    (None, unit_ty(db), empty_clause.stable_ptr(db).untyped())
-                }
-                ast::OptionExprClause::ExprClause(expr_clause) => {
-                    let expr_syntax = expr_clause.expr(db);
-                    let expr = compute_expr_semantic(ctx, &expr_syntax);
-                    (Some(expr.id), expr.ty(), expr_syntax.stable_ptr(db).untyped())
-                }
-            };
-            let expected_ty = match &ctx.inner_ctx {
-                None => ctx.get_return_type().ok_or_else(|| {
-                    ctx.diagnostics.report(
-                        return_syntax.stable_ptr(db),
-                        UnsupportedOutsideOfFunction(
-                            UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
-                        ),
-                    )
-                })?,
-                Some(ctx) => ctx.return_type,
-            };
-
-            let expected_ty = ctx.reduce_ty(expected_ty);
-            let expr_ty = ctx.reduce_ty(expr_ty);
-            if !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
-                let inference = &mut ctx.resolver.inference();
-                let _ = inference.conform_ty_for_diag(
-                    expr_ty,
-                    expected_ty,
-                    ctx.diagnostics,
-                    || stable_ptr,
-                    |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
-                );
-            }
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Return(
-                semantic::StatementReturn { expr_option, stable_ptr: syntax.stable_ptr(db) },
-            )));
-            Ok(())
-        }
-        ast::Statement::Break(break_syntax) => {
-            let (expr_option, ty, stable_ptr) = match break_syntax.expr_clause(db) {
-                ast::OptionExprClause::Empty(expr_empty) => {
-                    (None, unit_ty(db), expr_empty.stable_ptr(db).untyped())
-                }
-                ast::OptionExprClause::ExprClause(expr_clause) => {
-                    let expr_syntax = expr_clause.expr(db);
-                    let expr = compute_expr_semantic(ctx, &expr_syntax);
-
-                    (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
-                }
-            };
-            let ty = ctx.reduce_ty(ty);
-
-            if !ctx.is_inside_loop() {
-                return Err(ctx
-                    .diagnostics
-                    .report(break_syntax.stable_ptr(db), BreakOnlyAllowedInsideALoop));
-            }
-
-            if let Some(inner_ctx) = &mut ctx.inner_ctx {
-                match &mut inner_ctx.kind {
-                    InnerContextKind::Loop { type_merger, .. } => {
-                        type_merger.try_merge_types(
-                            ctx.db,
-                            ctx.diagnostics,
-                            &mut ctx.resolver.inference(),
-                            ty,
-                            stable_ptr,
-                        );
-                    }
-                    InnerContextKind::While | InnerContextKind::For => {
-                        if expr_option.is_some() {
-                            ctx.diagnostics.report(
-                                break_syntax.stable_ptr(db),
-                                BreakWithValueOnlyAllowedInsideALoop,
+    with_finally(
+        ctx,
+        |ctx| {
+            let db = ctx.db;
+            match &syntax {
+                ast::Statement::Let(let_syntax) => {
+                    let rhs_syntax = &let_syntax.rhs(db);
+                    let (rhs_expr, ty) = match let_syntax.type_clause(db) {
+                        ast::OptionTypeClause::Empty(_) => {
+                            let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
+                            let inferred_type = rhs_expr.ty();
+                            (rhs_expr, inferred_type)
+                        }
+                        ast::OptionTypeClause::TypeClause(type_clause) => {
+                            let var_type_path = type_clause.ty(db);
+                            let explicit_type = resolve_type_ex(
+                                db,
+                                ctx.diagnostics,
+                                ctx.resolver,
+                                &var_type_path,
+                                ResolutionContext::Statement(&mut ctx.environment),
                             );
-                        };
-                    }
-                    InnerContextKind::Closure => unreachable!("Not inside a loop."),
-                }
-            }
 
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Break(
-                semantic::StatementBreak { expr_option, stable_ptr: syntax.stable_ptr(db) },
-            )));
-            Ok(())
-        }
-        ast::Statement::Item(stmt_item_syntax) => {
-            let item_syntax = &stmt_item_syntax.item(db);
-            match item_syntax {
-                ast::ModuleItem::Constant(const_syntax) => {
-                    let lhs = const_syntax.type_clause(db).ty(db);
-                    let rhs = const_syntax.value(db);
-                    let rhs_expr = compute_expr_semantic(ctx, &rhs);
-                    let explicit_type = resolve_type_ex(
-                        db,
-                        ctx.diagnostics,
-                        ctx.resolver,
-                        &lhs,
-                        ResolutionContext::Statement(&mut ctx.environment),
-                    );
-                    let rhs_resolved_expr = resolve_const_expr_and_evaluate(
-                        db,
-                        ctx,
-                        &rhs_expr,
-                        stmt_item_syntax.stable_ptr(db).untyped(),
-                        explicit_type,
-                        false,
-                    );
-                    let name_syntax = const_syntax.name(db);
-                    let name = name_syntax.text(db);
-                    let rhs_id =
-                        StatementConstLongId(ctx.resolver.module_id, const_syntax.stable_ptr(db));
-                    let var_def = Binding::LocalItem(LocalItem {
-                        id: StatementItemId::Constant(rhs_id.intern(db)),
-                        kind: StatementItemKind::Constant(
-                            rhs_resolved_expr,
-                            rhs_resolved_expr.ty(db)?,
-                        ),
-                    });
-                    add_value_to_statement_environment(
-                        ctx,
-                        name,
-                        var_def,
-                        name_syntax.stable_ptr(db),
-                    );
-                }
-                ast::ModuleItem::Use(use_syntax) => {
-                    for leaf in get_all_path_leaves(db, use_syntax) {
-                        let stable_ptr = leaf.stable_ptr(db);
-                        let resolved_item = ctx.resolver.resolve_use_path(
-                            ctx.diagnostics,
-                            ast::UsePath::Leaf(leaf),
-                            ResolutionContext::Statement(&mut ctx.environment),
-                        )?;
-                        let var_def_id = StatementItemId::Use(
-                            StatementUseLongId(ctx.resolver.module_id, stable_ptr).intern(db),
-                        );
-                        let name = var_def_id.name(db);
-                        match resolved_item {
-                            ResolvedGenericItem::GenericConstant(const_id) => {
-                                let const_value_id = db.constant_const_value(const_id)?;
-                                let var_def = Binding::LocalItem(LocalItem {
-                                    id: var_def_id,
-                                    kind: StatementItemKind::Constant(
-                                        const_value_id,
-                                        const_value_id.ty(db)?,
-                                    ),
-                                });
-                                add_value_to_statement_environment(ctx, name, var_def, stable_ptr);
+                            let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
+                            let inferred_type = ctx.reduce_ty(rhs_expr.ty());
+                            if !inferred_type.is_missing(db) {
+                                let inference = &mut ctx.resolver.inference();
+                                let _ = inference.conform_ty_for_diag(
+                                    inferred_type,
+                                    explicit_type,
+                                    ctx.diagnostics,
+                                    || rhs_syntax.stable_ptr(db).untyped(),
+                                    |actual_ty, expected_ty| WrongArgumentType {
+                                        expected_ty,
+                                        actual_ty,
+                                    },
+                                );
                             }
-                            item @ (ResolvedGenericItem::GenericType(_)
-                            | ResolvedGenericItem::Module(_)) => {
-                                add_item_to_statement_environment(ctx, name, item, stable_ptr);
+                            (rhs_expr, explicit_type)
+                        }
+                    };
+                    let rhs_expr_id = rhs_expr.id;
+
+                    let else_clause = match let_syntax.let_else_clause(db) {
+                        ast::OptionLetElseClause::Empty(_) => None,
+                        ast::OptionLetElseClause::LetElseClause(else_clause) => {
+                            let else_block_syntax = else_clause.else_block(db);
+                            let else_block_stable_ptr = else_block_syntax.stable_ptr(db);
+
+                            let else_block =
+                                compute_expr_semantic(ctx, &ast::Expr::Block(else_block_syntax));
+
+                            if else_block.ty() != never_ty(db) {
+                                // Report the error, but continue processing.
+                                ctx.diagnostics.report(else_block_stable_ptr, NonNeverLetElseType);
                             }
-                            ResolvedGenericItem::GenericFunction(_)
-                            | ResolvedGenericItem::GenericTypeAlias(_)
-                            | ResolvedGenericItem::GenericImplAlias(_)
-                            | ResolvedGenericItem::Variant(_)
-                            | ResolvedGenericItem::Trait(_)
-                            | ResolvedGenericItem::Impl(_)
-                            | ResolvedGenericItem::Variable(_)
-                            | ResolvedGenericItem::TraitItem(_)
-                            | ResolvedGenericItem::Macro(_) => {
+
+                            Some(else_block.id)
+                        }
+                    };
+
+                    let pattern = compute_pattern_semantic(
+                        ctx,
+                        &let_syntax.pattern(db),
+                        ty,
+                        &UnorderedHashMap::default(),
+                    );
+                    let variables = pattern.variables(&ctx.arenas.patterns);
+                    let mut variable_names_in_pattern = UnorderedHashSet::<_>::default();
+                    for v in variables {
+                        if !variable_names_in_pattern.insert(v.name) {
+                            ctx.diagnostics.report(
+                                v.stable_ptr,
+                                VariableDefinedMultipleTimesInPattern(v.name),
+                            );
+                        }
+                        let var_def = Binding::LocalVar(v.var.clone());
+                        if let Some(old_var) =
+                            ctx.environment.variables.insert(v.name, var_def.clone())
+                        {
+                            if matches!(old_var, Binding::LocalItem(_)) {
                                 return Err(ctx
                                     .diagnostics
-                                    .report(stable_ptr, UnsupportedUseItemInStatement));
+                                    .report(v.stable_ptr, MultipleDefinitionforBinding(v.name)));
+                            }
+                            add_unused_binding_warning(
+                                ctx.diagnostics,
+                                ctx.db,
+                                &ctx.environment.used_variables,
+                                v.name,
+                                &old_var,
+                                &ctx.resolver.data.feature_config,
+                            );
+                        }
+                        if ctx.macro_defined_var_unhygienic
+                            && let Some(macro_info) = &mut ctx.environment.macro_info
+                        {
+                            macro_info.vars_to_expose.push((v.name, var_def.clone()));
+                        }
+                        let _ = ctx.variable_tracker.insert(var_def);
+                    }
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Let(
+                        semantic::StatementLet {
+                            pattern: pattern.id,
+                            expr: rhs_expr_id,
+                            else_clause,
+                            stable_ptr: syntax.stable_ptr(db),
+                        },
+                    )));
+                    Ok(())
+                }
+                ast::Statement::Expr(stmt_expr_syntax) => {
+                    let expr_syntax = stmt_expr_syntax.expr(db);
+                    if let ast::Expr::InlineMacro(inline_macro_syntax) = &expr_syntax {
+                        expand_macro_for_statement(ctx, inline_macro_syntax, false, statements)?;
+                    } else {
+                        let expr = compute_expr_semantic(ctx, &expr_syntax);
+                        if matches!(
+                            stmt_expr_syntax.semicolon(db),
+                            ast::OptionTerminalSemicolon::Empty(_)
+                        ) && !matches!(
+                            expr_syntax,
+                            ast::Expr::Block(_)
+                                | ast::Expr::If(_)
+                                | ast::Expr::Match(_)
+                                | ast::Expr::Loop(_)
+                                | ast::Expr::While(_)
+                                | ast::Expr::For(_)
+                        ) {
+                            ctx.diagnostics
+                                .report_after(expr_syntax.stable_ptr(db), MissingSemicolon);
+                        }
+                        let ty: TypeId<'_> = expr.ty();
+                        if let TypeLongId::Concrete(concrete) = ty.long(db)
+                            && concrete.is_must_use(db)?
+                        {
+                            ctx.diagnostics
+                                .report(expr_syntax.stable_ptr(db), UnhandledMustUseType(ty));
+                        }
+                        if let Expr::FunctionCall(expr_function_call) = &expr.expr {
+                            let generic_function_id =
+                                expr_function_call.function.long(db).function.generic_function;
+                            if generic_function_id.is_must_use(db)? {
+                                ctx.diagnostics
+                                    .report(expr_syntax.stable_ptr(db), UnhandledMustUseFunction);
                             }
                         }
+                        statements.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
+                            semantic::StatementExpr {
+                                expr: expr.id,
+                                stable_ptr: syntax.stable_ptr(db),
+                            },
+                        )));
                     }
+                    Ok(())
                 }
-                ast::ModuleItem::Module(_)
-                | ast::ModuleItem::FreeFunction(_)
-                | ast::ModuleItem::ExternFunction(_)
-                | ast::ModuleItem::ExternType(_)
-                | ast::ModuleItem::Trait(_)
-                | ast::ModuleItem::Impl(_)
-                | ast::ModuleItem::ImplAlias(_)
-                | ast::ModuleItem::Struct(_)
-                | ast::ModuleItem::Enum(_)
-                | ast::ModuleItem::TypeAlias(_)
-                | ast::ModuleItem::InlineMacro(_)
-                | ast::ModuleItem::HeaderDoc(_)
-                | ast::ModuleItem::MacroDeclaration(_) => {
-                    return Err(ctx
-                        .diagnostics
-                        .report(stmt_item_syntax.stable_ptr(db), UnsupportedItemInStatement));
+                ast::Statement::Continue(continue_syntax) => {
+                    if !ctx.is_inside_loop() {
+                        return Err(ctx.diagnostics.report(
+                            continue_syntax.stable_ptr(db),
+                            ContinueOnlyAllowedInsideALoop,
+                        ));
+                    }
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Continue(
+                        semantic::StatementContinue { stable_ptr: syntax.stable_ptr(db) },
+                    )));
+                    Ok(())
+                }
+                ast::Statement::Return(return_syntax) => {
+                    let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(db) {
+                        ast::OptionExprClause::Empty(empty_clause) => {
+                            (None, unit_ty(db), empty_clause.stable_ptr(db).untyped())
+                        }
+                        ast::OptionExprClause::ExprClause(expr_clause) => {
+                            let expr_syntax = expr_clause.expr(db);
+                            let expr = compute_expr_semantic(ctx, &expr_syntax);
+                            (Some(expr.id), expr.ty(), expr_syntax.stable_ptr(db).untyped())
+                        }
+                    };
+                    let expected_ty = match &ctx.inner_ctx {
+                        None => ctx.get_return_type().ok_or_else(|| {
+                            ctx.diagnostics.report(
+                                return_syntax.stable_ptr(db),
+                                UnsupportedOutsideOfFunction(
+                                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
+                                ),
+                            )
+                        })?,
+                        Some(ctx) => ctx.return_type,
+                    };
+
+                    let expected_ty = ctx.reduce_ty(expected_ty);
+                    let expr_ty = ctx.reduce_ty(expr_ty);
+                    if !expected_ty.is_missing(db) && !expr_ty.is_missing(db) {
+                        let inference = &mut ctx.resolver.inference();
+                        let _ = inference.conform_ty_for_diag(
+                            expr_ty,
+                            expected_ty,
+                            ctx.diagnostics,
+                            || stable_ptr,
+                            |actual_ty, expected_ty| WrongReturnType { expected_ty, actual_ty },
+                        );
+                    }
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Return(
+                        semantic::StatementReturn {
+                            expr_option,
+                            stable_ptr: syntax.stable_ptr(db),
+                        },
+                    )));
+                    Ok(())
+                }
+                ast::Statement::Break(break_syntax) => {
+                    let (expr_option, ty, stable_ptr) = match break_syntax.expr_clause(db) {
+                        ast::OptionExprClause::Empty(expr_empty) => {
+                            (None, unit_ty(db), expr_empty.stable_ptr(db).untyped())
+                        }
+                        ast::OptionExprClause::ExprClause(expr_clause) => {
+                            let expr_syntax = expr_clause.expr(db);
+                            let expr = compute_expr_semantic(ctx, &expr_syntax);
+
+                            (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
+                        }
+                    };
+                    let ty = ctx.reduce_ty(ty);
+
+                    if !ctx.is_inside_loop() {
+                        return Err(ctx
+                            .diagnostics
+                            .report(break_syntax.stable_ptr(db), BreakOnlyAllowedInsideALoop));
+                    }
+
+                    if let Some(inner_ctx) = &mut ctx.inner_ctx {
+                        match &mut inner_ctx.kind {
+                            InnerContextKind::Loop { type_merger, .. } => {
+                                type_merger.try_merge_types(
+                                    ctx.db,
+                                    ctx.diagnostics,
+                                    &mut ctx.resolver.inference(),
+                                    ty,
+                                    stable_ptr,
+                                );
+                            }
+                            InnerContextKind::While | InnerContextKind::For => {
+                                if expr_option.is_some() {
+                                    ctx.diagnostics.report(
+                                        break_syntax.stable_ptr(db),
+                                        BreakWithValueOnlyAllowedInsideALoop,
+                                    );
+                                };
+                            }
+                            InnerContextKind::Closure => unreachable!("Not inside a loop."),
+                        }
+                    }
+
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Break(
+                        semantic::StatementBreak { expr_option, stable_ptr: syntax.stable_ptr(db) },
+                    )));
+                    Ok(())
+                }
+                ast::Statement::Item(stmt_item_syntax) => {
+                    let item_syntax = &stmt_item_syntax.item(db);
+                    match item_syntax {
+                        ast::ModuleItem::Constant(const_syntax) => {
+                            let lhs = const_syntax.type_clause(db).ty(db);
+                            let rhs = const_syntax.value(db);
+                            let rhs_expr = compute_expr_semantic(ctx, &rhs);
+                            let explicit_type = resolve_type_ex(
+                                db,
+                                ctx.diagnostics,
+                                ctx.resolver,
+                                &lhs,
+                                ResolutionContext::Statement(&mut ctx.environment),
+                            );
+                            let rhs_resolved_expr = resolve_const_expr_and_evaluate(
+                                db,
+                                ctx,
+                                &rhs_expr,
+                                stmt_item_syntax.stable_ptr(db).untyped(),
+                                explicit_type,
+                                false,
+                            );
+                            let name_syntax = const_syntax.name(db);
+                            let name = name_syntax.text(db);
+                            let rhs_id = StatementConstLongId(
+                                ctx.resolver.module_id,
+                                const_syntax.stable_ptr(db),
+                            );
+                            let var_def = Binding::LocalItem(LocalItem {
+                                id: StatementItemId::Constant(rhs_id.intern(db)),
+                                kind: StatementItemKind::Constant(
+                                    rhs_resolved_expr,
+                                    rhs_resolved_expr.ty(db)?,
+                                ),
+                            });
+                            add_value_to_statement_environment(
+                                ctx,
+                                name,
+                                var_def,
+                                name_syntax.stable_ptr(db),
+                            );
+                        }
+                        ast::ModuleItem::Use(use_syntax) => {
+                            for star in get_all_path_stars(db, use_syntax) {
+                                ctx.diagnostics
+                                    .report(star.stable_ptr(db), UnsupportedUseItemInStatement);
+                            }
+                            for leaf in get_all_path_leaves(db, use_syntax) {
+                                let stable_ptr = leaf.stable_ptr(db);
+                                let resolved_item = ctx.resolver.resolve_use_path(
+                                    ctx.diagnostics,
+                                    ast::UsePath::Leaf(leaf),
+                                    ResolutionContext::Statement(&mut ctx.environment),
+                                )?;
+                                let var_def_id = StatementItemId::Use(
+                                    StatementUseLongId(ctx.resolver.module_id, stable_ptr)
+                                        .intern(db),
+                                );
+                                let name = var_def_id.name(db);
+                                match resolved_item {
+                                    ResolvedGenericItem::GenericConstant(const_id) => {
+                                        let const_value_id = db.constant_const_value(const_id)?;
+                                        let var_def = Binding::LocalItem(LocalItem {
+                                            id: var_def_id,
+                                            kind: StatementItemKind::Constant(
+                                                const_value_id,
+                                                const_value_id.ty(db)?,
+                                            ),
+                                        });
+                                        add_value_to_statement_environment(
+                                            ctx, name, var_def, stable_ptr,
+                                        );
+                                    }
+                                    item @ (ResolvedGenericItem::GenericType(_)
+                                    | ResolvedGenericItem::Module(_)) => {
+                                        add_item_to_statement_environment(
+                                            ctx, name, item, stable_ptr,
+                                        );
+                                    }
+                                    ResolvedGenericItem::GenericFunction(_)
+                                    | ResolvedGenericItem::GenericTypeAlias(_)
+                                    | ResolvedGenericItem::GenericImplAlias(_)
+                                    | ResolvedGenericItem::Variant(_)
+                                    | ResolvedGenericItem::Trait(_)
+                                    | ResolvedGenericItem::Impl(_)
+                                    | ResolvedGenericItem::Variable(_)
+                                    | ResolvedGenericItem::TraitItem(_)
+                                    | ResolvedGenericItem::Macro(_) => {
+                                        return Err(ctx
+                                            .diagnostics
+                                            .report(stable_ptr, UnsupportedUseItemInStatement));
+                                    }
+                                }
+                            }
+                        }
+                        ast::ModuleItem::Module(_)
+                        | ast::ModuleItem::FreeFunction(_)
+                        | ast::ModuleItem::ExternFunction(_)
+                        | ast::ModuleItem::ExternType(_)
+                        | ast::ModuleItem::Trait(_)
+                        | ast::ModuleItem::Impl(_)
+                        | ast::ModuleItem::ImplAlias(_)
+                        | ast::ModuleItem::Struct(_)
+                        | ast::ModuleItem::Enum(_)
+                        | ast::ModuleItem::TypeAlias(_)
+                        | ast::ModuleItem::InlineMacro(_)
+                        | ast::ModuleItem::HeaderDoc(_)
+                        | ast::ModuleItem::MacroDeclaration(_) => {
+                            return Err(ctx.diagnostics.report(
+                                stmt_item_syntax.stable_ptr(db),
+                                UnsupportedItemInStatement,
+                            ));
+                        }
+                        // Diagnostics reported on syntax level already.
+                        ast::ModuleItem::Missing(_) => return Err(skip_diagnostic()),
+                    }
+                    statements.push(ctx.arenas.statements.alloc(semantic::Statement::Item(
+                        semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) },
+                    )));
+                    Ok(())
                 }
                 // Diagnostics reported on syntax level already.
-                ast::ModuleItem::Missing(_) => return Err(skip_diagnostic()),
+                ast::Statement::Missing(_) => Err(skip_diagnostic()),
             }
-            statements.push(ctx.arenas.statements.alloc(semantic::Statement::Item(
-                semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) },
-            )));
-            Ok(())
-        }
-        // Diagnostics reported on syntax level already.
-        ast::Statement::Missing(_) => return Err(skip_diagnostic()),
-    };
-    ctx.restore_features(feature_restore);
-    Ok(())
+        },
+        |ctx| {
+            ctx.restore_features(feature_restore);
+        },
+    )
 }
 /// Adds an item to the statement environment and reports a diagnostic if the item is already
 /// defined.
@@ -4895,17 +5110,18 @@ fn compute_bool_condition_semantic<'db>(
 /// Validates a struct member is visible and otherwise adds a diagnostic.
 fn check_struct_member_is_visible<'db>(
     ctx: &mut ComputationContext<'db, '_>,
-    member: &Member<'db>,
+    member_id: MemberId<'db>,
+    visibility: visibility::Visibility,
     stable_ptr: SyntaxStablePtrId<'db>,
     member_name: SmolStrId<'db>,
 ) {
     let db = ctx.db;
-    let containing_module_id = member.id.parent_module(db);
+    let containing_module_id = member_id.parent_module(db);
     if ctx.resolver.ignore_visibility_checks(containing_module_id) {
         return;
     }
     let user_module_id = ctx.resolver.module_id;
-    if !visibility::peek_visible_in(db, member.visibility, containing_module_id, user_module_id) {
+    if !visibility::peek_visible_in(db, visibility, containing_module_id, user_module_id) {
         ctx.diagnostics.report(stable_ptr, MemberNotVisible(member_name));
     }
 }

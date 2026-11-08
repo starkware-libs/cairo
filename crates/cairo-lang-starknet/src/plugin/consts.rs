@@ -34,6 +34,7 @@ pub const COMPONENT_ATTR: &str = "starknet::component";
 pub const STORAGE_ATTR: &str = "storage";
 pub const EXTERNAL_ATTR: &str = "external";
 pub const EMBEDDABLE_ATTR: &str = "starknet::embeddable";
+pub const FORWARD_IMPL_ATTR: &str = "starknet::forward_impl";
 pub const L1_HANDLER_ATTR: &str = "l1_handler";
 pub const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const CONSTRUCTOR_NAME: &str = "constructor";
@@ -64,6 +65,8 @@ pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
 pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
 
 /// Starknet OS required implicit precedence.
+/// Validated in `cairo-lang-starknet-classes` during contract-class-to-CASM compilation (see
+/// `ENTRY_POINT_BUILTIN_ORDER` there).
 pub(super) const IMPLICIT_PRECEDENCE: &[&str] = &[
     "core::pedersen::Pedersen",
     "core::RangeCheck",

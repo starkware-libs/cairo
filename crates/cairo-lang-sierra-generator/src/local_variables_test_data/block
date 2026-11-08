@@ -3,10 +3,12 @@
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     let x1 = x + x;
     let x2 = x1 + x1;
@@ -19,12 +21,6 @@ fn foo(x: felt252) -> felt252 {
     let _w = x1 + x2;
     revoke_ap();
     x1 + y
-}
-
-//! > module_code
-// Revokes ap since this function is recursive.
-fn revoke_ap() -> felt252 {
-    revoke_ap()
 }
 
 //! > lowering_format

@@ -2,11 +2,10 @@
 #[path = "early_unsafe_panic_test.rs"]
 mod test;
 
-use std::collections::HashSet;
-
 use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use salsa::Database;
 
 use crate::analysis::core::StatementLocation;
@@ -27,7 +26,7 @@ pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>
     }
 
     let core = ModuleHelper::core(db);
-    let libfuncs_with_sideffect = HashSet::from_iter([
+    let libfuncs_with_sideffect = UnorderedHashSet::from_iter([
         core.submodule("debug").extern_function_id("print"),
         core.submodule("internal").extern_function_id("trace"),
     ]);
@@ -66,7 +65,7 @@ pub struct UnsafePanicContext<'db> {
     fixes: Vec<(StatementLocation, LocationId<'db>)>,
 
     /// libfuncs with side effects that we need to ignore.
-    libfuncs_with_sideffect: HashSet<ExternFunctionId<'db>>,
+    libfuncs_with_sideffect: UnorderedHashSet<ExternFunctionId<'db>>,
 }
 
 impl<'db> UnsafePanicContext<'db> {
@@ -107,14 +106,14 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for UnsafePanicContext<'db> {
         {
             self.fixes.push(((block_id, block.statements.len()), *match_info.location()));
         }
-        if ReachableSideEffects::Reachable == *info {
+        let ReachableSideEffects::Unreachable(location) = *info else {
             return;
-        }
-        for (i, stmt) in block.statements.iter().enumerate() {
-            if self.has_side_effects(stmt)
-                && let ReachableSideEffects::Unreachable(locations) = *info
-            {
-                self.fixes.push(((block_id, i), locations));
+        };
+        // Everything past the last side-effecting statement is dead (no `return` is reachable
+        // from here), so replace it with an early panic — but keep the side effects themselves.
+        for (i, stmt) in block.statements.iter().enumerate().rev() {
+            if self.has_side_effects(stmt) {
+                self.fixes.push(((block_id, i + 1), location));
                 *info = ReachableSideEffects::Reachable;
                 break;
             }

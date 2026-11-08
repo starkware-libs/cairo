@@ -108,6 +108,7 @@ TokenTree: String = {
     "/" => <>.to_string(),
     "\\" => <>.to_string(),
     "-" => <>.to_string(),
+    "#" => <>.to_string(),
 }
 
 BracesTokenTree: String = {
@@ -219,6 +220,7 @@ ConcreteLabel: String = {
     "(" <generic_args:GenericArgsString> "," ")" => format!("({generic_args})"),
     "(" ")" => format!("()"),
     <base:ConcreteLabel> "::" <next:BasicLabel> => format!("{base}::{next}"),
+    <base:ConcreteLabel> "::" <next:BracesTokenTree> => format!("{base}::{next}"),
     <base:ConcreteLabel> "::" "<" <generic_args:GenericArgsString> ">" => format!("{base}::<{generic_args}>"),
     <base:ConcreteLabel> "<" <generic_args:GenericArgsString> ">" => format!("{base}<{generic_args}>"),
 }

@@ -1,7 +1,8 @@
 use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
-use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
+use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleId};
+use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
     CrateSettings, Edition, ExperimentalFeaturesConfig, init_dev_corelib, init_files_group,
@@ -11,19 +12,73 @@ use cairo_lang_filesystem::ids::{
     BlobId, CrateId, CrateLongId, FileKind, FileLongId, SmolStrId, VirtualFile,
 };
 use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_test_utils::verify_diagnostics_expectation;
+use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, OptionFrom, extract_matches};
+use cairo_lang_utils::{Intern, extract_matches};
 use salsa::Database;
 
 use crate::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
 use crate::inline_macros::get_default_plugin_suite;
 use crate::items::function_with_body::FunctionWithBodySemantic;
-use crate::items::functions::GenericFunctionId;
-use crate::items::module::ModuleSemantic;
 use crate::plugin::PluginSuite;
 use crate::{ConcreteFunctionWithBodyId, SemanticDiagnostic, semantic};
+
+/// The attribute marking the function(s) a test block targets, within its `cairo_code` input.
+pub const TARGET_FUNCTION_ATTR: &str = "target_function";
+
+/// A test-only no-op macro plugin, whose sole purpose is to declare the `#[target_function]`
+/// attribute, so that marking a function with it in test code is not reported as an
+/// "Unsupported attribute." error.
+///
+/// It never generates code and never removes the original item, so it has no effect on any other
+/// plugin in the suite.
+#[derive(Debug, Default)]
+pub struct TargetFunctionPlugin;
+
+impl MacroPlugin for TargetFunctionPlugin {
+    fn generate_code<'db>(
+        &self,
+        _db: &'db dyn Database,
+        _item_ast: ast::ModuleItem<'db>,
+        _metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult<'db> {
+        PluginResult::default()
+    }
+
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, TARGET_FUNCTION_ATTR)]
+    }
+}
+
+/// Adds [TargetFunctionPlugin] to the given suite, and returns it.
+///
+/// Every testing database that runs golden test files must use this, otherwise `#[target_function]`
+/// markers in the test code would produce "Unsupported attribute." diagnostics.
+pub fn with_target_function_plugin(mut suite: PluginSuite) -> PluginSuite {
+    suite.add_plugin::<TargetFunctionPlugin>();
+    suite
+}
+
+/// Returns the free functions of the given module marked with `#[target_function]`, in the order
+/// they appear in the module.
+pub fn resolve_target_functions<'a>(
+    db: &'a dyn Database,
+    module_id: ModuleId<'a>,
+) -> Vec<FreeFunctionId<'a>> {
+    db.module_free_functions_ids(module_id)
+        .expect("Failed to load module.")
+        .iter()
+        .copied()
+        .filter(|free_function_id| {
+            db.module_free_function_by_id(*free_function_id)
+                .expect("Failed to load free function.")
+                .has_attr(db, TARGET_FUNCTION_ATTR)
+        })
+        .collect()
+}
 
 #[salsa::db]
 #[derive(Clone)]
@@ -47,7 +102,7 @@ impl SemanticDatabaseForTesting {
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
 
-        res.set_default_plugins_from_suite(suite);
+        res.set_default_plugins_from_suite(with_target_function_plugin(suite));
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
@@ -176,52 +231,55 @@ pub struct TestFunction<'a> {
     pub body: semantic::ExprId,
 }
 
-/// Returns the semantic model of a given function.
-/// `inputs["function_code"]` - code of the function.
-/// `inputs["function_name"]` - name of the function.
-/// `inputs["module_code"]` - optional extra setup code in the module context.
+/// Returns the code of the module described by the given test inputs.
+///
+/// `inputs["cairo_code"]` is the whole module - possibly a `>>> file: <path>` reference.
+pub fn test_module_code(inputs: &OrderedHashMap<String, String>) -> String {
+    let (_path, content) = get_direct_or_file_content(&inputs["cairo_code"]);
+    content
+}
+
+/// Returns the semantic model of the function a test targets.
+///
+/// The module code is taken as described in [test_module_code], and the target function within it
+/// is the single function marked with `#[target_function]`.
+///
 /// `inputs["crate_settings"]` - optional extra settings for the crate.
 pub fn setup_test_function<'a>(
     db: &'a dyn Database,
-    inputs: &'a OrderedHashMap<String, String>,
+    inputs: &OrderedHashMap<String, String>,
 ) -> WithStringDiagnostics<TestFunction<'a>> {
-    setup_test_function_ex(
+    setup_test_function_from_content(
         db,
-        &inputs["function_code"],
-        &inputs["function_name"],
-        inputs.get("module_code").map_or("", String::as_str),
+        &test_module_code(inputs),
         inputs.get("crate_settings").map(String::as_str),
         None,
     )
 }
 
-/// Returns the semantic model of a given function.
-/// `function_code` - code of the function.
-/// `function_name` - name of the function.
-/// `module_code` - extra setup code in the module context.
-/// `crate_settings` - optional extra settings for the crate.
-/// `cache_crate` - optional cache for the crate.
-pub fn setup_test_function_ex<'a>(
+/// Returns the semantic model of a function within the module of the given `content`.
+///
+/// The function is the single one marked with the `#[target_function]` marker.
+pub fn setup_test_function_from_content<'a>(
     db: &'a dyn Database,
-    function_code: &str,
-    function_name: &'a str,
-    module_code: &str,
+    content: &str,
     crate_settings: Option<&str>,
     cache_crate: Option<BlobId<'a>>,
 ) -> WithStringDiagnostics<TestFunction<'a>> {
-    let content = if module_code.is_empty() {
-        function_code.to_string()
-    } else {
-        format!("{module_code}\n{function_code}")
-    };
     let (test_module, diagnostics) =
-        setup_test_module_ex(db, &content, crate_settings, cache_crate).split();
-    let generic_function_id = db
-        .module_item_by_name(test_module.module_id, SmolStrId::from(db, function_name))
-        .expect("Failed to load module")
-        .and_then(GenericFunctionId::option_from)
-        .unwrap_or_else(|| panic!("Function '{function_name}' was not found."));
-    let free_function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
+        setup_test_module_ex(db, content, crate_settings, cache_crate).split();
+    let target_functions = resolve_target_functions(db, test_module.module_id);
+    let free_function_id = match target_functions.as_slice() {
+        [free_function_id] => *free_function_id,
+        [] => panic!(
+            "No function marked with `#[{TARGET_FUNCTION_ATTR}]` was found. Mark the tested \
+             function."
+        ),
+        _ => panic!(
+            "Expected a single function marked with `#[{TARGET_FUNCTION_ATTR}]`, found {}.",
+            target_functions.len()
+        ),
+    };
     let function_id = FunctionWithBodyId::Free(free_function_id);
     WithStringDiagnostics {
         value: TestFunction {
@@ -239,7 +297,7 @@ pub fn setup_test_function_ex<'a>(
     }
 }
 
-/// Helper struct for the return value of [setup_test_expr] and [setup_test_block].
+/// Helper struct for the return value of [setup_test_expr].
 pub struct TestExpr<'a> {
     pub module_id: ModuleId<'a>,
     pub function_id: FunctionWithBodyId<'a>,
@@ -258,26 +316,10 @@ pub fn setup_test_expr<'a>(
     function_body: &str,
     crate_settings: Option<&str>,
 ) -> WithStringDiagnostics<TestExpr<'a>> {
-    let function_code = format!("fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
-    let (test_function, diagnostics) =
-        setup_test_function_ex(db, &function_code, "test_func", module_code, crate_settings, None)
+    let ((test_function, statements, tail), diagnostics) =
+        setup_test_code_block(db, expr_code, module_code, function_body, crate_settings, false)
             .split();
-    let semantic::ExprBlock { statements, .. } = extract_matches!(
-        db.expr_semantic(test_function.function_id, test_function.body),
-        semantic::Expr::Block
-    );
-    let statement_expr = extract_matches!(
-        db.statement_semantic(test_function.function_id, *statements.last().unwrap()),
-        semantic::Statement::Expr
-    );
-    let semantic::ExprBlock { statements, tail, .. } = extract_matches!(
-        db.expr_semantic(test_function.function_id, statement_expr.expr),
-        semantic::Expr::Block
-    );
-    assert!(
-        statements.is_empty(),
-        "expr_code is not a valid expression. Consider using setup_test_block()."
-    );
+    assert!(statements.is_empty(), "expr_code is not a valid expression.");
     WithStringDiagnostics {
         value: TestExpr {
             module_id: test_function.module_id,
@@ -290,16 +332,86 @@ pub fn setup_test_expr<'a>(
     }
 }
 
-/// Returns the semantic model of a given block expression.
+/// Helper struct for the return value of [setup_test_exprs].
+pub struct TestExprs<'a> {
+    pub function_id: FunctionWithBodyId<'a>,
+    /// The tested expressions, each with the name it was bound to.
+    pub named_exprs: Vec<(SmolStrId<'a>, semantic::ExprId)>,
+}
+
+/// Returns the semantic model of the given expressions, each provided as a
+/// `let <name> = <expr>;` statement, paired with its name.
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
-pub fn setup_test_block<'a>(
+pub fn setup_test_exprs<'a>(
     db: &'a dyn Database,
-    expr_code: &str,
+    exprs_code: &str,
     module_code: &str,
     function_body: &str,
-) -> WithStringDiagnostics<TestExpr<'a>> {
-    setup_test_expr(db, &format!("{{ \n{expr_code}\n }}"), module_code, function_body, None)
+    crate_settings: Option<&str>,
+) -> WithStringDiagnostics<TestExprs<'a>> {
+    let ((test_function, statements, tail), diagnostics) =
+        setup_test_code_block(db, exprs_code, module_code, function_body, crate_settings, true)
+            .split();
+    const EXPECTATION: &str = "exprs_code must consist of `let <name> = <expr>;` statements.";
+    assert!(tail.is_none(), "{EXPECTATION}");
+    let function_id = test_function.function_id;
+    let named_exprs = statements
+        .iter()
+        .map(|statement| {
+            let statement_let = extract_matches!(
+                db.statement_semantic(function_id, *statement),
+                semantic::Statement::Let,
+                "{EXPECTATION}"
+            );
+            let pattern = extract_matches!(
+                db.pattern_semantic(function_id, statement_let.pattern),
+                semantic::Pattern::Variable,
+                "{EXPECTATION}"
+            );
+            (pattern.name, statement_let.expr)
+        })
+        .collect();
+    WithStringDiagnostics { value: TestExprs { function_id, named_exprs }, diagnostics }
+}
+
+/// Returns the test function created by wrapping the given `code` in a block within a test
+/// function, together with the statements and tail of that block.
+fn setup_test_code_block<'a>(
+    db: &'a dyn Database,
+    code: &str,
+    module_code: &str,
+    function_body: &str,
+    crate_settings: Option<&str>,
+    allow_unused_variables: bool,
+) -> WithStringDiagnostics<(TestFunction<'a>, Vec<semantic::StatementId>, Option<semantic::ExprId>)>
+{
+    let allow_attr = if allow_unused_variables { "#[allow(unused_variables)] " } else { "" };
+    // The attributes share the wrapper's first line so the spans of `code` do not shift.
+    let function_code = format!(
+        "{allow_attr}#[{TARGET_FUNCTION_ATTR}] fn test_func() {{ {function_body} {{\n{code}\n}}; \
+         }}"
+    );
+    let content = if module_code.is_empty() {
+        function_code
+    } else {
+        format!("{module_code}\n{function_code}")
+    };
+    let (test_function, diagnostics) =
+        setup_test_function_from_content(db, &content, crate_settings, None).split();
+    let semantic::ExprBlock { statements, .. } = extract_matches!(
+        db.expr_semantic(test_function.function_id, test_function.body),
+        semantic::Expr::Block
+    );
+    let statement_expr = extract_matches!(
+        db.statement_semantic(test_function.function_id, *statements.last().unwrap()),
+        semantic::Statement::Expr
+    );
+    let semantic::ExprBlock { statements, tail, .. } = extract_matches!(
+        db.expr_semantic(test_function.function_id, statement_expr.expr),
+        semantic::Expr::Block
+    );
+    WithStringDiagnostics { value: (test_function, statements, tail), diagnostics }
 }
 
 pub fn test_expr_diagnostics(
@@ -330,7 +442,15 @@ pub fn test_function_diagnostics(
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
 
-    let diagnostics = setup_test_function(db, inputs).get_diagnostics();
+    // The reported diagnostics are the recursive module diagnostics, so no function has to be
+    // resolved at all - which also allows test blocks that have no function to target.
+    let diagnostics = setup_test_module_ex(
+        db,
+        &test_module_code(inputs),
+        inputs.get("crate_settings").map(String::as_str),
+        None,
+    )
+    .get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
     TestRunnerResult {

@@ -3,11 +3,9 @@
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
 #[inline(never)]
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     if x == 0 {
         x

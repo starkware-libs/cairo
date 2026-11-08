@@ -116,9 +116,9 @@ Constant(
 
 //! > expected_diagnostics
 warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
- --> lib.cairo:1:24
-fn test_func() { const X: u8 = 4;
-                       ^
+ --> lib.cairo:1:43
+#[target_function] fn test_func() { const X: u8 = 4;
+                                          ^
 
 //! > ==========================================================================
 

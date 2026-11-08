@@ -25,7 +25,7 @@ use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, extract_matches, require, try_extract_matches};
+use cairo_lang_utils::{Intern, OptionHelper, extract_matches, require, try_extract_matches};
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_integer::Integer;
@@ -310,12 +310,36 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         VarInfo::Const(const_value) => {
                             if let ConstValue::Struct(member_values, _) = const_value.long(self.db)
                             {
-                                for (output, value) in zip_eq(outputs, member_values) {
+                                for (output, value) in zip_eq(&*outputs, member_values) {
                                     self.var_info.insert(
                                         *output,
                                         Rc::new(VarInfo::Const(*value))
                                             .wrap_with_snapshots(n_snapshots),
                                     );
+                                }
+                                if n_snapshots == 0
+                                    && self.variables[input.var_id].info.droppable.is_ok()
+                                    && let [rest_outputs @ .., last_output] = &outputs[..]
+                                    && let [rest_values @ .., last_value] = &member_values[..]
+                                {
+                                    let previous_len = self.additional_stmts.len();
+                                    let mut success = true;
+                                    for (output, value) in zip_eq(rest_outputs, rest_values) {
+                                        if let Some(mc) = self.materialize_const(*value, *output) {
+                                            self.additional_stmts.push(mc);
+                                        } else {
+                                            success = false;
+                                            break;
+                                        }
+                                    }
+                                    if success
+                                        && let Some(mc) =
+                                            self.materialize_const(*last_value, *last_output)
+                                    {
+                                        *stmt = mc;
+                                    } else {
+                                        self.additional_stmts.truncate(previous_len);
+                                    }
                                 }
                             }
                         }
@@ -338,8 +362,10 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     } else {
                         VarInfo::Enum { variant: *variant, payload: info.clone() }
                     }
+                } else if let Some(payload) = var_info_if_copy(self.variables, *input) {
+                    VarInfo::Enum { variant: *variant, payload }
                 } else {
-                    VarInfo::Enum { variant: *variant, payload: VarInfo::Var(*input).into() }
+                    return;
                 };
                 self.var_info.insert(*output, value.into());
             }
@@ -383,8 +409,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     /// - Inserts the accumulated additional statements into the block.
     /// - Converts match endings to goto when applicable.
     /// - Updates self.reachability based on the block's ending.
-    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut Block<'db>) {
+    ///
+    /// Returns the number of statements prepended to the block.
+    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut Block<'db>) -> usize {
         let statements = &mut block.statements;
+        let n_prepended = self.additional_stmts.len();
         statements.splice(0..0, self.additional_stmts.drain(..));
 
         match &mut block.end {
@@ -442,11 +471,17 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             BlockEnd::Match { info } => {
                 for arm in info.arms() {
-                    assert!(self.reachability.insert(arm.block_id, Reachability::Any).is_none());
+                    // A match end may be visited again if it was moved to the continuation block
+                    // when a statement appended by a block-end replacement was inlined.
+                    assert!(matches!(
+                        self.reachability.insert(arm.block_id, Reachability::Any),
+                        None | Some(Reachability::Any)
+                    ));
                 }
             }
             BlockEnd::NotSet | BlockEnd::Return(..) | BlockEnd::Panic(..) => {}
         }
+        n_prepended
     }
 
     /// Handles a statement call.
@@ -482,12 +517,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let VarInfo::Const(word) = word.as_ref()?.as_ref() else {
                     return None;
                 };
-                panic_data.push(word.long(db).to_int()?.clone());
+                panic_data.push(word.to_int(db)?.clone());
             }
-            panic_data.extend([
-                pending_word.long(db).to_int()?.clone(),
-                pending_len.long(db).to_int()?.clone(),
-            ]);
+            panic_data.extend([pending_word.to_int(db)?.clone(), pending_len.to_int(db)?.clone()]);
             let felt252_ty = self.felt252;
             let location = stmt.location;
             let new_var = |ty| Variable::with_default_context(db, ty, location);
@@ -661,8 +693,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             if let Some(const_value) = self.as_const(input_var)
                 && let ConstValue::Int(val, ty) = const_value.long(db)
             {
+                const ADDR_BOUND: Felt252 = Felt252::from_hex_unchecked(
+                    "0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00",
+                );
+                let as_felt252 = Felt252::from(val);
+                let normalized =
+                    if as_felt252 >= ADDR_BOUND { as_felt252 - ADDR_BOUND } else { as_felt252 };
                 stmt.inputs.clear();
-                let arg = GenericArgumentId::Constant(ConstValue::Int(val.clone(), *ty).intern(db));
+                let arg = GenericArgumentId::Constant(
+                    ConstValue::Int(normalized.to_bigint(), *ty).intern(db),
+                );
                 stmt.function =
                     self.storage_base_address_const.concretize(db, vec![arg]).lowered(db);
             }
@@ -705,7 +745,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     /// Returns The specialized call statement if it was specialized, or None otherwise.
     ///
     /// Specialization occurs only if `priv_should_specialize` returns true.
-    /// Additionally specialization of a callee the with the same base as the caller is currently
+    /// Additionally specialization of a callee with the same base as the caller is currently
     /// not supported.
     fn try_specialize_call(&self, call_stmt: &mut StatementCall<'db>) -> Option<Statement<'db>> {
         if call_stmt.with_coupon {
@@ -731,6 +771,13 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         let caller_base = extract_base(self.caller_function);
 
         if self.db.priv_never_inline(called_base).ok()? {
+            return None;
+        }
+
+        // A call to a function that would be inlined is inlined right after this visit, folding
+        // the constant arguments in place - specialization would only add the cost of estimating
+        // the specialized size.
+        if self.db.priv_should_inline(called_base).ok()? {
             return None;
         }
 
@@ -865,19 +912,41 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 
     /// Returns a statement that introduces the requested value into `output`, or None if fails.
     fn try_generate_const_statement(
-        &self,
+        &mut self,
+        value: ConstValueId<'db>,
+        output: VariableId,
+    ) -> Option<Statement<'db>> {
+        let prev_len = self.additional_stmts.len();
+        self.materialize_const(value, output).on_none(|| self.additional_stmts.truncate(prev_len))
+    }
+
+    /// Returns a statement materializing `value` into `output`, appending any additionally
+    /// required statements to `self.additional_stmts`.
+    /// Zero-sized values, which are always structs, are materialized by construction.
+    fn materialize_const(
+        &mut self,
         value: ConstValueId<'db>,
         output: VariableId,
     ) -> Option<Statement<'db>> {
         if self.db.type_size_info(self.variables[output].ty) == Ok(TypeSizeInformation::Other) {
-            Some(Statement::Const(StatementConst::new_flat(value, output)))
-        } else if matches!(value.long(self.db), ConstValue::Struct(members, _) if members.is_empty())
-        {
-            // Handling const empty structs - which are not supported in sierra-gen.
-            Some(Statement::StructConstruct(StatementStructConstruct { inputs: vec![], output }))
-        } else {
-            None
+            return Some(Statement::Const(StatementConst::new_flat(value, output)));
         }
+        let ConstValue::Struct(members, _) = value.long(self.db) else {
+            return None;
+        };
+        let location = self.variables[output].location;
+        let inputs = members
+            .iter()
+            .map(|member| {
+                let ty = member.long(self.db).ty(self.db).ok()?;
+                let var =
+                    self.variables.alloc(Variable::with_default_context(self.db, ty, location));
+                let stmt = self.materialize_const(*member, var)?;
+                self.additional_stmts.push(stmt);
+                Some(VarUsage { var_id: var, location })
+            })
+            .collect::<Option<Vec<_>>>()?;
+        Some(Statement::StructConstruct(StatementStructConstruct { inputs, output }))
     }
 
     /// Handles the end of block matching on an enum.
@@ -988,9 +1057,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let val = self.as_const(info.inputs[0].var_id)?;
             let is_zero = match val.long(db) {
                 ConstValue::Int(v, _) => v.is_zero(),
-                ConstValue::Struct(s, _) => s.iter().all(|v| {
-                    v.long(db).to_int().expect("Expected ConstValue::Int for size").is_zero()
-                }),
+                ConstValue::Struct(s, _) => s
+                    .iter()
+                    .all(|v| v.to_int(db).expect("Expected ConstValue::Int for size").is_zero()),
                 _ => unreachable!(),
             };
             Some(if is_zero {
@@ -1095,7 +1164,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     } else {
                         ty_info.dec?
                     };
-                    let enum_ty = function.signature(db).ok()?.return_type;
+                    let enum_ty =
+                        function.signature(db, LoweringStage::Monomorphized).ok()?.return_type;
                     let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
                         enum_ty.long(db)
                     else {
@@ -1103,17 +1173,21 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     };
                     let result = self.variables.alloc(Variable::with_default_context(
                         db,
-                        function.signature(db).unwrap().return_type,
+                        enum_ty,
                         info.location,
                     ));
-                    statements.push(Statement::Call(StatementCall {
+                    let mut call = StatementCall {
                         function,
                         inputs: vec![info.inputs[0]],
                         with_coupon: false,
                         outputs: vec![result],
                         location: info.location,
                         is_specialization_base_call: false,
-                    }));
+                    };
+                    statements.push(match self.try_specialize_call(&mut call) {
+                        Some(specialized) => specialized,
+                        None => Statement::Call(call),
+                    });
                     return Some(BlockEnd::Match {
                         info: MatchInfo::Enum(MatchEnumInfo {
                             concrete_enum_id: *concrete_enum_id,
@@ -1138,8 +1212,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 Some(if let Some(range) = self.type_value_ranges.get(&ty) {
                     range.clone()
                 } else {
-                    let (min, max) = corelib::try_extract_bounded_int_type_ranges(db, ty)?;
-                    TypeRange { min, max }
+                    let (min, max) = corelib::try_extract_bounded_int_type(db, ty)?;
+                    TypeRange::new(min.to_int(db)?.clone(), max.to_int(db)?.clone())
                 })
             };
             let (success_arm, failure_arm) = if *reversed { (1, 0) } else { (0, 1) };
@@ -1187,8 +1261,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let value = self.as_int(input_var)?;
             let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
-                .long(db)
-                .to_int()
+                .to_int(db)
                 .expect("Expected ConstValue::Int for size");
             let arm_idx = if value < constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
@@ -1202,7 +1275,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let is_trimmed = if let Some(range) = self.type_value_ranges.get(ty) {
                 range.min == *value
             } else {
-                corelib::try_extract_bounded_int_type_ranges(db, *ty)?.0 == *value
+                corelib::try_extract_bounded_int_type(db, *ty)?.0.to_int(db)? == value
             };
             let arm_idx = if is_trimmed {
                 0
@@ -1220,7 +1293,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let is_trimmed = if let Some(range) = self.type_value_ranges.get(ty) {
                 range.max == *value
             } else {
-                corelib::try_extract_bounded_int_type_ranges(db, *ty)?.1 == *value
+                corelib::try_extract_bounded_int_type(db, *ty)?.1.to_int(db)? == value
             };
             let arm_idx = if is_trimmed {
                 0
@@ -1592,7 +1665,7 @@ fn priv_const_folding_info<'db>(
 }
 
 /// Holds static information about libfuncs required for the optimization.
-#[derive(Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ConstFoldingLibfuncInfo<'db> {
     /// The `felt252_sub` libfunc.
     felt_sub: ExternFunctionId<'db>,
@@ -1810,7 +1883,7 @@ impl<'a> std::ops::Deref for ConstFoldingLibfuncInfo<'a> {
 }
 
 /// The information of a type required for const foldings.
-#[derive(Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, salsa::SalsaValue)]
 struct TypeInfo<'db> {
     /// The function to check if the value is zero for the type.
     is_zero: FunctionId<'db>,

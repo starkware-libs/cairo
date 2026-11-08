@@ -1,8 +1,13 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_defs::ids::{ExternFunctionId, ModuleItemId, TopLevelLanguageElementId};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_semantic::TypeId;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -11,10 +16,11 @@ use cairo_lang_utils::try_extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
+use salsa::Database;
 use test_case::test_case;
 
 use super::get_dummy_program_for_size_estimation;
-use crate::db::SierraGenGroup;
+use crate::db::{ExternalConstPlugin, SierraGenGroup};
 use crate::program_generator::SierraProgramWithDebug;
 use crate::replace_ids::replace_sierra_ids_in_program;
 use crate::test_utils::{
@@ -125,4 +131,58 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
             .collect_vec(),
         sierra_used_funcs
     );
+}
+
+/// A test [`ExternalConstPlugin`] defining its value in terms of itself.
+#[derive(Debug)]
+struct CyclicConstPlugin;
+impl ExternalConstPlugin for CyclicConstPlugin {
+    fn provide<'db>(
+        &self,
+        db: &'db dyn Database,
+        extern_id: ExternFunctionId<'db>,
+        ty: TypeId<'db>,
+    ) -> Option<Maybe<ConstValueId<'db>>> {
+        extern_id
+            .full_path(db)
+            .contains("cyclic")
+            .then(|| db.externally_provided_const(extern_id, ty))
+    }
+}
+
+#[test]
+#[should_panic(expected = "depends on itself")]
+fn test_externally_provided_const_cycle() {
+    let mut db = SierraGenDatabaseForTesting::new_empty();
+    db.add_external_const_plugin(Arc::new(CyclicConstPlugin));
+    let crate_id = setup_db_and_get_crate_id(
+        &db,
+        indoc! {"
+            mod cyclic {
+                #[allow(extern_outside_corelib)]
+                pub extern fn __externally_provided_const__() -> felt252 nopanic;
+            }
+
+            fn user() -> felt252 { cyclic::__externally_provided_const__() }
+        "},
+    );
+    db.get_sierra_program(vec![crate_id]).unwrap();
+}
+
+#[test]
+#[should_panic(expected = "must not return a tuple")]
+fn test_externally_provided_const_tuple() {
+    let db = SierraGenDatabaseForTesting::new_empty();
+    let crate_id = setup_db_and_get_crate_id(
+        &db,
+        indoc! {"
+            mod seven {
+                #[allow(extern_outside_corelib)]
+                pub extern fn __externally_provided_const__() -> (felt252, felt252) nopanic;
+            }
+
+            fn user() -> (felt252, felt252) { seven::__externally_provided_const__() }
+        "},
+    );
+    db.get_sierra_program(vec![crate_id]).unwrap();
 }

@@ -1,3 +1,4 @@
+#[expect(clippy::disallowed_types)]
 use std::collections::HashMap;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -47,6 +48,7 @@ pub enum SimulationError {
 }
 
 /// Runs a function from the program with the given inputs.
+#[expect(clippy::disallowed_types)]
 pub fn run(
     program: &Program,
     statement_gas_info: &HashMap<StatementIdx, i64>,
@@ -62,6 +64,7 @@ pub fn run(
 }
 
 /// Helper class for running the simulation.
+#[expect(clippy::disallowed_types)]
 struct SimulationContext<'a> {
     pub program: &'a Program,
     pub statement_gas_info: &'a HashMap<StatementIdx, i64>,

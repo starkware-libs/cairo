@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 use cairo_lang_sierra::extensions::NamedLibfunc;
 use cairo_lang_sierra::extensions::circuit::{
     CircuitFailureGuaranteeVerifyLibFunc, U96LimbsLessThanGuaranteeVerifyLibfunc,
-    U96SingleLimbLessThanGuaranteeVerifyLibfunc,
+    U96LimbsLessThanGuaranteeVerifyV2Libfunc, U96SingleLimbLessThanGuaranteeVerifyLibfunc,
 };
 use cairo_lang_sierra::extensions::starknet::interoperability::ContractAddressTryFromFelt252Libfunc;
 use cairo_lang_sierra::extensions::starknet::secp256::Secp256GetPointFromXLibfunc;
@@ -208,6 +208,7 @@ static SERDE_SUPPORTED_LONG_IDS: LazyLock<OrderedHashSet<&'static str>> = LazyLo
         Secp256GetPointFromXLibfunc::<Secp256r1>::STR_ID,
         CircuitFailureGuaranteeVerifyLibFunc::STR_ID,
         U96LimbsLessThanGuaranteeVerifyLibfunc::STR_ID,
+        U96LimbsLessThanGuaranteeVerifyV2Libfunc::STR_ID,
         U96SingleLimbLessThanGuaranteeVerifyLibfunc::STR_ID,
     ])
 });

@@ -10,11 +10,14 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use salsa::Database;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::{GenericParamsData, semantic_generic_params};
+use super::generics::{
+    GenericParamsData, generic_params_data_cycle, generic_params_data_initial,
+    semantic_generic_params,
+};
 use super::visibility::Visibility;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -29,7 +32,7 @@ use crate::{GenericParam, SemanticDiagnostic, semantic};
 #[path = "structure_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct StructDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -72,7 +75,7 @@ fn struct_declaration_data<'db>(
 }
 
 /// Query implementation of [StructSemantic::struct_generic_params_data].
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn struct_generic_params_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
@@ -104,7 +107,7 @@ fn struct_generic_params_data<'db>(
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct StructDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -112,7 +115,7 @@ struct StructDefinitionData<'db> {
     resolver_data: Arc<ResolverData<'db>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct Member<'db> {
     pub id: MemberId<'db>,
@@ -156,9 +159,18 @@ fn struct_definition_data<'db>(
         let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
         let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
         let member_name = member.name(db).text(db);
-        if let Some(_other_member) = members.insert(member_name, Member { id, ty, visibility }) {
-            diagnostics
-                .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
+        // Keep the first declaration on a redefinition (matching enum variants), rather than
+        // overwriting with the last - the later duplicate is reported and rejected below.
+        match members.entry(member_name) {
+            Entry::Vacant(e) => {
+                e.insert(Member { id, ty, visibility });
+            }
+            Entry::Occupied(_) => {
+                diagnostics.report(
+                    member.stable_ptr(db),
+                    StructMemberRedefinition { struct_id, member_name },
+                );
+            }
         }
         resolver.restore_feature_config(feature_restore);
     }
@@ -176,7 +188,7 @@ fn struct_definition_data<'db>(
 }
 
 /// Query implementation of [StructSemantic::struct_definition_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn struct_definition_diagnostics<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,

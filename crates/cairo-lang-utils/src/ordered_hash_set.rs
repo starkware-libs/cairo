@@ -4,9 +4,9 @@ use core::ops::Sub;
 use indexmap::IndexSet;
 use itertools::zip_eq;
 
-#[cfg(feature = "std")]
-type BHImpl = std::collections::hash_map::RandomState;
-#[cfg(not(feature = "std"))]
+// hashbrown's default hasher (foldhash) rather than std's SipHash. IndexMap/IndexSet iterate in
+// insertion order, so the iteration order -- and thus compilation determinism -- is independent of
+// the hasher.
 type BHImpl = hashbrown::DefaultHashBuilder;
 
 #[derive(Clone, Debug)]
@@ -35,21 +35,10 @@ impl<Key, BH> core::ops::DerefMut for OrderedHashSet<Key, BH> {
     }
 }
 
-// This code was taken from the salsa::Update trait implementation for IndexSet.
-// It is defined privately in macro_rules! maybe_update_set in the db-ext-macro repo.
 #[cfg(feature = "salsa")]
-unsafe impl<Key: Eq + Hash, BH: BuildHasher> salsa::Update for OrderedHashSet<Key, BH> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_set: Self) -> bool {
-        let old_set: &mut Self = unsafe { &mut *old_pointer };
-
-        if *old_set == new_set {
-            false
-        } else {
-            old_set.clear();
-            old_set.extend(new_set);
-            true
-        }
-    }
+unsafe impl<Key: Eq + Hash + salsa::SalsaValue, BH: BuildHasher> salsa::SalsaValue
+    for OrderedHashSet<Key, BH>
+{
 }
 
 pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
@@ -94,6 +83,15 @@ impl<Key: Eq, BH> PartialEq for OrderedHashSet<Key, BH> {
 }
 
 impl<Key: Eq, BH> Eq for OrderedHashSet<Key, BH> {}
+
+impl<Key: Hash, BH> Hash for OrderedHashSet<Key, BH> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.len().hash(state);
+        for e in self.iter() {
+            e.hash(state);
+        }
+    }
+}
 
 impl<Key: Hash + Eq, BH: BuildHasher + Default> FromIterator<Key> for OrderedHashSet<Key, BH> {
     fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {

@@ -4,6 +4,7 @@
 test_program_generator
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn coupon_buy<T>() -> T nopanic;
 
 fn foo() -> bar::<u8>::Coupon {
@@ -42,6 +43,7 @@ test::bar::<core::integer::u8>@F1() -> (felt252);
 test_program_generator
 
 //! > cairo_code
+#[allow(extern_outside_corelib)]
 extern fn coupon_refund<T>(c: T) nopanic;
 
 fn foo(c: bar::<u8>::Coupon) {

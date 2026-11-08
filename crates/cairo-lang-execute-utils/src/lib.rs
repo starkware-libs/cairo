@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use anyhow::Context;
@@ -6,6 +5,7 @@ use cairo_lang_casm::hints::Hint;
 use cairo_lang_executable::executable::{EntryPointKind, Executable, ExecutableEntryPoint};
 use cairo_lang_runner::{Arg, build_hints_dict};
 use cairo_lang_utils::bigint::BigUintAsHex;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::Felt252;
 use cairo_vm::types::program::Program;
 use cairo_vm::types::relocatable::MaybeRelocatable;
@@ -19,7 +19,7 @@ use num_bigint::BigInt;
 pub fn program_and_hints_from_executable(
     executable: &Executable,
     entrypoint: &ExecutableEntryPoint,
-) -> anyhow::Result<(Program, HashMap<String, Hint>)> {
+) -> anyhow::Result<(Program, UnorderedHashMap<String, Hint>)> {
     let data: Vec<MaybeRelocatable> =
         executable.program.bytecode.iter().map(Felt252::from).map(MaybeRelocatable::from).collect();
     let (hints, string_to_hint) = build_hints_dict(&executable.program.hints);

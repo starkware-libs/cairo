@@ -1,15 +1,17 @@
-use cairo_lang_defs::ids::MemberId;
+use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::usage::MemberPath;
-use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeLongId};
+use cairo_lang_semantic::{self as semantic, ConcreteTypeId, MemberAccessKind, TypeLongId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
 use itertools::{Itertools, chain};
 
 use super::block_builder::BlockStructRecomposer;
+use super::context::{LoweringContext, VarRequest};
 use crate::VariableId;
 use crate::ids::LocationId;
 
@@ -73,7 +75,13 @@ impl<'db> SemanticLoweringMapping<'db> {
         path: &MemberPath<'db>,
     ) -> Result<VariableId, AssembleValueError<'db>> {
         let value = self.break_into_value(&mut ctx, path).ok_or(AssembleValueError::Missing)?;
-        Self::assemble_value(&mut ctx, value).map_err(AssembleValueError::Moved)
+        let base_var = path.base_var();
+        let location_stable_ptr = match ctx.ctx.semantic_defs.get(&base_var) {
+            Some(binding) => binding.stable_ptr(ctx.ctx.db),
+            None => base_var.untyped_stable_ptr(ctx.ctx.db),
+        };
+        let location = ctx.ctx.get_location(location_stable_ptr);
+        Self::assemble_value(&mut ctx, value, location).map_err(AssembleValueError::Moved)
     }
 
     pub fn introduce(&mut self, path: MemberPath<'db>, var: VariableId) {
@@ -116,34 +124,35 @@ impl<'db> SemanticLoweringMapping<'db> {
     fn assemble_value(
         ctx: &mut BlockStructRecomposer<'_, '_, 'db>,
         value: &mut Value<'db>,
+        location: LocationId<'db>,
     ) -> Result<VariableId, MovedVar<'db>> {
         match value {
             Value::Var(var) => Ok(*var),
+            Value::MovedVar(moved) => Err(moved.clone()),
             Value::Scattered(scattered) => {
-                let members_res = scattered
+                let ty = scattered.ty;
+                let mut moved_var = None;
+                let members = scattered
                     .members
                     .iter_mut()
-                    .map(|(_, value)| Self::assemble_value(ctx, value))
-                    .collect::<Result<_, _>>();
-
-                match members_res {
-                    Ok(members) => {
-                        let var = ctx.reconstruct(scattered.concrete_struct_id, members);
-                        *value = Value::Var(var);
-                        Ok(var)
-                    }
-                    Err(MovedVar { ty: _, inference_error, last_use_location }) => {
-                        // Don't use the type of the moved member. Replace it with the type of the
-                        // variable.
-                        let y = TypeLongId::<'db>::Concrete(ConcreteTypeId::Struct(
-                            scattered.concrete_struct_id,
-                        ));
-                        let x = y.intern(ctx.ctx.db);
-                        Err(MovedVar { ty: x, inference_error, last_use_location })
-                    }
+                    .map(|(_, value)| match Self::assemble_value(ctx, value, location) {
+                        Ok(var) => var,
+                        Err(moved) => {
+                            let var = moved.var_id;
+                            moved_var.get_or_insert(moved);
+                            var
+                        }
+                    })
+                    .collect_vec();
+                let var = ctx.reconstruct(ty, members, location);
+                *value = Value::Var(var);
+                if let Some(MovedVar { var_id: _, inference_error, last_use_location }) = moved_var
+                {
+                    Err(MovedVar { var_id: var, inference_error, last_use_location })
+                } else {
+                    Ok(var)
                 }
             }
-            Value::MovedVar(moved) => Err(moved.clone()),
         }
     }
 
@@ -156,38 +165,44 @@ impl<'db> SemanticLoweringMapping<'db> {
             return self.scattered.get_mut(path);
         }
 
-        let MemberPath::Member { parent, member_id, concrete_struct_id, .. } = path else {
+        let MemberPath::Member { parent, kind } = path else {
             return None;
         };
 
+        // The type of the parent aggregate, taken from the member's [MemberAccessKind] (the
+        // authoritative semantic type).
+        let ty = aggregate_ty(ctx.ctx.db, kind);
         let parent_value = self.break_into_value(ctx, parent)?;
         match parent_value {
             Value::Var(var) => {
-                let members = ctx.deconstruct(*concrete_struct_id, *var);
+                let members = ctx.deconstruct(ty, *var);
                 let members = OrderedHashMap::from_iter(
-                    members.into_iter().map(|(member_id, var)| (member_id, Value::Var(var))),
+                    members.into_iter().map(|(kind, var)| (kind, Value::Var(var))),
                 );
-                let scattered = Scattered { concrete_struct_id: *concrete_struct_id, members };
+                let scattered = Scattered { ty, members };
                 *parent_value = Value::Scattered(Box::new(scattered));
             }
-            Value::MovedVar(MovedVar { ty: _, inference_error, last_use_location }) => {
-                let member_map = ctx.ctx.db.concrete_struct_members(*concrete_struct_id).unwrap();
-                let members = OrderedHashMap::from_iter(member_map.values().map(|member| {
-                    (
-                        member.id,
-                        Value::MovedVar(MovedVar {
-                            ty: member.ty,
-                            inference_error: inference_error.clone(),
-                            last_use_location: *last_use_location,
-                        }),
-                    )
-                }));
-                let scattered = Scattered { concrete_struct_id: *concrete_struct_id, members };
+            &mut Value::MovedVar(MovedVar { var_id, ref inference_error, last_use_location }) => {
+                let location = ctx.ctx.variables[var_id].location;
+                let inference_error = inference_error.clone();
+                let members = OrderedHashMap::from_iter(
+                    aggregate_members(ctx.ctx.db, ty).into_iter().map(|(kind, member_ty)| {
+                        (
+                            kind,
+                            Value::MovedVar(MovedVar {
+                                var_id: ctx.ctx.new_var(VarRequest { ty: member_ty, location }),
+                                inference_error: inference_error.clone(),
+                                last_use_location,
+                            }),
+                        )
+                    }),
+                );
+                let scattered = Scattered { ty, members };
                 *parent_value = Value::Scattered(Box::new(scattered));
             }
             Value::Scattered(..) => {}
         };
-        extract_matches!(parent_value, Value::Scattered).members.get_mut(member_id)
+        extract_matches!(parent_value, Value::Scattered).members.get_mut(kind)
     }
 }
 
@@ -317,24 +332,21 @@ fn compute_remapped_variables<'db>(
     // If we encountered a [Value::Var], we need to remap all the [Value::Scattered] values.
     let require_remapping = require_remapping || only_scattered.len() < values.len();
 
-    let concrete_struct_id = only_scattered[0].concrete_struct_id;
+    let ty = only_scattered[0].ty;
     let members = only_scattered[0]
         .members
         .keys()
-        .map(|member_id| {
-            let member_path = MemberPath::Member {
-                parent: parent_path.clone().into(),
-                member_id: *member_id,
-                concrete_struct_id,
-            };
+        .map(|kind| {
+            let member_path =
+                MemberPath::Member { parent: parent_path.clone().into(), kind: kind.clone() };
             // Call `compute_remapped_variables` recursively on the scattered values.
             // If there is a [Value::Var], `require_remapping` will be set to `true` to account
             // for it.
             let member_values =
-                only_scattered.iter().map(|scattered| &scattered.members[member_id]).collect_vec();
+                only_scattered.iter().map(|scattered| &scattered.members[kind]).collect_vec();
 
             (
-                *member_id,
+                kind.clone(),
                 compute_remapped_variables(
                     &member_values,
                     require_remapping,
@@ -345,7 +357,7 @@ fn compute_remapped_variables<'db>(
         })
         .collect();
 
-    Value::Scattered(Box::new(Scattered { concrete_struct_id, members }))
+    Value::Scattered(Box::new(Scattered { ty, members }))
 }
 
 /// Returns an iterator to all the [MemberPath]s that appear in both mappings and have different
@@ -369,7 +381,7 @@ pub fn find_changed_members<'db, 'a>(
 #[debug_db(ExprFormatter<'db>)]
 pub struct MovedVar<'db> {
     /// The type of the variable.
-    pub ty: semantic::TypeId<'db>,
+    pub var_id: VariableId,
     /// The reason it is not copyable.
     pub inference_error: InferenceError<'db>,
     /// The location of the last use of the moved variable. This is used to report an error.
@@ -397,7 +409,7 @@ impl<'db> std::fmt::Display for Value<'db> {
                 write!(
                     f,
                     "Scattered({})",
-                    scattered.members.values().map(|value| value.to_string()).join(", ")
+                    scattered.members.values().map(|value| value.to_string()).format(", ")
                 )
             }
             Value::MovedVar(..) => write!(f, "MovedVar"),
@@ -409,6 +421,81 @@ impl<'db> std::fmt::Display for Value<'db> {
 #[derive(Clone, Debug, DebugWithDb, Eq, PartialEq)]
 #[debug_db(ExprFormatter<'db>)]
 struct Scattered<'db> {
-    concrete_struct_id: semantic::ConcreteStructId<'db>,
-    members: OrderedHashMap<MemberId<'db>, Value<'db>>,
+    /// The type of the scattered aggregate (a struct or a tuple), used to reconstruct it.
+    ty: semantic::TypeId<'db>,
+    members: OrderedHashMap<MemberAccessKind<'db>, Value<'db>>,
+}
+
+/// Returns the type of the aggregate (a struct or a tuple) that a [MemberAccessKind] accesses a
+/// member of.
+fn aggregate_ty<'db>(
+    db: &'db dyn salsa::Database,
+    kind: &MemberAccessKind<'db>,
+) -> semantic::TypeId<'db> {
+    match kind {
+        MemberAccessKind::Struct { concrete_struct_id, .. } => {
+            TypeLongId::Concrete(ConcreteTypeId::Struct(*concrete_struct_id)).intern(db)
+        }
+        MemberAccessKind::Index { tuple_ty, .. } => *tuple_ty,
+    }
+}
+
+/// Returns the ordered members of an aggregate type (struct or tuple), as pairs of
+/// [MemberAccessKind] and the member type.
+pub(crate) fn aggregate_members<'db>(
+    db: &'db dyn salsa::Database,
+    ty: semantic::TypeId<'db>,
+) -> Vec<(MemberAccessKind<'db>, semantic::TypeId<'db>)> {
+    match ty.long(db) {
+        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => db
+            .concrete_struct_members(*concrete_struct_id)
+            .unwrap()
+            .iter()
+            .map(|(_, member)| {
+                (
+                    MemberAccessKind::Struct {
+                        concrete_struct_id: *concrete_struct_id,
+                        member_id: member.id,
+                    },
+                    member.ty,
+                )
+            })
+            .collect(),
+        TypeLongId::Tuple(tys) => tys
+            .iter()
+            .enumerate()
+            .map(|(index, member_ty)| (MemberAccessKind::Index { tuple_ty: ty, index }, *member_ty))
+            .collect(),
+        _ => unreachable!("Tried to scatter a non-aggregate type."),
+    }
+}
+
+/// Returns the snapshot-wrapped lowered types of the members of the aggregate `aggregate_ty`,
+/// along with the index of the member selected by `kind`. Returns `None` if `aggregate_ty` does
+/// not match `kind` (e.g. a tuple index on a non-tuple type).
+pub(crate) fn member_access_components<'db>(
+    ctx: &LoweringContext<'db, '_>,
+    aggregate_ty: semantic::TypeId<'db>,
+    kind: &MemberAccessKind<'db>,
+) -> Option<(Vec<semantic::TypeId<'db>>, usize)> {
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, aggregate_ty);
+    match kind {
+        MemberAccessKind::Struct { concrete_struct_id, member_id } => {
+            let members = ctx.db.concrete_struct_members(*concrete_struct_id).ok()?;
+            let member_idx = members.iter().position(|(_, member)| member.id == *member_id)?;
+            let member_tys = members
+                .iter()
+                .map(|(_, member)| wrap_in_snapshots(ctx.db, member.ty, n_snapshots))
+                .collect();
+            Some((member_tys, member_idx))
+        }
+        MemberAccessKind::Index { index, .. } => {
+            let TypeLongId::Tuple(tys) = long_ty else {
+                return None;
+            };
+            let member_tys =
+                tys.iter().map(|ty| wrap_in_snapshots(ctx.db, *ty, n_snapshots)).collect();
+            Some((member_tys, *index))
+        }
+    }
 }

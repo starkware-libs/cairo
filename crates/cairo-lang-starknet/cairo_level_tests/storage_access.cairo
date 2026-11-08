@@ -324,3 +324,20 @@ fn test_scrub_clears_memory() {
         assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i), Ok(1));
     }
 }
+
+#[test]
+fn test_scrub_up_to_last_offset() {
+    let base_address = starknet::storage_access::storage_base_address_from_felt252(
+        selector!("data"),
+    );
+    for i in 0..=255_u8 {
+        starknet::Store::<u8>::write_at_offset(0, base_address, i, 1).unwrap();
+    }
+    starknet::Store::<[felt252; 11]>::scrub(0, base_address, 245).unwrap();
+    for i in 0..245_u8 {
+        assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i), Ok(1));
+    }
+    for i in 245..=255_u8 {
+        assert_eq!(starknet::Store::<u8>::read_at_offset(0, base_address, i), Ok(0));
+    }
+}

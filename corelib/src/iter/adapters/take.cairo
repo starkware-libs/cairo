@@ -1,4 +1,4 @@
-use crate::num::traits::CheckedSub;
+use crate::num::traits::{CheckedAdd, CheckedSub};
 
 /// An iterator that only iterates over the first `n` iterations of `iter`.
 ///
@@ -29,7 +29,8 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
     fn nth<+Destruct<Take<I>>, +Destruct<Self::Item>>(
         ref self: Take<I>, n: usize,
     ) -> Option<Self::Item> {
-        if let Some(updated_n) = self.n.checked_sub(n + 1) {
+        if let Some(n_plus_1) = n.checked_add(1)
+            && let Some(updated_n) = self.n.checked_sub(n_plus_1) {
             self.n = updated_n;
             self.iter.nth(n)
         } else {
@@ -45,32 +46,50 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
     fn advance_by<+Destruct<Take<I>>, +Destruct<Self::Item>>(
         ref self: Take<I>, n: usize,
     ) -> Result<(), NonZero<usize>> {
+        // Marker returned on values caused by internal implementation error of underlying iterator,
+        // as we assume inner iterators would always be properly implemented.
+        const INNER_ERR_MARKER: NonZero<usize> = 0xffffffff;
+
         if let Some(updated_n) = self.n.checked_sub(n) {
+            // Advancing `n` fits within the remaining take budget.
             self.n = updated_n;
             match self.iter.advance_by(n) {
                 Ok(_) => Ok(()),
-                Err(rem_nz) => {
-                    self.n += rem_nz.into();
-                    Err(rem_nz)
+                Err(inner_rem) => {
+                    // The inner advanced `n - inner_rem`; refund the `inner_rem` it could not take.
+                    // `updated_n + inner_rem` is at most `self.n` before the split, so no overflow.
+                    let Some(refunded) = self.n.checked_add(inner_rem.into()) else {
+                        return Err(INNER_ERR_MARKER);
+                    };
+                    self.n = refunded;
+                    Err(inner_rem)
                 },
             }
         } else {
+            // `n` exceeds the budget, so drain the whole budget and report the shortfall. The take
+            // is now exhausted, so reset `self.n` to 0 - a later `next`/`count` then short-circuits
+            // instead of re-driving the now-dead inner iterator.
             let available = self.n;
-            let inner_taken = match self.iter.advance_by(available) {
-                Ok(_) => {
-                    self.n = 0;
-                    available
-                },
-                Err(inner_untaken) => {
-                    self.n = inner_untaken.into();
-                    available - self.n
+            self.n = 0;
+            // How many of `available` the inner actually advanced (all of them, unless it ran out
+            // first - a valid inner reports `inner_rem <= available`).
+            let advanced = match self.iter.advance_by(available) {
+                Ok(_) => available,
+                Err(inner_rem) => {
+                    let Some(advanced) = available.checked_sub(inner_rem.into()) else {
+                        return Err(INNER_ERR_MARKER);
+                    };
+                    advanced
                 },
             };
-            match (n - inner_taken).try_into() {
-                Some(nz) => Err(nz),
-                // Can't actually happen - but preventing the `unwrap` generated code.
-                None => Ok(()),
-            }
+            // `n > available >= advanced`, so the shortfall `n - advanced` is always `>= 1`.
+            let Some(shortfall) = n.checked_sub(advanced) else {
+                return Err(INNER_ERR_MARKER);
+            };
+            let Some(remainder) = shortfall.try_into() else {
+                return Err(INNER_ERR_MARKER);
+            };
+            Err(remainder)
         }
     }
 }

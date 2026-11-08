@@ -6,7 +6,7 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{
     CorelibSemantic, ErrorPropagationType, bounded_int_ty, get_enum_concrete_variant,
-    try_get_ty_by_name, unwrap_error_propagation_type, validate_literal,
+    try_get_ty_by_name, unwrap_error_propagation_type,
 };
 use cairo_lang_semantic::expr::compute::unwrap_pattern_type;
 use cairo_lang_semantic::items::constant::ConstValueId;
@@ -35,7 +35,7 @@ use flow_control::lower_graph::lower_graph;
 use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
-use refs::ClosureInfo;
+use refs::{ClosureInfo, member_access_components};
 use salsa::Database;
 use semantic::corelib::{
     core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
@@ -44,7 +44,7 @@ use semantic::items::constant::ConstValue;
 use semantic::types::wrap_in_snapshots;
 use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
-    MatchArmSelector, SemanticDiagnostic, TypeLongId,
+    MatchArmSelector, MemberAccessKind, SemanticDiagnostic, TypeLongId,
 };
 
 use self::block_builder::{BlockBuilder, SealedBlockBuilder, SealedGotoCallsite};
@@ -55,7 +55,7 @@ use self::context::{
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::logical_op::lower_logical_op;
 use crate::blocks::Blocks;
-use crate::diagnostic::LoweringDiagnosticKind::{self, *};
+use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::LoweringDiagnosticsBuilder;
 use crate::ids::{
     EnrichedSemanticSignature, FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId,
@@ -90,7 +90,7 @@ mod generated_test;
 mod specialized_test;
 
 /// Lowering of a function together with extra generated functions.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct MultiLowering<'db> {
     pub main_lowering: Lowered<'db>,
     pub generated_lowerings: OrderedHashMap<GeneratedFunctionKey<'db>, Lowered<'db>>,
@@ -726,7 +726,7 @@ fn lower_single_pattern<'db>(
         | semantic::Pattern::StringLiteral(_)
         | semantic::Pattern::EnumVariant(_) => {
             return Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(pattern.stable_ptr(), UnsupportedPattern),
+                ctx.diagnostics.report(pattern.stable_ptr(), RefutablePattern),
             ));
         }
         semantic::Pattern::Variable(semantic::PatternVariable {
@@ -798,8 +798,14 @@ fn lower_single_pattern<'db>(
             ty,
             ..
         }) => {
-            let patterns = patterns.clone();
-            lower_tuple_like_pattern_helper(ctx, builder, lowered_expr, &patterns, *ty)?;
+            lower_tuple_like_pattern_helper(
+                ctx,
+                builder,
+                lowered_expr,
+                patterns,
+                *ty,
+                pattern.stable_ptr().untyped(),
+            )?;
         }
         semantic::Pattern::Otherwise(pattern) => {
             let stable_ptr = pattern.stable_ptr.untyped();
@@ -818,6 +824,7 @@ fn lower_tuple_like_pattern_helper<'db>(
     lowered_expr: LoweredExpr<'db>,
     patterns: &[semantic::PatternId],
     ty: semantic::TypeId<'db>,
+    stable_ptr: SyntaxStablePtrId<'db>,
 ) -> LoweringResult<'db, ()> {
     let outputs = match lowered_expr {
         LoweredExpr::Tuple { exprs, .. } => exprs,
@@ -828,12 +835,18 @@ fn lower_tuple_like_pattern_helper<'db>(
                 TypeLongId::Tuple(tys) => tys,
                 TypeLongId::FixedSizeArray { type_id, size } => {
                     let size = size
-                        .long(ctx.db)
-                        .to_int()
+                        .to_int(ctx.db)
                         .expect("Expected ConstValue::Int for size")
                         .to_usize()
                         .unwrap();
                     vec![type_id; size]
+                }
+                // `Span<T>` matched against `[..]` is synthesized as a fixed-size array, but
+                // stays refutable.
+                TypeLongId::Concrete(_) => {
+                    return Err(LoweringFlowError::Failed(
+                        ctx.diagnostics.report(stable_ptr, RefutablePattern),
+                    ));
                 }
                 _ => unreachable!("Tuple-like pattern must be a tuple or fixed size array."),
             };
@@ -873,7 +886,7 @@ fn lower_tuple_like_pattern_helper<'db>(
 /// For example, if we have the code:
 /// foo(a + b)
 ///
-/// then `a + b` will be assigned  variable and a VarUsage object whose origin
+/// then `a + b` will be assigned variable and a VarUsage object whose origin
 /// is the location of the `a + b` expression.
 fn lower_expr_to_var_usage<'db>(
     ctx: &mut LoweringContext<'db, '_>,
@@ -947,14 +960,7 @@ fn lower_expr_literal_to_var_usage<'db>(
     value: &BigInt,
     builder: &mut BlockBuilder<'db>,
 ) -> VarUsage<'db> {
-    let value = if let Err(err) = validate_literal(ctx.db, ty, value) {
-        ConstValue::Missing(
-            ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err)),
-        )
-        .intern(ctx.db)
-    } else {
-        ConstValueId::from_int(ctx.db, ty, value)
-    };
+    let value = ConstValueId::from_int(ctx.db, ty, value);
     let location = ctx.get_location(stable_ptr);
     generators::Const { value, ty, location }.add(ctx, &mut builder.statements)
 }
@@ -1050,8 +1056,7 @@ fn add_chunks_to_data_array<'db, 'r>(
 ) -> &'r [u8] {
     let expr_stable_ptr = expr.stable_ptr.untyped();
 
-    let chunks = expr.value.as_bytes().chunks_exact(31);
-    let remainder = chunks.remainder();
+    let (chunks, remainder) = expr.value.as_bytes().as_chunks::<31>();
     for chunk in chunks {
         let chunk_usage = generators::Const {
             value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk), bytes31_ty)
@@ -1151,12 +1156,8 @@ fn lower_expr_fixed_size_array<'db>(
         semantic::FixedSizeArrayItems::ValueAndSize(value, size) => {
             let lowered_value = lower_expr(ctx, builder, *value)?;
             let var_usage = lowered_value.as_var_usage(ctx, builder)?;
-            let size = size
-                .long(ctx.db)
-                .to_int()
-                .expect("Expected ConstValue::Int for size")
-                .to_usize()
-                .unwrap();
+            let size =
+                size.to_int(ctx.db).expect("Expected ConstValue::Int for size").to_usize().unwrap();
             if size == 0 {
                 return Err(LoweringFlowError::Failed(
                     ctx.diagnostics
@@ -1223,13 +1224,8 @@ fn lower_expr_desnap<'db>(
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a desnap: {:?}", expr.debug(&ctx.expr_formatter));
+    let input = lower_expr(ctx, builder, expr.inner)?.as_var_usage(ctx, builder)?;
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let expr = lower_expr(ctx, builder, expr.inner)?;
-    if let LoweredExpr::Snapshot { expr, .. } = expr {
-        return Ok(*expr);
-    }
-    let input = expr.as_var_usage(ctx, builder)?;
-
     Ok(LoweredExpr::AtVariable(
         generators::Desnap { input, location }.add(ctx, &mut builder.statements),
     ))
@@ -1534,12 +1530,11 @@ fn lower_expr_loop<'db>(
             ExprVarMemberPath::Var(var) => {
                 ExprVarMemberPath::Var(ExprVar { ty: wrap_in_snapshots(db, var.ty, 1), ..*var })
             }
-            ExprVarMemberPath::Member { parent, member_id, stable_ptr, concrete_struct_id, ty } => {
+            ExprVarMemberPath::Member { parent, kind, stable_ptr, ty } => {
                 ExprVarMemberPath::Member {
                     parent: parent.clone(),
-                    member_id: *member_id,
+                    kind: kind.clone(),
                     stable_ptr: *stable_ptr,
-                    concrete_struct_id: *concrete_struct_id,
                     ty: wrap_in_snapshots(db, *ty, 1),
                 }
             }
@@ -1565,19 +1560,16 @@ fn lower_expr_loop<'db>(
     .intern(db);
 
     // Generate the function.
-    let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
-    let loop_ctx = LoopContext { loop_expr_id, early_return_info: early_return_info.clone() };
+    let encapsulating_ctx = ctx.encapsulating_ctx.as_mut().unwrap();
     let lowered = lower_loop_function(
         encapsulating_ctx,
         function,
         loop_signature.clone(),
-        loop_ctx,
+        LoopContext { loop_expr_id, early_return_info: early_return_info.clone() },
         ctx.return_type,
     )
     .map_err(LoweringFlowError::Failed)?;
-    // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(stable_ptr), lowered);
-    ctx.encapsulating_ctx = Some(encapsulating_ctx);
     let call_loop_expr = call_loop_func_ex(
         ctx,
         loop_signature,
@@ -1811,27 +1803,18 @@ fn lower_expr_member_access<'db>(
         ));
     }
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let members = ctx
-        .db
-        .concrete_struct_members(expr.concrete_struct_id)
-        .map_err(LoweringFlowError::Failed)?;
-    let member_idx =
-        members.iter().position(|(_, member)| member.id == expr.member).ok_or_else(|| {
-            LoweringFlowError::Failed(
-                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
-            )
-        })?;
+    let input = lower_expr_to_var_usage(ctx, builder, expr.expr)?;
+    let (member_tys, member_idx) =
+        member_access_components(ctx, ctx.variables[input.var_id].ty, &expr.kind).ok_or_else(
+            || {
+                LoweringFlowError::Failed(
+                    ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
+                )
+            },
+        )?;
     Ok(LoweredExpr::AtVariable(
-        generators::StructMemberAccess {
-            input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
-            member_tys: members
-                .iter()
-                .map(|(_, member)| wrap_in_snapshots(ctx.db, member.ty, expr.n_snapshots))
-                .collect(),
-            member_idx,
-            location,
-        }
-        .add(ctx, &mut builder.statements),
+        generators::StructMemberAccess { input, member_tys, member_idx, location }
+            .add(ctx, &mut builder.statements),
     ))
 }
 
@@ -1862,9 +1845,11 @@ fn lower_expr_struct_ctor<'db>(
                 };
                 let member_path = ExprVarMemberPath::Member {
                     parent: Box::new(path.clone()),
-                    member_id: member.id,
+                    kind: MemberAccessKind::Struct {
+                        concrete_struct_id: expr.concrete_struct_id,
+                        member_id: member.id,
+                    },
                     stable_ptr: path.stable_ptr(),
-                    concrete_struct_id: expr.concrete_struct_id,
                     ty: member.ty,
                 };
                 entry
@@ -1949,16 +1934,14 @@ fn add_capture_destruct_impl<'db>(
 
     let location_id = LocationId::from_stable_location(db, location);
 
-    let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
+    let encapsulating_ctx = ctx.encapsulating_ctx.as_mut().unwrap();
     let return_type = signature.return_type;
     let lowered_impl_res = get_destruct_lowering(
         LoweringContext::new(encapsulating_ctx, function_id, signature, return_type)?,
         location_id,
         closure_info,
-    );
-    // Restore the encapsulating context before unwrapping the result.
-    ctx.encapsulating_ctx = Some(encapsulating_ctx);
-    ctx.lowerings.insert(func_key, lowered_impl_res?);
+    )?;
+    ctx.lowerings.insert(func_key, lowered_impl_res);
     Ok(())
 }
 
@@ -2145,12 +2128,8 @@ fn lower_expr_closure<'db>(
     let (capture_var_usage, closure_info) = builder.capture(ctx, usage, expr);
     let closure_variable = LoweredExpr::AtVariable(capture_var_usage);
     let closure_ty = extract_matches!(expr.ty.long(ctx.db), TypeLongId::Closure);
-    let _ = add_capture_destruct_impl(
-        ctx,
-        capture_var_usage,
-        &closure_info,
-        closure_ty.params_location,
-    );
+    add_capture_destruct_impl(ctx, capture_var_usage, &closure_info, closure_ty.params_location)
+        .map_err(LoweringFlowError::Failed)?;
     add_closure_call_function(
         ctx,
         expr,

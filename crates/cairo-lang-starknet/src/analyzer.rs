@@ -199,7 +199,7 @@ fn analyze_storage_struct<'db>(
                          `#[storage_node]`, or use valid args for `Vec` or `Map` library types. \
                          To suppress this warning, use \
                          `#[allow(starknet::invalid_storage_member_types)]`.",
-                        inference_error.format(db)
+                        inference_error.format(db, struct_id.parent_module(db))
                     ),
                 ));
             }

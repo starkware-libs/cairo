@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     || -> i32 {
         let d: u32 = 3;
@@ -11,11 +11,8 @@ fn foo() {
     };
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
-error[E2042]: Unexpected return type. Expected: "core::integer::i32", found: "core::integer::u32".
+error[E2042]: Unexpected return type. Expected: "i32", found: "u32".
  --> lib.cairo:2:11
     || -> i32 {
           ^^^
@@ -27,16 +24,13 @@ error[E2042]: Unexpected return type. Expected: "core::integer::i32", found: "co
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     |a| -> i32 {
         let d: i32 = a;
         d
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -47,7 +41,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     |a: u32| -> i32 {
         let d: i32 = a;
@@ -55,11 +49,8 @@ fn foo() {
     };
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::integer::i32", found: "core::integer::u32".
+error[E2041]: Unexpected argument type. Expected: "i32", found: "u32".
  --> lib.cairo:3:22
         let d: i32 = a;
                      ^
@@ -71,7 +62,7 @@ error[E2041]: Unexpected argument type. Expected: "core::integer::i32", found: "
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: i32 = || {
         let d: u32 = 3;
@@ -79,11 +70,8 @@ fn foo() {
     };
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:19: 2:21}".
+error[E2041]: Unexpected argument type. Expected: "i32", found: "test::foo::{closure#0}".
  --> lib.cairo:2:19-5:5
       let _x: i32 = || {
  ___________________^
@@ -98,13 +86,7 @@ error[E2041]: Unexpected argument type. Expected: "core::integer::i32", found: "
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 const _x: i32 = || {
     let d: u32 = 3;
     d
@@ -119,13 +101,13 @@ error[E2182]: Closures are not allowed in this context.
 | };
 |_^
 
-error[E2302]: Type mismatch: `{closure@lib.cairo:1:17: 1:19}` and `core::integer::i32`.
- --> lib.cairo:1:1-4:2
+error[E2302]: Type mismatch: `<lib.cairo:1:17: 1:19>::{closure#0}` and `i32`.
+ --> lib.cairo:1:17-4:1
   const _x: i32 = || {
- _^
+ _________________^
 | ...
 | };
-|__^
+|_^
 
 //! > ==========================================================================
 
@@ -134,18 +116,13 @@ error[E2302]: Type mismatch: `{closure@lib.cairo:1:17: 1:19}` and `core::integer
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar<const N: u32>() {}
 fn foo() {
     bar::<{ || -> u32 {
         2
     } }>();
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar<const N: u32>() {}
 
 //! > expected_diagnostics
 error[E2182]: Closures are not allowed in this context.
@@ -156,7 +133,7 @@ error[E2182]: Closures are not allowed in this context.
 |     } }>();
 |_____^
 
-error[E2302]: Type mismatch: `{closure@lib.cairo:3:13: 3:15}` and `core::integer::u32`.
+error[E2302]: Type mismatch: `<lib.cairo:3:13: 3:15>::{closure#0}` and `u32`.
  --> lib.cairo:3:11-5:7
       bar::<{ || -> u32 {
  ___________^
@@ -171,16 +148,13 @@ error[E2302]: Type mismatch: `{closure@lib.cairo:3:13: 3:15}` and `core::integer
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     |a| {
         let d = a;
         d
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2314]: Type annotations needed. Failed to infer ?0.
@@ -195,21 +169,16 @@ error[E2314]: Type annotations needed. Failed to infer ?0.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
 fn foo() {
     let c = |a| {
         let d = a;
         d.into()
     };
     let _k: felt252 = bar(c);
-}
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
-    core::ops::FnOnce::call(c, (2,))
 }
 
 //! > expected_diagnostics
@@ -221,7 +190,10 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
 fn foo() {
     let c = |a| {
         let d = a;
@@ -231,16 +203,8 @@ fn foo() {
     let _k: felt252 = bar(c);
 }
 
-//! > function_name
-foo
-
-//! > module_code
-fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
-    core::ops::FnOnce::call(c, (2,))
-}
-
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::ops::function::FnOnce::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>.
+error[E2311]: Trait has no implementation in context: core::ops::function::FnOnce::<test::foo::{closure#0}, (u32,)>.
  --> lib.cairo:10:23
     let _k: felt252 = bar(c);
                       ^^^
@@ -252,7 +216,10 @@ error[E2311]: Trait has no implementation in context: core::ops::function::FnOnc
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
 fn foo() {
     let c = |a| {
         let d = a;
@@ -262,16 +229,8 @@ fn foo() {
     let _k: felt252 = bar(c);
 }
 
-//! > function_name
-foo
-
-//! > module_code
-fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
-    core::ops::FnOnce::call(c, (2,))
-}
-
 //! > expected_diagnostics
-error[E2308]: `core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,), core::traits::DestructFromDrop::<{closure@lib.cairo:5:13: 5:16}, Generated core::traits::Drop::<{closure@lib.cairo:5:13: 5:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>>::Output` type mismatch: `core::integer::u128` and `core::felt252`.
+error[E2308]: `core::ops::function::FnOnceImpl::<test::foo::{closure#0}, (u32,), traits::DestructFromDrop::<test::foo::{closure#0}, Generated core::traits::Drop::<test::foo::{closure#0}>>, Generated core::ops::function::Fn::<test::foo::{closure#0}, (core::integer::u32,)>>::Output` type mismatch: `u128` and `felt252`.
  --> lib.cairo:9:39
     let _f: u128 = core::ops::FnOnce::call(c, (2,));
                                       ^^^^
@@ -283,16 +242,13 @@ error[E2308]: `core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:13: 5:16},
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let c = |a, b, c| {
         a.into() + b.into() + c.into()
     };
     let _f: u256 = c(2_felt252, 2_u256, 6_u64);
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -303,7 +259,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let c = |a, b, c| {
         a.into() + b.into() + c.into()
@@ -311,11 +267,8 @@ fn foo() {
     let _f: u32 = c(2_felt252, 2_u256, 6_u64);
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::traits::Into::<core::integer::u256, core::integer::u32>.
+error[E2311]: Trait has no implementation in context: Into::<u256, u32>.
  --> lib.cairo:3:22
         a.into() + b.into() + c.into()
                      ^^^^
@@ -325,27 +278,33 @@ error[E2311]: Trait has no implementation in context: core::traits::Into::<core:
 //! > Test shadowing of a function with a variable.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: warnings_only)
+test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar() -> u32 {
+    2
+}
 fn foo() {
     let bar: u8 = 3;
     let _f: u32 = bar(2);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar() -> u32 {
-    2
+fn foo_in_loop() {
+    let bar: u8 = 3;
+    loop {
+        let _f: u32 = bar();
+    }
 }
 
 //! > expected_diagnostics
-warning[E2184]: Function `bar` is shadowed by a local variable.
+error[E2184]: Function `bar` is shadowed by a local variable.
  --> lib.cairo:6:19
     let _f: u32 = bar(2);
                   ^^^
+
+error[E2184]: Function `bar` is shadowed by a local variable.
+ --> lib.cairo:11:23
+        let _f: u32 = bar();
+                      ^^^
 
 //! > ==========================================================================
 
@@ -354,17 +313,7 @@ warning[E2184]: Function `bar` is shadowed by a local variable.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    let _y: u16 = baz(|a| {
-        a.into()
-    });
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 fn bar() -> u32 {
     2
 }
@@ -374,14 +323,19 @@ fn baz<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
     let _x: u32 = bar();
     c(9)
 }
+fn foo() {
+    let _y: u16 = baz(|a| {
+        a.into()
+    });
+}
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<core::felt252, ()>.
+error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<felt252, ()>.
  --> lib.cairo:7:19
     let _x: u32 = bar();
                   ^^^^^
 
-error[E2311]: Trait has no implementation in context: core::traits::Into::<core::integer::u32, core::integer::u16>.
+error[E2311]: Trait has no implementation in context: Into::<u32, u16>.
  --> lib.cairo:12:11
         a.into()
           ^^^^
@@ -393,7 +347,10 @@ error[E2311]: Trait has no implementation in context: core::traits::Into::<core:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar(a: felt252) -> u32 {
+    2
+}
 fn foo() {
     let bar = |_a, _b, _c| -> u32 {
         3
@@ -401,16 +358,8 @@ fn foo() {
     let _f: u32 = bar(2);
 }
 
-//! > function_name
-foo
-
-//! > module_code
-fn bar(a: felt252) -> u32 {
-    2
-}
-
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<{closure@lib.cairo:5:15: 5:27}, (core::felt252,)>.
+error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<test::foo::{closure#0}, (felt252,)>.
  --> lib.cairo:8:19
     let _f: u32 = bar(2);
                   ^^^^^^
@@ -422,7 +371,7 @@ error[E2311]: Trait has no implementation in context: core::ops::function::Fn::<
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let bar = |a| -> u32 {
         a
@@ -430,9 +379,6 @@ fn foo() {
     let a = 5;
     let _f: u32 = bar(ref a);
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2185]: Arguments to closure functions cannot be references
@@ -447,7 +393,7 @@ error[E2185]: Arguments to closure functions cannot be references
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let bar = |a| {
         return a;
@@ -455,9 +401,6 @@ fn foo() {
     let a = 5;
     let _f: u32 = bar(a);
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -468,7 +411,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let bar = |a: Option<u32>| -> Option<u32> {
         Some(a?)
@@ -476,9 +419,6 @@ fn foo() {
     let a = Some(5);
     let _f: u32 = bar(a).unwrap();
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -489,7 +429,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 //TODO(Tomer): Add support for inference of Option type in closures.
 fn foo() {
     let bar1 = |a| -> Option<u32> {
@@ -502,9 +442,6 @@ fn foo() {
     let _f: u32 = bar(a).unwrap();
     let _f: u32 = bar2(a).unwrap();
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2063]: Type "?0" cannot error propagate
@@ -520,7 +457,7 @@ error[E2061]: `?` can only be used in a function with `Option` or `Result` retur
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:6:17
     let bar2 = |b: Option<u32>| {
-                ^^^^^^^^^^^^^^
+                ^
 
 error[E0006]: Function not found.
  --> lib.cairo:10:19
@@ -544,7 +481,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     loop {
         let c = || {
@@ -553,9 +490,6 @@ fn foo() {
         c();
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2146]: `break` only allowed inside a `loop`.
@@ -570,7 +504,7 @@ error[E2146]: `break` only allowed inside a `loop`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     loop {
         let c = || {
@@ -579,9 +513,6 @@ fn foo() {
         c();
     }
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2145]: `continue` only allowed inside a `loop`.
@@ -596,7 +527,7 @@ error[E2145]: `continue` only allowed inside a `loop`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let mut a = 5;
     let b = a;
@@ -604,9 +535,6 @@ fn foo() {
         a + b
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2188]: Capture of mutable variables in a closure is not supported
@@ -621,16 +549,11 @@ error[E2188]: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+fn bar<T, +Destruct<T>>(a: T) {}
 fn foo() {
     bar(|| {});
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar<T, +Destruct<T>>(a: T) {}
 
 //! > expected_diagnostics
 
@@ -641,19 +564,16 @@ fn bar<T, +Destruct<T>>(a: T) {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _y = || 2;
     let x: u32 = 5;
     x()
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
-error[E2138]: Call expression requires a function, found `core::integer::u32`.
-Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<core::integer::u32, ?4>.
+error[E2138]: Call expression requires a function, found `u32`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<u32, ?4>.
  --> lib.cairo:4:5
     x()
     ^^^
@@ -665,22 +585,17 @@ Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has n
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() -> u32 {
-    let _y = || 2;
-    let x: u32 = 5;
-    x()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 impl MyImpl of core::ops::FnOnce<u32, ()> {
     type Output = u32;
     fn call(self: u32, args: ()) -> u32 {
         self
     }
+}
+fn foo() -> u32 {
+    let _y = || 2;
+    let x: u32 = 5;
+    x()
 }
 
 //! > expected_diagnostics
@@ -696,15 +611,12 @@ impl MyImpl of core::ops::FnOnce<u32, ()> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _ = |a| {
         a = a + 2
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2083]: Cannot assign to an immutable variable.
@@ -719,15 +631,12 @@ error[E2083]: Cannot assign to an immutable variable.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _ = |ref a| {
         a = a + 2
     };
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2186]: Closure parameters cannot be references
@@ -742,14 +651,11 @@ error[E2186]: Closure parameters cannot be references
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() -> Option<u32> {
     let x: Option<Array<i32>> = Some(array![1, 2, 3]);
     x.map(|x| x.len())
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -760,23 +666,18 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
-fn foo() {
-    MyTrait::call_with(|arr| {
-        arr.len();
-    });
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait<F, +core::ops::Fn<F, (Array::<i32>,)>> {
     fn call_with(func: F) {
         func(ArrayTrait::<i32>::new());
     }
 }
 impl MyImpl<F, impl Func: core::ops::Fn<F, (Array::<i32>,)>> of MyTrait<F, Func>;
+fn foo() {
+    MyTrait::call_with(|arr| {
+        arr.len();
+    });
+}
 
 //! > expected_diagnostics
 error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: ArrayTrait::len and SpanTrait::len. Consider adding type annotations or explicitly refer to the impl function.
@@ -791,21 +692,16 @@ error[E2046]: Ambiguous method call. More than one applicable trait function wit
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn call_with<F, +core::ops::Fn<F, (i32,)>>(func: F) {
+    func(1);
+}
 fn foo() {
     call_with(|| {})
 }
 
-//! > function_name
-foo
-
-//! > module_code
-fn call_with<F, +core::ops::Fn<F, (i32,)>>(func: F) {
-    func(1);
-}
-
 //! > expected_diagnostics
-error[E2302]: Type mismatch: `()` and `(core::integer::i32,)`.
+error[E2302]: Type mismatch: `()` and `(i32,)`.
  --> lib.cairo:5:15
     call_with(|| {})
               ^^^^^
@@ -817,7 +713,7 @@ error[E2302]: Type mismatch: `()` and `(core::integer::i32,)`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let c = |a, b| {
         a + b
@@ -825,11 +721,167 @@ fn foo() {
     c(b: 2_u32, a: 1_u32);
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
 error[E2121]: Named arguments are not supported in this context.
  --> lib.cairo:5:7
     c(b: 2_u32, a: 1_u32);
       ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Closure capturing an inferred-type value, unified with the closure type (occurs-check regression: must not stack-overflow).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn unify<T, +Drop<T>>(_a: T, _b: T) {}
+fn foo() {
+    let x = Default::default();
+    let f = || {
+        let _s = @x;
+    };
+    unify(x, f);
+}
+
+//! > expected_diagnostics
+error[E2041]: Unexpected argument type. Expected: "?0", found: "test::foo::{closure#0}".
+ --> lib.cairo:7:14
+    unify(x, f);
+             ^
+
+//! > ==========================================================================
+
+//! > Test the path a generated function is named by, in every scope one can be defined in.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+// Numbered per kind, in their order in the function - the loop does not renumber the closures.
+fn ordering() {
+    let _first: felt252 = |x: u32| x;
+    loop {
+        break;
+    }
+    let _second: felt252 = |x: u32| x;
+}
+
+// Nested in the path of the generated function containing them, each scope numbered from 0
+// independently of its depth.
+fn nesting() {
+    let _outer = |x: u32| {
+        let _mid = |y: u32| {
+            let _inner: felt252 = |z: u32| z;
+            y
+        };
+        loop {
+            let _in_loop: felt252 = |z: u32| z;
+            break;
+        }
+        x
+    };
+    loop {
+        let _in_loop: felt252 = |z: u32| z;
+        break;
+    }
+    let _last: felt252 = |v: u32| v;
+}
+
+// Only the body of a `for` is lowered into its loop function, so a closure in its iterable is
+// scoped outside the loop.
+fn for_scopes(a: Array<u32>) {
+    for _x in a.into_iter().map(|y: u32| {
+        let _in_iterable: felt252 = |z: u32| z;
+        y
+    }) {
+        let _in_body: felt252 = |z: u32| z;
+    }
+}
+
+// Named per macro expansion, as the expansion is in a file of its own.
+fn macro_expansions() {
+    let _a = array![{
+        let _in_macro: felt252 = |z: u32| z;
+        1_u32
+    }];
+    let _b = array![{
+        let _in_macro: felt252 = |z: u32| z;
+        2_u32
+    }];
+}
+
+// Relative to the trait function with a default body, or the impl function, defining them.
+trait MyTrait {
+    fn defaulted() {
+        let _in_trait: felt252 = |y: u32| y;
+    }
+    fn required();
+}
+
+impl MyImpl of MyTrait {
+    fn required() {
+        let _in_impl: felt252 = |y: u32| y;
+    }
+}
+
+//! > expected_diagnostics
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::ordering::{closure#0}".
+ --> lib.cairo:3:27
+    let _first: felt252 = |x: u32| x;
+                          ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::ordering::{closure#1}".
+ --> lib.cairo:7:28
+    let _second: felt252 = |x: u32| x;
+                           ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::nesting::{closure#0}::{closure#0}::{closure#0}".
+ --> lib.cairo:15:35
+            let _inner: felt252 = |z: u32| z;
+                                  ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::nesting::{closure#0}::{loop#0}::{closure#0}".
+ --> lib.cairo:19:37
+            let _in_loop: felt252 = |z: u32| z;
+                                    ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::nesting::{loop#0}::{closure#0}".
+ --> lib.cairo:25:33
+        let _in_loop: felt252 = |z: u32| z;
+                                ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::nesting::{closure#1}".
+ --> lib.cairo:28:26
+    let _last: felt252 = |v: u32| v;
+                         ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::for_scopes::{closure#0}::{closure#0}".
+ --> lib.cairo:35:37
+        let _in_iterable: felt252 = |z: u32| z;
+                                    ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::for_scopes::{loop#0}::{closure#0}".
+ --> lib.cairo:38:33
+        let _in_body: felt252 = |z: u32| z;
+                                ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::macro_expansions::{array_inline_macro@1142}::{closure#0}".
+ --> lib.cairo:45:34
+        let _in_macro: felt252 = |z: u32| z;
+                                 ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::macro_expansions::{array_inline_macro@1231}::{closure#0}".
+ --> lib.cairo:49:34
+        let _in_macro: felt252 = |z: u32| z;
+                                 ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::MyTrait::defaulted::{closure#0}".
+ --> lib.cairo:57:34
+        let _in_trait: felt252 = |y: u32| y;
+                                 ^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "test::MyImpl::required::{closure#0}".
+ --> lib.cairo:64:33
+        let _in_impl: felt252 = |y: u32| y;
+                                ^^^^^^^^^^

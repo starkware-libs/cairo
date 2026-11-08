@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FreeFunctionId, FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
@@ -16,7 +16,10 @@ use super::functions::{
     FunctionDeclarationData, GenericFunctionId, InlineConfiguration,
     forbid_inline_always_with_impl_generic_param,
 };
-use super::generics::{GenericParamsData, semantic_generic_params};
+use super::generics::{
+    GenericParamsData, generic_params_data_cycle, generic_params_data_initial,
+    semantic_generic_params,
+};
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
 use crate::expr::inference::InferenceId;
@@ -32,7 +35,7 @@ use crate::{FunctionLongId, GenericParam, SemanticDiagnostic, semantic};
 mod test;
 
 /// Returns the generic params data of a free function.
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn free_function_generic_params_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
@@ -124,7 +127,7 @@ fn free_function_declaration_data<'db>(
 }
 
 /// Query implementation of [FreeFunctionSemantic::priv_free_function_body_data].
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=priv_free_function_body_data_cycle, cycle_initial=priv_free_function_body_data_initial)]
 fn priv_free_function_body_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
@@ -174,6 +177,26 @@ fn priv_free_function_body_data<'db>(
         resolver_data,
         body: FunctionBody { arenas, body_expr },
     })
+}
+
+/// Cycle handling for [FreeFunctionSemantic::priv_free_function_body_data].
+fn priv_free_function_body_data_cycle<'db>(
+    _db: &'db dyn Database,
+    _cycle: &salsa::Cycle<'_>,
+    last_provisional_value: &Maybe<FunctionBodyData<'db>>,
+    _value: Maybe<FunctionBodyData<'db>>,
+    _free_function_id: FreeFunctionId<'db>,
+) -> Maybe<FunctionBodyData<'db>> {
+    last_provisional_value.clone()
+}
+
+/// Cycle handling for [FreeFunctionSemantic::priv_free_function_body_data].
+fn priv_free_function_body_data_initial<'db>(
+    _db: &'db dyn Database,
+    _id: salsa::Id,
+    _free_function_id: FreeFunctionId<'db>,
+) -> Maybe<FunctionBodyData<'db>> {
+    Err(skip_diagnostic())
 }
 
 /// Trait for free function-related semantic queries.

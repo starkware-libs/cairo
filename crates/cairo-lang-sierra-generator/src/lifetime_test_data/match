@@ -3,10 +3,8 @@
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) -> felt252 {
     if x == 0 {
         y
@@ -55,10 +53,8 @@ BeginningOfBlock(blk2): v2, v1
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) -> felt252 {
     let _z = if x == 0 {
         y
@@ -107,10 +103,8 @@ BeginningOfBlock(blk2): v2
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) {
     let _z = if x == 0 {
         y
@@ -162,10 +156,8 @@ BeginningOfBlock(blk1): v1
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo(x: felt252, y: felt252) {
     let _z = if x == 0 {
         y

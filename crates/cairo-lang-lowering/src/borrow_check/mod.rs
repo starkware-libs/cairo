@@ -2,7 +2,7 @@
 #[path = "test.rs"]
 mod test;
 
-use cairo_lang_defs::ids::TraitFunctionId;
+use cairo_lang_defs::ids::{ModuleId, TraitFunctionId};
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
@@ -17,7 +17,9 @@ use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics, LoweringDiagnosticsBuilder};
 use crate::ids::{FunctionId, LocationId, SemanticFunctionIdEx};
-use crate::{BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
+use crate::{
+    BlockId, Lowered, LoweringStage, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
+};
 
 pub mod demand;
 
@@ -30,6 +32,7 @@ pub struct BorrowChecker<'db, 'mt, 'r> {
     destruct_fn: TraitFunctionId<'db>,
     panic_destruct_fn: TraitFunctionId<'db>,
     is_panic_destruct_fn: bool,
+    context_module: ModuleId<'db>,
 }
 
 /// A state saved for each position in the back analysis.
@@ -137,10 +140,11 @@ impl<'db, 'mt> DemandReporter<VariableId, PanicState> for BorrowChecker<'db, 'mt
         }
         self.diagnostics.report_by_location(
             location
-                .with_note(DiagnosticNote::text_only(drop_err.format(db)))
-                .with_note(DiagnosticNote::text_only(destruct_err.format(db)))
+                .with_note(DiagnosticNote::text_only(drop_err.format(db, self.context_module)))
+                .with_note(DiagnosticNote::text_only(destruct_err.format(db, self.context_module)))
                 .maybe_with_note(
-                    panic_destruct_err.map(|err| DiagnosticNote::text_only(err.format(db))),
+                    panic_destruct_err
+                        .map(|err| DiagnosticNote::text_only(err.format(db, self.context_module))),
                 ),
             VariableNotDropped { drop_err, destruct_err },
         );
@@ -159,7 +163,9 @@ impl<'db, 'mt> DemandReporter<VariableId, PanicState> for BorrowChecker<'db, 'mt
                     .long(self.db)
                     .clone()
                     .add_note_with_location(self.db, "variable was previously used here", position)
-                    .with_note(DiagnosticNote::text_only(inference_error.format(self.db))),
+                    .with_note(DiagnosticNote::text_only(
+                        inference_error.format(self.db, self.context_module),
+                    )),
                 VariableMoved { inference_error },
             );
         }
@@ -178,7 +184,8 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
         info.variables_introduced(self, stmt.outputs(), (None, block_id));
         match stmt {
             Statement::Call(stmt) => {
-                if let Ok(signature) = stmt.function.signature(self.db)
+                if let Ok(signature) =
+                    stmt.function.signature(self.db, LoweringStage::Monomorphized)
                     && signature.panicable
                 {
                     // Be prepared to panic here.
@@ -197,10 +204,9 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.info.copyable.clone() {
                     self.diagnostics.report_by_location(
-                        var.location
-                            .long(self.db)
-                            .clone()
-                            .with_note(DiagnosticNote::text_only(inference_error.format(self.db))),
+                        var.location.long(self.db).clone().with_note(DiagnosticNote::text_only(
+                            inference_error.format(self.db, self.context_module),
+                        )),
                         DesnappingANonCopyableType { inference_error },
                     );
                 }
@@ -281,7 +287,7 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
 pub type PotentialDestructCalls<'db> = UnorderedHashMap<BlockId, Vec<FunctionId<'db>>>;
 
 /// The borrow checker result.
-#[derive(Eq, PartialEq, Debug, Default, salsa::Update)]
+#[derive(Eq, PartialEq, Debug, Default, salsa::SalsaValue)]
 pub struct BorrowCheckResult<'db> {
     /// The possible destruct calls per block.
     pub block_extra_calls: PotentialDestructCalls<'db>,
@@ -293,6 +299,7 @@ pub struct BorrowCheckResult<'db> {
 /// Returns the potential destruct function calls per block.
 pub fn borrow_check<'db>(
     db: &'db dyn Database,
+    context_module: ModuleId<'db>,
     is_panic_destruct_fn: bool,
     lowered: &'db Lowered<'db>,
 ) -> BorrowCheckResult<'db> {
@@ -312,6 +319,7 @@ pub fn borrow_check<'db>(
         destruct_fn,
         panic_destruct_fn,
         is_panic_destruct_fn,
+        context_module,
     };
     let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();
@@ -332,10 +340,10 @@ pub fn borrow_check<'db>(
     BorrowCheckResult { block_extra_calls, diagnostics: diagnostics.build() }
 }
 
-/// Borrow check the params of the function are panic destruct, as this function may have a gas
-/// withdrawal.
+/// Borrow check the function's panic-destructible parameters, as this function may withdraw gas.
 pub fn borrow_check_possible_withdraw_gas<'db>(
     db: &'db dyn Database,
+    context_module: ModuleId<'db>,
     location_id: LocationId<'db>,
     lowered: &Lowered<'db>,
     diagnostics: &mut LoweringDiagnostics<'db>,
@@ -351,6 +359,7 @@ pub fn borrow_check_possible_withdraw_gas<'db>(
         destruct_fn,
         panic_destruct_fn,
         is_panic_destruct_fn: false,
+        context_module,
     };
     let position = (
         Some(DropPosition::Panic(location_id.with_auto_generation_note(db, "withdraw_gas"))),

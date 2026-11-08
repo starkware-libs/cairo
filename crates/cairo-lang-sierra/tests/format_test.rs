@@ -17,12 +17,15 @@ fn format_test() {
                 type [4]= Enum<ut@core::option ::Option:: <core::felt252>, [3],[2]>;
                 type Complex = Struct<ut@Complex:: <core::felt252, @core::felt252>,[8],[9]>;
                 type ClosureName = Struct<ut@{closure@/path/examples/fib.cairo:3:15: 3:23}>;
+                type GeneratedName = Struct<ut@test::foo ::{closure#0}>;
+                type NestedGeneratedName = Struct<ut@test::foo::{closure#0}:: {loop#0}>;
 
                 libfunc CalleeId = LibfuncId ;
                 // Additional comment.
                 libfunc OtherCalleeId = LibfuncId <arg, 4>;
                 libfunc [5642] = LibfuncId<[22 ], 4>;
                 libfunc CallFunction = Call<user@Function>;
+                libfunc CallGenerated = Call<user@core::sha256::compute_sha256_byte_array::{loop#0}>;
                 libfunc LibDependent = LibDependent<lib@[124]>;
                 callee() -> ();
                 callee(arg1) -> (res1);
@@ -38,6 +41,7 @@ fn format_test() {
                 Name@5() -> ();
                 Other@3([5]: T1) -> (T2);
                 [343]@3([5]: [6343]) -> ([341]);
+                test::foo::{closure#0}::{loop#0}@9() -> ();
             "},)
             .map(|p| p.to_string()),
         Ok(indoc! {"
@@ -48,11 +52,14 @@ fn format_test() {
             type [4] = Enum<ut@core::option::Option::<core::felt252>, [3], [2]>;
             type Complex = Struct<ut@Complex::<core::felt252, @core::felt252>, [8], [9]>;
             type ClosureName = Struct<ut@{closure@/path/examples/fib.cairo:3:15:3:23}>;
+            type GeneratedName = Struct<ut@test::foo::{closure#0}>;
+            type NestedGeneratedName = Struct<ut@test::foo::{closure#0}::{loop#0}>;
 
             libfunc CalleeId = LibfuncId;
             libfunc OtherCalleeId = LibfuncId<arg, 4>;
             libfunc [5642] = LibfuncId<[22], 4>;
             libfunc CallFunction = Call<user@Function>;
+            libfunc CallGenerated = Call<user@core::sha256::compute_sha256_byte_array::{loop#0}>;
             libfunc LibDependent = LibDependent<lib@[124]>;
 
             callee() -> ();
@@ -68,11 +75,13 @@ fn format_test() {
             F0_B0:
             return(r);
             return(r1, r2);
+            F3:
             return([1], [45], [0]);
 
             Name@F0() -> ();
             Other@F2([5]: T1) -> (T2);
             [343]@F2([5]: [6343]) -> ([341]);
+            test::foo::{closure#0}::{loop#0}@F3() -> ();
         "}
         .to_string())
     );
@@ -95,6 +104,7 @@ fn versioned_program_display_test() {
                 libfunc OtherCalleeId = LibfuncId <arg, 4>;
                 libfunc [5642] = LibfuncId<[22 ], 4>;
                 libfunc CallFunction = Call<user@Function>;
+                libfunc CallGenerated = Call<user@core::sha256::compute_sha256_byte_array::{loop#0}>;
                 libfunc LibDependent = LibDependent<lib@[124]>;
                 callee() -> ();
                 callee(arg1) -> (res1);

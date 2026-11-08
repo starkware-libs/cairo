@@ -30,7 +30,7 @@ pub fn get_concrete_type_id<'db>(
             let inner = db.get_concrete_type_id(*inner_ty)?;
             if matches!(
                 db.lookup_concrete_type(inner),
-                SierraGeneratorTypeLongId::CycleBreaker(ty) if cycle_breaker_info(db, ty)?.duplicatable
+                SierraGeneratorTypeLongId::CycleBreaker(ty) if cycle_breaker_info(db, *ty)?.duplicatable
             ) {
                 return Ok(inner.clone());
             }
@@ -40,11 +40,16 @@ pub fn get_concrete_type_id<'db>(
         ) if db.is_self_referential(type_id)? => {
             return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)));
         }
-        _ => {
-            if type_id.is_phantom(db) {
-                return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)));
-            }
+        // An extern phantom type (e.g. a circuit gate) keeps its dedicated `Phantom` long id: its
+        // identity matters to the libfuncs that consume it. Other phantom types are diagnosed in
+        // the front end, and any that slip through (only concrete after generic substitution) fall
+        // through to their regular representation below.
+        semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Extern(_))
+            if type_id.is_phantom(db) =>
+        {
+            return Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Phantom(type_id)));
         }
+        _ => {}
     }
     Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
         db.get_concrete_long_type_id(type_id)?.clone(),
@@ -116,8 +121,7 @@ pub fn get_concrete_long_type_id<'db>(
                                 semantic::GenericArgumentId::Constant(value_id) => {
                                     SierraGenericArg::Value(
                                         value_id
-                                            .long(db)
-                                            .to_int()
+                                            .to_int(db)
                                             .expect("Expected ConstValue::Int for size")
                                             .clone(),
                                     )
@@ -161,6 +165,7 @@ pub fn get_concrete_long_type_id<'db>(
         .into(),
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
+        | semantic::TypeLongId::NumericLiteral(_)
         | semantic::TypeLongId::ImplType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
@@ -172,7 +177,7 @@ pub fn get_concrete_long_type_id<'db>(
 }
 
 /// See [SierraGenGroup::is_self_referential] for documentation.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn is_self_referential<'db>(
     db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
@@ -207,16 +212,13 @@ pub fn type_dependencies<'db>(
         semantic::TypeLongId::Coupon(_) => vec![],
         semantic::TypeLongId::Closure(closure_ty) => closure_ty.captured_types.clone(),
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
-            let size = size
-                .long(db)
-                .to_int()
-                .expect("Expected ConstValue::Int for size")
-                .to_usize()
-                .unwrap();
+            let size =
+                size.to_int(db).expect("Expected ConstValue::Int for size").to_usize().unwrap();
             [*type_id].repeat(size)
         }
         semantic::TypeLongId::GenericParameter(_)
         | semantic::TypeLongId::Var(_)
+        | semantic::TypeLongId::NumericLiteral(_)
         | semantic::TypeLongId::ImplType(_)
         | semantic::TypeLongId::Missing(_) => {
             panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
@@ -225,7 +227,7 @@ pub fn type_dependencies<'db>(
 }
 
 /// See [SierraGenGroup::has_in_deps] for documentation.
-#[salsa::tracked(cycle_result=has_in_deps_cycle)]
+#[salsa::tracked(returns(copy), cycle_result=has_in_deps_cycle)]
 pub fn has_in_deps<'db>(
     db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,

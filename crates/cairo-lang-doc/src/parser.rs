@@ -22,7 +22,7 @@ pub struct MarkdownLink {
 }
 
 /// Token representing a link to another item inside the documentation.
-#[derive(Debug, PartialEq, Clone, Eq, salsa::Update)]
+#[derive(Debug, PartialEq, Clone, Eq, salsa::SalsaValue)]
 pub struct CommentLinkToken {
     /// A link part that's inside "[]" brackets.
     pub label: String,
@@ -34,7 +34,7 @@ pub struct CommentLinkToken {
 
 /// Generic type for a comment token. It's either plain content or a link.
 /// Notice that the Content token type can store much more than just one word.
-#[derive(Debug, PartialEq, Clone, Eq, salsa::Update)]
+#[derive(Debug, PartialEq, Clone, Eq, salsa::SalsaValue)]
 pub enum DocumentationCommentToken {
     /// Token with plain documentation content.
     Content(String),
@@ -98,18 +98,16 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
         |list_nesting: &mut Vec<DocCommentListItem>,
          tokens: &mut Vec<DocumentationCommentToken>| {
             if !list_nesting.is_empty() {
-                let indent = "  ".repeat(list_nesting.len() - 1);
+                let indent = "    ".repeat(list_nesting.len() - 1);
                 let list_nesting = list_nesting.last_mut().unwrap();
 
-                let item_delimiter = if list_nesting.is_ordered_list {
+                tokens.push(DocumentationCommentToken::Content(if list_nesting.is_ordered_list {
                     let delimiter = list_nesting.delimiter.unwrap_or(0);
                     list_nesting.delimiter = Some(delimiter + 1);
-                    format!("{indent}{delimiter}.",)
+                    format!("{indent}{delimiter}. ",)
                 } else {
-                    format!("{indent}-")
-                };
-                tokens
-                    .push(DocumentationCommentToken::Content(format!("{indent}{item_delimiter} ")));
+                    format!("{indent}- ")
+                }));
             }
         };
     let mut prefix_list_item = false;
@@ -117,12 +115,15 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
     let mut table_alignment: Vec<Alignment> = Vec::new();
 
     for (event, range) in parser.into_offset_iter() {
+        let mut maybe_write_list_item_prefix = || {
+            if prefix_list_item {
+                write_list_item_prefix(&mut list_nesting, &mut tokens);
+                prefix_list_item = false;
+            }
+        };
         match &event {
             Event::Text(text) => {
-                if prefix_list_item {
-                    write_list_item_prefix(&mut list_nesting, &mut tokens);
-                    prefix_list_item = false;
-                }
+                maybe_write_list_item_prefix();
                 if let Some(link) = current_link.as_mut() {
                     link.label.push_str(text.as_ref());
                     link.label_range = Some(range.clone());
@@ -138,10 +139,7 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
                 }
             }
             Event::Code(code) => {
-                if prefix_list_item {
-                    write_list_item_prefix(&mut list_nesting, &mut tokens);
-                    prefix_list_item = false;
-                }
+                maybe_write_list_item_prefix();
                 let complete_code = format!("`{code}`");
                 if let Some(link) = current_link.as_mut() {
                     link.label.push_str(&complete_code);
@@ -216,9 +214,11 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
                     tokens.push(DocumentationCommentToken::Content("|".to_string()));
                 }
                 Tag::Strong => {
+                    maybe_write_list_item_prefix();
                     tokens.push(DocumentationCommentToken::Content("**".to_string()));
                 }
                 Tag::Emphasis => {
+                    maybe_write_list_item_prefix();
                     tokens.push(DocumentationCommentToken::Content("_".to_string()));
                 }
                 _ => {}
@@ -266,6 +266,7 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
                             .as_ref()
                             .and_then(|label_range| {
                                 location_from_link_fields(
+                                    documentation_comment,
                                     link.link_type,
                                     &link.destination,
                                     label_range,
@@ -372,24 +373,22 @@ fn span_from_relative_range(content: &str, range: Range<usize>) -> TextSpan {
 
 /// Extracts a location link span and normalized destination text for the given link fields.
 fn location_from_link_fields(
+    content: &str,
     link_type: LinkType,
     destination: &str,
     label_range: &Range<usize>,
 ) -> Option<(Range<usize>, String)> {
     let (destination_normalized, backticked) = normalize_location_text(destination)?;
 
-    match link_type {
-        LinkType::Inline => {
-            let range = find_inline_destination_range(label_range.end, destination);
-            Some((range, destination_normalized))
-        }
+    let range = match link_type {
+        LinkType::Inline => find_inline_destination_range(content, label_range.end, destination),
         LinkType::Collapsed
         | LinkType::CollapsedUnknown
         | LinkType::Shortcut
-        | LinkType::ShortcutUnknown => Some((label_range.clone(), destination_normalized)),
-        _ => None,
-    }
-    .map(|(range, text)| (trim_backtick_range(range.clone(), backticked), text))
+        | LinkType::ShortcutUnknown => label_range.clone(),
+        _ => return None,
+    };
+    Some((trim_backtick_range(range, backticked), destination_normalized))
 }
 
 /// Returns true when the string looks like a location path (letters, digits, '_' or ':').
@@ -419,10 +418,17 @@ fn trim_backtick_range(range: Range<usize>, backticked: bool) -> Range<usize> {
 }
 
 /// Computes the range for an inline destination that follows a label.
-fn find_inline_destination_range(label_last_end: usize, destination: &str) -> Range<usize> {
-    let destination_start = label_last_end + 2;
-    let destination_end = destination_start + destination.len();
-    destination_start..destination_end
+fn find_inline_destination_range(
+    content: &str,
+    label_last_end: usize,
+    destination: &str,
+) -> Range<usize> {
+    // Finds the actual `](` boundary after the label, or uses the label's end if not found.
+    // This handles cases where the label ends in markup (e.g. `[**bold**](path)`),
+    // so the `](` that opens the destination is not necessarily adjacent to it.
+    let destination_start =
+        label_last_end + content[label_last_end..].find("](").unwrap_or_default() + 2;
+    destination_start..(destination_start + destination.len())
 }
 
 /// Maps `HeadingLevel` to the correct markdown marker.

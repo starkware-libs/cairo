@@ -387,12 +387,11 @@ fn run_e2e_test(
 
     // Handle test_data if specified.
     // This runs AFTER sierra/casm generation, so compilation outputs are always verified first.
-    if let Some(test_data) = params.test_data {
-        if let Err(e) =
+    if let Some(test_data) = params.test_data
+        && let Err(e) =
             run_and_validate_test_data(sierra_program, test_data, params.add_withdraw_gas)
-        {
-            return TestRunnerResult { outputs: res, error: Some(e) };
-        }
+    {
+        return TestRunnerResult { outputs: res, error: Some(e) };
     }
 
     TestRunnerResult::success(res)

@@ -102,6 +102,7 @@ SmallE2ETestRunner
 //! > cairo_code
 use core::qm31::qm31;
 
+#[allow(extern_outside_corelib)]
 extern fn qm31_div(a: qm31, b: NonZero<qm31>) -> qm31 nopanic;
 fn foo(a: qm31, b: NonZero<qm31>) -> qm31 {
     qm31_div(a, b)
@@ -170,6 +171,7 @@ SmallE2ETestRunner
 use core::internal::OptionRev;
 use core::qm31::qm31;
 
+#[allow(extern_outside_corelib)]
 extern fn qm31_is_zero(a: qm31) -> OptionRev<NonZero<qm31>> nopanic;
 fn foo(a: qm31) -> OptionRev<NonZero<qm31>> {
     qm31_is_zero(a)
@@ -287,7 +289,7 @@ fn foo(a: qm31) -> [m31; 4] {
 [ap + 0] = [ap + -9] + [ap + -7], ap++;
 [ap + 0] = [ap + -6] + [ap + -5], ap++;
 [ap + 0] = [ap + -2] + [ap + -1], ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607363048734719, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607363048734720, ap++;
 [ap + -1] = [[fp + -4] + 4];
 [ap + 0] = [fp + -4] + 5, ap++;
 [ap + 0] = [ap + -14], ap++;

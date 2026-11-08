@@ -45,7 +45,7 @@ fn collect_and_generate_libfunc_declarations<'db>(
                 declared_libfuncs.insert(invocation.libfunc_id.clone()).then(|| {
                     program::LibfuncDeclaration {
                         id: invocation.libfunc_id.clone(),
-                        long_id: db.lookup_concrete_lib_func(&invocation.libfunc_id),
+                        long_id: db.lookup_concrete_lib_func(&invocation.libfunc_id).clone(),
                     }
                 })
             }
@@ -68,9 +68,9 @@ fn generate_type_declarations(
     libfunc_declarations: &[program::LibfuncDeclaration],
     functions: &[program::Function],
 ) -> Vec<program::TypeDeclaration> {
-    let mut declarations = vec![];
-    let mut already_declared = UnorderedHashSet::default();
     let mut remaining_types = collect_used_types(db, libfunc_declarations, functions);
+    let mut already_declared = UnorderedHashSet::with_capacity(remaining_types.len());
+    let mut declarations = Vec::with_capacity(remaining_types.len());
     while let Some(ty) = remaining_types.iter().next().cloned() {
         remaining_types.swap_remove(&ty);
         generate_type_declarations_helper(
@@ -87,7 +87,7 @@ fn generate_type_declarations(
 /// Helper to ensure declaring types ordered in such a way that no type appears before types it
 /// depends on for knowing its size.
 /// `remaining_types` are types that will later be checked.
-/// We may add types to there if we are not sure their dependencies are already declared.
+/// We may add types to them if we are not sure their dependencies are already declared.
 fn generate_type_declarations_helper(
     db: &dyn Database,
     ty: &ConcreteTypeId,
@@ -177,8 +177,12 @@ pub fn priv_libfunc_dependencies(
     )
     // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
     // the libfuncs in the [`CoreLibfunc`] structured enum.
-    .unwrap_or_else(|err| panic!("Failed to specialize: `{}`. Error: {err}",
-        DebugReplacer { db }.replace_libfunc_id(&libfunc_id)));
+    .unwrap_or_else(|err| {
+        panic!(
+            "Failed to specialize: `{}`. Error: {err}",
+            DebugReplacer { db }.replace_libfunc_id(&libfunc_id)
+        )
+    });
     // Collecting types as a vector since the set should be very small.
     let mut all_types = vec![];
     let mut add_ty = |ty: ConcreteTypeId| {
@@ -194,30 +198,20 @@ pub fn priv_libfunc_dependencies(
             add_ty(var.ty);
         }
     }
-    for arg in long_id.generic_args {
+    for arg in &long_id.generic_args {
         if let program::GenericArg::Type(ty) = arg {
-            add_ty(ty);
+            add_ty(ty.clone());
         }
     }
     all_types
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, salsa::SalsaValue)]
 pub struct SierraProgramWithDebug<'db> {
     pub program: cairo_lang_sierra::program::Program,
     pub debug_info: SierraProgramDebugInfo<'db>,
 }
 
-unsafe impl<'db> salsa::Update for SierraProgramWithDebug<'db> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = unsafe { &mut *old_pointer };
-        if old_value == &new_value {
-            return false;
-        }
-        *old_value = new_value;
-        true
-    }
-}
 /// Implementation for a debug print of a Sierra program with all locations.
 /// The print is a valid textual Sierra program.
 impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {
@@ -244,13 +238,17 @@ impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {
             for param in &func.params {
                 writeln!(f, "//   {param}")?;
             }
-            for i in start..end {
-                writeln!(f, "{}; // {i}", sierra_program.statements[i])?;
+            for (i, stmt) in sierra_program.statements.iter().enumerate().take(end).skip(start) {
+                writeln!(f, "{stmt}; // {i}")?;
                 if let Some(loc) =
                     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
                 {
                     let loc = get_location_marks(db, &loc.first().unwrap().span_in_file(db), true);
-                    writeln!(f, "{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"))?;
+                    writeln!(
+                        f,
+                        "{}",
+                        loc.split('\n').format_with("\n", |l, f| f(&format_args!("// {l}")))
+                    )?;
                 }
             }
         }
@@ -268,8 +266,9 @@ pub fn get_sierra_program_for_functions<'db>(
     _tracked: Tracked,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) -> Maybe<SierraProgramWithDebug<'db>> {
-    let mut functions: Vec<&'db pre_sierra::Function<'_>> = vec![];
-    let mut statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![];
+    let mut functions: Vec<&'db pre_sierra::Function<'_>> =
+        Vec::with_capacity(requested_function_ids.len());
+    let mut statements: Vec<pre_sierra::StatementWithLocation<'_>> = Default::default();
     let mut processed_function_ids = UnorderedHashSet::<ConcreteFunctionWithBodyId<'_>>::default();
     let mut function_id_queue: VecDeque<ConcreteFunctionWithBodyId<'_>> =
         requested_function_ids.into_iter().collect();
@@ -325,6 +324,7 @@ fn assemble_program<'db>(
                 FunctionDebugInfo {
                     signature_location: f.signature_location,
                     variables_locations: f.variable_locations.iter().cloned().collect(),
+                    param_ids: f.parameters.iter().map(|p| p.id.clone()).collect(),
                 },
             )
         })
@@ -442,10 +442,10 @@ pub fn get_dummy_program_for_size_estimation(
     let mut functions = vec![function];
 
     for statement in &function.body {
-        if let Some(function_id) = try_get_function_with_body_id(db, statement) {
-            if processed_function_ids.insert(function_id) {
-                functions.push(db.priv_get_dummy_function(function_id)?);
-            }
+        if let Some(function_id) = try_get_function_with_body_id(db, statement)
+            && processed_function_ids.insert(function_id)
+        {
+            functions.push(db.priv_get_dummy_function(function_id)?);
         }
     }
     // Since we are not interested in the locations, we can remove them from the statements.

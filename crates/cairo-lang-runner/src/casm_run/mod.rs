@@ -1,13 +1,10 @@
 use std::any::Any;
 use std::borrow::Cow;
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::ops::{Shl, Sub};
 use std::sync::Arc;
 use std::vec::IntoIter;
 
-use ark_ff::{BigInteger, PrimeField};
-use ark_secp256k1 as secp256k1;
-use ark_secp256r1 as secp256r1;
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, ExternalHint, Hint, StarknetHint};
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
@@ -17,6 +14,7 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::byte_array::{BYTE_ARRAY_MAGIC, BYTES_IN_WORD};
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::{
     HintProcessor, HintProcessorLogic, HintReference,
 };
@@ -38,7 +36,15 @@ use cairo_vm::vm::runners::cairo_runner::{
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
-use itertools::Itertools;
+use itertools::{Itertools, chain};
+use lambdaworks_math::cyclic_group::IsGroup;
+use lambdaworks_math::elliptic_curve::short_weierstrass::curves::secp256k1::curve::Secp256k1Curve;
+use lambdaworks_math::elliptic_curve::short_weierstrass::curves::secp256r1::curve::Secp256r1Curve;
+use lambdaworks_math::elliptic_curve::short_weierstrass::point::ShortWeierstrassProjectivePoint;
+use lambdaworks_math::elliptic_curve::short_weierstrass::traits::IsShortWeierstrass;
+use lambdaworks_math::field::element::FieldElement;
+use lambdaworks_math::field::traits::{IsField, IsPrimeField};
+use lambdaworks_math::unsigned_integer::element::U256;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
 use num_traits::{Signed, ToPrimitive, Zero};
@@ -64,7 +70,7 @@ pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
         accessible_scopes: vec![],
         flow_tracking_data: FlowTrackingData {
             ap_tracking: ApTracking::new(),
-            reference_ids: HashMap::new(),
+            reference_ids: Default::default(),
         },
     }
 }
@@ -74,7 +80,7 @@ pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
 struct Secp256k1ExecutionScope {
     /// All elliptic curve points provided by the secp256k1 syscalls.
     /// The id of a point is the index in the vector.
-    ec_points: Vec<secp256k1::Affine>,
+    ec_points: Vec<ShortWeierstrassProjectivePoint<Secp256k1Curve>>,
 }
 
 /// Helper object to allocate and track Secp256r1 elliptic curve points.
@@ -82,7 +88,7 @@ struct Secp256k1ExecutionScope {
 struct Secp256r1ExecutionScope {
     /// All elliptic curve points provided by the secp256r1 syscalls.
     /// The id of a point is the index in the vector.
-    ec_points: Vec<secp256r1::Affine>,
+    ec_points: Vec<ShortWeierstrassProjectivePoint<Secp256r1Curve>>,
 }
 
 /// HintProcessor for Cairo compiler hints.
@@ -95,7 +101,7 @@ pub struct CairoHintProcessor<'a> {
     /// several user args.
     pub user_args: Vec<Vec<Arg>>,
     /// A mapping from a string that represents a hint to the hint object.
-    pub string_to_hint: HashMap<String, Hint>,
+    pub string_to_hint: UnorderedHashMap<String, Hint>,
     /// The Starknet state.
     pub starknet_state: StarknetState,
     /// Maintains the resources of the run.
@@ -138,37 +144,15 @@ type L2ToL1Message = (Felt252, Vec<Felt252>);
 #[derive(Clone, Default)]
 pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
-    storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
+    storage: UnorderedHashMap<Felt252, UnorderedHashMap<Felt252, Felt252>>,
     /// A mapping from contract address to class hash.
-    deployed_contracts: HashMap<Felt252, Felt252>,
+    deployed_contracts: UnorderedHashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt252, ContractLogs>,
+    logs: UnorderedHashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     /// A mock history, mapping block number to the block hash.
-    block_hash: HashMap<u64, Felt252>,
-}
-impl StarknetState {
-    /// Replaces the addresses in the context.
-    pub fn open_caller_context(
-        &mut self,
-        (new_contract_address, new_caller_address): (Felt252, Felt252),
-    ) -> (Felt252, Felt252) {
-        let old_contract_address =
-            std::mem::replace(&mut self.exec_info.contract_address, new_contract_address);
-        let old_caller_address =
-            std::mem::replace(&mut self.exec_info.caller_address, new_caller_address);
-        (old_contract_address, old_caller_address)
-    }
-
-    /// Restores the addresses in the context.
-    pub fn close_caller_context(
-        &mut self,
-        (old_contract_address, old_caller_address): (Felt252, Felt252),
-    ) {
-        self.exec_info.contract_address = old_contract_address;
-        self.exec_info.caller_address = old_caller_address;
-    }
+    block_hash: UnorderedHashMap<u64, Felt252>,
 }
 
 /// Object storing logs for a contract.
@@ -185,6 +169,12 @@ struct ContractLogs {
 struct ExecutionInfo {
     block_info: BlockInfo,
     tx_info: TxInfo,
+    call_info: CallInfo,
+}
+
+/// Originally flat in `ExecutionInfo`, separated here for convenience.
+#[derive(Clone, Default)]
+struct CallInfo {
     caller_address: Felt252,
     contract_address: Felt252,
     entry_point_selector: Felt252,
@@ -361,6 +351,7 @@ mod gas_costs {
     pub const KECCAK: usize = 0;
     pub const KECCAK_ROUND_COST: usize = 180000;
     pub const SHA256_PROCESS_BLOCK: usize = 1852 * STEP + 65 * RANGE_CHECK + 1115 * BITWISE;
+    pub const SHA512_PROCESS_BLOCK: usize = 4733 * STEP + 65 * RANGE_CHECK + 3320 * BITWISE;
     pub const LIBRARY_CALL: usize = CALL_CONTRACT;
     pub const REPLACE_CLASS: usize = 50 * STEP;
     pub const SECP256K1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
@@ -465,14 +456,15 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
     }
 
     /// Trait function to store hint in the hint processor by string.
+    #[expect(clippy::disallowed_types)]
     fn compile_hint(
         &self,
         hint_code: &str,
         _ap_tracking_data: &ApTracking,
-        _reference_ids: &HashMap<String, usize>,
+        _reference_ids: &std::collections::HashMap<String, usize>,
         _references: &[HintReference],
         _accessible_scopes: &[String],
-        _constants: Arc<HashMap<String, Felt252>>,
+        _constants: Arc<std::collections::HashMap<String, Felt252>>,
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
@@ -603,8 +595,10 @@ impl<'a> MemBuffer<'a> {
     /// it by two.
     /// Fails with `MemoryError` if any of the next two values are not felt252s.
     /// Panics if any of the next two values are not u128.
-    pub fn next_u256(&mut self) -> Result<BigUint, MemoryError> {
-        Ok(self.next_u128()? + BigUint::from(self.next_u128()?).shl(128))
+    pub fn next_u256(&mut self) -> Result<U256, MemoryError> {
+        let low = self.next_u128()?;
+        let high = self.next_u128()?;
+        Ok(U256::from_limbs([(high >> 64) as u64, high as u64, (low >> 64) as u64, low as u64]))
     }
 
     /// Returns the address value in the current position of the buffer and advances it by one.
@@ -746,6 +740,15 @@ impl CairoHintProcessor<'_> {
                     system_buffer,
                 )
             }),
+            "Sha512ProcessBlock" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                sha_512_process_block(
+                    gas_counter,
+                    system_buffer.next_fixed_size_arr_pointer(8)?,
+                    system_buffer.next_fixed_size_arr_pointer(16)?,
+                    exec_scopes,
+                    system_buffer,
+                )
+            }),
             "Secp256k1New" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 secp256k1_new(
                     gas_counter,
@@ -851,7 +854,7 @@ impl CairoHintProcessor<'_> {
                 self.get_class_hash_at(gas_counter, system_buffer.next_felt252()?.into_owned())
             }),
             "MetaTxV0" => execute_handle_helper(&mut |_system_buffer, _gas_counter| {
-                panic!("Meta transaction is not supported.")
+                fail_syscall!(b"Meta tx is not supported.")
             }),
             _ => panic!("Unknown selector for system call!"),
         }
@@ -870,7 +873,7 @@ impl CairoHintProcessor<'_> {
             // Only address_domain 0 is currently supported.
             fail_syscall!(b"Unsupported address domain");
         }
-        let contract = self.starknet_state.exec_info.contract_address;
+        let contract = self.starknet_state.exec_info.call_info.contract_address;
         self.starknet_state.storage.entry(contract).or_default().insert(addr, value);
         Ok(SyscallResult::Success(vec![]))
     }
@@ -890,7 +893,7 @@ impl CairoHintProcessor<'_> {
         let value = self
             .starknet_state
             .storage
-            .get(&self.starknet_state.exec_info.contract_address)
+            .get(&self.starknet_state.exec_info.call_info.contract_address)
             .and_then(|contract_storage| contract_storage.get(&addr))
             .cloned()
             .unwrap_or_else(|| Felt252::from(0));
@@ -968,9 +971,9 @@ impl CairoHintProcessor<'_> {
         let exec_info_ptr = res_segment.ptr;
         res_segment.write(block_info_ptr)?;
         res_segment.write(tx_info_ptr)?;
-        res_segment.write(exec_info.caller_address)?;
-        res_segment.write(exec_info.contract_address)?;
-        res_segment.write(exec_info.entry_point_selector)?;
+        res_segment.write(exec_info.call_info.caller_address)?;
+        res_segment.write(exec_info.call_info.contract_address)?;
+        res_segment.write(exec_info.call_info.entry_point_selector)?;
         Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
     }
 
@@ -982,7 +985,7 @@ impl CairoHintProcessor<'_> {
         data: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, EMIT_EVENT);
-        let contract = self.starknet_state.exec_info.contract_address;
+        let contract = self.starknet_state.exec_info.call_info.contract_address;
         self.starknet_state.logs.entry(contract).or_default().events.push_back((keys, data));
         Ok(SyscallResult::Success(vec![]))
     }
@@ -995,7 +998,7 @@ impl CairoHintProcessor<'_> {
         payload: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
-        let contract = self.starknet_state.exec_info.contract_address;
+        let contract = self.starknet_state.exec_info.call_info.contract_address;
         self.starknet_state
             .logs
             .entry(contract)
@@ -1010,24 +1013,20 @@ impl CairoHintProcessor<'_> {
         &mut self,
         gas_counter: &mut usize,
         class_hash: Felt252,
-        _contract_address_salt: Felt252,
+        contract_address_salt: Felt252,
         calldata: Vec<Felt252>,
         deploy_from_zero: bool,
         vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, DEPLOY);
 
+        let caller_address = self.starknet_state.exec_info.call_info.contract_address;
         // Assign the Starknet address of the contract.
-        let deployer_address = if deploy_from_zero {
-            Felt252::zero()
-        } else {
-            self.starknet_state.exec_info.contract_address
-        };
-        let deployed_contract_address = calculate_contract_address(
-            &_contract_address_salt,
+        let deployed_address = calculate_contract_address(
+            &contract_address_salt,
             &class_hash,
             &calldata,
-            &deployer_address,
+            &if deploy_from_zero { Felt252::zero() } else { caller_address },
         );
 
         // Prepare runner for running the constructor.
@@ -1038,26 +1037,26 @@ impl CairoHintProcessor<'_> {
 
         // Set the class hash of the deployed contract before executing the constructor,
         // as the constructor could make an external call to this address.
-        if self
-            .starknet_state
-            .deployed_contracts
-            .insert(deployed_contract_address, class_hash)
-            .is_some()
-        {
+        if self.starknet_state.deployed_contracts.insert(deployed_address, class_hash).is_some() {
             fail_syscall!(b"CONTRACT_ALREADY_DEPLOYED");
         }
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
-            let old_addrs = self
-                .starknet_state
-                .open_caller_context((deployed_contract_address, deployer_address));
-            let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
-            self.starknet_state.close_caller_context(old_addrs);
+            let call_info = CallInfo {
+                contract_address: deployed_address,
+                caller_address,
+                // starknet_keccak of 'constructor'.
+                entry_point_selector: Felt252::from_hex_unchecked(
+                    "0x28ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
+                ),
+            };
+            let res =
+                self.call_entry_point(gas_counter, runner, constructor, calldata, vm, call_info);
             match res {
                 Ok(value) => value,
                 Err(mut revert_reason) => {
-                    self.starknet_state.deployed_contracts.remove(&deployed_contract_address);
+                    self.starknet_state.deployed_contracts.remove(&deployed_address);
                     fail_syscall!(revert_reason, b"CONSTRUCTOR_FAILED");
                 }
             }
@@ -1066,12 +1065,12 @@ impl CairoHintProcessor<'_> {
         } else {
             // Remove the contract from the deployed contracts,
             // since it failed to deploy.
-            self.starknet_state.deployed_contracts.remove(&deployed_contract_address);
+            self.starknet_state.deployed_contracts.remove(&deployed_address);
             fail_syscall!(b"INVALID_CALLDATA_LEN");
         };
 
         Ok(SyscallResult::Success(vec![
-            deployed_contract_address.into(),
+            deployed_address.into(),
             res_data_start.into(),
             res_data_end.into(),
         ]))
@@ -1105,12 +1104,12 @@ impl CairoHintProcessor<'_> {
             fail_syscall!([b"ENTRYPOINT_NOT_FOUND", b"ENTRYPOINT_FAILED"]);
         };
 
-        let old_addrs = self.starknet_state.open_caller_context((
+        let call_info = CallInfo {
             contract_address,
-            self.starknet_state.exec_info.contract_address,
-        ));
-        let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm);
-        self.starknet_state.close_caller_context(old_addrs);
+            caller_address: self.starknet_state.exec_info.call_info.contract_address,
+            entry_point_selector: selector,
+        };
+        let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm, call_info);
 
         match res {
             Ok((res_data_start, res_data_end)) => {
@@ -1142,7 +1141,13 @@ impl CairoHintProcessor<'_> {
         let Some(entry_point) = contract_info.externals.get(&selector) else {
             fail_syscall!([b"ENTRYPOINT_NOT_FOUND", b"ENTRYPOINT_FAILED"]);
         };
-        match self.call_entry_point(gas_counter, runner, entry_point, calldata, vm) {
+        // A library call runs in the caller's context; only the entry point selector changes.
+        let call_info = CallInfo {
+            entry_point_selector: selector,
+            ..self.starknet_state.exec_info.call_info.clone()
+        };
+        let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm, call_info);
+        match res {
             Ok((res_data_start, res_data_end)) => {
                 Ok(SyscallResult::Success(vec![res_data_start.into(), res_data_end.into()]))
             }
@@ -1168,7 +1173,7 @@ impl CairoHintProcessor<'_> {
         {
             fail_syscall!(b"CLASS_HASH_NOT_FOUND");
         };
-        let address = self.starknet_state.exec_info.contract_address;
+        let address = self.starknet_state.exec_info.call_info.contract_address;
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
     }
@@ -1198,12 +1203,15 @@ impl CairoHintProcessor<'_> {
         entry_point: &FunctionId,
         calldata: Vec<Felt252>,
         vm: &mut dyn VMWrapper,
+        call_info: CallInfo,
     ) -> Result<(Relocatable, Relocatable), Vec<Felt252>> {
         let function = runner
             .builder
             .registry()
             .get_function(entry_point)
             .expect("Entrypoint exists, but not found.");
+        let mut starknet_state = self.starknet_state.clone();
+        let old_call_info = std::mem::replace(&mut starknet_state.exec_info.call_info, call_info);
         let res = runner
             .run_function_with_starknet_context(
                 function,
@@ -1211,7 +1219,7 @@ impl CairoHintProcessor<'_> {
                 // The costs of the relevant syscall include `ENTRY_POINT_INITIAL_BUDGET` so we
                 // need to refund it here before running the entry point to avoid double charging.
                 Some(*gas_counter + gas_costs::ENTRY_POINT_INITIAL_BUDGET),
-                self.starknet_state.clone(),
+                starknet_state,
             )
             .expect("Internal runner error.");
         self.syscalls_used_resources += res.used_resources;
@@ -1219,6 +1227,7 @@ impl CairoHintProcessor<'_> {
         match res.value {
             RunResultValue::Success(value) => {
                 self.starknet_state = res.starknet_state;
+                self.starknet_state.exec_info.call_info = old_call_info;
                 Ok(segment_with_data(vm, read_array_result_as_vec(&res.memory, &value).into_iter())
                     .expect("failed to allocate segment"))
             }
@@ -1271,10 +1280,10 @@ impl CairoHintProcessor<'_> {
                 self.starknet_state.exec_info.block_info.block_timestamp = as_single_input(inputs)?;
             }
             "set_caller_address" => {
-                self.starknet_state.exec_info.caller_address = as_single_input(inputs)?;
+                self.starknet_state.exec_info.call_info.caller_address = as_single_input(inputs)?;
             }
             "set_contract_address" => {
-                self.starknet_state.exec_info.contract_address = as_single_input(inputs)?;
+                self.starknet_state.exec_info.call_info.contract_address = as_single_input(inputs)?;
             }
             "set_version" => {
                 self.starknet_state.exec_info.tx_info.version = as_single_input(inputs)?;
@@ -1355,8 +1364,16 @@ impl CairoHintProcessor<'_> {
                 },
             )?,
             ExternalHint::WriteRunParam { index, dst } => {
-                let index = get_val(vm, index)?.to_usize().expect("Got a bad index.");
-                let mut stack = vec![(cell_ref_to_relocatable(dst, vm), &self.user_args[index])];
+                let index = get_val(vm, index)?;
+                let values = index
+                    .to_usize()
+                    .and_then(|index| self.user_args.get(index))
+                    .ok_or_else(|| {
+                        HintError::CustomHint(Box::from(format!(
+                            "Run parameter index {index} is out of bounds."
+                        )))
+                    })?;
+                let mut stack = vec![(cell_ref_to_relocatable(dst, vm), values)];
                 while let Some((mut buffer, values)) = stack.pop() {
                     for value in values {
                         match value {
@@ -1439,12 +1456,13 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
         fail_syscall!(b"Invalid keccak input size");
     }
     let mut state = [0u64; 25];
+    let keccak = keccak::Keccak::new();
     for chunk in data.chunks(17) {
         deduct_gas!(gas_counter, KECCAK_ROUND_COST);
         for (i, val) in chunk.iter().enumerate() {
             state[i] ^= val.to_u64().unwrap();
         }
-        keccak::f1600(&mut state)
+        keccak.with_f1600(|f1600| f1600(&mut state));
     }
     Ok(SyscallResult::Success(vec![
         ((Felt252::from((state[1] as u128) << 64u32)) + Felt252::from(state[0])).into(),
@@ -1461,16 +1479,31 @@ fn sha_256_process_block(
     vm: &mut dyn VMWrapper,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SHA256_PROCESS_BLOCK);
-    let data_as_bytes = FromIterator::from_iter(
-        data.iter().flat_map(|felt| felt.to_bigint().to_u32().unwrap().to_be_bytes()),
-    );
-    let mut state_as_words: [u32; 8] = prev_state
-        .iter()
-        .map(|felt| felt.to_bigint().to_u32().unwrap())
-        .collect_vec()
-        .try_into()
-        .unwrap();
-    sha2::compress256(&mut state_as_words, &[data_as_bytes]);
+    let data_as_bytes =
+        data.iter().flat_map(|v| v.to_u32().unwrap().to_be_bytes()).collect_array().unwrap();
+    let mut state_as_words =
+        prev_state.iter().map(|v| v.to_u32().unwrap()).collect_array().unwrap();
+    sha2::block_api::compress256(&mut state_as_words, &[data_as_bytes]);
+    let next_state_ptr = alloc_memory(exec_scopes, vm.vm(), 8)?;
+    let mut buff: MemBuffer<'_> = MemBuffer::new(vm, next_state_ptr);
+    buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
+    Ok(SyscallResult::Success(vec![next_state_ptr.into()]))
+}
+
+/// Executes the `sha512_process_block` syscall.
+fn sha_512_process_block(
+    gas_counter: &mut usize,
+    prev_state: Vec<Felt252>,
+    data: Vec<Felt252>,
+    exec_scopes: &mut ExecutionScopes,
+    vm: &mut dyn VMWrapper,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, SHA512_PROCESS_BLOCK);
+    let data_as_bytes: [u8; 128] =
+        data.iter().flat_map(|v| v.to_u64().unwrap().to_be_bytes()).collect_array().unwrap();
+    let mut state_as_words: [u64; 8] =
+        prev_state.iter().map(|v| v.to_u64().unwrap()).collect_array().unwrap();
+    sha2::block_api::compress512(&mut state_as_words, &[data_as_bytes]);
     let next_state_ptr = alloc_memory(exec_scopes, vm.vm(), 8)?;
     let mut buff: MemBuffer<'_> = MemBuffer::new(vm, next_state_ptr);
     buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
@@ -1482,30 +1515,12 @@ fn sha_256_process_block(
 /// Executes the `secp256k1_new_syscall` syscall.
 fn secp256k1_new(
     gas_counter: &mut usize,
-    x: BigUint,
-    y: BigUint,
+    x: U256,
+    y: U256,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_NEW);
-    let modulus = <secp256k1::Fq as PrimeField>::MODULUS.into();
-    if x >= modulus || y >= modulus {
-        fail_syscall!(b"Coordinates out of range");
-    }
-    let p = if x.is_zero() && y.is_zero() {
-        secp256k1::Affine::identity()
-    } else {
-        secp256k1::Affine::new_unchecked(x.into(), y.into())
-    };
-    Ok(SyscallResult::Success(
-        if !(p.is_on_curve() && p.is_in_correct_subgroup_assuming_on_curve()) {
-            vec![1.into(), 0.into()]
-        } else {
-            let ec = get_secp256k1_exec_scope(exec_scopes)?;
-            let id = ec.ec_points.len();
-            ec.ec_points.push(p);
-            vec![0.into(), id.into()]
-        },
-    ))
+    secp_new(x, y, &mut get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256k1_add_syscall` syscall.
@@ -1516,59 +1531,29 @@ fn secp256k1_add(
     p1_id: usize,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_ADD);
-    let ec = get_secp256k1_exec_scope(exec_scopes)?;
-    let p0 = &ec.ec_points[p0_id];
-    let p1 = &ec.ec_points[p1_id];
-    let sum = *p0 + *p1;
-    let id = ec.ec_points.len();
-    ec.ec_points.push(sum.into());
-    Ok(SyscallResult::Success(vec![id.into()]))
+    secp_add(p0_id, p1_id, &mut get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256k1_mul_syscall` syscall.
 fn secp256k1_mul(
     gas_counter: &mut usize,
     p_id: usize,
-    scalar: BigUint,
+    scalar: U256,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_MUL);
-
-    let ec = get_secp256k1_exec_scope(exec_scopes)?;
-    let p = &ec.ec_points[p_id];
-    let product = *p * secp256k1::Fr::from(scalar);
-    let id = ec.ec_points.len();
-    ec.ec_points.push(product.into());
-    Ok(SyscallResult::Success(vec![id.into()]))
+    secp_mul(p_id, scalar, &mut get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256k1_get_point_from_x_syscall` syscall.
 fn secp256k1_get_point_from_x(
     gas_counter: &mut usize,
-    x: BigUint,
+    x: U256,
     y_parity: bool,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_GET_POINT_FROM_X);
-    if x >= <secp256k1::Fq as PrimeField>::MODULUS.into() {
-        fail_syscall!(b"Coordinates out of range");
-    }
-    let x = x.into();
-    let maybe_p = secp256k1::Affine::get_ys_from_x_unchecked(x)
-        .map(
-            |(smaller, greater)|
-            // Return the correct y coordinate based on the parity.
-            if smaller.into_bigint().is_odd() == y_parity { smaller } else { greater },
-        )
-        .map(|y| secp256k1::Affine::new_unchecked(x, y))
-        .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
-    let Some(p) = maybe_p else {
-        return Ok(SyscallResult::Success(vec![1.into(), 0.into()]));
-    };
-    let ec = get_secp256k1_exec_scope(exec_scopes)?;
-    let id = ec.ec_points.len();
-    ec.ec_points.push(p);
-    Ok(SyscallResult::Success(vec![0.into(), id.into()]))
+    secp_get_point_from_x(x, y_parity, &mut get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256k1_get_xy_syscall` syscall.
@@ -1578,17 +1563,7 @@ fn secp256k1_get_xy(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_GET_XY);
-    let ec = get_secp256k1_exec_scope(exec_scopes)?;
-    let p = &ec.ec_points[p_id];
-    let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
-    let (x1, x0) = BigUint::from(p.x).div_rem(&pow_2_128);
-    let (y1, y0) = BigUint::from(p.y).div_rem(&pow_2_128);
-    Ok(SyscallResult::Success(vec![
-        Felt252::from(x0).into(),
-        Felt252::from(x1).into(),
-        Felt252::from(y0).into(),
-        Felt252::from(y1).into(),
-    ]))
+    secp_get_xy(p_id, &get_secp256k1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Returns the `Secp256k1ExecScope` managing the different active points.
@@ -1609,30 +1584,12 @@ fn get_secp256k1_exec_scope(
 /// Executes the `secp256r1_new_syscall` syscall.
 fn secp256r1_new(
     gas_counter: &mut usize,
-    x: BigUint,
-    y: BigUint,
+    x: U256,
+    y: U256,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_NEW);
-    let modulus = <secp256r1::Fq as PrimeField>::MODULUS.into();
-    if x >= modulus || y >= modulus {
-        fail_syscall!(b"Coordinates out of range");
-    }
-    let p = if x.is_zero() && y.is_zero() {
-        secp256r1::Affine::identity()
-    } else {
-        secp256r1::Affine::new_unchecked(x.into(), y.into())
-    };
-    Ok(SyscallResult::Success(
-        if !(p.is_on_curve() && p.is_in_correct_subgroup_assuming_on_curve()) {
-            vec![1.into(), 0.into()]
-        } else {
-            let ec = get_secp256r1_exec_scope(exec_scopes)?;
-            let id = ec.ec_points.len();
-            ec.ec_points.push(p);
-            vec![0.into(), id.into()]
-        },
-    ))
+    secp_new(x, y, &mut get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256r1_add_syscall` syscall.
@@ -1643,59 +1600,29 @@ fn secp256r1_add(
     p1_id: usize,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_ADD);
-    let ec = get_secp256r1_exec_scope(exec_scopes)?;
-    let p0 = &ec.ec_points[p0_id];
-    let p1 = &ec.ec_points[p1_id];
-    let sum = *p0 + *p1;
-    let id = ec.ec_points.len();
-    ec.ec_points.push(sum.into());
-    Ok(SyscallResult::Success(vec![id.into()]))
+    secp_add(p0_id, p1_id, &mut get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256r1_mul_syscall` syscall.
 fn secp256r1_mul(
     gas_counter: &mut usize,
     p_id: usize,
-    scalar: BigUint,
+    scalar: U256,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_MUL);
-
-    let ec = get_secp256r1_exec_scope(exec_scopes)?;
-    let p = &ec.ec_points[p_id];
-    let product = *p * secp256r1::Fr::from(scalar);
-    let id = ec.ec_points.len();
-    ec.ec_points.push(product.into());
-    Ok(SyscallResult::Success(vec![id.into()]))
+    secp_mul(p_id, scalar, &mut get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256r1_get_point_from_x_syscall` syscall.
 fn secp256r1_get_point_from_x(
     gas_counter: &mut usize,
-    x: BigUint,
+    x: U256,
     y_parity: bool,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_GET_POINT_FROM_X);
-    if x >= <secp256r1::Fq as PrimeField>::MODULUS.into() {
-        fail_syscall!(b"Coordinates out of range");
-    }
-    let x = x.into();
-    let maybe_p = secp256r1::Affine::get_ys_from_x_unchecked(x)
-        .map(
-            |(smaller, greater)|
-            // Return the correct y coordinate based on the parity.
-            if smaller.into_bigint().is_odd() == y_parity { smaller } else { greater },
-        )
-        .map(|y| secp256r1::Affine::new_unchecked(x, y))
-        .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
-    let Some(p) = maybe_p else {
-        return Ok(SyscallResult::Success(vec![1.into(), 0.into()]));
-    };
-    let ec = get_secp256r1_exec_scope(exec_scopes)?;
-    let id = ec.ec_points.len();
-    ec.ec_points.push(p);
-    Ok(SyscallResult::Success(vec![0.into(), id.into()]))
+    secp_get_point_from_x(x, y_parity, &mut get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Executes the `secp256r1_get_xy_syscall` syscall.
@@ -1705,17 +1632,7 @@ fn secp256r1_get_xy(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_GET_XY);
-    let ec = get_secp256r1_exec_scope(exec_scopes)?;
-    let p = &ec.ec_points[p_id];
-    let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
-    let (x1, x0) = BigUint::from(p.x).div_rem(&pow_2_128);
-    let (y1, y0) = BigUint::from(p.y).div_rem(&pow_2_128);
-    Ok(SyscallResult::Success(vec![
-        Felt252::from(x0).into(),
-        Felt252::from(x1).into(),
-        Felt252::from(y0).into(),
-        Felt252::from(y1).into(),
-    ]))
+    secp_get_xy(p_id, &get_secp256r1_exec_scope(exec_scopes)?.ec_points)
 }
 
 /// Returns the `Secp256r1ExecScope` managing the different active points.
@@ -1731,7 +1648,117 @@ fn get_secp256r1_exec_scope(
     exec_scopes.get_mut_ref::<Secp256r1ExecutionScope>(NAME)
 }
 
-// ---
+/// Creates a new point on the curve `C` and adds it to `ec_points`.
+///
+/// Note that both secp curves have cofactor 1, so checking the curve equation is enough to
+/// validate group membership.
+fn secp_new<C>(
+    x: U256,
+    y: U256,
+    ec_points: &mut Vec<ShortWeierstrassProjectivePoint<C>>,
+) -> Result<SyscallResult, HintError>
+where
+    C: IsShortWeierstrass,
+    C::BaseField: IsPrimeField<RepresentativeType = U256> + IsField<BaseType = U256>,
+{
+    let modulus_minus_one = C::BaseField::modulus_minus_one();
+    if x > modulus_minus_one || y > modulus_minus_one {
+        fail_syscall!(b"Coordinates out of range");
+    }
+    let maybe_p = if chain!(&x.limbs, &y.limbs).all(|l| *l == 0) {
+        Some(ShortWeierstrassProjectivePoint::neutral_element())
+    } else {
+        ShortWeierstrassProjectivePoint::new([
+            FieldElement::new(x),
+            FieldElement::new(y),
+            FieldElement::one(),
+        ])
+        .ok()
+    };
+    Ok(SyscallResult::Success(match maybe_p {
+        Some(p) => {
+            let id = ec_points.len();
+            ec_points.push(p);
+            vec![0.into(), id.into()]
+        }
+        None => vec![1.into(), 0.into()],
+    }))
+}
+
+/// Adds the points at `p0_id` and `p1_id`, and adds the result to `ec_points`.
+fn secp_add<C: IsShortWeierstrass>(
+    p0_id: usize,
+    p1_id: usize,
+    ec_points: &mut Vec<ShortWeierstrassProjectivePoint<C>>,
+) -> Result<SyscallResult, HintError> {
+    let sum = ec_points[p0_id].operate_with(&ec_points[p1_id]);
+    let id = ec_points.len();
+    ec_points.push(sum);
+    Ok(SyscallResult::Success(vec![id.into()]))
+}
+
+/// Multiplies the point at `p_id` by `scalar`, and adds the result to `ec_points`.
+fn secp_mul<C: IsShortWeierstrass>(
+    p_id: usize,
+    scalar: U256,
+    ec_points: &mut Vec<ShortWeierstrassProjectivePoint<C>>,
+) -> Result<SyscallResult, HintError> {
+    // No need to reduce the scalar by the curve order, as multiplying by it gives the same point.
+    let product = ec_points[p_id].operate_with_self(scalar);
+    let id = ec_points.len();
+    ec_points.push(product);
+    Ok(SyscallResult::Success(vec![id.into()]))
+}
+
+/// Finds a point on the curve `C` with the given `x` coordinate and `y` parity, and adds it to
+/// `ec_points`.
+fn secp_get_point_from_x<C>(
+    x: U256,
+    y_parity: bool,
+    ec_points: &mut Vec<ShortWeierstrassProjectivePoint<C>>,
+) -> Result<SyscallResult, HintError>
+where
+    C: IsShortWeierstrass,
+    C::BaseField: IsPrimeField<RepresentativeType = U256> + IsField<BaseType = U256>,
+{
+    if x > C::BaseField::modulus_minus_one() {
+        fail_syscall!(b"Coordinates out of range");
+    }
+    let x = FieldElement::new(x);
+    // Solve the curve equation `y^2 = x^3 + ax + b` for `y`.
+    let Some((y0, y1)) = ((x.square() + C::a()) * &x + C::b()).sqrt() else {
+        // No point on the curve with the given `x`.
+        return Ok(SyscallResult::Success(vec![1.into(), 0.into()]));
+    };
+    // The roots are `y` and `modulus - y`, and as the modulus is odd, exactly one of them is odd.
+    let y0_is_odd = y0.representative().limbs[3] & 1 == 1;
+    let y = if y0_is_odd == y_parity { y0 } else { y1 };
+    let p = ShortWeierstrassProjectivePoint::new([x, y, FieldElement::one()]).unwrap();
+    let id = ec_points.len();
+    ec_points.push(p);
+    Ok(SyscallResult::Success(vec![0.into(), id.into()]))
+}
+
+/// Returns the coordinates of the point at `p_id`, as pairs of 128-bit limbs.
+fn secp_get_xy<C>(
+    p_id: usize,
+    ec_points: &[ShortWeierstrassProjectivePoint<C>],
+) -> Result<SyscallResult, HintError>
+where
+    C: IsShortWeierstrass,
+    C::BaseField: IsPrimeField<RepresentativeType = U256> + IsField<BaseType = U256>,
+{
+    let p = &ec_points[p_id];
+    if p.is_neutral_element() {
+        return Ok(SyscallResult::Success(vec![Felt252::ZERO.into(); 4]));
+    }
+    let p = p.to_affine();
+    let merge = |l0: u64, l1: u64| Felt252::from(((l1 as u128) << 64) + l0 as u128).into();
+    let split = |U256 { limbs: [l3, l2, l1, l0] }: U256| [merge(l0, l1), merge(l2, l3)];
+    let [x0, x1] = split(p.x().representative());
+    let [y0, y1] = split(p.y().representative());
+    Ok(SyscallResult::Success(vec![x0, x1, y0, y1]))
+}
 
 pub fn execute_core_hint_base(
     vm: &mut VirtualMachine,
@@ -2074,7 +2101,7 @@ pub fn execute_core_hint(
                     .or_insert_with(|| vec![Felt252::from(i)]);
             }
             // Reverse the accesses in order to pop them in order later.
-            for (_, accesses) in dict_squash_exec_scope.access_indices.iter_mut() {
+            for accesses in dict_squash_exec_scope.access_indices.values_mut() {
                 accesses.reverse();
             }
             dict_squash_exec_scope.keys =
@@ -2344,11 +2371,14 @@ pub fn run_function_with_runner(
     Ok(())
 }
 
+#[expect(clippy::disallowed_types)]
+pub type HintsDict = std::collections::HashMap<usize, Vec<HintParams>>;
+
 /// Creates CairoRunner for `program`.
 pub fn build_cairo_runner(
     data: Vec<MaybeRelocatable>,
     builtins: Vec<BuiltinName>,
-    hints_dict: HashMap<usize, Vec<HintParams>>,
+    hints_dict: HintsDict,
 ) -> Result<CairoRunner, Box<CairoRunError>> {
     let program = Program::new(
         builtins,
@@ -2356,7 +2386,7 @@ pub fn build_cairo_runner(
         Some(0),
         hints_dict,
         ReferenceManager { references: Vec::new() },
-        HashMap::new(),
+        Default::default(),
         vec![],
         None,
     )
@@ -2396,7 +2426,7 @@ pub fn run_function<'a, 'b: 'a>(
     builtins: Vec<BuiltinName>,
     additional_initialization: impl FnOnce(&mut VirtualMachine) -> Result<(), Box<CairoRunError>>,
     hint_processor: &mut dyn HintProcessor,
-    hints_dict: HashMap<usize, Vec<HintParams>>,
+    hints_dict: HintsDict,
 ) -> Result<RunFunctionResult, Box<CairoRunError>> {
     let data: Vec<MaybeRelocatable> =
         bytecode.map(Felt252::from).map(MaybeRelocatable::from).collect();
@@ -2485,8 +2515,11 @@ where
     while let Some(item) = format_next_item(&mut felts) {
         items.push(item.quote_if_string());
     }
-    let panic_values_string =
-        if let [item] = &items[..] { item.clone() } else { format!("({})", items.join(", ")) };
+    let panic_values_string = if let [item] = &items[..] {
+        item.clone()
+    } else {
+        format!("({})", items.iter().format(", "))
+    };
     format!("Panicked with {panic_values_string}.")
 }
 

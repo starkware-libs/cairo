@@ -1,3 +1,4 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_utils::{Intern, define_short_id};
@@ -16,7 +17,6 @@ use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
 use crate::optimizations::branch_inversion::branch_inversion;
-use crate::optimizations::cancel_ops::cancel_ops;
 use crate::optimizations::config::Optimizations;
 use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::match_optimizer::optimize_matches;
@@ -24,16 +24,17 @@ use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
 use crate::optimizations::split_structs::split_structs;
+use crate::optimizations::trim_unused_params::trim_unused_params;
+use crate::optimizations::variable_forwarding::variable_forwarding;
 use crate::reorganize_blocks::reorganize_blocks;
 
 /// Enum of the optimization phases that can be used in a strategy.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue, HeapSize)]
 pub enum OptimizationPhase<'db> {
     ApplyInlining {
         enable_const_folding: bool,
     },
     BranchInversion,
-    CancelOps,
     ConstFolding,
     Cse,
     DedupBlocks,
@@ -46,6 +47,11 @@ pub enum OptimizationPhase<'db> {
     ReturnOptimization,
     SplitStructs,
     TrimUnreachable,
+    /// Removes parameters that are never used by the function's body, from both the function's
+    /// signature and from every call site.
+    /// Must be applied exactly once, directly on the `PostBaseline` stage lowering.
+    TrimUnusedParams,
+    VariableForwarding,
     GasRedeposit,
     /// The following is not really an optimization but we want to apply optimizations before and
     /// after it, so it is convenient to treat it as an optimization.
@@ -89,12 +95,11 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
                 apply_inlining(db, function, lowered, *enable_const_folding)?
             }
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
-            OptimizationPhase::CancelOps => cancel_ops(lowered),
             OptimizationPhase::ConstFolding => const_folding(db, function, lowered),
             OptimizationPhase::Cse => cse(lowered),
             OptimizationPhase::EarlyUnsafePanic => early_unsafe_panic(db, lowered),
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
-            OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
+            OptimizationPhase::OptimizeMatches => optimize_matches(db, lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
             OptimizationPhase::Reboxing => apply_reboxing(db, lowered)?,
             OptimizationPhase::ReorderStatements => reorder_statements(db, lowered),
@@ -102,6 +107,8 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
+            OptimizationPhase::TrimUnusedParams => trim_unused_params(db, function, lowered)?,
+            OptimizationPhase::VariableForwarding => variable_forwarding(db, lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
             OptimizationPhase::Validate => validate(lowered).unwrap_or_else(|err| {
@@ -129,7 +136,7 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
 define_short_id!(OptimizationStrategyId, OptimizationStrategy<'db>);
 
 /// A strategy is a sequence of optimization phases.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue, HeapSize)]
 pub struct OptimizationStrategy<'db>(pub Vec<OptimizationPhase<'db>>);
 
 impl<'db> ApplyOptimization<'db> for [OptimizationPhase<'db>] {
@@ -139,8 +146,23 @@ impl<'db> ApplyOptimization<'db> for [OptimizationPhase<'db>] {
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
+        let fmt = crate::fmt::LoweredFormatter::new(db, &lowered.variables);
+        tracing::trace!(
+            target: "optimization_dump",
+            "({:?})\nInitial:\n{:?}",
+            function.debug(db),
+            lowered.debug(&fmt)
+        );
+
         for phase in self {
             phase.apply(db, function, lowered)?;
+            let fmt = crate::fmt::LoweredFormatter::new(db, &lowered.variables);
+            tracing::trace!(
+                target: "optimization_dump",
+                "({:?})\nAfter {phase:?}:\n{:?}",
+                function.debug(db),
+                lowered.debug(&fmt)
+            );
         }
         Ok(())
     }
@@ -161,7 +183,7 @@ impl<'db> ApplyOptimization<'db> for OptimizationStrategyId<'db> {
 }
 
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationStrategyId<'db> {
     match db.optimizations() {
         Optimizations::Enabled(_) => {
@@ -173,7 +195,12 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
                 OptimizationPhase::ReorganizeBlocks,
                 OptimizationPhase::ReorderStatements,
                 OptimizationPhase::BranchInversion,
-                OptimizationPhase::CancelOps,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::VariableForwarding,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::OptimizeMatches,
+                OptimizationPhase::ReorderStatements,
                 // Must be right before const folding.
                 OptimizationPhase::ReorganizeBlocks,
                 OptimizationPhase::ConstFolding,
@@ -184,7 +211,9 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
                 OptimizationPhase::OptimizeMatches,
                 OptimizationPhase::ReorganizeBlocks,
                 OptimizationPhase::Reboxing,
-                OptimizationPhase::CancelOps,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::VariableForwarding,
+                OptimizationPhase::ReorderStatements,
                 OptimizationPhase::ReorganizeBlocks,
                 // Performing CSE here after blocks are the most contiguous, to reach maximum
                 // effect.
@@ -204,11 +233,18 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
 }
 
 /// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn final_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationStrategyId<'db> {
     match db.optimizations() {
         Optimizations::Enabled(_) => {
             OptimizationStrategy(vec![
+                // Must be applied first: the unused-parameters analysis runs on the `PostBaseline`
+                // lowering (which is why it cannot be part of the baseline strategy), and the
+                // trimmed positions refer to its layout, before `LowerImplicits` prepends the
+                // implicit parameters.
+                OptimizationPhase::TrimUnusedParams,
+                // Cleans up the statements producing the trimmed call arguments.
+                OptimizationPhase::ReorderStatements,
                 OptimizationPhase::GasRedeposit,
                 OptimizationPhase::EarlyUnsafePanic,
                 // Apply `TrimUnreachable` here to remove unreachable `redeposit_gas` and

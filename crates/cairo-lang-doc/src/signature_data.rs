@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use cairo_lang_defs::ids::TraitItemId::Function;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
@@ -24,6 +22,7 @@ use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::lookup_item::HasResolverData;
 use cairo_lang_semantic::{Expr, GenericArgumentId, GenericParam, Parameter, TypeId};
 use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 use salsa::Database;
 
@@ -256,7 +255,7 @@ fn get_trait_function_signature_data<'db>(
     // to get a signature relevant subset, the trait ones need to be filtered out
     let trait_id = item_id.trait_id(db);
     let trait_resolver_data = trait_id.resolver_data(db)?;
-    let trait_params_set: HashSet<_> = trait_resolver_data.generic_params.iter().collect();
+    let trait_params_set: UnorderedHashSet<_> = trait_resolver_data.generic_params.iter().collect();
 
     let function_generic_params: Vec<GenericParamId<'_>> = resolver_data
         .generic_params

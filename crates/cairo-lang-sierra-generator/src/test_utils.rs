@@ -1,8 +1,9 @@
-use std::sync::{LazyLock, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use cairo_lang_defs as defs;
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
-use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_defs::ids::{ExternFunctionId, ModuleId, TopLevelLanguageElementId};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
@@ -12,21 +13,44 @@ use cairo_lang_lowering::db::{LoweringGroup, lowering_group_input};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
-use cairo_lang_semantic::test_utils::setup_test_crate;
+use cairo_lang_semantic::items::constant::ConstValueId;
+use cairo_lang_semantic::test_utils::{setup_test_crate, with_target_function_plugin};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_utils::{CloneableDatabase, Intern};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::Optimizations;
+use num_bigint::BigInt;
 use salsa::{Database, Setter};
 use semantic::inline_macros::get_default_plugin_suite;
 
-use crate::db::SierraGenGroup;
+use crate::db::{ExternalConstPlugin, SierraGenGroup};
 use crate::pre_sierra::{self, LabelLongId};
 use crate::program_generator::SierraProgramWithDebug;
 use crate::replace_ids::replace_sierra_ids_in_program;
 use crate::utils::{jump_statement, return_statement, simple_statement};
+
+/// A test [`ExternalConstPlugin`], supplying `value` for the externs whose full path contains
+/// `module`.
+#[derive(Debug)]
+struct TestConstPlugin {
+    module: &'static str,
+    value: i64,
+}
+impl ExternalConstPlugin for TestConstPlugin {
+    fn provide<'db>(
+        &self,
+        db: &'db dyn Database,
+        extern_id: ExternFunctionId<'db>,
+        ty: semantic::TypeId<'db>,
+    ) -> Option<Maybe<ConstValueId<'db>>> {
+        extern_id
+            .full_path(db)
+            .contains(self.module)
+            .then(|| Ok(ConstValueId::from_int(db, ty, &BigInt::from(self.value))))
+    }
+}
 
 #[salsa::db]
 #[derive(Clone)]
@@ -66,12 +90,20 @@ impl SierraGenDatabaseForTesting {
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
 
-        let plugin_suite = get_default_plugin_suite();
+        let plugin_suite = with_target_function_plugin(get_default_plugin_suite());
         res.set_default_plugins_from_suite(plugin_suite);
 
         lowering_group_input(&res)
             .set_optimizations(&mut res)
             .to(Some(Optimizations::enabled_with_minimal_movable_functions()));
+
+        // Test plugins for the `__externally_provided_const__` extern function. They are inert
+        // unless that extern is actually called, and each resolves only the calls in its own
+        // module.
+        res.set_external_const_plugins(vec![
+            Arc::new(TestConstPlugin { module: "seven", value: 7777 }),
+            Arc::new(TestConstPlugin { module: "eight", value: 8888 }),
+        ]);
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
@@ -248,46 +280,4 @@ pub fn dummy_push_values_ex<'db>(
             .collect(),
     )
     .into_statement_without_location()
-}
-
-/// Creates a test for a given function that reads test files.
-///
-/// filenames - a vector of tests files the test will apply to.
-/// db - the salsa DB to use for the test.
-/// func - the function to be applied on the test params to generate the tested result.
-/// params - the function parameters. For functions specialized here the parameters can be omitted.
-#[macro_export]
-macro_rules! diagnostics_test {
-    ($test_name:ident, $filenames:expr, $db:expr, $func:expr, $($param:expr),*) => {
-        #[test]
-        fn $test_name() -> Result<(), std::io::Error> {
-            let mut db = $db;
-            for filename in $filenames{
-                let tests = cairo_lang_utils::parse_test_file::parse_test_file(
-                    std::path::Path::new(filename)
-                )?;
-                for (name, test) in tests {
-                    let test_expr = $func(
-                        &mut db,
-                        $(&test.attributes[$param],)*
-                    )
-                    .unwrap();
-                    verify_exception(&db, test_expr, &test.attributes["Expected Result"], &name);
-                }
-            }
-            Ok(())
-        }
-    };
-
-    ($test_name:ident, $filenames:expr, $db:expr, setup_test_block) => {
-        diagnostics_test!(
-            $test_name,
-            $filenames,
-            $db,
-            setup_test_block,
-            "Expr Code",
-            "Module Code",
-            "Function Body"
-        );
-    };
 }

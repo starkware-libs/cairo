@@ -233,7 +233,7 @@ use starknet::storage::Map as LegacyMap;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__constructor(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -262,7 +262,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_name_, __arg_symbol_, __arg_decimals_, __arg_initial_supply, __arg_recipient);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -270,7 +270,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_name(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -280,7 +280,7 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_name(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -289,7 +289,7 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_symbol(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -299,7 +299,7 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_symbol(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -308,7 +308,7 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_decimals(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -318,7 +318,7 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_decimals(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u8>::serialize(@res, ref arr);
@@ -327,7 +327,7 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_total_supply(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -337,7 +337,7 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_total_supply(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -346,7 +346,7 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__balance_of(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -359,7 +359,7 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::balance_of(@contract_state, __arg_account);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -368,7 +368,7 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__allowance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -385,7 +385,7 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::allowance(@contract_state, __arg_owner, __arg_spender);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -394,7 +394,7 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__increase_allowance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -411,7 +411,7 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::increase_allowance(ref contract_state, __arg_spender, __arg_added_value);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -419,7 +419,7 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__decrease_allowance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -436,7 +436,7 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::decrease_allowance(ref contract_state, __arg_spender, __arg_subtracted_value);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -444,7 +444,7 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__write_info(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -457,7 +457,7 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::write_info(ref contract_state, __arg_user_info);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -465,7 +465,7 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_info(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -475,7 +475,7 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_info(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<UserInfo>::serialize(@res, ref arr);
@@ -536,16 +536,16 @@ pub mod __constructor {
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 #[doc(hidden)]
@@ -1235,6 +1235,217 @@ self: IERC20SafeDispatcher, spender: ContractAddress, subtracted_value: u256,
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl IERC20ForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of IERC20<TContractState> {
+    fn get_name(self: @TContractState) -> felt252 {
+        IERC20DispatcherTrait::get_name(IERC20LibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn get_symbol(self: @TContractState) -> felt252 {
+        IERC20DispatcherTrait::get_symbol(IERC20LibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn get_decimals(self: @TContractState) -> u8 {
+        IERC20DispatcherTrait::get_decimals(IERC20LibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn get_total_supply(self: @TContractState) -> u256 {
+        IERC20DispatcherTrait::get_total_supply(IERC20LibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+    fn balance_of(self: @TContractState, account: ContractAddress) -> u256 {
+        IERC20DispatcherTrait::balance_of(IERC20LibraryDispatcher { class_hash: FCH::class_hash(self) }, account)
+    }
+    fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256 {
+        IERC20DispatcherTrait::allowance(IERC20LibraryDispatcher { class_hash: FCH::class_hash(self) }, owner, spender)
+    }
+    fn increase_allowance(ref self: TContractState, spender: ContractAddress, added_value: u256) {
+        IERC20DispatcherTrait::increase_allowance(IERC20LibraryDispatcher { class_hash: FCH::class_hash(@self) }, spender, added_value)
+    }
+    fn decrease_allowance(
+ref self: TContractState, spender: ContractAddress, subtracted_value: u256,
+    ) {
+        IERC20DispatcherTrait::decrease_allowance(IERC20LibraryDispatcher { class_hash: FCH::class_hash(@self) }, spender, subtracted_value)
+    }
+    fn write_info(ref self: TContractState, user_info: UserInfo) {
+        IERC20DispatcherTrait::write_info(IERC20LibraryDispatcher { class_hash: FCH::class_hash(@self) }, user_info)
+    }
+    fn get_info(self: @TContractState) -> UserInfo {
+        IERC20DispatcherTrait::get_info(IERC20LibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_name<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_name"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_symbol<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_symbol"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_decimals<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_decimals"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_total_supply<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_total_supply"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__balance_of<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("balance_of"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__allowance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("allowance"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__increase_allowance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("increase_allowance"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__decrease_allowance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("decrease_allowance"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__write_info<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("write_info"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_info<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_info"),
+            data,
+        )
+    )
+}
+
+mod __external_IERC20ForwardImpl {
+    pub use super::__wrapper__IERC20ForwardImpl__get_name as get_name;
+    pub use super::__wrapper__IERC20ForwardImpl__get_symbol as get_symbol;
+    pub use super::__wrapper__IERC20ForwardImpl__get_decimals as get_decimals;
+    pub use super::__wrapper__IERC20ForwardImpl__get_total_supply as get_total_supply;
+    pub use super::__wrapper__IERC20ForwardImpl__balance_of as balance_of;
+    pub use super::__wrapper__IERC20ForwardImpl__allowance as allowance;
+    pub use super::__wrapper__IERC20ForwardImpl__increase_allowance as increase_allowance;
+    pub use super::__wrapper__IERC20ForwardImpl__decrease_allowance as decrease_allowance;
+    pub use super::__wrapper__IERC20ForwardImpl__write_info as write_info;
+    pub use super::__wrapper__IERC20ForwardImpl__get_info as get_info;
+}
+
+mod __l1_handler_IERC20ForwardImpl {
+}
+
+mod __constructor_IERC20ForwardImpl {
+}
 impl UserInfoSerde<> of core::serde::Serde::<UserInfo> {
     fn serialize(self: @UserInfo, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<felt252>::serialize(self.name, ref output);
@@ -1243,15 +1454,15 @@ impl UserInfoSerde<> of core::serde::Serde::<UserInfo> {
         core::serde::Serde::<u256>::serialize(self.total_supply, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<UserInfo> {
-        let name = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
-        let symbol = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
-        let decimals = core::internal::InferDestruct::<u8> { value: core::serde::Serde::<u8>::deserialize(ref serialized)? };
-        let total_supply = core::internal::InferDestruct::<u256> { value: core::serde::Serde::<u256>::deserialize(ref serialized)? };
+        let __serde_member_name = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let __serde_member_symbol = core::internal::InferDestruct::<felt252> { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
+        let __serde_member_decimals = core::internal::InferDestruct::<u8> { value: core::serde::Serde::<u8>::deserialize(ref serialized)? };
+        let __serde_member_total_supply = core::internal::InferDestruct::<u256> { value: core::serde::Serde::<u256>::deserialize(ref serialized)? };
         core::option::Option::Some(UserInfo {
-            name: name.value,
-            symbol: symbol.value,
-            decimals: decimals.value,
-            total_supply: total_supply.value,
+            name: __serde_member_name.value,
+            symbol: __serde_member_symbol.value,
+            decimals: __serde_member_decimals.value,
+            total_supply: __serde_member_total_supply.value,
         })
     }
 }
@@ -1528,9 +1739,9 @@ impl IERC20DispatcherSerde<> of core::serde::Serde::<IERC20Dispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20Dispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20Dispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -1634,9 +1845,9 @@ impl IERC20LibraryDispatcherSerde<> of core::serde::Serde::<IERC20LibraryDispatc
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20LibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20LibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -1740,9 +1951,9 @@ impl IERC20SafeLibraryDispatcherSerde<> of core::serde::Serde::<IERC20SafeLibrar
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20SafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -1846,9 +2057,9 @@ impl IERC20SafeDispatcherSerde<> of core::serde::Serde::<IERC20SafeDispatcher> {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(IERC20SafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -2190,7 +2401,7 @@ use starknet::storage::Map as LegacyMap;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__constructor(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2219,7 +2430,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_name_, __arg_symbol_, __arg_decimals_, __arg_initial_supply, __arg_recipient);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -2227,7 +2438,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_name(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2237,7 +2448,7 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_name(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -2246,7 +2457,7 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_symbol(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2256,7 +2467,7 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_symbol(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<felt252>::serialize(@res, ref arr);
@@ -2265,7 +2476,7 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_decimals(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2275,7 +2486,7 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_decimals(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u8>::serialize(@res, ref arr);
@@ -2284,7 +2495,7 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_total_supply(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2294,7 +2505,7 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_total_supply(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -2303,7 +2514,7 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__balance_of(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2316,7 +2527,7 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::balance_of(@contract_state, __arg_account);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -2325,7 +2536,7 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__allowance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2342,7 +2553,7 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::allowance(@contract_state, __arg_owner, __arg_spender);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u256>::serialize(@res, ref arr);
@@ -2351,7 +2562,7 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__increase_allowance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2368,7 +2579,7 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::increase_allowance(ref contract_state, __arg_spender, __arg_added_value);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -2376,7 +2587,7 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__decrease_allowance(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2393,7 +2604,7 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::decrease_allowance(ref contract_state, __arg_spender, __arg_subtracted_value);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -2401,7 +2612,7 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__write_info(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2414,7 +2625,7 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::write_info(ref contract_state, __arg_user_info);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -2422,7 +2633,7 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__IERC20Impl__get_info(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -2432,7 +2643,7 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_info(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<UserInfo>::serialize(@res, ref arr);
@@ -2493,16 +2704,16 @@ pub mod __constructor {
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        Option::None
+        core::option::Option::None
     }
 }
 #[doc(hidden)]

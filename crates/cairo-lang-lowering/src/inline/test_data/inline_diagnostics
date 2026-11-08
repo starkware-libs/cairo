@@ -3,21 +3,19 @@
 //! > test_runner_name
 test_function_inlining
 
-//! > function_code
+//! > cairo_code
 #[inline(always)]
+#[target_function]
 fn foo(ref a: felt252, b: felt252) -> felt252 {
     foo(ref a, b);
     b
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error[E3005]: Cannot inline a function that might call itself.
- --> lib.cairo:1:1-5:1
+ --> lib.cairo:1:1-6:1
   #[inline(always)]
  _^
 | ...
@@ -37,15 +35,7 @@ error[E3005]: Cannot inline a function that might call itself.
 //! > test_runner_name
 test_function_inlining
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(n: felt252) -> felt252 {
-    bar(n)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(n: felt252) -> felt252 {
     if n == 0 {
@@ -53,6 +43,10 @@ fn bar(n: felt252) -> felt252 {
     } else {
         return 1;
     }
+}
+#[target_function]
+fn foo(n: felt252) -> felt252 {
+    bar(n)
 }
 
 //! > semantic_diagnostics

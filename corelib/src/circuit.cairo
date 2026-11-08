@@ -67,10 +67,11 @@
 //!
 //! # Errors
 //!
-//! Circuit evaluation can fail in certain cases:
-//! - When computing multiplicative inverses of non-invertible elements
-//! - When the modulus is 0 or 1
-//! In that case the evaluation will return an Error.
+//! Circuit evaluation can fail when computing multiplicative inverses of non-invertible
+//! elements, in which case it returns an `Error`.
+//!
+//! Note that a modulus of 0 or 1 is rejected at `CircuitModulus` construction (`try_into`
+//! returns `None`), so it never reaches evaluation.
 
 /// Creates a new circuit element representing addition modulo p of two input circuits.
 ///
@@ -593,8 +594,9 @@ impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
 ///     .next([10, 0, 0, 0])
 ///     .next([11, 0, 0, 0])
 ///     .done()
-///     .eval(modulus) // Performs the circuit evaluation with the given modulus and returns the
-///     Result .unwrap();
+///     // Performs the circuit evaluation with the given modulus and returns the Result.
+///     .eval(modulus)
+///     .unwrap();
 /// assert!(circuit.get_output(a) == 0.into());
 /// assert!(circuit.get_output(b) == 1.into());
 /// ```
@@ -746,13 +748,17 @@ extern fn u96_limbs_less_than_guarantee_verify<
     guarantee: U96LimbsLtGuarantee<LIMB_COUNT>,
 ) -> NextU96LessThanGuarantee<MO::VALUE> nopanic;
 
+extern fn u96_limbs_less_than_guarantee_verify_v2<const LIMB_COUNT: usize>(
+    guarantee: U96LimbsLtGuarantee<LIMB_COUNT>,
+) implicits(RangeCheck96) nopanic;
+
 extern fn u96_single_limb_less_than_guarantee_verify(
     guarantee: U96LimbsLtGuarantee<1>,
 ) -> U96Guarantee nopanic;
 
 impl DestructDestructU96LimbsLtGuarantee4 of Destruct<U96LimbsLtGuarantee<4>> {
     fn destruct(self: U96LimbsLtGuarantee<4>) nopanic {
-        self.into_u96_guarantee().destruct()
+        u96_limbs_less_than_guarantee_verify_v2(self)
     }
 }
 

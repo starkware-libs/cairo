@@ -8,3 +8,16 @@ It is automatically used in every module.
 It is not possible to disable standard library prelude importing.
 This means that items from the prelude are always in scope without explicit imports,
 which is why you can use types like `Option`, `Result`, and common traits without importing them.
+
+== Edition-based Preludes
+
+Cairo has five compiler editions that map to three prelude definitions.
+The edition is set per crate via the `edition` field — typically in `Scarb.toml` for Scarb
+projects, or in `cairo_project.toml` for non-Scarb setups (and via `CrateSettings` when
+driving the compiler programmatically).
+
+- `core::prelude::v2024_07` — the modern prelude, used by editions `v2024_07` and `v2025_12`
+- `core::prelude::v2023_10` — intermediate edition, used by editions `v2023_10` and `v2023_11`
+- `core::prelude::v2023_01` — the legacy prelude
+
+Each successive prelude is more conservative, exporting only the most commonly needed items.

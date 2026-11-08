@@ -116,3 +116,23 @@ error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Fun
  --> dummy_file.cairo:3:9
   tokens  fn foo() {}
         ^
+
+//! > ==========================================================================
+
+//! > Skipped token whose leading trivia is a full-line comment: span points at the token, not the comment.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo()
+    // a leading comment
+    )
+{
+}
+
+//! > expected_diagnostics
+error[E1000]: Skipped tokens. Expected: '{'.
+ --> dummy_file.cairo:3:5
+    )
+    ^

@@ -146,7 +146,7 @@ impl<'db> DebugWithDb<'db> for VarUsage<'db> {
                     .long(ctx.db)
                     .lines()
                     .map(|s| s.trim())
-                    .join(" ")
+                    .format(" ")
             )?;
         }
         Ok(())

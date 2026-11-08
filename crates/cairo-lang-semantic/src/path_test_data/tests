@@ -1,3 +1,45 @@
+//! > Path via crate does not double-encode the crate name.
+
+//! > test_runner_name
+test_path_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod provider1 {
+    pub trait T {
+        fn foo(self: @felt252);
+    }
+    impl I of T {
+        fn foo(self: @felt252) {}
+    }
+}
+mod provider2 {
+    pub trait T {
+        fn foo(self: @felt252);
+    }
+    impl I of T {
+        fn foo(self: @felt252) {}
+    }
+}
+mod caller {
+    use crate::provider1::*;
+    use crate::provider2::*;
+    fn go() {
+        let x = 1_felt252;
+        x.foo();
+    }
+}
+
+//! > expected_diagnostics
+error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: crate::provider1::T::foo and crate::provider2::T::foo. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:22:11
+        x.foo();
+          ^^^
+
+//! > ==========================================================================
+
 //! > Ambiguous trait function via glob use
 
 //! > test_runner_name

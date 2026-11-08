@@ -5,6 +5,7 @@
 #![allow(unused_variables)]
 use std::ops::Deref;
 
+use assert_matches::assert_matches;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_proc_macros::HeapSize;
@@ -20,7 +21,7 @@ use super::{
 };
 #[path = "ast_ext.rs"]
 mod ast_ext;
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct Trivia<'db>(ElementList<'db, Trivium<'db>, 1>);
 impl<'db> Deref for Trivia<'db> {
     type Target = ElementList<'db, Trivium<'db>, 1>;
@@ -43,7 +44,7 @@ impl<'db> Trivia<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TriviaPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TriviaPtr<'db> {
     type SyntaxNode = Trivia<'db>;
@@ -59,7 +60,7 @@ impl<'db> From<TriviaPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TriviaGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Trivia<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Trivia);
@@ -90,7 +91,7 @@ impl<'db> TypedSyntaxNode<'db> for Trivia<'db> {
         TriviaPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum Trivium<'db> {
     SingleLineComment(TokenSingleLineComment<'db>),
     SingleLineDocComment(TokenSingleLineDocComment<'db>),
@@ -100,7 +101,7 @@ pub enum Trivium<'db> {
     Skipped(TokenSkipped<'db>),
     SkippedNode(TriviumSkippedNode<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TriviumPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TriviumPtr<'db> {
     type SyntaxNode = Trivium<'db>;
@@ -186,7 +187,7 @@ impl<'db> From<TriviumSkippedNodeGreen<'db>> for TriviumGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TriviumGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Trivium<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -275,7 +276,82 @@ impl<'db> Trivium<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct ExprMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> ExprMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> ExprMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        ExprMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ExprMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> ExprMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct ExprMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> ExprMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for ExprMissingPtr<'db> {
+    type SyntaxNode = ExprMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> ExprMissing<'db> {
+        ExprMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<ExprMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: ExprMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct ExprMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for ExprMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMissing);
+    type StablePtr = ExprMissingPtr<'db>;
+    type Green = ExprMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        ExprMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ExprMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ExprMissing { Some(Self::from_syntax_node(db, node)) } else { None }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        ExprMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum Expr<'db> {
     Path(ExprPath<'db>),
     Literal(TerminalLiteralNumber<'db>),
@@ -304,7 +380,7 @@ pub enum Expr<'db> {
     Underscore(TerminalUnderscore<'db>),
     Missing(ExprMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ExprPtr<'db> {
     type SyntaxNode = Expr<'db>;
@@ -580,7 +656,7 @@ impl<'db> From<ExprMissingGreen<'db>> for ExprGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -769,7 +845,7 @@ impl<'db> Expr<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprList<'db>(ElementList<'db, Expr<'db>, 2>);
 impl<'db> Deref for ExprList<'db> {
     type Target = ElementList<'db, Expr<'db>, 2>;
@@ -795,7 +871,7 @@ impl<'db> ExprList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ExprListPtr<'db> {
     type SyntaxNode = ExprList<'db>;
@@ -811,7 +887,7 @@ impl<'db> From<ExprListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum ExprListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(ExprGreen<'db>),
@@ -834,7 +910,7 @@ impl<'db> ExprListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprList);
@@ -869,7 +945,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprList<'db> {
         ExprListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct Arg<'db> {
     node: SyntaxNode<'db>,
 }
@@ -900,7 +976,7 @@ impl<'db> Arg<'db> {
         ArgClause::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ArgPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ArgPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ArgPtr<'db> {
@@ -917,7 +993,7 @@ impl<'db> From<ArgPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ArgGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Arg<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Arg);
@@ -957,13 +1033,13 @@ impl<'db> TypedSyntaxNode<'db> for Arg<'db> {
         ArgPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum ArgClause<'db> {
     Unnamed(ArgClauseUnnamed<'db>),
     Named(ArgClauseNamed<'db>),
     FieldInitShorthand(ArgClauseFieldInitShorthand<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ArgClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ArgClausePtr<'db> {
     type SyntaxNode = ArgClause<'db>;
@@ -1009,7 +1085,7 @@ impl<'db> From<ArgClauseFieldInitShorthandGreen<'db>> for ArgClauseGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ArgClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ArgClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -1070,7 +1146,7 @@ impl<'db> ArgClause<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ArgClauseNamed<'db> {
     node: SyntaxNode<'db>,
 }
@@ -1106,7 +1182,7 @@ impl<'db> ArgClauseNamed<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ArgClauseNamedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ArgClauseNamedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ArgClauseNamedPtr<'db> {
@@ -1123,7 +1199,7 @@ impl<'db> From<ArgClauseNamedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ArgClauseNamedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ArgClauseNamed<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgClauseNamed);
@@ -1172,7 +1248,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseNamed<'db> {
         ArgClauseNamedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ArgClauseUnnamed<'db> {
     node: SyntaxNode<'db>,
 }
@@ -1195,7 +1271,7 @@ impl<'db> ArgClauseUnnamed<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ArgClauseUnnamedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ArgClauseUnnamedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ArgClauseUnnamedPtr<'db> {
@@ -1212,7 +1288,7 @@ impl<'db> From<ArgClauseUnnamedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ArgClauseUnnamedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ArgClauseUnnamed<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgClauseUnnamed);
@@ -1256,7 +1332,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseUnnamed<'db> {
         ArgClauseUnnamedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ArgClauseFieldInitShorthand<'db> {
     node: SyntaxNode<'db>,
 }
@@ -1287,7 +1363,7 @@ impl<'db> ArgClauseFieldInitShorthand<'db> {
         ExprFieldInitShorthand::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ArgClauseFieldInitShorthandPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ArgClauseFieldInitShorthandPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ArgClauseFieldInitShorthandPtr<'db> {
@@ -1304,7 +1380,7 @@ impl<'db> From<ArgClauseFieldInitShorthandPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ArgClauseFieldInitShorthandGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ArgClauseFieldInitShorthand<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgClauseFieldInitShorthand);
@@ -1349,7 +1425,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgClauseFieldInitShorthand<'db> {
         ArgClauseFieldInitShorthandPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprFieldInitShorthand<'db> {
     node: SyntaxNode<'db>,
 }
@@ -1375,7 +1451,7 @@ impl<'db> ExprFieldInitShorthand<'db> {
         TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprFieldInitShorthandPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprFieldInitShorthandPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprFieldInitShorthandPtr<'db> {
@@ -1392,7 +1468,7 @@ impl<'db> From<ExprFieldInitShorthandPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprFieldInitShorthandGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprFieldInitShorthand<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprFieldInitShorthand);
@@ -1436,7 +1512,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprFieldInitShorthand<'db> {
         ExprFieldInitShorthandPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ArgList<'db>(ElementList<'db, Arg<'db>, 2>);
 impl<'db> Deref for ArgList<'db> {
     type Target = ElementList<'db, Arg<'db>, 2>;
@@ -1462,7 +1538,7 @@ impl<'db> ArgList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ArgListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ArgListPtr<'db> {
     type SyntaxNode = ArgList<'db>;
@@ -1478,7 +1554,7 @@ impl<'db> From<ArgListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum ArgListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(ArgGreen<'db>),
@@ -1501,7 +1577,7 @@ impl<'db> ArgListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ArgListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ArgList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgList);
@@ -1532,88 +1608,12 @@ impl<'db> TypedSyntaxNode<'db> for ArgList<'db> {
         ArgListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct ExprMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> ExprMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> ExprMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        ExprMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ExprMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> ExprMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct ExprMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> ExprMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for ExprMissingPtr<'db> {
-    type SyntaxNode = ExprMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> ExprMissing<'db> {
-        ExprMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<ExprMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: ExprMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ExprMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for ExprMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMissing);
-    type StablePtr = ExprMissingPtr<'db>;
-    type Green = ExprMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        ExprMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ExprMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ExprMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ExprMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::ExprMissing { Some(Self::from_syntax_node(db, node)) } else { None }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        ExprMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum PathSegment<'db> {
     Simple(PathSegmentSimple<'db>),
     WithGenericArgs(PathSegmentWithGenericArgs<'db>),
-    Missing(PathSegmentMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PathSegmentPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for PathSegmentPtr<'db> {
     type SyntaxNode = PathSegment<'db>;
@@ -1639,11 +1639,6 @@ impl<'db> From<PathSegmentWithGenericArgsPtr<'db>> for PathSegmentPtr<'db> {
         Self(value.0)
     }
 }
-impl<'db> From<PathSegmentMissingPtr<'db>> for PathSegmentPtr<'db> {
-    fn from(value: PathSegmentMissingPtr<'db>) -> Self {
-        Self(value.0)
-    }
-}
 impl<'db> From<PathSegmentSimpleGreen<'db>> for PathSegmentGreen<'db> {
     fn from(value: PathSegmentSimpleGreen<'db>) -> Self {
         Self(value.0)
@@ -1654,19 +1649,14 @@ impl<'db> From<PathSegmentWithGenericArgsGreen<'db>> for PathSegmentGreen<'db> {
         Self(value.0)
     }
 }
-impl<'db> From<PathSegmentMissingGreen<'db>> for PathSegmentGreen<'db> {
-    fn from(value: PathSegmentMissingGreen<'db>) -> Self {
-        Self(value.0)
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PathSegmentGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = PathSegmentPtr<'db>;
     type Green = PathSegmentGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
-        PathSegmentGreen(PathSegmentMissing::missing(db).0)
+        panic!("No missing variant.");
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         let kind = node.kind(db);
@@ -1676,9 +1666,6 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
             }
             SyntaxKind::PathSegmentWithGenericArgs => {
                 PathSegment::WithGenericArgs(PathSegmentWithGenericArgs::from_syntax_node(db, node))
-            }
-            SyntaxKind::PathSegmentMissing => {
-                PathSegment::Missing(PathSegmentMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "PathSegment"),
         }
@@ -1692,9 +1679,6 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
             SyntaxKind::PathSegmentWithGenericArgs => Some(PathSegment::WithGenericArgs(
                 PathSegmentWithGenericArgs::from_syntax_node(db, node),
             )),
-            SyntaxKind::PathSegmentMissing => {
-                Some(PathSegment::Missing(PathSegmentMissing::from_syntax_node(db, node)))
-            }
             _ => None,
         }
     }
@@ -1702,7 +1686,6 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
         match self {
             PathSegment::Simple(x) => x.as_syntax_node(),
             PathSegment::WithGenericArgs(x) => x.as_syntax_node(),
-            PathSegment::Missing(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
@@ -1712,15 +1695,10 @@ impl<'db> TypedSyntaxNode<'db> for PathSegment<'db> {
 impl<'db> PathSegment<'db> {
     /// Checks if a kind of a variant of [PathSegment].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(
-            kind,
-            SyntaxKind::PathSegmentSimple
-                | SyntaxKind::PathSegmentWithGenericArgs
-                | SyntaxKind::PathSegmentMissing
-        )
+        matches!(kind, SyntaxKind::PathSegmentSimple | SyntaxKind::PathSegmentWithGenericArgs)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PathSegmentSimple<'db> {
     node: SyntaxNode<'db>,
 }
@@ -1746,7 +1724,7 @@ impl<'db> PathSegmentSimple<'db> {
         TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PathSegmentSimplePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PathSegmentSimplePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for PathSegmentSimplePtr<'db> {
@@ -1763,7 +1741,7 @@ impl<'db> From<PathSegmentSimplePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PathSegmentSimpleGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PathSegmentSimple<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentSimple);
@@ -1807,12 +1785,12 @@ impl<'db> TypedSyntaxNode<'db> for PathSegmentSimple<'db> {
         PathSegmentSimplePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionTerminalColonColon<'db> {
     Empty(OptionTerminalColonColonEmpty<'db>),
     TerminalColonColon(TerminalColonColon<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalColonColonPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionTerminalColonColonPtr<'db> {
     type SyntaxNode = OptionTerminalColonColon<'db>;
@@ -1848,7 +1826,7 @@ impl<'db> From<TerminalColonColonGreen<'db>> for OptionTerminalColonColonGreen<'
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalColonColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalColonColon<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -1900,7 +1878,7 @@ impl<'db> OptionTerminalColonColon<'db> {
         matches!(kind, SyntaxKind::OptionTerminalColonColonEmpty | SyntaxKind::TerminalColonColon)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionTerminalColonColonEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -1918,7 +1896,7 @@ impl<'db> OptionTerminalColonColonEmpty<'db> {
     }
 }
 impl<'db> OptionTerminalColonColonEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalColonColonEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionTerminalColonColonEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionTerminalColonColonEmptyPtr<'db> {
@@ -1935,7 +1913,7 @@ impl<'db> From<OptionTerminalColonColonEmptyPtr<'db>> for SyntaxStablePtrId<'db>
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalColonColonEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalColonColonEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalColonColonEmpty);
@@ -1979,7 +1957,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalColonColonEmpty<'db> {
         OptionTerminalColonColonEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PathSegmentWithGenericArgs<'db> {
     node: SyntaxNode<'db>,
 }
@@ -2015,7 +1993,7 @@ impl<'db> PathSegmentWithGenericArgs<'db> {
         GenericArgs::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PathSegmentWithGenericArgsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PathSegmentWithGenericArgsPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for PathSegmentWithGenericArgsPtr<'db> {
@@ -2032,7 +2010,7 @@ impl<'db> From<PathSegmentWithGenericArgsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PathSegmentWithGenericArgsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PathSegmentWithGenericArgs<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentWithGenericArgs);
@@ -2081,7 +2059,7 @@ impl<'db> TypedSyntaxNode<'db> for PathSegmentWithGenericArgs<'db> {
         PathSegmentWithGenericArgsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprPath<'db> {
     node: SyntaxNode<'db>,
 }
@@ -2112,7 +2090,7 @@ impl<'db> ExprPath<'db> {
         ExprPathInner::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprPathPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprPathPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprPathPtr<'db> {
@@ -2129,7 +2107,7 @@ impl<'db> From<ExprPathPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprPathGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprPath<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprPath);
@@ -2170,12 +2148,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprPath<'db> {
         ExprPathPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionTerminalDollar<'db> {
     Empty(OptionTerminalDollarEmpty<'db>),
     TerminalDollar(TerminalDollar<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalDollarPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionTerminalDollarPtr<'db> {
     type SyntaxNode = OptionTerminalDollar<'db>;
@@ -2211,7 +2189,7 @@ impl<'db> From<TerminalDollarGreen<'db>> for OptionTerminalDollarGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalDollarGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalDollar<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -2263,7 +2241,7 @@ impl<'db> OptionTerminalDollar<'db> {
         matches!(kind, SyntaxKind::OptionTerminalDollarEmpty | SyntaxKind::TerminalDollar)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionTerminalDollarEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -2281,7 +2259,7 @@ impl<'db> OptionTerminalDollarEmpty<'db> {
     }
 }
 impl<'db> OptionTerminalDollarEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalDollarEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionTerminalDollarEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionTerminalDollarEmptyPtr<'db> {
@@ -2298,7 +2276,7 @@ impl<'db> From<OptionTerminalDollarEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalDollarEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalDollarEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalDollarEmpty);
@@ -2342,94 +2320,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalDollarEmpty<'db> {
         OptionTerminalDollarEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct PathSegmentMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> PathSegmentMissing<'db> {
-    pub const INDEX_IDENT: usize = 0;
-    pub fn new_green(
-        db: &'db dyn Database,
-        ident: TerminalIdentifierGreen<'db>,
-    ) -> PathSegmentMissingGreen<'db> {
-        let children = [ident.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        PathSegmentMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::PathSegmentMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> PathSegmentMissing<'db> {
-    pub fn ident(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct PathSegmentMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> PathSegmentMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for PathSegmentMissingPtr<'db> {
-    type SyntaxNode = PathSegmentMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> PathSegmentMissing<'db> {
-        PathSegmentMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<PathSegmentMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: PathSegmentMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct PathSegmentMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for PathSegmentMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentMissing);
-    type StablePtr = PathSegmentMissingPtr<'db>;
-    type Green = PathSegmentMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        PathSegmentMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::PathSegmentMissing,
-                details: GreenNodeDetails::Node {
-                    children: [TerminalIdentifier::missing(db).0].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::PathSegmentMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::PathSegmentMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::PathSegmentMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        PathSegmentMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprPathInner<'db>(ElementList<'db, PathSegment<'db>, 2>);
 impl<'db> Deref for ExprPathInner<'db> {
     type Target = ElementList<'db, PathSegment<'db>, 2>;
@@ -2455,7 +2346,7 @@ impl<'db> ExprPathInner<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprPathInnerPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ExprPathInnerPtr<'db> {
     type SyntaxNode = ExprPathInner<'db>;
@@ -2471,7 +2362,7 @@ impl<'db> From<ExprPathInnerPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum ExprPathInnerElementOrSeparatorGreen<'db> {
     Separator(TerminalColonColonGreen<'db>),
     Element(PathSegmentGreen<'db>),
@@ -2494,7 +2385,7 @@ impl<'db> ExprPathInnerElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprPathInnerGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprPathInner<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprPathInner);
@@ -2529,7 +2420,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprPathInner<'db> {
         ExprPathInnerPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprParenthesized<'db> {
     node: SyntaxNode<'db>,
 }
@@ -2565,7 +2456,7 @@ impl<'db> ExprParenthesized<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprParenthesizedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprParenthesizedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprParenthesizedPtr<'db> {
@@ -2582,7 +2473,7 @@ impl<'db> From<ExprParenthesizedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprParenthesizedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprParenthesized<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprParenthesized);
@@ -2631,7 +2522,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprParenthesized<'db> {
         ExprParenthesizedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprUnary<'db> {
     node: SyntaxNode<'db>,
 }
@@ -2662,7 +2553,7 @@ impl<'db> ExprUnary<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprUnaryPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprUnaryPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprUnaryPtr<'db> {
@@ -2679,7 +2570,7 @@ impl<'db> From<ExprUnaryPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprUnaryGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprUnary<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprUnary);
@@ -2719,7 +2610,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprUnary<'db> {
         ExprUnaryPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum UnaryOperator<'db> {
     Not(TerminalNot<'db>),
     BitNot(TerminalBitNot<'db>),
@@ -2728,7 +2619,7 @@ pub enum UnaryOperator<'db> {
     Desnap(TerminalMul<'db>),
     Reference(TerminalAnd<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct UnaryOperatorPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for UnaryOperatorPtr<'db> {
     type SyntaxNode = UnaryOperator<'db>;
@@ -2804,7 +2695,7 @@ impl<'db> From<TerminalAndGreen<'db>> for UnaryOperatorGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct UnaryOperatorGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for UnaryOperator<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -2885,7 +2776,7 @@ impl<'db> UnaryOperator<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprBinary<'db> {
     node: SyntaxNode<'db>,
 }
@@ -2921,7 +2812,7 @@ impl<'db> ExprBinary<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprBinaryPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprBinaryPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprBinaryPtr<'db> {
@@ -2938,7 +2829,7 @@ impl<'db> From<ExprBinaryPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprBinaryGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprBinary<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprBinary);
@@ -2983,7 +2874,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprBinary<'db> {
         ExprBinaryPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum BinaryOperator<'db> {
     Dot(TerminalDot<'db>),
     Not(TerminalNot<'db>),
@@ -3012,7 +2903,7 @@ pub enum BinaryOperator<'db> {
     DotDot(TerminalDotDot<'db>),
     DotDotEq(TerminalDotDotEq<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct BinaryOperatorPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for BinaryOperatorPtr<'db> {
     type SyntaxNode = BinaryOperator<'db>;
@@ -3288,7 +3179,7 @@ impl<'db> From<TerminalDotDotEqGreen<'db>> for BinaryOperatorGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct BinaryOperatorGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for BinaryOperator<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -3507,7 +3398,7 @@ impl<'db> BinaryOperator<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprListParenthesized<'db> {
     node: SyntaxNode<'db>,
 }
@@ -3543,7 +3434,7 @@ impl<'db> ExprListParenthesized<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprListParenthesizedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprListParenthesizedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprListParenthesizedPtr<'db> {
@@ -3560,7 +3451,7 @@ impl<'db> From<ExprListParenthesizedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprListParenthesizedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprListParenthesized<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprListParenthesized);
@@ -3609,7 +3500,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprListParenthesized<'db> {
         ExprListParenthesizedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprFunctionCall<'db> {
     node: SyntaxNode<'db>,
 }
@@ -3640,7 +3531,7 @@ impl<'db> ExprFunctionCall<'db> {
         ArgListParenthesized::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprFunctionCallPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprFunctionCallPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprFunctionCallPtr<'db> {
@@ -3657,7 +3548,7 @@ impl<'db> From<ExprFunctionCallPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprFunctionCallGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprFunctionCall<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprFunctionCall);
@@ -3701,7 +3592,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprFunctionCall<'db> {
         ExprFunctionCallPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ArgListParenthesized<'db> {
     node: SyntaxNode<'db>,
 }
@@ -3737,7 +3628,7 @@ impl<'db> ArgListParenthesized<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ArgListParenthesizedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ArgListParenthesizedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ArgListParenthesizedPtr<'db> {
@@ -3754,7 +3645,7 @@ impl<'db> From<ArgListParenthesizedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ArgListParenthesizedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ArgListParenthesized<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgListParenthesized);
@@ -3803,12 +3694,12 @@ impl<'db> TypedSyntaxNode<'db> for ArgListParenthesized<'db> {
         ArgListParenthesizedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionArgListParenthesized<'db> {
     Empty(OptionArgListParenthesizedEmpty<'db>),
     ArgListParenthesized(ArgListParenthesized<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionArgListParenthesizedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionArgListParenthesizedPtr<'db> {
     type SyntaxNode = OptionArgListParenthesized<'db>;
@@ -3844,7 +3735,7 @@ impl<'db> From<ArgListParenthesizedGreen<'db>> for OptionArgListParenthesizedGre
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionArgListParenthesizedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionArgListParenthesized<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -3901,7 +3792,7 @@ impl<'db> OptionArgListParenthesized<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionArgListParenthesizedEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -3919,7 +3810,7 @@ impl<'db> OptionArgListParenthesizedEmpty<'db> {
     }
 }
 impl<'db> OptionArgListParenthesizedEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionArgListParenthesizedEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionArgListParenthesizedEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionArgListParenthesizedEmptyPtr<'db> {
@@ -3936,7 +3827,7 @@ impl<'db> From<OptionArgListParenthesizedEmptyPtr<'db>> for SyntaxStablePtrId<'d
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionArgListParenthesizedEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionArgListParenthesizedEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionArgListParenthesizedEmpty);
@@ -3980,7 +3871,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionArgListParenthesizedEmpty<'db> {
         OptionArgListParenthesizedEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprStructCtorCall<'db> {
     node: SyntaxNode<'db>,
 }
@@ -4011,7 +3902,7 @@ impl<'db> ExprStructCtorCall<'db> {
         StructArgListBraced::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprStructCtorCallPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprStructCtorCallPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprStructCtorCallPtr<'db> {
@@ -4028,7 +3919,7 @@ impl<'db> From<ExprStructCtorCallPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprStructCtorCallGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprStructCtorCall<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprStructCtorCall);
@@ -4072,7 +3963,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprStructCtorCall<'db> {
         ExprStructCtorCallPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StructArgListBraced<'db> {
     node: SyntaxNode<'db>,
 }
@@ -4108,7 +3999,7 @@ impl<'db> StructArgListBraced<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StructArgListBracedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StructArgListBracedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for StructArgListBracedPtr<'db> {
@@ -4125,7 +4016,7 @@ impl<'db> From<StructArgListBracedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StructArgListBracedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StructArgListBraced<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgListBraced);
@@ -4174,7 +4065,7 @@ impl<'db> TypedSyntaxNode<'db> for StructArgListBraced<'db> {
         StructArgListBracedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprBlock<'db> {
     node: SyntaxNode<'db>,
 }
@@ -4210,7 +4101,7 @@ impl<'db> ExprBlock<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprBlockPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprBlockPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprBlockPtr<'db> {
@@ -4227,7 +4118,7 @@ impl<'db> From<ExprBlockPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprBlockGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprBlock<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprBlock);
@@ -4272,7 +4163,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprBlock<'db> {
         ExprBlockPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprMatch<'db> {
     node: SyntaxNode<'db>,
 }
@@ -4318,7 +4209,7 @@ impl<'db> ExprMatch<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprMatchPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprMatchPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprMatchPtr<'db> {
@@ -4335,7 +4226,7 @@ impl<'db> From<ExprMatchPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprMatchGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprMatch<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMatch);
@@ -4382,7 +4273,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprMatch<'db> {
         ExprMatchPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MatchArms<'db>(ElementList<'db, MatchArm<'db>, 2>);
 impl<'db> Deref for MatchArms<'db> {
     type Target = ElementList<'db, MatchArm<'db>, 2>;
@@ -4408,7 +4299,7 @@ impl<'db> MatchArms<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MatchArmsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MatchArmsPtr<'db> {
     type SyntaxNode = MatchArms<'db>;
@@ -4424,7 +4315,7 @@ impl<'db> From<MatchArmsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum MatchArmsElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(MatchArmGreen<'db>),
@@ -4447,7 +4338,7 @@ impl<'db> MatchArmsElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MatchArmsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MatchArms<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MatchArms);
@@ -4482,7 +4373,7 @@ impl<'db> TypedSyntaxNode<'db> for MatchArms<'db> {
         MatchArmsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MatchArm<'db> {
     node: SyntaxNode<'db>,
 }
@@ -4518,7 +4409,7 @@ impl<'db> MatchArm<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MatchArmPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> MatchArmPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for MatchArmPtr<'db> {
@@ -4535,7 +4426,7 @@ impl<'db> From<MatchArmPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MatchArmGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MatchArm<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MatchArm);
@@ -4580,7 +4471,7 @@ impl<'db> TypedSyntaxNode<'db> for MatchArm<'db> {
         MatchArmPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprIf<'db> {
     node: SyntaxNode<'db>,
 }
@@ -4621,7 +4512,7 @@ impl<'db> ExprIf<'db> {
         OptionElseClause::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprIfPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprIfPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprIfPtr<'db> {
@@ -4638,7 +4529,7 @@ impl<'db> From<ExprIfPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprIfGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprIf<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprIf);
@@ -4684,7 +4575,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprIf<'db> {
         ExprIfPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ConditionListAnd<'db>(ElementList<'db, Condition<'db>, 2>);
 impl<'db> Deref for ConditionListAnd<'db> {
     type Target = ElementList<'db, Condition<'db>, 2>;
@@ -4710,7 +4601,7 @@ impl<'db> ConditionListAnd<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ConditionListAndPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ConditionListAndPtr<'db> {
     type SyntaxNode = ConditionListAnd<'db>;
@@ -4726,7 +4617,7 @@ impl<'db> From<ConditionListAndPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum ConditionListAndElementOrSeparatorGreen<'db> {
     Separator(TerminalAndAndGreen<'db>),
     Element(ConditionGreen<'db>),
@@ -4749,7 +4640,7 @@ impl<'db> ConditionListAndElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ConditionListAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ConditionListAnd<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ConditionListAnd);
@@ -4784,12 +4675,12 @@ impl<'db> TypedSyntaxNode<'db> for ConditionListAnd<'db> {
         ConditionListAndPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum Condition<'db> {
     Let(ConditionLet<'db>),
     Expr(ConditionExpr<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ConditionPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ConditionPtr<'db> {
     type SyntaxNode = Condition<'db>;
@@ -4825,7 +4716,7 @@ impl<'db> From<ConditionExprGreen<'db>> for ConditionGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ConditionGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Condition<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -4870,7 +4761,7 @@ impl<'db> Condition<'db> {
         matches!(kind, SyntaxKind::ConditionLet | SyntaxKind::ConditionExpr)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ConditionLet<'db> {
     node: SyntaxNode<'db>,
 }
@@ -4911,7 +4802,7 @@ impl<'db> ConditionLet<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ConditionLetPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ConditionLetPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ConditionLetPtr<'db> {
@@ -4928,7 +4819,7 @@ impl<'db> From<ConditionLetPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ConditionLetGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ConditionLet<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ConditionLet);
@@ -4974,7 +4865,7 @@ impl<'db> TypedSyntaxNode<'db> for ConditionLet<'db> {
         ConditionLetPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ConditionExpr<'db> {
     node: SyntaxNode<'db>,
 }
@@ -4997,7 +4888,7 @@ impl<'db> ConditionExpr<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ConditionExprPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ConditionExprPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ConditionExprPtr<'db> {
@@ -5014,7 +4905,7 @@ impl<'db> From<ConditionExprPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ConditionExprGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ConditionExpr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ConditionExpr);
@@ -5058,12 +4949,12 @@ impl<'db> TypedSyntaxNode<'db> for ConditionExpr<'db> {
         ConditionExprPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum BlockOrIf<'db> {
     Block(ExprBlock<'db>),
     If(ExprIf<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct BlockOrIfPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for BlockOrIfPtr<'db> {
     type SyntaxNode = BlockOrIf<'db>;
@@ -5099,7 +4990,7 @@ impl<'db> From<ExprIfGreen<'db>> for BlockOrIfGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct BlockOrIfGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for BlockOrIf<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -5140,7 +5031,7 @@ impl<'db> BlockOrIf<'db> {
         matches!(kind, SyntaxKind::ExprBlock | SyntaxKind::ExprIf)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprLoop<'db> {
     node: SyntaxNode<'db>,
 }
@@ -5171,7 +5062,7 @@ impl<'db> ExprLoop<'db> {
         ExprBlock::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprLoopPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprLoopPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprLoopPtr<'db> {
@@ -5188,7 +5079,7 @@ impl<'db> From<ExprLoopPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprLoopGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprLoop<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprLoop);
@@ -5228,7 +5119,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprLoop<'db> {
         ExprLoopPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprWhile<'db> {
     node: SyntaxNode<'db>,
 }
@@ -5264,7 +5155,7 @@ impl<'db> ExprWhile<'db> {
         ExprBlock::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprWhilePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprWhilePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprWhilePtr<'db> {
@@ -5281,7 +5172,7 @@ impl<'db> From<ExprWhilePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprWhileGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprWhile<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprWhile);
@@ -5326,7 +5217,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprWhile<'db> {
         ExprWhilePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprFor<'db> {
     node: SyntaxNode<'db>,
 }
@@ -5372,7 +5263,7 @@ impl<'db> ExprFor<'db> {
         ExprBlock::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprForPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprForPtr<'db> {
     pub fn pattern_green(self, db: &'db dyn Database) -> PatternGreen<'db> {
@@ -5396,7 +5287,7 @@ impl<'db> From<ExprForPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprForGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprFor<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprFor);
@@ -5443,7 +5334,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprFor<'db> {
         ExprForPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ElseClause<'db> {
     node: SyntaxNode<'db>,
 }
@@ -5474,7 +5365,7 @@ impl<'db> ElseClause<'db> {
         BlockOrIf::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ElseClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ElseClausePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ElseClausePtr<'db> {
@@ -5491,7 +5382,7 @@ impl<'db> From<ElseClausePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ElseClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ElseClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ElseClause);
@@ -5531,12 +5422,12 @@ impl<'db> TypedSyntaxNode<'db> for ElseClause<'db> {
         ElseClausePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionElseClause<'db> {
     Empty(OptionElseClauseEmpty<'db>),
     ElseClause(ElseClause<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionElseClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionElseClausePtr<'db> {
     type SyntaxNode = OptionElseClause<'db>;
@@ -5572,7 +5463,7 @@ impl<'db> From<ElseClauseGreen<'db>> for OptionElseClauseGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionElseClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionElseClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -5624,7 +5515,7 @@ impl<'db> OptionElseClause<'db> {
         matches!(kind, SyntaxKind::OptionElseClauseEmpty | SyntaxKind::ElseClause)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionElseClauseEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -5642,7 +5533,7 @@ impl<'db> OptionElseClauseEmpty<'db> {
     }
 }
 impl<'db> OptionElseClauseEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionElseClauseEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionElseClauseEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionElseClauseEmptyPtr<'db> {
@@ -5659,7 +5550,7 @@ impl<'db> From<OptionElseClauseEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionElseClauseEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionElseClauseEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionElseClauseEmpty);
@@ -5703,7 +5594,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionElseClauseEmpty<'db> {
         OptionElseClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprErrorPropagate<'db> {
     node: SyntaxNode<'db>,
 }
@@ -5734,7 +5625,7 @@ impl<'db> ExprErrorPropagate<'db> {
         TerminalQuestionMark::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprErrorPropagatePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprErrorPropagatePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprErrorPropagatePtr<'db> {
@@ -5751,7 +5642,7 @@ impl<'db> From<ExprErrorPropagatePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprErrorPropagateGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprErrorPropagate<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprErrorPropagate);
@@ -5795,7 +5686,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprErrorPropagate<'db> {
         ExprErrorPropagatePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprIndexed<'db> {
     node: SyntaxNode<'db>,
 }
@@ -5836,7 +5727,7 @@ impl<'db> ExprIndexed<'db> {
         TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprIndexedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprIndexedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprIndexedPtr<'db> {
@@ -5853,7 +5744,7 @@ impl<'db> From<ExprIndexedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprIndexedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprIndexed<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprIndexed);
@@ -5899,7 +5790,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprIndexed<'db> {
         ExprIndexedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprFixedSizeArray<'db> {
     node: SyntaxNode<'db>,
 }
@@ -5940,7 +5831,7 @@ impl<'db> ExprFixedSizeArray<'db> {
         TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprFixedSizeArrayPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprFixedSizeArrayPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprFixedSizeArrayPtr<'db> {
@@ -5957,7 +5848,7 @@ impl<'db> From<ExprFixedSizeArrayPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprFixedSizeArrayGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprFixedSizeArray<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprFixedSizeArray);
@@ -6007,7 +5898,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprFixedSizeArray<'db> {
         ExprFixedSizeArrayPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct FixedSizeArraySize<'db> {
     node: SyntaxNode<'db>,
 }
@@ -6038,7 +5929,7 @@ impl<'db> FixedSizeArraySize<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct FixedSizeArraySizePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> FixedSizeArraySizePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for FixedSizeArraySizePtr<'db> {
@@ -6055,7 +5946,7 @@ impl<'db> From<FixedSizeArraySizePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct FixedSizeArraySizeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for FixedSizeArraySize<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::FixedSizeArraySize);
@@ -6099,12 +5990,12 @@ impl<'db> TypedSyntaxNode<'db> for FixedSizeArraySize<'db> {
         FixedSizeArraySizePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionFixedSizeArraySize<'db> {
     Empty(OptionFixedSizeArraySizeEmpty<'db>),
     FixedSizeArraySize(FixedSizeArraySize<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionFixedSizeArraySizePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionFixedSizeArraySizePtr<'db> {
     type SyntaxNode = OptionFixedSizeArraySize<'db>;
@@ -6140,7 +6031,7 @@ impl<'db> From<FixedSizeArraySizeGreen<'db>> for OptionFixedSizeArraySizeGreen<'
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionFixedSizeArraySizeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionFixedSizeArraySize<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -6192,7 +6083,7 @@ impl<'db> OptionFixedSizeArraySize<'db> {
         matches!(kind, SyntaxKind::OptionFixedSizeArraySizeEmpty | SyntaxKind::FixedSizeArraySize)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionFixedSizeArraySizeEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -6210,7 +6101,7 @@ impl<'db> OptionFixedSizeArraySizeEmpty<'db> {
     }
 }
 impl<'db> OptionFixedSizeArraySizeEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionFixedSizeArraySizeEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionFixedSizeArraySizeEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionFixedSizeArraySizeEmptyPtr<'db> {
@@ -6227,7 +6118,7 @@ impl<'db> From<OptionFixedSizeArraySizeEmptyPtr<'db>> for SyntaxStablePtrId<'db>
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionFixedSizeArraySizeEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionFixedSizeArraySizeEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionFixedSizeArraySizeEmpty);
@@ -6271,7 +6162,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionFixedSizeArraySizeEmpty<'db> {
         OptionFixedSizeArraySizeEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprClosure<'db> {
     node: SyntaxNode<'db>,
 }
@@ -6312,7 +6203,7 @@ impl<'db> ExprClosure<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprClosurePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprClosurePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprClosurePtr<'db> {
@@ -6329,7 +6220,7 @@ impl<'db> From<ExprClosurePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprClosureGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprClosure<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprClosure);
@@ -6375,7 +6266,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprClosure<'db> {
         ExprClosurePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ClosureParams<'db> {
     node: SyntaxNode<'db>,
 }
@@ -6411,7 +6302,7 @@ impl<'db> ClosureParams<'db> {
         TerminalOr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ClosureParamsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ClosureParamsPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ClosureParamsPtr<'db> {
@@ -6428,7 +6319,7 @@ impl<'db> From<ClosureParamsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ClosureParamsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ClosureParams<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ClosureParams);
@@ -6477,7 +6368,7 @@ impl<'db> TypedSyntaxNode<'db> for ClosureParams<'db> {
         ClosureParamsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StructArgExpr<'db> {
     node: SyntaxNode<'db>,
 }
@@ -6508,7 +6399,7 @@ impl<'db> StructArgExpr<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StructArgExprPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StructArgExprPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for StructArgExprPtr<'db> {
@@ -6525,7 +6416,7 @@ impl<'db> From<StructArgExprPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StructArgExprGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StructArgExpr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgExpr);
@@ -6569,12 +6460,12 @@ impl<'db> TypedSyntaxNode<'db> for StructArgExpr<'db> {
         StructArgExprPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionStructArgExpr<'db> {
     Empty(OptionStructArgExprEmpty<'db>),
     StructArgExpr(StructArgExpr<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionStructArgExprPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionStructArgExprPtr<'db> {
     type SyntaxNode = OptionStructArgExpr<'db>;
@@ -6610,7 +6501,7 @@ impl<'db> From<StructArgExprGreen<'db>> for OptionStructArgExprGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionStructArgExprGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionStructArgExpr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -6662,7 +6553,7 @@ impl<'db> OptionStructArgExpr<'db> {
         matches!(kind, SyntaxKind::OptionStructArgExprEmpty | SyntaxKind::StructArgExpr)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionStructArgExprEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -6680,7 +6571,7 @@ impl<'db> OptionStructArgExprEmpty<'db> {
     }
 }
 impl<'db> OptionStructArgExprEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionStructArgExprEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionStructArgExprEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionStructArgExprEmptyPtr<'db> {
@@ -6697,7 +6588,7 @@ impl<'db> From<OptionStructArgExprEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionStructArgExprEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionStructArgExprEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionStructArgExprEmpty);
@@ -6741,7 +6632,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionStructArgExprEmpty<'db> {
         OptionStructArgExprEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StructArgSingle<'db> {
     node: SyntaxNode<'db>,
 }
@@ -6772,7 +6663,7 @@ impl<'db> StructArgSingle<'db> {
         OptionStructArgExpr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StructArgSinglePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StructArgSinglePtr<'db> {
     pub fn identifier_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -6793,7 +6684,7 @@ impl<'db> From<StructArgSinglePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StructArgSingleGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StructArgSingle<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgSingle);
@@ -6841,7 +6732,7 @@ impl<'db> TypedSyntaxNode<'db> for StructArgSingle<'db> {
         StructArgSinglePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StructArgTail<'db> {
     node: SyntaxNode<'db>,
 }
@@ -6872,7 +6763,7 @@ impl<'db> StructArgTail<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StructArgTailPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StructArgTailPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for StructArgTailPtr<'db> {
@@ -6889,7 +6780,7 @@ impl<'db> From<StructArgTailPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StructArgTailGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StructArgTail<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgTail);
@@ -6933,12 +6824,12 @@ impl<'db> TypedSyntaxNode<'db> for StructArgTail<'db> {
         StructArgTailPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum StructArg<'db> {
     StructArgSingle(StructArgSingle<'db>),
     StructArgTail(StructArgTail<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StructArgPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for StructArgPtr<'db> {
     type SyntaxNode = StructArg<'db>;
@@ -6974,7 +6865,7 @@ impl<'db> From<StructArgTailGreen<'db>> for StructArgGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StructArgGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StructArg<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -7023,7 +6914,7 @@ impl<'db> StructArg<'db> {
         matches!(kind, SyntaxKind::StructArgSingle | SyntaxKind::StructArgTail)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StructArgList<'db>(ElementList<'db, StructArg<'db>, 2>);
 impl<'db> Deref for StructArgList<'db> {
     type Target = ElementList<'db, StructArg<'db>, 2>;
@@ -7049,7 +6940,7 @@ impl<'db> StructArgList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StructArgListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for StructArgListPtr<'db> {
     type SyntaxNode = StructArgList<'db>;
@@ -7065,7 +6956,7 @@ impl<'db> From<StructArgListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum StructArgListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(StructArgGreen<'db>),
@@ -7088,7 +6979,7 @@ impl<'db> StructArgListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StructArgListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StructArgList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgList);
@@ -7123,7 +7014,7 @@ impl<'db> TypedSyntaxNode<'db> for StructArgList<'db> {
         StructArgListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ArgListBraced<'db> {
     node: SyntaxNode<'db>,
 }
@@ -7159,7 +7050,7 @@ impl<'db> ArgListBraced<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ArgListBracedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ArgListBracedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ArgListBracedPtr<'db> {
@@ -7176,7 +7067,7 @@ impl<'db> From<ArgListBracedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ArgListBracedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ArgListBraced<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgListBraced);
@@ -7225,7 +7116,7 @@ impl<'db> TypedSyntaxNode<'db> for ArgListBraced<'db> {
         ArgListBracedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ArgListBracketed<'db> {
     node: SyntaxNode<'db>,
 }
@@ -7261,7 +7152,7 @@ impl<'db> ArgListBracketed<'db> {
         TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ArgListBracketedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ArgListBracketedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ArgListBracketedPtr<'db> {
@@ -7278,7 +7169,7 @@ impl<'db> From<ArgListBracketedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ArgListBracketedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ArgListBracketed<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgListBracketed);
@@ -7327,14 +7218,93 @@ impl<'db> TypedSyntaxNode<'db> for ArgListBracketed<'db> {
         ArgListBracketedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct WrappedArgListMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> WrappedArgListMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> WrappedArgListMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        WrappedArgListMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::WrappedArgListMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> WrappedArgListMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct WrappedArgListMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> WrappedArgListMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for WrappedArgListMissingPtr<'db> {
+    type SyntaxNode = WrappedArgListMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> WrappedArgListMissing<'db> {
+        WrappedArgListMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<WrappedArgListMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: WrappedArgListMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct WrappedArgListMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for WrappedArgListMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedArgListMissing);
+    type StablePtr = WrappedArgListMissingPtr<'db>;
+    type Green = WrappedArgListMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        WrappedArgListMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::WrappedArgListMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::WrappedArgListMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::WrappedArgListMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::WrappedArgListMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        WrappedArgListMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum WrappedArgList<'db> {
     BracketedArgList(ArgListBracketed<'db>),
     ParenthesizedArgList(ArgListParenthesized<'db>),
     BracedArgList(ArgListBraced<'db>),
     Missing(WrappedArgListMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct WrappedArgListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for WrappedArgListPtr<'db> {
     type SyntaxNode = WrappedArgList<'db>;
@@ -7390,7 +7360,7 @@ impl<'db> From<WrappedArgListMissingGreen<'db>> for WrappedArgListGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct WrappedArgListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for WrappedArgList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -7461,86 +7431,7 @@ impl<'db> WrappedArgList<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct WrappedArgListMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> WrappedArgListMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> WrappedArgListMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        WrappedArgListMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::WrappedArgListMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> WrappedArgListMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct WrappedArgListMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> WrappedArgListMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for WrappedArgListMissingPtr<'db> {
-    type SyntaxNode = WrappedArgListMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> WrappedArgListMissing<'db> {
-        WrappedArgListMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<WrappedArgListMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: WrappedArgListMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct WrappedArgListMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for WrappedArgListMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedArgListMissing);
-    type StablePtr = WrappedArgListMissingPtr<'db>;
-    type Green = WrappedArgListMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        WrappedArgListMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::WrappedArgListMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::WrappedArgListMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::WrappedArgListMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::WrappedArgListMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        WrappedArgListMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum Pattern<'db> {
     Underscore(TerminalUnderscore<'db>),
     Literal(TerminalLiteralNumber<'db>),
@@ -7555,7 +7446,7 @@ pub enum Pattern<'db> {
     FixedSizeArray(PatternFixedSizeArray<'db>),
     Path(ExprPath<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for PatternPtr<'db> {
     type SyntaxNode = Pattern<'db>;
@@ -7691,7 +7582,7 @@ impl<'db> From<ExprPathGreen<'db>> for PatternGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Pattern<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -7808,7 +7699,7 @@ impl<'db> Pattern<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternIdentifier<'db> {
     node: SyntaxNode<'db>,
 }
@@ -7839,7 +7730,7 @@ impl<'db> PatternIdentifier<'db> {
         TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternIdentifierPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PatternIdentifierPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -7860,7 +7751,7 @@ impl<'db> From<PatternIdentifierPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternIdentifierGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternIdentifier<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternIdentifier);
@@ -7905,7 +7796,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternIdentifier<'db> {
         PatternIdentifierPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternStruct<'db> {
     node: SyntaxNode<'db>,
 }
@@ -7946,7 +7837,7 @@ impl<'db> PatternStruct<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternStructPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PatternStructPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for PatternStructPtr<'db> {
@@ -7963,7 +7854,7 @@ impl<'db> From<PatternStructPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternStructGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternStruct<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternStruct);
@@ -8013,7 +7904,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternStruct<'db> {
         PatternStructPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternStructParamList<'db>(ElementList<'db, PatternStructParam<'db>, 2>);
 impl<'db> Deref for PatternStructParamList<'db> {
     type Target = ElementList<'db, PatternStructParam<'db>, 2>;
@@ -8039,7 +7930,7 @@ impl<'db> PatternStructParamList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternStructParamListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for PatternStructParamListPtr<'db> {
     type SyntaxNode = PatternStructParamList<'db>;
@@ -8055,7 +7946,7 @@ impl<'db> From<PatternStructParamListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum PatternStructParamListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(PatternStructParamGreen<'db>),
@@ -8080,7 +7971,7 @@ impl<'db> PatternStructParamListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternStructParamListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternStructParamList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternStructParamList);
@@ -8115,7 +8006,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternStructParamList<'db> {
         PatternStructParamListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternTuple<'db> {
     node: SyntaxNode<'db>,
 }
@@ -8151,7 +8042,7 @@ impl<'db> PatternTuple<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternTuplePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PatternTuplePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for PatternTuplePtr<'db> {
@@ -8168,7 +8059,7 @@ impl<'db> From<PatternTuplePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternTupleGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternTuple<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternTuple);
@@ -8213,7 +8104,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternTuple<'db> {
         PatternTuplePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternFixedSizeArray<'db> {
     node: SyntaxNode<'db>,
 }
@@ -8249,7 +8140,7 @@ impl<'db> PatternFixedSizeArray<'db> {
         TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternFixedSizeArrayPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PatternFixedSizeArrayPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for PatternFixedSizeArrayPtr<'db> {
@@ -8266,7 +8157,7 @@ impl<'db> From<PatternFixedSizeArrayPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternFixedSizeArrayGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternFixedSizeArray<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternFixedSizeArray);
@@ -8315,7 +8206,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternFixedSizeArray<'db> {
         PatternFixedSizeArrayPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternList<'db>(ElementList<'db, Pattern<'db>, 2>);
 impl<'db> Deref for PatternList<'db> {
     type Target = ElementList<'db, Pattern<'db>, 2>;
@@ -8341,7 +8232,7 @@ impl<'db> PatternList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for PatternListPtr<'db> {
     type SyntaxNode = PatternList<'db>;
@@ -8357,7 +8248,7 @@ impl<'db> From<PatternListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum PatternListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(PatternGreen<'db>),
@@ -8380,7 +8271,7 @@ impl<'db> PatternListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternList);
@@ -8415,7 +8306,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternList<'db> {
         PatternListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternListOr<'db>(ElementList<'db, Pattern<'db>, 2>);
 impl<'db> Deref for PatternListOr<'db> {
     type Target = ElementList<'db, Pattern<'db>, 2>;
@@ -8441,7 +8332,7 @@ impl<'db> PatternListOr<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternListOrPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for PatternListOrPtr<'db> {
     type SyntaxNode = PatternListOr<'db>;
@@ -8457,7 +8348,7 @@ impl<'db> From<PatternListOrPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum PatternListOrElementOrSeparatorGreen<'db> {
     Separator(TerminalOrGreen<'db>),
     Element(PatternGreen<'db>),
@@ -8480,7 +8371,7 @@ impl<'db> PatternListOrElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternListOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternListOr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternListOr);
@@ -8515,13 +8406,13 @@ impl<'db> TypedSyntaxNode<'db> for PatternListOr<'db> {
         PatternListOrPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum PatternStructParam<'db> {
     Single(PatternIdentifier<'db>),
     WithExpr(PatternStructParamWithExpr<'db>),
     Tail(TerminalDotDot<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternStructParamPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for PatternStructParamPtr<'db> {
     type SyntaxNode = PatternStructParam<'db>;
@@ -8567,7 +8458,7 @@ impl<'db> From<TerminalDotDotGreen<'db>> for PatternStructParamGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternStructParamGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternStructParam<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -8631,7 +8522,7 @@ impl<'db> PatternStructParam<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternStructParamWithExpr<'db> {
     node: SyntaxNode<'db>,
 }
@@ -8672,7 +8563,7 @@ impl<'db> PatternStructParamWithExpr<'db> {
         Pattern::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternStructParamWithExprPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PatternStructParamWithExprPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for PatternStructParamWithExprPtr<'db> {
@@ -8689,7 +8580,7 @@ impl<'db> From<PatternStructParamWithExprPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternStructParamWithExprGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternStructParamWithExpr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternStructParamWithExpr);
@@ -8739,7 +8630,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternStructParamWithExpr<'db> {
         PatternStructParamWithExprPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternEnum<'db> {
     node: SyntaxNode<'db>,
 }
@@ -8770,7 +8661,7 @@ impl<'db> PatternEnum<'db> {
         OptionPatternEnumInnerPattern::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternEnumPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PatternEnumPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for PatternEnumPtr<'db> {
@@ -8787,7 +8678,7 @@ impl<'db> From<PatternEnumPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternEnumGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternEnum<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternEnum);
@@ -8831,7 +8722,7 @@ impl<'db> TypedSyntaxNode<'db> for PatternEnum<'db> {
         PatternEnumPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct PatternEnumInnerPattern<'db> {
     node: SyntaxNode<'db>,
 }
@@ -8867,7 +8758,7 @@ impl<'db> PatternEnumInnerPattern<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct PatternEnumInnerPatternPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PatternEnumInnerPatternPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for PatternEnumInnerPatternPtr<'db> {
@@ -8884,7 +8775,7 @@ impl<'db> From<PatternEnumInnerPatternPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct PatternEnumInnerPatternGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for PatternEnumInnerPattern<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternEnumInnerPattern);
@@ -8933,12 +8824,12 @@ impl<'db> TypedSyntaxNode<'db> for PatternEnumInnerPattern<'db> {
         PatternEnumInnerPatternPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionPatternEnumInnerPattern<'db> {
     Empty(OptionPatternEnumInnerPatternEmpty<'db>),
     PatternEnumInnerPattern(PatternEnumInnerPattern<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionPatternEnumInnerPatternPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionPatternEnumInnerPatternPtr<'db> {
     type SyntaxNode = OptionPatternEnumInnerPattern<'db>;
@@ -8978,7 +8869,7 @@ impl<'db> From<PatternEnumInnerPatternGreen<'db>> for OptionPatternEnumInnerPatt
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionPatternEnumInnerPatternGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionPatternEnumInnerPattern<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -9039,7 +8930,7 @@ impl<'db> OptionPatternEnumInnerPattern<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionPatternEnumInnerPatternEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -9057,7 +8948,7 @@ impl<'db> OptionPatternEnumInnerPatternEmpty<'db> {
     }
 }
 impl<'db> OptionPatternEnumInnerPatternEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionPatternEnumInnerPatternEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionPatternEnumInnerPatternEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionPatternEnumInnerPatternEmptyPtr<'db> {
@@ -9074,7 +8965,7 @@ impl<'db> From<OptionPatternEnumInnerPatternEmptyPtr<'db>> for SyntaxStablePtrId
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionPatternEnumInnerPatternEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionPatternEnumInnerPatternEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionPatternEnumInnerPatternEmpty);
@@ -9118,7 +9009,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionPatternEnumInnerPatternEmpty<'db> {
         OptionPatternEnumInnerPatternEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TypeClause<'db> {
     node: SyntaxNode<'db>,
 }
@@ -9149,7 +9040,7 @@ impl<'db> TypeClause<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TypeClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypeClausePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TypeClausePtr<'db> {
@@ -9166,7 +9057,7 @@ impl<'db> From<TypeClausePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TypeClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TypeClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TypeClause);
@@ -9206,12 +9097,12 @@ impl<'db> TypedSyntaxNode<'db> for TypeClause<'db> {
         TypeClausePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionTypeClause<'db> {
     Empty(OptionTypeClauseEmpty<'db>),
     TypeClause(TypeClause<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTypeClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionTypeClausePtr<'db> {
     type SyntaxNode = OptionTypeClause<'db>;
@@ -9247,7 +9138,7 @@ impl<'db> From<TypeClauseGreen<'db>> for OptionTypeClauseGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTypeClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTypeClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -9299,7 +9190,7 @@ impl<'db> OptionTypeClause<'db> {
         matches!(kind, SyntaxKind::OptionTypeClauseEmpty | SyntaxKind::TypeClause)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionTypeClauseEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -9317,7 +9208,7 @@ impl<'db> OptionTypeClauseEmpty<'db> {
     }
 }
 impl<'db> OptionTypeClauseEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTypeClauseEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionTypeClauseEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionTypeClauseEmptyPtr<'db> {
@@ -9334,7 +9225,7 @@ impl<'db> From<OptionTypeClauseEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTypeClauseEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTypeClauseEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTypeClauseEmpty);
@@ -9378,7 +9269,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTypeClauseEmpty<'db> {
         OptionTypeClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ReturnTypeClause<'db> {
     node: SyntaxNode<'db>,
 }
@@ -9409,7 +9300,7 @@ impl<'db> ReturnTypeClause<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ReturnTypeClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ReturnTypeClausePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ReturnTypeClausePtr<'db> {
@@ -9426,7 +9317,7 @@ impl<'db> From<ReturnTypeClausePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ReturnTypeClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ReturnTypeClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ReturnTypeClause);
@@ -9470,12 +9361,12 @@ impl<'db> TypedSyntaxNode<'db> for ReturnTypeClause<'db> {
         ReturnTypeClausePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionReturnTypeClause<'db> {
     Empty(OptionReturnTypeClauseEmpty<'db>),
     ReturnTypeClause(ReturnTypeClause<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionReturnTypeClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionReturnTypeClausePtr<'db> {
     type SyntaxNode = OptionReturnTypeClause<'db>;
@@ -9511,7 +9402,7 @@ impl<'db> From<ReturnTypeClauseGreen<'db>> for OptionReturnTypeClauseGreen<'db> 
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionReturnTypeClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionReturnTypeClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -9563,7 +9454,7 @@ impl<'db> OptionReturnTypeClause<'db> {
         matches!(kind, SyntaxKind::OptionReturnTypeClauseEmpty | SyntaxKind::ReturnTypeClause)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionReturnTypeClauseEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -9581,7 +9472,7 @@ impl<'db> OptionReturnTypeClauseEmpty<'db> {
     }
 }
 impl<'db> OptionReturnTypeClauseEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionReturnTypeClauseEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionReturnTypeClauseEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionReturnTypeClauseEmptyPtr<'db> {
@@ -9598,7 +9489,7 @@ impl<'db> From<OptionReturnTypeClauseEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionReturnTypeClauseEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionReturnTypeClauseEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionReturnTypeClauseEmpty);
@@ -9642,7 +9533,86 @@ impl<'db> TypedSyntaxNode<'db> for OptionReturnTypeClauseEmpty<'db> {
         OptionReturnTypeClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct StatementMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> StatementMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> StatementMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        StatementMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::StatementMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> StatementMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct StatementMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> StatementMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for StatementMissingPtr<'db> {
+    type SyntaxNode = StatementMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> StatementMissing<'db> {
+        StatementMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<StatementMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: StatementMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct StatementMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for StatementMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementMissing);
+    type StablePtr = StatementMissingPtr<'db>;
+    type Green = StatementMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        StatementMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::StatementMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::StatementMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::StatementMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StatementMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        StatementMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum Statement<'db> {
     Let(StatementLet<'db>),
     Expr(StatementExpr<'db>),
@@ -9652,7 +9622,7 @@ pub enum Statement<'db> {
     Item(StatementItem<'db>),
     Missing(StatementMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StatementPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for StatementPtr<'db> {
     type SyntaxNode = Statement<'db>;
@@ -9738,7 +9708,7 @@ impl<'db> From<StatementMissingGreen<'db>> for StatementGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StatementGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Statement<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -9825,7 +9795,7 @@ impl<'db> Statement<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StatementList<'db>(ElementList<'db, Statement<'db>, 1>);
 impl<'db> Deref for StatementList<'db> {
     type Target = ElementList<'db, Statement<'db>, 1>;
@@ -9851,7 +9821,7 @@ impl<'db> StatementList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StatementListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for StatementListPtr<'db> {
     type SyntaxNode = StatementList<'db>;
@@ -9867,7 +9837,7 @@ impl<'db> From<StatementListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StatementListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StatementList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementList);
@@ -9902,86 +9872,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementList<'db> {
         StatementListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct StatementMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> StatementMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> StatementMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        StatementMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::StatementMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> StatementMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct StatementMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> StatementMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for StatementMissingPtr<'db> {
-    type SyntaxNode = StatementMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> StatementMissing<'db> {
-        StatementMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<StatementMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: StatementMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct StatementMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for StatementMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementMissing);
-    type StablePtr = StatementMissingPtr<'db>;
-    type Green = StatementMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        StatementMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::StatementMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::StatementMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::StatementMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::StatementMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        StatementMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StatementLet<'db> {
     node: SyntaxNode<'db>,
 }
@@ -10051,7 +9942,7 @@ impl<'db> StatementLet<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StatementLetPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StatementLetPtr<'db> {
     pub fn pattern_green(self, db: &'db dyn Database) -> PatternGreen<'db> {
@@ -10072,7 +9963,7 @@ impl<'db> From<StatementLetPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StatementLetGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StatementLet<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementLet);
@@ -10122,7 +10013,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementLet<'db> {
         StatementLetPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct LetElseClause<'db> {
     node: SyntaxNode<'db>,
 }
@@ -10153,7 +10044,7 @@ impl<'db> LetElseClause<'db> {
         ExprBlock::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct LetElseClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> LetElseClausePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for LetElseClausePtr<'db> {
@@ -10170,7 +10061,7 @@ impl<'db> From<LetElseClausePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct LetElseClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for LetElseClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::LetElseClause);
@@ -10214,12 +10105,12 @@ impl<'db> TypedSyntaxNode<'db> for LetElseClause<'db> {
         LetElseClausePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionLetElseClause<'db> {
     Empty(OptionLetElseClauseEmpty<'db>),
     LetElseClause(LetElseClause<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionLetElseClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionLetElseClausePtr<'db> {
     type SyntaxNode = OptionLetElseClause<'db>;
@@ -10255,7 +10146,7 @@ impl<'db> From<LetElseClauseGreen<'db>> for OptionLetElseClauseGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionLetElseClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionLetElseClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -10307,7 +10198,7 @@ impl<'db> OptionLetElseClause<'db> {
         matches!(kind, SyntaxKind::OptionLetElseClauseEmpty | SyntaxKind::LetElseClause)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionLetElseClauseEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -10325,7 +10216,7 @@ impl<'db> OptionLetElseClauseEmpty<'db> {
     }
 }
 impl<'db> OptionLetElseClauseEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionLetElseClauseEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionLetElseClauseEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionLetElseClauseEmptyPtr<'db> {
@@ -10342,7 +10233,7 @@ impl<'db> From<OptionLetElseClauseEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionLetElseClauseEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionLetElseClauseEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionLetElseClauseEmpty);
@@ -10386,12 +10277,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionLetElseClauseEmpty<'db> {
         OptionLetElseClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionTerminalSemicolon<'db> {
     Empty(OptionTerminalSemicolonEmpty<'db>),
     TerminalSemicolon(TerminalSemicolon<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalSemicolonPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionTerminalSemicolonPtr<'db> {
     type SyntaxNode = OptionTerminalSemicolon<'db>;
@@ -10427,7 +10318,7 @@ impl<'db> From<TerminalSemicolonGreen<'db>> for OptionTerminalSemicolonGreen<'db
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalSemicolonGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalSemicolon<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -10479,7 +10370,7 @@ impl<'db> OptionTerminalSemicolon<'db> {
         matches!(kind, SyntaxKind::OptionTerminalSemicolonEmpty | SyntaxKind::TerminalSemicolon)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionTerminalSemicolonEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -10497,7 +10388,7 @@ impl<'db> OptionTerminalSemicolonEmpty<'db> {
     }
 }
 impl<'db> OptionTerminalSemicolonEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalSemicolonEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionTerminalSemicolonEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionTerminalSemicolonEmptyPtr<'db> {
@@ -10514,7 +10405,7 @@ impl<'db> From<OptionTerminalSemicolonEmptyPtr<'db>> for SyntaxStablePtrId<'db> 
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalSemicolonEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalSemicolonEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalSemicolonEmpty);
@@ -10558,7 +10449,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalSemicolonEmpty<'db> {
         OptionTerminalSemicolonEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StatementExpr<'db> {
     node: SyntaxNode<'db>,
 }
@@ -10594,7 +10485,7 @@ impl<'db> StatementExpr<'db> {
         OptionTerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StatementExprPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StatementExprPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for StatementExprPtr<'db> {
@@ -10611,7 +10502,7 @@ impl<'db> From<StatementExprPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StatementExprGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StatementExpr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementExpr);
@@ -10660,7 +10551,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementExpr<'db> {
         StatementExprPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StatementContinue<'db> {
     node: SyntaxNode<'db>,
 }
@@ -10696,7 +10587,7 @@ impl<'db> StatementContinue<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StatementContinuePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StatementContinuePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for StatementContinuePtr<'db> {
@@ -10713,7 +10604,7 @@ impl<'db> From<StatementContinuePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StatementContinueGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StatementContinue<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementContinue);
@@ -10762,7 +10653,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementContinue<'db> {
         StatementContinuePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprClause<'db> {
     node: SyntaxNode<'db>,
 }
@@ -10785,7 +10676,7 @@ impl<'db> ExprClause<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprClausePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprClausePtr<'db> {
@@ -10802,7 +10693,7 @@ impl<'db> From<ExprClausePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprClause);
@@ -10842,12 +10733,12 @@ impl<'db> TypedSyntaxNode<'db> for ExprClause<'db> {
         ExprClausePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionExprClause<'db> {
     Empty(OptionExprClauseEmpty<'db>),
     ExprClause(ExprClause<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionExprClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionExprClausePtr<'db> {
     type SyntaxNode = OptionExprClause<'db>;
@@ -10883,7 +10774,7 @@ impl<'db> From<ExprClauseGreen<'db>> for OptionExprClauseGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionExprClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionExprClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -10935,7 +10826,7 @@ impl<'db> OptionExprClause<'db> {
         matches!(kind, SyntaxKind::OptionExprClauseEmpty | SyntaxKind::ExprClause)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionExprClauseEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -10953,7 +10844,7 @@ impl<'db> OptionExprClauseEmpty<'db> {
     }
 }
 impl<'db> OptionExprClauseEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionExprClauseEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionExprClauseEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionExprClauseEmptyPtr<'db> {
@@ -10970,7 +10861,7 @@ impl<'db> From<OptionExprClauseEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionExprClauseEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionExprClauseEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionExprClauseEmpty);
@@ -11014,7 +10905,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionExprClauseEmpty<'db> {
         OptionExprClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StatementReturn<'db> {
     node: SyntaxNode<'db>,
 }
@@ -11055,7 +10946,7 @@ impl<'db> StatementReturn<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StatementReturnPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StatementReturnPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for StatementReturnPtr<'db> {
@@ -11072,7 +10963,7 @@ impl<'db> From<StatementReturnPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StatementReturnGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StatementReturn<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementReturn);
@@ -11122,7 +11013,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementReturn<'db> {
         StatementReturnPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StatementBreak<'db> {
     node: SyntaxNode<'db>,
 }
@@ -11163,7 +11054,7 @@ impl<'db> StatementBreak<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StatementBreakPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StatementBreakPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for StatementBreakPtr<'db> {
@@ -11180,7 +11071,7 @@ impl<'db> From<StatementBreakPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StatementBreakGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StatementBreak<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementBreak);
@@ -11230,7 +11121,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementBreak<'db> {
         StatementBreakPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct StatementItem<'db> {
     node: SyntaxNode<'db>,
 }
@@ -11253,7 +11144,7 @@ impl<'db> StatementItem<'db> {
         ModuleItem::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct StatementItemPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StatementItemPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for StatementItemPtr<'db> {
@@ -11270,7 +11161,7 @@ impl<'db> From<StatementItemPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct StatementItemGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for StatementItem<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementItem);
@@ -11314,7 +11205,7 @@ impl<'db> TypedSyntaxNode<'db> for StatementItem<'db> {
         StatementItemPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct Param<'db> {
     node: SyntaxNode<'db>,
 }
@@ -11350,7 +11241,7 @@ impl<'db> Param<'db> {
         OptionTypeClause::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ParamPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ParamPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -11371,7 +11262,7 @@ impl<'db> From<ParamPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ParamGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Param<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Param);
@@ -11416,7 +11307,7 @@ impl<'db> TypedSyntaxNode<'db> for Param<'db> {
         ParamPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ModifierList<'db>(ElementList<'db, Modifier<'db>, 1>);
 impl<'db> Deref for ModifierList<'db> {
     type Target = ElementList<'db, Modifier<'db>, 1>;
@@ -11442,7 +11333,7 @@ impl<'db> ModifierList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ModifierListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ModifierListPtr<'db> {
     type SyntaxNode = ModifierList<'db>;
@@ -11458,7 +11349,7 @@ impl<'db> From<ModifierListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ModifierListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ModifierList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModifierList);
@@ -11493,12 +11384,12 @@ impl<'db> TypedSyntaxNode<'db> for ModifierList<'db> {
         ModifierListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum Modifier<'db> {
     Ref(TerminalRef<'db>),
     Mut(TerminalMut<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ModifierPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ModifierPtr<'db> {
     type SyntaxNode = Modifier<'db>;
@@ -11534,7 +11425,7 @@ impl<'db> From<TerminalMutGreen<'db>> for ModifierGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ModifierGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Modifier<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -11575,7 +11466,7 @@ impl<'db> Modifier<'db> {
         matches!(kind, SyntaxKind::TerminalRef | SyntaxKind::TerminalMut)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ParamList<'db>(ElementList<'db, Param<'db>, 2>);
 impl<'db> Deref for ParamList<'db> {
     type Target = ElementList<'db, Param<'db>, 2>;
@@ -11601,7 +11492,7 @@ impl<'db> ParamList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ParamListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ParamListPtr<'db> {
     type SyntaxNode = ParamList<'db>;
@@ -11617,7 +11508,7 @@ impl<'db> From<ParamListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum ParamListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(ParamGreen<'db>),
@@ -11640,7 +11531,7 @@ impl<'db> ParamListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ParamListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ParamList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ParamList);
@@ -11675,7 +11566,7 @@ impl<'db> TypedSyntaxNode<'db> for ParamList<'db> {
         ParamListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ImplicitsClause<'db> {
     node: SyntaxNode<'db>,
 }
@@ -11716,7 +11607,7 @@ impl<'db> ImplicitsClause<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ImplicitsClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ImplicitsClausePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ImplicitsClausePtr<'db> {
@@ -11733,7 +11624,7 @@ impl<'db> From<ImplicitsClausePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ImplicitsClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ImplicitsClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplicitsClause);
@@ -11783,7 +11674,7 @@ impl<'db> TypedSyntaxNode<'db> for ImplicitsClause<'db> {
         ImplicitsClausePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ImplicitsList<'db>(ElementList<'db, ExprPath<'db>, 2>);
 impl<'db> Deref for ImplicitsList<'db> {
     type Target = ElementList<'db, ExprPath<'db>, 2>;
@@ -11809,7 +11700,7 @@ impl<'db> ImplicitsList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ImplicitsListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ImplicitsListPtr<'db> {
     type SyntaxNode = ImplicitsList<'db>;
@@ -11825,7 +11716,7 @@ impl<'db> From<ImplicitsListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum ImplicitsListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(ExprPathGreen<'db>),
@@ -11848,7 +11739,7 @@ impl<'db> ImplicitsListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ImplicitsListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ImplicitsList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplicitsList);
@@ -11883,12 +11774,12 @@ impl<'db> TypedSyntaxNode<'db> for ImplicitsList<'db> {
         ImplicitsListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionImplicitsClause<'db> {
     Empty(OptionImplicitsClauseEmpty<'db>),
     ImplicitsClause(ImplicitsClause<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionImplicitsClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionImplicitsClausePtr<'db> {
     type SyntaxNode = OptionImplicitsClause<'db>;
@@ -11924,7 +11815,7 @@ impl<'db> From<ImplicitsClauseGreen<'db>> for OptionImplicitsClauseGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionImplicitsClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionImplicitsClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -11976,7 +11867,7 @@ impl<'db> OptionImplicitsClause<'db> {
         matches!(kind, SyntaxKind::OptionImplicitsClauseEmpty | SyntaxKind::ImplicitsClause)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionImplicitsClauseEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -11994,7 +11885,7 @@ impl<'db> OptionImplicitsClauseEmpty<'db> {
     }
 }
 impl<'db> OptionImplicitsClauseEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionImplicitsClauseEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionImplicitsClauseEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionImplicitsClauseEmptyPtr<'db> {
@@ -12011,7 +11902,7 @@ impl<'db> From<OptionImplicitsClauseEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionImplicitsClauseEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionImplicitsClauseEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionImplicitsClauseEmpty);
@@ -12055,12 +11946,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionImplicitsClauseEmpty<'db> {
         OptionImplicitsClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionTerminalNoPanic<'db> {
     Empty(OptionTerminalNoPanicEmpty<'db>),
     TerminalNoPanic(TerminalNoPanic<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalNoPanicPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionTerminalNoPanicPtr<'db> {
     type SyntaxNode = OptionTerminalNoPanic<'db>;
@@ -12096,7 +11987,7 @@ impl<'db> From<TerminalNoPanicGreen<'db>> for OptionTerminalNoPanicGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalNoPanicGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalNoPanic<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -12148,7 +12039,7 @@ impl<'db> OptionTerminalNoPanic<'db> {
         matches!(kind, SyntaxKind::OptionTerminalNoPanicEmpty | SyntaxKind::TerminalNoPanic)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionTerminalNoPanicEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -12166,7 +12057,7 @@ impl<'db> OptionTerminalNoPanicEmpty<'db> {
     }
 }
 impl<'db> OptionTerminalNoPanicEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalNoPanicEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionTerminalNoPanicEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionTerminalNoPanicEmptyPtr<'db> {
@@ -12183,7 +12074,7 @@ impl<'db> From<OptionTerminalNoPanicEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalNoPanicEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalNoPanicEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalNoPanicEmpty);
@@ -12227,12 +12118,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalNoPanicEmpty<'db> {
         OptionTerminalNoPanicEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionTerminalConst<'db> {
     Empty(OptionTerminalConstEmpty<'db>),
     TerminalConst(TerminalConst<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalConstPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionTerminalConstPtr<'db> {
     type SyntaxNode = OptionTerminalConst<'db>;
@@ -12268,7 +12159,7 @@ impl<'db> From<TerminalConstGreen<'db>> for OptionTerminalConstGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalConstGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalConst<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -12320,7 +12211,7 @@ impl<'db> OptionTerminalConst<'db> {
         matches!(kind, SyntaxKind::OptionTerminalConstEmpty | SyntaxKind::TerminalConst)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionTerminalConstEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -12338,7 +12229,7 @@ impl<'db> OptionTerminalConstEmpty<'db> {
     }
 }
 impl<'db> OptionTerminalConstEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalConstEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionTerminalConstEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionTerminalConstEmptyPtr<'db> {
@@ -12355,7 +12246,7 @@ impl<'db> From<OptionTerminalConstEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalConstEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalConstEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalConstEmpty);
@@ -12399,7 +12290,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalConstEmpty<'db> {
         OptionTerminalConstEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct FunctionSignature<'db> {
     node: SyntaxNode<'db>,
 }
@@ -12451,7 +12342,7 @@ impl<'db> FunctionSignature<'db> {
         OptionTerminalNoPanic::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct FunctionSignaturePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> FunctionSignaturePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for FunctionSignaturePtr<'db> {
@@ -12468,7 +12359,7 @@ impl<'db> From<FunctionSignaturePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct FunctionSignatureGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for FunctionSignature<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::FunctionSignature);
@@ -12520,7 +12411,7 @@ impl<'db> TypedSyntaxNode<'db> for FunctionSignature<'db> {
         FunctionSignaturePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct Member<'db> {
     node: SyntaxNode<'db>,
 }
@@ -12561,7 +12452,7 @@ impl<'db> Member<'db> {
         TypeClause::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MemberPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> MemberPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -12582,7 +12473,7 @@ impl<'db> From<MemberPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MemberGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Member<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Member);
@@ -12628,7 +12519,7 @@ impl<'db> TypedSyntaxNode<'db> for Member<'db> {
         MemberPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MemberList<'db>(ElementList<'db, Member<'db>, 2>);
 impl<'db> Deref for MemberList<'db> {
     type Target = ElementList<'db, Member<'db>, 2>;
@@ -12654,7 +12545,7 @@ impl<'db> MemberList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MemberListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MemberListPtr<'db> {
     type SyntaxNode = MemberList<'db>;
@@ -12670,7 +12561,7 @@ impl<'db> From<MemberListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum MemberListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(MemberGreen<'db>),
@@ -12693,7 +12584,7 @@ impl<'db> MemberListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MemberListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MemberList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MemberList);
@@ -12728,7 +12619,7 @@ impl<'db> TypedSyntaxNode<'db> for MemberList<'db> {
         MemberListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct Variant<'db> {
     node: SyntaxNode<'db>,
 }
@@ -12764,7 +12655,7 @@ impl<'db> Variant<'db> {
         OptionTypeClause::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct VariantPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> VariantPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -12785,7 +12676,7 @@ impl<'db> From<VariantPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct VariantGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Variant<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Variant);
@@ -12830,7 +12721,7 @@ impl<'db> TypedSyntaxNode<'db> for Variant<'db> {
         VariantPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct VariantList<'db>(ElementList<'db, Variant<'db>, 2>);
 impl<'db> Deref for VariantList<'db> {
     type Target = ElementList<'db, Variant<'db>, 2>;
@@ -12856,7 +12747,7 @@ impl<'db> VariantList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct VariantListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for VariantListPtr<'db> {
     type SyntaxNode = VariantList<'db>;
@@ -12872,7 +12763,7 @@ impl<'db> From<VariantListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum VariantListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(VariantGreen<'db>),
@@ -12895,7 +12786,7 @@ impl<'db> VariantListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct VariantListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for VariantList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VariantList);
@@ -12930,7 +12821,86 @@ impl<'db> TypedSyntaxNode<'db> for VariantList<'db> {
         VariantListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct ModuleItemMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> ModuleItemMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> ModuleItemMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        ModuleItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ModuleItemMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> ModuleItemMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct ModuleItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> ModuleItemMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for ModuleItemMissingPtr<'db> {
+    type SyntaxNode = ModuleItemMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> ModuleItemMissing<'db> {
+        ModuleItemMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<ModuleItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: ModuleItemMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct ModuleItemMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for ModuleItemMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModuleItemMissing);
+    type StablePtr = ModuleItemMissingPtr<'db>;
+    type Green = ModuleItemMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        ModuleItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ModuleItemMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ModuleItemMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ModuleItemMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ModuleItemMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        ModuleItemMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum ModuleItem<'db> {
     Constant(ItemConstant<'db>),
     Module(ItemModule<'db>),
@@ -12949,7 +12919,7 @@ pub enum ModuleItem<'db> {
     HeaderDoc(ItemHeaderDoc<'db>),
     Missing(ModuleItemMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ModuleItemPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ModuleItemPtr<'db> {
     type SyntaxNode = ModuleItem<'db>;
@@ -13125,7 +13095,7 @@ impl<'db> From<ModuleItemMissingGreen<'db>> for ModuleItemGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ModuleItemGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ModuleItem<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -13270,7 +13240,7 @@ impl<'db> ModuleItem<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ModuleItemList<'db>(ElementList<'db, ModuleItem<'db>, 1>);
 impl<'db> Deref for ModuleItemList<'db> {
     type Target = ElementList<'db, ModuleItem<'db>, 1>;
@@ -13296,7 +13266,7 @@ impl<'db> ModuleItemList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ModuleItemListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ModuleItemListPtr<'db> {
     type SyntaxNode = ModuleItemList<'db>;
@@ -13312,7 +13282,7 @@ impl<'db> From<ModuleItemListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ModuleItemListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ModuleItemList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModuleItemList);
@@ -13347,86 +13317,7 @@ impl<'db> TypedSyntaxNode<'db> for ModuleItemList<'db> {
         ModuleItemListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct ModuleItemMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> ModuleItemMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> ModuleItemMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        ModuleItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ModuleItemMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> ModuleItemMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct ModuleItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> ModuleItemMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for ModuleItemMissingPtr<'db> {
-    type SyntaxNode = ModuleItemMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> ModuleItemMissing<'db> {
-        ModuleItemMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<ModuleItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: ModuleItemMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ModuleItemMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for ModuleItemMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModuleItemMissing);
-    type StablePtr = ModuleItemMissingPtr<'db>;
-    type Green = ModuleItemMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        ModuleItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ModuleItemMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ModuleItemMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ModuleItemMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::ModuleItemMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        ModuleItemMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct Attribute<'db> {
     node: SyntaxNode<'db>,
 }
@@ -13472,7 +13363,7 @@ impl<'db> Attribute<'db> {
         TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct AttributePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> AttributePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for AttributePtr<'db> {
@@ -13489,7 +13380,7 @@ impl<'db> From<AttributePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct AttributeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Attribute<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Attribute);
@@ -13536,7 +13427,7 @@ impl<'db> TypedSyntaxNode<'db> for Attribute<'db> {
         AttributePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct AttributeList<'db>(ElementList<'db, Attribute<'db>, 1>);
 impl<'db> Deref for AttributeList<'db> {
     type Target = ElementList<'db, Attribute<'db>, 1>;
@@ -13562,7 +13453,7 @@ impl<'db> AttributeList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct AttributeListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for AttributeListPtr<'db> {
     type SyntaxNode = AttributeList<'db>;
@@ -13578,7 +13469,7 @@ impl<'db> From<AttributeListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct AttributeListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for AttributeList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AttributeList);
@@ -13613,7 +13504,7 @@ impl<'db> TypedSyntaxNode<'db> for AttributeList<'db> {
         AttributeListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct VisibilityDefault<'db> {
     node: SyntaxNode<'db>,
 }
@@ -13631,7 +13522,7 @@ impl<'db> VisibilityDefault<'db> {
     }
 }
 impl<'db> VisibilityDefault<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct VisibilityDefaultPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> VisibilityDefaultPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for VisibilityDefaultPtr<'db> {
@@ -13648,7 +13539,7 @@ impl<'db> From<VisibilityDefaultPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct VisibilityDefaultGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for VisibilityDefault<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VisibilityDefault);
@@ -13692,7 +13583,7 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityDefault<'db> {
         VisibilityDefaultPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct VisibilityPubArgumentClause<'db> {
     node: SyntaxNode<'db>,
 }
@@ -13728,7 +13619,7 @@ impl<'db> VisibilityPubArgumentClause<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct VisibilityPubArgumentClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> VisibilityPubArgumentClausePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for VisibilityPubArgumentClausePtr<'db> {
@@ -13745,7 +13636,7 @@ impl<'db> From<VisibilityPubArgumentClausePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct VisibilityPubArgumentClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for VisibilityPubArgumentClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VisibilityPubArgumentClause);
@@ -13794,12 +13685,12 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityPubArgumentClause<'db> {
         VisibilityPubArgumentClausePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionVisibilityPubArgumentClause<'db> {
     Empty(OptionVisibilityPubArgumentClauseEmpty<'db>),
     VisibilityPubArgumentClause(VisibilityPubArgumentClause<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionVisibilityPubArgumentClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionVisibilityPubArgumentClausePtr<'db> {
     type SyntaxNode = OptionVisibilityPubArgumentClause<'db>;
@@ -13841,7 +13732,7 @@ impl<'db> From<VisibilityPubArgumentClauseGreen<'db>>
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionVisibilityPubArgumentClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionVisibilityPubArgumentClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -13905,7 +13796,7 @@ impl<'db> OptionVisibilityPubArgumentClause<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionVisibilityPubArgumentClauseEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -13923,7 +13814,7 @@ impl<'db> OptionVisibilityPubArgumentClauseEmpty<'db> {
     }
 }
 impl<'db> OptionVisibilityPubArgumentClauseEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionVisibilityPubArgumentClauseEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionVisibilityPubArgumentClauseEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionVisibilityPubArgumentClauseEmptyPtr<'db> {
@@ -13940,7 +13831,7 @@ impl<'db> From<OptionVisibilityPubArgumentClauseEmptyPtr<'db>> for SyntaxStableP
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionVisibilityPubArgumentClauseEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionVisibilityPubArgumentClauseEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> =
@@ -13985,7 +13876,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionVisibilityPubArgumentClauseEmpty<'db> {
         OptionVisibilityPubArgumentClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct VisibilityPub<'db> {
     node: SyntaxNode<'db>,
 }
@@ -14016,7 +13907,7 @@ impl<'db> VisibilityPub<'db> {
         OptionVisibilityPubArgumentClause::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct VisibilityPubPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> VisibilityPubPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for VisibilityPubPtr<'db> {
@@ -14033,7 +13924,7 @@ impl<'db> From<VisibilityPubPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct VisibilityPubGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for VisibilityPub<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VisibilityPub);
@@ -14081,12 +13972,12 @@ impl<'db> TypedSyntaxNode<'db> for VisibilityPub<'db> {
         VisibilityPubPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum Visibility<'db> {
     Default(VisibilityDefault<'db>),
     Pub(VisibilityPub<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct VisibilityPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for VisibilityPtr<'db> {
     type SyntaxNode = Visibility<'db>;
@@ -14122,7 +14013,7 @@ impl<'db> From<VisibilityPubGreen<'db>> for VisibilityGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct VisibilityGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for Visibility<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -14169,7 +14060,7 @@ impl<'db> Visibility<'db> {
         matches!(kind, SyntaxKind::VisibilityDefault | SyntaxKind::VisibilityPub)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemModule<'db> {
     node: SyntaxNode<'db>,
 }
@@ -14215,7 +14106,7 @@ impl<'db> ItemModule<'db> {
         MaybeModuleBody::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemModulePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemModulePtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -14236,7 +14127,7 @@ impl<'db> From<ItemModulePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemModuleGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemModule<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemModule);
@@ -14283,12 +14174,12 @@ impl<'db> TypedSyntaxNode<'db> for ItemModule<'db> {
         ItemModulePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MaybeModuleBody<'db> {
     Some(ModuleBody<'db>),
     None(TerminalSemicolon<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MaybeModuleBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MaybeModuleBodyPtr<'db> {
     type SyntaxNode = MaybeModuleBody<'db>;
@@ -14324,7 +14215,7 @@ impl<'db> From<TerminalSemicolonGreen<'db>> for MaybeModuleBodyGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MaybeModuleBodyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MaybeModuleBody<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -14373,7 +14264,7 @@ impl<'db> MaybeModuleBody<'db> {
         matches!(kind, SyntaxKind::ModuleBody | SyntaxKind::TerminalSemicolon)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ModuleBody<'db> {
     node: SyntaxNode<'db>,
 }
@@ -14409,7 +14300,7 @@ impl<'db> ModuleBody<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ModuleBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ModuleBodyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ModuleBodyPtr<'db> {
@@ -14426,7 +14317,7 @@ impl<'db> From<ModuleBodyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ModuleBodyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ModuleBody<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModuleBody);
@@ -14471,7 +14362,7 @@ impl<'db> TypedSyntaxNode<'db> for ModuleBody<'db> {
         ModuleBodyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct FunctionDeclaration<'db> {
     node: SyntaxNode<'db>,
 }
@@ -14517,7 +14408,7 @@ impl<'db> FunctionDeclaration<'db> {
         FunctionSignature::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct FunctionDeclarationPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> FunctionDeclarationPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -14538,7 +14429,7 @@ impl<'db> From<FunctionDeclarationPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct FunctionDeclarationGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for FunctionDeclaration<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::FunctionDeclaration);
@@ -14589,7 +14480,7 @@ impl<'db> TypedSyntaxNode<'db> for FunctionDeclaration<'db> {
         FunctionDeclarationPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemConstant<'db> {
     node: SyntaxNode<'db>,
 }
@@ -14659,7 +14550,7 @@ impl<'db> ItemConstant<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemConstantPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemConstantPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -14680,7 +14571,7 @@ impl<'db> From<ItemConstantPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemConstantGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemConstant<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemConstant);
@@ -14730,7 +14621,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemConstant<'db> {
         ItemConstantPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct FunctionWithBody<'db> {
     node: SyntaxNode<'db>,
 }
@@ -14771,7 +14662,7 @@ impl<'db> FunctionWithBody<'db> {
         ExprBlock::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct FunctionWithBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> FunctionWithBodyPtr<'db> {
     pub fn declaration_green(self, db: &'db dyn Database) -> FunctionDeclarationGreen<'db> {
@@ -14792,7 +14683,7 @@ impl<'db> From<FunctionWithBodyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct FunctionWithBodyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for FunctionWithBody<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::FunctionWithBody);
@@ -14842,7 +14733,7 @@ impl<'db> TypedSyntaxNode<'db> for FunctionWithBody<'db> {
         FunctionWithBodyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemExternFunction<'db> {
     node: SyntaxNode<'db>,
 }
@@ -14888,7 +14779,7 @@ impl<'db> ItemExternFunction<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemExternFunctionPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemExternFunctionPtr<'db> {
     pub fn declaration_green(self, db: &'db dyn Database) -> FunctionDeclarationGreen<'db> {
@@ -14909,7 +14800,7 @@ impl<'db> From<ItemExternFunctionPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemExternFunctionGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemExternFunction<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemExternFunction);
@@ -14960,7 +14851,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemExternFunction<'db> {
         ItemExternFunctionPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemExternType<'db> {
     node: SyntaxNode<'db>,
 }
@@ -15024,7 +14915,7 @@ impl<'db> ItemExternType<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[6])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemExternTypePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemExternTypePtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -15045,7 +14936,7 @@ impl<'db> From<ItemExternTypePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemExternTypeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemExternType<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemExternType);
@@ -15098,7 +14989,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemExternType<'db> {
         ItemExternTypePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemTrait<'db> {
     node: SyntaxNode<'db>,
 }
@@ -15149,7 +15040,7 @@ impl<'db> ItemTrait<'db> {
         MaybeTraitBody::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemTraitPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemTraitPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -15170,7 +15061,7 @@ impl<'db> From<ItemTraitPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemTraitGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemTrait<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemTrait);
@@ -15218,12 +15109,12 @@ impl<'db> TypedSyntaxNode<'db> for ItemTrait<'db> {
         ItemTraitPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MaybeTraitBody<'db> {
     Some(TraitBody<'db>),
     None(TerminalSemicolon<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MaybeTraitBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MaybeTraitBodyPtr<'db> {
     type SyntaxNode = MaybeTraitBody<'db>;
@@ -15259,7 +15150,7 @@ impl<'db> From<TerminalSemicolonGreen<'db>> for MaybeTraitBodyGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MaybeTraitBodyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MaybeTraitBody<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -15308,7 +15199,7 @@ impl<'db> MaybeTraitBody<'db> {
         matches!(kind, SyntaxKind::TraitBody | SyntaxKind::TerminalSemicolon)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TraitBody<'db> {
     node: SyntaxNode<'db>,
 }
@@ -15344,7 +15235,7 @@ impl<'db> TraitBody<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TraitBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TraitBodyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TraitBodyPtr<'db> {
@@ -15361,7 +15252,7 @@ impl<'db> From<TraitBodyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TraitBodyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TraitBody<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitBody);
@@ -15406,7 +15297,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitBody<'db> {
         TraitBodyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TraitItemList<'db>(ElementList<'db, TraitItem<'db>, 1>);
 impl<'db> Deref for TraitItemList<'db> {
     type Target = ElementList<'db, TraitItem<'db>, 1>;
@@ -15432,7 +15323,7 @@ impl<'db> TraitItemList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TraitItemListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TraitItemListPtr<'db> {
     type SyntaxNode = TraitItemList<'db>;
@@ -15448,7 +15339,7 @@ impl<'db> From<TraitItemListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TraitItemListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TraitItemList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemList);
@@ -15483,7 +15374,86 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemList<'db> {
         TraitItemListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct TraitItemMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> TraitItemMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> TraitItemMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        TraitItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::TraitItemMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> TraitItemMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct TraitItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> TraitItemMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for TraitItemMissingPtr<'db> {
+    type SyntaxNode = TraitItemMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> TraitItemMissing<'db> {
+        TraitItemMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<TraitItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: TraitItemMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct TraitItemMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for TraitItemMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemMissing);
+    type StablePtr = TraitItemMissingPtr<'db>;
+    type Green = TraitItemMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        TraitItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::TraitItemMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TraitItemMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TraitItemMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TraitItemMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        TraitItemMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum TraitItem<'db> {
     Function(TraitItemFunction<'db>),
     Type(TraitItemType<'db>),
@@ -15491,7 +15461,7 @@ pub enum TraitItem<'db> {
     Impl(TraitItemImpl<'db>),
     Missing(TraitItemMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TraitItemPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TraitItemPtr<'db> {
     type SyntaxNode = TraitItem<'db>;
@@ -15557,7 +15527,7 @@ impl<'db> From<TraitItemMissingGreen<'db>> for TraitItemGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TraitItemGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TraitItem<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -15630,86 +15600,7 @@ impl<'db> TraitItem<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct TraitItemMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> TraitItemMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> TraitItemMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        TraitItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::TraitItemMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> TraitItemMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct TraitItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> TraitItemMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for TraitItemMissingPtr<'db> {
-    type SyntaxNode = TraitItemMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> TraitItemMissing<'db> {
-        TraitItemMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<TraitItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: TraitItemMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct TraitItemMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for TraitItemMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemMissing);
-    type StablePtr = TraitItemMissingPtr<'db>;
-    type Green = TraitItemMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        TraitItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::TraitItemMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::TraitItemMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::TraitItemMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::TraitItemMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        TraitItemMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TraitItemFunction<'db> {
     node: SyntaxNode<'db>,
 }
@@ -15745,7 +15636,7 @@ impl<'db> TraitItemFunction<'db> {
         MaybeTraitFunctionBody::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TraitItemFunctionPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TraitItemFunctionPtr<'db> {
     pub fn declaration_green(self, db: &'db dyn Database) -> FunctionDeclarationGreen<'db> {
@@ -15766,7 +15657,7 @@ impl<'db> From<TraitItemFunctionPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TraitItemFunctionGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TraitItemFunction<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemFunction);
@@ -15815,7 +15706,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemFunction<'db> {
         TraitItemFunctionPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TraitItemType<'db> {
     node: SyntaxNode<'db>,
 }
@@ -15861,7 +15752,7 @@ impl<'db> TraitItemType<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TraitItemTypePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TraitItemTypePtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -15882,7 +15773,7 @@ impl<'db> From<TraitItemTypePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TraitItemTypeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TraitItemType<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemType);
@@ -15933,7 +15824,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemType<'db> {
         TraitItemTypePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TraitItemConstant<'db> {
     node: SyntaxNode<'db>,
 }
@@ -15979,7 +15870,7 @@ impl<'db> TraitItemConstant<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TraitItemConstantPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TraitItemConstantPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -16000,7 +15891,7 @@ impl<'db> From<TraitItemConstantPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TraitItemConstantGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TraitItemConstant<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemConstant);
@@ -16051,7 +15942,7 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemConstant<'db> {
         TraitItemConstantPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TraitItemImpl<'db> {
     node: SyntaxNode<'db>,
 }
@@ -16102,7 +15993,7 @@ impl<'db> TraitItemImpl<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TraitItemImplPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TraitItemImplPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -16123,7 +16014,7 @@ impl<'db> From<TraitItemImplPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TraitItemImplGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TraitItemImpl<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemImpl);
@@ -16175,12 +16066,12 @@ impl<'db> TypedSyntaxNode<'db> for TraitItemImpl<'db> {
         TraitItemImplPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MaybeTraitFunctionBody<'db> {
     Some(ExprBlock<'db>),
     None(TerminalSemicolon<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MaybeTraitFunctionBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MaybeTraitFunctionBodyPtr<'db> {
     type SyntaxNode = MaybeTraitFunctionBody<'db>;
@@ -16216,7 +16107,7 @@ impl<'db> From<TerminalSemicolonGreen<'db>> for MaybeTraitFunctionBodyGreen<'db>
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MaybeTraitFunctionBodyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MaybeTraitFunctionBody<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -16268,7 +16159,7 @@ impl<'db> MaybeTraitFunctionBody<'db> {
         matches!(kind, SyntaxKind::ExprBlock | SyntaxKind::TerminalSemicolon)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemImpl<'db> {
     node: SyntaxNode<'db>,
 }
@@ -16338,7 +16229,7 @@ impl<'db> ItemImpl<'db> {
         MaybeImplBody::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemImplPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemImplPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -16359,7 +16250,7 @@ impl<'db> From<ItemImplPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemImplGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemImpl<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemImpl);
@@ -16409,7 +16300,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemImpl<'db> {
         ItemImplPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemHeaderDoc<'db> {
     node: SyntaxNode<'db>,
 }
@@ -16435,7 +16326,7 @@ impl<'db> ItemHeaderDoc<'db> {
         TerminalEmpty::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemHeaderDocPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemHeaderDocPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ItemHeaderDocPtr<'db> {
@@ -16452,7 +16343,7 @@ impl<'db> From<ItemHeaderDocPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemHeaderDocGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemHeaderDoc<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemHeaderDoc);
@@ -16496,12 +16387,12 @@ impl<'db> TypedSyntaxNode<'db> for ItemHeaderDoc<'db> {
         ItemHeaderDocPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MaybeImplBody<'db> {
     Some(ImplBody<'db>),
     None(TerminalSemicolon<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MaybeImplBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MaybeImplBodyPtr<'db> {
     type SyntaxNode = MaybeImplBody<'db>;
@@ -16537,7 +16428,7 @@ impl<'db> From<TerminalSemicolonGreen<'db>> for MaybeImplBodyGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MaybeImplBodyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MaybeImplBody<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -16582,7 +16473,7 @@ impl<'db> MaybeImplBody<'db> {
         matches!(kind, SyntaxKind::ImplBody | SyntaxKind::TerminalSemicolon)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ImplBody<'db> {
     node: SyntaxNode<'db>,
 }
@@ -16618,7 +16509,7 @@ impl<'db> ImplBody<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ImplBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ImplBodyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ImplBodyPtr<'db> {
@@ -16635,7 +16526,7 @@ impl<'db> From<ImplBodyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ImplBodyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ImplBody<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplBody);
@@ -16680,7 +16571,7 @@ impl<'db> TypedSyntaxNode<'db> for ImplBody<'db> {
         ImplBodyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ImplItemList<'db>(ElementList<'db, ImplItem<'db>, 1>);
 impl<'db> Deref for ImplItemList<'db> {
     type Target = ElementList<'db, ImplItem<'db>, 1>;
@@ -16706,7 +16597,7 @@ impl<'db> ImplItemList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ImplItemListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ImplItemListPtr<'db> {
     type SyntaxNode = ImplItemList<'db>;
@@ -16722,7 +16613,7 @@ impl<'db> From<ImplItemListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ImplItemListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ImplItemList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplItemList);
@@ -16757,7 +16648,86 @@ impl<'db> TypedSyntaxNode<'db> for ImplItemList<'db> {
         ImplItemListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct ImplItemMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> ImplItemMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> ImplItemMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        ImplItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ImplItemMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> ImplItemMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct ImplItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> ImplItemMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for ImplItemMissingPtr<'db> {
+    type SyntaxNode = ImplItemMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> ImplItemMissing<'db> {
+        ImplItemMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<ImplItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: ImplItemMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct ImplItemMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for ImplItemMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplItemMissing);
+    type StablePtr = ImplItemMissingPtr<'db>;
+    type Green = ImplItemMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        ImplItemMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::ImplItemMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ImplItemMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ImplItemMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::ImplItemMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        ImplItemMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum ImplItem<'db> {
     Function(FunctionWithBody<'db>),
     Type(ItemTypeAlias<'db>),
@@ -16772,7 +16742,7 @@ pub enum ImplItem<'db> {
     Enum(ItemEnum<'db>),
     Missing(ImplItemMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ImplItemPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for ImplItemPtr<'db> {
     type SyntaxNode = ImplItem<'db>;
@@ -16908,7 +16878,7 @@ impl<'db> From<ImplItemMissingGreen<'db>> for ImplItemGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ImplItemGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ImplItem<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -17021,86 +16991,7 @@ impl<'db> ImplItem<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct ImplItemMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> ImplItemMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> ImplItemMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        ImplItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ImplItemMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> ImplItemMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct ImplItemMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> ImplItemMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for ImplItemMissingPtr<'db> {
-    type SyntaxNode = ImplItemMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> ImplItemMissing<'db> {
-        ImplItemMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<ImplItemMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: ImplItemMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ImplItemMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for ImplItemMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplItemMissing);
-    type StablePtr = ImplItemMissingPtr<'db>;
-    type Green = ImplItemMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        ImplItemMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::ImplItemMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ImplItemMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ImplItemMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::ImplItemMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        ImplItemMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemImplAlias<'db> {
     node: SyntaxNode<'db>,
 }
@@ -17170,7 +17061,7 @@ impl<'db> ItemImplAlias<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemImplAliasPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemImplAliasPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -17191,7 +17082,7 @@ impl<'db> From<ItemImplAliasPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemImplAliasGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemImplAlias<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemImplAlias);
@@ -17245,7 +17136,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemImplAlias<'db> {
         ItemImplAliasPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemStruct<'db> {
     node: SyntaxNode<'db>,
 }
@@ -17315,7 +17206,7 @@ impl<'db> ItemStruct<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemStructPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemStructPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -17336,7 +17227,7 @@ impl<'db> From<ItemStructPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemStructGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemStruct<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemStruct);
@@ -17386,7 +17277,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemStruct<'db> {
         ItemStructPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemEnum<'db> {
     node: SyntaxNode<'db>,
 }
@@ -17456,7 +17347,7 @@ impl<'db> ItemEnum<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemEnumPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemEnumPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -17477,7 +17368,7 @@ impl<'db> From<ItemEnumPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemEnumGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemEnum<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemEnum);
@@ -17527,7 +17418,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemEnum<'db> {
         ItemEnumPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemTypeAlias<'db> {
     node: SyntaxNode<'db>,
 }
@@ -17597,7 +17488,7 @@ impl<'db> ItemTypeAlias<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemTypeAliasPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemTypeAliasPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -17618,7 +17509,7 @@ impl<'db> From<ItemTypeAliasPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemTypeAliasGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemTypeAlias<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemTypeAlias);
@@ -17672,7 +17563,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemTypeAlias<'db> {
         ItemTypeAliasPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemUse<'db> {
     node: SyntaxNode<'db>,
 }
@@ -17723,7 +17614,7 @@ impl<'db> ItemUse<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemUsePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemUsePtr<'db> {
     pub fn use_path_green(self, db: &'db dyn Database) -> UsePathGreen<'db> {
@@ -17744,7 +17635,7 @@ impl<'db> From<ItemUsePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemUseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemUse<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemUse);
@@ -17792,14 +17683,14 @@ impl<'db> TypedSyntaxNode<'db> for ItemUse<'db> {
         ItemUsePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum UsePath<'db> {
     Leaf(UsePathLeaf<'db>),
     Single(UsePathSingle<'db>),
     Multi(UsePathMulti<'db>),
     Star(UsePathStar<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct UsePathPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for UsePathPtr<'db> {
     type SyntaxNode = UsePath<'db>;
@@ -17855,7 +17746,7 @@ impl<'db> From<UsePathStarGreen<'db>> for UsePathGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct UsePathGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for UsePath<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -17912,7 +17803,7 @@ impl<'db> UsePath<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct UsePathLeaf<'db> {
     node: SyntaxNode<'db>,
 }
@@ -17943,7 +17834,7 @@ impl<'db> UsePathLeaf<'db> {
         OptionAliasClause::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct UsePathLeafPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> UsePathLeafPtr<'db> {
     pub fn ident_green(self, db: &'db dyn Database) -> PathSegmentGreen<'db> {
@@ -17967,7 +17858,7 @@ impl<'db> From<UsePathLeafPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct UsePathLeafGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for UsePathLeaf<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathLeaf);
@@ -18007,7 +17898,7 @@ impl<'db> TypedSyntaxNode<'db> for UsePathLeaf<'db> {
         UsePathLeafPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct UsePathSingle<'db> {
     node: SyntaxNode<'db>,
 }
@@ -18043,7 +17934,7 @@ impl<'db> UsePathSingle<'db> {
         UsePath::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct UsePathSinglePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> UsePathSinglePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for UsePathSinglePtr<'db> {
@@ -18060,7 +17951,7 @@ impl<'db> From<UsePathSinglePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct UsePathSingleGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for UsePathSingle<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathSingle);
@@ -18109,7 +18000,7 @@ impl<'db> TypedSyntaxNode<'db> for UsePathSingle<'db> {
         UsePathSinglePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct UsePathMulti<'db> {
     node: SyntaxNode<'db>,
 }
@@ -18145,7 +18036,7 @@ impl<'db> UsePathMulti<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct UsePathMultiPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> UsePathMultiPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for UsePathMultiPtr<'db> {
@@ -18162,7 +18053,7 @@ impl<'db> From<UsePathMultiPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct UsePathMultiGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for UsePathMulti<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathMulti);
@@ -18207,7 +18098,7 @@ impl<'db> TypedSyntaxNode<'db> for UsePathMulti<'db> {
         UsePathMultiPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct UsePathStar<'db> {
     node: SyntaxNode<'db>,
 }
@@ -18230,7 +18121,7 @@ impl<'db> UsePathStar<'db> {
         TerminalMul::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct UsePathStarPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> UsePathStarPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for UsePathStarPtr<'db> {
@@ -18247,7 +18138,7 @@ impl<'db> From<UsePathStarPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct UsePathStarGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for UsePathStar<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathStar);
@@ -18287,7 +18178,7 @@ impl<'db> TypedSyntaxNode<'db> for UsePathStar<'db> {
         UsePathStarPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct UsePathList<'db>(ElementList<'db, UsePath<'db>, 2>);
 impl<'db> Deref for UsePathList<'db> {
     type Target = ElementList<'db, UsePath<'db>, 2>;
@@ -18313,7 +18204,7 @@ impl<'db> UsePathList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct UsePathListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for UsePathListPtr<'db> {
     type SyntaxNode = UsePathList<'db>;
@@ -18329,7 +18220,7 @@ impl<'db> From<UsePathListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum UsePathListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(UsePathGreen<'db>),
@@ -18352,7 +18243,7 @@ impl<'db> UsePathListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct UsePathListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for UsePathList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathList);
@@ -18387,7 +18278,7 @@ impl<'db> TypedSyntaxNode<'db> for UsePathList<'db> {
         UsePathListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct AliasClause<'db> {
     node: SyntaxNode<'db>,
 }
@@ -18418,7 +18309,7 @@ impl<'db> AliasClause<'db> {
         TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct AliasClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> AliasClausePtr<'db> {
     pub fn alias_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -18439,7 +18330,7 @@ impl<'db> From<AliasClausePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct AliasClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for AliasClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AliasClause);
@@ -18479,12 +18370,12 @@ impl<'db> TypedSyntaxNode<'db> for AliasClause<'db> {
         AliasClausePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionAliasClause<'db> {
     Empty(OptionAliasClauseEmpty<'db>),
     AliasClause(AliasClause<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionAliasClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionAliasClausePtr<'db> {
     type SyntaxNode = OptionAliasClause<'db>;
@@ -18520,7 +18411,7 @@ impl<'db> From<AliasClauseGreen<'db>> for OptionAliasClauseGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionAliasClauseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionAliasClause<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -18572,7 +18463,7 @@ impl<'db> OptionAliasClause<'db> {
         matches!(kind, SyntaxKind::OptionAliasClauseEmpty | SyntaxKind::AliasClause)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionAliasClauseEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -18590,7 +18481,7 @@ impl<'db> OptionAliasClauseEmpty<'db> {
     }
 }
 impl<'db> OptionAliasClauseEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionAliasClauseEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionAliasClauseEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionAliasClauseEmptyPtr<'db> {
@@ -18607,7 +18498,7 @@ impl<'db> From<OptionAliasClauseEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionAliasClauseEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionAliasClauseEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionAliasClauseEmpty);
@@ -18651,12 +18542,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionAliasClauseEmpty<'db> {
         OptionAliasClauseEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum GenericArg<'db> {
     Unnamed(GenericArgUnnamed<'db>),
     Named(GenericArgNamed<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericArgPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for GenericArgPtr<'db> {
     type SyntaxNode = GenericArg<'db>;
@@ -18692,7 +18583,7 @@ impl<'db> From<GenericArgNamedGreen<'db>> for GenericArgGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericArgGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericArg<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -18741,7 +18632,7 @@ impl<'db> GenericArg<'db> {
         matches!(kind, SyntaxKind::GenericArgUnnamed | SyntaxKind::GenericArgNamed)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericArgNamed<'db> {
     node: SyntaxNode<'db>,
 }
@@ -18777,7 +18668,7 @@ impl<'db> GenericArgNamed<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericArgNamedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericArgNamedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for GenericArgNamedPtr<'db> {
@@ -18794,7 +18685,7 @@ impl<'db> From<GenericArgNamedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericArgNamedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericArgNamed<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgNamed);
@@ -18843,7 +18734,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgNamed<'db> {
         GenericArgNamedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericArgUnnamed<'db> {
     node: SyntaxNode<'db>,
 }
@@ -18866,7 +18757,7 @@ impl<'db> GenericArgUnnamed<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericArgUnnamedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericArgUnnamedPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for GenericArgUnnamedPtr<'db> {
@@ -18883,7 +18774,7 @@ impl<'db> From<GenericArgUnnamedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericArgUnnamedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericArgUnnamed<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgUnnamed);
@@ -18927,7 +18818,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgUnnamed<'db> {
         GenericArgUnnamedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericArgs<'db> {
     node: SyntaxNode<'db>,
 }
@@ -18963,7 +18854,7 @@ impl<'db> GenericArgs<'db> {
         TerminalGT::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericArgsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericArgsPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for GenericArgsPtr<'db> {
@@ -18980,7 +18871,7 @@ impl<'db> From<GenericArgsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericArgsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericArgs<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgs);
@@ -19025,7 +18916,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgs<'db> {
         GenericArgsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericArgList<'db>(ElementList<'db, GenericArg<'db>, 2>);
 impl<'db> Deref for GenericArgList<'db> {
     type Target = ElementList<'db, GenericArg<'db>, 2>;
@@ -19051,7 +18942,7 @@ impl<'db> GenericArgList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericArgListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for GenericArgListPtr<'db> {
     type SyntaxNode = GenericArgList<'db>;
@@ -19067,7 +18958,7 @@ impl<'db> From<GenericArgListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum GenericArgListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(GenericArgGreen<'db>),
@@ -19090,7 +18981,7 @@ impl<'db> GenericArgListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericArgListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericArgList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgList);
@@ -19125,7 +19016,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgList<'db> {
         GenericArgListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct AssociatedItemConstraint<'db> {
     node: SyntaxNode<'db>,
 }
@@ -19161,7 +19052,7 @@ impl<'db> AssociatedItemConstraint<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct AssociatedItemConstraintPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> AssociatedItemConstraintPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for AssociatedItemConstraintPtr<'db> {
@@ -19178,7 +19069,7 @@ impl<'db> From<AssociatedItemConstraintPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct AssociatedItemConstraintGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraint<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AssociatedItemConstraint);
@@ -19227,7 +19118,7 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraint<'db> {
         AssociatedItemConstraintPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct AssociatedItemConstraints<'db> {
     node: SyntaxNode<'db>,
 }
@@ -19266,7 +19157,7 @@ impl<'db> AssociatedItemConstraints<'db> {
         TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct AssociatedItemConstraintsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> AssociatedItemConstraintsPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for AssociatedItemConstraintsPtr<'db> {
@@ -19283,7 +19174,7 @@ impl<'db> From<AssociatedItemConstraintsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct AssociatedItemConstraintsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraints<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AssociatedItemConstraints);
@@ -19332,7 +19223,7 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraints<'db> {
         AssociatedItemConstraintsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct AssociatedItemConstraintList<'db>(ElementList<'db, AssociatedItemConstraint<'db>, 2>);
 impl<'db> Deref for AssociatedItemConstraintList<'db> {
     type Target = ElementList<'db, AssociatedItemConstraint<'db>, 2>;
@@ -19358,7 +19249,7 @@ impl<'db> AssociatedItemConstraintList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct AssociatedItemConstraintListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for AssociatedItemConstraintListPtr<'db> {
     type SyntaxNode = AssociatedItemConstraintList<'db>;
@@ -19374,7 +19265,7 @@ impl<'db> From<AssociatedItemConstraintListPtr<'db>> for SyntaxStablePtrId<'db> 
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum AssociatedItemConstraintListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(AssociatedItemConstraintGreen<'db>),
@@ -19401,7 +19292,7 @@ impl<'db> AssociatedItemConstraintListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct AssociatedItemConstraintListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraintList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AssociatedItemConstraintList);
@@ -19436,12 +19327,12 @@ impl<'db> TypedSyntaxNode<'db> for AssociatedItemConstraintList<'db> {
         AssociatedItemConstraintListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionAssociatedItemConstraints<'db> {
     Empty(OptionAssociatedItemConstraintsEmpty<'db>),
     AssociatedItemConstraints(AssociatedItemConstraints<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionAssociatedItemConstraintsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionAssociatedItemConstraintsPtr<'db> {
     type SyntaxNode = OptionAssociatedItemConstraints<'db>;
@@ -19481,7 +19372,7 @@ impl<'db> From<AssociatedItemConstraintsGreen<'db>> for OptionAssociatedItemCons
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionAssociatedItemConstraintsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionAssociatedItemConstraints<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -19545,7 +19436,7 @@ impl<'db> OptionAssociatedItemConstraints<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionAssociatedItemConstraintsEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -19563,7 +19454,7 @@ impl<'db> OptionAssociatedItemConstraintsEmpty<'db> {
     }
 }
 impl<'db> OptionAssociatedItemConstraintsEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionAssociatedItemConstraintsEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionAssociatedItemConstraintsEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionAssociatedItemConstraintsEmptyPtr<'db> {
@@ -19580,7 +19471,7 @@ impl<'db> From<OptionAssociatedItemConstraintsEmptyPtr<'db>> for SyntaxStablePtr
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionAssociatedItemConstraintsEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionAssociatedItemConstraintsEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> =
@@ -19625,12 +19516,12 @@ impl<'db> TypedSyntaxNode<'db> for OptionAssociatedItemConstraintsEmpty<'db> {
         OptionAssociatedItemConstraintsEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionWrappedGenericParamList<'db> {
     Empty(OptionWrappedGenericParamListEmpty<'db>),
     WrappedGenericParamList(WrappedGenericParamList<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionWrappedGenericParamListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionWrappedGenericParamListPtr<'db> {
     type SyntaxNode = OptionWrappedGenericParamList<'db>;
@@ -19670,7 +19561,7 @@ impl<'db> From<WrappedGenericParamListGreen<'db>> for OptionWrappedGenericParamL
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionWrappedGenericParamListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionWrappedGenericParamList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -19731,7 +19622,7 @@ impl<'db> OptionWrappedGenericParamList<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionWrappedGenericParamListEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -19749,7 +19640,7 @@ impl<'db> OptionWrappedGenericParamListEmpty<'db> {
     }
 }
 impl<'db> OptionWrappedGenericParamListEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionWrappedGenericParamListEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionWrappedGenericParamListEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionWrappedGenericParamListEmptyPtr<'db> {
@@ -19766,7 +19657,7 @@ impl<'db> From<OptionWrappedGenericParamListEmptyPtr<'db>> for SyntaxStablePtrId
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionWrappedGenericParamListEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionWrappedGenericParamListEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionWrappedGenericParamListEmpty);
@@ -19810,7 +19701,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionWrappedGenericParamListEmpty<'db> {
         OptionWrappedGenericParamListEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct WrappedGenericParamList<'db> {
     node: SyntaxNode<'db>,
 }
@@ -19846,7 +19737,7 @@ impl<'db> WrappedGenericParamList<'db> {
         TerminalGT::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct WrappedGenericParamListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> WrappedGenericParamListPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for WrappedGenericParamListPtr<'db> {
@@ -19863,7 +19754,7 @@ impl<'db> From<WrappedGenericParamListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct WrappedGenericParamListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for WrappedGenericParamList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedGenericParamList);
@@ -19912,7 +19803,7 @@ impl<'db> TypedSyntaxNode<'db> for WrappedGenericParamList<'db> {
         WrappedGenericParamListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericParamList<'db>(ElementList<'db, GenericParam<'db>, 2>);
 impl<'db> Deref for GenericParamList<'db> {
     type Target = ElementList<'db, GenericParam<'db>, 2>;
@@ -19938,7 +19829,7 @@ impl<'db> GenericParamList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericParamListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for GenericParamListPtr<'db> {
     type SyntaxNode = GenericParamList<'db>;
@@ -19954,7 +19845,7 @@ impl<'db> From<GenericParamListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub enum GenericParamListElementOrSeparatorGreen<'db> {
     Separator(TerminalCommaGreen<'db>),
     Element(GenericParamGreen<'db>),
@@ -19977,7 +19868,7 @@ impl<'db> GenericParamListElementOrSeparatorGreen<'db> {
         }
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericParamListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericParamList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamList);
@@ -20012,7 +19903,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamList<'db> {
         GenericParamListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum GenericParam<'db> {
     Type(GenericParamType<'db>),
     Const(GenericParamConst<'db>),
@@ -20020,7 +19911,7 @@ pub enum GenericParam<'db> {
     ImplAnonymous(GenericParamImplAnonymous<'db>),
     NegativeImpl(GenericParamNegativeImpl<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericParamPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for GenericParamPtr<'db> {
     type SyntaxNode = GenericParam<'db>;
@@ -20086,7 +19977,7 @@ impl<'db> From<GenericParamNegativeImplGreen<'db>> for GenericParamGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericParamGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericParam<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -20163,7 +20054,7 @@ impl<'db> GenericParam<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericParamType<'db> {
     node: SyntaxNode<'db>,
 }
@@ -20189,7 +20080,7 @@ impl<'db> GenericParamType<'db> {
         TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericParamTypePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericParamTypePtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -20210,7 +20101,7 @@ impl<'db> From<GenericParamTypePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericParamTypeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericParamType<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamType);
@@ -20254,7 +20145,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamType<'db> {
         GenericParamTypePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericParamConst<'db> {
     node: SyntaxNode<'db>,
 }
@@ -20295,7 +20186,7 @@ impl<'db> GenericParamConst<'db> {
         Expr::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericParamConstPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericParamConstPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -20316,7 +20207,7 @@ impl<'db> From<GenericParamConstPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericParamConstGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericParamConst<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamConst);
@@ -20366,7 +20257,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamConst<'db> {
         GenericParamConstPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericParamImplNamed<'db> {
     node: SyntaxNode<'db>,
 }
@@ -20412,7 +20303,7 @@ impl<'db> GenericParamImplNamed<'db> {
         OptionAssociatedItemConstraints::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericParamImplNamedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericParamImplNamedPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -20433,7 +20324,7 @@ impl<'db> From<GenericParamImplNamedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericParamImplNamedGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericParamImplNamed<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamImplNamed);
@@ -20484,7 +20375,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamImplNamed<'db> {
         GenericParamImplNamedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericParamImplAnonymous<'db> {
     node: SyntaxNode<'db>,
 }
@@ -20520,7 +20411,7 @@ impl<'db> GenericParamImplAnonymous<'db> {
         OptionAssociatedItemConstraints::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericParamImplAnonymousPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericParamImplAnonymousPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for GenericParamImplAnonymousPtr<'db> {
@@ -20537,7 +20428,7 @@ impl<'db> From<GenericParamImplAnonymousPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericParamImplAnonymousGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericParamImplAnonymous<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamImplAnonymous);
@@ -20586,7 +20477,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamImplAnonymous<'db> {
         GenericParamImplAnonymousPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct GenericParamNegativeImpl<'db> {
     node: SyntaxNode<'db>,
 }
@@ -20617,7 +20508,7 @@ impl<'db> GenericParamNegativeImpl<'db> {
         ExprPath::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct GenericParamNegativeImplPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericParamNegativeImplPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for GenericParamNegativeImplPtr<'db> {
@@ -20634,7 +20525,7 @@ impl<'db> From<GenericParamNegativeImplPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct GenericParamNegativeImplGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for GenericParamNegativeImpl<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamNegativeImpl);
@@ -20678,7 +20569,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericParamNegativeImpl<'db> {
         GenericParamNegativeImplPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenList<'db>(ElementList<'db, TokenTree<'db>, 1>);
 impl<'db> Deref for TokenList<'db> {
     type Target = ElementList<'db, TokenTree<'db>, 1>;
@@ -20704,7 +20595,7 @@ impl<'db> TokenList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenListPtr<'db> {
     type SyntaxNode = TokenList<'db>;
@@ -20720,7 +20611,7 @@ impl<'db> From<TokenListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TokenList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenList);
@@ -20755,7 +20646,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenList<'db> {
         TokenListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenTreeLeaf<'db> {
     node: SyntaxNode<'db>,
 }
@@ -20778,7 +20669,7 @@ impl<'db> TokenTreeLeaf<'db> {
         TokenNode::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenTreeLeafPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TokenTreeLeafPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TokenTreeLeafPtr<'db> {
@@ -20795,7 +20686,7 @@ impl<'db> From<TokenTreeLeafPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenTreeLeafGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TokenTreeLeaf<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeLeaf);
@@ -20839,7 +20730,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeLeaf<'db> {
         TokenTreeLeafPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenTreeNode<'db> {
     node: SyntaxNode<'db>,
 }
@@ -20865,7 +20756,7 @@ impl<'db> TokenTreeNode<'db> {
         WrappedTokenTree::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenTreeNodePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TokenTreeNodePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TokenTreeNodePtr<'db> {
@@ -20882,7 +20773,7 @@ impl<'db> From<TokenTreeNodePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenTreeNodeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TokenTreeNode<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeNode);
@@ -20926,7 +20817,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeNode<'db> {
         TokenTreeNodePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenTreeRepetition<'db> {
     node: SyntaxNode<'db>,
 }
@@ -20977,7 +20868,7 @@ impl<'db> TokenTreeRepetition<'db> {
         MacroRepetitionOperator::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenTreeRepetitionPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TokenTreeRepetitionPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TokenTreeRepetitionPtr<'db> {
@@ -20994,7 +20885,7 @@ impl<'db> From<TokenTreeRepetitionPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenTreeRepetitionGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TokenTreeRepetition<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeRepetition);
@@ -21046,7 +20937,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeRepetition<'db> {
         TokenTreeRepetitionPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenTreeParam<'db> {
     node: SyntaxNode<'db>,
 }
@@ -21077,7 +20968,7 @@ impl<'db> TokenTreeParam<'db> {
         TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenTreeParamPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TokenTreeParamPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TokenTreeParamPtr<'db> {
@@ -21094,7 +20985,7 @@ impl<'db> From<TokenTreeParamPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenTreeParamGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TokenTreeParam<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeParam);
@@ -21139,7 +21030,86 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeParam<'db> {
         TokenTreeParamPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct TokenTreeMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> TokenTreeMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> TokenTreeMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        TokenTreeMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::TokenTreeMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> TokenTreeMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct TokenTreeMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> TokenTreeMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for TokenTreeMissingPtr<'db> {
+    type SyntaxNode = TokenTreeMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> TokenTreeMissing<'db> {
+        TokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<TokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: TokenTreeMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct TokenTreeMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeMissing);
+    type StablePtr = TokenTreeMissingPtr<'db>;
+    type Green = TokenTreeMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        TokenTreeMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::TokenTreeMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TokenTreeMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TokenTreeMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::TokenTreeMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        TokenTreeMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum TokenTree<'db> {
     Token(TokenTreeLeaf<'db>),
     Subtree(TokenTreeNode<'db>),
@@ -21147,7 +21117,7 @@ pub enum TokenTree<'db> {
     Param(TokenTreeParam<'db>),
     Missing(TokenTreeMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenTreePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenTreePtr<'db> {
     type SyntaxNode = TokenTree<'db>;
@@ -21213,7 +21183,7 @@ impl<'db> From<TokenTreeMissingGreen<'db>> for TokenTreeGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenTreeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TokenTree<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -21290,51 +21260,51 @@ impl<'db> TokenTree<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct TokenTreeMissing<'db> {
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct WrappedTokenTreeMissing<'db> {
     node: SyntaxNode<'db>,
 }
-impl<'db> TokenTreeMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> TokenTreeMissingGreen<'db> {
+impl<'db> WrappedTokenTreeMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> WrappedTokenTreeMissingGreen<'db> {
         let children = [];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        TokenTreeMissingGreen(
+        WrappedTokenTreeMissingGreen(
             GreenNode {
-                kind: SyntaxKind::TokenTreeMissing,
+                kind: SyntaxKind::WrappedTokenTreeMissing,
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
         )
     }
 }
-impl<'db> TokenTreeMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct TokenTreeMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> TokenTreeMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for TokenTreeMissingPtr<'db> {
-    type SyntaxNode = TokenTreeMissing<'db>;
+impl<'db> WrappedTokenTreeMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct WrappedTokenTreeMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> WrappedTokenTreeMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for WrappedTokenTreeMissingPtr<'db> {
+    type SyntaxNode = WrappedTokenTreeMissing<'db>;
     fn untyped(self) -> SyntaxStablePtrId<'db> {
         self.0
     }
-    fn lookup(&self, db: &'db dyn Database) -> TokenTreeMissing<'db> {
-        TokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
+    fn lookup(&self, db: &'db dyn Database) -> WrappedTokenTreeMissing<'db> {
+        WrappedTokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
     }
 }
-impl<'db> From<TokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: TokenTreeMissingPtr<'db>) -> Self {
+impl<'db> From<WrappedTokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: WrappedTokenTreeMissingPtr<'db>) -> Self {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct TokenTreeMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTreeMissing);
-    type StablePtr = TokenTreeMissingPtr<'db>;
-    type Green = TokenTreeMissingGreen<'db>;
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct WrappedTokenTreeMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for WrappedTokenTreeMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedTokenTreeMissing);
+    type StablePtr = WrappedTokenTreeMissingPtr<'db>;
+    type Green = WrappedTokenTreeMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
-        TokenTreeMissingGreen(
+        WrappedTokenTreeMissingGreen(
             GreenNode {
-                kind: SyntaxKind::TokenTreeMissing,
+                kind: SyntaxKind::WrappedTokenTreeMissing,
                 details: GreenNodeDetails::Node {
                     children: [].into(),
                     width: TextWidth::default(),
@@ -21347,16 +21317,16 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::TokenTreeMissing,
+            SyntaxKind::WrappedTokenTreeMissing,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::TokenTreeMissing
+            SyntaxKind::WrappedTokenTreeMissing
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::TokenTreeMissing {
+        if kind == SyntaxKind::WrappedTokenTreeMissing {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -21366,17 +21336,17 @@ impl<'db> TypedSyntaxNode<'db> for TokenTreeMissing<'db> {
         self.node
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        TokenTreeMissingPtr(self.node.stable_ptr(db))
+        WrappedTokenTreeMissingPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum WrappedTokenTree<'db> {
     Parenthesized(ParenthesizedTokenTree<'db>),
     Braced(BracedTokenTree<'db>),
     Bracketed(BracketedTokenTree<'db>),
     Missing(WrappedTokenTreeMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct WrappedTokenTreePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for WrappedTokenTreePtr<'db> {
     type SyntaxNode = WrappedTokenTree<'db>;
@@ -21432,7 +21402,7 @@ impl<'db> From<WrappedTokenTreeMissingGreen<'db>> for WrappedTokenTreeGreen<'db>
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct WrappedTokenTreeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for WrappedTokenTree<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -21504,86 +21474,7 @@ impl<'db> WrappedTokenTree<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct WrappedTokenTreeMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> WrappedTokenTreeMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> WrappedTokenTreeMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        WrappedTokenTreeMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::WrappedTokenTreeMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> WrappedTokenTreeMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct WrappedTokenTreeMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> WrappedTokenTreeMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for WrappedTokenTreeMissingPtr<'db> {
-    type SyntaxNode = WrappedTokenTreeMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> WrappedTokenTreeMissing<'db> {
-        WrappedTokenTreeMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<WrappedTokenTreeMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: WrappedTokenTreeMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct WrappedTokenTreeMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for WrappedTokenTreeMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedTokenTreeMissing);
-    type StablePtr = WrappedTokenTreeMissingPtr<'db>;
-    type Green = WrappedTokenTreeMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        WrappedTokenTreeMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::WrappedTokenTreeMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::WrappedTokenTreeMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::WrappedTokenTreeMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::WrappedTokenTreeMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        WrappedTokenTreeMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ParenthesizedTokenTree<'db> {
     node: SyntaxNode<'db>,
 }
@@ -21619,7 +21510,7 @@ impl<'db> ParenthesizedTokenTree<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ParenthesizedTokenTreePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ParenthesizedTokenTreePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ParenthesizedTokenTreePtr<'db> {
@@ -21636,7 +21527,7 @@ impl<'db> From<ParenthesizedTokenTreePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ParenthesizedTokenTreeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ParenthesizedTokenTree<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ParenthesizedTokenTree);
@@ -21685,7 +21576,7 @@ impl<'db> TypedSyntaxNode<'db> for ParenthesizedTokenTree<'db> {
         ParenthesizedTokenTreePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct BracedTokenTree<'db> {
     node: SyntaxNode<'db>,
 }
@@ -21721,7 +21612,7 @@ impl<'db> BracedTokenTree<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct BracedTokenTreePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> BracedTokenTreePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for BracedTokenTreePtr<'db> {
@@ -21738,7 +21629,7 @@ impl<'db> From<BracedTokenTreePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct BracedTokenTreeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for BracedTokenTree<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::BracedTokenTree);
@@ -21787,7 +21678,7 @@ impl<'db> TypedSyntaxNode<'db> for BracedTokenTree<'db> {
         BracedTokenTreePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct BracketedTokenTree<'db> {
     node: SyntaxNode<'db>,
 }
@@ -21823,7 +21714,7 @@ impl<'db> BracketedTokenTree<'db> {
         TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct BracketedTokenTreePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> BracketedTokenTreePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for BracketedTokenTreePtr<'db> {
@@ -21840,7 +21731,7 @@ impl<'db> From<BracketedTokenTreePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct BracketedTokenTreeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for BracketedTokenTree<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::BracketedTokenTree);
@@ -21889,7 +21780,7 @@ impl<'db> TypedSyntaxNode<'db> for BracketedTokenTree<'db> {
         BracketedTokenTreePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ExprInlineMacro<'db> {
     node: SyntaxNode<'db>,
 }
@@ -21925,7 +21816,7 @@ impl<'db> ExprInlineMacro<'db> {
         TokenTreeNode::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ExprInlineMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprInlineMacroPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ExprInlineMacroPtr<'db> {
@@ -21942,7 +21833,7 @@ impl<'db> From<ExprInlineMacroPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ExprInlineMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ExprInlineMacro<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprInlineMacro);
@@ -21991,7 +21882,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprInlineMacro<'db> {
         ExprInlineMacroPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemInlineMacro<'db> {
     node: SyntaxNode<'db>,
 }
@@ -22037,7 +21928,7 @@ impl<'db> ItemInlineMacro<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemInlineMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemInlineMacroPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ItemInlineMacroPtr<'db> {
@@ -22054,7 +21945,7 @@ impl<'db> From<ItemInlineMacroPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemInlineMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemInlineMacro<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemInlineMacro);
@@ -22105,7 +21996,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemInlineMacro<'db> {
         ItemInlineMacroPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ItemMacroDeclaration<'db> {
     node: SyntaxNode<'db>,
 }
@@ -22162,7 +22053,7 @@ impl<'db> ItemMacroDeclaration<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[6])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ItemMacroDeclarationPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemMacroDeclarationPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
@@ -22183,7 +22074,7 @@ impl<'db> From<ItemMacroDeclarationPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ItemMacroDeclarationGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ItemMacroDeclaration<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemMacroDeclaration);
@@ -22236,7 +22127,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemMacroDeclaration<'db> {
         ItemMacroDeclarationPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MacroRulesList<'db>(ElementList<'db, MacroRule<'db>, 1>);
 impl<'db> Deref for MacroRulesList<'db> {
     type Target = ElementList<'db, MacroRule<'db>, 1>;
@@ -22262,7 +22153,7 @@ impl<'db> MacroRulesList<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MacroRulesListPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MacroRulesListPtr<'db> {
     type SyntaxNode = MacroRulesList<'db>;
@@ -22278,7 +22169,7 @@ impl<'db> From<MacroRulesListPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MacroRulesListGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroRulesList<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRulesList);
@@ -22313,7 +22204,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroRulesList<'db> {
         MacroRulesListPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MacroRule<'db> {
     node: SyntaxNode<'db>,
 }
@@ -22354,7 +22245,7 @@ impl<'db> MacroRule<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[3])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MacroRulePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> MacroRulePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for MacroRulePtr<'db> {
@@ -22371,7 +22262,7 @@ impl<'db> From<MacroRulePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MacroRuleGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroRule<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRule);
@@ -22417,7 +22308,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroRule<'db> {
         MacroRulePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ParamKind<'db> {
     node: SyntaxNode<'db>,
 }
@@ -22448,7 +22339,7 @@ impl<'db> ParamKind<'db> {
         MacroParamKind::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ParamKindPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ParamKindPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ParamKindPtr<'db> {
@@ -22465,7 +22356,7 @@ impl<'db> From<ParamKindPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ParamKindGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ParamKind<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ParamKind);
@@ -22505,12 +22396,12 @@ impl<'db> TypedSyntaxNode<'db> for ParamKind<'db> {
         ParamKindPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionParamKind<'db> {
     Empty(OptionParamKindEmpty<'db>),
     ParamKind(ParamKind<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionParamKindPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionParamKindPtr<'db> {
     type SyntaxNode = OptionParamKind<'db>;
@@ -22546,7 +22437,7 @@ impl<'db> From<ParamKindGreen<'db>> for OptionParamKindGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionParamKindGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionParamKind<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -22597,7 +22488,7 @@ impl<'db> OptionParamKind<'db> {
         matches!(kind, SyntaxKind::OptionParamKindEmpty | SyntaxKind::ParamKind)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionParamKindEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -22615,7 +22506,7 @@ impl<'db> OptionParamKindEmpty<'db> {
     }
 }
 impl<'db> OptionParamKindEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionParamKindEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionParamKindEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionParamKindEmptyPtr<'db> {
@@ -22632,7 +22523,7 @@ impl<'db> From<OptionParamKindEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionParamKindEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionParamKindEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionParamKindEmpty);
@@ -22676,7 +22567,7 @@ impl<'db> TypedSyntaxNode<'db> for OptionParamKindEmpty<'db> {
         OptionParamKindEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MacroParam<'db> {
     node: SyntaxNode<'db>,
 }
@@ -22712,7 +22603,7 @@ impl<'db> MacroParam<'db> {
         OptionParamKind::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MacroParamPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> MacroParamPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for MacroParamPtr<'db> {
@@ -22729,7 +22620,7 @@ impl<'db> From<MacroParamPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MacroParamGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroParam<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroParam);
@@ -22774,7 +22665,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroParam<'db> {
         MacroParamPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MacroRepetition<'db> {
     node: SyntaxNode<'db>,
 }
@@ -22825,7 +22716,7 @@ impl<'db> MacroRepetition<'db> {
         MacroRepetitionOperator::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MacroRepetitionPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> MacroRepetitionPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for MacroRepetitionPtr<'db> {
@@ -22842,7 +22733,7 @@ impl<'db> From<MacroRepetitionPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MacroRepetitionGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroRepetition<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRepetition);
@@ -22894,12 +22785,12 @@ impl<'db> TypedSyntaxNode<'db> for MacroRepetition<'db> {
         MacroRepetitionPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum OptionTerminalComma<'db> {
     Empty(OptionTerminalCommaEmpty<'db>),
     TerminalComma(TerminalComma<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalCommaPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for OptionTerminalCommaPtr<'db> {
     type SyntaxNode = OptionTerminalComma<'db>;
@@ -22935,7 +22826,7 @@ impl<'db> From<TerminalCommaGreen<'db>> for OptionTerminalCommaGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalCommaGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalComma<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -22987,7 +22878,7 @@ impl<'db> OptionTerminalComma<'db> {
         matches!(kind, SyntaxKind::OptionTerminalCommaEmpty | SyntaxKind::TerminalComma)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct OptionTerminalCommaEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -23005,7 +22896,7 @@ impl<'db> OptionTerminalCommaEmpty<'db> {
     }
 }
 impl<'db> OptionTerminalCommaEmpty<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct OptionTerminalCommaEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> OptionTerminalCommaEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for OptionTerminalCommaEmptyPtr<'db> {
@@ -23022,7 +22913,7 @@ impl<'db> From<OptionTerminalCommaEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct OptionTerminalCommaEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for OptionTerminalCommaEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalCommaEmpty);
@@ -23066,14 +22957,93 @@ impl<'db> TypedSyntaxNode<'db> for OptionTerminalCommaEmpty<'db> {
         OptionTerminalCommaEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct MacroRepetitionOperatorMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> MacroRepetitionOperatorMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> MacroRepetitionOperatorMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        MacroRepetitionOperatorMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroRepetitionOperatorMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> MacroRepetitionOperatorMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct MacroRepetitionOperatorMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> MacroRepetitionOperatorMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for MacroRepetitionOperatorMissingPtr<'db> {
+    type SyntaxNode = MacroRepetitionOperatorMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> MacroRepetitionOperatorMissing<'db> {
+        MacroRepetitionOperatorMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<MacroRepetitionOperatorMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: MacroRepetitionOperatorMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct MacroRepetitionOperatorMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperatorMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRepetitionOperatorMissing);
+    type StablePtr = MacroRepetitionOperatorMissingPtr<'db>;
+    type Green = MacroRepetitionOperatorMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        MacroRepetitionOperatorMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroRepetitionOperatorMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroRepetitionOperatorMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroRepetitionOperatorMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroRepetitionOperatorMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        MacroRepetitionOperatorMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MacroRepetitionOperator<'db> {
     ZeroOrOne(TerminalQuestionMark<'db>),
     OneOrMore(TerminalPlus<'db>),
     ZeroOrMore(TerminalMul<'db>),
     Missing(MacroRepetitionOperatorMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MacroRepetitionOperatorPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MacroRepetitionOperatorPtr<'db> {
     type SyntaxNode = MacroRepetitionOperator<'db>;
@@ -23129,7 +23099,7 @@ impl<'db> From<MacroRepetitionOperatorMissingGreen<'db>> for MacroRepetitionOper
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MacroRepetitionOperatorGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperator<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -23201,86 +23171,7 @@ impl<'db> MacroRepetitionOperator<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct MacroRepetitionOperatorMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> MacroRepetitionOperatorMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> MacroRepetitionOperatorMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        MacroRepetitionOperatorMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::MacroRepetitionOperatorMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> MacroRepetitionOperatorMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct MacroRepetitionOperatorMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> MacroRepetitionOperatorMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for MacroRepetitionOperatorMissingPtr<'db> {
-    type SyntaxNode = MacroRepetitionOperatorMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> MacroRepetitionOperatorMissing<'db> {
-        MacroRepetitionOperatorMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<MacroRepetitionOperatorMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: MacroRepetitionOperatorMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct MacroRepetitionOperatorMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for MacroRepetitionOperatorMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroRepetitionOperatorMissing);
-    type StablePtr = MacroRepetitionOperatorMissingPtr<'db>;
-    type Green = MacroRepetitionOperatorMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        MacroRepetitionOperatorMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::MacroRepetitionOperatorMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::MacroRepetitionOperatorMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::MacroRepetitionOperatorMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::MacroRepetitionOperatorMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        MacroRepetitionOperatorMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ParamIdent<'db> {
     node: SyntaxNode<'db>,
 }
@@ -23306,7 +23197,7 @@ impl<'db> ParamIdent<'db> {
         TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ParamIdentPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ParamIdentPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ParamIdentPtr<'db> {
@@ -23323,7 +23214,7 @@ impl<'db> From<ParamIdentPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ParamIdentGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ParamIdent<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ParamIdent);
@@ -23363,7 +23254,7 @@ impl<'db> TypedSyntaxNode<'db> for ParamIdent<'db> {
         ParamIdentPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ParamExpr<'db> {
     node: SyntaxNode<'db>,
 }
@@ -23389,7 +23280,7 @@ impl<'db> ParamExpr<'db> {
         TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ParamExprPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ParamExprPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ParamExprPtr<'db> {
@@ -23406,7 +23297,7 @@ impl<'db> From<ParamExprPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ParamExprGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ParamExpr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ParamExpr);
@@ -23446,13 +23337,92 @@ impl<'db> TypedSyntaxNode<'db> for ParamExpr<'db> {
         ParamExprPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct MacroParamKindMissing<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> MacroParamKindMissing<'db> {
+    pub fn new_green(db: &'db dyn Database) -> MacroParamKindMissingGreen<'db> {
+        let children = [];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        MacroParamKindMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroParamKindMissing,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> MacroParamKindMissing<'db> {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
+pub struct MacroParamKindMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> MacroParamKindMissingPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for MacroParamKindMissingPtr<'db> {
+    type SyntaxNode = MacroParamKindMissing<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> MacroParamKindMissing<'db> {
+        MacroParamKindMissing::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<MacroParamKindMissingPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: MacroParamKindMissingPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct MacroParamKindMissingGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for MacroParamKindMissing<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroParamKindMissing);
+    type StablePtr = MacroParamKindMissingPtr<'db>;
+    type Green = MacroParamKindMissingGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        MacroParamKindMissingGreen(
+            GreenNode {
+                kind: SyntaxKind::MacroParamKindMissing,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::MacroParamKindMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::MacroParamKindMissing
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::MacroParamKindMissing {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        MacroParamKindMissingPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MacroParamKind<'db> {
     Identifier(ParamIdent<'db>),
     Expr(ParamExpr<'db>),
     Missing(MacroParamKindMissing<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MacroParamKindPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MacroParamKindPtr<'db> {
     type SyntaxNode = MacroParamKind<'db>;
@@ -23498,7 +23468,7 @@ impl<'db> From<MacroParamKindMissingGreen<'db>> for MacroParamKindGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MacroParamKindGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroParamKind<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -23557,93 +23527,14 @@ impl<'db> MacroParamKind<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct MacroParamKindMissing<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> MacroParamKindMissing<'db> {
-    pub fn new_green(db: &'db dyn Database) -> MacroParamKindMissingGreen<'db> {
-        let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        MacroParamKindMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::MacroParamKindMissing,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> MacroParamKindMissing<'db> {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct MacroParamKindMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> MacroParamKindMissingPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for MacroParamKindMissingPtr<'db> {
-    type SyntaxNode = MacroParamKindMissing<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> MacroParamKindMissing<'db> {
-        MacroParamKindMissing::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<MacroParamKindMissingPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: MacroParamKindMissingPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct MacroParamKindMissingGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for MacroParamKindMissing<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroParamKindMissing);
-    type StablePtr = MacroParamKindMissingPtr<'db>;
-    type Green = MacroParamKindMissingGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        MacroParamKindMissingGreen(
-            GreenNode {
-                kind: SyntaxKind::MacroParamKindMissing,
-                details: GreenNodeDetails::Node {
-                    children: [].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::MacroParamKindMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::MacroParamKindMissing
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::MacroParamKindMissing {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        MacroParamKindMissingPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum MacroElement<'db> {
     Token(TokenTreeLeaf<'db>),
     Param(MacroParam<'db>),
     Subtree(MacroWrapper<'db>),
     Repetition(MacroRepetition<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MacroElementPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MacroElementPtr<'db> {
     type SyntaxNode = MacroElement<'db>;
@@ -23699,7 +23590,7 @@ impl<'db> From<MacroRepetitionGreen<'db>> for MacroElementGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MacroElementGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroElement<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -23766,7 +23657,7 @@ impl<'db> MacroElement<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MacroElements<'db>(ElementList<'db, MacroElement<'db>, 1>);
 impl<'db> Deref for MacroElements<'db> {
     type Target = ElementList<'db, MacroElement<'db>, 1>;
@@ -23792,7 +23683,7 @@ impl<'db> MacroElements<'db> {
         )
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MacroElementsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for MacroElementsPtr<'db> {
     type SyntaxNode = MacroElements<'db>;
@@ -23808,7 +23699,7 @@ impl<'db> From<MacroElementsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MacroElementsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroElements<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroElements);
@@ -23843,7 +23734,7 @@ impl<'db> TypedSyntaxNode<'db> for MacroElements<'db> {
         MacroElementsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct MacroWrapper<'db> {
     node: SyntaxNode<'db>,
 }
@@ -23869,7 +23760,7 @@ impl<'db> MacroWrapper<'db> {
         WrappedMacro::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct MacroWrapperPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> MacroWrapperPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for MacroWrapperPtr<'db> {
@@ -23886,7 +23777,7 @@ impl<'db> From<MacroWrapperPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct MacroWrapperGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for MacroWrapper<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MacroWrapper);
@@ -23926,13 +23817,13 @@ impl<'db> TypedSyntaxNode<'db> for MacroWrapper<'db> {
         MacroWrapperPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum WrappedMacro<'db> {
     Parenthesized(ParenthesizedMacro<'db>),
     Braced(BracedMacro<'db>),
     Bracketed(BracketedMacro<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct WrappedMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for WrappedMacroPtr<'db> {
     type SyntaxNode = WrappedMacro<'db>;
@@ -23978,7 +23869,7 @@ impl<'db> From<BracketedMacroGreen<'db>> for WrappedMacroGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct WrappedMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for WrappedMacro<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -24037,7 +23928,7 @@ impl<'db> WrappedMacro<'db> {
         )
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct ParenthesizedMacro<'db> {
     node: SyntaxNode<'db>,
 }
@@ -24073,7 +23964,7 @@ impl<'db> ParenthesizedMacro<'db> {
         TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct ParenthesizedMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ParenthesizedMacroPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for ParenthesizedMacroPtr<'db> {
@@ -24090,7 +23981,7 @@ impl<'db> From<ParenthesizedMacroPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct ParenthesizedMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for ParenthesizedMacro<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ParenthesizedMacro);
@@ -24139,7 +24030,7 @@ impl<'db> TypedSyntaxNode<'db> for ParenthesizedMacro<'db> {
         ParenthesizedMacroPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct BracedMacro<'db> {
     node: SyntaxNode<'db>,
 }
@@ -24175,7 +24066,7 @@ impl<'db> BracedMacro<'db> {
         TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct BracedMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> BracedMacroPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for BracedMacroPtr<'db> {
@@ -24192,7 +24083,7 @@ impl<'db> From<BracedMacroPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct BracedMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for BracedMacro<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::BracedMacro);
@@ -24237,7 +24128,7 @@ impl<'db> TypedSyntaxNode<'db> for BracedMacro<'db> {
         BracedMacroPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct BracketedMacro<'db> {
     node: SyntaxNode<'db>,
 }
@@ -24273,7 +24164,7 @@ impl<'db> BracketedMacro<'db> {
         TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct BracketedMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> BracketedMacroPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for BracketedMacroPtr<'db> {
@@ -24290,7 +24181,7 @@ impl<'db> From<BracketedMacroPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct BracketedMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for BracketedMacro<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::BracketedMacro);
@@ -24339,7 +24230,7 @@ impl<'db> TypedSyntaxNode<'db> for BracketedMacro<'db> {
         BracketedMacroPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct LegacyExprInlineMacro<'db> {
     node: SyntaxNode<'db>,
 }
@@ -24375,7 +24266,7 @@ impl<'db> LegacyExprInlineMacro<'db> {
         WrappedArgList::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct LegacyExprInlineMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> LegacyExprInlineMacroPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for LegacyExprInlineMacroPtr<'db> {
@@ -24392,7 +24283,7 @@ impl<'db> From<LegacyExprInlineMacroPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct LegacyExprInlineMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for LegacyExprInlineMacro<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::LegacyExprInlineMacro);
@@ -24441,7 +24332,7 @@ impl<'db> TypedSyntaxNode<'db> for LegacyExprInlineMacro<'db> {
         LegacyExprInlineMacroPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct LegacyItemInlineMacro<'db> {
     node: SyntaxNode<'db>,
 }
@@ -24487,7 +24378,7 @@ impl<'db> LegacyItemInlineMacro<'db> {
         TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct LegacyItemInlineMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> LegacyItemInlineMacroPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for LegacyItemInlineMacroPtr<'db> {
@@ -24504,7 +24395,7 @@ impl<'db> From<LegacyItemInlineMacroPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct LegacyItemInlineMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for LegacyItemInlineMacro<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::LegacyItemInlineMacro);
@@ -24555,7 +24446,7 @@ impl<'db> TypedSyntaxNode<'db> for LegacyItemInlineMacro<'db> {
         LegacyItemInlineMacroPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TriviumSkippedNode<'db> {
     node: SyntaxNode<'db>,
 }
@@ -24581,7 +24472,7 @@ impl<'db> TriviumSkippedNode<'db> {
         SkippedNode::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TriviumSkippedNodePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TriviumSkippedNodePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TriviumSkippedNodePtr<'db> {
@@ -24598,7 +24489,7 @@ impl<'db> From<TriviumSkippedNodePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TriviumSkippedNodeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TriviumSkippedNode<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TriviumSkippedNode);
@@ -24642,13 +24533,13 @@ impl<'db> TypedSyntaxNode<'db> for TriviumSkippedNode<'db> {
         TriviumSkippedNodePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum SkippedNode<'db> {
     AttributeList(AttributeList<'db>),
     VisibilityPub(VisibilityPub<'db>),
     ExprPath(ExprPath<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct SkippedNodePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for SkippedNodePtr<'db> {
     type SyntaxNode = SkippedNode<'db>;
@@ -24694,7 +24585,7 @@ impl<'db> From<ExprPathGreen<'db>> for SkippedNodeGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct SkippedNodeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for SkippedNode<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
@@ -24748,7 +24639,7 @@ impl<'db> SkippedNode<'db> {
         matches!(kind, SyntaxKind::AttributeList | SyntaxKind::VisibilityPub | SyntaxKind::ExprPath)
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenIdentifier<'db> {
     node: SyntaxNode<'db>,
 }
@@ -24763,7 +24654,7 @@ impl<'db> Token<'db> for TokenIdentifier<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenIdentifierPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenIdentifierPtr<'db> {
     type SyntaxNode = TokenIdentifier<'db>;
@@ -24779,7 +24670,7 @@ impl<'db> From<TokenIdentifierPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenIdentifierGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenIdentifierGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -24800,6 +24691,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenIdentifier | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -24808,6 +24700,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenIdentifier | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -24820,7 +24715,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
         TokenIdentifierPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalIdentifier<'db> {
     node: SyntaxNode<'db>,
 }
@@ -24861,7 +24756,7 @@ impl<'db> TerminalIdentifier<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalIdentifierPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalIdentifierPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalIdentifierPtr<'db> {
@@ -24878,7 +24773,7 @@ impl<'db> From<TerminalIdentifierPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalIdentifierGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalIdentifier<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalIdentifier);
@@ -24927,7 +24822,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIdentifier<'db> {
         TerminalIdentifierPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenLiteralNumber<'db> {
     node: SyntaxNode<'db>,
 }
@@ -24945,7 +24840,7 @@ impl<'db> Token<'db> for TokenLiteralNumber<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenLiteralNumberPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenLiteralNumberPtr<'db> {
     type SyntaxNode = TokenLiteralNumber<'db>;
@@ -24961,7 +24856,7 @@ impl<'db> From<TokenLiteralNumberPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenLiteralNumberGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLiteralNumberGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -24982,6 +24877,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLiteralNumber | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -24991,6 +24887,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLiteralNumber | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25003,7 +24902,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
         TokenLiteralNumberPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalLiteralNumber<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25044,7 +24943,7 @@ impl<'db> TerminalLiteralNumber<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalLiteralNumberPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalLiteralNumberPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalLiteralNumberPtr<'db> {
@@ -25061,7 +24960,7 @@ impl<'db> From<TerminalLiteralNumberPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalLiteralNumberGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLiteralNumber<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLiteralNumber);
@@ -25110,7 +25009,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLiteralNumber<'db> {
         TerminalLiteralNumberPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenShortString<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25128,7 +25027,7 @@ impl<'db> Token<'db> for TokenShortString<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenShortStringPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenShortStringPtr<'db> {
     type SyntaxNode = TokenShortString<'db>;
@@ -25144,7 +25043,7 @@ impl<'db> From<TokenShortStringPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenShortStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenShortStringGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -25165,6 +25064,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenShortString | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25173,6 +25073,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenShortString | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25185,7 +25088,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
         TokenShortStringPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalShortString<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25226,7 +25129,7 @@ impl<'db> TerminalShortString<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalShortStringPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalShortStringPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalShortStringPtr<'db> {
@@ -25243,7 +25146,7 @@ impl<'db> From<TerminalShortStringPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalShortStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalShortString<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalShortString);
@@ -25292,7 +25195,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalShortString<'db> {
         TerminalShortStringPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenString<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25307,7 +25210,7 @@ impl<'db> Token<'db> for TokenString<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenStringPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenStringPtr<'db> {
     type SyntaxNode = TokenString<'db>;
@@ -25323,7 +25226,7 @@ impl<'db> From<TokenStringPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenStringGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -25344,6 +25247,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenString | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25352,6 +25256,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenString | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25364,7 +25271,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
         TokenStringPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalString<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25405,7 +25312,7 @@ impl<'db> TerminalString<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalStringPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalStringPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalStringPtr<'db> {
@@ -25422,7 +25329,7 @@ impl<'db> From<TerminalStringPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalString<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalString);
@@ -25471,7 +25378,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalString<'db> {
         TerminalStringPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenAs<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25486,7 +25393,7 @@ impl<'db> Token<'db> for TokenAs<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenAsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenAsPtr<'db> {
     type SyntaxNode = TokenAs<'db>;
@@ -25502,7 +25409,7 @@ impl<'db> From<TokenAsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenAsGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAsGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -25523,6 +25430,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenAs | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25531,6 +25439,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenAs | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25543,7 +25454,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
         TokenAsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalAs<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25584,7 +25495,7 @@ impl<'db> TerminalAs<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalAsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalAsPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalAsPtr<'db> {
@@ -25601,7 +25512,7 @@ impl<'db> From<TerminalAsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalAsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalAs<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAs);
@@ -25646,7 +25557,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAs<'db> {
         TerminalAsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenConst<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25661,7 +25572,7 @@ impl<'db> Token<'db> for TokenConst<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenConstPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenConstPtr<'db> {
     type SyntaxNode = TokenConst<'db>;
@@ -25677,7 +25588,7 @@ impl<'db> From<TokenConstPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenConstGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenConstGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -25698,6 +25609,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenConst | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25706,6 +25618,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenConst | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25718,7 +25633,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
         TokenConstPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalConst<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25759,7 +25674,7 @@ impl<'db> TerminalConst<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalConstPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalConstPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalConstPtr<'db> {
@@ -25776,7 +25691,7 @@ impl<'db> From<TerminalConstPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalConstGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalConst<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalConst);
@@ -25825,7 +25740,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalConst<'db> {
         TerminalConstPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenElse<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25840,7 +25755,7 @@ impl<'db> Token<'db> for TokenElse<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenElsePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenElsePtr<'db> {
     type SyntaxNode = TokenElse<'db>;
@@ -25856,7 +25771,7 @@ impl<'db> From<TokenElsePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenElseGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenElseGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -25877,6 +25792,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenElse | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -25885,6 +25801,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenElse | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -25897,7 +25816,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
         TokenElsePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalElse<'db> {
     node: SyntaxNode<'db>,
 }
@@ -25938,7 +25857,7 @@ impl<'db> TerminalElse<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalElsePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalElsePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalElsePtr<'db> {
@@ -25955,7 +25874,7 @@ impl<'db> From<TerminalElsePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalElseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalElse<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalElse);
@@ -26000,7 +25919,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalElse<'db> {
         TerminalElsePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenEnum<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26015,7 +25934,7 @@ impl<'db> Token<'db> for TokenEnum<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenEnumPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenEnumPtr<'db> {
     type SyntaxNode = TokenEnum<'db>;
@@ -26031,7 +25950,7 @@ impl<'db> From<TokenEnumPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenEnumGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEnumGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26052,6 +25971,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEnum | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26060,6 +25980,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEnum | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26072,7 +25995,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
         TokenEnumPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalEnum<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26113,7 +26036,7 @@ impl<'db> TerminalEnum<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalEnumPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalEnumPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalEnumPtr<'db> {
@@ -26130,7 +26053,7 @@ impl<'db> From<TerminalEnumPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalEnumGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEnum<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEnum);
@@ -26175,7 +26098,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEnum<'db> {
         TerminalEnumPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenExtern<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26190,7 +26113,7 @@ impl<'db> Token<'db> for TokenExtern<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenExternPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenExternPtr<'db> {
     type SyntaxNode = TokenExtern<'db>;
@@ -26206,7 +26129,7 @@ impl<'db> From<TokenExternPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenExternGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenExternGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26227,6 +26150,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenExtern | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26235,6 +26159,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenExtern | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26247,7 +26174,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
         TokenExternPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalExtern<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26288,7 +26215,7 @@ impl<'db> TerminalExtern<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalExternPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalExternPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalExternPtr<'db> {
@@ -26305,7 +26232,7 @@ impl<'db> From<TerminalExternPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalExternGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalExtern<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalExtern);
@@ -26354,7 +26281,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalExtern<'db> {
         TerminalExternPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenFalse<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26369,7 +26296,7 @@ impl<'db> Token<'db> for TokenFalse<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenFalsePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenFalsePtr<'db> {
     type SyntaxNode = TokenFalse<'db>;
@@ -26385,7 +26312,7 @@ impl<'db> From<TokenFalsePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenFalseGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenFalseGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26406,6 +26333,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenFalse | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26414,6 +26342,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenFalse | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26426,7 +26357,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
         TokenFalsePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalFalse<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26467,7 +26398,7 @@ impl<'db> TerminalFalse<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalFalsePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalFalsePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalFalsePtr<'db> {
@@ -26484,7 +26415,7 @@ impl<'db> From<TerminalFalsePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalFalseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalFalse<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFalse);
@@ -26533,7 +26464,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFalse<'db> {
         TerminalFalsePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenFunction<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26548,7 +26479,7 @@ impl<'db> Token<'db> for TokenFunction<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenFunctionPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenFunctionPtr<'db> {
     type SyntaxNode = TokenFunction<'db>;
@@ -26564,7 +26495,7 @@ impl<'db> From<TokenFunctionPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenFunctionGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenFunctionGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26585,6 +26516,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenFunction | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26593,6 +26525,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenFunction | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26605,7 +26540,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
         TokenFunctionPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalFunction<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26646,7 +26581,7 @@ impl<'db> TerminalFunction<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalFunctionPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalFunctionPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalFunctionPtr<'db> {
@@ -26663,7 +26598,7 @@ impl<'db> From<TerminalFunctionPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalFunctionGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalFunction<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFunction);
@@ -26712,7 +26647,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFunction<'db> {
         TerminalFunctionPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenIf<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26727,7 +26662,7 @@ impl<'db> Token<'db> for TokenIf<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenIfPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenIfPtr<'db> {
     type SyntaxNode = TokenIf<'db>;
@@ -26743,7 +26678,7 @@ impl<'db> From<TokenIfPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenIfGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenIfGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26764,6 +26699,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenIf | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26772,6 +26708,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenIf | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26784,7 +26723,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
         TokenIfPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalIf<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26825,7 +26764,7 @@ impl<'db> TerminalIf<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalIfPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalIfPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalIfPtr<'db> {
@@ -26842,7 +26781,7 @@ impl<'db> From<TerminalIfPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalIfGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalIf<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalIf);
@@ -26887,7 +26826,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalIf<'db> {
         TerminalIfPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenWhile<'db> {
     node: SyntaxNode<'db>,
 }
@@ -26902,7 +26841,7 @@ impl<'db> Token<'db> for TokenWhile<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenWhilePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenWhilePtr<'db> {
     type SyntaxNode = TokenWhile<'db>;
@@ -26918,7 +26857,7 @@ impl<'db> From<TokenWhilePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenWhileGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenWhileGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -26939,6 +26878,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenWhile | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -26947,6 +26887,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenWhile | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -26959,7 +26902,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
         TokenWhilePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalWhile<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27000,7 +26943,7 @@ impl<'db> TerminalWhile<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalWhilePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalWhilePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalWhilePtr<'db> {
@@ -27017,7 +26960,7 @@ impl<'db> From<TerminalWhilePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalWhileGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalWhile<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalWhile);
@@ -27066,7 +27009,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalWhile<'db> {
         TerminalWhilePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenFor<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27081,7 +27024,7 @@ impl<'db> Token<'db> for TokenFor<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenForPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenForPtr<'db> {
     type SyntaxNode = TokenFor<'db>;
@@ -27097,7 +27040,7 @@ impl<'db> From<TokenForPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenForGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenForGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27118,6 +27061,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenFor | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27126,6 +27070,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenFor | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27138,7 +27085,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
         TokenForPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalFor<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27179,7 +27126,7 @@ impl<'db> TerminalFor<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalForPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalForPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalForPtr<'db> {
@@ -27196,7 +27143,7 @@ impl<'db> From<TerminalForPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalForGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalFor<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFor);
@@ -27241,7 +27188,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalFor<'db> {
         TerminalForPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenLoop<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27256,7 +27203,7 @@ impl<'db> Token<'db> for TokenLoop<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenLoopPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenLoopPtr<'db> {
     type SyntaxNode = TokenLoop<'db>;
@@ -27272,7 +27219,7 @@ impl<'db> From<TokenLoopPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenLoopGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLoopGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27293,6 +27240,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLoop | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27301,6 +27249,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLoop | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27313,7 +27264,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
         TokenLoopPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalLoop<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27354,7 +27305,7 @@ impl<'db> TerminalLoop<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalLoopPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalLoopPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalLoopPtr<'db> {
@@ -27371,7 +27322,7 @@ impl<'db> From<TerminalLoopPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalLoopGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLoop<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLoop);
@@ -27416,7 +27367,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLoop<'db> {
         TerminalLoopPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenImpl<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27431,7 +27382,7 @@ impl<'db> Token<'db> for TokenImpl<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenImplPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenImplPtr<'db> {
     type SyntaxNode = TokenImpl<'db>;
@@ -27447,7 +27398,7 @@ impl<'db> From<TokenImplPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenImplGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenImplGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27468,6 +27419,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenImpl | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27476,6 +27428,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenImpl | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27488,7 +27443,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
         TokenImplPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalImpl<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27529,7 +27484,7 @@ impl<'db> TerminalImpl<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalImplPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalImplPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalImplPtr<'db> {
@@ -27546,7 +27501,7 @@ impl<'db> From<TerminalImplPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalImplGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalImpl<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalImpl);
@@ -27591,7 +27546,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImpl<'db> {
         TerminalImplPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenImplicits<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27606,7 +27561,7 @@ impl<'db> Token<'db> for TokenImplicits<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenImplicitsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenImplicitsPtr<'db> {
     type SyntaxNode = TokenImplicits<'db>;
@@ -27622,7 +27577,7 @@ impl<'db> From<TokenImplicitsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenImplicitsGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenImplicitsGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27643,6 +27598,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenImplicits | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27651,6 +27607,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenImplicits | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27663,7 +27622,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
         TokenImplicitsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalImplicits<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27704,7 +27663,7 @@ impl<'db> TerminalImplicits<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalImplicitsPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalImplicitsPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalImplicitsPtr<'db> {
@@ -27721,7 +27680,7 @@ impl<'db> From<TerminalImplicitsPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalImplicitsGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalImplicits<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalImplicits);
@@ -27770,7 +27729,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalImplicits<'db> {
         TerminalImplicitsPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenLet<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27785,7 +27744,7 @@ impl<'db> Token<'db> for TokenLet<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenLetPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenLetPtr<'db> {
     type SyntaxNode = TokenLet<'db>;
@@ -27801,7 +27760,7 @@ impl<'db> From<TokenLetPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenLetGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLetGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27822,6 +27781,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLet | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -27830,6 +27790,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLet | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -27842,7 +27805,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
         TokenLetPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalLet<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27883,7 +27846,7 @@ impl<'db> TerminalLet<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalLetPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalLetPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalLetPtr<'db> {
@@ -27900,7 +27863,7 @@ impl<'db> From<TerminalLetPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalLetGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLet<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLet);
@@ -27945,7 +27908,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLet<'db> {
         TerminalLetPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMacro<'db> {
     node: SyntaxNode<'db>,
 }
@@ -27960,7 +27923,7 @@ impl<'db> Token<'db> for TokenMacro<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenMacroPtr<'db> {
     type SyntaxNode = TokenMacro<'db>;
@@ -27976,7 +27939,7 @@ impl<'db> From<TokenMacroPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMacroGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -27997,6 +27960,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMacro | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28005,6 +27969,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMacro | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28017,7 +27984,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
         TokenMacroPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalMacro<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28058,7 +28025,7 @@ impl<'db> TerminalMacro<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalMacroPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalMacroPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalMacroPtr<'db> {
@@ -28075,7 +28042,7 @@ impl<'db> From<TerminalMacroPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMacro<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMacro);
@@ -28124,7 +28091,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMacro<'db> {
         TerminalMacroPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMatch<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28139,7 +28106,7 @@ impl<'db> Token<'db> for TokenMatch<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenMatchPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenMatchPtr<'db> {
     type SyntaxNode = TokenMatch<'db>;
@@ -28155,7 +28122,7 @@ impl<'db> From<TokenMatchPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenMatchGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMatchGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28176,6 +28143,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMatch | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28184,6 +28152,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMatch | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28196,7 +28167,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
         TokenMatchPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalMatch<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28237,7 +28208,7 @@ impl<'db> TerminalMatch<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalMatchPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalMatchPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalMatchPtr<'db> {
@@ -28254,7 +28225,7 @@ impl<'db> From<TerminalMatchPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalMatchGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMatch<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMatch);
@@ -28303,7 +28274,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatch<'db> {
         TerminalMatchPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenModule<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28318,7 +28289,7 @@ impl<'db> Token<'db> for TokenModule<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenModulePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenModulePtr<'db> {
     type SyntaxNode = TokenModule<'db>;
@@ -28334,7 +28305,7 @@ impl<'db> From<TokenModulePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenModuleGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenModuleGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28355,6 +28326,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenModule | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28363,6 +28335,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenModule | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28375,7 +28350,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
         TokenModulePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalModule<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28416,7 +28391,7 @@ impl<'db> TerminalModule<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalModulePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalModulePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalModulePtr<'db> {
@@ -28433,7 +28408,7 @@ impl<'db> From<TerminalModulePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalModuleGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalModule<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalModule);
@@ -28482,7 +28457,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModule<'db> {
         TerminalModulePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMut<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28497,7 +28472,7 @@ impl<'db> Token<'db> for TokenMut<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenMutPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenMutPtr<'db> {
     type SyntaxNode = TokenMut<'db>;
@@ -28513,7 +28488,7 @@ impl<'db> From<TokenMutPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenMutGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMutGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28534,6 +28509,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMut | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28542,6 +28518,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMut | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28554,7 +28533,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
         TokenMutPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalMut<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28595,7 +28574,7 @@ impl<'db> TerminalMut<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalMutPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalMutPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalMutPtr<'db> {
@@ -28612,7 +28591,7 @@ impl<'db> From<TerminalMutPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalMutGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMut<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMut);
@@ -28657,7 +28636,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMut<'db> {
         TerminalMutPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenNoPanic<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28672,7 +28651,7 @@ impl<'db> Token<'db> for TokenNoPanic<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenNoPanicPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenNoPanicPtr<'db> {
     type SyntaxNode = TokenNoPanic<'db>;
@@ -28688,7 +28667,7 @@ impl<'db> From<TokenNoPanicPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenNoPanicGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNoPanicGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28709,6 +28688,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenNoPanic | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28717,6 +28697,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenNoPanic | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28729,7 +28712,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
         TokenNoPanicPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalNoPanic<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28770,7 +28753,7 @@ impl<'db> TerminalNoPanic<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalNoPanicPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalNoPanicPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalNoPanicPtr<'db> {
@@ -28787,7 +28770,7 @@ impl<'db> From<TerminalNoPanicPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalNoPanicGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalNoPanic<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNoPanic);
@@ -28836,7 +28819,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNoPanic<'db> {
         TerminalNoPanicPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenOf<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28851,7 +28834,7 @@ impl<'db> Token<'db> for TokenOf<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenOfPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenOfPtr<'db> {
     type SyntaxNode = TokenOf<'db>;
@@ -28867,7 +28850,7 @@ impl<'db> From<TokenOfPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenOfGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenOfGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -28888,6 +28871,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenOf | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -28896,6 +28880,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenOf | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -28908,7 +28895,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
         TokenOfPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalOf<'db> {
     node: SyntaxNode<'db>,
 }
@@ -28949,7 +28936,7 @@ impl<'db> TerminalOf<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalOfPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalOfPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalOfPtr<'db> {
@@ -28966,7 +28953,7 @@ impl<'db> From<TerminalOfPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalOfGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalOf<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalOf);
@@ -29011,7 +28998,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOf<'db> {
         TerminalOfPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenRef<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29026,7 +29013,7 @@ impl<'db> Token<'db> for TokenRef<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenRefPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenRefPtr<'db> {
     type SyntaxNode = TokenRef<'db>;
@@ -29042,7 +29029,7 @@ impl<'db> From<TokenRefPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenRefGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRefGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29063,6 +29050,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenRef | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29071,6 +29059,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenRef | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29083,7 +29074,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
         TokenRefPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalRef<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29124,7 +29115,7 @@ impl<'db> TerminalRef<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalRefPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalRefPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalRefPtr<'db> {
@@ -29141,7 +29132,7 @@ impl<'db> From<TerminalRefPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalRefGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalRef<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRef);
@@ -29186,7 +29177,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRef<'db> {
         TerminalRefPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenContinue<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29201,7 +29192,7 @@ impl<'db> Token<'db> for TokenContinue<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenContinuePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenContinuePtr<'db> {
     type SyntaxNode = TokenContinue<'db>;
@@ -29217,7 +29208,7 @@ impl<'db> From<TokenContinuePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenContinueGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenContinueGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29238,6 +29229,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenContinue | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29246,6 +29238,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenContinue | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29258,7 +29253,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
         TokenContinuePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalContinue<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29299,7 +29294,7 @@ impl<'db> TerminalContinue<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalContinuePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalContinuePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalContinuePtr<'db> {
@@ -29316,7 +29311,7 @@ impl<'db> From<TerminalContinuePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalContinueGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalContinue<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalContinue);
@@ -29365,7 +29360,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalContinue<'db> {
         TerminalContinuePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenReturn<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29380,7 +29375,7 @@ impl<'db> Token<'db> for TokenReturn<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenReturnPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenReturnPtr<'db> {
     type SyntaxNode = TokenReturn<'db>;
@@ -29396,7 +29391,7 @@ impl<'db> From<TokenReturnPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenReturnGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenReturnGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29417,6 +29412,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenReturn | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29425,6 +29421,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenReturn | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29437,7 +29436,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
         TokenReturnPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalReturn<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29478,7 +29477,7 @@ impl<'db> TerminalReturn<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalReturnPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalReturnPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalReturnPtr<'db> {
@@ -29495,7 +29494,7 @@ impl<'db> From<TerminalReturnPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalReturnGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalReturn<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalReturn);
@@ -29544,7 +29543,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalReturn<'db> {
         TerminalReturnPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenBreak<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29559,7 +29558,7 @@ impl<'db> Token<'db> for TokenBreak<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenBreakPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenBreakPtr<'db> {
     type SyntaxNode = TokenBreak<'db>;
@@ -29575,7 +29574,7 @@ impl<'db> From<TokenBreakPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenBreakGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenBreakGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29596,6 +29595,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenBreak | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29604,6 +29604,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenBreak | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29616,7 +29619,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
         TokenBreakPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalBreak<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29657,7 +29660,7 @@ impl<'db> TerminalBreak<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalBreakPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalBreakPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalBreakPtr<'db> {
@@ -29674,7 +29677,7 @@ impl<'db> From<TerminalBreakPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalBreakGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalBreak<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalBreak);
@@ -29723,7 +29726,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBreak<'db> {
         TerminalBreakPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenStruct<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29738,7 +29741,7 @@ impl<'db> Token<'db> for TokenStruct<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenStructPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenStructPtr<'db> {
     type SyntaxNode = TokenStruct<'db>;
@@ -29754,7 +29757,7 @@ impl<'db> From<TokenStructPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenStructGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenStructGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29775,6 +29778,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenStruct | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29783,6 +29787,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenStruct | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29795,7 +29802,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
         TokenStructPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalStruct<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29836,7 +29843,7 @@ impl<'db> TerminalStruct<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalStructPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalStructPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalStructPtr<'db> {
@@ -29853,7 +29860,7 @@ impl<'db> From<TerminalStructPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalStructGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalStruct<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalStruct);
@@ -29902,7 +29909,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalStruct<'db> {
         TerminalStructPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenTrait<'db> {
     node: SyntaxNode<'db>,
 }
@@ -29917,7 +29924,7 @@ impl<'db> Token<'db> for TokenTrait<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenTraitPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenTraitPtr<'db> {
     type SyntaxNode = TokenTrait<'db>;
@@ -29933,7 +29940,7 @@ impl<'db> From<TokenTraitPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenTraitGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenTraitGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -29954,6 +29961,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenTrait | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -29962,6 +29970,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenTrait | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -29974,7 +29985,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
         TokenTraitPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalTrait<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30015,7 +30026,7 @@ impl<'db> TerminalTrait<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalTraitPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalTraitPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalTraitPtr<'db> {
@@ -30032,7 +30043,7 @@ impl<'db> From<TerminalTraitPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalTraitGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalTrait<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalTrait);
@@ -30081,7 +30092,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrait<'db> {
         TerminalTraitPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenTrue<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30096,7 +30107,7 @@ impl<'db> Token<'db> for TokenTrue<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenTruePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenTruePtr<'db> {
     type SyntaxNode = TokenTrue<'db>;
@@ -30112,7 +30123,7 @@ impl<'db> From<TokenTruePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenTrueGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenTrueGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30133,6 +30144,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenTrue | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30141,6 +30153,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenTrue | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30153,7 +30168,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
         TokenTruePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalTrue<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30194,7 +30209,7 @@ impl<'db> TerminalTrue<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalTruePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalTruePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalTruePtr<'db> {
@@ -30211,7 +30226,7 @@ impl<'db> From<TerminalTruePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalTrueGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalTrue<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalTrue);
@@ -30256,7 +30271,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalTrue<'db> {
         TerminalTruePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenType<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30271,7 +30286,7 @@ impl<'db> Token<'db> for TokenType<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenTypePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenTypePtr<'db> {
     type SyntaxNode = TokenType<'db>;
@@ -30287,7 +30302,7 @@ impl<'db> From<TokenTypePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenTypeGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenTypeGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30308,6 +30323,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenType | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30316,6 +30332,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenType | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30328,7 +30347,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
         TokenTypePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalType<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30369,7 +30388,7 @@ impl<'db> TerminalType<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalTypePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalTypePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalTypePtr<'db> {
@@ -30386,7 +30405,7 @@ impl<'db> From<TerminalTypePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalTypeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalType<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalType);
@@ -30431,7 +30450,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalType<'db> {
         TerminalTypePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenUse<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30446,7 +30465,7 @@ impl<'db> Token<'db> for TokenUse<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenUsePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenUsePtr<'db> {
     type SyntaxNode = TokenUse<'db>;
@@ -30462,7 +30481,7 @@ impl<'db> From<TokenUsePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenUseGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenUseGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30483,6 +30502,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenUse | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30491,6 +30511,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenUse | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30503,7 +30526,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
         TokenUsePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalUse<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30544,7 +30567,7 @@ impl<'db> TerminalUse<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalUsePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalUsePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalUsePtr<'db> {
@@ -30561,7 +30584,7 @@ impl<'db> From<TerminalUsePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalUseGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalUse<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalUse);
@@ -30606,7 +30629,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUse<'db> {
         TerminalUsePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenPub<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30621,7 +30644,7 @@ impl<'db> Token<'db> for TokenPub<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenPubPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenPubPtr<'db> {
     type SyntaxNode = TokenPub<'db>;
@@ -30637,7 +30660,7 @@ impl<'db> From<TokenPubPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenPubGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenPubGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30658,6 +30681,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenPub | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30666,6 +30690,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenPub | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30678,7 +30705,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
         TokenPubPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalPub<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30719,7 +30746,7 @@ impl<'db> TerminalPub<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalPubPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalPubPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalPubPtr<'db> {
@@ -30736,7 +30763,7 @@ impl<'db> From<TerminalPubPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalPubGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalPub<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalPub);
@@ -30781,7 +30808,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPub<'db> {
         TerminalPubPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenAnd<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30796,7 +30823,7 @@ impl<'db> Token<'db> for TokenAnd<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenAndPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenAndPtr<'db> {
     type SyntaxNode = TokenAnd<'db>;
@@ -30812,7 +30839,7 @@ impl<'db> From<TokenAndPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAndGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -30833,6 +30860,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenAnd | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -30841,6 +30869,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenAnd | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -30853,7 +30884,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
         TokenAndPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalAnd<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30894,7 +30925,7 @@ impl<'db> TerminalAnd<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalAndPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalAndPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalAndPtr<'db> {
@@ -30911,7 +30942,7 @@ impl<'db> From<TerminalAndPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalAnd<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAnd);
@@ -30956,7 +30987,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAnd<'db> {
         TerminalAndPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenAndAnd<'db> {
     node: SyntaxNode<'db>,
 }
@@ -30971,7 +31002,7 @@ impl<'db> Token<'db> for TokenAndAnd<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenAndAndPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenAndAndPtr<'db> {
     type SyntaxNode = TokenAndAnd<'db>;
@@ -30987,7 +31018,7 @@ impl<'db> From<TokenAndAndPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenAndAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAndAndGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31008,6 +31039,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenAndAnd | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31016,6 +31048,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenAndAnd | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31028,7 +31063,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
         TokenAndAndPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalAndAnd<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31069,7 +31104,7 @@ impl<'db> TerminalAndAnd<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalAndAndPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalAndAndPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalAndAndPtr<'db> {
@@ -31086,7 +31121,7 @@ impl<'db> From<TerminalAndAndPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalAndAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalAndAnd<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAndAnd);
@@ -31135,7 +31170,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAndAnd<'db> {
         TerminalAndAndPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenArrow<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31150,7 +31185,7 @@ impl<'db> Token<'db> for TokenArrow<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenArrowPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenArrowPtr<'db> {
     type SyntaxNode = TokenArrow<'db>;
@@ -31166,7 +31201,7 @@ impl<'db> From<TokenArrowPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenArrowGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31187,6 +31222,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenArrow | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31195,6 +31231,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenArrow | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31207,7 +31246,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
         TokenArrowPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalArrow<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31248,7 +31287,7 @@ impl<'db> TerminalArrow<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalArrowPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalArrowPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalArrowPtr<'db> {
@@ -31265,7 +31304,7 @@ impl<'db> From<TerminalArrowPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalArrow<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalArrow);
@@ -31314,7 +31353,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalArrow<'db> {
         TerminalArrowPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenAt<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31329,7 +31368,7 @@ impl<'db> Token<'db> for TokenAt<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenAtPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenAtPtr<'db> {
     type SyntaxNode = TokenAt<'db>;
@@ -31345,7 +31384,7 @@ impl<'db> From<TokenAtPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenAtGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAtGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31366,6 +31405,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenAt | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31374,6 +31414,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenAt | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31386,7 +31429,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
         TokenAtPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalAt<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31427,7 +31470,7 @@ impl<'db> TerminalAt<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalAtPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalAtPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalAtPtr<'db> {
@@ -31444,7 +31487,7 @@ impl<'db> From<TerminalAtPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalAtGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalAt<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAt);
@@ -31489,7 +31532,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalAt<'db> {
         TerminalAtPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenBadCharacters<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31507,7 +31550,7 @@ impl<'db> Token<'db> for TokenBadCharacters<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenBadCharactersPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenBadCharactersPtr<'db> {
     type SyntaxNode = TokenBadCharacters<'db>;
@@ -31523,7 +31566,7 @@ impl<'db> From<TokenBadCharactersPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenBadCharactersGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenBadCharactersGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31544,6 +31587,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenBadCharacters | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -31553,6 +31597,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenBadCharacters | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31565,7 +31612,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
         TokenBadCharactersPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalBadCharacters<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31606,7 +31653,7 @@ impl<'db> TerminalBadCharacters<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalBadCharactersPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalBadCharactersPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalBadCharactersPtr<'db> {
@@ -31623,7 +31670,7 @@ impl<'db> From<TerminalBadCharactersPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalBadCharactersGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalBadCharacters<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalBadCharacters);
@@ -31672,7 +31719,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBadCharacters<'db> {
         TerminalBadCharactersPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenColon<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31687,7 +31734,7 @@ impl<'db> Token<'db> for TokenColon<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenColonPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenColonPtr<'db> {
     type SyntaxNode = TokenColon<'db>;
@@ -31703,7 +31750,7 @@ impl<'db> From<TokenColonPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenColonGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31724,6 +31771,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenColon | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31732,6 +31780,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenColon | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31744,7 +31795,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
         TokenColonPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalColon<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31785,7 +31836,7 @@ impl<'db> TerminalColon<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalColonPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalColonPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalColonPtr<'db> {
@@ -31802,7 +31853,7 @@ impl<'db> From<TerminalColonPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalColon<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalColon);
@@ -31851,7 +31902,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColon<'db> {
         TerminalColonPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenColonColon<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31866,7 +31917,7 @@ impl<'db> Token<'db> for TokenColonColon<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenColonColonPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenColonColonPtr<'db> {
     type SyntaxNode = TokenColonColon<'db>;
@@ -31882,7 +31933,7 @@ impl<'db> From<TokenColonColonPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenColonColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenColonColonGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -31903,6 +31954,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenColonColon | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -31911,6 +31963,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenColonColon | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -31923,7 +31978,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
         TokenColonColonPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalColonColon<'db> {
     node: SyntaxNode<'db>,
 }
@@ -31964,7 +32019,7 @@ impl<'db> TerminalColonColon<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalColonColonPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalColonColonPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalColonColonPtr<'db> {
@@ -31981,7 +32036,7 @@ impl<'db> From<TerminalColonColonPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalColonColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalColonColon<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalColonColon);
@@ -32030,7 +32085,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalColonColon<'db> {
         TerminalColonColonPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenComma<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32045,7 +32100,7 @@ impl<'db> Token<'db> for TokenComma<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenCommaPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenCommaPtr<'db> {
     type SyntaxNode = TokenComma<'db>;
@@ -32061,7 +32116,7 @@ impl<'db> From<TokenCommaPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenCommaGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenCommaGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32082,6 +32137,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenComma | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32090,6 +32146,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenComma | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32102,7 +32161,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
         TokenCommaPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalComma<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32143,7 +32202,7 @@ impl<'db> TerminalComma<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalCommaPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalCommaPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalCommaPtr<'db> {
@@ -32160,7 +32219,7 @@ impl<'db> From<TerminalCommaPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalCommaGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalComma<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalComma);
@@ -32209,7 +32268,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalComma<'db> {
         TerminalCommaPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenDiv<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32224,7 +32283,7 @@ impl<'db> Token<'db> for TokenDiv<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenDivPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenDivPtr<'db> {
     type SyntaxNode = TokenDiv<'db>;
@@ -32240,7 +32299,7 @@ impl<'db> From<TokenDivPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenDivGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDivGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32261,6 +32320,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDiv | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32269,6 +32329,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDiv | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32281,7 +32344,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
         TokenDivPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalDiv<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32322,7 +32385,7 @@ impl<'db> TerminalDiv<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalDivPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalDivPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalDivPtr<'db> {
@@ -32339,7 +32402,7 @@ impl<'db> From<TerminalDivPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalDivGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDiv<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDiv);
@@ -32384,7 +32447,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDiv<'db> {
         TerminalDivPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenDivEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32399,7 +32462,7 @@ impl<'db> Token<'db> for TokenDivEq<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenDivEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenDivEqPtr<'db> {
     type SyntaxNode = TokenDivEq<'db>;
@@ -32415,7 +32478,7 @@ impl<'db> From<TokenDivEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenDivEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDivEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32436,6 +32499,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDivEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32444,6 +32508,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDivEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32456,7 +32523,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
         TokenDivEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalDivEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32497,7 +32564,7 @@ impl<'db> TerminalDivEq<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalDivEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalDivEqPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalDivEqPtr<'db> {
@@ -32514,7 +32581,7 @@ impl<'db> From<TerminalDivEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalDivEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDivEq<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDivEq);
@@ -32563,7 +32630,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDivEq<'db> {
         TerminalDivEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenDollar<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32578,7 +32645,7 @@ impl<'db> Token<'db> for TokenDollar<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenDollarPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenDollarPtr<'db> {
     type SyntaxNode = TokenDollar<'db>;
@@ -32594,7 +32661,7 @@ impl<'db> From<TokenDollarPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenDollarGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDollarGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32615,6 +32682,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDollar | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32623,6 +32691,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDollar | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32635,7 +32706,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
         TokenDollarPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalDollar<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32676,7 +32747,7 @@ impl<'db> TerminalDollar<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalDollarPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalDollarPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalDollarPtr<'db> {
@@ -32693,7 +32764,7 @@ impl<'db> From<TerminalDollarPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalDollarGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDollar<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDollar);
@@ -32742,7 +32813,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDollar<'db> {
         TerminalDollarPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenDot<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32757,7 +32828,7 @@ impl<'db> Token<'db> for TokenDot<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenDotPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenDotPtr<'db> {
     type SyntaxNode = TokenDot<'db>;
@@ -32773,7 +32844,7 @@ impl<'db> From<TokenDotPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDotGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32794,6 +32865,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDot | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32802,6 +32874,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDot | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32814,7 +32889,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
         TokenDotPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalDot<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32855,7 +32930,7 @@ impl<'db> TerminalDot<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalDotPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalDotPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalDotPtr<'db> {
@@ -32872,7 +32947,7 @@ impl<'db> From<TerminalDotPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDot<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDot);
@@ -32917,7 +32992,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDot<'db> {
         TerminalDotPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenDotDot<'db> {
     node: SyntaxNode<'db>,
 }
@@ -32932,7 +33007,7 @@ impl<'db> Token<'db> for TokenDotDot<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenDotDotPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenDotDotPtr<'db> {
     type SyntaxNode = TokenDotDot<'db>;
@@ -32948,7 +33023,7 @@ impl<'db> From<TokenDotDotPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenDotDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDotDotGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -32969,6 +33044,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDotDot | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -32977,6 +33053,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDotDot | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -32989,7 +33068,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
         TokenDotDotPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalDotDot<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33030,7 +33109,7 @@ impl<'db> TerminalDotDot<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalDotDotPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalDotDotPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalDotDotPtr<'db> {
@@ -33047,7 +33126,7 @@ impl<'db> From<TerminalDotDotPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalDotDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDotDot<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDotDot);
@@ -33096,7 +33175,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDot<'db> {
         TerminalDotDotPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenDotDotEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33111,7 +33190,7 @@ impl<'db> Token<'db> for TokenDotDotEq<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenDotDotEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenDotDotEqPtr<'db> {
     type SyntaxNode = TokenDotDotEq<'db>;
@@ -33127,7 +33206,7 @@ impl<'db> From<TokenDotDotEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenDotDotEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDotDotEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33148,6 +33227,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenDotDotEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33156,6 +33236,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenDotDotEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33168,7 +33251,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
         TokenDotDotEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalDotDotEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33209,7 +33292,7 @@ impl<'db> TerminalDotDotEq<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalDotDotEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalDotDotEqPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalDotDotEqPtr<'db> {
@@ -33226,7 +33309,7 @@ impl<'db> From<TerminalDotDotEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalDotDotEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalDotDotEq<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDotDotEq);
@@ -33275,7 +33358,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalDotDotEq<'db> {
         TerminalDotDotEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenEndOfFile<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33290,7 +33373,7 @@ impl<'db> Token<'db> for TokenEndOfFile<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenEndOfFilePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenEndOfFilePtr<'db> {
     type SyntaxNode = TokenEndOfFile<'db>;
@@ -33306,7 +33389,7 @@ impl<'db> From<TokenEndOfFilePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenEndOfFileGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEndOfFileGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33327,6 +33410,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEndOfFile | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33335,6 +33419,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEndOfFile | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33347,7 +33434,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
         TokenEndOfFilePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalEndOfFile<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33388,7 +33475,7 @@ impl<'db> TerminalEndOfFile<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalEndOfFilePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalEndOfFilePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalEndOfFilePtr<'db> {
@@ -33405,7 +33492,7 @@ impl<'db> From<TerminalEndOfFilePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalEndOfFileGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEndOfFile<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEndOfFile);
@@ -33454,7 +33541,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEndOfFile<'db> {
         TerminalEndOfFilePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33469,7 +33556,7 @@ impl<'db> Token<'db> for TokenEq<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenEqPtr<'db> {
     type SyntaxNode = TokenEq<'db>;
@@ -33485,7 +33572,7 @@ impl<'db> From<TokenEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33506,6 +33593,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33514,6 +33602,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33526,7 +33617,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
         TokenEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33567,7 +33658,7 @@ impl<'db> TerminalEq<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalEqPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalEqPtr<'db> {
@@ -33584,7 +33675,7 @@ impl<'db> From<TerminalEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEq<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEq);
@@ -33629,7 +33720,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEq<'db> {
         TerminalEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenEqEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33644,7 +33735,7 @@ impl<'db> Token<'db> for TokenEqEq<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenEqEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenEqEqPtr<'db> {
     type SyntaxNode = TokenEqEq<'db>;
@@ -33660,7 +33751,7 @@ impl<'db> From<TokenEqEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenEqEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEqEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33681,6 +33772,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEqEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33689,6 +33781,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEqEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33701,7 +33796,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
         TokenEqEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalEqEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33742,7 +33837,7 @@ impl<'db> TerminalEqEq<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalEqEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalEqEqPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalEqEqPtr<'db> {
@@ -33759,7 +33854,7 @@ impl<'db> From<TerminalEqEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalEqEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEqEq<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEqEq);
@@ -33804,7 +33899,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEqEq<'db> {
         TerminalEqEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenGE<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33819,7 +33914,7 @@ impl<'db> Token<'db> for TokenGE<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenGEPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenGEPtr<'db> {
     type SyntaxNode = TokenGE<'db>;
@@ -33835,7 +33930,7 @@ impl<'db> From<TokenGEPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenGEGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenGEGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -33856,6 +33951,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenGE | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -33864,6 +33960,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenGE | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -33876,7 +33975,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
         TokenGEPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalGE<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33917,7 +34016,7 @@ impl<'db> TerminalGE<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalGEPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalGEPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalGEPtr<'db> {
@@ -33934,7 +34033,7 @@ impl<'db> From<TerminalGEPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalGEGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalGE<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalGE);
@@ -33979,7 +34078,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGE<'db> {
         TerminalGEPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenGT<'db> {
     node: SyntaxNode<'db>,
 }
@@ -33994,7 +34093,7 @@ impl<'db> Token<'db> for TokenGT<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenGTPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenGTPtr<'db> {
     type SyntaxNode = TokenGT<'db>;
@@ -34010,7 +34109,7 @@ impl<'db> From<TokenGTPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenGTGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenGTGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34031,6 +34130,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenGT | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34039,6 +34139,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenGT | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34051,7 +34154,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
         TokenGTPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalGT<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34092,7 +34195,7 @@ impl<'db> TerminalGT<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalGTPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalGTPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalGTPtr<'db> {
@@ -34109,7 +34212,7 @@ impl<'db> From<TerminalGTPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalGTGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalGT<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalGT);
@@ -34154,7 +34257,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalGT<'db> {
         TerminalGTPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenHash<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34169,7 +34272,7 @@ impl<'db> Token<'db> for TokenHash<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenHashPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenHashPtr<'db> {
     type SyntaxNode = TokenHash<'db>;
@@ -34185,7 +34288,7 @@ impl<'db> From<TokenHashPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenHashGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenHashGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34206,6 +34309,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenHash | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34214,6 +34318,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenHash | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34226,7 +34333,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
         TokenHashPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalHash<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34267,7 +34374,7 @@ impl<'db> TerminalHash<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalHashPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalHashPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalHashPtr<'db> {
@@ -34284,7 +34391,7 @@ impl<'db> From<TerminalHashPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalHashGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalHash<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalHash);
@@ -34329,7 +34436,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalHash<'db> {
         TerminalHashPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenLBrace<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34344,7 +34451,7 @@ impl<'db> Token<'db> for TokenLBrace<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenLBracePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenLBracePtr<'db> {
     type SyntaxNode = TokenLBrace<'db>;
@@ -34360,7 +34467,7 @@ impl<'db> From<TokenLBracePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenLBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLBraceGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34381,6 +34488,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLBrace | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34389,6 +34497,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLBrace | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34401,7 +34512,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
         TokenLBracePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalLBrace<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34442,7 +34553,7 @@ impl<'db> TerminalLBrace<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalLBracePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalLBracePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalLBracePtr<'db> {
@@ -34459,7 +34570,7 @@ impl<'db> From<TerminalLBracePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalLBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLBrace<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLBrace);
@@ -34508,7 +34619,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrace<'db> {
         TerminalLBracePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenLBrack<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34523,7 +34634,7 @@ impl<'db> Token<'db> for TokenLBrack<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenLBrackPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenLBrackPtr<'db> {
     type SyntaxNode = TokenLBrack<'db>;
@@ -34539,7 +34650,7 @@ impl<'db> From<TokenLBrackPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenLBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLBrackGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34560,6 +34671,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLBrack | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34568,6 +34680,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLBrack | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34580,7 +34695,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
         TokenLBrackPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalLBrack<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34621,7 +34736,7 @@ impl<'db> TerminalLBrack<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalLBrackPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalLBrackPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalLBrackPtr<'db> {
@@ -34638,7 +34753,7 @@ impl<'db> From<TerminalLBrackPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalLBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLBrack<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLBrack);
@@ -34687,7 +34802,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLBrack<'db> {
         TerminalLBrackPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenLE<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34702,7 +34817,7 @@ impl<'db> Token<'db> for TokenLE<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenLEPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenLEPtr<'db> {
     type SyntaxNode = TokenLE<'db>;
@@ -34718,7 +34833,7 @@ impl<'db> From<TokenLEPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenLEGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLEGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34739,6 +34854,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLE | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34747,6 +34863,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLE | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34759,7 +34878,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
         TokenLEPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalLE<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34800,7 +34919,7 @@ impl<'db> TerminalLE<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalLEPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalLEPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalLEPtr<'db> {
@@ -34817,7 +34936,7 @@ impl<'db> From<TerminalLEPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalLEGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLE<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLE);
@@ -34862,7 +34981,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLE<'db> {
         TerminalLEPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenLParen<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34877,7 +34996,7 @@ impl<'db> Token<'db> for TokenLParen<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenLParenPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenLParenPtr<'db> {
     type SyntaxNode = TokenLParen<'db>;
@@ -34893,7 +35012,7 @@ impl<'db> From<TokenLParenPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenLParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLParenGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -34914,6 +35033,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLParen | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -34922,6 +35042,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLParen | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -34934,7 +35057,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
         TokenLParenPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalLParen<'db> {
     node: SyntaxNode<'db>,
 }
@@ -34975,7 +35098,7 @@ impl<'db> TerminalLParen<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalLParenPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalLParenPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalLParenPtr<'db> {
@@ -34992,7 +35115,7 @@ impl<'db> From<TerminalLParenPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalLParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLParen<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLParen);
@@ -35041,7 +35164,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLParen<'db> {
         TerminalLParenPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenLT<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35056,7 +35179,7 @@ impl<'db> Token<'db> for TokenLT<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenLTPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenLTPtr<'db> {
     type SyntaxNode = TokenLT<'db>;
@@ -35072,7 +35195,7 @@ impl<'db> From<TokenLTPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenLTGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLTGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35093,6 +35216,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenLT | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35101,6 +35225,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenLT | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35113,7 +35240,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
         TokenLTPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalLT<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35154,7 +35281,7 @@ impl<'db> TerminalLT<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalLTPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalLTPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalLTPtr<'db> {
@@ -35171,7 +35298,7 @@ impl<'db> From<TerminalLTPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalLTGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalLT<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLT);
@@ -35216,7 +35343,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalLT<'db> {
         TerminalLTPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMatchArrow<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35231,7 +35358,7 @@ impl<'db> Token<'db> for TokenMatchArrow<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenMatchArrowPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenMatchArrowPtr<'db> {
     type SyntaxNode = TokenMatchArrow<'db>;
@@ -35247,7 +35374,7 @@ impl<'db> From<TokenMatchArrowPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenMatchArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMatchArrowGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35268,6 +35395,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMatchArrow | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35276,6 +35404,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMatchArrow | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35288,7 +35419,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
         TokenMatchArrowPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalMatchArrow<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35329,7 +35460,7 @@ impl<'db> TerminalMatchArrow<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalMatchArrowPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalMatchArrowPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalMatchArrowPtr<'db> {
@@ -35346,7 +35477,7 @@ impl<'db> From<TerminalMatchArrowPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalMatchArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMatchArrow<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMatchArrow);
@@ -35395,7 +35526,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMatchArrow<'db> {
         TerminalMatchArrowPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMinus<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35410,7 +35541,7 @@ impl<'db> Token<'db> for TokenMinus<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenMinusPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenMinusPtr<'db> {
     type SyntaxNode = TokenMinus<'db>;
@@ -35426,7 +35557,7 @@ impl<'db> From<TokenMinusPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenMinusGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMinusGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35447,6 +35578,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMinus | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35455,6 +35587,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMinus | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35467,7 +35602,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
         TokenMinusPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalMinus<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35508,7 +35643,7 @@ impl<'db> TerminalMinus<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalMinusPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalMinusPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalMinusPtr<'db> {
@@ -35525,7 +35660,7 @@ impl<'db> From<TerminalMinusPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalMinusGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMinus<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMinus);
@@ -35574,7 +35709,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinus<'db> {
         TerminalMinusPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMinusEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35589,7 +35724,7 @@ impl<'db> Token<'db> for TokenMinusEq<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenMinusEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenMinusEqPtr<'db> {
     type SyntaxNode = TokenMinusEq<'db>;
@@ -35605,7 +35740,7 @@ impl<'db> From<TokenMinusEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenMinusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMinusEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35626,6 +35761,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMinusEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35634,6 +35770,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMinusEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35646,7 +35785,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
         TokenMinusEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalMinusEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35687,7 +35826,7 @@ impl<'db> TerminalMinusEq<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalMinusEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalMinusEqPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalMinusEqPtr<'db> {
@@ -35704,7 +35843,7 @@ impl<'db> From<TerminalMinusEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalMinusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMinusEq<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMinusEq);
@@ -35753,7 +35892,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMinusEq<'db> {
         TerminalMinusEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMod<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35768,7 +35907,7 @@ impl<'db> Token<'db> for TokenMod<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenModPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenModPtr<'db> {
     type SyntaxNode = TokenMod<'db>;
@@ -35784,7 +35923,7 @@ impl<'db> From<TokenModPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenModGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenModGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35805,6 +35944,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMod | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35813,6 +35953,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMod | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -35825,7 +35968,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
         TokenModPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalMod<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35866,7 +36009,7 @@ impl<'db> TerminalMod<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalModPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalModPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalModPtr<'db> {
@@ -35883,7 +36026,7 @@ impl<'db> From<TerminalModPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalModGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMod<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMod);
@@ -35928,7 +36071,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMod<'db> {
         TerminalModPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenModEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -35943,7 +36086,7 @@ impl<'db> Token<'db> for TokenModEq<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenModEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenModEqPtr<'db> {
     type SyntaxNode = TokenModEq<'db>;
@@ -35959,7 +36102,7 @@ impl<'db> From<TokenModEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenModEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenModEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -35980,6 +36123,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenModEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -35988,6 +36132,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenModEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36000,7 +36147,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
         TokenModEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalModEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36041,7 +36188,7 @@ impl<'db> TerminalModEq<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalModEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalModEqPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalModEqPtr<'db> {
@@ -36058,7 +36205,7 @@ impl<'db> From<TerminalModEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalModEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalModEq<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalModEq);
@@ -36107,7 +36254,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalModEq<'db> {
         TerminalModEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMul<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36122,7 +36269,7 @@ impl<'db> Token<'db> for TokenMul<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenMulPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenMulPtr<'db> {
     type SyntaxNode = TokenMul<'db>;
@@ -36138,7 +36285,7 @@ impl<'db> From<TokenMulPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenMulGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMulGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36159,6 +36306,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMul | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36167,6 +36315,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMul | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36179,7 +36330,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
         TokenMulPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalMul<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36220,7 +36371,7 @@ impl<'db> TerminalMul<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalMulPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalMulPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalMulPtr<'db> {
@@ -36237,7 +36388,7 @@ impl<'db> From<TerminalMulPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalMulGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMul<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMul);
@@ -36282,7 +36433,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMul<'db> {
         TerminalMulPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMulEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36297,7 +36448,7 @@ impl<'db> Token<'db> for TokenMulEq<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenMulEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenMulEqPtr<'db> {
     type SyntaxNode = TokenMulEq<'db>;
@@ -36313,7 +36464,7 @@ impl<'db> From<TokenMulEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenMulEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMulEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36334,6 +36485,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMulEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36342,6 +36494,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMulEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36354,7 +36509,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
         TokenMulEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalMulEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36395,7 +36550,7 @@ impl<'db> TerminalMulEq<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalMulEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalMulEqPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalMulEqPtr<'db> {
@@ -36412,7 +36567,7 @@ impl<'db> From<TerminalMulEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalMulEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalMulEq<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMulEq);
@@ -36461,7 +36616,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalMulEq<'db> {
         TerminalMulEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenNeq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36476,7 +36631,7 @@ impl<'db> Token<'db> for TokenNeq<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenNeqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenNeqPtr<'db> {
     type SyntaxNode = TokenNeq<'db>;
@@ -36492,7 +36647,7 @@ impl<'db> From<TokenNeqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenNeqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNeqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36513,6 +36668,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenNeq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36521,6 +36677,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenNeq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36533,7 +36692,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
         TokenNeqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalNeq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36574,7 +36733,7 @@ impl<'db> TerminalNeq<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalNeqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalNeqPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalNeqPtr<'db> {
@@ -36591,7 +36750,7 @@ impl<'db> From<TerminalNeqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalNeqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalNeq<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNeq);
@@ -36636,7 +36795,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNeq<'db> {
         TerminalNeqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenNot<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36651,7 +36810,7 @@ impl<'db> Token<'db> for TokenNot<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenNotPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenNotPtr<'db> {
     type SyntaxNode = TokenNot<'db>;
@@ -36667,7 +36826,7 @@ impl<'db> From<TokenNotPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNotGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36688,6 +36847,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenNot | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36696,6 +36856,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenNot | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36708,7 +36871,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
         TokenNotPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalNot<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36749,7 +36912,7 @@ impl<'db> TerminalNot<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalNotPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalNotPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalNotPtr<'db> {
@@ -36766,7 +36929,7 @@ impl<'db> From<TerminalNotPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalNot<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNot);
@@ -36811,7 +36974,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalNot<'db> {
         TerminalNotPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenBitNot<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36826,7 +36989,7 @@ impl<'db> Token<'db> for TokenBitNot<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenBitNotPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenBitNotPtr<'db> {
     type SyntaxNode = TokenBitNot<'db>;
@@ -36842,7 +37005,7 @@ impl<'db> From<TokenBitNotPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenBitNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenBitNotGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -36863,6 +37026,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenBitNot | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -36871,6 +37035,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenBitNot | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -36883,7 +37050,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
         TokenBitNotPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalBitNot<'db> {
     node: SyntaxNode<'db>,
 }
@@ -36924,7 +37091,7 @@ impl<'db> TerminalBitNot<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalBitNotPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalBitNotPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalBitNotPtr<'db> {
@@ -36941,7 +37108,7 @@ impl<'db> From<TerminalBitNotPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalBitNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalBitNot<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalBitNot);
@@ -36990,7 +37157,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalBitNot<'db> {
         TerminalBitNotPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenOr<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37005,7 +37172,7 @@ impl<'db> Token<'db> for TokenOr<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenOrPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenOrPtr<'db> {
     type SyntaxNode = TokenOr<'db>;
@@ -37021,7 +37188,7 @@ impl<'db> From<TokenOrPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenOrGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37042,6 +37209,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenOr | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37050,6 +37218,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenOr | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37062,7 +37233,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
         TokenOrPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalOr<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37103,7 +37274,7 @@ impl<'db> TerminalOr<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalOrPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalOrPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalOrPtr<'db> {
@@ -37120,7 +37291,7 @@ impl<'db> From<TerminalOrPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalOr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalOr);
@@ -37165,7 +37336,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOr<'db> {
         TerminalOrPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenOrOr<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37180,7 +37351,7 @@ impl<'db> Token<'db> for TokenOrOr<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenOrOrPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenOrOrPtr<'db> {
     type SyntaxNode = TokenOrOr<'db>;
@@ -37196,7 +37367,7 @@ impl<'db> From<TokenOrOrPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenOrOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenOrOrGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37217,6 +37388,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenOrOr | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37225,6 +37397,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenOrOr | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37237,7 +37412,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
         TokenOrOrPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalOrOr<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37278,7 +37453,7 @@ impl<'db> TerminalOrOr<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalOrOrPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalOrOrPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalOrOrPtr<'db> {
@@ -37295,7 +37470,7 @@ impl<'db> From<TerminalOrOrPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalOrOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalOrOr<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalOrOr);
@@ -37340,7 +37515,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalOrOr<'db> {
         TerminalOrOrPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenPlus<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37355,7 +37530,7 @@ impl<'db> Token<'db> for TokenPlus<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenPlusPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenPlusPtr<'db> {
     type SyntaxNode = TokenPlus<'db>;
@@ -37371,7 +37546,7 @@ impl<'db> From<TokenPlusPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenPlusGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenPlusGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37392,6 +37567,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenPlus | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37400,6 +37576,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenPlus | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37412,7 +37591,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
         TokenPlusPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalPlus<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37453,7 +37632,7 @@ impl<'db> TerminalPlus<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalPlusPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalPlusPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalPlusPtr<'db> {
@@ -37470,7 +37649,7 @@ impl<'db> From<TerminalPlusPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalPlusGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalPlus<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalPlus);
@@ -37515,7 +37694,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlus<'db> {
         TerminalPlusPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenPlusEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37530,7 +37709,7 @@ impl<'db> Token<'db> for TokenPlusEq<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenPlusEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenPlusEqPtr<'db> {
     type SyntaxNode = TokenPlusEq<'db>;
@@ -37546,7 +37725,7 @@ impl<'db> From<TokenPlusEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenPlusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenPlusEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37567,6 +37746,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenPlusEq | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37575,6 +37755,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenPlusEq | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37587,7 +37770,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
         TokenPlusEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalPlusEq<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37628,7 +37811,7 @@ impl<'db> TerminalPlusEq<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalPlusEqPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalPlusEqPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalPlusEqPtr<'db> {
@@ -37645,7 +37828,7 @@ impl<'db> From<TerminalPlusEqPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalPlusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalPlusEq<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalPlusEq);
@@ -37694,7 +37877,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalPlusEq<'db> {
         TerminalPlusEqPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenQuestionMark<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37712,7 +37895,7 @@ impl<'db> Token<'db> for TokenQuestionMark<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenQuestionMarkPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenQuestionMarkPtr<'db> {
     type SyntaxNode = TokenQuestionMark<'db>;
@@ -37728,7 +37911,7 @@ impl<'db> From<TokenQuestionMarkPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenQuestionMarkGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenQuestionMarkGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37749,6 +37932,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenQuestionMark | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37757,6 +37941,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenQuestionMark | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37769,7 +37956,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
         TokenQuestionMarkPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalQuestionMark<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37810,7 +37997,7 @@ impl<'db> TerminalQuestionMark<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalQuestionMarkPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalQuestionMarkPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalQuestionMarkPtr<'db> {
@@ -37827,7 +38014,7 @@ impl<'db> From<TerminalQuestionMarkPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalQuestionMarkGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalQuestionMark<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalQuestionMark);
@@ -37876,7 +38063,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalQuestionMark<'db> {
         TerminalQuestionMarkPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenRBrace<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37891,7 +38078,7 @@ impl<'db> Token<'db> for TokenRBrace<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenRBracePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenRBracePtr<'db> {
     type SyntaxNode = TokenRBrace<'db>;
@@ -37907,7 +38094,7 @@ impl<'db> From<TokenRBracePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenRBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRBraceGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -37928,6 +38115,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenRBrace | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -37936,6 +38124,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenRBrace | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -37948,7 +38139,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
         TokenRBracePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalRBrace<'db> {
     node: SyntaxNode<'db>,
 }
@@ -37989,7 +38180,7 @@ impl<'db> TerminalRBrace<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalRBracePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalRBracePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalRBracePtr<'db> {
@@ -38006,7 +38197,7 @@ impl<'db> From<TerminalRBracePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalRBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalRBrace<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRBrace);
@@ -38055,7 +38246,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrace<'db> {
         TerminalRBracePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenRBrack<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38070,7 +38261,7 @@ impl<'db> Token<'db> for TokenRBrack<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenRBrackPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenRBrackPtr<'db> {
     type SyntaxNode = TokenRBrack<'db>;
@@ -38086,7 +38277,7 @@ impl<'db> From<TokenRBrackPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenRBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRBrackGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38107,6 +38298,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenRBrack | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38115,6 +38307,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenRBrack | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38127,7 +38322,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
         TokenRBrackPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalRBrack<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38168,7 +38363,7 @@ impl<'db> TerminalRBrack<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalRBrackPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalRBrackPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalRBrackPtr<'db> {
@@ -38185,7 +38380,7 @@ impl<'db> From<TerminalRBrackPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalRBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalRBrack<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRBrack);
@@ -38234,7 +38429,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRBrack<'db> {
         TerminalRBrackPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenRParen<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38249,7 +38444,7 @@ impl<'db> Token<'db> for TokenRParen<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenRParenPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenRParenPtr<'db> {
     type SyntaxNode = TokenRParen<'db>;
@@ -38265,7 +38460,7 @@ impl<'db> From<TokenRParenPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenRParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRParenGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38286,6 +38481,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenRParen | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38294,6 +38490,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenRParen | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38306,7 +38505,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
         TokenRParenPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalRParen<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38347,7 +38546,7 @@ impl<'db> TerminalRParen<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalRParenPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalRParenPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalRParenPtr<'db> {
@@ -38364,7 +38563,7 @@ impl<'db> From<TerminalRParenPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalRParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalRParen<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRParen);
@@ -38413,7 +38612,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalRParen<'db> {
         TerminalRParenPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenSemicolon<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38428,7 +38627,7 @@ impl<'db> Token<'db> for TokenSemicolon<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenSemicolonPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenSemicolonPtr<'db> {
     type SyntaxNode = TokenSemicolon<'db>;
@@ -38444,7 +38643,7 @@ impl<'db> From<TokenSemicolonPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenSemicolonGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSemicolonGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38465,6 +38664,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenSemicolon | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38473,6 +38673,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenSemicolon | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38485,7 +38688,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
         TokenSemicolonPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalSemicolon<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38526,7 +38729,7 @@ impl<'db> TerminalSemicolon<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalSemicolonPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalSemicolonPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalSemicolonPtr<'db> {
@@ -38543,7 +38746,7 @@ impl<'db> From<TerminalSemicolonPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalSemicolonGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalSemicolon<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalSemicolon);
@@ -38592,7 +38795,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalSemicolon<'db> {
         TerminalSemicolonPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenUnderscore<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38607,7 +38810,7 @@ impl<'db> Token<'db> for TokenUnderscore<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenUnderscorePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenUnderscorePtr<'db> {
     type SyntaxNode = TokenUnderscore<'db>;
@@ -38623,7 +38826,7 @@ impl<'db> From<TokenUnderscorePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenUnderscoreGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenUnderscoreGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38644,6 +38847,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenUnderscore | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38652,6 +38856,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenUnderscore | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38664,7 +38871,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
         TokenUnderscorePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalUnderscore<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38705,7 +38912,7 @@ impl<'db> TerminalUnderscore<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalUnderscorePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalUnderscorePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalUnderscorePtr<'db> {
@@ -38722,7 +38929,7 @@ impl<'db> From<TerminalUnderscorePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalUnderscoreGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalUnderscore<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalUnderscore);
@@ -38771,7 +38978,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalUnderscore<'db> {
         TerminalUnderscorePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenXor<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38786,7 +38993,7 @@ impl<'db> Token<'db> for TokenXor<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenXorPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenXorPtr<'db> {
     type SyntaxNode = TokenXor<'db>;
@@ -38802,7 +39009,7 @@ impl<'db> From<TokenXorPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenXorGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenXorGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -38823,6 +39030,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenXor | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -38831,6 +39039,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenXor | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -38843,7 +39054,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
         TokenXorPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalXor<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38884,7 +39095,7 @@ impl<'db> TerminalXor<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalXorPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalXorPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalXorPtr<'db> {
@@ -38901,7 +39112,7 @@ impl<'db> From<TerminalXorPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalXorGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalXor<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalXor);
@@ -38946,7 +39157,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalXor<'db> {
         TerminalXorPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct SyntaxFile<'db> {
     node: SyntaxNode<'db>,
 }
@@ -38977,7 +39188,7 @@ impl<'db> SyntaxFile<'db> {
         TerminalEndOfFile::from_syntax_node(db, self.node.get_children(db)[1])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct SyntaxFilePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> SyntaxFilePtr<'db> {}
 impl<'db> TypedStablePtr<'db> for SyntaxFilePtr<'db> {
@@ -38994,7 +39205,7 @@ impl<'db> From<SyntaxFilePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct SyntaxFileGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for SyntaxFile<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::SyntaxFile);
@@ -39035,7 +39246,7 @@ impl<'db> TypedSyntaxNode<'db> for SyntaxFile<'db> {
         SyntaxFilePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -39050,7 +39261,7 @@ impl<'db> Token<'db> for TokenEmpty<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenEmptyPtr<'db> {
     type SyntaxNode = TokenEmpty<'db>;
@@ -39066,7 +39277,7 @@ impl<'db> From<TokenEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEmptyGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39087,6 +39298,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenEmpty | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -39095,6 +39307,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenEmpty | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39107,7 +39322,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
         TokenEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TerminalEmpty<'db> {
     node: SyntaxNode<'db>,
 }
@@ -39148,7 +39363,7 @@ impl<'db> TerminalEmpty<'db> {
         Trivia::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TerminalEmptyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TerminalEmptyPtr<'db> {}
 impl<'db> TypedStablePtr<'db> for TerminalEmptyPtr<'db> {
@@ -39165,7 +39380,7 @@ impl<'db> From<TerminalEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TerminalEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TerminalEmpty<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEmpty);
@@ -39214,7 +39429,7 @@ impl<'db> TypedSyntaxNode<'db> for TerminalEmpty<'db> {
         TerminalEmptyPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenSingleLineComment<'db> {
     node: SyntaxNode<'db>,
 }
@@ -39232,7 +39447,7 @@ impl<'db> Token<'db> for TokenSingleLineComment<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenSingleLineCommentPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenSingleLineCommentPtr<'db> {
     type SyntaxNode = TokenSingleLineComment<'db>;
@@ -39248,7 +39463,7 @@ impl<'db> From<TokenSingleLineCommentPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenSingleLineCommentGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSingleLineCommentGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39269,6 +39484,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenMissing
+        );
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -39278,6 +39497,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39290,7 +39512,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
         TokenSingleLineCommentPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenSingleLineInnerComment<'db> {
     node: SyntaxNode<'db>,
 }
@@ -39308,7 +39530,7 @@ impl<'db> Token<'db> for TokenSingleLineInnerComment<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenSingleLineInnerCommentPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenSingleLineInnerCommentPtr<'db> {
     type SyntaxNode = TokenSingleLineInnerComment<'db>;
@@ -39324,7 +39546,7 @@ impl<'db> From<TokenSingleLineInnerCommentPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenSingleLineInnerCommentGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSingleLineInnerCommentGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39345,6 +39567,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineInnerComment | SyntaxKind::TokenMissing
+        );
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -39354,6 +39580,12 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineInnerComment | SyntaxKind::TokenMissing
+        ) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39366,7 +39598,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
         TokenSingleLineInnerCommentPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenSingleLineDocComment<'db> {
     node: SyntaxNode<'db>,
 }
@@ -39384,7 +39616,7 @@ impl<'db> Token<'db> for TokenSingleLineDocComment<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenSingleLineDocCommentPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenSingleLineDocCommentPtr<'db> {
     type SyntaxNode = TokenSingleLineDocComment<'db>;
@@ -39400,7 +39632,7 @@ impl<'db> From<TokenSingleLineDocCommentPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenSingleLineDocCommentGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSingleLineDocCommentGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39421,6 +39653,10 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenMissing
+        );
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => panic!(
@@ -39430,6 +39666,12 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(
+            node.kind(db),
+            SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenMissing
+        ) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39442,7 +39684,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
         TokenSingleLineDocCommentPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenWhitespace<'db> {
     node: SyntaxNode<'db>,
 }
@@ -39457,7 +39699,7 @@ impl<'db> Token<'db> for TokenWhitespace<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenWhitespacePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenWhitespacePtr<'db> {
     type SyntaxNode = TokenWhitespace<'db>;
@@ -39473,7 +39715,7 @@ impl<'db> From<TokenWhitespacePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenWhitespaceGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenWhitespaceGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39494,6 +39736,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenWhitespace | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -39502,6 +39745,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenWhitespace | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39514,7 +39760,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
         TokenWhitespacePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenNewline<'db> {
     node: SyntaxNode<'db>,
 }
@@ -39529,7 +39775,7 @@ impl<'db> Token<'db> for TokenNewline<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenNewlinePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenNewlinePtr<'db> {
     type SyntaxNode = TokenNewline<'db>;
@@ -39545,7 +39791,7 @@ impl<'db> From<TokenNewlinePtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenNewlineGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNewlineGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39566,6 +39812,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenNewline | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -39574,6 +39821,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenNewline | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39586,7 +39836,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
         TokenNewlinePtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenMissing<'db> {
     node: SyntaxNode<'db>,
 }
@@ -39601,7 +39851,7 @@ impl<'db> Token<'db> for TokenMissing<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenMissingPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenMissingPtr<'db> {
     type SyntaxNode = TokenMissing<'db>;
@@ -39617,7 +39867,7 @@ impl<'db> From<TokenMissingPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMissingGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39638,6 +39888,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -39646,6 +39897,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39658,7 +39912,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
         TokenMissingPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub struct TokenSkipped<'db> {
     node: SyntaxNode<'db>,
 }
@@ -39673,7 +39927,7 @@ impl<'db> Token<'db> for TokenSkipped<'db> {
         *extract_matches!(&self.node.green_node(db).details, GreenNodeDetails::Token)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenSkippedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenSkippedPtr<'db> {
     type SyntaxNode = TokenSkipped<'db>;
@@ -39689,7 +39943,7 @@ impl<'db> From<TokenSkippedPtr<'db>> for SyntaxStablePtrId<'db> {
         ptr.untyped()
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenSkippedGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSkippedGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
@@ -39710,6 +39964,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        assert_matches!(node.kind(db), SyntaxKind::TokenSkipped | SyntaxKind::TokenMissing);
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Self { node },
             GreenNodeDetails::Node { .. } => {
@@ -39718,6 +39973,9 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
         }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if !matches!(node.kind(db), SyntaxKind::TokenSkipped | SyntaxKind::TokenMissing) {
+            return None;
+        }
         match node.green_node(db).details {
             GreenNodeDetails::Token(_) => Some(Self { node }),
             GreenNodeDetails::Node { .. } => None,
@@ -39730,7 +39988,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
         TokenSkippedPtr(self.node.stable_ptr(db))
     }
 }
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
 pub enum TokenNode<'db> {
     TerminalIdentifier(TerminalIdentifier<'db>),
     TerminalLiteralNumber(TerminalLiteralNumber<'db>),
@@ -39814,7 +40072,7 @@ pub enum TokenNode<'db> {
     TerminalXor(TerminalXor<'db>),
     TerminalEmpty(TerminalEmpty<'db>),
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue, HeapSize)]
 pub struct TokenNodePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TypedStablePtr<'db> for TokenNodePtr<'db> {
     type SyntaxNode = TokenNode<'db>;
@@ -40640,7 +40898,7 @@ impl<'db> From<TerminalEmptyGreen<'db>> for TokenNodeGreen<'db> {
         Self(value.0)
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
 pub struct TokenNodeGreen<'db>(pub GreenId<'db>);
 impl<'db> TypedSyntaxNode<'db> for TokenNode<'db> {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;

@@ -1,6 +1,6 @@
 :cairo-repo: https://github.com/starkware-libs/cairo/blob/main
 
-# Compiling and running Cairo files
+= Compiling and running Cairo files
 
 Compile Cairo to Sierra:
 [source,bash]

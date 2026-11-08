@@ -17,7 +17,7 @@ fn trait_type_implized_by_context<'db>(
 }
 
 /// Query implementation of [ImplizationSemantic::trait_type_implized_by_context].
-#[salsa::tracked(cycle_result=trait_type_implized_by_context_cycle)]
+#[salsa::tracked(returns(copy), cycle_result=trait_type_implized_by_context_cycle)]
 fn trait_type_implized_by_context_tracked<'db>(
     db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,

@@ -1,58 +1,27 @@
-use cairo_lang_debug::DebugWithDb;
-use cairo_lang_semantic::test_utils::setup_test_function;
-use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::gas_redeposit;
 use crate::LoweringStage;
-use crate::db::LoweringGroup;
-use crate::fmt::LoweredFormatter;
-use crate::ids::ConcreteFunctionWithBodyId;
-use crate::test_utils::LoweringDatabaseForTesting;
+use crate::optimizations::strategy::OptimizationPhase;
+use crate::test_runner::run_lowering_phases_test;
 
-cairo_lang_test_utils::test_file_test_with_runner!(
+cairo_lang_test_utils::test_file_test!(
     gas_redeposit,
     "src/optimizations/test_data",
     {
         gas_redeposit: "gas_redeposit",
     },
-    GetRedepositTestRunner
+    test_gas_redeposit
 );
 
-#[derive(Default)]
-struct GetRedepositTestRunner {
-    db: LoweringDatabaseForTesting,
-}
-
-impl TestFileRunner for GetRedepositTestRunner {
-    fn run(
-        &mut self,
-        inputs: &OrderedHashMap<String, String>,
-        _args: &OrderedHashMap<String, String>,
-    ) -> TestRunnerResult {
-        let db = &self.db;
-        let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
-        let function_id =
-            ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-
-        let before = db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().clone();
-
-        let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-
-        let mut after = before.clone();
-        gas_redeposit(db, function_id, &mut after);
-
-        TestRunnerResult::success(OrderedHashMap::from([
-            ("semantic_diagnostics".into(), semantic_diagnostics),
-            (
-                "before".into(),
-                format!("{:?}", before.debug(&LoweredFormatter::new(db, &before.variables))),
-            ),
-            (
-                "after".into(),
-                format!("{:?}", after.debug(&LoweredFormatter::new(db, &after.variables))),
-            ),
-            ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
-        ]))
-    }
+fn test_gas_redeposit(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    run_lowering_phases_test(
+        inputs,
+        LoweringStage::PreOptimizations,
+        &[],
+        &[OptimizationPhase::GasRedeposit],
+    )
 }

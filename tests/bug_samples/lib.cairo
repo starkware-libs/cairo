@@ -1,4 +1,6 @@
 mod builtin_usage_before_unreachable;
+mod const_folding_non_copy_enum_payload;
+mod derive_associated_type_member;
 mod ecdsa_completeness;
 mod generic_cycles;
 mod inconsistent_gas;
@@ -67,6 +69,7 @@ mod issue7544;
 mod issue7640;
 mod issue7961;
 mod issue8105;
+mod issue9887;
 mod loop_break_in_match;
 mod loop_only_change;
 mod merge_const_member;

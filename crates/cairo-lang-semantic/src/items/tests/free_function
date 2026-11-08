@@ -3,11 +3,8 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: bool, a: felt252) {}
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 error[E2054]: Redefinition of parameter name "a" in function "foo".
@@ -22,11 +19,8 @@ fn foo(a: bool, a: felt252) {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo(a: bool) implicits(felt252, bool) {}
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -37,19 +31,39 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar<const n: u16>(a: bool) {}
 fn foo(a: bool) {
     bar(a)
 }
-
-//! > function_name
-foo
-
-//! > module_code
-fn bar<const n: u16>(a: bool) {}
 
 //! > expected_diagnostics
 error[E2310]: Failed to infer constant.
  --> lib.cairo:3:5
     bar(a)
     ^^^
+
+//! > ==========================================================================
+
+//! > Test no ICE when an item-level macro call names an enum variant whose type comes from a generic free function with a trait bound.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > cairo_code
+fn g<T, +Drop<T>>(x: T) {}
+enum E {
+    A: g::<felt252>::Coupon,
+}
+E::A!(());
+
+//! > expected_diagnostics
+error[E2028]: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:1:9
+fn g<T, +Drop<T>>(x: T) {}
+        ^^^^^^^^
+
+error[E2156]: Inline macro `E::A` not found.
+ --> lib.cairo:5:1
+E::A!(());
+^^^^^^^^^^

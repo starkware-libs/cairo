@@ -3,16 +3,12 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+const MY_CONST: felt252 = 0x1234;
+#[target_function]
 fn foo(x: felt252) -> felt252 {
     MY_CONST + x
 }
-
-//! > function_name
-foo
-
-//! > module_code
-const MY_CONST: felt252 = 0x1234;
 
 //! > semantic_diagnostics
 
@@ -34,15 +30,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> MyStruct {
-    MY_CONST
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct MyStruct {
     felt_val: felt252,
     bool_val: bool,
@@ -58,6 +46,10 @@ enum MyEnum {
 const MY_CONST: MyStruct = MyStruct {
     felt_val: 1234, bool_val: true, my_enum_val1: MyEnum::A(5678), my_enum_val2: MyEnum::B,
 };
+#[target_function]
+fn foo() -> MyStruct {
+    MY_CONST
+}
 
 //! > semantic_diagnostics
 
@@ -78,18 +70,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo() -> u32 {
-    bar(S::<4> {})
-}
-fn bar<T, +MyTrait<T>, +Drop<T>>(x: T) -> u32 {
-    MyTrait::<S<MyTrait::<T>::C>>::C
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 struct S<const N: u32> {}
 trait MyTrait<T> {
     const C: u32;
@@ -98,6 +79,13 @@ impl MyImpl<const N: u32> of MyTrait<S<N>> {
     const C: u32 = N;
 }
 impl SDrop<const N: u32> of Drop<S<N>> {}
+#[target_function]
+fn foo() -> u32 {
+    bar(S::<4> {})
+}
+fn bar<T, +MyTrait<T>, +Drop<T>>(x: T) -> u32 {
+    MyTrait::<S<MyTrait::<T>::C>>::C
+}
 
 //! > semantic_diagnostics
 

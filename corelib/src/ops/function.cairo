@@ -27,9 +27,9 @@
 /// `FnOnce` is implemented automatically by closures that might consume captured
 /// variables.
 ///
-/// ```
 /// # Examples
 ///
+/// ```
 /// fn consume_with_relish<
 ///     F, O, +Drop<F>, +core::ops::FnOnce<F, ()>[Output: O], +core::fmt::Display<O>, +Drop<O>,
 /// >(
@@ -48,6 +48,7 @@
 ///   let consume_and_return_x = || x;
 ///   consume_with_relish(consume_and_return_x);
 ///   // `consume_and_return_x` can no longer be invoked at this point
+/// ```
 pub trait FnOnce<T, Args> {
     /// The returned type after the call operator is used.
     type Output;

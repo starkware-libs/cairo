@@ -17,7 +17,9 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, extract_matches};
+use itertools::Itertools;
 use salsa::Database;
+use sha3::{Digest, Keccak256};
 use syntax::node::TypedStablePtr;
 
 use super::constant::{ConstValue, ConstValueId};
@@ -45,7 +47,7 @@ use crate::{ConcreteTraitId, ConcreteTraitLongId, SemanticDiagnostic, TypeId, Ty
 /// Generic argument.
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub enum GenericArgumentId<'db> {
     Type(TypeId<'db>),
     Constant(ConstValueId<'db>),
@@ -100,6 +102,21 @@ impl<'db> GenericArgumentId<'db> {
     pub fn short_name(&self, db: &dyn Database) -> String {
         if let GenericArgumentId::Type(ty) = self { ty.short_name(db) } else { self.format(db) }
     }
+    /// Adds a name that distinct arguments do not share, unlike `short_name` which names impl
+    /// parameters by their local names.
+    fn add_key_name(&self, db: &'db dyn Database, names: &mut NamesHasher) {
+        use NegativeImplLongId::*;
+        match self {
+            GenericArgumentId::Type(ty) => names.add(ty.key_name(db)),
+            GenericArgumentId::Constant(value) => names.add(value.key_name(db)),
+            GenericArgumentId::Impl(imp) => names.add(imp.key_name(db)),
+            GenericArgumentId::NegImpl(imp) => match imp.long(db) {
+                Solved(concrete_trait) => names.add(format!("-{}", concrete_trait.key_name(db))),
+                GenericParameter(param) => names.add(param.key_path(db)),
+                NegativeImplVar(var) => names.add(format!("?{}", var.long(db).id.0)),
+            },
+        }
+    }
 
     /// A utility function for extracting the generic parameters arguments from a GenericArgumentId.
     /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
@@ -149,7 +166,7 @@ impl<'db> DebugWithDb<'db> for GenericArgumentId<'db> {
 /// A non-param non-variable generic argument has a head, which represents the kind of the root node
 /// in its tree. This is used for caching queries for fast lookups when the generic argument is not
 /// completely inferred yet.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub enum GenericArgumentHead<'db> {
     Type(TypeHead<'db>),
     Impl(ImplHead<'db>),
@@ -158,7 +175,7 @@ pub enum GenericArgumentHead<'db> {
 }
 
 /// Generic parameter.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub enum GenericParam<'db> {
     Type(GenericParamType<'db>),
     // TODO(spapini): Add expression.
@@ -221,14 +238,32 @@ pub fn generic_params_to_args<'db>(
 }
 
 #[derive(
-    Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    PartialEq,
+    Eq,
+    DebugWithDb,
+    SemanticObject,
+    HeapSize,
+    salsa::SalsaValue,
 )]
 #[debug_db(dyn Database)]
 pub struct GenericParamType<'db> {
     pub id: GenericParamId<'db>,
 }
 #[derive(
-    Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    PartialEq,
+    Eq,
+    DebugWithDb,
+    SemanticObject,
+    HeapSize,
+    salsa::SalsaValue,
 )]
 #[debug_db(dyn Database)]
 pub struct GenericParamConst<'db> {
@@ -236,7 +271,7 @@ pub struct GenericParamConst<'db> {
     pub ty: TypeId<'db>,
 }
 #[derive(
-    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::SalsaValue,
 )]
 #[debug_db(dyn Database)]
 pub struct GenericParamImpl<'db> {
@@ -246,7 +281,7 @@ pub struct GenericParamImpl<'db> {
 }
 
 /// The result of the computation of the semantic model of a generic parameter.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct GenericParamData<'db> {
     pub generic_param: Maybe<GenericParam<'db>>,
@@ -255,7 +290,7 @@ pub struct GenericParamData<'db> {
 }
 
 /// The result of the computation of the semantic model of a generic parameters list.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct GenericParamsData<'db> {
     pub generic_params: Vec<GenericParam<'db>>,
@@ -263,8 +298,47 @@ pub struct GenericParamsData<'db> {
     pub resolver_data: Arc<ResolverData<'db>>,
 }
 
+/// Cycle handling for the `*_generic_params_data` queries.
+///
+/// Example cycle, given `struct W<T, +Drop<T>>` and an item-level macro call `E::A!(());` where
+/// variant `E::A`'s type is `W<felt252>`:
+/// `W`'s generic params -> resolving `+Drop<T>` -> the module's items -> expanding `E::A!`
+/// (`priv_macro_call_data`) -> resolving the path `E::A` -> `E`'s variants -> the variant's type
+/// `W<felt252>` -> `W`'s generic params.
+///
+/// Returning the freshly computed `value` lets salsa fixpoint-iterate, so the memoized result is
+/// the real computation and the item's own diagnostics survive. Returning the last provisional
+/// value instead would freeze the query at [generic_params_data_initial] and silently drop them.
+///
+/// The computed value depends only on whether the re-entrant read saw the initial `Err` or a real
+/// value, so the fixpoint is reached within 3 iterations (verified on the goldens via
+/// `Cycle::iteration()`, against salsa's `MAX_ITERATIONS` of 200):
+/// initial `Err` -> value computed against that `Err` -> value computed against a real value ->
+/// unchanged.
+pub fn generic_params_data_cycle<'db, TKey>(
+    _db: &'db dyn Database,
+    _cycle: &salsa::Cycle<'_>,
+    _last_provisional_value: &Maybe<GenericParamsData<'db>>,
+    value: Maybe<GenericParamsData<'db>>,
+    _key: TKey,
+) -> Maybe<GenericParamsData<'db>> {
+    value
+}
+
+/// The provisional value seen by the query that re-enters a `*_generic_params_data` query.
+///
+/// See [generic_params_data_cycle]. `skip_diagnostic` avoids reporting the cycle itself - what
+/// actually went wrong is reported by the queries participating in it.
+pub fn generic_params_data_initial<'db, TKey>(
+    _db: &'db dyn Database,
+    _id: salsa::Id,
+    _key: TKey,
+) -> Maybe<GenericParamsData<'db>> {
+    Err(skip_diagnostic())
+}
+
 /// Query implementation of [GenericsSemantic::generic_impl_param_trait].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn generic_impl_param_trait<'db>(
     db: &'db dyn Database,
     generic_param_id: GenericParamId<'db>,
@@ -294,7 +368,7 @@ fn generic_impl_param_trait<'db>(
 
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     let inference_id = InferenceId::GenericImplParamTrait(generic_param_id);
-    // TODO(spapini): We should not create a new resolver -  we are missing the other generic params
+    // TODO(spapini): We should not create a new resolver - we are missing the other generic params
     // in the context.
     // Remove also GenericImplParamTrait.
     let mut resolver = Resolver::new(db, module_id, inference_id);
@@ -401,7 +475,6 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
                 })
                 .collect::<Vec<_>>())
         }
-        ast::PathSegment::Missing(_) => Ok(Vec::new()),
     }
 }
 
@@ -591,7 +664,7 @@ fn is_associated_item_constraints_enabled(db: &dyn Database, module_id: ModuleId
         .is_some_and(|c| c.settings.experimental_features.associated_item_constraints)
 }
 
-/// Computes the semantic model of a generic parameter give its ast.
+/// Computes the semantic model of a generic parameter given its ast.
 fn semantic_from_generic_param_ast<'db>(
     db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
@@ -662,14 +735,21 @@ fn semantic_from_generic_param_ast<'db>(
 
             let neg_impl =
                 impl_generic_param_semantic(db, resolver, diagnostics, &path_syntax, None, id);
-            for param in db.trait_generic_params(neg_impl.concrete_trait?.trait_id(db))? {
-                if matches!(param, GenericParam::Type(_) | GenericParam::Const(_)) {
-                    continue;
+            // Note: the trait params are only inspected if the trait was resolved successfully.
+            // On failure the param is still returned (as in the positive impl param arms), so that
+            // the resolution diagnostic is not lost.
+            if let Ok(concrete_trait) = neg_impl.concrete_trait
+                && let Ok(trait_params) = db.trait_generic_params(concrete_trait.trait_id(db))
+            {
+                for param in trait_params {
+                    if matches!(param, GenericParam::Type(_) | GenericParam::Const(_)) {
+                        continue;
+                    }
+                    diagnostics.report(
+                        param.stable_ptr(db),
+                        SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl,
+                    );
                 }
-                diagnostics.report(
-                    param.stable_ptr(db),
-                    SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl,
-                );
             }
 
             GenericParam::NegImpl(neg_impl)
@@ -714,7 +794,7 @@ fn impl_generic_param_semantic<'db>(
                             concrete_trait_id,
                         },
                     );
-                    return map;
+                    continue;
                 };
 
                 let concrete_trait_type_id =
@@ -778,6 +858,40 @@ pub fn displayable_concrete<'db, 'a: 'db, Name: Display>(
     DisplayableConcrete { db, name, generic_args }
 }
 
+/// The key name of a generic definition applied to generic arguments: the definition's key path,
+/// then a hash of the arguments' key names, so the name's size is bounded by the path's. Distinct
+/// instantiations have distinct key names.
+pub fn concrete_key_name<'db>(
+    db: &'db dyn Database,
+    path: &str,
+    generic_args: &[GenericArgumentId<'db>],
+) -> String {
+    if generic_args.is_empty() {
+        return path.to_string();
+    }
+    let hash = names_hash(|names| generic_args.iter().for_each(|arg| arg.add_key_name(db, names)));
+    format!("{path}::<{hash}>")
+}
+
+/// Hashes names, each delimited from the next.
+pub struct NamesHasher(Keccak256);
+impl NamesHasher {
+    pub fn add(&mut self, name: impl AsRef<[u8]>) {
+        self.0.update(name);
+        self.0.update([0]);
+    }
+}
+
+/// A hash of the names `add_names` adds: distinct sequences of names have distinct hashes.
+pub fn names_hash(add_names: impl FnOnce(&mut NamesHasher)) -> String {
+    let mut names = NamesHasher(Keccak256::new());
+    add_names(&mut names);
+    format!(
+        "h0x{}",
+        names.0.finalize().iter().format_with("", |byte, f| f(&format_args!("{byte:02x}")))
+    )
+}
+
 /// The helper struct for `with_generic_args_formatter`.
 struct DisplayableConcrete<'a, 'db, Name> {
     db: &'db dyn Database,
@@ -787,21 +901,21 @@ struct DisplayableConcrete<'a, 'db, Name> {
 impl<Name: Display> Display for DisplayableConcrete<'_, '_, Name> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut f = CountingWriter::new(f);
-        write!(f, "{}", &self.name)?;
+        write!(f, "{}", self.name)?;
         let mut generic_args = self.generic_args.iter();
         if let Some(first) = generic_args.next() {
             // Soft limit for the number of chars in the formatted type.
             const CHARS_BOUND: usize = 500;
             write!(f, "::<")?;
-            write!(f, "{}", &first.format(self.db))?;
+            write!(f, "{}", first.format(self.db))?;
 
             for arg in generic_args {
                 write!(f, ", ")?;
                 if f.count() > CHARS_BOUND {
                     // If the formatted type is becoming too long, add short version of arguments.
-                    write!(f, "{}", &arg.short_name(self.db))?;
+                    write!(f, "{}", arg.short_name(self.db))?;
                 } else {
-                    write!(f, "{}", &arg.format(self.db))?;
+                    write!(f, "{}", arg.format(self.db))?;
                 }
             }
             write!(f, ">")?;

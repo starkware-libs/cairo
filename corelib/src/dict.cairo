@@ -30,11 +30,11 @@
 //! It is also possible to use the [`Felt252DictTrait::entry`] method to retrieve the last entry
 //! given a certain key.
 //! In this case, the method takes ownership of the dictionary and returns the entry to update.
-//! After that, using the [`Felt252DictEntryTrait::finalize`] allows to create a new entry in the
+//! After that, you can use [`Felt252DictEntryTrait::finalize`] to create a new entry in the
 //! dictionary.
-//! Using `entry` and `finalize` methods can be very useful given that it does not require the type
-//! in the dictionary to be copyable, meaning that we can use non-copyable types like arrays as
-//! dictionary values.
+//! Using the `entry` and `finalize` methods can be very useful, given that they do not require the
+//! type in the dictionary to be copyable, meaning that we can use non-copyable types like arrays
+//! as dictionary values.
 //!
 //! ```
 //! use core::dict::Felt252Dict;
@@ -181,19 +181,17 @@ pub trait Felt252DictEntryTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::dict::Felt252DictEntryTrait;
+    /// use core::dict::{Felt252Dict, Felt252DictEntryTrait};
     ///
-    /// // Create a dictionary that stores arrays
+    /// // A dictionary that stores arrays (a non-`Copy` type).
     /// let mut dict: Felt252Dict<Nullable<Array<felt252>>> = Default::default();
+    /// dict.insert(0, NullableTrait::new(array![1, 2, 3]));
     ///
-    /// let a = array![1, 2, 3];
-    /// dict.insert(0, NullableTrait::new(a));
-    ///
+    /// // `entry` takes the dictionary and the previous value; `finalize` stores the
+    /// // new value and gives the dictionary back.
     /// let (entry, prev_value) = dict.entry(0);
-    /// let new_value = NullableTrait::new(array![4, 5, 6]);
-    /// dict = entry.finalize(new_value);
-    /// assert!(prev_value == a);
-    /// assert!(dict.get(0) == new_value);
+    /// dict = entry.finalize(NullableTrait::new(array![4, 5, 6]));
+    /// assert!(prev_value.deref() == array![1, 2, 3]);
     /// ```
     fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>;
 }
@@ -205,7 +203,7 @@ impl Felt252DictEntryImpl<T, +Felt252DictValue<T>> of Felt252DictEntryTrait<T> {
     }
 }
 
-impl Felt252DictDefault<T> of Default<Felt252Dict<T>> {
+impl Felt252DictDefault<T, +Felt252DictValue<T>> of Default<Felt252Dict<T>> {
     /// Returns a new empty dictionary.
     ///
     /// # Examples
@@ -295,7 +293,7 @@ impl Felt252DictFromIterator<
 #[generate_trait]
 pub impl SquashedFelt252DictImpl<T> of SquashedFelt252DictTrait<T> {
     /// Returns an array of `(key, first_value, last_value)` tuples.
-    /// The first value is always 0.
+    /// The first value is always the zero/default value of the value type `T`.
     ///
     /// # Example
     /// ```

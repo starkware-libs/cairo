@@ -84,7 +84,7 @@ impl<'db> UserLocationWithPluginNotes<'db> for SpanInFile<'db> {
 
 /// A note about a diagnostic.
 /// May include a relevant diagnostic location.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, HeapSize, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, HeapSize, salsa::SalsaValue)]
 pub struct DiagnosticNote<'a> {
     pub text: String,
     pub location: Option<SpanInFile<'a>>,
@@ -115,7 +115,7 @@ impl<'a> DebugWithDb<'a> for DiagnosticNote<'a> {
 ///
 /// It must not be constructed directly. Instead, it is returned by [DiagnosticsBuilder::add]
 /// when a diagnostic is reported.
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, HeapSize, salsa::Update)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, HeapSize, salsa::SalsaValue)]
 pub struct DiagnosticAdded;
 
 pub fn skip_diagnostic() -> DiagnosticAdded {
@@ -167,14 +167,18 @@ impl<T> ToOption<T> for Maybe<T> {
 }
 
 /// A builder for Diagnostics, accumulating multiple diagnostic entries.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct DiagnosticsBuilder<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> {
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct DiagnosticsBuilder<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue> {
     pub error_count: usize,
     pub leaves: Vec<TEntry>,
+    /// SAFETY: the field is recursive in `Self`, so a structural `SalsaValue` bound would
+    /// overflow the trait solver; `Diagnostics<'db, TEntry>` is a `SalsaValue` whenever the
+    /// other fields' checks pass, as it is composed of the same `TEntry` values.
+    #[salsa_value(unsafe(prove_safe_to_retain_manually))]
     pub subtrees: Vec<Diagnostics<'db, TEntry>>,
     _marker: std::marker::PhantomData<&'db ()>,
 }
-impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> DiagnosticsBuilder<'db, TEntry> {
+impl<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue> DiagnosticsBuilder<'db, TEntry> {
     pub fn add(&mut self, diagnostic: TEntry) -> DiagnosticAdded {
         if diagnostic.severity() == Severity::Error {
             self.error_count += 1;
@@ -190,7 +194,7 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> DiagnosticsBuilder<'db, 
         Diagnostics(self.into())
     }
 }
-impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> From<Diagnostics<'db, TEntry>>
+impl<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue> From<Diagnostics<'db, TEntry>>
     for DiagnosticsBuilder<'db, TEntry>
 {
     fn from(diagnostics: Diagnostics<'db, TEntry>) -> Self {
@@ -199,7 +203,7 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> From<Diagnostics<'db, TE
         new_self
     }
 }
-impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Default
+impl<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue> Default
     for DiagnosticsBuilder<'db, TEntry>
 {
     fn default() -> Self {
@@ -258,11 +262,11 @@ impl fmt::Display for FormattedDiagnosticEntry {
 }
 
 /// A set of diagnostic entries that arose during a computation.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct Diagnostics<'db, TEntry: DiagnosticEntry<'db> + salsa::Update>(
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::SalsaValue)]
+pub struct Diagnostics<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue>(
     pub Arc<DiagnosticsBuilder<'db, TEntry>>,
 );
-impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry> {
+impl<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue> Diagnostics<'db, TEntry> {
     pub fn new() -> Self {
         Self(DiagnosticsBuilder::default().into())
     }
@@ -387,12 +391,12 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
         builder.build()
     }
 }
-impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Default for Diagnostics<'db, TEntry> {
+impl<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue> Default for Diagnostics<'db, TEntry> {
     fn default() -> Self {
         Self::new()
     }
 }
-impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> FromIterator<TEntry>
+impl<'db, TEntry: DiagnosticEntry<'db> + salsa::SalsaValue> FromIterator<TEntry>
     for Diagnostics<'db, TEntry>
 {
     fn from_iter<T: IntoIterator<Item = TEntry>>(diags_iter: T) -> Self {

@@ -2,6 +2,8 @@
 //!
 //! This module provides `FwdAnalysis`, which traverses the control flow graph in forward
 //! (topological) order, computing dataflow information from function entry to exits.
+use itertools::Itertools;
+
 use crate::analysis::core::{DataflowAnalyzer, Direction, Edge};
 use crate::{BlockEnd, BlockId, Lowered};
 
@@ -46,15 +48,11 @@ impl<'db, 'a, TAnalyzer: DataflowAnalyzer<'db, 'a>> ForwardDataflowAnalysis<'db,
 
         // Root block has 0 predecessors, so it's immediately ready.
         let root_id = BlockId::root();
-        self.incoming[root_id.0] =
-            Some(self.analyzer.initial_info(root_id, &self.lowered.blocks[root_id].end));
-        let mut ready: Vec<BlockId> = vec![root_id];
+        let mut ready =
+            vec![(root_id, self.analyzer.initial_info(root_id, &self.lowered.blocks[root_id].end))];
 
-        while let Some(block_id) = ready.pop() {
+        while let Some((block_id, mut info)) = ready.pop() {
             let block = &self.lowered.blocks[block_id];
-
-            // Get entry info from incoming edges.
-            let mut info = self.incoming[block_id.0].clone().unwrap();
 
             // Process block.
             self.analyzer.visit_block_start(&mut info, block_id, block);
@@ -62,10 +60,13 @@ impl<'db, 'a, TAnalyzer: DataflowAnalyzer<'db, 'a>> ForwardDataflowAnalysis<'db,
 
             // Transfer to successors and check readiness.
             self.propagate_to_successors(block_id, &info, &mut ready);
-
             block_info[block_id.0] = Some(info);
         }
-
+        assert!(
+            self.incoming.iter().all(Option::is_none),
+            "Post run, there should be no-incoming. Actual: {:?}",
+            self.incoming.iter().map(Option::is_some).zip(&self.predecessor_counts).collect_vec()
+        );
         block_info
     }
 
@@ -74,7 +75,7 @@ impl<'db, 'a, TAnalyzer: DataflowAnalyzer<'db, 'a>> ForwardDataflowAnalysis<'db,
         &mut self,
         block_id: BlockId,
         info: &TAnalyzer::Info,
-        ready: &mut Vec<BlockId>,
+        ready: &mut Vec<(BlockId, TAnalyzer::Info)>,
     ) {
         let block = &self.lowered.blocks[block_id];
         match &block.end {
@@ -104,16 +105,18 @@ impl<'db, 'a, TAnalyzer: DataflowAnalyzer<'db, 'a>> ForwardDataflowAnalysis<'db,
         &mut self,
         target: BlockId,
         info: TAnalyzer::Info,
-        ready: &mut Vec<BlockId>,
+        ready: &mut Vec<(BlockId, TAnalyzer::Info)>,
     ) {
         let merged_info = match self.incoming[target.0].take() {
             Some(existing) => self.analyzer.merge(self.lowered, (target, 0), existing, info),
             None => info,
         };
-        self.incoming[target.0] = Some(merged_info);
+
         self.predecessor_counts[target.0] -= 1;
         if self.predecessor_counts[target.0] == 0 {
-            ready.push(target);
+            ready.push((target, merged_info));
+        } else {
+            self.incoming[target.0] = Some(merged_info);
         }
     }
 }
@@ -123,15 +126,18 @@ fn compute_predecessor_counts(lowered: &Lowered<'_>) -> Vec<usize> {
     let n_blocks = lowered.blocks.len();
     let mut counts = vec![0usize; n_blocks];
 
-    for (_, block) in lowered.blocks.iter() {
-        match &block.end {
-            BlockEnd::Goto(target, _) => {
-                counts[target.0] += 1;
+    let mut stack = vec![BlockId::root()];
+    while let Some(b) = stack.pop() {
+        let mut handle_target = |target: BlockId| {
+            if counts[target.0] == 0 {
+                stack.push(target);
             }
+            counts[target.0] += 1;
+        };
+        match &lowered.blocks[b].end {
+            BlockEnd::Goto(target, _) => handle_target(*target),
             BlockEnd::Match { info } => {
-                for arm in info.arms() {
-                    counts[arm.block_id.0] += 1;
-                }
+                info.arms().iter().for_each(|arm| handle_target(arm.block_id));
             }
             BlockEnd::Return(..) | BlockEnd::Panic(_) | BlockEnd::NotSet => {}
         }

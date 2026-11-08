@@ -7,7 +7,7 @@ use crate::db::files_group_input;
 use crate::ids::{FlagId, FlagLongId};
 
 /// A compilation flag.
-#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize, Hash, salsa::Update)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize, Hash, salsa::SalsaValue)]
 pub enum Flag {
     /// Whether to automatically add `withdraw_gas` calls in code cycles.
     /// Default is true - automatically add.
@@ -52,14 +52,14 @@ macro_rules! extract_flag_value {
 }
 
 /// Returns the value of the `add_withdraw_gas` flag, or `true` if the flag is not set.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn flag_add_withdraw_gas(db: &dyn Database) -> bool {
     extract_flag_value!(db, ADD_WITHDRAW_GAS, AddWithdrawGas).unwrap_or(true)
 }
 
 /// Returns the value of the `numeric_match_optimization_min_arms_threshold` flag, or `None` if the
 /// flag is not set.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn flag_numeric_match_optimization_min_arms_threshold(db: &dyn salsa::Database) -> Option<usize> {
     extract_flag_value!(
         db,
@@ -69,19 +69,19 @@ fn flag_numeric_match_optimization_min_arms_threshold(db: &dyn salsa::Database) 
 }
 
 /// Returns the value of the `panic_backtrace` flag, or `false` if the flag is not set.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn flag_panic_backtrace(db: &dyn salsa::Database) -> bool {
     extract_flag_value!(db, PANIC_BACKTRACE, PanicBacktrace).unwrap_or_default()
 }
 
 /// Returns the value of the `unsafe_panic` flag, or `false` if the flag is not set.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn flag_unsafe_panic(db: &dyn salsa::Database) -> bool {
     extract_flag_value!(db, UNSAFE_PANIC, UnsafePanic).unwrap_or_default()
 }
 
 /// Returns the value of the `future_sierra` flag, or `false` if the flag is not set.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn flag_future_sierra(db: &dyn salsa::Database) -> bool {
     extract_flag_value!(db, FUTURE_SIERRA, FutureSierra).unwrap_or_default()
 }
@@ -93,7 +93,7 @@ pub fn flags<'db>(db: &'db dyn Database) -> OrderedHashMap<FlagId<'db>, Flag> {
 }
 
 /// Returns a reference to the flag value.
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn get_flag<'db>(db: &'db dyn Database, id: FlagId<'db>) -> Option<Flag> {
     db.flags().get(&id).copied()
 }

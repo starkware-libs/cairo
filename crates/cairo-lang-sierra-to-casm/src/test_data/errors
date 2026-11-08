@@ -1172,3 +1172,26 @@ type InvalidNonZeroPoint = Const<NonZeroEcPoint, ValidPoint2>;
 
 //! > error
 Error during type specialization of `InvalidNonZeroPoint`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > Function entry point inside a tracked part of another function
+
+//! > test_runner_name
+compiler_errors
+
+//! > metadata
+gas
+
+//! > sierra_code
+type felt252 = felt252;
+libfunc store_temp_felt252 = store_temp<felt252>;
+
+store_temp_felt252([0]) -> ([0]);
+return([0]);
+
+foo@0([0]: felt252) -> (felt252);
+bar@1([0]: felt252) -> (felt252);
+
+//! > error
+Attempted to merge branches with different bases to align

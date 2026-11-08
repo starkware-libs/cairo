@@ -90,6 +90,7 @@ macro_rules! module_item_kw {
             | SyntaxKind::TerminalExtern
             | SyntaxKind::TerminalFunction
             | SyntaxKind::TerminalImpl
+            | SyntaxKind::TerminalMacro
             | SyntaxKind::TerminalModule
             | SyntaxKind::TerminalStruct
             | SyntaxKind::TerminalTrait
@@ -101,7 +102,15 @@ pub(crate) use module_item_kw;
 
 macro_rules! block {
     () => {
-        SyntaxKind::TerminalLet | SyntaxKind::TerminalMatch | SyntaxKind::TerminalReturn
+        SyntaxKind::TerminalLet
+            | SyntaxKind::TerminalMatch
+            | SyntaxKind::TerminalReturn
+            | SyntaxKind::TerminalBreak
+            | SyntaxKind::TerminalContinue
+            | SyntaxKind::TerminalIf
+            | SyntaxKind::TerminalWhile
+            | SyntaxKind::TerminalLoop
+            | SyntaxKind::TerminalFor
     };
 }
 pub(crate) use block;

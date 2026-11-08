@@ -1,3 +1,63 @@
+//! > Test short string ending with escaped quote
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+   let s = 'abc\';
+}
+
+//! > expected_diagnostics
+error[E1020]: Unterminated short string literal.
+ --> dummy_file.cairo:2:12-3:1
+     let s = 'abc\';
+ ____________^
+| }
+|_^
+
+error[E1001]: Missing token ';'.
+ --> dummy_file.cairo:3:2
+}
+ ^
+
+error[E1001]: Missing token '}'.
+ --> dummy_file.cairo:3:2
+}
+ ^
+
+//! > ==========================================================================
+
+//! > Test string ending with escaped quote
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+   let s = "abc\";
+}
+
+//! > expected_diagnostics
+error[E1021]: Unterminated string literal.
+ --> dummy_file.cairo:2:12-3:1
+     let s = "abc\";
+ ____________^
+| }
+|_^
+
+error[E1001]: Missing token ';'.
+ --> dummy_file.cairo:3:2
+}
+ ^
+
+error[E1001]: Missing token '}'.
+ --> dummy_file.cairo:3:2
+}
+ ^
+
+//! > ==========================================================================
+
 //! > Test missing closing short string token
 
 //! > test_runner_name

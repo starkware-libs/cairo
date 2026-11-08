@@ -3,18 +3,7 @@
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo() -> bool {
-    let x = true;
-    immovable(x);
-    revoke_ap();
-    x
-}
-
-//! > module_code
+//! > cairo_code
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()
@@ -28,6 +17,13 @@ struct MyStruct {
 #[inline(never)]
 fn immovable<T>(t: T) -> T {
     t
+}
+#[target_function]
+fn foo() -> bool {
+    let x = true;
+    immovable(x);
+    revoke_ap();
+    x
 }
 
 //! > lowering_format

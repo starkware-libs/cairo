@@ -54,7 +54,27 @@ fn main() {
 ----
 
 NOTE: Division is not directly supported via the `/` operator. Use the
-`felt252_div` function from the core library for field division.
+`felt252_div` function from the core library for field division. Field division
+is *not* integer division: `felt252_div(a, b)` returns the field element `n`
+such that `n * b ≡ a (mod P)`. The divisor must be wrapped in `NonZero<felt252>`
+to guarantee it is non-zero.
+
+[source,cairo]
+----
+use core::felt252_div;
+
+fn main() {
+    let two: NonZero<felt252> = 2.try_into().unwrap();
+    // Exact division works as expected
+    assert!(felt252_div(4, two) == 2);
+
+    let three: NonZero<felt252> = 3.try_into().unwrap();
+    // Non-exact division returns the field inverse, NOT an integer quotient
+    // felt252_div(4, 3) returns n where n * 3 ≡ 4 (mod P)
+    let result = felt252_div(4, three);
+    assert!(result * 3 == 4);
+}
+----
 
 == Negation
 

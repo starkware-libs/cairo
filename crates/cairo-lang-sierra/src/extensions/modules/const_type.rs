@@ -147,7 +147,7 @@ fn validate_const_enum_data(
         selector.try_into().map_err(|_| SpecializationError::UnsupportedGenericArg)?;
     // Extract the variant data type according to the selector.
     let Some(GenericArg::Type(variant_data_ty)) =
-        inner_type_info.long_id.generic_args.get(1 + selector)
+        selector.checked_add(1).and_then(|idx| inner_type_info.long_id.generic_args.get(idx))
     else {
         return Err(SpecializationError::UnsupportedGenericArg);
     };

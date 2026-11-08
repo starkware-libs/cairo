@@ -3,20 +3,22 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleId,
-    NamedLanguageElementId, StructId, TraitTypeId, UnstableSalsaId,
+    NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_proc_macros::{HeapSize, SemanticObject};
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::PathSegment;
+use cairo_lang_syntax::node::helpers::generated_function_path;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, extract_matches, try_extract_matches};
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
-use num_traits::Zero;
+use num_traits::{ToPrimitive, Zero};
 use salsa::Database;
 use sha3::{Digest, Keccak256};
 
@@ -24,24 +26,27 @@ use crate::corelib::{
     CorelibSemantic, concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
     concrete_panic_destruct_trait, core_box_ty, get_usize_ty, unit_ty,
 };
-use crate::diagnostic::SemanticDiagnosticKind::*;
+use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, compute_expr_semantic};
 use crate::expr::inference::canonic::{CanonicalTrait, ResultNoErrEx};
-use crate::expr::inference::solver::{SemanticSolver, SolutionSet, enrich_lookup_context};
+use crate::expr::inference::solver::{SemanticSolver, SolutionSet};
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
+use crate::helper::ModuleHelper;
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
 use crate::items::enm::{EnumSemantic, SemanticEnumEx};
 use crate::items::extern_type::ExternTypeSemantic;
-use crate::items::generics::{GenericParamSemantic, displayable_concrete};
+use crate::items::generics::{
+    GenericParamSemantic, concrete_key_name, displayable_concrete, names_hash,
+};
 use crate::items::imp::{ImplId, ImplLookupContext, ImplLookupContextId, ImplSemantic};
 use crate::items::structure::StructSemantic;
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub enum TypeLongId<'db> {
     Concrete(ConcreteTypeId<'db>),
     /// Some expressions might have invalid types during processing, either due to errors or
@@ -50,6 +55,12 @@ pub enum TypeLongId<'db> {
     Snapshot(TypeId<'db>),
     GenericParameter(GenericParamId<'db>),
     Var(TypeVar<'db>),
+    /// A deferred concrete integer type. A placeholder produced by numeric literal expressions.
+    /// Always satisfies `Drop`, `Copy`, `Destruct`, `PanicDestruct` (via a synthetic generated
+    /// impl). Can be unified with any type that accepts numeric literals (felt252, primitive
+    /// integers, `NonZero<…>`, bounded ints), and defaults to `felt252` if still unbound at
+    /// inference finalization.
+    NumericLiteral(TypeVar<'db>),
     Coupon(FunctionId<'db>),
     FixedSizeArray {
         type_id: TypeId<'db>,
@@ -106,16 +117,72 @@ impl<'db> TypeId<'db> {
         db.priv_type_is_var_free(*self)
     }
 
-    /// Returns whether the type is phantom.
-    /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
-    /// sized array containing it.
+    /// Returns whether the type is, or transitively contains, a phantom type - i.e. a type with no
+    /// runtime representation.
+    ///
+    /// A type is phantom if it carries the `#[phantom]` attribute (or a phantom attribute declared
+    /// by a plugin), or if any of its struct members, enum variants, tuple or fixed-size-array
+    /// elements, or its snapshotted type is (transitively) phantom.
     pub fn is_phantom(&self, db: &dyn Database) -> bool {
-        self.long(db).is_phantom(db)
+        #[salsa::tracked(returns(copy), cycle_result=is_phantom_cycle)]
+        fn is_phantom_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
+            ty.long(db).is_phantom(db)
+        }
+        /// A type that (transitively) contains itself is not made phantom by the cycle - any
+        /// phantom is found through the non-cyclic branches, so the cyclic edge contributes
+        /// `false`.
+        fn is_phantom_cycle<'db>(_db: &'db dyn Database, _id: salsa::Id, _ty: TypeId<'db>) -> bool {
+            false
+        }
+        is_phantom_tracked(db, *self)
     }
 
     /// Short name of the type argument.
     pub fn short_name(&self, db: &dyn Database) -> String {
         db.priv_type_short_name(*self)
+    }
+
+    /// A name of bounded size that distinct types do not share, unlike `short_name` which names
+    /// impl parameters by their local names. Memoized.
+    pub fn key_name(&self, db: &'db dyn Database) -> &'db str {
+        type_key_name(db, *self)
+    }
+}
+
+/// Query implementation of [TypeId::key_name].
+#[salsa::tracked(returns(ref))]
+fn type_key_name<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> String {
+    match ty.long(db) {
+        TypeLongId::Concrete(concrete_type_id) => concrete_key_name(
+            db,
+            &concrete_type_id.generic_type(db).key_path(db),
+            &concrete_type_id.generic_args(db),
+        ),
+        TypeLongId::Tuple(types) => {
+            format!(
+                "({})",
+                names_hash(|names| types.iter().for_each(|ty| names.add(ty.key_name(db))))
+            )
+        }
+        TypeLongId::Snapshot(ty) => format!("@{}", ty.key_name(db)),
+        TypeLongId::GenericParameter(param) => param.key_path(db),
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            format!("[{}; {}]", type_id.key_name(db), size.key_name(db))
+        }
+        TypeLongId::ImplType(impl_type) => {
+            format!("{}::{}", impl_type.impl_id().key_name(db), impl_type.ty().name(db).long(db))
+        }
+        TypeLongId::Var(var) | TypeLongId::NumericLiteral(var) => format!("?{}", var.id.0),
+        TypeLongId::Coupon(function) => format!("{}::Coupon", function.key_name(db)),
+        TypeLongId::Closure(closure) => match closure.parent_function {
+            Ok(parent) => format!(
+                "{}::{}",
+                parent.key_name(db),
+                generated_function_path(db, closure.params_location.syntax_node(db))
+            ),
+            Err(_) => ty.format(db),
+        },
+        TypeLongId::Missing(_) => ty.format(db),
     }
 }
 impl<'db> TypeLongId<'db> {
@@ -133,6 +200,7 @@ impl<'db> TypeLongId<'db> {
             TypeLongId::FixedSizeArray { .. } => TypeHead::FixedSizeArray,
             TypeLongId::GenericParameter(generic_param_id) => TypeHead::Generic(*generic_param_id),
             TypeLongId::Var(_)
+            | TypeLongId::NumericLiteral(_)
             | TypeLongId::Missing(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Closure(_) => {
@@ -141,40 +209,51 @@ impl<'db> TypeLongId<'db> {
         })
     }
 
-    /// Returns whether the type is phantom.
-    /// Type is considered phantom if it has the `#[phantom]` attribute, (or an other attribute
-    /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
-    /// containing it.
+    /// Returns whether the type is, or transitively contains, a phantom type.
+    /// See [TypeId::is_phantom].
     pub fn is_phantom(&self, db: &dyn Database) -> bool {
+        fn has_phantom_attribute<'db>(
+            db: &'db dyn Database,
+            crate_id: CrateId<'db>,
+            item: impl SemanticQueryAttrs<'db>,
+        ) -> bool {
+            db.declared_phantom_type_attributes(crate_id)
+                .iter()
+                .any(|attr| item.has_attr(db, attr.long(db)).unwrap_or_default())
+        }
         match self {
             TypeLongId::Concrete(id) => match id {
                 ConcreteTypeId::Struct(id) => {
-                    let crate_id = id.struct_id(db).long(db).0.owning_crate(db);
-
-                    db.declared_phantom_type_attributes(crate_id)
-                        .iter()
-                        .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
+                    let struct_id = id.struct_id(db);
+                    if has_phantom_attribute(db, struct_id.long(db).0.owning_crate(db), struct_id) {
+                        return true;
+                    }
+                    let Ok(members) = db.concrete_struct_members(*id) else {
+                        return false;
+                    };
+                    members.iter().any(|(_, m)| m.ty.is_phantom(db))
                 }
                 ConcreteTypeId::Enum(id) => {
-                    let crate_id = id.enum_id(db).long(db).0.owning_crate(db);
-
-                    db.declared_phantom_type_attributes(crate_id)
-                        .iter()
-                        .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
+                    let enum_id = id.enum_id(db);
+                    if has_phantom_attribute(db, enum_id.long(db).0.owning_crate(db), enum_id) {
+                        return true;
+                    }
+                    let Ok(variants) = db.concrete_enum_variants(*id) else {
+                        return false;
+                    };
+                    variants.iter().any(|v| v.ty.is_phantom(db))
                 }
                 ConcreteTypeId::Extern(id) => {
-                    let crate_id = id.extern_type_id(db).long(db).0.owning_crate(db);
-
-                    db.declared_phantom_type_attributes(crate_id)
-                        .iter()
-                        .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
+                    let extern_id = id.extern_type_id(db);
+                    has_phantom_attribute(db, extern_id.long(db).0.owning_crate(db), extern_id)
                 }
             },
             TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
             TypeLongId::FixedSizeArray { type_id, .. } => type_id.is_phantom(db),
-            TypeLongId::Snapshot(_)
-            | TypeLongId::GenericParameter(_)
+            TypeLongId::Snapshot(inner) => inner.is_phantom(db),
+            TypeLongId::GenericParameter(_)
             | TypeLongId::Var(_)
+            | TypeLongId::NumericLiteral(_)
             | TypeLongId::Coupon(_)
             | TypeLongId::ImplType(_)
             | TypeLongId::Missing(_)
@@ -192,6 +271,7 @@ impl<'db> TypeLongId<'db> {
             }
             TypeLongId::GenericParameter(_) => None,
             TypeLongId::Var(_) => None,
+            TypeLongId::NumericLiteral(_) => None,
             TypeLongId::Coupon(function_id) => {
                 function_id.get_concrete(db).generic_function.module_id(db)
             }
@@ -235,9 +315,11 @@ impl<'db> TypeLongId<'db> {
                 generic_parameters.insert(*generic_param);
             }
             TypeLongId::Var(_) => {}
+            TypeLongId::NumericLiteral(_) => {}
             TypeLongId::Coupon(_) => {}
-            TypeLongId::FixedSizeArray { type_id, .. } => {
-                type_id.extract_generic_params(db, generic_parameters, visited)?
+            TypeLongId::FixedSizeArray { type_id, size } => {
+                type_id.extract_generic_params(db, generic_parameters, visited)?;
+                size.extract_generic_params(db, generic_parameters, visited)?;
             }
             TypeLongId::ImplType(impl_type_id) => {
                 let concrete_trait_id = impl_type_id.impl_id.concrete_trait(db)?;
@@ -285,7 +367,7 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
                 if inner_types.len() == 1 {
                     write!(f, "({},)", inner_types[0].format(db))
                 } else {
-                    write!(f, "({})", inner_types.iter().map(|ty| ty.format(db)).join(", "))
+                    write!(f, "({})", inner_types.iter().map(|ty| ty.format(db)).format(", "))
                 }
             }
             TypeLongId::Snapshot(ty) => write!(f, "@{}", ty.format(db)),
@@ -301,6 +383,7 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
                 )
             }
             TypeLongId::Var(var) => write!(f, "?{}", var.id.0),
+            TypeLongId::NumericLiteral(_) => write!(f, "{{numeric}}"),
             TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_path(db)),
             TypeLongId::Missing(_) => write!(f, "<missing>"),
             TypeLongId::FixedSizeArray { type_id, size } => {
@@ -318,7 +401,7 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
 /// A type that is not one of {generic param, type variable, impl type} has a head, which represents
 /// the kind of the root node in its type tree. This is used for caching queries for fast lookups
 /// when the type is not completely inferred yet.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::SalsaValue)]
 pub enum TypeHead<'db> {
     Concrete(GenericTypeId<'db>),
     Snapshot(Box<TypeHead<'db>>),
@@ -328,7 +411,7 @@ pub enum TypeHead<'db> {
     FixedSizeArray,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub enum ConcreteTypeId<'db> {
     Struct(ConcreteStructId<'db>),
     Enum(ConcreteEnumId<'db>),
@@ -401,7 +484,7 @@ impl<'db> DebugWithDb<'db> for ConcreteTypeId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ConcreteStructLongId<'db> {
     pub struct_id: StructId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -421,7 +504,7 @@ impl<'db> DebugWithDb<'db> for ConcreteStructLongId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ConcreteEnumLongId<'db> {
     pub enum_id: EnumId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -442,7 +525,7 @@ impl<'db> ConcreteEnumId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ConcreteExternTypeLongId<'db> {
     pub extern_type_id: ExternTypeId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -456,7 +539,7 @@ impl<'db> ConcreteExternTypeId<'db> {
 }
 
 /// A type id of a closure function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ClosureTypeLongId<'db> {
     pub param_tys: Vec<TypeId<'db>>,
     pub ret_ty: TypeId<'db>,
@@ -475,12 +558,18 @@ impl<'db> DebugWithDb<'db> for ClosureTypeLongId<'db> {
     type Db = dyn Database;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
-        write!(f, "{{closure@{:?}}}", self.params_location.debug(db))
+        let path = generated_function_path(db, self.params_location.syntax_node(db));
+        if let Ok(parent_function) = self.parent_function {
+            return write!(f, "{:?}::{path}", parent_function.debug(db));
+        }
+        // The parent function is unknown, and a diagnostic was already reported for it - name the
+        // closure by its location, which is unique.
+        write!(f, "<{:?}>::{path}", self.params_location.debug(db))
     }
 }
 
 /// An impl item of kind type.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::SalsaValue)]
 pub struct ImplTypeId<'db> {
     /// The impl the item type is in.
     impl_id: ImplId<'db>,
@@ -513,30 +602,6 @@ impl<'db> DebugWithDb<'db> for ImplTypeId<'db> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         write!(f, "{}", self.format(db))
-    }
-}
-
-/// A wrapper around ImplTypeById that implements Ord for saving in an ordered collection.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
-pub struct ImplTypeById<'db>(ImplTypeId<'db>);
-
-impl<'db> From<ImplTypeId<'db>> for ImplTypeById<'db> {
-    fn from(impl_type_id: ImplTypeId<'db>) -> Self {
-        Self(impl_type_id)
-    }
-}
-impl<'db> Ord for ImplTypeById<'db> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.0
-            .impl_id
-            .get_internal_id()
-            .cmp(&other.0.impl_id.get_internal_id())
-            .then_with(|| self.0.ty.get_internal_id().cmp(&other.0.ty.get_internal_id()))
-    }
-}
-impl<'db> PartialOrd for ImplTypeById<'db> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
     }
 }
 
@@ -644,14 +709,16 @@ fn maybe_resolve_type<'db>(
                 );
             };
             let ty = resolve_type_ex(db, diagnostics, resolver, ty, ctx);
-            let size =
-                match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)? {
-                    Some(size) => size,
-                    None => {
-                        return Err(diagnostics
-                            .report(ty_syntax.stable_ptr(db), FixedSizeArrayTypeEmptySize));
-                    }
-                };
+            let Some(size) =
+                extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)?
+            else {
+                return Err(
+                    diagnostics.report(ty_syntax.stable_ptr(db), FixedSizeArrayTypeEmptySize)
+                );
+            };
+            if let Some(size_int) = size.to_int(db) {
+                verify_fixed_size_array_size(db, diagnostics, size_int, array_syntax)?;
+            }
             TypeLongId::FixedSizeArray { type_id: ty, size }.intern(db)
         }
         _ => {
@@ -661,7 +728,7 @@ fn maybe_resolve_type<'db>(
 }
 
 /// A generic argument which is not fully inferred. Used to avoid cycles in the inference.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub enum ShallowGenericArg<'db> {
     /// The generic argument is a generic parameter.
     GenericParameter(GenericParamId<'db>),
@@ -811,7 +878,7 @@ pub fn verify_fixed_size_array_size<'db>(
     Ok(())
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct TypeInfo<'db> {
     pub droppable: Result<ImplId<'db>, InferenceError<'db>>,
     pub copyable: Result<ImplId<'db>, InferenceError<'db>>,
@@ -880,6 +947,7 @@ fn single_value_type(db: &dyn Database, ty: TypeId<'_>) -> Maybe<bool> {
         TypeLongId::Snapshot(ty) => db.single_value_type(*ty)?,
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
         | TypeLongId::Missing(_)
         | TypeLongId::Coupon(_)
         | TypeLongId::ImplType(_)
@@ -893,12 +961,42 @@ fn single_value_type(db: &dyn Database, ty: TypeId<'_>) -> Maybe<bool> {
 }
 
 /// Query implementation of [TypesSemantic::single_value_type].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn single_value_type_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<bool> {
     single_value_type(db, ty)
 }
 
-/// Adds diagnostics for a type, post semantic analysis of types.
+/// Adds diagnostics for a type used as a value - in a parameter, return type, or expression.
+///
+/// Rejects a phantom type, which has no runtime representation, and an array whose element cannot
+/// be instantiated. Both are faults of this use rather than of the type.
+///
+/// An infinitely-sized type is deliberately not reported here: the cycle is closed by a struct
+/// member or an enum variant, and [add_type_based_diagnostics] already reports it there. Repeating
+/// it at every use names a location the author cannot act on, and one broken type would otherwise
+/// produce a diagnostic per parameter, return type and expression mentioning it.
+pub fn add_value_type_based_diagnostics<'db>(
+    db: &'db dyn Database,
+    diagnostics: &mut SemanticDiagnostics<'db>,
+    ty: TypeId<'db>,
+    stable_ptr: impl Into<SyntaxStablePtrId<'db>> + Copy,
+) {
+    if ty.is_phantom(db) {
+        diagnostics.report(stable_ptr, InstancesOfPhantomTypes);
+    } else if let Some(violation) = array_element_violation(db, ty) {
+        diagnostics.report(stable_ptr, violation.to_kind());
+    } else if let Some(CircuitInputIndexViolation { expected, actual }) =
+        circuit_input_index_violation(db, ty)
+    {
+        diagnostics.report(stable_ptr, CircuitInputIndicesNotContiguous { expected, actual });
+    }
+}
+
+/// Adds diagnostics for a type in a definition - a struct member or an enum variant.
+///
+/// This is where an infinitely-sized type is reported, as the member being checked is the one
+/// closing the cycle. A phantom type is allowed here, and so is not rejected; a value position
+/// should use [add_value_type_based_diagnostics] instead.
 pub fn add_type_based_diagnostics<'db>(
     db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
@@ -908,15 +1006,230 @@ pub fn add_type_based_diagnostics<'db>(
     if db.type_size_info(ty) == Ok(TypeSizeInformation::Infinite) {
         diagnostics.report(stable_ptr, InfiniteSizeType(ty));
     }
-    if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.long(db) {
-        let long_id = extrn.long(db);
-        if long_id.extern_type_id.name(db).long(db) == "Array"
-            && let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..]
-            && db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized)
-        {
-            diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));
+    if let Some(violation) = array_element_violation(db, ty) {
+        diagnostics.report(stable_ptr, violation.to_kind());
+    }
+}
+
+/// A reason a type cannot be used as a value: it (transitively) contains an array whose element
+/// type cannot be instantiated.
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
+enum ArrayElementViolation<'db> {
+    /// An array of a phantom element.
+    Phantom,
+    /// An array of a zero-sized element (carries the element type, for the diagnostic).
+    ZeroSized(TypeId<'db>),
+}
+impl<'db> ArrayElementViolation<'db> {
+    /// The diagnostic kind reported for this violation.
+    fn to_kind(&self) -> SemanticDiagnosticKind<'db> {
+        match self {
+            Self::Phantom => InstancesOfPhantomTypes,
+            Self::ZeroSized(ty) => ArrayOfZeroSizedElements(*ty),
         }
     }
+}
+
+/// Whether `ty` (transitively) contains an array whose element type cannot be instantiated - a
+/// phantom or zero-sized element - and so cannot be used as a value, e.g. `Span<Ph>` or
+/// `Span<[(); 0]>` (which nest `Array<...>`). Memoized.
+///
+/// A phantom type is reported on its own (see [add_value_type_based_diagnostics] for a value, or
+/// the `NonPhantomTypeContainingPhantomType` check for a definition), so it is not descended into.
+/// Only concrete types are searched; a generic parameter is assumed instantiable, so a generic
+/// `Array<T>` is only diagnosed once `T` is concretely disallowed.
+#[salsa::tracked(returns(clone), cycle_result=array_element_violation_cycle)]
+fn array_element_violation<'db>(
+    db: &'db dyn Database,
+    ty: TypeId<'db>,
+) -> Option<ArrayElementViolation<'db>> {
+    if ty.is_phantom(db) {
+        return None;
+    }
+    array_element_deps_or_issue(db, ty, |dep| array_element_violation(db, dep))
+}
+
+/// Cycle handling for [array_element_violation], hit when a type is recursive through an array
+/// element (e.g. `Array<Self>`).
+///
+/// Implements the same logic as [array_element_violation], but iteratively over an explicit
+/// work-stack with a visited set so it never re-enters the query. Recursing back into the query
+/// mid-cycle would let salsa cache a false negative for whichever participant is computed first -
+/// its violation may be reachable only through the rest of the cycle.
+fn array_element_violation_cycle<'db>(
+    db: &'db dyn Database,
+    _id: salsa::Id,
+    ty: TypeId<'db>,
+) -> Option<ArrayElementViolation<'db>> {
+    let mut visited: OrderedHashSet<TypeId<'db>> = OrderedHashSet::default();
+    let mut stack = vec![ty];
+    while let Some(ty) = stack.pop() {
+        if ty.is_phantom(db) || !visited.insert(ty) {
+            continue;
+        }
+        if let Some(violation) = array_element_deps_or_issue(db, ty, |dep| {
+            stack.push(dep);
+            None
+        }) {
+            return Some(violation);
+        }
+    }
+    None
+}
+
+/// Searches `ty` for a bad array element. An array's element is checked directly (phantom or
+/// zero-sized); every component to search recursively - struct members, enum variants, tuple /
+/// snapshot / fixed-size-array / closure-capture components, the type wrapped by a `Box` /
+/// `Nullable`, and an array's (otherwise valid) element - is passed to `on_dep`. Returns the first
+/// violation found.
+fn array_element_deps_or_issue<'db>(
+    db: &'db dyn Database,
+    ty: TypeId<'db>,
+    mut on_dep: impl FnMut(TypeId<'db>) -> Option<ArrayElementViolation<'db>>,
+) -> Option<ArrayElementViolation<'db>> {
+    match ty.long(db) {
+        TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) => {
+            let ConcreteExternTypeLongId { extern_type_id, generic_args } = extrn.long(db);
+            match (extern_type_id.name(db).long(db).as_str(), &generic_args[..]) {
+                ("Array", [GenericArgumentId::Type(arg_ty)]) => {
+                    if arg_ty.is_phantom(db) {
+                        Some(ArrayElementViolation::Phantom)
+                    } else if db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized) {
+                        Some(ArrayElementViolation::ZeroSized(*arg_ty))
+                    } else {
+                        on_dep(*arg_ty)
+                    }
+                }
+                ("Box" | "Nullable", [GenericArgumentId::Type(arg_ty)]) => on_dep(*arg_ty),
+                _ => None,
+            }
+        }
+        TypeLongId::Concrete(ConcreteTypeId::Struct(id)) => {
+            db.concrete_struct_members(*id).ok()?.iter().find_map(|(_, member)| on_dep(member.ty))
+        }
+        TypeLongId::Concrete(ConcreteTypeId::Enum(id)) => {
+            db.concrete_enum_variants(*id).ok()?.iter().find_map(|variant| on_dep(variant.ty))
+        }
+        TypeLongId::Tuple(types) => types.iter().find_map(|ty| on_dep(*ty)),
+        TypeLongId::Snapshot(inner) => on_dep(*inner),
+        TypeLongId::FixedSizeArray { type_id, .. } => on_dep(*type_id),
+        TypeLongId::Closure(closure) => closure.captured_types.iter().find_map(|ty| on_dep(*ty)),
+        TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
+        | TypeLongId::Coupon(_)
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Missing(_) => None,
+    }
+}
+
+/// The first gap in a circuit's sorted input indices.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, salsa::SalsaValue)]
+struct CircuitInputIndexViolation {
+    expected: usize,
+    actual: usize,
+}
+
+/// Finds a malformed `core::circuit::Circuit` nested in `ty`.
+///
+/// Sierra lays out circuit inputs in index order, so the indices reachable from the circuit's
+/// outputs must be exactly `0..n`. Detecting the gap while the type still has a source location
+/// lets the compiler report a diagnostic instead of failing during Sierra type specialization.
+#[salsa::tracked(returns(copy))]
+fn circuit_input_index_violation<'db>(
+    db: &'db dyn Database,
+    ty: TypeId<'db>,
+) -> Option<CircuitInputIndexViolation> {
+    let circuit_module = ModuleHelper::core(db).submodule("circuit");
+    let circuit_extern_id = circuit_module.extern_type_id("Circuit");
+    let circuit_input_extern_id = circuit_module.extern_type_id("CircuitInput");
+    let mut visited = OrderedHashSet::<TypeId<'db>>::default();
+    let mut stack = vec![ty];
+
+    while let Some(ty) = stack.pop() {
+        if !visited.insert(ty) {
+            continue;
+        }
+        match ty.long(db) {
+            TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) => {
+                let ConcreteExternTypeLongId { extern_type_id, generic_args } = extrn.long(db);
+                if *extern_type_id != circuit_extern_id {
+                    stack.extend(
+                        generic_args
+                            .iter()
+                            .filter_map(|arg| try_extract_matches!(arg, GenericArgumentId::Type)),
+                    );
+                } else if let [GenericArgumentId::Type(outputs)] = generic_args[..]
+                    && let Some((expected, actual)) =
+                        non_contiguous_circuit_input(db, outputs, circuit_input_extern_id)
+                {
+                    return Some(CircuitInputIndexViolation { expected, actual });
+                }
+            }
+            TypeLongId::Concrete(ConcreteTypeId::Struct(id)) => {
+                stack.extend(db.concrete_struct_members(*id).ok()?.iter().map(|(_, m)| m.ty));
+            }
+            TypeLongId::Concrete(ConcreteTypeId::Enum(id)) => {
+                stack.extend(db.concrete_enum_variants(*id).ok()?.iter().map(|v| v.ty));
+            }
+            TypeLongId::Tuple(types) => stack.extend(types.iter().copied()),
+            TypeLongId::Snapshot(inner) => stack.push(*inner),
+            TypeLongId::FixedSizeArray { type_id, .. } => stack.push(*type_id),
+            TypeLongId::Closure(closure) => stack.extend(closure.captured_types.iter().copied()),
+            TypeLongId::GenericParameter(_)
+            | TypeLongId::Var(_)
+            | TypeLongId::NumericLiteral(_)
+            | TypeLongId::Coupon(_)
+            | TypeLongId::ImplType(_)
+            | TypeLongId::Missing(_) => {}
+        }
+    }
+    None
+}
+
+/// Returns the first missing index in the input set reachable from `outputs`.
+fn non_contiguous_circuit_input<'db>(
+    db: &'db dyn Database,
+    outputs: TypeId<'db>,
+    circuit_input_extern_id: ExternTypeId<'db>,
+) -> Option<(usize, usize)> {
+    let mut visited = OrderedHashSet::<TypeId<'db>>::default();
+    let mut input_indices = OrderedHashSet::<usize>::default();
+    let mut stack = vec![outputs];
+
+    while let Some(ty) = stack.pop() {
+        if !visited.insert(ty) {
+            continue;
+        }
+        match ty.long(db) {
+            TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) => {
+                let ConcreteExternTypeLongId { extern_type_id, generic_args } = extrn.long(db);
+                if *extern_type_id == circuit_input_extern_id {
+                    if let [GenericArgumentId::Constant(index)] = generic_args[..]
+                        && let Some(index) = index.to_int(db)
+                        && let Some(index) = index.to_usize()
+                    {
+                        input_indices.insert(index);
+                    }
+                    continue;
+                }
+                stack.extend(
+                    generic_args
+                        .iter()
+                        .filter_map(|arg| try_extract_matches!(arg, GenericArgumentId::Type)),
+                );
+            }
+            TypeLongId::Tuple(types) => stack.extend(types.iter().copied()),
+            TypeLongId::Missing(_) => return None,
+            _ => {}
+        }
+    }
+
+    input_indices
+        .into_iter()
+        .sorted_unstable()
+        .enumerate()
+        .find(|(expected, actual)| expected != actual)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -969,6 +1282,7 @@ fn type_size_info(db: &dyn Database, ty: TypeId<'_>) -> Maybe<TypeSizeInformatio
         TypeLongId::Coupon(_) => return Ok(TypeSizeInformation::ZeroSized),
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
         | TypeLongId::Missing(_)
         | TypeLongId::ImplType(_) => {}
         TypeLongId::FixedSizeArray { type_id, size } => {
@@ -983,7 +1297,7 @@ fn type_size_info(db: &dyn Database, ty: TypeId<'_>) -> Maybe<TypeSizeInformatio
 }
 
 /// Query implementation of [TypesSemantic::type_size_info].
-#[salsa::tracked(cycle_result=type_size_info_cycle)]
+#[salsa::tracked(returns(clone), cycle_result=type_size_info_cycle)]
 fn type_size_info_tracked<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
@@ -1033,7 +1347,7 @@ fn type_info<'db>(
 }
 
 /// Query implementation of [TypesSemantic::type_info].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn type_info_tracked<'db>(
     db: &'db dyn Database,
     lookup_context: ImplLookupContextId<'db>,
@@ -1049,9 +1363,7 @@ fn solve_concrete_trait_no_constraints<'db>(
     lookup_context: ImplLookupContextId<'db>,
     id: ConcreteTraitId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
-    let mut lookup_context = lookup_context.long(db).clone();
-    enrich_lookup_context(db, id, &mut lookup_context);
-    let lookup_context = lookup_context.intern(db);
+    let lookup_context = lookup_context.enriched(db, id);
     match db.canonic_trait_solutions(
         CanonicalTrait { id, mappings: Default::default() },
         lookup_context,
@@ -1076,7 +1388,7 @@ fn copyable<'db>(
 }
 
 /// Query implementation of [TypesSemantic::copyable].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn copyable_tracked<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
@@ -1097,7 +1409,7 @@ fn droppable<'db>(
 }
 
 /// Query implementation of [TypesSemantic::droppable].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn droppable_tracked<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
@@ -1113,6 +1425,7 @@ fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
         TypeLongId::Snapshot(ty) => ty.is_fully_concrete(db),
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
+        | TypeLongId::NumericLiteral(_)
         | TypeLongId::Missing(_)
         | TypeLongId::ImplType(_) => false,
         TypeLongId::Coupon(function_id) => function_id.is_fully_concrete(db),
@@ -1128,7 +1441,7 @@ fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
 }
 
 /// Query implementation of [PrivTypesSemantic::priv_type_is_fully_concrete].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn priv_type_is_fully_concrete_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     priv_type_is_fully_concrete(db, ty)
 }
@@ -1139,6 +1452,7 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> boo
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_var_free(db)),
         TypeLongId::Snapshot(ty) => ty.is_var_free(db),
         TypeLongId::Var(_) => false,
+        TypeLongId::NumericLiteral(_) => false,
         TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => true,
         TypeLongId::Coupon(function_id) => function_id.is_var_free(db),
         TypeLongId::FixedSizeArray { type_id, size } => {
@@ -1155,7 +1469,7 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> boo
 }
 
 /// Query implementation of [PrivTypesSemantic::priv_type_is_var_free].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn priv_type_is_var_free_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     priv_type_is_var_free(db, ty)
 }
@@ -1194,13 +1508,14 @@ pub fn priv_type_short_name(db: &dyn Database, ty: TypeId<'_>) -> String {
             format!("@{}", ty.short_name(db))
         }
         TypeLongId::FixedSizeArray { type_id, size } => {
-            format!("[{}; {:?}", type_id.short_name(db), size.debug(db))
+            format!("[{}; {:?}]", type_id.short_name(db), size.debug(db))
         }
+        TypeLongId::NumericLiteral(_) => "{numeric}".to_string(),
         other => other.format(db),
     }
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn priv_type_short_name_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> String {
     priv_type_short_name(db, ty)
 }

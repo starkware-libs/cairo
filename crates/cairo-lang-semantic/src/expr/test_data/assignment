@@ -3,7 +3,9 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern type MyType;
 fn foo(p: felt252) {
     p = 7;
     a = 1 + 2;
@@ -13,35 +15,29 @@ fn foo(p: felt252) {
     x = true;
 }
 
-//! > function_name
-foo
-
-//! > module_code
-extern type MyType;
-
 //! > expected_diagnostics
 error[E2083]: Cannot assign to an immutable variable.
- --> lib.cairo:3:5
+ --> lib.cairo:4:5
     p = 7;
     ^^^^^
 
 error[E0006]: Identifier not found.
- --> lib.cairo:4:5
+ --> lib.cairo:5:5
     a = 1 + 2;
     ^
 
 error[E2084]: Invalid left-hand side of assignment.
- --> lib.cairo:4:5
+ --> lib.cairo:5:5
     a = 1 + 2;
     ^
 
 error[E2083]: Cannot assign to an immutable variable.
- --> lib.cairo:6:24
+ --> lib.cairo:7:24
     let _c: felt252 = (b = 5);
                        ^^^^^
 
-error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "()".
- --> lib.cairo:6:23
+error[E2041]: Unexpected argument type. Expected: "felt252", found: "()".
+ --> lib.cairo:7:23
     let _c: felt252 = (b = 5);
                       ^^^^^^^
 
@@ -52,13 +48,10 @@ error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "()".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: ByteArray = "error";
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -69,16 +62,13 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: felt252 = "error";
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
-error[E2311]: Mismatched types. The type `core::felt252` cannot be created from a string literal.
+error[E2311]: Mismatched types. The type `felt252` cannot be created from a string literal.
  --> lib.cairo:2:23
     let _x: felt252 = "error";
                       ^^^^^^^
@@ -90,13 +80,10 @@ error[E2311]: Mismatched types. The type `core::felt252` cannot be created from 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: felt252 = 252;
 }
-
-//! > function_name
-foo
 
 //! > expected_diagnostics
 
@@ -107,16 +94,13 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
 fn foo() {
     let _x: ByteArray = 252;
 }
 
-//! > function_name
-foo
-
 //! > expected_diagnostics
-error[E2311]: Mismatched types. The type `core::byte_array::ByteArray` cannot be created from a numeric literal.
+error[E2315]: Mismatched types. The type `ByteArray` cannot be created from a numeric literal.
  --> lib.cairo:2:25
     let _x: ByteArray = 252;
                         ^^^

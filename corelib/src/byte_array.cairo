@@ -38,7 +38,7 @@
 //!
 //! ```
 //! let mut ba: ByteArray = "ABC";
-//! let first_byte = ba[0]
+//! let first_byte = ba[0];
 //! assert!(first_byte == 0x41);
 //! ```
 
@@ -269,7 +269,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// Appends the reverse of the given word to the end of `self`.
     ///
     /// This function assumes that:
-    /// 1. len < 31
+    /// 1. len <= 31
     /// 2. word is validly convertible to bytes31 of length `len`.
     ///
     /// # Examples
@@ -727,7 +727,7 @@ impl ByteArrayFromIterator of crate::iter::FromIterator<ByteArray, u8> {
 #[derive(Copy, Drop)]
 pub struct ByteSpan {
     /// A span representing the array of all `bytes31` words in the byte-span, excluding the last
-    /// bytes_31 word that is stored in [Self::last_word].
+    /// bytes_31 word that is stored in [Self::remainder_word].
     /// Invariant: every byte stored in `data` is part of the span except for the bytes appearing
     /// before `first_char_start_offset` in the first word.
     data: Span<bytes31>,
@@ -859,7 +859,13 @@ impl ByteSpanGetRange of crate::ops::Get<ByteSpan, crate::ops::Range<usize>> {
     fn get(self: @ByteSpan, index: crate::ops::Range<usize>) -> Option<ByteSpan> {
         let range = index;
         if range.start == range.end {
-            return Some(Default::default());
+            return if range.start <= (*self).len() {
+                // If range is within bounds, return the empty slice.
+                Some(Default::default())
+            } else {
+                // If range is out of bounds, return `None`.
+                None
+            };
         }
         if range.start > range.end {
             return None;

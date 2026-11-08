@@ -1,3 +1,5 @@
+use std::collections::hash_map::RandomState;
+
 use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::cell_ref;
@@ -6,7 +8,7 @@ use cairo_lang_sierra::program::{Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::write_comma_separated;
+use itertools::Itertools;
 use thiserror::Error;
 
 use crate::invocations::InvocationError;
@@ -23,7 +25,10 @@ pub enum ReferencesError {
     UnknownType(ConcreteTypeId),
 }
 
-pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue>;
+/// The `VarId` keys come from an untrusted Sierra program and an attacker can make thousands of
+/// them live at once, so this uses the DoS-resistant `RandomState` (SipHash) rather than the
+/// crate-default fast hasher, whose weaker collision resistance would allow quadratic blowup.
+pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue, RandomState>;
 
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.
@@ -137,9 +142,7 @@ impl ApplyApChange for ReferenceExpression {
 
 impl core::fmt::Display for ReferenceExpression {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[")?;
-        write_comma_separated(f, &self.cells)?;
-        write!(f, "]")
+        write!(f, "[{}]", self.cells.iter().format(", "))
     }
 }
 

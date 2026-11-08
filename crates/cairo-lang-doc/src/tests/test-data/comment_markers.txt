@@ -8,7 +8,7 @@ documentation_test_runner
 hello = "src"
 
 //! > cairo_code
-trait T {
+trait Mapper<T> {
     /////////////////////////////////////////////////////////////////////////
     // Transforming contained values
     /////////////////////////////////////////////////////////////////////////
@@ -39,16 +39,14 @@ trait T {
 //! > Item documentation tokens #1
 
 //! > Item signature #2
-trait T
+trait Mapper<T>
 
 //! > Item documentation #2
 
 //! > Item documentation tokens #2
 
 //! > Item signature #3
-fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
-    self: Option<T>, f: F,
-) -> Option<U>
+fn map<U, F, +Destruct<F>, +FnOnce<F, (T,)>[Output: U]>(self: Option<T>, f: F) -> Option<U>
 
 //! > Item documentation #3
 Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)

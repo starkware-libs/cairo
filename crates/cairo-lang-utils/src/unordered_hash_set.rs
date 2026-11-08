@@ -1,10 +1,16 @@
+#![cfg_attr(
+    feature = "std",
+    expect(
+        clippy::disallowed_types,
+        reason = "this module is the UnorderedHashSet wrapper over std::collections::HashSet"
+    )
+)]
+
 use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Sub;
 #[cfg(feature = "std")]
 use std::collections::HashSet;
-#[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::HashSet;
@@ -13,29 +19,15 @@ use hashbrown::HashSet;
 ///
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
 /// For an iterable version see [OrderedHashSet](crate::ordered_hash_set::OrderedHashSet).
-#[cfg(feature = "std")]
-#[derive(Clone, Debug)]
-pub struct UnorderedHashSet<Key, BH = RandomState>(HashSet<Key, BH>);
-#[cfg(not(feature = "std"))]
+/// Uses hashbrown's default hasher (foldhash) rather than std's SipHash: the set forbids
+/// iteration, so determinism is unaffected, and it sits on hot compiler paths.
 #[derive(Clone, Debug)]
 pub struct UnorderedHashSet<Key, BH = hashbrown::DefaultHashBuilder>(HashSet<Key, BH>);
 
-// This code was taken from the salsa::Update trait implementation for IndexSet.
-// It is defined privately in macro_rules! maybe_update_set in the db-ext-macro repo (with a small
-// change of using `extend_unordered` instead of `extend`).
 #[cfg(feature = "salsa")]
-unsafe impl<Key: Eq + Hash, BH: BuildHasher> salsa::Update for UnorderedHashSet<Key, BH> {
-    unsafe fn maybe_update(old_pointer: *mut Self, new_set: Self) -> bool {
-        let old_set: &mut Self = unsafe { &mut *old_pointer };
-
-        if *old_set == new_set {
-            false
-        } else {
-            old_set.clear();
-            old_set.extend_unordered(new_set);
-            true
-        }
-    }
+unsafe impl<Key: Eq + Hash + salsa::SalsaValue, BH: BuildHasher> salsa::SalsaValue
+    for UnorderedHashSet<Key, BH>
+{
 }
 
 impl<K, BH: Default> Default for UnorderedHashSet<K, BH> {
@@ -80,6 +72,12 @@ impl<Key, BH> UnorderedHashSet<Key, BH> {
     /// Clears the set, removing all values.
     pub fn clear(&mut self) {
         self.0.clear()
+    }
+}
+
+impl<Key: Hash + Eq> UnorderedHashSet<Key> {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashSet::with_capacity_and_hasher(capacity, Default::default()))
     }
 }
 

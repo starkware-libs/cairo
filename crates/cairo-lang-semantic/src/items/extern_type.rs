@@ -11,6 +11,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use salsa::Database;
 
 use super::generics::{GenericParamsData, semantic_generic_params};
+use super::report_extern_item_outside_corelib;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
@@ -24,7 +25,7 @@ use crate::{GenericParam, SemanticDiagnostic};
 mod test;
 
 // Declaration.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct ExternTypeDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -66,7 +67,7 @@ fn extern_type_declaration_generic_params_data<'db>(
 }
 
 /// Query implementation of [ExternTypeSemantic::extern_type_declaration_generic_params_data].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn extern_type_declaration_generic_params_data_tracked<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
@@ -96,6 +97,7 @@ fn extern_type_declaration_data<'db>(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.extend(generic_params_data.diagnostics.clone());
+    report_extern_item_outside_corelib(db, &mut diagnostics, &resolver, &extern_type_syntax);
     let attributes = extern_type_syntax.attributes(db).structurize(db);
 
     // Check fully resolved.

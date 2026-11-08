@@ -76,6 +76,11 @@ Write it with logical conjunctions instead:
 let all_equal = a == b && b == c;
 ----
 
+Mixed consecutive comparison/equality operators are also not supported
+(for example, `a < b == c` or `a == b < c`).
+Use explicit conjunctions or parenthesized boolean comparisons to express intent.
+The parser reports these forms as `E1028` (consecutive comparison operators).
+
 == Related
 
 - xref:operator-expressions.adoc[Operator expressions]

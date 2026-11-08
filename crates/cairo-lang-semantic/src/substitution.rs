@@ -43,8 +43,8 @@ use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
     ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
     ExprId, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId, GenericArgumentId,
-    GenericParam, MatchArmSelector, Parameter, Signature, TypeId, TypeLongId, ValueSelectorArm,
-    VarId,
+    GenericParam, MatchArmSelector, MemberAccessKind, Parameter, Signature, TypeId, TypeLongId,
+    ValueSelectorArm, VarId,
 };
 
 pub enum RewriteResult {
@@ -54,7 +54,7 @@ pub enum RewriteResult {
 
 /// A substitution of generic arguments in generic parameters as well as the `Self` of traits. Used
 /// for concretization.
-#[derive(Clone, Debug, Default, PartialEq, Eq, salsa::Update, Hash)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, salsa::SalsaValue, Hash)]
 pub struct GenericSubstitution<'db> {
     pub param_to_arg: OrderedHashMap<GenericParamId<'db>, GenericArgumentId<'db>>,
     pub self_impl: Option<ImplId<'db>>,
@@ -93,7 +93,11 @@ impl<'db> GenericSubstitution<'db> {
         'db: 'a,
         SubstitutionRewriter<'a, 'r>: SemanticRewriter<Obj, DiagnosticAdded>,
     {
-        SubstitutionRewriter { db, substitution: self }.rewrite(obj)
+        if self.is_empty() {
+            Ok(obj)
+        } else {
+            SubstitutionRewriter { db, substitution: self }.rewrite(obj)
+        }
     }
 }
 impl<'db> Deref for GenericSubstitution<'db> {
@@ -387,6 +391,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, UninferredGeneratedImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, UninferredImpl, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVarMemberPath, $($exclude)*);
+        $crate::prune_single!(__regular_helper, MemberAccessKind, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplVarTraitItemMappings, $($exclude)*);
         $crate::prune_single!(__regular_helper, CanonicalTrait, $($exclude)*);

@@ -2,9 +2,7 @@
 #[path = "lexer_test.rs"]
 mod test;
 
-use std::sync::Arc;
-
-use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
@@ -12,28 +10,28 @@ use cairo_lang_syntax::node::ast::{
     TokenWhitespace, TriviumGreen,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_utils::deque::Deque;
 use salsa::Database;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
-pub struct Lexer {
-    text: Arc<str>,
+pub struct Lexer<'a> {
+    text: &'a str,
     previous_position: TextOffset,
     current_position: TextOffset,
 }
 
-impl Lexer {
-    pub fn position(&self) -> TextOffset {
-        self.current_position
+impl<'a> Lexer<'a> {
+    /// Creates a new lexer with the given text.
+    pub fn new(text: &'a str) -> Self {
+        Self { text, previous_position: TextOffset::START, current_position: TextOffset::START }
     }
 
     // Helpers.
     fn peek(&self) -> Option<char> {
-        self.current_position.take_from(&self.text).chars().next()
+        self.current_position.take_from(self.text).chars().next()
     }
 
     fn peek_nth(&self, n: usize) -> Option<char> {
-        self.current_position.take_from(&self.text).chars().nth(n)
+        self.current_position.take_from(self.text).chars().nth(n)
     }
 
     fn take(&mut self) -> Option<char> {
@@ -63,7 +61,7 @@ impl Lexer {
     }
 
     // Trivia matchers.
-    fn match_trivia<'a>(&mut self, db: &'a dyn Database, leading: bool) -> Vec<TriviumGreen<'a>> {
+    fn match_trivia(&mut self, db: &'a dyn Database, leading: bool) -> Vec<TriviumGreen<'a>> {
         let mut res: Vec<TriviumGreen<'a>> = Vec::new();
         while let Some(current) = self.peek() {
             let trivium = match current {
@@ -81,40 +79,42 @@ impl Lexer {
     }
 
     /// Assumes the next character is one of [' ', '\r', '\t'].
-    fn match_trivium_whitespace<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
+    fn match_trivium_whitespace(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
         let span = self.consume_text_span();
-        let text = span.take(&self.text);
+        let text = span.take(self.text);
         TokenWhitespace::new_green(db, SmolStrId::from(db, text)).into()
     }
 
     /// Assumes the next character is '\n'.
-    fn match_trivium_newline<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
+    fn match_trivium_newline(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take();
         let span = self.consume_text_span();
-        let text = span.take(&self.text);
+        let text = span.take(self.text);
         TokenNewline::new_green(db, SmolStrId::from(db, text)).into()
     }
 
     /// Assumes the next 2 characters are "//".
-    fn match_trivium_single_line_comment<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
+    fn match_trivium_single_line_comment(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         match self.peek_nth(2) {
-            Some('/') => {
+            // `///` is a doc comment, but `////` (4+ slashes) is a regular comment. This matches
+            // `cairo-lang-doc`, which discards a doc comment whose content starts with `/`.
+            Some('/') if self.peek_nth(3) != Some('/') => {
                 self.take_while(|c| c != '\n');
                 let span = self.consume_text_span();
-                let text = span.take(&self.text);
+                let text = span.take(self.text);
                 TokenSingleLineDocComment::new_green(db, SmolStrId::from(db, text)).into()
             }
             Some('!') => {
                 self.take_while(|c| c != '\n');
                 let span = self.consume_text_span();
-                let text = span.take(&self.text);
+                let text = span.take(self.text);
                 TokenSingleLineInnerComment::new_green(db, SmolStrId::from(db, text)).into()
             }
             _ => {
                 self.take_while(|c| c != '\n');
                 let span = self.consume_text_span();
-                let text = span.take(&self.text);
+                let text = span.take(self.text);
                 TokenSingleLineComment::new_green(db, SmolStrId::from(db, text)).into()
             }
         }
@@ -193,7 +193,7 @@ impl Lexer {
         self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
 
         let span = self.peek_text_span();
-        match span.take(&self.text) {
+        match span.take(self.text) {
             "as" => TokenKind::As,
             "const" => TokenKind::Const,
             "false" => TokenKind::False,
@@ -251,7 +251,7 @@ impl Lexer {
         }
     }
 
-    fn match_terminal<'a>(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
+    pub fn match_terminal(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
         let leading_trivia = self.match_trivia(db, true);
 
         let kind = if let Some(current) = self.peek() {
@@ -314,7 +314,7 @@ impl Lexer {
         };
 
         let span = self.consume_text_span();
-        let text = SmolStrId::from(db, span.take(&self.text));
+        let text = SmolStrId::from(db, span.take(self.text));
         let trailing_trivia = self.match_trivia(db, false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
@@ -323,29 +323,8 @@ impl Lexer {
     }
 }
 
-/// Tokenizes the entire text and returns a deque of terminals.
-#[salsa::tracked]
-pub fn tokenize_all<'a>(
-    db: &'a dyn Database,
-    _tracked: Tracked,
-    text: Arc<str>,
-) -> cairo_lang_utils::deque::Deque<LexerTerminal<'a>> {
-    let mut lexer =
-        Lexer { text, previous_position: TextOffset::START, current_position: TextOffset::START };
-    let mut result: Deque<LexerTerminal<'a>> = Default::default();
-    loop {
-        let terminal = lexer.match_terminal(db);
-        let is_eof = terminal.kind == SyntaxKind::TerminalEndOfFile;
-        result.push_back(terminal);
-        if is_eof {
-            break;
-        }
-    }
-    result
-}
-
 /// Output terminal emitted by the lexer.
-#[derive(Clone, PartialEq, Eq, Debug, salsa::Update)]
+#[derive(Clone, PartialEq, Eq, Debug, salsa::SalsaValue)]
 pub struct LexerTerminal<'a> {
     pub text: SmolStrId<'a>,
     /// The kind of the inner token of this terminal.

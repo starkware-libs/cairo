@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs as defs;
 use cairo_lang_defs::cache::{
-    CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext, LanguageElementCached,
-    SyntaxStablePtrIdCached,
+    CacheBlobReader, CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext,
+    LanguageElementCached, SyntaxStablePtrIdCached, write_cache_section,
 };
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -19,16 +19,17 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::cache::{
-    ConcreteEnumCached, ConcreteVariantCached, ConstValueIdCached, ExprVarMemberPathCached,
-    ImplIdCached, MatchArmSelectorCached, SemanticCacheLoadingData, SemanticCacheSavingContext,
-    SemanticCacheSavingData, SemanticConcreteFunctionWithBodyCached, SemanticFunctionIdCached,
-    TypeIdCached, generate_crate_def_cache, generate_crate_semantic_cache,
+    ConcreteEnumCached, ConcreteVariantCached, ConstValueIdCached, ImplIdCached,
+    MatchArmSelectorCached, SEMANTIC_CACHE_SECTION, SemanticCacheLoadingData,
+    SemanticCacheSavingContext, SemanticCacheSavingData, SemanticConcreteFunctionWithBodyCached,
+    SemanticFunctionIdCached, TypeIdCached, generate_crate_def_cache,
+    generate_crate_semantic_cache,
 };
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::imp::ImplSemantic;
-use cairo_lang_semantic::items::macro_call::module_macro_modules;
+use cairo_lang_semantic::items::macro_call::crate_modules_including_generated;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -36,15 +37,13 @@ use cairo_lang_syntax::node::ast::{ExprPtr, FunctionWithBodyPtr, TraitItemFuncti
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::Arena;
-use itertools::chain;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::blocks::BlocksBuilder;
 use crate::ids::{
-    FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, LoweredParam,
-    Signature,
+    FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, Signature,
 };
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::objects::{
@@ -59,6 +58,8 @@ use crate::{
 
 type LookupCache = (CacheLookups, Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>);
 
+const LOWERING_CACHE_SECTION: u8 = SEMANTIC_CACHE_SECTION + 1;
+
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_functions<'db>(
     db: &'db dyn Database,
@@ -71,23 +72,8 @@ pub fn load_cached_crate_functions<'db>(
 
     let semantic_loading_data = db.cached_crate_semantic_data(crate_id)?.loading_data;
 
-    let def_size = usize::from_be_bytes(content[..8].try_into().unwrap()); // def_size is the first 8 bytes of the blob.
-    let semantic_start = 8 + def_size;
-    let semantic_size =
-        usize::from_be_bytes(content[semantic_start..semantic_start + 8].try_into().unwrap()); // semantic_size is the next 8 bytes.
-
-    let lowering_start = semantic_start + semantic_size + 8;
-    let lowering_size =
-        usize::from_be_bytes(content[lowering_start..lowering_start + 8].try_into().unwrap()); // lowering_size is the next 8 bytes.
-
-    let content = &content[lowering_start + 8..lowering_start + 8 + lowering_size];
-
-    let (lookups, lowerings): LookupCache = postcard::from_bytes(content).unwrap_or_else(|e| {
-        panic!(
-            "failed to deserialize lookup cache for crate `{}`: {e}",
-            crate_id.long(db).name().long(db),
-        )
-    });
+    let (lookups, lowerings): LookupCache =
+        CacheBlobReader::read_section(db, content, LOWERING_CACHE_SECTION, crate_id);
 
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
 
@@ -112,7 +98,7 @@ pub enum CrateCacheError {
     #[error("Failed compilation of crate.")]
     CompilationFailed,
     #[error("Cache encoding/decoding failed: {0}")]
-    CacheError(#[from] postcard::Error),
+    CacheError(#[from] cairo_lang_defs::cache::CacheError),
 }
 
 impl From<DiagnosticAdded> for CrateCacheError {
@@ -126,22 +112,19 @@ pub fn generate_crate_cache<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
 ) -> Result<Vec<u8>, CrateCacheError> {
-    let modules = db.crate_modules(crate_id);
     let mut function_ids = Vec::new();
-    for module_id in modules.iter() {
-        for module_id in chain!([module_id], module_macro_modules(db, true, *module_id)) {
-            for free_func in db.module_free_functions_ids(*module_id)?.iter() {
-                function_ids.push(FunctionWithBodyId::Free(*free_func));
+    for module_id in crate_modules_including_generated(db, crate_id) {
+        for free_func in db.module_free_functions_ids(module_id)?.iter() {
+            function_ids.push(FunctionWithBodyId::Free(*free_func));
+        }
+        for impl_id in db.module_impls_ids(module_id)?.iter() {
+            for impl_func in db.impl_functions(*impl_id)?.values() {
+                function_ids.push(FunctionWithBodyId::Impl(*impl_func));
             }
-            for impl_id in db.module_impls_ids(*module_id)?.iter() {
-                for impl_func in db.impl_functions(*impl_id)?.values() {
-                    function_ids.push(FunctionWithBodyId::Impl(*impl_func));
-                }
-            }
-            for trait_id in db.module_traits_ids(*module_id)?.iter() {
-                for trait_func in db.trait_functions(*trait_id)?.values() {
-                    function_ids.push(FunctionWithBodyId::Trait(*trait_func));
-                }
+        }
+        for trait_id in db.module_traits_ids(module_id)?.iter() {
+            for trait_func in db.trait_functions(*trait_id)?.values() {
+                function_ids.push(FunctionWithBodyId::Trait(*trait_func));
             }
         }
     }
@@ -169,21 +152,19 @@ pub fn generate_crate_cache<'db>(
 
     let mut artifact = Vec::<u8>::new();
 
-    let def = postcard::to_allocvec(&(
-        CachedCrateMetadata::new(crate_id, db),
-        def_cache,
-        &ctx.semantic_ctx.defs_ctx.lookups,
-    ))?;
-    artifact.extend(def.len().to_be_bytes());
-    artifact.extend(def);
+    // External (plugin-generated) file content comes first: it's filesystem-layer content (served
+    // by `ext_as_virtual`) that the phase sections below depend on, and putting it first lets the
+    // `external_file_contents` query (in defs) read it without deserializing them.
+    write_cache_section(&mut artifact, ctx.semantic_ctx.defs_ctx.external_file_contents())?;
 
-    let semantic = postcard::to_allocvec(&(semantic_cache, &ctx.semantic_ctx.lookups))?;
-    artifact.extend(semantic.len().to_be_bytes());
-    artifact.extend(semantic);
+    write_cache_section(
+        &mut artifact,
+        &(CachedCrateMetadata::new(crate_id, db), def_cache, &ctx.semantic_ctx.defs_ctx.lookups),
+    )?;
 
-    let lowered = postcard::to_allocvec(&(&ctx.lookups, cached))?;
-    artifact.extend(lowered.len().to_be_bytes());
-    artifact.extend(lowered);
+    write_cache_section(&mut artifact, &(semantic_cache, &ctx.semantic_ctx.lookups))?;
+
+    write_cache_section(&mut artifact, &(&ctx.lookups, cached))?;
 
     Ok(artifact)
 }
@@ -451,13 +432,13 @@ impl LoweredCached {
 #[derive(Serialize, Deserialize)]
 struct LoweredSignatureCached {
     /// Function parameters.
-    params: Vec<LoweredParamCached>,
-    /// Extra return values.
-    extra_rets: Vec<ExprVarMemberPathCached>,
+    params: Vec<TypeIdCached>,
+    /// Types of the extra return values.
+    extra_rets: Vec<TypeIdCached>,
     /// Return type.
     return_type: TypeIdCached,
-    /// Implicit parameters.
-    implicits: Vec<TypeIdCached>,
+    /// The declared implicit parameters.
+    declared_implicits: Vec<TypeIdCached>,
     /// Whether the function is panicable.
     panicable: bool,
     location: LocationIdCached,
@@ -468,17 +449,17 @@ impl LoweredSignatureCached {
             params: signature
                 .params
                 .iter()
-                .map(|param| LoweredParamCached::new(param, ctx))
+                .map(|ty| TypeIdCached::new(*ty, &mut ctx.semantic_ctx))
                 .collect(),
             extra_rets: signature
                 .extra_rets
-                .into_iter()
-                .map(|var| ExprVarMemberPathCached::new(var, &mut ctx.semantic_ctx))
+                .iter()
+                .map(|ty| TypeIdCached::new(*ty, &mut ctx.semantic_ctx))
                 .collect(),
 
             return_type: TypeIdCached::new(signature.return_type, &mut ctx.semantic_ctx),
-            implicits: signature
-                .implicits
+            declared_implicits: signature
+                .declared_implicits
                 .into_iter()
                 .map(|ty| TypeIdCached::new(ty, &mut ctx.semantic_ctx))
                 .collect(),
@@ -488,15 +469,19 @@ impl LoweredSignatureCached {
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> Signature<'db> {
         Signature {
-            params: self.params.into_iter().map(|var| var.embed(ctx)).collect(),
+            params: self
+                .params
+                .into_iter()
+                .map(|ty| ty.get_embedded(&ctx.semantic_loading_data))
+                .collect(),
             extra_rets: self
                 .extra_rets
                 .into_iter()
-                .map(|var| var.get_embedded(&ctx.semantic_loading_data, ctx.db))
+                .map(|ty| ty.get_embedded(&ctx.semantic_loading_data))
                 .collect(),
             return_type: self.return_type.get_embedded(&ctx.semantic_loading_data),
-            implicits: self
-                .implicits
+            declared_implicits: self
+                .declared_implicits
                 .into_iter()
                 .map(|ty| ty.get_embedded(&ctx.semantic_loading_data))
                 .collect(),
@@ -506,30 +491,6 @@ impl LoweredSignatureCached {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-struct LoweredParamCached {
-    ty: TypeIdCached,
-    stable_ptr: SyntaxStablePtrIdCached,
-}
-impl LoweredParamCached {
-    fn new<'db>(param: &LoweredParam<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
-        Self {
-            ty: TypeIdCached::new(param.ty, &mut ctx.semantic_ctx),
-            stable_ptr: SyntaxStablePtrIdCached::new(
-                param.stable_ptr.untyped(),
-                &mut ctx.semantic_ctx.defs_ctx,
-            ),
-        }
-    }
-    fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> LoweredParam<'db> {
-        LoweredParam {
-            ty: self.ty.get_embedded(&ctx.semantic_loading_data),
-            stable_ptr: ExprPtr(
-                self.stable_ptr.get_embedded(&ctx.semantic_loading_data.defs_loading_data),
-            ),
-        }
-    }
-}
 #[derive(Serialize, Deserialize)]
 struct VariableCached {
     droppable: Option<ImplIdCached>,

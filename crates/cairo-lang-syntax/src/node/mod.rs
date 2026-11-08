@@ -5,6 +5,7 @@ use cairo_lang_filesystem::ids::{FileId, SmolStrId};
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize};
 use cairo_lang_utils::require;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use salsa::Database;
 use salsa::plumbing::AsId;
 
@@ -12,7 +13,6 @@ use self::ast::TriviaGreen;
 use self::green::GreenNode;
 use self::ids::{GreenId, SyntaxStablePtrId};
 use self::kind::SyntaxKind;
-use crate::node::db::SyntaxGroup;
 use crate::node::iter::{Preorder, WalkEvent};
 
 pub mod ast;
@@ -33,13 +33,16 @@ mod ast_test;
 mod test_utils;
 
 /// Private enum for syntax node id. This holds data used to identify the node.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, DebugWithDb, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub enum SyntaxNodeId<'db> {
     Root(FileId<'db>),
     Child {
         /// Parent of this node, either another node or if node is root, its file id.
         parent: SyntaxNode<'db>,
+        /// The kind of this node. Part of the identity, as `index` below counts occurrences
+        /// per `(parent, kind, key_fields)`.
+        kind: SyntaxKind,
         /// Chronological index among all nodes with the same (parent, kind, key_fields).
         index: usize,
         /// Which fields are used is determined by each SyntaxKind.
@@ -55,10 +58,12 @@ pub enum SyntaxNodeId<'db> {
 struct SyntaxNodeData<'a> {
     #[tracked]
     green: GreenId<'a>,
-    /// Number of characters from the beginning of the file to the start of the span of this
-    /// syntax subtree.
+    /// This node's span start relative to its parent's (for a root, to the file start). Keeping
+    /// it parent-relative makes `get_children` a pure function of the green tree, independent of
+    /// the node's absolute position. Recover the absolute offset via [`SyntaxNode::offset`].
     #[tracked]
-    offset: TextOffset,
+    #[returns(copy)]
+    offset_in_parent: TextOffset,
     /// Unique identifier for this node.
     #[returns(ref)]
     id: SyntaxNodeId<'a>,
@@ -74,12 +79,34 @@ impl<'db> SyntaxNodeData<'db> {
     }
 }
 
+/// The absolute offset of the node from the beginning of the file: its offset within its parent
+/// plus the (recursively memoized) absolute offset of the parent. A tracked query rather than a
+/// cache inside the node data, as a cache would go stale when a shifted-but-unchanged subtree is
+/// backdated.
+#[salsa::tracked(returns(copy))]
+fn absolute_offset<'db>(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> TextOffset {
+    match data.parent(db) {
+        Some(parent) => absolute_offset(db, parent.data)
+            .add_width(data.offset_in_parent(db) - TextOffset::START),
+        None => data.offset_in_parent(db),
+    }
+}
+
+/// The eagerly-materialized children of all non-terminal nodes of one syntax tree, stored flat:
+/// one contiguous nodes vector plus per-node (start, len) ranges, avoiding a heap allocation per
+/// node.
+#[derive(Debug, Default, PartialEq, Eq, salsa::SalsaValue)]
+struct RedTree<'db> {
+    nodes: Vec<SyntaxNode<'db>>,
+    ranges: UnorderedHashMap<SyntaxNodeData<'db>, std::ops::Range<u32>>,
+}
+
 impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
         f.debug_struct("SyntaxNode")
             .field("green", &self.green(db).debug(db))
-            .field("offset", &self.offset(db))
+            .field("offset_in_parent", &self.offset_in_parent(db))
             .field("id", &self.id(db).debug(db))
             .finish()
     }
@@ -89,16 +116,38 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
 ///
 /// This is a public wrapper around a private tracked struct. Construction only happens through
 /// tracked functions to ensure uniqueness of SyntaxNodes.
-/// Use `SyntaxNode::new_root` or `SyntaxNode::new_root_with_offset` to create root nodes.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, salsa::Update, HeapSize)]
+/// The canonical tree of a file comes from `db.file_syntax(file_id)` (created via
+/// [`SyntaxNode::new_canonical_root`]); standalone trees use [`SyntaxNode::new_detached_root`].
+#[derive(Clone, Copy, salsa::SalsaValue, HeapSize)]
 pub struct SyntaxNode<'a> {
     data: SyntaxNodeData<'a>,
+    /// The data of the outermost enclosing expression block, if any - the root of the arena
+    /// chunk this node belongs to. Expression code is consumed densely (body semantics visits
+    /// every node), so it is materialized as one arena per body; everything else (module and item
+    /// structure, which plugin expansion samples shallowly) stays lazily materialized per node.
+    /// Fully derived from `data`, like the other caches below.
+    arena_root: Option<SyntaxNodeData<'a>>,
     /// Cached parent data to avoid database lookups. None for root nodes.
     parent: Option<SyntaxNodeData<'a>>,
     /// Cached kind to avoid database lookups.
     kind: SyntaxKind,
     /// Cached parent kind to avoid database lookups. None for root nodes.
     parent_kind: Option<SyntaxKind>,
+}
+
+/// Equality and hashing consider only `data`: the other fields are caches fully derived from it
+/// at every construction site, and `data` is embedded (via parents and stable pointers) in the
+/// identity of practically every semantic object, so this is on very hot paths.
+impl PartialEq for SyntaxNode<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.data == other.data
+    }
+}
+impl Eq for SyntaxNode<'_> {}
+impl Hash for SyntaxNode<'_> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.data.hash(state);
+    }
 }
 
 impl<'db> std::fmt::Debug for SyntaxNode<'db> {
@@ -115,9 +164,23 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNode<'db> {
 }
 
 impl<'db> SyntaxNode<'db> {
-    /// Gets the offset of this syntax node from the beginning of the file.
+    /// Reconstructs the node view from its tracked data - every other field of [`SyntaxNode`] is
+    /// a cache fully derived from it.
+    fn from_data(db: &'db dyn Database, data: SyntaxNodeData<'db>) -> Self {
+        let (parent, parent_kind, inherited_arena_root) = match data.id(db) {
+            SyntaxNodeId::Child { parent, .. } => {
+                (Some(parent.data), Some(parent.kind), parent.arena_root)
+            }
+            SyntaxNodeId::Root(_) => (None, None, None),
+        };
+        let kind = data.green(db).long(db).kind;
+        let arena_root = inherited_arena_root.or((kind == SyntaxKind::ExprBlock).then_some(data));
+        SyntaxNode { data, arena_root, parent, kind, parent_kind }
+    }
+
+    /// Gets the absolute offset of this syntax node from the beginning of the file.
     pub fn offset(self, db: &'db dyn Database) -> TextOffset {
-        self.data.offset(db)
+        absolute_offset(db, self.data)
     }
 
     /// Gets the parent syntax node, if any.
@@ -202,25 +265,40 @@ impl<'db> SyntaxNode<'db> {
     }
 }
 
-/// Creates a new syntax node.
+/// Creates a new syntax node. `offset_in_parent` must be relative to the parent (absolute for a
+/// root) — see `SyntaxNodeData::offset_in_parent`.
 pub fn new_syntax_node<'db>(
     db: &'db dyn Database,
     green: GreenId<'db>,
-    offset: TextOffset,
+    offset_in_parent: TextOffset,
     id: SyntaxNodeId<'db>,
     kind: SyntaxKind,
 ) -> SyntaxNode<'db> {
-    let (parent, parent_kind) = match &id {
-        SyntaxNodeId::Child { parent, .. } => (Some(parent.data), Some(parent.kind)),
-        SyntaxNodeId::Root(_) => (None, None),
+    let parent = match &id {
+        SyntaxNodeId::Child { parent, .. } => Some(*parent),
+        SyntaxNodeId::Root(_) => None,
     };
-    let data = SyntaxNodeData::new(db, green, offset, id);
-    SyntaxNode { data, parent, kind, parent_kind }
+    let data = SyntaxNodeData::new(db, green, offset_in_parent, id);
+    let arena_root = parent
+        .and_then(|parent| parent.arena_root)
+        .or((kind == SyntaxKind::ExprBlock).then_some(data));
+    SyntaxNode {
+        data,
+        arena_root,
+        parent: parent.map(|parent| parent.data),
+        kind,
+        parent_kind: parent.map(|parent| parent.kind),
+    }
 }
 
-/// A tracked function to prevent root duplication.
-#[salsa::tracked]
-fn new_root_node<'db>(
+/// Green-keyed query backing the *detached* root constructors. Keyed by `(file_id, green,
+/// offset)`, it deduplicates roots built from the same green tree (so repeated detached
+/// construction returns one node) and provides the tracked-function context salsa needs to mint a
+/// root's tracked struct. Because the key includes `green`, a detached root's id changes whenever
+/// the content does — fine for transient trees, but never use it for the canonical file tree
+/// (see [`SyntaxNode::new_canonical_root`]).
+#[salsa::tracked(returns(copy))]
+fn new_detached_root_node<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
     green: GreenId<'db>,
@@ -232,19 +310,43 @@ fn new_root_node<'db>(
 
 // Construction methods
 impl<'a> SyntaxNode<'a> {
-    /// Creates a new root syntax node.
-    pub fn new_root(db: &'a dyn Database, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
-        new_root_node(db, file_id, green, TextOffset::START)
+    /// Creates **the canonical root** for a file's syntax tree. Must be called only from the
+    /// per-file parse query (`file_syntax_data`): the root's tracked struct is then seeded by that
+    /// *file-keyed* query, so reparsing changed content reuses the same node ids instead of
+    /// minting fresh ones. That id stability is what lets downstream early cutoff fire across
+    /// edits. Every other consumer must obtain this tree via `db.file_syntax(file_id)`, not by
+    /// constructing a root directly.
+    pub fn new_canonical_root(
+        db: &'a dyn Database,
+        file_id: FileId<'a>,
+        green: GreenId<'a>,
+    ) -> Self {
+        let kind = green.long(db).kind;
+        new_syntax_node(db, green, TextOffset::START, SyntaxNodeId::Root(file_id), kind)
     }
 
-    /// Creates a new root syntax node with a custom initial offset.
-    pub fn new_root_with_offset(
+    /// Creates a **detached** root: a standalone tree built directly from `green`, not unified with
+    /// the file's canonical tree. For transient/standalone parses (proc-macro token streams,
+    /// snippet formatting, tests) that have no per-file parse query to seed from. Its node ids are
+    /// green-keyed, so they are *not* stable across content changes — do not use it to back a file
+    /// that an editor mutates; use `db.file_syntax(file_id)` for that.
+    pub fn new_detached_root(
+        db: &'a dyn Database,
+        file_id: FileId<'a>,
+        green: GreenId<'a>,
+    ) -> Self {
+        new_detached_root_node(db, file_id, green, TextOffset::START)
+    }
+
+    /// A [`Self::new_detached_root`] with a custom initial offset, for embedding a standalone
+    /// subtree (e.g. a macro expansion) at its position in the parent file.
+    pub fn new_detached_root_with_offset(
         db: &'a dyn Database,
         file_id: FileId<'a>,
         green: GreenId<'a>,
         initial_offset: Option<TextOffset>,
     ) -> Self {
-        new_root_node(db, file_id, green, initial_offset.unwrap_or_default())
+        new_detached_root_node(db, file_id, green, initial_offset.unwrap_or_default())
     }
 
     // Basic accessors
@@ -277,6 +379,21 @@ impl<'a> SyntaxNode<'a> {
         self.data.green(db).long(db)
     }
 
+    /// Returns whether the subtree rooted at this node contains a node of a missing kind, i.e.
+    /// whether it had a parser error.
+    pub fn contains_missing(&self, db: &'a dyn Database) -> bool {
+        /// Whether the green subtree rooted at `green_id` contains a node of a missing kind.
+        /// Walks the green tree directly - materializing the red tree just for this check would
+        /// create (and memoize) a `SyntaxNode` per descendant. Memoized per green id, so shared
+        /// subtrees are walked once.
+        #[salsa::tracked(returns(copy))]
+        fn query<'db>(db: &'db dyn Database, green_id: GreenId<'db>) -> bool {
+            let node = green_id.long(db);
+            node.kind.is_missing() || node.children().iter().any(|child| query(db, *child))
+        }
+        query(db, *self.data.green(db))
+    }
+
     /// Returns the span of the syntax node without trivia.
     pub fn span_without_trivia(&self, db: &dyn Database) -> TextSpan {
         let green_node = self.green_node(db);
@@ -300,15 +417,63 @@ impl<'a> SyntaxNode<'a> {
 
     /// Gets the children syntax nodes of the current node.
     pub fn get_children(&self, db: &'a dyn Database) -> &'a [SyntaxNode<'a>] {
-        db.get_children(*self)
+        /// The children of every non-terminal node in the expression subtree rooted at `root`
+        /// (an outermost expression block), materialized eagerly in one query. A single memo per
+        /// body replaces a full salsa query (key lookup, sync-table claim, memo insert,
+        /// dependency edge) per node, which dominated compilation profiles. Terminal subtrees
+        /// (token + trivia, ~4/5 of all nodes) are rarely visited, so they stay lazy - served by
+        /// the per-node [`node_children`] fallback.
+        #[salsa::tracked(returns(ref))]
+        fn red_tree<'db>(db: &'db dyn Database, root: SyntaxNodeData<'db>) -> RedTree<'db> {
+            let root_node = SyntaxNode::from_data(db, root);
+            let mut res = RedTree::default();
+            // DFS is done so subtrees would occupy contiguous regions and tree-shaped consumers
+            // stay local.
+            let mut stack = vec![root_node];
+            while let Some(node) = stack.pop() {
+                if node.kind.is_terminal() {
+                    continue;
+                }
+                let start = res.nodes.len();
+                node.collect_children_into(db, &mut res.nodes);
+                let end = res.nodes.len();
+                res.ranges.insert(node.data, start as u32..end as u32);
+                stack.extend(res.nodes[start..end].iter().rev().copied());
+            }
+            res
+        }
+        /// Lazy per-node fallback for nodes the arena does not cover (terminals and their
+        /// descendants). Keyed on the tracked [`SyntaxNodeData`] struct, so the memo is attached
+        /// to it; the wrapper's other fields are caches derived from `data`.
+        #[salsa::tracked(returns(ref))]
+        fn node_children<'db>(
+            db: &'db dyn Database,
+            data: SyntaxNodeData<'db>,
+        ) -> Vec<SyntaxNode<'db>> {
+            let node = SyntaxNode::from_data(db, data);
+            let mut res = Vec::with_capacity(node.green_node(db).children().len());
+            node.collect_children_into(db, &mut res);
+            res
+        }
+        match self.arena_root {
+            Some(arena_root) => {
+                let tree = red_tree(db, arena_root);
+                match tree.ranges.get(&self.data) {
+                    Some(range) => &tree.nodes[range.start as usize..range.end as usize],
+                    None => node_children(db, self.data).as_slice(),
+                }
+            }
+            None => node_children(db, self.data).as_slice(),
+        }
     }
 
-    /// Implementation of [SyntaxNode::get_children].
-    pub(crate) fn get_children_impl(&self, db: &'a dyn Database) -> Vec<SyntaxNode<'a>> {
-        let mut offset = self.offset(db);
+    /// Appends this node's children to `res`.
+    fn collect_children_into(&self, db: &'a dyn Database, res: &mut Vec<SyntaxNode<'a>>) {
+        // Children offsets are relative to this node, so seeding from `TextOffset::START` (rather
+        // than `self.offset(db)`) keeps `get_children` a pure function of the green tree.
+        let mut offset = TextOffset::START;
         let self_green = self.green_node(db);
         let children = self_green.children();
-        let mut res: Vec<SyntaxNode<'_>> = Vec::with_capacity(children.len());
         let mut key_map = Vec::<(_, usize)>::with_capacity(children.len());
         for green_id in children {
             let green = green_id.long(db);
@@ -318,14 +483,14 @@ impl<'a> SyntaxNode<'a> {
             let key_fields: &'a [GreenId<'a>] = &green.children()[rng];
             let index = key_map
                 .iter_mut()
-                .find(|(k, _v)| *k == key_fields)
+                .find(|(k, _v)| *k == (kind, key_fields))
                 .map(|(_k, v)| {
                     let index = *v;
                     *v += 1;
                     index
                 })
                 .unwrap_or_else(|| {
-                    key_map.push((key_fields, 1));
+                    key_map.push(((kind, key_fields), 1));
                     0
                 });
             // Create the SyntaxNode view for the child.
@@ -333,13 +498,17 @@ impl<'a> SyntaxNode<'a> {
                 db,
                 *green_id,
                 offset,
-                SyntaxNodeId::Child { parent: *self, index, key_fields: Box::from(key_fields) },
+                SyntaxNodeId::Child {
+                    parent: *self,
+                    kind,
+                    index,
+                    key_fields: Box::from(key_fields),
+                },
                 kind,
             ));
 
             offset = offset.add_width(width);
         }
-        res
     }
 
     // Text and span utilities

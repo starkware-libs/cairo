@@ -59,7 +59,7 @@ fn main() -> anyhow::Result<()> {
         _abi,
     } = serde_json::from_str(
         &fs::read_to_string(&args.file)
-            .with_context(|| format!("Failed to read {}.", &args.file))?,
+            .with_context(|| format!("Failed to read {}.", args.file))?,
     )
     .with_context(|| "deserialization Failed.")?;
     let contract_class = ContractClass {

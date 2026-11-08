@@ -3,7 +3,8 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> (felt252, felt252, felt252, u128, u128) {
     let a = 5;
     let b = 6;
@@ -13,14 +14,9 @@ fn foo() -> (felt252, felt252, felt252, u128, u128) {
     (a, b, c, d, e)
 }
 
-//! > function_name
-foo
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > sierra_code
 const_as_immediate<Const<felt252, 5>>() -> ([0])

@@ -1,5 +1,5 @@
-use std::collections::HashMap;
-
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use starknet_types_core::felt::Felt as Felt252;
@@ -7,7 +7,7 @@ use starknet_types_core::felt::Felt as Felt252;
 /// Stores the data of a specific dictionary.
 pub struct DictTrackerExecScope {
     /// The data of the dictionary.
-    data: HashMap<Felt252, MaybeRelocatable>,
+    data: UnorderedHashMap<Felt252, MaybeRelocatable>,
     /// The index of the dictionary in the dict_infos segment.
     idx: usize,
 }
@@ -16,13 +16,13 @@ pub struct DictTrackerExecScope {
 #[derive(Default)]
 pub struct DictManagerExecScope {
     /// Maps between a segment index and the DictTrackerExecScope associated with it.
-    trackers: HashMap<isize, DictTrackerExecScope>,
+    trackers: UnorderedHashMap<isize, DictTrackerExecScope>,
 }
 
 impl DictTrackerExecScope {
     /// Creates a new tracker placed in index `idx` in the dict_infos segment.
     pub fn new(idx: usize) -> Self {
-        Self { data: HashMap::default(), idx }
+        Self { data: Default::default(), idx }
     }
 }
 
@@ -96,7 +96,7 @@ impl DictManagerExecScope {
 #[derive(Default, Debug)]
 pub struct DictSquashExecScope {
     /// A map from key to the list of indices accessing it, each list in reverse order.
-    pub access_indices: HashMap<Felt252, Vec<Felt252>>,
+    pub access_indices: OrderedHashMap<Felt252, Vec<Felt252>>,
     /// Descending list of keys.
     pub keys: Vec<Felt252>,
 }
@@ -110,7 +110,8 @@ impl DictSquashExecScope {
     /// Returns and removes the current key, and its access indices. Should be called when only the
     /// last key access is in the corresponding indices list.
     pub fn pop_current_key(&mut self) -> Option<Felt252> {
-        let key_accesses = self.access_indices.remove(&self.current_key().unwrap());
+        let key = self.current_key().unwrap();
+        let key_accesses = self.access_indices.swap_remove(&key);
         assert!(
             key_accesses.unwrap().len() == 1,
             "Key popped but not all accesses were processed."

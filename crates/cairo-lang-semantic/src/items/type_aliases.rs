@@ -17,7 +17,7 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct TypeAliasData<'db> {
     pub resolved_type: Maybe<TypeId<'db>>,

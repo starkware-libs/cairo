@@ -6,6 +6,7 @@
 //! # Limitations
 //! - Only handles a module context.
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     GenericTypeId, ImplAliasId, ImplDefId, ImplFunctionId, ImportableId, LanguageElementId,
@@ -25,7 +26,7 @@ use crate::items::module::ModuleSemantic;
 use crate::resolve::{ResolvedGenericItem, Resolver};
 
 /// Data about how an item can be accessed from a specific context.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ItemAccessInfo<'db> {
     /// The shortest path segments to access the item from the context, in reverse order.
     pub path_segments: Vec<ImportableId<'db>>,
@@ -60,7 +61,7 @@ impl<'db> ItemAccessInfo<'db> {
             self.path_segments.iter().rev().map(|id| id.name(db).long(db)),
             [self.name.long(db)]
         )
-        .join("::");
+        .format("::");
         format!("{prefix}{path}")
     }
 
@@ -71,7 +72,7 @@ impl<'db> ItemAccessInfo<'db> {
 }
 
 /// How an item is accessed from a context.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub enum ItemAccessKind<'db> {
     /// The item is directly defined in the current module.
     DirectInModule,
@@ -101,17 +102,22 @@ fn get_contextualized_path<'db>(
     item: ImportableId<'db>,
     context_module: ModuleId<'db>,
 ) -> Maybe<ItemAccessInfo<'db>> {
-    if let Some(access_info) = check_prelude(db, item, context_module)? {
-        return Ok(access_info);
+    // A crate has no parent to shorten the path through - it is always accessed by its name.
+    if let ImportableId::Crate(crate_id) = item {
+        return Ok(ItemAccessInfo::new(ItemAccessKind::FullPath(crate_id), vec![], item.name(db)));
     }
 
     let mut resolver = Resolver::new(db, context_module, InferenceId::NoContext);
+
+    if let Some(access_info) = check_prelude(db, item, context_module, &mut resolver)? {
+        return Ok(access_info);
+    }
 
     // Try to find the item in the context module (includes use statements, macro expansions,
     // and star uses)
     let item_name = item.name(db);
     if let Some(info) = resolver.resolve_item_in_module(context_module, item_name)
-        && let Some(found_item) = Option::<ImportableId<'_>>::from(info.item_id)
+        && let Ok::<ImportableId<'_>, _>(found_item) = info.item_id.try_into()
         && found_item == item
     {
         return Ok(ItemAccessInfo::new(ItemAccessKind::DirectInModule, vec![], item_name));
@@ -122,7 +128,7 @@ fn get_contextualized_path<'db>(
         // Check if the ancestor is accessible from the context (includes use statements, macro
         // expansions, and star uses)
         if let Some(info) = resolver.resolve_item_in_module(context_module, ancestor.name(db))
-            && let Some(found_item) = Option::<ImportableId<'_>>::from(info.item_id)
+            && let Ok::<ImportableId<'_>, _>(found_item) = info.item_id.try_into()
             && found_item == *ancestor
         {
             return Ok(ItemAccessInfo::new(
@@ -133,7 +139,7 @@ fn get_contextualized_path<'db>(
         }
 
         // Check if the ancestor is in the prelude.
-        if let Some(access_info) = check_prelude(db, *ancestor, context_module)? {
+        if let Some(access_info) = check_prelude(db, *ancestor, context_module, &mut resolver)? {
             let mut res_path_segments = path_items[..i + 1].iter().copied().collect_vec();
             res_path_segments.extend(access_info.path_segments);
             return Ok(ItemAccessInfo::new(
@@ -145,17 +151,23 @@ fn get_contextualized_path<'db>(
     }
 
     if owning_crate == context_module.owning_crate(db) {
+        // Removing the crate name for the provided path, as `crate::` prefix already denotes the
+        // crate root.
+        let mut path_items = path_items;
+        path_items.pop();
         return Ok(ItemAccessInfo::new(ItemAccessKind::ViaCrate, path_items, item_name));
     }
 
     Ok(ItemAccessInfo::new(ItemAccessKind::FullPath(owning_crate), path_items, item_name))
 }
 
-/// Check if the given item is in the prelude module.
+/// Check if the given item is in the prelude module, and its name is not shadowed by a different
+/// item in the context module.
 fn check_prelude<'db>(
     db: &'db dyn Database,
     item: ImportableId<'db>,
     context_module: ModuleId<'db>,
+    resolver: &mut Resolver<'db>,
 ) -> Maybe<Option<ItemAccessInfo<'db>>> {
     let settings = db
         .crate_config(context_module.owning_crate(db))
@@ -212,6 +224,16 @@ fn check_prelude<'db>(
         };
 
         if is_prelude {
+            // A different item bound to the same name in the context module shadows the prelude
+            // item, making the short name refer to the wrong item.
+            if let Some(info) = resolver.resolve_item_in_module(context_module, item.name(db))
+                && !matches!(
+                    info.item_id.try_into(),
+                    Ok::<ImportableId<'_>, _>(found_item) if found_item == item
+                )
+            {
+                return Ok(None);
+            }
             return Ok(Some(ItemAccessInfo::new(
                 ItemAccessKind::ViaPrelude,
                 vec![],
@@ -263,7 +285,7 @@ fn get_importable_parent<'db>(
 }
 
 /// Query implementation of [PathSemantic::contextualized_path].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn contextualized_path_query<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -278,11 +300,7 @@ fn contextualized_path_query<'db>(
 /// A trait for contextualizing the full path of an item.
 pub trait ContextualizePath<'db> {
     /// Returns the shortest valid path to access an item from a given module context.
-    fn contextualized_path(
-        &self,
-        db: &'db dyn Database,
-        context_module: ModuleId<'db>,
-    ) -> Maybe<String>;
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String;
 }
 
 /// Marker trait for contextualizing the full path of an item implementation based on ImportableId.
@@ -291,18 +309,17 @@ trait IntoImportableMarker<'db>: Into<ImportableId<'db>> {}
 impl<'db, T> ContextualizePath<'db> for T
 where
     for<'a> &'a T: IntoImportableMarker<'db>,
+    T: TopLevelLanguageElementId<'db>,
 {
-    fn contextualized_path(
-        &self,
-        db: &'db dyn Database,
-        context_module: ModuleId<'db>,
-    ) -> Maybe<String> {
-        let item: ImportableId<'db> = self.into();
-        contextualized_path_query(db, (), item, context_module).map(|info| info.path(db))
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        if let Ok(info) = contextualized_path_query(db, (), self.into(), context_module) {
+            info.path(db)
+        } else {
+            self.full_path(db)
+        }
     }
 }
 
-impl<'db> IntoImportableMarker<'db> for &CrateId<'db> {}
 impl<'db> IntoImportableMarker<'db> for &SubmoduleId<'db> {}
 impl<'db> IntoImportableMarker<'db> for &ConstantId<'db> {}
 impl<'db> IntoImportableMarker<'db> for &FreeFunctionId<'db> {}
@@ -317,72 +334,56 @@ impl<'db> IntoImportableMarker<'db> for &ExternTypeId<'db> {}
 impl<'db> IntoImportableMarker<'db> for &ExternFunctionId<'db> {}
 impl<'db> IntoImportableMarker<'db> for &MacroDeclarationId<'db> {}
 
+impl<'db> ContextualizePath<'db> for CrateId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        if let Ok(info) = contextualized_path_query(db, (), self.into(), context_module) {
+            info.path(db)
+        } else {
+            self.long(db).name().long(db).to_string()
+        }
+    }
+}
+
 impl<'db> ContextualizePath<'db> for ModuleId<'db> {
-    fn contextualized_path(
-        &self,
-        db: &'db dyn Database,
-        context_module: ModuleId<'db>,
-    ) -> Maybe<String> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
         match self {
             ModuleId::CrateRoot(crate_id) => crate_id.contextualized_path(db, context_module),
             ModuleId::Submodule(submodule_id) => {
                 submodule_id.contextualized_path(db, context_module)
             }
-            ModuleId::MacroCall { .. } => Ok(self.full_path(db)),
+            ModuleId::MacroCall { .. } => self.full_path(db),
         }
     }
 }
 
 impl<'db> ContextualizePath<'db> for ModuleItemId<'db> {
-    fn contextualized_path(
-        &self,
-        db: &'db dyn Database,
-        context_module: ModuleId<'db>,
-    ) -> Maybe<String> {
-        if let Some(item) = Option::<ImportableId<'db>>::from(*self) {
-            contextualized_path_query(db, (), item, context_module).map(|info| info.path(db))
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        if let Ok(item) = (*self).try_into()
+            && let Ok(info) = contextualized_path_query(db, (), item, context_module)
+        {
+            info.path(db)
         } else {
-            Ok(self.full_path(db))
+            self.full_path(db)
         }
     }
 }
 
 impl<'db> ContextualizePath<'db> for TraitFunctionId<'db> {
-    fn contextualized_path(
-        &self,
-        db: &'db dyn Database,
-        context_module: ModuleId<'db>,
-    ) -> Maybe<String> {
-        let contextualized_path = self.trait_id(db).contextualized_path(db, context_module)?;
-        Ok(if contextualized_path.is_empty() {
-            self.name(db).to_string(db)
-        } else {
-            format!("{contextualized_path}::{}", self.name(db).long(db))
-        })
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        let contextualized_path = self.trait_id(db).contextualized_path(db, context_module);
+        format!("{contextualized_path}::{}", self.name(db).long(db))
     }
 }
 
 impl<'db> ContextualizePath<'db> for ImplFunctionId<'db> {
-    fn contextualized_path(
-        &self,
-        db: &'db dyn Database,
-        context_module: ModuleId<'db>,
-    ) -> Maybe<String> {
-        let contextualized_path = self.impl_def_id(db).contextualized_path(db, context_module)?;
-        Ok(if contextualized_path.is_empty() {
-            self.name(db).to_string(db)
-        } else {
-            format!("{contextualized_path}::{}", self.name(db).long(db))
-        })
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        let contextualized_path = self.impl_def_id(db).contextualized_path(db, context_module);
+        format!("{contextualized_path}::{}", self.name(db).long(db))
     }
 }
 
 impl<'db> ContextualizePath<'db> for FunctionTitleId<'db> {
-    fn contextualized_path(
-        &self,
-        db: &'db dyn Database,
-        context_module: ModuleId<'db>,
-    ) -> Maybe<String> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
         match self {
             FunctionTitleId::Free(id) => id.contextualized_path(db, context_module),
             FunctionTitleId::Extern(id) => id.contextualized_path(db, context_module),
@@ -393,11 +394,231 @@ impl<'db> ContextualizePath<'db> for FunctionTitleId<'db> {
 }
 
 impl<'db> ContextualizePath<'db> for crate::ConcreteTraitId<'db> {
-    fn contextualized_path(
-        &self,
-        db: &'db dyn Database,
-        context_module: ModuleId<'db>,
-    ) -> Maybe<String> {
-        self.trait_id(db).contextualized_path(db, context_module)
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        self.long(db).contextualized_path(db, context_module)
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::trt::ConcreteTraitLongId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        let path = self.trait_id.contextualized_path(db, context_module);
+        if self.generic_args.is_empty() {
+            path
+        } else {
+            let args = self
+                .generic_args
+                .iter()
+                .map(|arg| arg.contextualized_path(db, context_module))
+                .format(", ");
+            format!("{path}::<{args}>")
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for GenericTypeId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        match self {
+            GenericTypeId::Struct(id) => id.contextualized_path(db, context_module),
+            GenericTypeId::Enum(id) => id.contextualized_path(db, context_module),
+            GenericTypeId::Extern(id) => id.contextualized_path(db, context_module),
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::ConcreteTypeId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        let path = self.generic_type(db).contextualized_path(db, context_module);
+        let generic_args = self.generic_args(db);
+        if generic_args.is_empty() {
+            path
+        } else {
+            let args = generic_args
+                .iter()
+                .map(|arg| arg.contextualized_path(db, context_module))
+                .format(", ");
+            format!("{path}::<{args}>")
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::TypeId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        self.long(db).contextualized_path(db, context_module)
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::TypeLongId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        match self {
+            crate::TypeLongId::Concrete(concrete) => {
+                concrete.contextualized_path(db, context_module)
+            }
+            crate::TypeLongId::Tuple(inner_types) => {
+                let inner = inner_types.iter().map(|ty| ty.contextualized_path(db, context_module));
+                match inner.exactly_one() {
+                    Ok(single) => format!("({single},)"),
+                    Err(other) => format!("({})", other.format(", ")),
+                }
+            }
+            crate::TypeLongId::Snapshot(ty) => {
+                format!("@{}", ty.contextualized_path(db, context_module))
+            }
+            crate::TypeLongId::FixedSizeArray { type_id, size } => {
+                format!(
+                    "[{}; {}]",
+                    type_id.contextualized_path(db, context_module),
+                    size.contextualized_path(db, context_module)
+                )
+            }
+            crate::TypeLongId::Coupon(function_id) => {
+                format!("{}::Coupon", function_id.contextualized_path(db, context_module))
+            }
+            crate::TypeLongId::ImplType(impl_type_id) => format!(
+                "{}::{}",
+                impl_type_id.impl_id().contextualized_path(db, context_module),
+                impl_type_id.ty().name(db).long(db)
+            ),
+            _ => self.format(db),
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::GenericArgumentId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        match self {
+            crate::GenericArgumentId::Type(ty) => ty.contextualized_path(db, context_module),
+            crate::GenericArgumentId::Constant(value) => {
+                value.contextualized_path(db, context_module)
+            }
+            crate::GenericArgumentId::Impl(imp) => imp.contextualized_path(db, context_module),
+            crate::GenericArgumentId::NegImpl(_) => self.format(db),
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::constant::ConstValueId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        self.long(db).contextualized_path(db, context_module)
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::constant::ConstValue<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        use crate::items::constant::ConstValue;
+        match self {
+            ConstValue::Int(value, _) => value.to_string(),
+            ConstValue::Enum(variant, payload) => {
+                let variant_path = variant.id.contextualized_path(db, context_module);
+                // A unit payload (e.g. of `None`, `true`, `false`) is an empty struct - elide it.
+                if matches!(payload.long(db), ConstValue::Struct(members, _) if members.is_empty())
+                {
+                    variant_path
+                } else {
+                    format!("{variant_path}({})", payload.contextualized_path(db, context_module))
+                }
+            }
+            ConstValue::NonZero(inner) => inner.contextualized_path(db, context_module),
+            ConstValue::ImplConstant(impl_constant_id) => format!(
+                "{}::{}",
+                impl_constant_id.impl_id().contextualized_path(db, context_module),
+                impl_constant_id.trait_constant_id().name(db).long(db)
+            ),
+            ConstValue::Generic(_)
+            | ConstValue::Struct(..)
+            | ConstValue::Var(..)
+            | ConstValue::Missing(_) => format!("{:?}", self.debug(db)),
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::imp::ImplId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        self.long(db).contextualized_path(db, context_module)
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::imp::ImplLongId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        use crate::items::imp::ImplLongId;
+        match self {
+            ImplLongId::Concrete(concrete_impl) => {
+                let long = concrete_impl.long(db);
+                let path = long.impl_def_id.contextualized_path(db, context_module);
+                if long.generic_args.is_empty() {
+                    path
+                } else {
+                    let args = long
+                        .generic_args
+                        .iter()
+                        .map(|arg| arg.contextualized_path(db, context_module))
+                        .format(", ");
+                    format!("{path}::<{args}>")
+                }
+            }
+            ImplLongId::GenericParameter(param) => {
+                param.name(db).map(|name| name.to_string(db)).unwrap_or_else(|| self.format(db))
+            }
+            ImplLongId::SelfImpl(concrete_trait) => {
+                concrete_trait.contextualized_path(db, context_module)
+            }
+            ImplLongId::ImplImpl(impl_impl) => format!(
+                "{}::{}",
+                impl_impl.impl_id().contextualized_path(db, context_module),
+                impl_impl.trait_impl_id().name(db).long(db)
+            ),
+            // Inferred and generated impls keep the plain formatting.
+            ImplLongId::ImplVar(_) | ImplLongId::GeneratedImpl(_) => self.format(db),
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for GenericFunctionId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        match self {
+            GenericFunctionId::Free(id) => id.contextualized_path(db, context_module),
+            GenericFunctionId::Extern(id) => id.contextualized_path(db, context_module),
+            GenericFunctionId::Impl(id) => format!(
+                "{}::{}",
+                id.impl_id.contextualized_path(db, context_module),
+                id.function.name(db).long(db)
+            ),
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::functions::ConcreteFunction<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        let path = self.generic_function.contextualized_path(db, context_module);
+        if self.generic_args.is_empty() {
+            path
+        } else {
+            let args = self
+                .generic_args
+                .iter()
+                .map(|arg| arg.contextualized_path(db, context_module))
+                .format(", ");
+            format!("{path}::<{args}>")
+        }
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::FunctionId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        self.long(db).contextualized_path(db, context_module)
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::functions::FunctionLongId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        self.function.contextualized_path(db, context_module)
+    }
+}
+
+impl<'db> ContextualizePath<'db> for crate::items::functions::ConcreteFunctionWithBodyId<'db> {
+    fn contextualized_path(&self, db: &'db dyn Database, context_module: ModuleId<'db>) -> String {
+        match self.function_id(db) {
+            Ok(id) => id.contextualized_path(db, context_module),
+            Err(_) => self.full_path(db),
+        }
     }
 }

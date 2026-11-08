@@ -48,6 +48,16 @@ Write them with an explicit conjunction instead:
 let in_range = a < b && b < c;
 ----
 
+Mixed consecutive comparison/equality operators are also not supported, for example
+`a < b == c` or `a == b < c`.
+Make the intent explicit with conjunctions or parentheses:
+
+[source,cairo]
+----
+let in_range_and_equal = a < b && b == c;
+let bool_comparison = (a < b) == expected;
+----
+
 == Examples
 
 === Primitives

@@ -73,6 +73,12 @@ pub fn inner_lower_implicits<'db>(
     let implicit_vars = &ctx.implicit_vars_for_block[&root_block_id];
     ctx.lowered.parameters.splice(0..0, implicit_vars.iter().map(|var_usage| var_usage.var_id));
 
+    // The implicits are now physically prepended to both the parameters and the returned values,
+    // so they are recorded as ordinary params/extra-rets and the implicits concept is dropped.
+    ctx.lowered.signature.params.splice(0..0, ctx.implicits_tys.iter().copied());
+    ctx.lowered.signature.extra_rets.splice(0..0, ctx.implicits_tys.iter().copied());
+    ctx.lowered.signature.declared_implicits.clear();
+
     Ok(())
 }
 
@@ -244,7 +250,7 @@ fn lower_function_blocks_implicits<'db>(
 // =========== Query implementations ===========
 
 /// Query implementation of [crate::db::LoweringGroup::function_implicits].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 pub fn function_implicits<'db>(
     db: &'db dyn Database,
     function: FunctionId<'db>,
@@ -252,7 +258,8 @@ pub fn function_implicits<'db>(
     if let Some(body) = function.body(db)? {
         return db.function_with_body_implicits(body);
     }
-    Ok(function.signature(db)?.implicits)
+    // Reached only for bodyless functions; their declared implicits are stage invariant.
+    Ok(function.signature(db, LoweringStage::Monomorphized)?.declared_implicits.clone())
 }
 
 /// A trait to add helper methods in [LoweringGroup].
@@ -289,7 +296,7 @@ fn scc_implicits<'db>(
 }
 
 /// Tracked implementation of [scc_implicits].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn scc_implicits_tracked<'db>(
     db: &'db dyn Database,
     rep: ConcreteFunctionWithBodyId<'db>,
@@ -298,7 +305,14 @@ fn scc_implicits_tracked<'db>(
     let mut all_implicits = OrderedHashSet::<_>::default();
     for function in scc_functions {
         // Add the function's explicit implicits.
-        all_implicits.extend(function.function_id(db)?.signature(db)?.implicits);
+        all_implicits.extend(
+            function
+                .function_id(db)?
+                .signature(db, LoweringStage::Monomorphized)?
+                .declared_implicits
+                .iter()
+                .copied(),
+        );
         // For each direct callee, add its implicits.
         let direct_callees =
             db.lowered_direct_callees(function, DependencyType::Call, LoweringStage::PostBaseline)?;
@@ -313,7 +327,13 @@ fn scc_implicits_tracked<'db>(
                     all_implicits.extend(scc_implicits(db, callee_scc)?);
                 }
             } else {
-                all_implicits.extend(direct_callee.signature(db)?.implicits);
+                all_implicits.extend(
+                    direct_callee
+                        .signature(db, LoweringStage::Monomorphized)?
+                        .declared_implicits
+                        .iter()
+                        .copied(),
+                );
             }
         }
     }

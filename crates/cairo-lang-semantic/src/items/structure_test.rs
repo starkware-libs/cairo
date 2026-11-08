@@ -63,7 +63,7 @@ fn test_struct() {
     assert_eq!(
         actual,
         indoc! {"
-            a: Member { id: MemberId(test::A::a), ty: (), visibility: Private },
+            a: Member { id: MemberId(test::A::a), ty: core::felt252, visibility: Private },
             b: Member { id: MemberId(test::A::b), ty: (core::felt252, core::felt252), visibility: Public },
             c: Member { id: MemberId(test::A::c), ty: (), visibility: PublicInCrate }"}
     );

@@ -1,14 +1,12 @@
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::LoweringStage;
 use crate::db::LoweringGroup;
-use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::optimizations::scrub_units::scrub_units;
-use crate::test_utils::LoweringDatabaseForTesting;
+use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
 
 cairo_lang_test_utils::test_file_test!(
     scrub_units,
@@ -19,6 +17,8 @@ cairo_lang_test_utils::test_file_test!(
     test_scrub_units
 );
 
+/// Not using `test_runner::run_lowering_phases_test`, as `scrub_units` is a hardcoded step of
+/// `lowered_body` rather than an `OptimizationPhase`, so there is no phase to hand the runner.
 fn test_scrub_units(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
@@ -37,14 +37,8 @@ fn test_scrub_units(
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
-        (
-            "before".into(),
-            format!("{:?}", before.debug(&LoweredFormatter::new(db, &before.variables))),
-        ),
-        (
-            "after".into(),
-            format!("{:?}", after.debug(&LoweredFormatter::new(db, &after.variables))),
-        ),
+        ("before".into(), formatted_lowered(db, Some(before))),
+        ("after".into(), formatted_lowered(db, Some(&after))),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
     ]))
 }

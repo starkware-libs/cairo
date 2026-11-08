@@ -10,6 +10,7 @@ true
 true
 
 //! > cairo_code
+#[target_function]
 fn pow2_14000() {
     pow2_by_add_loop(14000, 1);
 }
@@ -24,9 +25,6 @@ fn pow2_by_add_loop(n: felt252, x: felt252) -> felt252 {
 
 //! > max_stack_trace_depth
 100
-
-//! > function_name
-pow2_14000
 
 //! > expected_profiling_info
 test::pow2_14000;store_temp<RangeCheck> 2

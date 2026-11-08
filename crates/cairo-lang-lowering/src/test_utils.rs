@@ -8,6 +8,7 @@ use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
+use cairo_lang_semantic::test_utils::with_target_function_plugin;
 use salsa::Database;
 
 use crate::Lowered;
@@ -32,7 +33,7 @@ impl LoweringDatabaseForTesting {
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
 
-        res.set_default_plugins_from_suite(get_default_plugin_suite());
+        res.set_default_plugins_from_suite(with_target_function_plugin(get_default_plugin_suite()));
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
@@ -50,17 +51,24 @@ impl LoweringDatabaseForTesting {
     }
 }
 
-pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
+static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
     LazyLock::new(|| Mutex::new(LoweringDatabaseForTesting::new()));
-pub static SHARED_DB_FUTURE_SIERRA: LazyLock<Mutex<LoweringDatabaseForTesting>> =
-    LazyLock::new(|| {
-        let mut db = LoweringDatabaseForTesting::new();
-        db.set_flag(FlagLongId(Flag::FUTURE_SIERRA.into()), Some(Flag::FutureSierra(true)));
-        Mutex::new(db)
-    });
+static SHARED_DB_NO_GAS: LazyLock<Mutex<LoweringDatabaseForTesting>> = LazyLock::new(|| {
+    let mut db = LoweringDatabaseForTesting::new();
+    db.set_flag(FlagLongId(Flag::ADD_WITHDRAW_GAS.into()), Some(Flag::AddWithdrawGas(false)));
+    Mutex::new(db)
+});
+static SHARED_DB_FUTURE_SIERRA: LazyLock<Mutex<LoweringDatabaseForTesting>> = LazyLock::new(|| {
+    let mut db = LoweringDatabaseForTesting::new();
+    db.set_flag(FlagLongId(Flag::FUTURE_SIERRA.into()), Some(Flag::FutureSierra(true)));
+    Mutex::new(db)
+});
 impl LoweringDatabaseForTesting {
     pub fn with_future_sierra() -> Self {
         SHARED_DB_FUTURE_SIERRA.lock().unwrap().snapshot()
+    }
+    pub fn with_no_gas() -> Self {
+        SHARED_DB_NO_GAS.lock().unwrap().snapshot()
     }
 }
 impl Default for LoweringDatabaseForTesting {

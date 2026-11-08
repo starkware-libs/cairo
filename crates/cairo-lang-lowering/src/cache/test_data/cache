@@ -3,7 +3,19 @@
 //! > test_runner_name
 test_cache_check
 
-//! > function_code
+//! > cairo_code
+#[allow(extern_outside_corelib)]
+extern type ACopy;
+impl ACopyCopy of Copy<ACopy>;
+#[allow(extern_outside_corelib)]
+extern type ADrop;
+impl ADropDrop of Drop<ADrop>;
+
+#[allow(extern_outside_corelib)]
+extern fn use_a_copy(x: ACopy) nopanic;
+#[allow(extern_outside_corelib)]
+extern fn use_a_drop(x: ADrop) nopanic;
+#[target_function]
 fn foo(x: ACopy, y: ADrop) {
     if true {
         use_a_copy(x);
@@ -13,18 +25,6 @@ fn foo(x: ACopy, y: ADrop) {
     }
     use_a_copy(x);
 }
-
-//! > function_name
-foo
-
-//! > module_code
-extern type ACopy;
-impl ACopyCopy of Copy<ACopy>;
-extern type ADrop;
-impl ADropDrop of Drop<ADrop>;
-
-extern fn use_a_copy(x: ACopy) nopanic;
-extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > semantic_diagnostics
 
@@ -47,16 +47,14 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function_code
+//! > cairo_code
+#[target_function]
 fn foo() -> u32 {
     let x = |a| {
         a + 5
     };
     x(5)
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 
@@ -79,19 +77,7 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function_code
-fn foo() {
-    bar::<MyOuter>();
-}
-
-fn bar<impl I: Outer>() {
-    I::Impl::foo();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait Inner {
     fn foo();
 }
@@ -105,6 +91,14 @@ impl MyInner of Inner {
 }
 
 impl MyOuter of Outer {}
+#[target_function]
+fn foo() {
+    bar::<MyOuter>();
+}
+
+fn bar<impl I: Outer>() {
+    I::Impl::foo();
+}
 
 //! > semantic_diagnostics
 
@@ -124,15 +118,7 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function_code
-fn foo() -> i32 {
-    MyTrait::foo()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn foo() -> i32 {
         let y = |x| x;
@@ -141,6 +127,10 @@ trait MyTrait {
 }
 
 impl MyImpl of MyTrait {}
+#[target_function]
+fn foo() -> i32 {
+    MyTrait::foo()
+}
 
 //! > semantic_diagnostics
 
@@ -161,15 +151,7 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function_code
-fn foo() -> i32 {
-    MyTrait::foo()
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 trait MyTrait {
     fn foo() -> i32 {
         loop {
@@ -181,6 +163,10 @@ trait MyTrait {
 }
 
 impl MyImpl of MyTrait {}
+#[target_function]
+fn foo() -> i32 {
+    MyTrait::foo()
+}
 
 //! > semantic_diagnostics
 
@@ -190,7 +176,7 @@ impl MyImpl of MyTrait {}
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::integer::i32,)>) <- test::MyImpl::foo[22-113](v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::integer::i32,)>) <- test::MyImpl::foo::{loop#0}(v0, v1)
 End:
   Return(v2, v3, v4)
 
@@ -201,19 +187,15 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function_code
-fn foo() -> i32 {
-    my_macro!(3)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro my_macro {
     ($x:expr) => {
         $x + 1
     };
+}
+#[target_function]
+fn foo() -> i32 {
+    my_macro!(3)
 }
 
 //! > semantic_diagnostics
@@ -237,15 +219,7 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function_code
-fn foo() {
-    bar();
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 macro define_bar {
     () => {
         expose! (
@@ -254,6 +228,10 @@ macro define_bar {
     };
 }
 define_bar!();
+#[target_function]
+fn foo() {
+    bar();
+}
 
 //! > semantic_diagnostics
 
@@ -265,3 +243,65 @@ blk0 (root):
 Statements:
 End:
   Return()
+
+//! > ==========================================================================
+
+//! > Cache Derive Drop
+
+//! > test_runner_name
+test_cache_check
+
+//! > cairo_code
+#[derive(Drop)]
+struct MyStruct {
+    x: felt252,
+}
+#[target_function]
+fn foo() -> felt252 {
+    let s = MyStruct { x: 5 };
+    s.x
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Cache Derive in Submodule
+
+//! > test_runner_name
+test_cache_check
+
+//! > cairo_code
+mod inner {
+    #[derive(Drop)]
+    pub struct InnerStruct {
+        pub x: felt252,
+    }
+}
+#[target_function]
+fn foo() -> felt252 {
+    let s = inner::InnerStruct { x: 5 };
+    s.x
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+End:
+  Return(v0)

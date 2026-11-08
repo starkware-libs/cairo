@@ -123,8 +123,10 @@ impl<'a> PluginTypeInfo<'a> {
         format!(
             "impl {name}{derived_trait_name}<{generics}> of {derived_trait}::<{full_typename}>",
             name = self.name,
-            generics =
-                self.impl_generics(dependent_traits, |trt, ty| format!("{trt}<{ty}>")).join(", "),
+            generics = self
+                .impl_generics(dependent_traits, |trt, ty| format!("{trt}<{ty}>"))
+                .iter()
+                .format(", "),
             full_typename = self.full_typename(),
         )
     }
@@ -154,7 +156,7 @@ impl<'a> PluginTypeInfo<'a> {
         if self.generics.param_names.is_empty() {
             self.name.to_string()
         } else {
-            format!("{}<{}>", self.name, self.generics.param_names.iter().join(", "))
+            format!("{}<{}>", self.name, self.generics.param_names.iter().format(", "))
         }
     }
 }

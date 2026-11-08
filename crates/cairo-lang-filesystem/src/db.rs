@@ -66,7 +66,7 @@ impl CrateConfigurationInput {
 }
 
 /// A configuration per crate.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub struct CrateConfiguration<'db> {
     /// The root directory of the crate.
     pub root: Directory<'db>,
@@ -122,7 +122,7 @@ pub struct CrateSettings {
 /// Tracked function to return the default settings for a crate.
 /// This is used to initialize the default settings once, and return it by reference.
 #[salsa::tracked(returns(ref))]
-pub fn default_crate_settings<'db>(_db: &'db dyn Database) -> CrateSettings {
+pub fn default_crate_settings(_db: &dyn Database) -> CrateSettings {
     CrateSettings::default()
 }
 
@@ -132,9 +132,9 @@ pub fn default_crate_settings<'db>(_db: &'db dyn Database) -> CrateSettings {
 /// Compiler minor version updates will always support all editions supported by the previous
 /// updates with the same major version. Compiler major version updates may remove support for older
 /// editions. Editions may be added to provide features that are not backwards compatible, while
-/// allowing user to opt-in to them, and be ready for later compiler updates.
+/// allowing users to opt in to them and prepare for later compiler updates.
 #[derive(
-    Clone, Copy, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::Update,
+    Clone, Copy, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::SalsaValue,
 )]
 pub enum Edition {
     /// The base edition, dated for the first release of the compiler.
@@ -245,7 +245,7 @@ pub struct FilesGroupInput {
     pub ext_as_virtual_obj: Option<ExtAsVirtual>,
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn files_group_input(db: &dyn Database) -> FilesGroupInput {
     FilesGroupInput::new(db, None, None, None, None, None)
 }
@@ -519,7 +519,7 @@ fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Optio
     }
 }
 
-/// Tracked function to return the content of a file as a string.
+/// Tracked function to compute the [FileSummary] of a file.
 #[salsa::tracked(returns(ref))]
 fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<FileSummary> {
     let content = db.file_content(file)?;
@@ -543,7 +543,7 @@ fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<
     })
 }
 
-/// Returns a reference to the content of a file as a string.
+/// Returns a reference to the [FileSummary] of a file.
 /// This is a wrapper around the tracked function `file_summary_helper` to return a
 /// reference to a type unsupported by salsa tracked functions.
 fn file_summary<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<&'db FileSummary> {

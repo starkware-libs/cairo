@@ -36,3 +36,42 @@ a: i32, b: i32,
 mod mod1 {
 fn foo() {let x=1   ;}
 }
+
+// Skip the formatting of trait items.
+trait MyTrait {
+    #[cairofmt::skip]
+    const   FOO:   i32;
+    #[cairofmt::skip]
+    type   Bar;
+    #[cairofmt::skip]
+    impl   Baz:   MyTrait;
+}
+
+// Skip the formatting of a macro declaration.
+#[cairofmt::skip]
+macro   my_macro   {
+    ($x:expr) => {$x};
+}
+
+// A trailing comment of a macro rule matcher does not swallow the `=>` after it.
+macro add_one {
+    ($x:ident) // Matches one identifier.
+    => {
+        $x + 1
+    };
+}
+
+// A trailing comment of a macro rule body does not swallow the `;` after it.
+macro with_body_comment {
+    ($x:expr) => {
+        $x
+    } // After the body.
+    ;
+}
+
+// A trailing comment of a skipped member does not swallow the `,` after it.
+struct S {
+    #[cairofmt::skip]
+    a: u8 // After a skipped member.
+    , b: u8,
+}

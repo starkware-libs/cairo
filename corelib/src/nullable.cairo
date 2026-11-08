@@ -100,6 +100,7 @@ pub impl NullableImpl<T> of NullableTrait<T> {
     /// This function method does the same thing:
     /// ```
     /// use core::nullable::NullableTrait;
+    /// let value: Nullable<u32> = NullableTrait::new(42);
     /// let also_unwrapped = NullableTrait::deref(value);
     /// ```
     fn deref(nullable: Nullable<T>) -> T {
@@ -124,7 +125,7 @@ pub impl NullableImpl<T> of NullableTrait<T> {
         }
     }
 
-    ///  Returns the contained value if not null, or computes it from a closure.
+    /// Returns the contained value if not null, or computes it from a closure.
     ///
     /// # Examples
     ///

@@ -1,5 +1,5 @@
+use std::collections::VecDeque;
 use std::mem;
-use std::sync::Arc;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use cairo_lang_utils::deque::Deque;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, require};
 use salsa::Database;
 use syntax::node::green::{GreenNode, GreenNodeDetails};
@@ -19,7 +19,7 @@ use syntax::node::ids::GreenId;
 
 use crate::ParserDiagnostic;
 use crate::diagnostic::ParserDiagnosticKind;
-use crate::lexer::{LexerTerminal, tokenize_all};
+use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
 use crate::utils::primitive_token_stream_content_and_offset;
@@ -47,8 +47,15 @@ enum MacroParsingContext {
 pub struct Parser<'a, 'mt> {
     db: &'a dyn Database,
     file_id: FileId<'a>,
-    /// A queue of lexed tokens to be parsed.
-    terminals: Deque<LexerTerminal<'a>>,
+    /// The parsed text.
+    text: &'a str,
+    /// The lexer producing the tokens, pulled lazily into `current_terminals` as parsing advances.
+    lexer: Lexer<'a>,
+    /// A small lookahead window of already-lexed, not-yet-consumed terminals, kept filled by
+    /// `ensure_next_k_exists`. The front is the next terminal to parse.
+    current_terminals: VecDeque<LexerTerminal<'a>>,
+    /// Whether the lexer has produced the end-of-file terminal (no more tokens to pull).
+    eof: bool,
     /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
     pending_trivia: Vec<TriviumGreen<'a>>,
     /// The current offset, excluding the current terminal.
@@ -63,23 +70,42 @@ pub struct Parser<'a, 'mt> {
     pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
     /// An indicator if we are inside a macro rule expansion.
     macro_parsing_context: MacroParsingContext,
+    /// Green ids of already-built pure-whitespace trivia lists, keyed by their source text, to
+    /// avoid re-interning the constantly repeating indentation trivia. Sound as the lexer's
+    /// split of a whitespace run into trivia is a pure function of its text.
+    trivia_greens: UnorderedHashMap<&'a str, TriviaGreen<'a>>,
+    /// The green id of an empty trivia list, built once and used for every trivia-less terminal.
+    empty_trivia: TriviaGreen<'a>,
 }
 
 impl<'a> Parser<'a, '_> {
     fn next_terminal(&self) -> &LexerTerminal<'a> {
-        &self.terminals[0]
+        &self.current_terminals[0]
     }
 
     fn next_next_terminal(&self) -> &LexerTerminal<'a> {
-        &self.terminals[1]
+        &self.current_terminals[1]
     }
 
     fn advance(&mut self) -> LexerTerminal<'a> {
-        self.terminals.pop_front().unwrap()
+        // Keep the two-terminal lookahead (`next_terminal`/`next_next_terminal`) valid after the
+        // pop by refilling to 3 (the popped terminal plus the two peeked ones) before popping.
+        self.ensure_next_k_exists(3);
+        self.current_terminals.pop_front().unwrap()
+    }
+
+    /// Pulls terminals from the lexer until the lookahead window holds at least `k` of them (or the
+    /// lexer reaches end-of-file).
+    fn ensure_next_k_exists(&mut self, k: usize) {
+        while !self.eof && self.current_terminals.len() < k {
+            let terminal = self.lexer.match_terminal(self.db);
+            self.eof = terminal.kind == SyntaxKind::TerminalEndOfFile;
+            self.current_terminals.push_back(terminal);
+        }
     }
 
     fn next_terminal_mut(&mut self) -> &mut LexerTerminal<'a> {
-        &mut self.terminals[0]
+        &mut self.current_terminals[0]
     }
 }
 
@@ -147,11 +173,13 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         text: &'a str,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     ) -> Self {
-        let tokens: Deque<LexerTerminal<'a>> = tokenize_all(db, (), Arc::from(text));
-        Parser {
+        let mut parser = Parser {
             db,
             file_id,
-            terminals: tokens,
+            text,
+            lexer: Lexer::new(text),
+            current_terminals: VecDeque::with_capacity(8),
+            eof: false,
             pending_trivia: Vec::new(),
             offset: Default::default(),
             current_width: Default::default(),
@@ -159,7 +187,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             diagnostics,
             pending_skipped_token_diagnostics: Vec::new(),
             macro_parsing_context: MacroParsingContext::None,
-        }
+            trivia_greens: Default::default(),
+            empty_trivia: Trivia::new_green(db, &[]),
+        };
+        parser.ensure_next_k_exists(2);
+        parser
     }
 
     /// Adds a diagnostic to the parser diagnostics collection.
@@ -174,18 +206,30 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         file_id: FileId<'a>,
         text: &'a str,
     ) -> SyntaxFile<'a> {
-        let parser = Parser::new(db, file_id, text, diagnostics);
-        let green = parser.parse_syntax_file();
-        SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+        let green = Self::parse_file_green(db, diagnostics, file_id, text);
+        SyntaxFile::from_syntax_node(db, SyntaxNode::new_detached_root(db, file_id, green.0))
     }
 
-    /// Parses a file expr.
-    pub fn parse_file_expr(
+    /// Parses a file, returning the green root. Used by callers that control root node creation,
+    /// such as the canonical parsing query, which creates the root in its own query context so
+    /// that node ids are reused when the file is reparsed.
+    pub fn parse_file_green(
         db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
-    ) -> Expr<'a> {
+    ) -> SyntaxFileGreen<'a> {
+        let parser = Parser::new(db, file_id, text, diagnostics);
+        parser.parse_syntax_file()
+    }
+
+    /// Parses a file expr, returning the green root. See [Self::parse_file_green].
+    pub fn parse_file_expr_green(
+        db: &'a dyn Database,
+        diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
+        file_id: FileId<'a>,
+        text: &'a str,
+    ) -> ExprGreen<'a> {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
         let green = parser.parse_expr();
@@ -195,23 +239,23 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 span,
             );
         }
-        Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+        green
     }
 
-    /// Parses a file as a list of statements.
-    pub fn parse_file_statement_list(
+    /// Parses a file as a list of statements, returning the green root. See
+    /// [Self::parse_file_green].
+    pub fn parse_file_statement_list_green(
         db: &'a dyn Database,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
         file_id: FileId<'a>,
         text: &'a str,
-    ) -> StatementList<'a> {
+    ) -> StatementListGreen<'a> {
         let mut parser = Parser::new(db, file_id, text, diagnostics);
         parser.macro_parsing_context = MacroParsingContext::ExpandedMacro;
-        let statements = StatementList::new_green(
+        StatementList::new_green(
             db,
             &parser.parse_list(Self::try_parse_statement, Self::is_eof, "statement"),
-        );
-        StatementList::from_syntax_node(db, SyntaxNode::new_root(db, file_id, statements.0))
+        )
     }
 
     /// Checks if the given kind is an end of file token.
@@ -239,7 +283,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(
             db,
-            SyntaxNode::new_root_with_offset(db, file_id, green.0, offset),
+            SyntaxNode::new_detached_root_with_offset(db, file_id, green.0, offset),
         )
     }
 
@@ -260,7 +304,10 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 span,
             });
         }
-        Expr::from_syntax_node(db, SyntaxNode::new_root_with_offset(db, file_id, green.0, offset))
+        Expr::from_syntax_node(
+            db,
+            SyntaxNode::new_detached_root_with_offset(db, file_id, green.0, offset),
+        )
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.
@@ -303,8 +350,10 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         // token, which doesn't exist.
         self.offset = self.offset.add_width(self.current_width);
 
-        let eof =
-            self.add_trivia_to_terminal::<TerminalEndOfFile<'_>>(self.next_terminal().clone());
+        let eof = self.add_trivia_to_terminal::<TerminalEndOfFile<'_>>(
+            self.next_terminal().clone(),
+            self.offset,
+        );
         SyntaxFile::new_green(self.db, items, eof)
     }
 
@@ -795,7 +844,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             }
                             SyntaxKind::TerminalPlus => self.take::<TerminalPlus<'_>>().into(),
                             SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
-                            _ => MacroRepetitionOperator::missing(self.db),
+                            _ => self.create_and_report_missing::<MacroRepetitionOperator<'_>>(
+                                ParserDiagnosticKind::MissingMacroRepetitionOperator,
+                            ),
                         };
                         Ok(MacroRepetition::new_green(
                             self.db, dollar, lparen, elements, rparen, separator, operator,
@@ -827,7 +878,6 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             }
                             OptionParamKindEmpty::new_green(self.db).into()
                         };
-                        self.macro_parsing_context = MacroParsingContext::None;
                         Ok(MacroParam::new_green(self.db, dollar, ident, param_kind).into())
                     }
                 }
@@ -1300,7 +1350,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is Impl.
-    /// Expects either an impl item (`impl <name> of <trait_path> {<impl_body>}`) or and impl alias
+    /// Expects either an impl item (`impl <name> of <trait_path> {<impl_body>}`) or an impl alias
     /// `impl <name> = <path>;`.
     /// If `only_allow_alias` is true, always returns an ImplItemOrAlias::Alias.
     fn expect_item_impl_inner(
@@ -1699,8 +1749,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         }
     }
 
-    /// Returns a GreenId of a node with an ExprPath|ExprParenthesized|ExprTuple kind, or
-    /// TryParseFailure if such an expression can't be parsed.
+    /// Returns a GreenId of a node with an
+    /// ExprUnderscore|ExprUnary|ExprPath|ExprTuple|ExprFixedSizeArray kind, or TryParseFailure if
+    /// such an expression can't be parsed.
+    /// Note that unlike in value position, `(<type_expr>)` is not a grouping construct - it is
+    /// parsed as a tuple, with a diagnostic.
     fn try_parse_type_expr(&mut self) -> TryParseResult<ExprGreen<'a>> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
@@ -1728,8 +1781,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         }
     }
 
-    /// Returns a GreenId of a node with an ExprPath|ExprParenthesized|ExprTuple kind, or
-    /// ExprMissing if such an expression can't be parsed.
+    /// Returns a GreenId of a node with an
+    /// ExprUnderscore|ExprUnary|ExprPath|ExprTuple|ExprFixedSizeArray kind, or ExprMissing if such
+    /// an expression can't be parsed.
     fn parse_type_expr(&mut self) -> ExprGreen<'a> {
         match self.try_parse_type_expr() {
             Ok(expr) => expr,
@@ -1773,43 +1827,14 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Either parses a leaf of the tree (i.e. any non-parenthesis token) or an inner node (i.e. a
-    /// parenthesized stream of tokens).
+    /// parenthesized stream of tokens). Call-site token trees are unstructured: `$`, `?`, `+`, `*`
+    /// have no special meaning here and are just leaves. The semantic layer decides whether the
+    /// shape matches any rule of the target macro.
     fn parse_token_tree(&mut self) -> TokenTreeGreen<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalLBrace
             | SyntaxKind::TerminalLParen
             | SyntaxKind::TerminalLBrack => self.parse_token_tree_node().into(),
-            SyntaxKind::TerminalDollar => {
-                let dollar: TerminalDollarGreen<'_> = self.take::<TerminalDollar<'_>>();
-                match self.peek().kind {
-                    SyntaxKind::TerminalLParen => {
-                        let lparen = self.take::<TerminalLParen<'_>>();
-                        let elements = TokenList::new_green(self.db, &self.parse_token_list());
-                        let rparen = self.parse_token::<TerminalRParen<'_>>();
-                        let separator: OptionTerminalCommaGreen<'_> = match self.peek().kind {
-                            SyntaxKind::TerminalComma => self.take::<TerminalComma<'_>>().into(),
-                            _ => OptionTerminalCommaEmpty::new_green(self.db).into(),
-                        };
-                        let operator = match self.peek().kind {
-                            SyntaxKind::TerminalQuestionMark => {
-                                self.take::<TerminalQuestionMark<'_>>().into()
-                            }
-                            SyntaxKind::TerminalPlus => self.take::<TerminalPlus<'_>>().into(),
-                            SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
-                            _ => unreachable!(),
-                        };
-                        TokenTreeRepetition::new_green(
-                            self.db, dollar, lparen, elements, rparen, separator, operator,
-                        )
-                        .into()
-                    }
-                    SyntaxKind::TerminalIdentifier => {
-                        let identifier = self.take::<TerminalIdentifier<'_>>();
-                        TokenTreeParam::new_green(self.db, dollar, identifier).into()
-                    }
-                    _ => self.parse_token_tree_leaf().into(),
-                }
-            }
             _ => self.parse_token_tree_leaf().into(),
         }
     }
@@ -1899,6 +1924,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             SyntaxKind::TerminalImpl => self.take::<TerminalImpl<'_>>().into(),
             SyntaxKind::TerminalImplicits => self.take::<TerminalImplicits<'_>>().into(),
             SyntaxKind::TerminalLet => self.take::<TerminalLet<'_>>().into(),
+            SyntaxKind::TerminalMacro => self.take::<TerminalMacro<'_>>().into(),
             SyntaxKind::TerminalMatch => self.take::<TerminalMatch<'_>>().into(),
             SyntaxKind::TerminalModule => self.take::<TerminalModule<'_>>().into(),
             SyntaxKind::TerminalMut => self.take::<TerminalMut<'_>>().into(),
@@ -2186,7 +2212,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let rparen = self.parse_token::<TerminalRParen<'_>>();
         if let [ExprListElementOrSeparatorGreen::Element(_)] = &exprs[..] {
             self.add_diagnostic(
-                ParserDiagnosticKind::MissingToken(SyntaxKind::TokenComma),
+                ParserDiagnosticKind::MissingToken(SyntaxKind::TerminalComma),
                 TextSpan::cursor(self.offset),
             );
         }
@@ -2477,17 +2503,15 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     fn expect_for_expr(&mut self) -> ExprForGreen<'a> {
         let for_kw = self.take::<TerminalFor<'a>>();
         let pattern = self.parse_pattern();
-        let ident = self.take_raw();
-        let in_identifier: TerminalIdentifierGreen<'_> = match ident.text.long(self.db).as_str() {
-            "in" => self.add_trivia_to_terminal::<TerminalIdentifier<'_>>(ident),
-            _ => {
-                self.append_skipped_token_to_pending_trivia(
-                    ident,
+        let peeked = self.peek();
+        let in_identifier =
+            if peeked.kind == SyntaxKind::TerminalIdentifier && peeked.text.long(self.db) == "in" {
+                self.take::<TerminalIdentifier<'_>>()
+            } else {
+                self.skip_token_and_return_missing::<TerminalIdentifier<'_>>(
                     ParserDiagnosticKind::SkippedElement { element_name: "'in'".into() },
-                );
-                TerminalIdentifier::missing(self.db)
-            }
-        };
+                )
+            };
         let expression =
             self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid, AndLetBehavior::Simple);
         let body = self.parse_block();
@@ -2581,7 +2605,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             SyntaxKind::TerminalTrue => self.take::<TerminalTrue<'_>>().into(),
             SyntaxKind::TerminalFalse => self.take::<TerminalFalse<'_>>().into(),
             SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore<'_>>().into(),
-            SyntaxKind::TerminalIdentifier => {
+            SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalDollar => {
                 // TODO(ilya): Consider parsing a single identifier as PatternIdentifier rather
                 // then ExprPath.
                 let path = self.parse_path();
@@ -3098,14 +3122,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     ) -> (PathSegmentGreen<'a>, Option<TerminalColonColonGreen<'a>>) {
         let identifier = match self.try_parse_identifier() {
             Ok(identifier) => identifier,
-            Err(_) => {
-                return (
-                    self.create_and_report_missing::<PathSegment<'_>>(
-                        ParserDiagnosticKind::MissingPathSegment,
-                    ),
-                    None,
-                );
-            }
+            Err(_) => self.create_and_report_missing::<TerminalIdentifier<'_>>(
+                ParserDiagnosticKind::MissingPathSegment,
+            ),
         };
         match self.try_parse_token::<TerminalColonColon<'_>>() {
             Ok(separator) if self.peek().kind == SyntaxKind::TerminalLT => (
@@ -3131,14 +3150,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     ) -> (PathSegmentGreen<'a>, Option<TerminalColonColonGreen<'a>>) {
         let identifier = match self.try_parse_identifier() {
             Ok(identifier) => identifier,
-            Err(_) => {
-                return (
-                    self.create_and_report_missing::<PathSegment<'_>>(
-                        ParserDiagnosticKind::MissingPathSegment,
-                    ),
-                    None,
-                );
-            }
+            Err(_) => self.create_and_report_missing::<TerminalIdentifier<'_>>(
+                ParserDiagnosticKind::MissingPathSegment,
+            ),
         };
         match self.try_parse_token::<TerminalColonColon<'_>>() {
             Err(_) if self.peek().kind == SyntaxKind::TerminalLT => (
@@ -3171,41 +3185,45 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Takes and validates a TerminalLiteralNumber token.
     fn take_terminal_literal_number(&mut self) -> TerminalLiteralNumberGreen<'a> {
-        let diag = validate_literal_number(self.peek().text.long(self.db));
-        let green = self.take::<TerminalLiteralNumber<'_>>();
-        self.add_optional_diagnostic(diag);
-        green
+        self.take_validated_terminal::<TerminalLiteralNumber<'_>>(validate_literal_number)
     }
 
     /// Takes and validates a TerminalShortString token.
     fn take_terminal_short_string(&mut self) -> TerminalShortStringGreen<'a> {
-        let diag = validate_short_string(self.peek().text.long(self.db));
-        let green = self.take::<TerminalShortString<'_>>();
-        self.add_optional_diagnostic(diag);
-        green
+        self.take_validated_terminal::<TerminalShortString<'_>>(validate_short_string)
     }
 
     /// Takes and validates a TerminalString token.
     fn take_terminal_string(&mut self) -> TerminalStringGreen<'a> {
-        let diag = validate_string(self.peek().text.long(self.db));
-        let green = self.take::<TerminalString<'_>>();
-        self.add_optional_diagnostic(diag);
-        green
+        self.take_validated_terminal::<TerminalString<'_>>(validate_string)
     }
 
-    /// Adds a diagnostic of kind `kind` if provided, at the current offset.
-    fn add_optional_diagnostic(&mut self, err: Option<ValidationError>) {
-        if let Some(err) = err {
+    /// Takes a terminal of the given kind and validates its text with `validate`, reporting the
+    /// resulting diagnostic (if any). Validation offsets are relative to the terminal's text, so
+    /// the diagnostic span is anchored at the text and excludes the terminal's trivia.
+    fn take_validated_terminal<Terminal: syntax::node::Terminal<'a>>(
+        &mut self,
+        validate: impl FnOnce(&str) -> Option<ValidationError>,
+    ) -> Terminal::Green {
+        let peek = self.peek();
+        let text = peek.text.long(self.db);
+        let leading_width = trivia_total_width(self.db, &peek.leading_trivia);
+        let green = self.take::<Terminal>();
+        if let Some(err) = validate(text) {
+            // `self.offset` now points at the start of the taken terminal (including its leading
+            // trivia); anchor the span at the terminal's text.
+            let text_start = self.offset.add_width(leading_width);
+            let text_width = TextWidth::from_str(text);
             let span = match err.location {
-                ValidationLocation::Full => {
-                    TextSpan::new_with_width(self.offset, self.current_width)
-                }
-                ValidationLocation::After => {
-                    TextSpan::cursor(self.offset.add_width(self.current_width))
+                ValidationLocation::Full => TextSpan::new_with_width(text_start, text_width),
+                ValidationLocation::After => TextSpan::cursor(text_start.add_width(text_width)),
+                ValidationLocation::Cursor(offset) => {
+                    TextSpan::cursor(text_start.add_width(offset))
                 }
             };
             self.add_diagnostic(err.kind, span);
         }
+        green
     }
 
     /// Returns a GreenId of a node with an
@@ -3216,7 +3234,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             SyntaxKind::TerminalLiteralNumber => self.take_terminal_literal_number().into(),
             SyntaxKind::TerminalMinus => {
                 let op = self.take::<TerminalMinus<'_>>().into();
-                let expr = self.parse_token::<TerminalLiteralNumber<'_>>().into();
+                let expr = if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
+                    self.take_terminal_literal_number().into()
+                } else {
+                    self.create_and_report_missing_terminal::<TerminalLiteralNumber<'_>>().into()
+                };
                 ExprUnary::new_green(self.db, op, expr).into()
             }
             SyntaxKind::TerminalShortString => self.take_terminal_short_string().into(),
@@ -3549,14 +3571,14 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         // Consume the original token and grab its trivia.
         let orig = self.advance();
         // Pushing the second first, with the trailing trivia.
-        self.terminals.push_front(LexerTerminal {
+        self.current_terminals.push_front(LexerTerminal {
             text: SmolStrId::from(self.db, second),
             kind: Second::KIND,
             leading_trivia: vec![],
             trailing_trivia: orig.trailing_trivia,
         });
         // Pushing the first second, with the leading trivia.
-        self.terminals.push_front(LexerTerminal {
+        self.current_terminals.push_front(LexerTerminal {
             text: SmolStrId::from(self.db, first),
             kind: First::KIND,
             leading_trivia: orig.leading_trivia,
@@ -3566,11 +3588,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Move forward one terminal.
     fn take_raw(&mut self) -> LexerTerminal<'a> {
+        let terminal = self.advance();
         self.offset = self.offset.add_width(self.current_width);
-        self.current_width = self.next_terminal().width(self.db);
-        self.last_trivia_length =
-            trivia_total_width(self.db, &self.next_terminal().trailing_trivia);
-        self.advance()
+        self.current_width = terminal.width(self.db);
+        self.last_trivia_length = trivia_total_width(self.db, &terminal.trailing_trivia);
+        terminal
     }
 
     /// Skips the next, non-taken, token. A skipped token is a token which is not expected where it
@@ -3578,7 +3600,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// current trivia as skipped, and continuing the compilation as if it wasn't there.
     fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
         if self.peek().kind == SyntaxKind::TerminalEndOfFile {
-            self.add_diagnostic(diagnostic_kind, TextSpan::cursor(self.offset));
+            let next_offset = self.offset.add_width(self.current_width - self.last_trivia_length);
+            self.add_diagnostic(diagnostic_kind, TextSpan::cursor(next_offset));
             return;
         }
         let terminal = self.take_raw();
@@ -3683,14 +3706,14 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let mut diag_start = None;
         let mut diag_end = None;
         while !should_stop(self.peek().kind) {
-            let terminal = self.take_raw();
-            diag_start.get_or_insert(self.offset);
-            diag_end =
-                Some(self.offset.add_width(TextWidth::from_str(terminal.text.long(self.db))));
+            let LexerTerminal { leading_trivia, text, trailing_trivia, .. } = self.take_raw();
+            let text_start = self.offset.add_width(trivia_total_width(self.db, &leading_trivia));
+            diag_start.get_or_insert(text_start);
+            diag_end = Some(text_start.add_width(TextWidth::from_str(text.long(self.db))));
 
-            self.pending_trivia.extend(terminal.leading_trivia);
-            self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
-            self.pending_trivia.extend(terminal.trailing_trivia);
+            self.pending_trivia.extend(leading_trivia);
+            self.pending_trivia.push(TokenSkipped::new_green(self.db, text).into());
+            self.pending_trivia.extend(trailing_trivia);
         }
         if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
             Err(SkippedError(TextSpan::new(diag_start, diag_end)))
@@ -3700,24 +3723,52 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
-    /// to the given terminal as extra leading trivia.
+    /// to the given terminal as extra leading trivia. `terminal_start` is the offset of
+    /// `lexer_terminal` (including its leading trivia) in the file, keying the trivia cache.
     fn add_trivia_to_terminal<Terminal: syntax::node::Terminal<'a>>(
         &mut self,
         lexer_terminal: LexerTerminal<'a>,
+        terminal_start: TextOffset,
     ) -> Terminal::Green {
         let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
         let token = Terminal::TokenType::new_green(self.db, text);
-        let mut new_leading_trivia = mem::take(&mut self.pending_trivia);
+        let mut pending_trivia = mem::take(&mut self.pending_trivia);
 
         self.consume_pending_skipped_diagnostics();
 
-        new_leading_trivia.extend(leading_trivia);
+        // Pending trivia is source-contiguous and ends exactly at `terminal_start`.
+        let leading_start = terminal_start.sub_width(trivia_total_width(self.db, &pending_trivia));
+        let leading_end = terminal_start.add_width(trivia_total_width(self.db, &leading_trivia));
+        let trailing_start = leading_end.add_width(TextWidth::from_str(text.long(self.db)));
+        let trailing_end = trailing_start.add_width(trivia_total_width(self.db, &trailing_trivia));
+        let leading_trivia = if pending_trivia.is_empty() {
+            leading_trivia
+        } else {
+            pending_trivia.extend(leading_trivia);
+            pending_trivia
+        };
         Terminal::new_green(
             self.db,
-            Trivia::new_green(self.db, &new_leading_trivia),
+            self.trivia_green(&leading_trivia, TextSpan::new(leading_start, leading_end)),
             token,
-            Trivia::new_green(self.db, &trailing_trivia),
+            self.trivia_green(&trailing_trivia, TextSpan::new(trailing_start, trailing_end)),
         )
+    }
+
+    /// A cached version of [Trivia::new_green]: `span` locates the trivia's text in the source,
+    /// which keys the cache (for pure-whitespace trivia - see [`Parser::trivia_greens`]).
+    fn trivia_green(&mut self, trivia: &[TriviumGreen<'a>], span: TextSpan) -> TriviaGreen<'a> {
+        if trivia.is_empty() {
+            return self.empty_trivia;
+        }
+        let text = span.take(self.text);
+        // Matching the exact whitespace set of the lexer, as for any other text (e.g. form feed,
+        // which is lexed as a skipped token) the trivia list is not a function of the text alone.
+        if text.bytes().all(|b| matches!(b, b' ' | b'\t' | b'\r' | b'\n')) {
+            *self.trivia_greens.entry(text).or_insert_with(|| Trivia::new_green(self.db, trivia))
+        } else {
+            Trivia::new_green(self.db, trivia)
+        }
     }
 
     /// Adds the pending skipped-tokens diagnostics, merging consecutive similar ones, and reset
@@ -3761,7 +3812,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     pub fn take<Terminal: syntax::node::Terminal<'a>>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
         assert_eq!(token.kind, Terminal::KIND);
-        self.add_trivia_to_terminal::<Terminal>(token)
+        self.add_trivia_to_terminal::<Terminal>(token, self.offset)
     }
 
     /// If the current leading trivia start with non-doc comments, creates a new `ItemHeaderDoc` and
@@ -3801,9 +3852,13 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             leading_trivia: header_doc,
             trailing_trivia: vec![],
         };
+        // `self.offset` points at the start of the last taken terminal - the split trivia
+        // starts after it, at the start of the next terminal.
+        let terminal_start = self.offset.add_width(self.current_width);
         self.offset = self.offset.add_width(empty_lexer_terminal.width(self.db));
 
-        let empty_terminal = self.add_trivia_to_terminal::<TerminalEmpty<'_>>(empty_lexer_terminal);
+        let empty_terminal =
+            self.add_trivia_to_terminal::<TerminalEmpty<'_>>(empty_lexer_terminal, terminal_start);
         Some(ItemHeaderDoc::new_green(self.db, empty_terminal))
     }
 

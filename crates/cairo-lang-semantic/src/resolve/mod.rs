@@ -77,7 +77,7 @@ use crate::types::{
 };
 use crate::{
     ConcreteFunction, ConcreteTypeId, ConcreteVariant, FunctionId, FunctionLongId,
-    GenericArgumentId, GenericParam, Member, Mutability, TypeId, TypeLongId,
+    GenericArgumentId, GenericParam, MemberAccessKind, Mutability, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -90,7 +90,7 @@ const STARKNET_CRATE_NAME: &str = "starknet";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
-#[derive(Clone, Default, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct ResolvedItems<'db> {
     pub concrete: UnorderedHashMap<ast::TerminalIdentifierPtr<'db>, ResolvedConcreteItem<'db>>,
@@ -129,12 +129,12 @@ impl<'db> ResolvedItems<'db> {
 
 /// The enriched members of a type, including direct members of structs, as well as members of
 /// targets of `Deref` and `DerefMut` of the type.
-#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct EnrichedMembers<'db> {
-    /// A map from member names to their semantic representation and the number of deref operations
-    /// needed to access them.
-    pub members: OrderedHashMap<SmolStrId<'db>, (Member<'db>, usize)>,
+    /// A map from member names to the member and the number of deref operations needed to access
+    /// them.
+    pub members: OrderedHashMap<SmolStrId<'db>, (EnrichedMember<'db>, usize)>,
     /// The sequence of deref needed to access the members.
     pub deref_chain: Arc<Vec<DerefInfo<'db>>>,
     // The number of derefs that were explored.
@@ -156,11 +156,24 @@ impl<'db> EnrichedMembers<'db> {
     }
 }
 
+/// A member accessible on a type: a named struct member or a positional tuple element.
+#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone, salsa::SalsaValue)]
+#[debug_db(dyn Database)]
+pub struct EnrichedMember<'db> {
+    /// How the member is accessed: a struct member id or a tuple index.
+    pub kind: MemberAccessKind<'db>,
+    /// The type of the member.
+    pub ty: TypeId<'db>,
+    /// The visibility of the member. `Some` for struct members; `None` for tuple elements (which
+    /// are always visible).
+    pub visibility: Option<visibility::Visibility>,
+}
+
 /// The enriched member of a type, including the member itself and the deref functions needed to
 /// access it.
 pub struct EnrichedTypeMemberAccess<'db> {
-    /// The member itself.
-    pub member: Member<'db>,
+    /// The accessible member.
+    pub member: EnrichedMember<'db>,
     /// The sequence of deref functions needed to access the member.
     pub deref_functions: Vec<(FunctionId<'db>, Mutability)>,
 }
@@ -176,7 +189,7 @@ enum MacroContextModifier {
     None,
 }
 
-#[derive(Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 pub struct ResolverData<'db> {
     /// Current module in which to resolve the path.
@@ -236,7 +249,7 @@ impl<'db> ResolverData<'db> {
 }
 
 /// Resolving data needed for resolving macro expanded code in the correct context.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, salsa::SalsaValue)]
 pub struct ResolverMacroData<'db> {
     /// The module file id of the macro definition site. It is used if the path begins with
     /// `$defsite`.
@@ -246,8 +259,8 @@ pub struct ResolverMacroData<'db> {
     /// 2. The path was supplied as a macro argument. In other words, the path is an expansion of a
     ///    placeholder and is not a part of the macro expansion template.
     pub callsite_module_id: ModuleId<'db>,
-    /// This is the mappings of the macro expansion. It is used to determine if a part of the
-    /// code came from a macro argument or from the macro expansion template.
+    /// These mappings identify whether a part of the code came from a macro argument or from the
+    /// macro expansion template.
     pub expansion_mappings: Arc<[CodeMapping]>,
     /// The parent macro data. Exists in case of a macro calling another macro, and is used if we
     /// climb to the callsite environment.
@@ -354,7 +367,7 @@ enum UseStarResult<'db> {
     /// The path was not found, considering only the `use *` imports.
     PathNotFound,
     /// Item is not visible in the current module, considering only the `use *` imports.
-    ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
+    ItemNotVisible(Option<ModuleItemId<'db>>, Vec<ModuleId<'db>>),
 }
 
 /// A trait for things that can be interpreted as a path of segments.
@@ -594,14 +607,14 @@ impl<'db> Resolver<'db> {
         if let Some(last) = segments.segments.last()
             && last.identifier(self.db).long(self.db) == SELF_PARAM_KW
         {
+            segments.segments.pop();
+            if segments.segments.is_empty() {
+                return Err(diagnostics.report(use_path.stable_ptr(self.db), UseSelfEmptyPath));
+            }
             // If the `self` keyword is used in a non-multi-use path, report an error.
             if use_path.as_syntax_node().parent_kind(self.db).unwrap() != SyntaxKind::UsePathList {
                 diagnostics.report(use_path.stable_ptr(self.db), UseSelfNonMulti);
             }
-            segments.segments.pop();
-        }
-        if segments.segments.is_empty() {
-            return Err(diagnostics.report(use_path.stable_ptr(self.db), UseSelfEmptyPath));
         }
         self.resolve_generic_path(diagnostics, segments, NotFoundItemType::Identifier, ctx)
     }
@@ -762,7 +775,9 @@ impl<'db> Resolver<'db> {
     ) -> UseStarResult<'db> {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
-        let mut other_containing_modules = vec![];
+        let mut non_pub_module_items_found: OrderedHashSet<ModuleItemId<'_>> =
+            OrderedHashSet::default();
+        let mut non_pub_containing_modules = vec![];
         for (item_module_id, info) in self.db.module_imported_modules((), module_id).iter() {
             // Not checking the main module to prevent cycles.
             if *item_module_id == module_id {
@@ -777,34 +792,21 @@ impl<'db> Resolver<'db> {
                     item_info = Some(inner_item_info.clone());
                     module_items_found.insert(inner_item_info.item_id);
                 } else {
-                    other_containing_modules.push(*item_module_id);
+                    non_pub_containing_modules.push(*item_module_id);
+                    non_pub_module_items_found.insert(inner_item_info.item_id);
                 }
             }
         }
         if module_items_found.len() > 1 {
-            return UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect());
+            return UseStarResult::AmbiguousPath(module_items_found.into_iter().collect());
         }
         match item_info {
             Some(item_info) => UseStarResult::UniquePathFound(item_info),
-            None => {
-                for item_module_id in &other_containing_modules {
-                    if let Some(inner_item_info) =
-                        self.resolve_item_in_module_or_expanded_macro(*item_module_id, ident)
-                    {
-                        item_info = Some(inner_item_info.clone());
-                        module_items_found.insert(inner_item_info.item_id);
-                    }
-                }
-                if let Some(item_info) = item_info {
-                    if module_items_found.len() > 1 {
-                        UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect())
-                    } else {
-                        UseStarResult::ItemNotVisible(item_info.item_id, other_containing_modules)
-                    }
-                } else {
-                    UseStarResult::PathNotFound
-                }
-            }
+            None => match non_pub_module_items_found.into_iter().exactly_one() {
+                Ok(item) => UseStarResult::ItemNotVisible(Some(item), non_pub_containing_modules),
+                Err(err) if err.len() == 0 => UseStarResult::PathNotFound,
+                Err(_) => UseStarResult::ItemNotVisible(None, non_pub_containing_modules),
+            },
         }
     }
 
@@ -1073,11 +1075,16 @@ impl<'db> Resolver<'db> {
         stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Maybe<Vec<GenericArgumentId<'db>>> {
         let mut resolved_args = vec![];
-        let arg_syntax_per_param = self.get_arg_syntax_per_param(
-            diagnostics,
-            &generic_params.iter().map(|generic_param| generic_param.id()).collect_vec(),
-            generic_args_syntax,
-        )?;
+        // In the common inference-driven case no args are spelled out, and the mapping is empty.
+        let arg_syntax_per_param = if generic_args_syntax.is_empty() {
+            Default::default()
+        } else {
+            self.get_arg_syntax_per_param(
+                diagnostics,
+                &generic_params.iter().map(|generic_param| generic_param.id()).collect_vec(),
+                generic_args_syntax,
+            )?
+        };
 
         for generic_param in generic_params {
             let generic_param = substitution.substitute(self.db, generic_param.clone())?;
@@ -1558,23 +1565,21 @@ impl<'db> Resolver<'db> {
         identifier: &ast::TerminalIdentifier<'db>,
         inner_generic_item: ResolvedGenericItem<'db>,
         generic_args_syntax: Option<Vec<ast::GenericArg<'db>>>,
-    ) -> ResolvedConcreteItem<'db> {
+    ) -> Maybe<ResolvedConcreteItem<'db>> {
         let segment_stable_ptr = segment.stable_ptr(self.db).untyped();
-        let mut specialized_item = self
-            .specialize_generic_module_item(
-                diagnostics,
-                identifier,
-                inner_generic_item,
-                generic_args_syntax.clone(),
-            )
-            .unwrap();
+        let mut specialized_item = self.specialize_generic_module_item(
+            diagnostics,
+            identifier,
+            inner_generic_item,
+            generic_args_syntax.clone(),
+        )?;
         self.handle_same_impl_trait(
             diagnostics,
             &mut specialized_item,
             &generic_args_syntax.unwrap_or_default(),
             segment_stable_ptr,
         );
-        specialized_item
+        Ok(specialized_item)
     }
 }
 
@@ -1686,7 +1691,7 @@ enum ResolvedBase<'db> {
     /// The base module is ambiguous.
     Ambiguous(Vec<ModuleItemId<'db>>),
     /// The base module is inaccessible.
-    ItemNotVisible(ModuleItemId<'db>, Vec<ModuleId<'db>>),
+    ItemNotVisible(Option<ModuleItemId<'db>>, Vec<ModuleId<'db>>),
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
@@ -1748,21 +1753,25 @@ impl<'db, 'a> Resolution<'db, 'a> {
         let db = resolver.db;
         let placeholder_marker = path.placeholder_marker(db);
 
-        let mut cur_offset =
-            ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
-        let mut segments = path.to_segments(db).into_iter().peekable();
         let mut cur_macro_call_data = resolver.macro_call_data.as_ref();
         let mut path_defining_module = resolver.data.module_id;
         // Climb up the macro call data while the current resolved path is being mapped to an
-        // argument of a macro call.
-        while let Some(macro_call_data) = &cur_macro_call_data {
-            let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings) else {
-                break;
-            };
-            path_defining_module = macro_call_data.callsite_module_id;
-            cur_macro_call_data = macro_call_data.parent_macro_call_data.as_ref();
-            cur_offset = new_offset;
+        // argument of a macro call. The offset is computed only when resolving inside a macro
+        // call, as it recursively resolves the node's absolute position.
+        if cur_macro_call_data.is_some() {
+            let mut cur_offset =
+                ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
+            while let Some(macro_call_data) = &cur_macro_call_data {
+                let Some(new_offset) = cur_offset.mapped(&macro_call_data.expansion_mappings)
+                else {
+                    break;
+                };
+                path_defining_module = macro_call_data.callsite_module_id;
+                cur_macro_call_data = macro_call_data.parent_macro_call_data.as_ref();
+                cur_offset = new_offset;
+            }
         }
+        let mut segments = path.to_segments(db).into_iter().peekable();
         let macro_call_data = cur_macro_call_data.cloned();
 
         let macro_context_modifier = if let Some(marker) = placeholder_marker {
@@ -1841,10 +1850,8 @@ impl<'db, 'a> Resolution<'db, 'a> {
         let db = self.resolver.db;
         let generic_args_syntax = segment.generic_args(db);
         let segment_stable_ptr = segment.stable_ptr(db).untyped();
-        self.validate_module_item_usability(module_id, identifier, &inner_item_info);
-        self.resolver.insert_used_use(inner_item_info.item_id);
         let inner_generic_item =
-            ResolvedGenericItem::from_module_item(db, inner_item_info.item_id)?;
+            self.resolve_module_item_as_generic(module_id, identifier, &inner_item_info)?;
         let mut specialized_item = self.resolver.specialize_generic_module_item(
             self.diagnostics,
             identifier,
@@ -1897,7 +1904,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                             &identifier,
                             generic_item,
                             segment.generic_args(db),
-                        );
+                        )?;
                         self.resolver.resolved_items.mark_concrete(db, &segment, concrete_item)
                     }
                     ResolvedBase::FoundThroughGlobalUse {
@@ -1972,7 +1979,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                                 &identifier,
                                 generic_item,
                                 segment.generic_args(db),
-                            );
+                            )?;
                             self.resolver.resolved_items.mark_concrete(db, &segment, concrete_item)
                         }
                         ResolvedBase::FoundThroughGlobalUse {
@@ -2002,8 +2009,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     }
                 }
             }
-            // A diagnostic for the missing segment should have been reported from the syntax phase.
-            syntax::node::ast::PathSegment::Missing(_) => return Err(skip_diagnostic()),
         })
     }
     /// Resolves the first segment of a generic path.
@@ -2036,11 +2041,14 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     }
                     ResolvedBase::StatementEnvironment(generic_item) => generic_item,
                     ResolvedBase::FoundThroughGlobalUse {
-                        item_info: inner_module_item, ..
+                        item_info: inner_module_item,
+                        containing_module,
                     } => {
-                        self.resolver.insert_used_use(inner_module_item.item_id);
-                        let generic_item =
-                            ResolvedGenericItem::from_module_item(db, inner_module_item.item_id)?;
+                        let generic_item = self.resolve_module_item_as_generic(
+                            containing_module,
+                            &identifier,
+                            &inner_module_item,
+                        )?;
                         self.resolver.resolved_items.mark_generic(
                             db,
                             &self.segments.next().unwrap(),
@@ -2075,11 +2083,14 @@ impl<'db, 'a> Resolution<'db, 'a> {
                         .resolved_items
                         .mark_generic(db, &self.segments.next().unwrap(), generic_item),
                     ResolvedBase::FoundThroughGlobalUse {
-                        item_info: inner_module_item, ..
+                        item_info: inner_module_item,
+                        containing_module,
                     } => {
-                        self.resolver.insert_used_use(inner_module_item.item_id);
-                        let generic_item =
-                            ResolvedGenericItem::from_module_item(db, inner_module_item.item_id)?;
+                        let generic_item = self.resolve_module_item_as_generic(
+                            containing_module,
+                            &identifier,
+                            &inner_module_item,
+                        )?;
                         self.resolver.resolved_items.mark_generic(
                             db,
                             &self.segments.next().unwrap(),
@@ -2099,8 +2110,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     }
                 }
             }
-            // A diagnostic for the missing segment should have been reported from the syntax phase.
-            syntax::node::ast::PathSegment::Missing(_) => return Err(skip_diagnostic()),
         })
     }
 
@@ -2119,7 +2128,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
         let db = self.resolver.db;
         let mut curr = None;
         for segment in self.segments.peeking_take_while(|segment| match segment {
-            ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
+            ast::PathSegment::WithGenericArgs(_) => false,
             ast::PathSegment::Simple(simple) => simple.identifier(db).long(db) == SUPER_KW,
         }) {
             let module_id = match curr {
@@ -2490,9 +2499,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
             ResolvedGenericItem::Module(module_id) => {
                 let inner_item_info = self.module_inner_item(module_id, ident, &identifier)?;
 
-                self.validate_module_item_usability(*module_id, &identifier, &inner_item_info);
-                self.resolver.insert_used_use(inner_item_info.item_id);
-                ResolvedGenericItem::from_module_item(db, inner_item_info.item_id)
+                self.resolve_module_item_as_generic(*module_id, &identifier, &inner_item_info)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = db.enum_variants(*enum_id)?;
@@ -2598,26 +2605,29 @@ impl<'db, 'a> Resolution<'db, 'a> {
         }
         Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(&self.macro_info)))
     }
-    /// Validates that an item is usable from the current module or adds a diagnostic.
-    /// This includes visibility checks and feature checks.
-    fn validate_module_item_usability(
+
+    /// Resolves a module item reached through an import into a [`ResolvedGenericItem`].
+    ///
+    /// Additionally enforces that the item is usable from the current context and records the
+    /// import as used.
+    ///
+    /// Every path that turns an imported item into a generic item — a direct import or one reached
+    /// through a glob `use *` — must go through here, so these checks are never skipped.
+    fn resolve_module_item_as_generic(
         &mut self,
-        containing_module_id: ModuleId<'db>,
+        containing_module: ModuleId<'db>,
         identifier: &ast::TerminalIdentifier<'db>,
         item_info: &ModuleItemInfo<'db>,
-    ) {
-        if !self.resolver.is_item_visible_ex(
-            containing_module_id,
-            item_info,
-            self.resolver.active_module_id(&self.macro_info),
-            &self.macro_info,
-        ) {
-            self.diagnostics.report(
-                identifier.stable_ptr(self.resolver.db),
-                ItemNotVisible(item_info.item_id, vec![]),
-            );
+    ) -> Maybe<ResolvedGenericItem<'db>> {
+        let Self { resolver, diagnostics, macro_info, .. } = self;
+        let active_module = resolver.active_module_id(macro_info);
+        if !resolver.is_item_visible_ex(containing_module, item_info, active_module, macro_info) {
+            let stable_ptr = identifier.stable_ptr(resolver.db);
+            diagnostics.report(stable_ptr, ItemNotVisible(Some(item_info.item_id), vec![]));
         }
 
-        self.resolver.validate_feature_constraints(self.diagnostics, identifier, item_info);
+        resolver.validate_feature_constraints(diagnostics, identifier, item_info);
+        resolver.insert_used_use(item_info.item_id);
+        ResolvedGenericItem::from_module_item(resolver.db, item_info.item_id)
     }
 }

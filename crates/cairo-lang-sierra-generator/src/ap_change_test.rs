@@ -1,7 +1,7 @@
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_semantic::test_utils::{setup_test_module, test_module_code};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
@@ -22,7 +22,7 @@ fn contains_cycles_test(
 ) -> TestRunnerResult {
     let db = &SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
-    let test_module = setup_test_module(db, inputs["module_code"].as_str()).unwrap();
+    let test_module = setup_test_module(db, &test_module_code(inputs)).unwrap();
 
     db.module_lowering_diagnostics(test_module.module_id)
         .unwrap()

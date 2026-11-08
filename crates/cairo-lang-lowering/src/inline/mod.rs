@@ -14,7 +14,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
 use salsa::Database;
 
-use crate::blocks::{Blocks, BlocksBuilder};
+use crate::blocks::Blocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{
     LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
@@ -53,7 +53,7 @@ pub fn get_inline_diagnostics<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_should_inline].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn priv_should_inline<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
@@ -72,7 +72,7 @@ pub fn priv_should_inline<'db>(
         | ConcreteFunctionWithBodyLongId::Generated(_) => function_id,
         ConcreteFunctionWithBodyLongId::Specialized(specialized) => specialized.long(db).base,
     };
-    if db.concrete_in_cycle(base, DependencyType::Call, LoweringStage::Monomorphized)? {
+    if db.concrete_in_cycle(base, DependencyType::Call, LoweringStage::PreOptimizations)? {
         return Ok(false);
     }
 
@@ -93,7 +93,7 @@ pub fn priv_should_inline<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_never_inline].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn priv_never_inline<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
@@ -221,68 +221,65 @@ impl<'db, 'mt> Rebuilder<'db> for Mapper<'db, 'mt, '_> {
 /// error case.
 fn inner_apply_inlining<'db>(
     db: &'db dyn Database,
-    lowered: &mut Lowered<'db>,
+    Lowered { blocks, variables, .. }: &mut Lowered<'db>,
     calling_function_id: ConcreteFunctionWithBodyId<'db>,
     mut enable_const_folding: bool,
 ) -> Maybe<()> {
-    lowered.blocks.has_root()?;
+    blocks.has_root()?;
 
-    let mut blocks: BlocksBuilder<'db> = BlocksBuilder::new();
+    let mut stack: Vec<std::vec::IntoIter<BlockId>> =
+        vec![(0..blocks.len()).map(BlockId).collect_vec().into_iter()];
 
-    let mut stack: Vec<std::vec::IntoIter<BlockId>> = vec![
-        lowered
-            .blocks
-            .iter()
-            .map(|(_, block)| blocks.alloc(block.clone()))
-            .collect_vec()
-            .into_iter(),
-    ];
-
-    let mut const_folding_ctx =
-        ConstFoldingContext::new(db, calling_function_id, &mut lowered.variables);
+    let mut const_folding_ctx = ConstFoldingContext::new(db, calling_function_id, variables);
 
     enable_const_folding = enable_const_folding && !const_folding_ctx.should_skip_const_folding(db);
 
     while let Some(mut func_blocks) = stack.pop() {
         for block_id in func_blocks.by_ref() {
-            let blocks = &mut blocks;
+            let blocks = &mut *blocks;
             if enable_const_folding
-                && !const_folding_ctx.visit_block_start(block_id, |block_id| &blocks.0[block_id.0])
+                && !const_folding_ctx.visit_block_start(block_id, |block_id| &blocks[block_id])
             {
                 continue;
             }
 
             // Read the next block id before `blocks` is borrowed.
             let next_block_id = blocks.len();
-            let block = blocks.get_mut_block(block_id);
+            let block = &mut blocks[block_id];
 
-            let mut opt_inline_info = None;
-            for (idx, statement) in block.statements.iter_mut().enumerate() {
-                if enable_const_folding {
+            let mut stmt_idx = 0;
+            let mut end_visited = false;
+            let opt_inline_info = loop {
+                let Some(statement) = block.statements.get_mut(stmt_idx) else {
+                    if enable_const_folding && !end_visited {
+                        end_visited = true;
+                        // Skipping the prepended statements, and continuing the scan over the
+                        // statements possibly appended by a block-end replacement.
+                        stmt_idx += const_folding_ctx.visit_block_end(block_id, block);
+                        continue;
+                    }
+                    break None;
+                };
+                if enable_const_folding && !end_visited {
                     const_folding_ctx.visit_statement(statement);
                 }
-                if let Some((call_stmt, called_func)) =
-                    should_inline(db, calling_function_id, statement)?
-                {
-                    opt_inline_info = Some((idx, call_stmt.clone(), called_func));
-                    break;
+                if let Some(inline_info) = should_inline(db, calling_function_id, statement)? {
+                    break Some(inline_info);
                 }
-            }
+                stmt_idx += 1;
+            };
 
-            let Some((call_stmt_idx, call_stmt, called_func)) = opt_inline_info else {
-                if enable_const_folding {
-                    const_folding_ctx.visit_block_end(block_id, block);
-                }
+            let Some((call_stmt, called_func)) = opt_inline_info else {
                 // Nothing to inline in this block, go to the next block.
                 continue;
             };
+            let call_stmt = call_stmt.clone();
 
             let inlined_lowered = db.lowered_body(called_func, LoweringStage::PostBaseline)?;
             inlined_lowered.blocks.has_root()?;
 
             // Drain the statements starting at the call to the inlined function.
-            let remaining_statements =
-                block.statements.drain(call_stmt_idx..).skip(1).collect_vec();
+            let remaining_statements = block.statements.drain(stmt_idx..).skip(1).collect_vec();
 
             // Replace the end of the block with a goto to the root block of the inlined function.
             let orig_block_end = std::mem::replace(
@@ -303,16 +300,16 @@ fn inner_apply_inlining<'db>(
             );
 
             // Apply the mapper to the inlined blocks and add them as a contiguous chunk to the
-            // blocks builder.
+            // blocks.
             let mut inlined_blocks_ids = inlined_lowered
                 .blocks
                 .iter()
-                .map(|(_block_id, block)| blocks.alloc(inline_mapper.rebuild_block(block)))
+                .map(|(_block_id, block)| blocks.push(inline_mapper.rebuild_block(block)))
                 .collect_vec();
 
             // Move the remaining statements and the original block end to a new return block.
             let return_block_id =
-                blocks.alloc(Block { statements: remaining_statements, end: orig_block_end });
+                blocks.push(Block { statements: remaining_statements, end: orig_block_end });
             assert_eq!(return_block_id, inline_mapper.return_block_id);
 
             // Append the id of the return block to the list of blocks in the inlined function.
@@ -328,7 +325,6 @@ fn inner_apply_inlining<'db>(
         }
     }
 
-    lowered.blocks = blocks.build().unwrap();
     Ok(())
 }
 
@@ -357,8 +353,6 @@ where
                 return Ok(Some((stmt, called_func)));
             }
 
-            // TODO: Implement better logic to avoid inlining of destructors that call
-            // themselves.
             if called_func != calling_function_id && db.priv_should_inline(called_func)? {
                 return Ok(Some((stmt, called_func)));
             }

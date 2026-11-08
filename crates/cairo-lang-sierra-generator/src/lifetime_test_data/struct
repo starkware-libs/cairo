@@ -3,17 +3,7 @@
 //! > test_runner_name
 check_variable_lifetime
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(x: MyStruct) -> MyStruct {
-    let s = immovable(MyStruct { a: immovable(x.a), b: x.b });
-    let _w = immovable(MyStruct { a: s.a, b: immovable(s.b) });
-    MyStruct { a: 10, b: 20 }
-}
-
-//! > module_code
+//! > cairo_code
 #[derive(Copy)]
 struct MyStruct {
     a: felt252,
@@ -25,6 +15,12 @@ impl MyStructDrop of Drop<MyStruct>;
 #[inline(never)]
 fn immovable<T>(t: T) -> T {
     t
+}
+#[target_function]
+fn foo(x: MyStruct) -> MyStruct {
+    let s = immovable(MyStruct { a: immovable(x.a), b: x.b });
+    let _w = immovable(MyStruct { a: s.a, b: immovable(s.b) });
+    MyStruct { a: 10, b: 20 }
 }
 
 //! > lowering_format

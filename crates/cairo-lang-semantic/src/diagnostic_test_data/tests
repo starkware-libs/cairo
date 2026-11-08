@@ -308,7 +308,7 @@ error[E0006]: Function not found.
   func_call(x);
   ^^^^^^^^^
 
-error[E0002]: Method `member_call` not found on type `?2`. Did you import the correct trait and impl?
+error[E0002]: Method `member_call` not found on type `{numeric}`. Did you import the correct trait and impl?
  --> lib.cairo:7:5
   z.member_call(y);
     ^^^^^^^^^^^
@@ -328,7 +328,7 @@ test_expr_diagnostics(expect_diagnostics: warnings_only)
 //! > function_body
 
 //! > expected_diagnostics
-warning[E2064]: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
+warning[E2064]: Unhandled `#[must_use]` type `Option::<felt252>`
  --> lib.cairo:3:3
   Option::<felt252>::None;
   ^^^^^^^^^^^^^^^^^^^^^^^
@@ -348,7 +348,7 @@ test_expr_diagnostics(expect_diagnostics: warnings_only)
 //! > function_body
 
 //! > expected_diagnostics
-warning[E2064]: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, core::felt252>`
+warning[E2064]: Unhandled `#[must_use]` type `Result::<felt252, felt252>`
  --> lib.cairo:3:3
   Result::<felt252, felt252>::Err(4);
   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -383,10 +383,8 @@ warning[E2069]: Unhandled `#[must_use]` function.
 
 //! > Test unhandled must use impl function.
 
-//! > TODO(gil): fix and change `expect_diagnostics` to true.
-
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: *)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -407,6 +405,10 @@ impl imp of trt {
 //! > function_body
 
 //! > expected_diagnostics
+warning[E2069]: Unhandled `#[must_use]` function.
+ --> lib.cairo:12:3
+  imp::must_use_function();
+  ^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1087,10 +1089,64 @@ INACCESSIBLE
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::INACCESSIBLE` is not visible in this context through module `test::a`.
+error[E2099]: Item `a::INACCESSIBLE` is not visible in this context through module `a`.
  --> lib.cairo:6:1
 INACCESSIBLE
 ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Testing prelude name shadowed by a local item
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+struct u128 {}
+
+//! > function_body
+
+//! > expr_code
+{
+    let _x: core::integer::u128 = 1_felt252;
+}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error[E2041]: Unexpected argument type. Expected: "core::integer::u128", found: "felt252".
+ --> lib.cairo:4:35
+    let _x: core::integer::u128 = 1_felt252;
+                                  ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Testing use star inaccessible item through a crate root
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+use core::*;
+
+//! > function_body
+
+//! > expr_code
+felt_252::Felt252One
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error[E2099]: Item `core::felt_252` is not visible in this context through module `core`.
+ --> lib.cairo:3:1
+felt_252::Felt252One
+^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1118,7 +1174,7 @@ inaccessible::C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::inaccessible` is not visible in this context through module `test::a`.
+error[E2099]: Item `a::inaccessible` is not visible in this context through module `a`.
  --> lib.cairo:8:1
 inaccessible::C
 ^^^^^^^^^^^^
@@ -1155,12 +1211,12 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+error[E2099]: Item `a::b::C` is not visible in this context through module `a::b`.
  --> lib.cairo:14:1
 C
 ^
 
-error[E2099]: Item `test::a::b` is not visible in this context.
+error[E2099]: Item `crate::a::b` is not visible in this context.
  --> lib.cairo:9:30
         use super::super::a::b::*;
                              ^
@@ -1197,7 +1253,7 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+error[E2099]: Item `a::b::C` is not visible in this context through module `a::b`.
  --> lib.cairo:14:1
 C
 ^
@@ -1240,7 +1296,7 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+error[E2099]: Item `a::b::C` is not visible in this context through module `a::b`.
  --> lib.cairo:20:1
 C
 ^
@@ -1283,7 +1339,7 @@ C
 //! > expected_semantics
 
 //! > expected_diagnostics
-error[E2099]: Item `test::a::b` is not visible in this context.
+error[E2099]: Item `crate::a::b` is not visible in this context.
  --> lib.cairo:9:34
         pub use super::super::a::b::*;
                                  ^
@@ -1470,7 +1526,7 @@ impl SDictValue of Felt252DictValue<S> {
 //! > function_body
 
 //! > expected_diagnostics
-error[E2181]: Trait `core::traits::Felt252DictValue` should not be implemented outside of the corelib.
+error[E2181]: Trait `Felt252DictValue` should not be implemented outside of the corelib.
  --> lib.cairo:3:20
 impl SDictValue of Felt252DictValue<S> {
                    ^^^^^^^^^^^^^^^^^^^
@@ -1496,12 +1552,12 @@ impl SStringLiteral of StringLiteral<S> {}
 //! > function_body
 
 //! > expected_diagnostics
-error[E2181]: Trait `core::integer::NumericLiteral` should not be implemented outside of the corelib.
+error[E2181]: Trait `NumericLiteral` should not be implemented outside of the corelib.
  --> lib.cairo:3:25
 impl SNumericLiteral of NumericLiteral<S> {}
                         ^^^^^^^^^^^^^^^^^
 
-error[E2181]: Trait `core::string::StringLiteral` should not be implemented outside of the corelib.
+error[E2181]: Trait `StringLiteral` should not be implemented outside of the corelib.
  --> lib.cairo:5:24
 impl SStringLiteral of StringLiteral<S> {}
                        ^^^^^^^^^^^^^^^^
@@ -1526,7 +1582,7 @@ struct S {
 //! > function_body
 
 //! > expected_diagnostics
-error[E2041]: Unexpected argument type. Expected: "core::integer::u8", found: "@?0".
+error[E2041]: Unexpected argument type. Expected: "u8", found: "@{numeric}".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:6:12
@@ -1559,6 +1615,9 @@ mod m2;
 #[path(3)]
 mod m3;
 
+#[path("first.cairo")]
+#[path("second.cairo")]
+mod multiple_paths;
 #[path("non_existent_path.cairo")]
 mod non_existing;
 
@@ -1590,6 +1649,11 @@ error[E2200]: Plugin diagnostic: `#[path(..)]` expects exactly one string litera
 #[path(3)]
       ^^^
 
+error[E2200]: Plugin diagnostic: Multiple `#[path(..)]` attributes are not allowed on a single module.
+ --> lib.cairo:17:1
+#[path("second.cairo")]
+^^^^^^^^^^^^^^^^^^^^^^^
+
 error[E0005]: Module file not found. Expected path: m1.cairo
  --> lib.cairo:7:1-8:7
   #[path]
@@ -1611,9 +1675,148 @@ error[E0005]: Module file not found. Expected path: m3.cairo
 | mod m3;
 |_______^
 
+error[E0005]: Module file not found. Expected path: first.cairo
+ --> lib.cairo:16:1-18:19
+  #[path("first.cairo")]
+ _^
+| #[path("second.cairo")]
+| mod multiple_paths;
+|___________________^
+
 error[E0005]: Module file not found. Expected path: non_existent_path.cairo
- --> lib.cairo:16:1-17:17
+ --> lib.cairo:19:1-20:17
   #[path("non_existent_path.cairo")]
  _^
 | mod non_existing;
 |_________________^
+
+//! > ==========================================================================
+
+//! > Testing use star with only invisible candidates.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    const AMBIGUOUS: u8 = 1;
+}
+
+mod b {
+    const AMBIGUOUS: u8 = 4;
+}
+use a::*;
+use b::*;
+
+//! > function_body
+
+//! > expr_code
+AMBIGUOUS
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error[E2099]: Item is not visible in this context through any of the modules: `a`, `b`.
+ --> lib.cairo:11:1
+AMBIGUOUS
+^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Local use alias with a wrong generic-argument count is diagnosed, not an ICE.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+struct Pair<S, T> {
+    a: S,
+    b: T,
+}
+
+//! > function_body
+use Pair as P;
+
+//! > expr_code
+P::<felt252, u8, u16> { a: 0, b: 0 }
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error[E2163]: Expected 2 generic arguments, found 3.
+ --> lib.cairo:6:18
+P::<felt252, u8, u16> { a: 0, b: 0 }
+                 ^^^
+
+//! > ==========================================================================
+
+//! > Test unstable feature gating through a glob re-export.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod inner {
+    #[unstable(feature: "testing")]
+    pub fn unstable() {}
+}
+use inner::*;
+pub use unstable as renamed;
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+warning[E2065]: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
+ --> lib.cairo:6:9
+pub use unstable as renamed;
+        ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test unstable feature gating through a chain of glob re-exports.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    #[unstable(feature: "testing")]
+    pub fn unstable() {}
+}
+
+mod b {
+    pub use super::a::*;
+}
+
+mod c {
+    pub use super::b::*;
+}
+use c::*;
+pub use unstable as renamed;
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+warning[E2065]: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
+ --> lib.cairo:14:9
+pub use unstable as renamed;
+        ^^^^^^^^

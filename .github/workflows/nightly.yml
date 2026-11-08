@@ -12,30 +12,30 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@4fd1da8b0805d2d2e936788875a7d65dbd677dc2 # nightly
         with:
           components: rustfmt
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@c8037a86dde8214a8310e9f54a8fc61ab362aa31 # v2
       - run: scripts/rust_fmt.sh --check
 
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@4fd1da8b0805d2d2e936788875a7d65dbd677dc2 # nightly
         with:
           components: clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@c8037a86dde8214a8310e9f54a8fc61ab362aa31 # v2
       - run: >
           scripts/clippy.sh
 
   cairotest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+      - uses: Swatinem/rust-cache@c8037a86dde8214a8310e9f54a8fc61ab362aa31 # v2
       - run: |
           cargo run --profile=ci-dev --bin cairo-test -- corelib/
       - run: |
@@ -46,17 +46,11 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@4fd1da8b0805d2d2e936788875a7d65dbd677dc2 # nightly
+      - uses: Swatinem/rust-cache@c8037a86dde8214a8310e9f54a8fc61ab362aa31 # v2
       - run: >
           scripts/docs.sh
-
-  typos:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: crate-ci/typos@master
 
   benchmark:
     if: github.repository == 'starkware-libs/cairo'
@@ -67,16 +61,16 @@ jobs:
       group: benchmark-results
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v6
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Swatinem/rust-cache@c8037a86dde8214a8310e9f54a8fc61ab362aa31 # v2
 
-      - name: Run benchmarks
+      - name: Run timing benchmarks
         run: |
           set -o pipefail
           cargo bench --bench compile -- --output-format bencher 2>&1 | tee benchmark-output.txt
 
-      - name: Store benchmark results
-        uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b
+      - name: Store timing benchmark results
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc
         with:
           name: Cairo Compiler Benchmarks
           tool: 'cargo'
@@ -88,16 +82,81 @@ jobs:
           fail-on-alert: true
           alert-threshold: '150%'
 
+      # The remaining suites and the final push run even if an earlier store step failed on a
+      # degradation alert (fail-on-alert), so a single regression doesn't drop the results of the
+      # other benchmarks.
+      - name: Run heap benchmarks
+        if: ${{ !cancelled() }}
+        run: cargo bench --bench dhat_compile --features dhat
+
+      - name: Store heap benchmark results
+        if: ${{ !cancelled() }}
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc
+        with:
+          name: Cairo Heap Benchmarks
+          tool: 'customSmallerIsBetter'
+          output-file-path: target/dhat-bench/dhat-output.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          fail-on-alert: true
+          alert-threshold: '150%'
+          # MUST run after `Store timing benchmark results`, which fetches the gh-pages worktree
+          # this step then reuses. Reordering or removing the timing step will break this one.
+          skip-fetch-gh-pages: true
+
+      - name: Run LS-flow heap benchmark
+        if: ${{ !cancelled() }}
+        run: cargo bench --bench dhat_ls_flow --features dhat
+
+      - name: Store LS-flow heap benchmark results
+        if: ${{ !cancelled() }}
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc
+        with:
+          name: Cairo LS-Flow Memory Benchmarks
+          tool: 'customSmallerIsBetter'
+          output-file-path: target/dhat-bench/dhat-ls-output.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          fail-on-alert: true
+          alert-threshold: '150%'
+          # Like the heap step, reuses the gh-pages worktree fetched by the timing step.
+          skip-fetch-gh-pages: true
+
+      - name: Run language-server re-execution benchmark
+        if: ${{ !cancelled() }}
+        run: cargo bench --bench ls_reexec
+
+      - name: Store language-server re-execution benchmark results
+        if: ${{ !cancelled() }}
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc
+        with:
+          name: Cairo Language Server Re-execution Benchmarks
+          tool: 'customSmallerIsBetter'
+          output-file-path: target/ls-reexec/ls-reexec-output.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          fail-on-alert: true
+          alert-threshold: '150%'
+          # Like the heap step, reuses the gh-pages worktree fetched by the timing step.
+          skip-fetch-gh-pages: true
+
       - name: Push results to gh-pages
+        if: ${{ !cancelled() }}
         run: git push origin gh-pages
 
   starknet_sierra_validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@4fd1da8b0805d2d2e936788875a7d65dbd677dc2 # nightly
+      - uses: Swatinem/rust-cache@c8037a86dde8214a8310e9f54a8fc61ab362aa31 # v2
       - run: >
-          scripts/starknet_sierra_validate.sh https://starknet-mainnet.core.chainstack.com/57088c25afa0ff21277c6ee5f3b536bb/rpc/v0_7 10000
+          scripts/starknet_sierra_validate.sh https://starknet-mainnet.core.chainstack.com/57088c25afa0ff21277c6ee5f3b536bb/rpc/v0_9 10000
       - run: >
-          scripts/starknet_sierra_validate.sh https://starknet-sepolia.core.chainstack.com/2eaebe8806ed2208f571223be415f594/rpc/v0_7 10000
+          scripts/starknet_sierra_validate.sh https://starknet-sepolia.core.chainstack.com/2eaebe8806ed2208f571223be415f594/rpc/v0_9 10000

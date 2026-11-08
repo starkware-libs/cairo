@@ -162,7 +162,7 @@ use starknet::storage::Map as LegacyMap;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__constructor(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -175,7 +175,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_initial_counter);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -183,7 +183,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__get_counter(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -193,7 +193,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = CounterContract::get_counter(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -202,7 +202,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__increase_counter(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -215,7 +215,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::increase_counter(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -223,7 +223,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__decrease_counter(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -236,13 +236,13 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::decrease_counter(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
-impl ContractStateUpgradableImpl of
+impl ContractStateUpgradable of
     upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -322,7 +322,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::CounterIncreased(val) => {
@@ -352,22 +352,22 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("CounterIncreased") {
-            return Option::Some(Event::CounterIncreased(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::CounterIncreased(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("CounterDecreased") {
-            return Option::Some(Event::CounterDecreased(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::CounterDecreased(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("UpgradableEvent") {
-            return Option::Some(Event::UpgradableEvent(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::UpgradableEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("OwnableEvent") {
-            return Option::Some(Event::OwnableEvent(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::OwnableEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventCounterIncreasedIntoEvent of Into<CounterIncreased, Event> {
@@ -393,27 +393,27 @@ impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
 impl CounterIncreasedDrop<> of core::traits::Drop::<CounterIncreased>;
 impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
     fn append_keys_and_data(
-        self: @CounterIncreased, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @CounterIncreased, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
             core::serde::Serde::serialize(self.amount, ref data);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CounterIncreased> {
-        Option::Some(CounterIncreased {amount: core::serde::Serde::deserialize(ref data)?, })
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<CounterIncreased> {
+        core::option::Option::Some(CounterIncreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 impl CounterDecreasedDrop<> of core::traits::Drop::<CounterDecreased>;
 impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
     fn append_keys_and_data(
-        self: @CounterDecreased, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @CounterDecreased, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
             core::serde::Serde::serialize(self.amount, ref data);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CounterDecreased> {
-        Option::Some(CounterDecreased {amount: core::serde::Serde::deserialize(ref data)?, })
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<CounterDecreased> {
+        core::option::Option::Some(CounterDecreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 #[doc(hidden)]
@@ -642,6 +642,82 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
     }
 
 }
+#[feature("forward-impl")]
+#[unstable(feature: "forward-impl")]
+#[starknet::forward_impl]
+impl ICounterContractForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ICounterContract<TContractState> {
+    fn increase_counter(ref self: TContractState, amount: u128) {
+        ICounterContractDispatcherTrait::increase_counter(ICounterContractLibraryDispatcher { class_hash: FCH::class_hash(@self) }, amount)
+    }
+    fn decrease_counter(ref self: TContractState, amount: u128) {
+        ICounterContractDispatcherTrait::decrease_counter(ICounterContractLibraryDispatcher { class_hash: FCH::class_hash(@self) }, amount)
+    }
+    fn get_counter(self: @TContractState) -> u128 {
+        ICounterContractDispatcherTrait::get_counter(ICounterContractLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ICounterContractForwardImpl__increase_counter<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("increase_counter"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ICounterContractForwardImpl__decrease_counter<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("decrease_counter"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ICounterContractForwardImpl__get_counter<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState>>(data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_counter"),
+            data,
+        )
+    )
+}
+
+mod __external_ICounterContractForwardImpl {
+    pub use super::__wrapper__ICounterContractForwardImpl__increase_counter as increase_counter;
+    pub use super::__wrapper__ICounterContractForwardImpl__decrease_counter as decrease_counter;
+    pub use super::__wrapper__ICounterContractForwardImpl__get_counter as get_counter;
+}
+
+mod __l1_handler_ICounterContractForwardImpl {
+}
+
+mod __constructor_ICounterContractForwardImpl {
+}
 #[doc(group: "dispatchers")]
 impl ICounterContractDispatcherCopy<> of core::traits::Copy::<ICounterContractDispatcher>;
 #[doc(group: "dispatchers")]
@@ -652,9 +728,9 @@ impl ICounterContractDispatcherSerde<> of core::serde::Serde::<ICounterContractD
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ICounterContractDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -758,9 +834,9 @@ impl ICounterContractLibraryDispatcherSerde<> of core::serde::Serde::<ICounterCo
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ICounterContractLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -864,9 +940,9 @@ impl ICounterContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<ICount
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractSafeLibraryDispatcher> {
-        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        let __serde_member_class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
         core::option::Option::Some(ICounterContractSafeLibraryDispatcher {
-            class_hash: class_hash.value,
+            class_hash: __serde_member_class_hash.value,
         })
     }
 }
@@ -970,9 +1046,9 @@ impl ICounterContractSafeDispatcherSerde<> of core::serde::Serde::<ICounterContr
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractSafeDispatcher> {
-        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        let __serde_member_contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
         core::option::Option::Some(ICounterContractSafeDispatcher {
-            contract_address: contract_address.value,
+            contract_address: __serde_member_contract_address.value,
         })
     }
 }
@@ -1245,7 +1321,7 @@ use starknet::storage::Map as LegacyMap;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__constructor(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1258,7 +1334,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_initial_counter);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -1266,7 +1342,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__get_counter(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1276,7 +1352,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = CounterContract::get_counter(@contract_state, );
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::serde::Serde::<u128>::serialize(@res, ref arr);
@@ -1285,7 +1361,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__increase_counter(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1298,7 +1374,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::increase_counter(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
@@ -1306,7 +1382,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__decrease_counter(mut data: core::array::Span::<felt252>) -> core::array::Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
@@ -1319,13 +1395,13 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::decrease_counter(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
+    let mut arr = core::array::ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
-impl ContractStateUpgradableImpl of
+impl ContractStateUpgradable of
     upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
@@ -1405,7 +1481,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @Event, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
         match self {
             Event::CounterIncreased(val) => {
@@ -1435,22 +1511,22 @@ impl EventIsEvent of starknet::Event<Event> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("CounterIncreased") {
-            return Option::Some(Event::CounterIncreased(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::CounterIncreased(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("CounterDecreased") {
-            return Option::Some(Event::CounterDecreased(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::CounterDecreased(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("UpgradableEvent") {
-            return Option::Some(Event::UpgradableEvent(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::UpgradableEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("OwnableEvent") {
-            return Option::Some(Event::OwnableEvent(starknet::Event::deserialize(ref keys, ref data)?));
+            return core::option::Option::Some(Event::OwnableEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
-        Option::None
+        core::option::Option::None
     }
 }
 impl EventCounterIncreasedIntoEvent of Into<CounterIncreased, Event> {
@@ -1476,27 +1552,27 @@ impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
 impl CounterIncreasedDrop<> of core::traits::Drop::<CounterIncreased>;
 impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
     fn append_keys_and_data(
-        self: @CounterIncreased, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @CounterIncreased, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
             core::serde::Serde::serialize(self.amount, ref data);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CounterIncreased> {
-        Option::Some(CounterIncreased {amount: core::serde::Serde::deserialize(ref data)?, })
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<CounterIncreased> {
+        core::option::Option::Some(CounterIncreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 impl CounterDecreasedDrop<> of core::traits::Drop::<CounterDecreased>;
 impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
     fn append_keys_and_data(
-        self: @CounterDecreased, ref keys: Array<felt252>, ref data: Array<felt252>
+        self: @CounterDecreased, ref keys: core::array::Array<felt252>, ref data: core::array::Array<felt252>
     ) {
             core::serde::Serde::serialize(self.amount, ref data);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CounterDecreased> {
-        Option::Some(CounterDecreased {amount: core::serde::Serde::deserialize(ref data)?, })
+        ref keys: core::array::Span<felt252>, ref data: core::array::Span<felt252>,
+    ) -> core::option::Option<CounterDecreased> {
+        core::option::Option::Some(CounterDecreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 #[doc(hidden)]

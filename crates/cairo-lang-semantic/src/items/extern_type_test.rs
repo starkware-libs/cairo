@@ -16,6 +16,7 @@ fn test_extern_type() {
     let test_module = setup_test_module(
         db,
         indoc::indoc! {"
+            #[allow(extern_outside_corelib)]
             extern type S<A, B>;
         "},
     )

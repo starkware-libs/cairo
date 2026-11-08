@@ -3,15 +3,7 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function_code
-fn foo(opt: Option<felt252>) -> felt252 {
-    expect(opt)
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn expect(opt: Option<felt252>) -> felt252 {
     match opt {
@@ -27,12 +19,14 @@ fn no_inline_panic() -> never {
     data.append(1);
     panic(data)
 }
+#[target_function]
+fn foo(opt: Option<felt252>) -> felt252 {
+    expect(opt)
+}
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > sierra_gen_diagnostics
 
 //! > lowering_flat
 Parameters: v0: core::option::Option::<core::felt252>

@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CodeOrigin, FileKind, FileLongId, SmolStrId, VirtualFile,
+    CodeMapping, CodeOrigin, CrateId, FileKind, FileLongId, SmolStrId, VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
@@ -23,7 +23,7 @@ use crate::items::module::ModuleSemantic;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
 
 /// The data associated with a macro call in item context.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, salsa::SalsaValue)]
 pub struct MacroCallData<'db> {
     /// The module to which the macro call was expanded to.
     pub macro_call_module: Maybe<ModuleId<'db>>,
@@ -54,7 +54,6 @@ fn priv_macro_call_data<'db>(
     {
         let (content, mapping) = expose_content_and_mapping(db, macro_call_syntax.arguments(db))?;
         let code_mappings: Arc<[CodeMapping]> = [mapping].into();
-        let parent_macro_call_data = resolver.macro_call_data;
         let generated_file_id = FileLongId::Virtual(VirtualFile {
             parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
             name: macro_name,
@@ -73,10 +72,22 @@ fn priv_macro_call_data<'db>(
             defsite_module_id: callsite_module_id,
             callsite_module_id,
             expansion_mappings: code_mappings,
-            parent_macro_call_data,
+            parent_macro_call_data: resolver.macro_call_data,
         });
     }
     let mut diagnostics = SemanticDiagnostics::new(callsite_module_id);
+    // Skipping the expansion of a macro call that had a parser error, as the reported parser errors
+    // already describe the problem.
+    if macro_call_syntax.as_syntax_node().contains_missing(db) {
+        return Ok(MacroCallData {
+            macro_call_module: Err(skip_diagnostic()),
+            diagnostics: diagnostics.build(),
+            defsite_module_id: callsite_module_id,
+            callsite_module_id,
+            expansion_mappings: Arc::new([]),
+            parent_macro_call_data: resolver.macro_call_data,
+        });
+    }
     let macro_declaration_id = match resolver.resolve_generic_path(
         &mut diagnostics,
         &macro_call_path,
@@ -95,7 +106,7 @@ fn priv_macro_call_data<'db>(
                 defsite_module_id: callsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
-                parent_macro_call_data: None,
+                parent_macro_call_data: resolver.macro_call_data,
             });
         }
         Err(diag_added) => {
@@ -105,11 +116,12 @@ fn priv_macro_call_data<'db>(
                 defsite_module_id: callsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
-                parent_macro_call_data: None,
+                parent_macro_call_data: resolver.macro_call_data,
             });
         }
     };
     let defsite_module_id = macro_declaration_id.parent_module(db);
+    let parent_macro_call_data = resolver.macro_call_data;
     let macro_rules = match db.macro_declaration_rules(macro_declaration_id) {
         Ok(rules) => rules,
         Err(diag_added) => {
@@ -119,7 +131,7 @@ fn priv_macro_call_data<'db>(
                 defsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
-                parent_macro_call_data: None,
+                parent_macro_call_data,
             });
         }
     };
@@ -136,12 +148,35 @@ fn priv_macro_call_data<'db>(
             defsite_module_id,
             callsite_module_id,
             expansion_mappings: Arc::new([]),
-            parent_macro_call_data: None,
+            parent_macro_call_data,
         });
     };
+    // If the rule has declaration-time errors, skip expansion to avoid panics on malformed rules.
+    if let Err(diag_added) = rule.err {
+        return Ok(MacroCallData {
+            macro_call_module: Err(diag_added),
+            diagnostics: diagnostics.build(),
+            defsite_module_id,
+            callsite_module_id,
+            expansion_mappings: Arc::new([]),
+            parent_macro_call_data,
+        });
+    }
     let mut matcher_ctx = MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
-    let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
-    let parent_macro_call_data = resolver.macro_call_data;
+    let expanded_code = match expand_macro_rule(db, rule, &mut matcher_ctx) {
+        Ok(expanded_code) => expanded_code,
+        Err(err) => {
+            let diag_added = err.report(&mut diagnostics);
+            return Ok(MacroCallData {
+                macro_call_module: Err(diag_added),
+                diagnostics: diagnostics.build(),
+                defsite_module_id,
+                callsite_module_id,
+                expansion_mappings: Arc::new([]),
+                parent_macro_call_data,
+            });
+        }
+    };
     let generated_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
         name: macro_name,
@@ -164,7 +199,7 @@ fn priv_macro_call_data<'db>(
 }
 
 /// Query implementation of [MacroCallSemantic::priv_macro_call_data].
-#[salsa::tracked(cycle_fn=priv_macro_call_data_cycle, cycle_initial=priv_macro_call_data_initial)]
+#[salsa::tracked(returns(clone), cycle_fn=priv_macro_call_data_cycle, cycle_initial=priv_macro_call_data_initial)]
 fn priv_macro_call_data_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
@@ -247,7 +282,7 @@ fn macro_call_diagnostics<'db>(
 }
 
 /// Query implementation of [MacroCallSemantic::macro_call_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn macro_call_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
@@ -264,7 +299,7 @@ fn macro_call_module_id<'db>(
 }
 
 /// Query implementation of [MacroCallSemantic::macro_call_module_id].
-#[salsa::tracked(cycle_fn=macro_call_module_id_cycle, cycle_initial=macro_call_module_id_initial)]
+#[salsa::tracked(returns(copy), cycle_fn=macro_call_module_id_cycle, cycle_initial=macro_call_module_id_initial)]
 fn macro_call_module_id_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
@@ -319,6 +354,26 @@ pub fn module_macro_modules<'db>(
         }
     }
     modules
+}
+
+/// Returns all modules reachable from the crate root, following both submodule and macro call
+/// edges. This ensures that submodules nested inside MacroCall modules are included.
+pub fn crate_modules_including_generated<'db>(
+    db: &'db dyn Database,
+    crate_id: CrateId<'db>,
+) -> Vec<ModuleId<'db>> {
+    let mut result = vec![ModuleId::CrateRoot(crate_id)];
+    let mut unprocessed = 0;
+    while let Some(module_id) = result.get(unprocessed).copied() {
+        unprocessed += 1;
+        if let Ok(submodule_ids) = db.module_submodules_ids(module_id) {
+            result.extend(submodule_ids.iter().map(|id| ModuleId::Submodule(*id)));
+        }
+        if let Ok(macro_calls) = db.module_macro_calls_ids(module_id) {
+            result.extend(macro_calls.iter().flat_map(|id| db.macro_call_module_id(*id)));
+        }
+    }
+    result
 }
 
 /// Trait for macro call-related semantic queries.

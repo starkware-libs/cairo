@@ -160,6 +160,99 @@ fn test_complex_consts() {
 }
 
 #[test]
+fn test_const_bool_bitwise() {
+    const AND: bool = true & false;
+    const OR: bool = true | false;
+    const XOR: bool = true ^ false;
+    assert!(!AND);
+    assert!(OR);
+    assert!(XOR);
+}
+
+#[derive(Copy, Drop, PartialEq, Debug)]
+struct Pair<T> {
+    a: T,
+    b: T,
+}
+
+#[derive(Copy, Drop, PartialEq, Debug)]
+enum Either<T> {
+    Left: T,
+    Right: T,
+}
+
+const fn make_pair<T, +Copy<T>, +Drop<T>>(a: T, b: T) -> Pair<T> {
+    Pair { a, b }
+}
+
+const fn make_tuple<T, +Copy<T>, +Drop<T>>(a: T, b: T) -> (T, T) {
+    (a, b)
+}
+
+const fn make_left<T, +Copy<T>, +Drop<T>>(value: T) -> Either<T> {
+    Either::Left(value)
+}
+
+// A generic const fn returning an aggregate must tag the result with the concrete (substituted)
+// type, rather than the generic type from the function body.
+#[test]
+fn test_const_generic_struct_ctor() {
+    const RESULT: Pair<felt252> = make_pair(1, 2);
+    assert_eq!(RESULT, Pair { a: 1, b: 2 });
+}
+
+#[test]
+fn test_const_generic_tuple_return() {
+    const RESULT: (felt252, felt252) = make_tuple(1, 2);
+    assert_eq!(RESULT, (1, 2));
+}
+
+#[test]
+fn test_const_generic_enum_return() {
+    const RESULT: Either<felt252> = make_left(7);
+    assert_eq!(RESULT, Either::Left(7));
+}
+
+trait AssocConst<const N: usize> {
+    const VALUE: usize;
+}
+
+impl AssocConstImpl of AssocConst<7> {
+    const VALUE: usize = 70;
+}
+
+const fn assoc_const_via_generic<const N: usize, impl A: AssocConst<N>>() -> usize {
+    A::VALUE
+}
+
+// Associated-const (impl-constant projection) evaluation in const context: both direct concrete
+// access (evaluated under an empty substitution) and through a generic const fn must yield the
+// concrete value, not an unresolved projection.
+#[test]
+fn test_const_assoc_const() {
+    const DIRECT: usize = AssocConstImpl::VALUE;
+    assert_eq!(DIRECT, 70);
+    const VIA_GENERIC: usize = assoc_const_via_generic::<7, AssocConstImpl>();
+    assert_eq!(VIA_GENERIC, 70);
+}
+
+#[derive(Copy, Drop, PartialEq, Debug)]
+struct Point {
+    x: felt252,
+    y: felt252,
+    z: felt252,
+}
+
+#[test]
+fn test_const_struct_update() {
+    const BASE: Point = Point { x: 1, y: 2, z: 3 };
+    const UPDATED: Point = Point { y: 20, ..BASE };
+    assert_eq!(UPDATED, Point { x: 1, y: 20, z: 3 });
+    const FROM_UPDATED: Point = Point { x: 10, z: 30, ..UPDATED };
+    assert_eq!(FROM_UPDATED, Point { x: 10, y: 20, z: 30 });
+}
+
+#[test]
 fn test_const_casts_from_felt252() {
     const _U8_UNDER_RANGE: () = assert((-1_felt252).try_into() == None::<u8>, 'U8 under range');
     const _U8_MIN_IN_RANGE: () = assert(0_felt252.try_into() == Some(0_u8), 'U8 min in range');
@@ -296,4 +389,3 @@ fn test_starknet_consts() {
             .unbox() == STARKNET_CONSTS,
     );
 }
-

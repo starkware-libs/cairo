@@ -42,8 +42,11 @@ but not for integer types (which may overflow).
 
 == `panic_with` Attribute
 
-Functions returning `Option` or `Result` may use the `panic_with` attribute
-to generate a wrapper function that panics on `None` or `Err`:
+IMPORTANT: `#[panic_with]` is deprecated. Prefer direct error handling expressions.
+
+Functions returning `Option` or `Result` may use the `panic_with` attribute to generate a wrapper
+function that panics on `None` or `Err`. Using it emits a deprecation warning unless suppressed
+with `#[feature("deprecated-panic-with")]`.
 
 [source,cairo]
 ----

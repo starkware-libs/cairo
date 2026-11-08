@@ -210,7 +210,8 @@ mod impl_parity_scale_codec {
             // sign + len packed in the same byte, it allows numbers of byte size up to 63 (2**504),
             // data.
             let bits = self.value.bits() as usize;
-            core::mem::size_of::<u8>() + bits.div_ceil(8)
+            // `encode` always emits at least one data byte (`0` encodes as `[0]`).
+            core::mem::size_of::<u8>() + bits.div_ceil(8).max(1)
         }
 
         /// /!\ Warning this function panics if the number encoded is too big (>= 2**504).

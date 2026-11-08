@@ -17,6 +17,42 @@ use crate::{FormatterConfig, get_formatted_file};
     false
 )]
 #[test_case(
+    "test_data/cairo_files/empty_block_comment.cairo",
+    "test_data/expected_results/empty_block_comment.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/list_comments.cairo",
+    "test_data/expected_results/list_comments.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/leading_comment_after_operator.cairo",
+    "test_data/expected_results/leading_comment_after_operator.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/trailing_comment_after_assignment.cairo",
+    "test_data/expected_results/trailing_comment_after_assignment.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
     "test_data/cairo_files/linebreaking.cairo",
     "test_data/expected_results/linebreaking.cairo",
     false,
@@ -37,6 +73,15 @@ use crate::{FormatterConfig, get_formatted_file};
 #[test_case(
     "test_data/cairo_files/use_sorting.cairo",
     "test_data/expected_results/use_sorting.cairo",
+    true,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/sort_self_use.cairo",
+    "test_data/expected_results/sort_self_use.cairo",
     true,
     false,
     false,
@@ -90,6 +135,33 @@ use crate::{FormatterConfig, get_formatted_file};
     false
 )]
 #[test_case(
+    "test_data/cairo_files/comment_overflow.cairo",
+    "test_data/expected_results/comment_overflow.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/match_arm_doc_comment.cairo",
+    "test_data/expected_results/match_arm_doc_comment.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/trailing_comment.cairo",
+    "test_data/expected_results/trailing_comment.cairo",
+    false,
+    false,
+    false,
+    false,
+    false
+)]
+#[test_case(
     "test_data/cairo_files/use_merge.cairo",
     "test_data/expected_results/use_merge.cairo",
     true,
@@ -106,6 +178,35 @@ use crate::{FormatterConfig, get_formatted_file};
     false,
     true,
     true
+)]
+// Merge enabled, module-level sorting disabled: merged braces must still honor the
+// `self`-first convention.
+#[test_case(
+    "test_data/cairo_files/use_merge_no_sort.cairo",
+    "test_data/expected_results/use_merge_no_sort.cairo",
+    false,
+    false,
+    false,
+    true,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/use_merge_leading_trivia.cairo",
+    "test_data/expected_results/use_merge_leading_trivia.cairo",
+    false,
+    false,
+    false,
+    true,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/use_merge_leading_trivia.cairo",
+    "test_data/expected_results/use_merge_leading_trivia_use_sorting.cairo",
+    true,
+    false,
+    false,
+    true,
+    false
 )]
 fn format_and_compare_file(
     unformatted_filename: &str,
@@ -135,8 +236,14 @@ fn format_and_compare_file(
         .merge_use_items(Some(merge_use_statements))
         .allow_duplicate_uses(Some(allow_duplicate_uses));
 
-    let formatted_file = get_formatted_file(db, &syntax_root, config);
+    let formatted_file = get_formatted_file(db, &syntax_root, config.clone());
     let expected_file =
         fs::read_to_string(expected_filename).expect("Expected file does not exist.");
     assert_eq!(formatted_file, expected_file);
+
+    // Reformatting the formatted file should be a no-op.
+    let formatted_root =
+        db.parse_virtual(&formatted_file).expect("The formatted file failed parsing.");
+    let reformatted_file = get_formatted_file(db, &formatted_root, config);
+    assert_eq!(reformatted_file, formatted_file, "Formatting is not idempotent.");
 }

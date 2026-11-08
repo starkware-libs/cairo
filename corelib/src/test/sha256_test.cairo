@@ -169,4 +169,3 @@ fn sha256_as_u256(input: ByteArray) -> u256 {
     }
     value
 }
-

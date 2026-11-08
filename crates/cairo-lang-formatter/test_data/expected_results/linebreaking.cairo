@@ -114,7 +114,7 @@ fn foo(x: T) -> S {
     for i in 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4
         ..1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 {}
     for (x, y) in array![
-        (10, 10), (11, 11), (12, 12), (13, 13), (14, 14), (15, 15), (16, 16), (17, 17),
+        (10, 10), (11, 11), (12, 12), (13, 13), (14, 14), (15, 15), (16, 16), (17, 17)
     ] {
         do_something!(x, i);
     };
@@ -306,6 +306,32 @@ fn struct_line_breaking() {
         long_long_long_long_key_e,
     } = my_val;
 }
+fn match_arm_line_breaking() {
+    match my_val {
+        // The arm's expression is broken first, so the pattern fits in a single line.
+        MyEnum::FirstVariant(MyStruct { first_arg, second_arg, third_arg }) => {
+            let x = first_arg;
+            bar(x)
+        },
+        // The pattern is broken as well, as breaking the expression is not enough.
+        MyEnum::SecondVariant(MyStruct {
+            long_long_long_long_key_a, long_long_long_long_key_b, long_long_long_long_key_c,
+        }) => {
+            let x = long_long_long_long_key_a;
+            bar(x)
+        },
+        // The arm is broken at the `|` between the patterns, and not inside them.
+        MyEnum::ThirdVariant(MyStruct { first_arg }) |
+        MyEnum::FourthVariant(MyStruct { first_arg }) => {
+            let x = first_arg;
+            bar(x)
+        },
+        // The pattern is broken rather than the expression, as the expression is not a block.
+        MyEnum::FifthVariant(MyStruct {
+            long_long_long_long_key_a, long_long_long_long_key_b,
+        }) => a_long_function_name(long_long_long_long_key_a, long_long_long_long_key_b),
+    }
+}
 fn let_else_line_breaking() {
     let MyEnum::MyVariant(info) = my_val.calc0().calc1().calc2() else {
         return rather_long_return_value;
@@ -357,4 +383,19 @@ macro many_elements {
             + 5
             + 6
     };
+}
+
+fn user_macro_call_no_trailing_separator() {
+    let result = some_user_macro!(
+        first_very_long_argument_name, second_very_long_argument_name, third_very_long_argument_name
+    );
+}
+
+fn user_macro_call_trailing_separator_kept() {
+    let result = some_user_macro!(
+        first_very_long_argument_name,
+        second_very_long_argument_name,
+        third_very_long_argument_name,
+    );
+    let short = some_user_macro!(a, b,);
 }

@@ -1,3 +1,5 @@
+#![expect(clippy::disallowed_types)]
+
 use std::collections::HashMap;
 use std::ops::Add;
 

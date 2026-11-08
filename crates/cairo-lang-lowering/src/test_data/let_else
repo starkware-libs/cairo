@@ -3,7 +3,12 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+#[target_function]
 fn foo(a: MyEnum) {
     let MyEnum::A(x) = a else {
         bar(0);
@@ -12,16 +17,8 @@ fn foo(a: MyEnum) {
     bar(x);
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar(x: felt252) nopanic;
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: felt252,
-    B: felt252,
-}
 
 //! > semantic_diagnostics
 
@@ -57,7 +54,13 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+enum MyEnum {
+    A: (felt252, felt252, felt252, felt252),
+    B: felt252,
+    C: (),
+}
+#[target_function]
 fn foo(a: MyEnum) {
     let MyEnum::A((x, y, _, z)) = a else {
         bar(0);
@@ -66,17 +69,8 @@ fn foo(a: MyEnum) {
     bar(x + y + z);
 }
 
+#[allow(extern_outside_corelib)]
 extern fn bar(x: felt252) nopanic;
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-    A: (felt252, felt252, felt252, felt252),
-    B: felt252,
-    C: (),
-}
 
 //! > semantic_diagnostics
 

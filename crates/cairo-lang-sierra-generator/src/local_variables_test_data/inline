@@ -3,15 +3,7 @@
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(x: felt252) -> felt252 {
-    bar(x)
-}
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(x: felt252) -> felt252 {
     if x == 0 {
@@ -27,6 +19,10 @@ fn bar(x: felt252) -> felt252 {
 // Revokes ap since this function is recursive.
 fn revoke_ap() {
     revoke_ap()
+}
+#[target_function]
+fn foo(x: felt252) -> felt252 {
+    bar(x)
 }
 
 //! > lowering_format
@@ -63,15 +59,7 @@ v4
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(x: felt252) -> felt252 {
-    bar(x) + x
-}
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(x: felt252) -> felt252 {
     if x == 0 {
@@ -88,6 +76,10 @@ fn bar(x: felt252) -> felt252 {
 // Revokes ap since this function is recursive.
 fn revoke_ap() {
     revoke_ap()
+}
+#[target_function]
+fn foo(x: felt252) -> felt252 {
+    bar(x) + x
 }
 
 //! > lowering_format
@@ -131,17 +123,7 @@ v5
 //! > test_runner_name
 check_find_local_variables
 
-//! > function_name
-foo
-
-//! > function_code
-fn foo(x: felt252) -> felt252 {
-    let y = bar(x + 1);
-    revoke_ap();
-    y
-}
-
-//! > module_code
+//! > cairo_code
 #[inline(always)]
 fn bar(x: felt252) -> felt252 {
     x
@@ -150,6 +132,12 @@ fn bar(x: felt252) -> felt252 {
 // Revokes ap since this function is recursive.
 fn revoke_ap() {
     revoke_ap()
+}
+#[target_function]
+fn foo(x: felt252) -> felt252 {
+    let y = bar(x + 1);
+    revoke_ap();
+    y
 }
 
 //! > lowering_format

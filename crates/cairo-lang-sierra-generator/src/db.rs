@@ -1,18 +1,20 @@
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::ids::{ExternFunctionId, LanguageElementId, TopLevelLanguageElementId};
 use cairo_lang_diagnostics::{Maybe, MaybeAsRef};
-use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::{CrateId, Tracked};
 use cairo_lang_lowering as lowering;
-use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::panic::PanicSignatureInfo;
+use cairo_lang_lowering::LoweringStage;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
+use itertools::chain;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use salsa::plumbing::FromId;
-use salsa::{Database, Id};
+use salsa::{Database, Id, Setter};
 
 use crate::program_generator::{self, SierraProgramWithDebug};
 use crate::replace_ids::SierraIdReplacer;
@@ -22,7 +24,7 @@ use crate::{ap_change, function_generator, pre_sierra, replace_ids};
 
 /// Helper type for Sierra long IDs, which can be either a type long ID or a cycle breaker.
 /// This is required for cases where the type long id is self referential.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::SalsaValue)]
 pub enum SierraGeneratorTypeLongId<'db> {
     /// A normal type long id.
     Regular(Arc<cairo_lang_sierra::program::ConcreteTypeLongId>),
@@ -31,6 +33,45 @@ pub enum SierraGeneratorTypeLongId<'db> {
     /// This is a long id of a phantom type.
     /// Phantom types have a one to one mapping from the semantic type to the Sierra type.
     Phantom(semantic::TypeId<'db>),
+}
+
+/// The reserved name of the extern function whose calls are replaced by a constant supplied by an
+/// installed [`ExternalConstPlugin`]. Recognized solely by this name, and never reaches Sierra.
+pub const EXTERNALLY_PROVIDED_CONST: &str = "__externally_provided_const__";
+
+/// A plugin supplying constant values for calls to the reserved `__externally_provided_const__`
+/// extern function.
+///
+/// Any number of plugins may be installed on the database (see
+/// [`SierraGenGroup::set_external_const_plugins`]), so that independent flows - e.g. class hash
+/// injection and build configuration values - may each supply their own constants.
+pub trait ExternalConstPlugin: std::fmt::Debug + Send + Sync {
+    /// Returns the value for the declaration `extern_id` returning `ty`, or `None` to leave it to
+    /// the following plugins. Validated against `ty` by the caller.
+    ///
+    /// Memoized per declaration, so the answer must be stable - a plugin changing its answers must
+    /// be reinstalled through [`SierraGenGroup::set_external_const_plugins`].
+    fn provide<'db>(
+        &self,
+        db: &'db dyn Database,
+        extern_id: ExternFunctionId<'db>,
+        ty: semantic::TypeId<'db>,
+    ) -> Option<Maybe<ConstValueId<'db>>>;
+}
+
+/// The inputs of [`SierraGenGroup`], set through its `set_*` methods.
+#[salsa::input]
+pub struct SierraGenGroupInput {
+    /// The plugins supplying the values of the externally provided constants.
+    #[returns(ref)]
+    pub external_const_plugins: Option<Vec<Arc<dyn ExternalConstPlugin>>>,
+}
+
+/// Returns a reference to the inputs of [`SierraGenGroup`].
+/// The reference is also used to set the inputs to new values.
+#[salsa::tracked]
+pub fn sierra_gen_group_input(db: &dyn Database) -> SierraGenGroupInput {
+    SierraGenGroupInput::new(db, None)
 }
 
 /// Wrapper for the concrete libfunc long id, providing a unique id for each libfunc.
@@ -66,7 +107,7 @@ fn intern_concrete_lib_func(
 fn lookup_concrete_lib_func(
     db: &dyn Database,
     id: ConcreteLibfuncHandle,
-) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
+) -> &cairo_lang_sierra::program::ConcreteLibfuncLongId {
     let interned = ConcreteLibfuncIdLongWrapper::from_id(Id::from_bits(id.0));
     interned.id(db)
 }
@@ -82,7 +123,7 @@ fn intern_concrete_type<'db>(
 fn lookup_concrete_type<'db>(
     db: &'db dyn Database,
     id: ConcreteTypeHandle,
-) -> SierraGeneratorTypeLongId<'db> {
+) -> &'db SierraGeneratorTypeLongId<'db> {
     let interned = SierraGeneratorTypeLongIdWrapper::from_id(Id::from_bits(id.0));
     interned.id(db)
 }
@@ -105,10 +146,10 @@ pub trait SierraGenGroup: Database {
         intern_concrete_lib_func(self.as_dyn_database(), id)
     }
 
-    fn lookup_concrete_lib_func(
-        &self,
+    fn lookup_concrete_lib_func<'db>(
+        &'db self,
         id: &cairo_lang_sierra::ids::ConcreteLibfuncId,
-    ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
+    ) -> &'db cairo_lang_sierra::program::ConcreteLibfuncLongId {
         lookup_concrete_lib_func(self.as_dyn_database(), ConcreteLibfuncHandle(id.id))
     }
 
@@ -122,7 +163,7 @@ pub trait SierraGenGroup: Database {
     fn lookup_concrete_type<'db>(
         &'db self,
         id: &cairo_lang_sierra::ids::ConcreteTypeId,
-    ) -> SierraGeneratorTypeLongId<'db> {
+    ) -> &'db SierraGeneratorTypeLongId<'db> {
         lookup_concrete_type(self.as_dyn_database(), ConcreteTypeHandle(id.id))
     }
 
@@ -272,6 +313,98 @@ pub trait SierraGenGroup: Database {
         program_generator::get_sierra_program(self.as_dyn_database(), (), requested_crate_ids)
             .maybe_as_ref()
     }
+
+    /// Returns the constant value supplied for the reserved `__externally_provided_const__` extern
+    /// function declared by `extern_id` and returning `ty`.
+    ///
+    /// The installed [`ExternalConstPlugin`]s are queried in order with the declaration, and the
+    /// first supplied value wins, after being validated against `ty`. There is no default value - a
+    /// declaration none of the plugins supplies a value for fails Sierra generation.
+    ///
+    /// Resolution is a query, so a plugin computing its value through the database - e.g. by
+    /// compiling another crate - has that work memoized per declaration instead of repeated per
+    /// call site, and a value transitively depending on itself is reported as a cycle rather than
+    /// recursing endlessly.
+    fn externally_provided_const<'db>(
+        &'db self,
+        extern_id: ExternFunctionId<'db>,
+        ty: semantic::TypeId<'db>,
+    ) -> Maybe<ConstValueId<'db>> {
+        #[salsa::tracked(returns(copy), cycle_result = externally_provided_const_cycle)]
+        fn externally_provided_const_tracked<'db>(
+            db: &'db dyn Database,
+            extern_id: ExternFunctionId<'db>,
+            ty: semantic::TypeId<'db>,
+        ) -> Maybe<ConstValueId<'db>> {
+            let declaration = || {
+                format!(
+                    "`{}` at {:?}",
+                    extern_id.full_path(db),
+                    extern_id.stable_location(db).span_in_file(db).user_location(db).debug(db)
+                )
+            };
+            let Some(value) = db
+                .external_const_plugins()
+                .iter()
+                .find_map(|plugin| plugin.provide(db, extern_id, ty))
+            else {
+                panic!(
+                    "No `{EXTERNALLY_PROVIDED_CONST}` plugin provided a value for {}.",
+                    declaration()
+                );
+            };
+            let value = value?;
+            // The plugins return a value of an arbitrary type; ensure it matches the declared one,
+            // as a mismatch would produce a type-incorrect Sierra program.
+            if value.ty(db)? != ty {
+                panic!(
+                    "`{EXTERNALLY_PROVIDED_CONST}` plugin returned a value whose type does not \
+                     match the declared return type of {}.",
+                    declaration()
+                );
+            }
+            Ok(value)
+        }
+        /// A plugin supplied a value depending on the value itself, which has no fixed point.
+        fn externally_provided_const_cycle<'db>(
+            db: &'db dyn Database,
+            _id: salsa::Id,
+            extern_id: ExternFunctionId<'db>,
+            _ty: semantic::TypeId<'db>,
+        ) -> Maybe<ConstValueId<'db>> {
+            panic!(
+                "`{EXTERNALLY_PROVIDED_CONST}` value of `{}` at {:?} depends on itself.",
+                extern_id.full_path(db),
+                extern_id.stable_location(db).span_in_file(db).user_location(db).debug(db)
+            );
+        }
+        externally_provided_const_tracked(self.as_dyn_database(), extern_id, ty)
+    }
+
+    /// Returns the installed [`ExternalConstPlugin`]s, in the order they are queried in.
+    fn external_const_plugins(&self) -> &[Arc<dyn ExternalConstPlugin>] {
+        sierra_gen_group_input(self.as_dyn_database())
+            .external_const_plugins(self)
+            .as_deref()
+            .unwrap_or_default()
+    }
+
+    /// Sets the [`ExternalConstPlugin`]s used to resolve calls to the reserved
+    /// `__externally_provided_const__` extern function, replacing the previously installed ones.
+    ///
+    /// The plugins are queried in order, and the first one supplying a value for a call resolves
+    /// it.
+    fn set_external_const_plugins(&mut self, plugins: Vec<Arc<dyn ExternalConstPlugin>>) {
+        let input = sierra_gen_group_input(self.as_dyn_database());
+        input.set_external_const_plugins(self).to(Some(plugins));
+    }
+
+    /// Adds an [`ExternalConstPlugin`], to be queried after the already installed ones.
+    fn add_external_const_plugin(&mut self, plugin: Arc<dyn ExternalConstPlugin>) {
+        let mut plugins = self.external_const_plugins().to_vec();
+        plugins.push(plugin);
+        self.set_external_const_plugins(plugins);
+    }
 }
 impl<T: Database + ?Sized> SierraGenGroup for T {}
 
@@ -281,47 +414,23 @@ fn get_function_signature(
     _tracked: Tracked,
     function_id: cairo_lang_sierra::ids::FunctionId,
 ) -> Maybe<cairo_lang_sierra::program::FunctionSignature> {
-    // TODO(yuval): add another version of this function that directly received semantic FunctionId.
-    // Call it from function_generators::get_function_code. Take ret_types from the result instead
-    // of only the explicit ret_type. Also use it for params instead of the current logic. Then use
-    // it in the end of program_generator::get_sierra_program instead of calling this function from
-    // there.
     let lowered_function_id = db.lookup_sierra_function(&function_id);
-    let signature = lowered_function_id.signature(db)?;
+    let signature = lowered_function_id.signature(db, LoweringStage::Final)?;
 
-    let implicits = db
-        .function_implicits(lowered_function_id)?
+    let param_types = signature
+        .params
         .iter()
-        .map(|ty| db.get_concrete_type_id(*ty).cloned())
-        .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
+        .map(|ty| Ok(db.get_concrete_type_id(*ty)?.clone()))
+        .collect::<Maybe<Vec<_>>>()?;
+    // Functions that return the unit type don't have a return type in the signature.
+    let ret_types = chain!(
+        signature.extra_rets.iter().copied(),
+        (!signature.return_type.is_unit(db)).then_some(signature.return_type)
+    )
+    .map(|ty| Ok(db.get_concrete_type_id(ty)?.clone()))
+    .collect::<Maybe<Vec<_>>>()?;
 
-    // TODO(spapini): Handle ret_types in lowering.
-    let mut all_params = implicits.clone();
-    let mut extra_rets = vec![];
-    for param in &signature.params {
-        let concrete_type_id = db.get_concrete_type_id(param.ty)?;
-        all_params.push(concrete_type_id.clone());
-    }
-    for var in &signature.extra_rets {
-        let concrete_type_id = db.get_concrete_type_id(var.ty())?;
-        extra_rets.push(concrete_type_id.clone());
-    }
-
-    let mut ret_types = implicits;
-
-    let may_panic = !db.flag_unsafe_panic() && db.function_may_panic(lowered_function_id)?;
-    if may_panic {
-        let panic_info = PanicSignatureInfo::new(db, &signature);
-        ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?.clone());
-    } else {
-        ret_types.extend(extra_rets);
-        // Functions that return the unit type don't have a return type in the signature.
-        if !signature.return_type.is_unit(db) {
-            ret_types.push(db.get_concrete_type_id(signature.return_type)?.clone());
-        }
-    }
-
-    Ok(cairo_lang_sierra::program::FunctionSignature { param_types: all_params, ret_types })
+    Ok(cairo_lang_sierra::program::FunctionSignature { param_types, ret_types })
 }
 
 /// Initializes the [`Database`] database to a proper state.
@@ -337,11 +446,11 @@ fn get_type_info(
     id: ConcreteTypeHandle,
 ) -> Maybe<cairo_lang_sierra::extensions::types::TypeInfo> {
     let long_id = match lookup_concrete_type(db, id) {
-        SierraGeneratorTypeLongId::Regular(long_id) => long_id,
+        SierraGeneratorTypeLongId::Regular(long_id) => long_id.clone(),
         SierraGeneratorTypeLongId::CycleBreaker(ty) => {
-            let info = cycle_breaker_info(db, ty)?;
+            let info = cycle_breaker_info(db, *ty)?;
             return Ok(cairo_lang_sierra::extensions::types::TypeInfo {
-                long_id: db.get_concrete_long_type_id(ty)?.as_ref().clone(),
+                long_id: db.get_concrete_long_type_id(*ty)?.as_ref().clone(),
                 storable: true,
                 droppable: info.droppable,
                 duplicatable: info.duplicatable,
@@ -349,7 +458,7 @@ fn get_type_info(
             });
         }
         SierraGeneratorTypeLongId::Phantom(ty) => {
-            let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
+            let long_id = db.get_concrete_long_type_id(*ty)?.as_ref().clone();
             return Ok(cairo_lang_sierra::extensions::types::TypeInfo {
                 long_id,
                 storable: false,
@@ -378,10 +487,10 @@ pub fn sierra_concrete_long_id(
     concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
     match db.lookup_concrete_type(&concrete_type_id) {
-        SierraGeneratorTypeLongId::Regular(long_id) => Ok(long_id),
+        SierraGeneratorTypeLongId::Regular(long_id) => Ok(long_id.clone()),
         SierraGeneratorTypeLongId::Phantom(type_id)
         | SierraGeneratorTypeLongId::CycleBreaker(type_id) => {
-            db.get_concrete_long_type_id(type_id).cloned()
+            db.get_concrete_long_type_id(*type_id).cloned()
         }
     }
 }

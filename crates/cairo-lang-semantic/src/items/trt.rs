@@ -29,7 +29,8 @@ use super::functions::{
     InlineConfiguration,
 };
 use super::generics::{
-    GenericParamsData, displayable_concrete, generic_params_to_args, semantic_generic_params,
+    GenericParamsData, concrete_key_name, displayable_concrete, generic_params_data_cycle,
+    generic_params_data_initial, generic_params_to_args, semantic_generic_params,
     semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, ImplLongId, TraitFilter};
@@ -52,7 +53,7 @@ use crate::{
 #[path = "trt_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::SalsaValue, HeapSize)]
 pub struct ConcreteTraitLongId<'db> {
     pub trait_id: TraitId<'db>,
     pub generic_args: Vec<GenericArgumentId<'db>>,
@@ -79,6 +80,11 @@ impl<'db> ConcreteTraitId<'db> {
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
         format!("{:?}", self.debug(db))
+    }
+    /// The trait's key path, then a hash of its generic arguments' key names.
+    pub fn key_name(&self, db: &'db dyn Database) -> String {
+        let long = self.long(db);
+        concrete_key_name(db, &long.trait_id.key_path(db), &long.generic_args)
     }
     pub fn filter(&self, db: &'db dyn Database) -> TraitFilter<'db> {
         let generics_filter = match self.generic_args(db).first() {
@@ -109,7 +115,7 @@ impl<'db> ConcreteTraitId<'db> {
 
 /// The ID of a generic function in a concrete trait.
 #[derive(
-    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update, HeapSize,
+    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue, HeapSize,
 )]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitGenericFunctionLongId<'db> {
@@ -153,7 +159,7 @@ impl<'db> ConcreteTraitGenericFunctionId<'db> {
 
 /// The ID of a type item in a concrete trait.
 #[derive(
-    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update, HeapSize,
+    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue, HeapSize,
 )]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitTypeLongId<'db> {
@@ -197,7 +203,7 @@ impl<'db> ConcreteTraitTypeId<'db> {
 
 /// The ID of a constant item in a concrete trait.
 #[derive(
-    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update, HeapSize,
+    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue, HeapSize,
 )]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitConstantLongId<'db> {
@@ -241,7 +247,7 @@ impl<'db> ConcreteTraitConstantId<'db> {
 
 /// The ID of an impl item in a concrete trait.
 #[derive(
-    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update, HeapSize,
+    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::SalsaValue, HeapSize,
 )]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitImplLongId<'db> {
@@ -285,7 +291,7 @@ impl<'db> ConcreteTraitImplId<'db> {
 
 // === Trait Declaration ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct TraitDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -409,7 +415,7 @@ fn priv_trait_declaration_data<'db>(
 
 // === Trait Definition ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct TraitDefinitionData<'db> {
     /// The diagnostics here are "flat" - that is, only the diagnostics found on the trait level
@@ -429,7 +435,7 @@ struct TraitDefinitionData<'db> {
 }
 
 /// Stores metadata for a trait item, including its ID and feature kind.
-#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, salsa::SalsaValue)]
 pub struct TraitItemInfo<'db> {
     /// The unique identifier of the trait item.
     pub id: TraitItemId<'db>,
@@ -478,7 +484,7 @@ fn trait_semantic_definition_diagnostics<'db>(
 }
 
 /// Query implementation of [TraitSemantic::trait_semantic_definition_diagnostics].
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn trait_semantic_definition_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
@@ -725,7 +731,7 @@ fn priv_trait_definition_data<'db>(
 
 // === Trait item type ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct TraitItemTypeData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -808,7 +814,7 @@ fn priv_trait_type_data<'db>(
 
 // === Trait item constant ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct TraitItemConstantData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -859,7 +865,7 @@ fn concrete_trait_constant_type<'db>(
 }
 
 /// Query implementation of [TraitSemantic::concrete_trait_constant_type].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn concrete_trait_constant_type_tracked<'db>(
     db: &'db dyn Database,
     concrete_trait_constant_id: ConcreteTraitConstantId<'db>,
@@ -869,7 +875,7 @@ fn concrete_trait_constant_type_tracked<'db>(
 
 // === Trait item impl ===
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::SalsaValue)]
 #[debug_db(dyn Database)]
 struct TraitItemImplData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
@@ -928,7 +934,7 @@ fn concrete_trait_impl_concrete_trait<'db>(
 }
 
 /// Query implementation of [TraitSemantic::concrete_trait_impl_concrete_trait].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn concrete_trait_impl_concrete_trait_tracked<'db>(
     db: &'db dyn Database,
     concrete_trait_impl_id: ConcreteTraitImplId<'db>,
@@ -939,7 +945,7 @@ fn concrete_trait_impl_concrete_trait_tracked<'db>(
 // === Trait function Declaration ===
 
 /// Query implementation of [TraitSemantic::priv_trait_function_generic_params_data].
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref), cycle_fn=generic_params_data_cycle, cycle_initial=generic_params_data_initial)]
 fn priv_trait_function_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,

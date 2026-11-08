@@ -3,19 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function_code
-fn foo(a: felt252) -> MyEnum {
-    immovable(true);
-    MyEnum::B({
-        ();
-        5
-    })
-}
-
-//! > function_name
-foo
-
-//! > module_code
+//! > cairo_code
 enum MyEnum {
     A: (),
     B: felt252,
@@ -25,6 +13,14 @@ enum MyEnum {
 #[inline(never)]
 fn immovable<T>(t: T) -> T {
     t
+}
+#[target_function]
+fn foo(a: felt252) -> MyEnum {
+    immovable(true);
+    MyEnum::B({
+        ();
+        5
+    })
 }
 
 //! > semantic_diagnostics
@@ -50,21 +46,17 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > module_code
+//! > cairo_code
 enum MyEnum {
     Dup: felt252,
     Dup: felt252,
 }
-
-//! > function_code
+#[target_function]
 fn foo(v: MyEnum) -> felt252 {
     match v {
         MyEnum::Dup(x) => x,
     }
 }
-
-//! > function_name
-foo
 
 //! > semantic_diagnostics
 error[E2051]: Redefinition of variant "Dup" on enum "MyEnum".

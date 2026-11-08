@@ -3,18 +3,13 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function_code
+//! > cairo_code
+fn bar_panic() {}
+fn bar_nopanic() nopanic {}
 fn foo_panic() {
     bar_panic();
     bar_nopanic();
 }
-
-//! > function_name
-foo_panic
-
-//! > module_code
-fn bar_panic() {}
-fn bar_nopanic() nopanic {}
 
 //! > expected_diagnostics
 
@@ -25,18 +20,13 @@ fn bar_nopanic() nopanic {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function_code
+//! > cairo_code
+fn bar_panic() {}
+fn bar_nopanic() nopanic {}
 fn foo_nopanic() nopanic {
     bar_panic();
     bar_nopanic();
 }
-
-//! > function_name
-foo_nopanic
-
-//! > module_code
-fn bar_panic() {}
-fn bar_nopanic() nopanic {}
 
 //! > expected_diagnostics
 error[E2115]: Function is declared as nopanic but calls a function that may panic.

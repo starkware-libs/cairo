@@ -21,7 +21,7 @@ At the language semantics level, memory is immutable. Assigning to an lvalue doe
 existing memory; instead, a variable is a logical placeholder that can point to a different value
 after assignment. See the language constructs reference for the canonical wording.
 
-xref:../../language_constructs/pages/lvalue.adoc#_mutability_in_an_immutable_world[Mutability in an immutable world]
+xref:../../language_constructs/pages/lvalue.adoc#mutability-in-an-immutable-world[Mutability in an immutable world]
 
 == Struct member updates and copying
 

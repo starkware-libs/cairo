@@ -69,9 +69,9 @@ pub fn lower_panics<'db>(
         return Ok(());
     }
 
-    let signature = function_id.signature(db)?;
+    let signature = function_id.signature(db, LoweringStage::Monomorphized)?;
     // TODO(orizi): Validate all signature types are fully concrete at this point.
-    let panic_info = PanicSignatureInfo::new(db, &signature);
+    let panic_info = PanicSignatureInfo::new(db, signature);
     let variables = VariableAllocator::new(
         db,
         function_id.base_semantic_function(db).function_with_body_id(db),
@@ -107,6 +107,11 @@ pub fn lower_panics<'db>(
 
     lowered.variables = ctx.variables.variables;
     lowered.blocks = ctx.flat_blocks.build().unwrap();
+
+    // The blocks now return a single `PanicResult` value, with the previous extra-returns folded
+    // into its `Ok` variant - derived from the very `panic_info` that rewrote them.
+    lowered.signature.return_type = ctx.panic_info.actual_return_ty;
+    lowered.signature.extra_rets.clear();
 
     Ok(())
 }
@@ -193,7 +198,7 @@ fn handle_block<'db>(
     Ok(ctx)
 }
 
-pub struct PanicSignatureInfo<'db> {
+struct PanicSignatureInfo<'db> {
     /// The types of all the variables returned on OK: Reference variables and the original result.
     ok_ret_tys: Vec<TypeId<'db>>,
     /// The type of the Ok() variant.
@@ -201,16 +206,16 @@ pub struct PanicSignatureInfo<'db> {
     /// The Ok() variant.
     ok_variant: ConcreteVariant<'db>,
     /// The Err() variant.
-    pub err_variant: ConcreteVariant<'db>,
+    err_variant: ConcreteVariant<'db>,
     /// The PanicResult concrete type - the new return type of the function.
-    pub actual_return_ty: TypeId<'db>,
+    actual_return_ty: TypeId<'db>,
     /// Does the function always panic.
     /// Note that if it does - the function returned type is always `(Panic, Array<felt252>)`.
-    pub always_panic: bool,
+    always_panic: bool,
 }
 impl<'db> PanicSignatureInfo<'db> {
     pub fn new(db: &'db dyn Database, signature: &Signature<'db>) -> Self {
-        let extra_rets = signature.extra_rets.iter().map(|param| param.ty());
+        let extra_rets = signature.extra_rets.iter().copied();
         let original_return_ty = signature.return_type;
 
         let ok_ret_tys = chain!(extra_rets, [original_return_ty]).collect_vec();
@@ -303,8 +308,8 @@ impl<'db> PanicBlockLoweringContext<'db> {
         let location = call.location.with_auto_generation_note(self.db(), "Panic handling");
 
         // Get callee info.
-        let callee_signature = call.function.signature(self.db())?;
-        let callee_info = PanicSignatureInfo::new(self.db(), &callee_signature);
+        let callee_signature = call.function.signature(self.db(), LoweringStage::Monomorphized)?;
+        let callee_info = PanicSignatureInfo::new(self.db(), callee_signature);
         if callee_info.always_panic {
             // The panic value, which is actually of type (Panics, Array<felt252>).
             let panic_result_var = self.new_var(callee_info.actual_return_ty, location);
@@ -449,12 +454,12 @@ impl<'db> PanicBlockLoweringContext<'db> {
 // ============= Query implementations =============
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn function_may_panic<'db>(db: &'db dyn Database, function: FunctionId<'db>) -> Maybe<bool> {
     if let Some(body) = function.body(db)? {
         return db.function_with_body_may_panic(body);
     }
-    Ok(function.signature(db)?.panicable)
+    Ok(function.signature(db, LoweringStage::Monomorphized)?.panicable)
 }
 
 /// A trait to add helper methods in [LoweringGroup].
@@ -481,7 +486,7 @@ fn scc_may_panic<'db>(db: &'db dyn Database, scc: ConcreteSCCRepresentative<'db>
 }
 
 /// Tracked implementation of [scc_may_panic].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 fn scc_may_panic_tracked<'db>(
     db: &'db dyn Database,
     rep: ConcreteFunctionWithBodyId<'db>,
@@ -511,7 +516,7 @@ fn scc_may_panic_tracked<'db>(
                 if callee_scc.0 != rep && scc_may_panic(db, callee_scc)? {
                     return Ok(true);
                 }
-            } else if direct_callee.signature(db)?.panicable {
+            } else if direct_callee.signature(db, LoweringStage::Monomorphized)?.panicable {
                 return Ok(true);
             }
         }
@@ -520,7 +525,7 @@ fn scc_may_panic_tracked<'db>(
 }
 
 /// Query implementation of [crate::db::LoweringGroup::has_direct_panic].
-#[salsa::tracked]
+#[salsa::tracked(returns(copy))]
 pub fn has_direct_panic<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,

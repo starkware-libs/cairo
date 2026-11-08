@@ -18,9 +18,12 @@ let span = ba.span();
 
 == Doc Comments
 
-Doc comments begin with `///` and are used to document items like types,
+Doc comments begin with exactly `///` and are used to document items like types,
 functions, and traits.
 They appear directly before the item they document:
+
+NOTE: Four or more consecutive slashes (`////`) are treated as a regular line comment,
+not a doc comment.
 
 [source,cairo]
 ----

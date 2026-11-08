@@ -57,7 +57,7 @@ pub trait DocGroup: Database {
 
 impl<T: Database + ?Sized> DocGroup for T {}
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn get_item_documentation<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -79,7 +79,7 @@ fn get_item_documentation<'db>(
     Some(buff)
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn get_item_documentation_as_tokens<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -163,13 +163,13 @@ fn extract_item_outer_documentation<'db>(
     let raw_text = item_id.stable_location(db)?.syntax_node(db).get_text(db);
     Some(
         raw_text
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        // Takes all the lines before the definition.
-        // Anything other than doc comments will be filtered out later.
-        .take_while_ref(|line| is_comment_line(line) || line.trim_start().starts_with("#"))
-        .filter_map(|line| extract_comment_from_code_line(line, &["///"]))
-        .join("\n"),
+            .lines()
+            .filter(|line| !line.trim().is_empty())
+            // Takes all the lines before the definition.
+            // Anything other than doc comments will be filtered out later.
+            .take_while_ref(|line| is_comment_line(line) || line.trim_start().starts_with("#"))
+            .filter_map(|line| extract_comment_from_code_line(line, &["///"]))
+            .join("\n"),
     )
 }
 
@@ -248,8 +248,8 @@ fn is_comment_line(line: &str) -> bool {
     line.trim_start().starts_with("//")
 }
 
-#[salsa::tracked]
 /// Extracts embedded Markdown links from a documentation comment syntax node.
+#[salsa::tracked(returns(clone))]
 fn get_embedded_markdown_links<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,

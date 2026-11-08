@@ -49,7 +49,7 @@ pub enum Edge<'db, 'a> {
 
 /// Unified analyzer trait for dataflow analysis.
 ///
-/// Implementors specify the direction via `DIRECTION` and implement the core methods.
+/// Implementers specify the direction via `DIRECTION` and implement the core methods.
 /// The framework specifies the "behaviour" of the dataflow (essentially updates to lattice state
 /// for lattice analysis). Running an analysis is done by a runner (backward/forward/etc) which will
 /// handle control flow and dataflow mechanics.
