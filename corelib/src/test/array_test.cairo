@@ -45,6 +45,18 @@ fn test_span() {
     assert_eq(@span.len(), @1, 'Unexpected span length.');
 }
 
+fn generic_to_span<C, T, +ToSpanTrait<C, T>>(collection: @C) -> Span<T> {
+    collection.span()
+}
+
+#[test]
+fn test_generic_to_span() {
+    let span = array![10, 11, 12].span();
+    assert_eq(@generic_to_span(@span), @span, 'Unexpected span from span');
+    assert_eq(@generic_to_span(@array![10, 11, 12]), @span, 'Unexpected span from array');
+    assert_eq(@generic_to_span(@[10, 11, 12]), @span, 'Unexpected span from fixed');
+}
+
 #[test]
 fn test_slice() {
     let span = [10, 11, 12].span();
