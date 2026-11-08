@@ -783,10 +783,15 @@ fn is_macro_rule_match_ex<'db>(
                         let peek_token = input_iter.peek().cloned()?;
                         let file_id = peek_token.as_syntax_node().stable_ptr(db).file_id(db);
                         let expr_node = as_expr_macro_token_tree(input_iter, file_id, db)?;
+                        let syntax_node = expr_node.as_syntax_node();
                         ctx.record_capture(
                             placeholder_name,
                             CapturedValue {
-                                text: expr_node.as_syntax_node().get_text(db).to_string(),
+                                // The trivia around the expression belongs to the call; the
+                                // expansion spaces the value by its own trivia.
+                                text: syntax_node
+                                    .get_text_of_span(db, syntax_node.span_without_trivia(db))
+                                    .to_string(),
                                 stable_ptr: peek_token.stable_ptr(db).untyped(),
                             },
                         );
@@ -977,22 +982,51 @@ impl<'db> ExpansionContext<'db, '_> {
                 // `$defsite` / `$callsite` are not placeholders; they are emitted as written, by
                 // the fallthrough below.
                 if let Some(name) = extract_placeholder(db, &param) {
-                    return self.expand_placeholder(&param, name);
+                    self.expand_placeholder(&param, name)?;
+                    self.push_trailing_trivia(node);
+                    return Ok(());
                 }
             }
             SyntaxKind::MacroRepetition => {
-                return self.expand_repetition(&ast::MacroRepetition::from_syntax_node(db, node));
+                self.expand_repetition(&ast::MacroRepetition::from_syntax_node(db, node))?;
+                self.push_trailing_trivia(node);
+                return Ok(());
             }
             _ => {}
         }
         if node.kind(db).is_terminal() {
-            self.res_buffer.push_str(node.get_text(db));
+            self.push_text(node.get_text(db));
             return Ok(());
         }
         for child in node.get_children(db).iter() {
             self.expand_node(*child)?;
         }
         Ok(())
+    }
+
+    /// Appends `text` to the expansion, spaced from the token before it when the two would
+    /// otherwise fuse into one - a replaced node carries no trivia of its own.
+    fn push_text(&mut self, text: &str) {
+        self.keep_apart(text);
+        self.res_buffer.push_str(text);
+    }
+
+    /// Appends a space when `next` would fuse with the token the expansion currently ends with.
+    fn keep_apart(&mut self, next: &str) {
+        let is_word = |c: char| c.is_alphanumeric() || c == '_';
+        if self.res_buffer.ends_with(is_word) && next.starts_with(is_word) {
+            self.res_buffer.push(' ');
+        }
+    }
+
+    /// Appends the trailing trivia of `node`, whose text the expansion replaced, to
+    /// [`Self::res_buffer`]. Its leading trivia is not emitted: the resolver maps a path back to
+    /// the call by the offset of its node, which includes the leading trivia, so emitting it would
+    /// put the offset before the value's [`CodeMapping`].
+    fn push_trailing_trivia(&mut self, node: SyntaxNode<'db>) {
+        let db = self.db;
+        let span = TextSpan::new(node.span_end_without_trivia(db), node.span(db).end);
+        self.res_buffer.push_str(node.get_text_of_span(db, span));
     }
 
     /// Expands the placeholder `name`, used by `param`, to the value it captured in the group being
@@ -1014,6 +1048,7 @@ impl<'db> ExpansionContext<'db, '_> {
                 failure: MacroExpansionFailure::MissingCapture(name),
             });
         };
+        self.keep_apart(&value.text);
         let start = TextWidth::from_str(&self.res_buffer).as_offset();
         let span = TextSpan::new_with_width(start, TextWidth::from_str(&value.text));
         self.res_buffer.push_str(&value.text);
@@ -1043,7 +1078,7 @@ impl<'db> ExpansionContext<'db, '_> {
             if index + 1 < group_count
                 && let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db)
             {
-                self.res_buffer.push_str(sep.as_syntax_node().get_text(db));
+                self.push_text(sep.as_syntax_node().get_text(db));
             }
         }
         Ok(())
