@@ -3,7 +3,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::{
-    TARGET_FUNCTION_ATTR, resolve_target_functions, setup_test_module, with_target_function_plugin,
+    TARGET_FUNCTION_ATTR, resolve_target_functions, setup_test_module, with_test_plugins,
 };
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
@@ -69,7 +69,7 @@ pub fn test_profiling(
     }
 
     let db = RootDatabase::builder()
-        .with_default_plugin_suite(with_target_function_plugin(starknet_plugin_suite()))
+        .with_default_plugin_suite(with_test_plugins(starknet_plugin_suite()))
         .detect_corelib()
         .build()
         .unwrap();
