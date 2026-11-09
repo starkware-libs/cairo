@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794184895569,
+  "lastUpdate": 1794185010241,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -46391,6 +46391,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/bba5bc182296277c9f243d41f1829c9dedb01e52"
         },
         "date": 1794098278298,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1910,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Bengineer",
+            "username": "bengineer42",
+            "email": "158306087+bengineer42@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "2f993cceb7d88dfdf4fc381e43819553b1af9767",
+          "message": "feat: implement ToSpanTrait for Span<T> to return self (#9050)\n\nCo-authored-by: Bengineer <blockengineer42@gmail.com>\nCo-authored-by: Ori Ziv <oriz@starkware.co>",
+          "timestamp": "2026-11-08T16:37:58Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/2f993cceb7d88dfdf4fc381e43819553b1af9767"
+        },
+        "date": 1794185009777,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
