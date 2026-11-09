@@ -1190,7 +1190,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventLogIntoEvent of Into<Log, Event> {
+impl EventIntoEvent0 of Into<Log, Event> {
     fn into(self: Log) -> Event {
         Event::Log(self)
     }

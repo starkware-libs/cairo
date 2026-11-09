@@ -269,7 +269,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
+impl EventIntoEvent0 of Into<ownable_comp::Event, Event> {
     fn into(self: ownable_comp::Event) -> Event {
         Event::Ownable(self)
     }
@@ -552,7 +552,7 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
+impl EventIntoEvent0 of Into<ownable_comp::Event, Event> {
     fn into(self: ownable_comp::Event) -> Event {
         Event::Ownable(self)
     }

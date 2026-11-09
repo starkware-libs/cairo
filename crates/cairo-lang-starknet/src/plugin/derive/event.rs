@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_starknet_classes::abi::EventFieldKind;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
 use salsa::Database;
 
 use crate::plugin::aux_data::StarknetEventAuxData;
@@ -195,7 +195,7 @@ fn handle_enum<'db>(
     let mut deserialize_nested_variants = vec![];
     let mut variants = vec![];
     let mut event_into_impls = vec![];
-    for variant in enum_ast.variants(db).elements(db) {
+    for (idx, variant) in enum_ast.variants(db).elements(db).enumerate() {
         let ty = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => RewriteNode::text("()"),
             ast::OptionTypeClause::TypeClause(tc) => RewriteNode::from_ast_trimmed(&tc.ty(db)),
@@ -271,12 +271,12 @@ fn handle_enum<'db>(
         }
         append_variants.push(append_variant);
         let into_impl = RewriteNode::interpolate_patched(
-            indoc! {"
-                impl $enum_name$$variant_name$IntoEvent of Into<$ty$, $enum_name$> {
-                    fn into(self: $ty$) -> $enum_name$ {
+            &formatdoc! {"
+                impl $enum_name$IntoEvent{idx} of Into<$ty$, $enum_name$> {{
+                    fn into(self: $ty$) -> $enum_name$ {{
                         $enum_name$::$variant_name$(self)
-                    }
-                }
+                    }}
+                }}
                 "},
             &[
                 ("enum_name".to_string(), enum_name.clone()),

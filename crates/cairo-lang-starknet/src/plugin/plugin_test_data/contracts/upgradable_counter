@@ -370,22 +370,22 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventCounterIncreasedIntoEvent of Into<CounterIncreased, Event> {
+impl EventIntoEvent0 of Into<CounterIncreased, Event> {
     fn into(self: CounterIncreased) -> Event {
         Event::CounterIncreased(self)
     }
 }
-impl EventCounterDecreasedIntoEvent of Into<CounterDecreased, Event> {
+impl EventIntoEvent1 of Into<CounterDecreased, Event> {
     fn into(self: CounterDecreased) -> Event {
         Event::CounterDecreased(self)
     }
 }
-impl EventUpgradableEventIntoEvent of Into<upgradable_comp::Event, Event> {
+impl EventIntoEvent2 of Into<upgradable_comp::Event, Event> {
     fn into(self: upgradable_comp::Event) -> Event {
         Event::UpgradableEvent(self)
     }
 }
-impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
+impl EventIntoEvent3 of Into<ownable_comp::Event, Event> {
     fn into(self: ownable_comp::Event) -> Event {
         Event::OwnableEvent(self)
     }
@@ -1529,22 +1529,22 @@ impl EventIsEvent of starknet::Event<Event> {
         core::option::Option::None
     }
 }
-impl EventCounterIncreasedIntoEvent of Into<CounterIncreased, Event> {
+impl EventIntoEvent0 of Into<CounterIncreased, Event> {
     fn into(self: CounterIncreased) -> Event {
         Event::CounterIncreased(self)
     }
 }
-impl EventCounterDecreasedIntoEvent of Into<CounterDecreased, Event> {
+impl EventIntoEvent1 of Into<CounterDecreased, Event> {
     fn into(self: CounterDecreased) -> Event {
         Event::CounterDecreased(self)
     }
 }
-impl EventUpgradableEventIntoEvent of Into<upgradable_comp::Event, Event> {
+impl EventIntoEvent2 of Into<upgradable_comp::Event, Event> {
     fn into(self: upgradable_comp::Event) -> Event {
         Event::UpgradableEvent(self)
     }
 }
-impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
+impl EventIntoEvent3 of Into<ownable_comp::Event, Event> {
     fn into(self: ownable_comp::Event) -> Event {
         Event::OwnableEvent(self)
     }
