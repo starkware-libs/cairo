@@ -1395,22 +1395,37 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 ))
             }
         } else if id == self.array_snapshot_pop_back || id == self.array_snapshot_pop_front {
-            let var_info = self.var_info.get(&info.inputs[0].var_id)?;
+            let var_info = self.var_info.get(&info.inputs[0].var_id)?.clone();
             let desnapped = try_extract_matches!(var_info.as_ref(), VarInfo::Snapshot)?;
             let element_var_infos = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?;
-            // TODO(orizi): Propagate success values as well.
-            if element_var_infos.is_empty() {
+            let split = if id == self.array_snapshot_pop_front {
+                element_var_infos.split_first()
+            } else {
+                element_var_infos.split_last()
+            };
+            let Some((popped, remaining)) = split else {
                 let arm = &info.arms[1];
-                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]).into());
-                Some(BlockEnd::Goto(
+                self.var_info
+                    .insert(arm.var_ids[0], Rc::new(VarInfo::Array(vec![])).wrap_with_snapshots(1));
+                return Some(BlockEnd::Goto(
                     arm.block_id,
                     VarRemapping {
                         remapping: FromIterator::from_iter([(arm.var_ids[0], info.inputs[0])]),
                     },
-                ))
-            } else {
-                None
+                ));
+            };
+            let arm = &info.arms[0];
+            self.var_info.insert(
+                arm.var_ids[0],
+                Rc::new(VarInfo::Array(remaining.to_vec())).wrap_with_snapshots(1),
+            );
+            if let Some(popped) = popped {
+                self.var_info.insert(
+                    arm.var_ids[1],
+                    VarInfo::Box(VarInfo::Snapshot(popped.clone()).into()).into(),
+                );
             }
+            None
         } else {
             None
         }
