@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794357328103,
+  "lastUpdate": 1794357672938,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -54267,6 +54267,68 @@ window.BENCHMARK_DATA = {
           {
             "name": "max_bytes/ls-new-item-edit",
             "value": 630853265,
+            "unit": "bytes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Javier Castillo",
+            "username": "jcastil0",
+            "email": "javiercastillovierjill@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c52c5c07bcd1a79db4e5e9b436c7aeee720e1486",
+          "message": "bugfix(lowering): propagate snapshot pop success values (#9783)\n\nCo-authored-by: Ori Ziv <oriz@starkware.co>\nCo-authored-by: Claude <noreply@anthropic.com>",
+          "timestamp": "2026-11-09T12:16:13Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/c52c5c07bcd1a79db4e5e9b436c7aeee720e1486"
+        },
+        "date": 1794357672600,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit",
+            "value": 1569,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit",
+            "value": 629901249,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-body-edit",
+            "value": 10980,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-body-edit",
+            "value": 630294935,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-trivia-edit-plain",
+            "value": 1569,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-trivia-edit-plain",
+            "value": 629880827,
+            "unit": "bytes"
+          },
+          {
+            "name": "growth_per_edit_bytes/ls-new-item-edit",
+            "value": 23696,
+            "unit": "bytes"
+          },
+          {
+            "name": "max_bytes/ls-new-item-edit",
+            "value": 630853129,
             "unit": "bytes"
           }
         ]
