@@ -14,6 +14,7 @@ use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::smol_str::SmolStr;
+use cairo_lang_utils::stack::with_sufficient_stack;
 use itertools::{Itertools, chain};
 use salsa::Database;
 use syntax::node::kind::SyntaxKind;
@@ -974,6 +975,11 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode<'a>) {
+        with_sufficient_stack(|| self.format_node_inner(syntax_node))
+    }
+
+    /// See [Self::format_node].
+    fn format_node_inner(&mut self, syntax_node: &SyntaxNode<'a>) {
         // If we encounter a token tree node, i.e. a macro, we try to parse it as a
         // [ast::WrappedArgList] (the syntax kind of legacy macro calls). If successful, we
         // format the wrapped arg list according to the rules of wrapped arg lists, otherwise we
