@@ -14,3 +14,6 @@ ensure-no_std/target/
 .claude/settings.local.json
 .reviews/
 .claude/worktrees
+
+corelib/target/
+corelib/.snfoundry_cache/

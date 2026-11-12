@@ -53,7 +53,8 @@ fn test_mul() {
 }
 
 #[test]
-fn test_implied_non_zero() -> Result<NonZero<BoundedInt<-0x80, -1>>, NonZero<BoundedInt<0, 0x7f>>> {
-    let x: NonZero<i8> = 5;
-    constrain::<_, 0>(x)
+fn test_implied_non_zero() {
+        let x: NonZero<i8> = 5;
+       let _res: Result<NonZero<BoundedInt<-0x80, -1>>, NonZero<BoundedInt<0, 0x7f>>> =
+        constrain::<_, 0>(x);
 }
