@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794444781264,
+  "lastUpdate": 1794444932612,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -47291,6 +47291,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/c52c5c07bcd1a79db4e5e9b436c7aeee720e1486"
         },
         "date": 1794357788460,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1910,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Javier Castillo",
+            "username": "jcastil0",
+            "email": "javiercastillovierjill@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c52c5c07bcd1a79db4e5e9b436c7aeee720e1486",
+          "message": "bugfix(lowering): propagate snapshot pop success values (#9783)\n\nCo-authored-by: Ori Ziv <oriz@starkware.co>\nCo-authored-by: Claude <noreply@anthropic.com>",
+          "timestamp": "2026-11-09T12:16:13Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/c52c5c07bcd1a79db4e5e9b436c7aeee720e1486"
+        },
+        "date": 1794444932332,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
