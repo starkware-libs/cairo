@@ -149,14 +149,14 @@ impl DebugInfo {
         }
     }
 
-    /// Replaces the debug name of an id if exists in the matching map.
+    /// Replaces the debug name of an id if it exists in the matching map.
     fn try_replace_libfunc_id(&self, id: &mut ConcreteLibfuncId) {
         if let Some(name) = self.libfunc_names.get(id).cloned() {
             let _ = id.debug_name.insert(name);
         }
     }
 
-    /// Replaces the debug name of an id if exists in the matching map.
+    /// Replaces the debug name of an id if it exists in the matching map.
     fn try_replace_function_id(&self, id: &mut FunctionId) {
         if let Some(name) = self.user_func_names.get(id).cloned() {
             let _ = id.debug_name.insert(name);

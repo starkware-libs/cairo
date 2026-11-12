@@ -72,7 +72,7 @@ impl FnOnceImpl<T, Args, +Destruct<T>, +Fn<T, Args>> of FnOnce<T, Args> {
 /// `Fn` is implemented automatically by closures whose captured variables are all `Copy`.
 /// Additionally, for any type `F` that implements `Fn`, `@F` implements `Fn`, too.
 ///
-/// Since [`FnOnce`] is implemented for all implementers  of `Fn`, any instance of `Fn` can be used
+/// Since [`FnOnce`] is implemented for all implementers of `Fn`, any instance of `Fn` can be used
 /// as a parameter where a [`FnOnce`] is expected.
 ///
 /// Use `Fn` as a bound when you want to accept a parameter of function-like type and need to call
