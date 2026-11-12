@@ -2,7 +2,7 @@
 #[path = "pedersen_test.rs"]
 mod test;
 
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 
@@ -38,7 +38,7 @@ fn build_pedersen_hash(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[pedersen], &[result]], None)],
+        [(Label::FALLTHROUGH, &[&[pedersen], &[result]], None)],
         Default::default(),
     ))
 }

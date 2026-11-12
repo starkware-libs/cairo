@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 
@@ -32,7 +32,7 @@ fn build_bool_and(
     casm_build_extend!(casm_builder, let res = a * b;);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[res]], None)],
+        [(Label::FALLTHROUGH, &[&[res]], None)],
         Default::default(),
     ))
 }
@@ -51,7 +51,7 @@ fn build_bool_not(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[res]], None)],
+        [(Label::FALLTHROUGH, &[&[res]], None)],
         Default::default(),
     ))
 }
@@ -75,7 +75,7 @@ fn build_bool_xor(
     }
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[res]], None)],
+        [(Label::FALLTHROUGH, &[&[res]], None)],
         Default::default(),
     ))
 }
@@ -100,7 +100,7 @@ fn build_bool_or(
     }
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[res]], None)],
+        [(Label::FALLTHROUGH, &[&[res]], None)],
         Default::default(),
     ))
 }

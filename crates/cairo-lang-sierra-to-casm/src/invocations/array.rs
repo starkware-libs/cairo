@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuilder, Label, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::array::{ArrayConcreteLibfunc, ConcreteMultiPopLibfunc};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -54,7 +54,7 @@ fn build_array_new(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[arr_start, arr_start]], None)],
+        [(Label::FALLTHROUGH, &[&[arr_start, arr_start]], None)],
         Default::default(),
     ))
 }
@@ -79,7 +79,7 @@ fn build_span_from_tuple(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[arr_start, arr_end]], None)],
+        [(Label::FALLTHROUGH, &[&[arr_start, arr_end]], None)],
         Default::default(),
     ))
 }
@@ -100,6 +100,7 @@ fn build_tuple_from_span(
         deref arr_end;
     };
     casm_build_extend! {casm_builder,
+        label Failure;
         const success_span_size = full_struct_size;
         tempvar actual_length = arr_end - arr_start;
         tempvar diff = actual_length - success_span_size;
@@ -108,7 +109,7 @@ fn build_tuple_from_span(
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[arr_start]], None), ("Failure", &[], Some(failure_handle))],
+        [(Label::FALLTHROUGH, &[&[arr_start]], None), (Failure, &[], Some(failure_handle))],
         Default::default(),
     ))
 }
@@ -130,7 +131,7 @@ fn build_array_append(
     }
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[arr_start, arr_end]], None)],
+        [(Label::FALLTHROUGH, &[&[arr_start, arr_end]], None)],
         Default::default(),
     ))
 }
@@ -150,6 +151,7 @@ fn build_pop_front(
         deref arr_end;
     };
     casm_build_extend! {casm_builder,
+        label NonEmpty, Failure;
         tempvar is_non_empty = arr_end - arr_start;
         jump NonEmpty if is_non_empty != 0;
         jump Failure;
@@ -163,8 +165,8 @@ fn build_pop_front(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[new_start, arr_end], &[arr_start]], None),
-            ("Failure", &failure_ret[..], Some(failure_handle)),
+            (Label::FALLTHROUGH, &[&[new_start, arr_end], &[arr_start]], None),
+            (Failure, &failure_ret[..], Some(failure_handle)),
         ],
         Default::default(),
     ))
@@ -185,6 +187,7 @@ fn build_pop_back(
         deref arr_end;
     };
     casm_build_extend! {casm_builder,
+        label NonEmpty, Failure;
         tempvar is_non_empty = arr_end - arr_start;
         jump NonEmpty if is_non_empty != 0;
         jump Failure;
@@ -198,8 +201,8 @@ fn build_pop_back(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[arr_start, new_end], &[new_end]], None),
-            ("Failure", &failure_ret[..], Some(failure_handle)),
+            (Label::FALLTHROUGH, &[&[arr_start, new_end], &[new_end]], None),
+            (Failure, &failure_ret[..], Some(failure_handle)),
         ],
         Default::default(),
     ))
@@ -223,6 +226,7 @@ fn build_array_get(
         buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
+        label InRange, FailureHandle;
         const element_size = element_size;
         let orig_range_check = range_check;
         // Compute the length of the array (in cells).
@@ -256,8 +260,8 @@ fn build_array_get(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[target_cell]], None),
-            ("FailureHandle", &[&[range_check]], Some(failure_handle)),
+            (Label::FALLTHROUGH, &[&[range_check], &[target_cell]], None),
+            (FailureHandle, &[&[range_check]], Some(failure_handle)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -293,6 +297,7 @@ fn build_array_slice(
         buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
+        label InRange, FailureHandle;
         let orig_range_check = range_check;
         const element_size = element_size;
         // Compute the length of the array (in cells).
@@ -330,8 +335,8 @@ fn build_array_slice(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[slice_start_cell, slice_end_cell]], None),
-            ("FailureHandle", &[&[range_check]], Some(failure_handle)),
+            (Label::FALLTHROUGH, &[&[range_check], &[slice_start_cell, slice_end_cell]], None),
+            (FailureHandle, &[&[range_check]], Some(failure_handle)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -371,7 +376,7 @@ fn build_array_len(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[length]], None)],
+        [(Label::FALLTHROUGH, &[&[length]], None)],
         Default::default(),
     ))
 }
@@ -392,7 +397,7 @@ fn build_multi_pop_front(
         deref arr_end;
     };
     casm_build_extend!(casm_builder, let orig_range_check = range_check;);
-    extend_multi_pop_failure_checks(
+    let failure = extend_multi_pop_failure_checks(
         &mut casm_builder,
         range_check,
         arr_start,
@@ -412,8 +417,8 @@ fn build_multi_pop_front(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[new_start, arr_end], &[arr_start]], None),
-            ("Failure", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
+            (Label::FALLTHROUGH, &[&[range_check], &[new_start, arr_end], &[arr_start]], None),
+            (failure, &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -442,7 +447,7 @@ fn build_multi_pop_back(
         deref arr_end;
     };
     casm_build_extend!(casm_builder, let orig_range_check = range_check;);
-    extend_multi_pop_failure_checks(
+    let failure = extend_multi_pop_failure_checks(
         &mut casm_builder,
         range_check,
         arr_start,
@@ -462,8 +467,8 @@ fn build_multi_pop_back(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[arr_start, new_end], &[new_end]], None),
-            ("Failure", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
+            (Label::FALLTHROUGH, &[&[range_check], &[arr_start, new_end], &[new_end]], None),
+            (failure, &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -477,14 +482,16 @@ fn build_multi_pop_back(
 }
 
 /// Extends the CASM builder with the common part of the multi-pop front and multi-pop back.
+/// Returns the label jumped to on failure.
 fn extend_multi_pop_failure_checks(
     casm_builder: &mut CasmBuilder,
     range_check: Var,
     arr_start: Var,
     arr_end: Var,
     popped_size: i16,
-) {
+) -> Label {
     casm_build_extend! {casm_builder,
+        label HasEnoughElements, Failure;
         const popped_size_minus_1 = popped_size - 1;
         const popped_size = popped_size;
         let arr_start_popped = arr_start + popped_size;
@@ -502,4 +509,5 @@ fn extend_multi_pop_failure_checks(
         jump Failure;
         HasEnoughElements:
     };
+    Failure
 }
