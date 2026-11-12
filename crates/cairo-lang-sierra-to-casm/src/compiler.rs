@@ -256,7 +256,7 @@ impl ConstsInfo {
         let mut segments_data_size = 0;
 
         // A lambda to add a const.
-        // Note that `segments` is passed as an argument to avoid taking borrowing it.
+        // Note that `segments` is passed as an argument to avoid borrowing it.
         let mut add_const = |segments: &mut OrderedHashMap<u32, ConstSegment>,
                              segment_id,
                              ty,

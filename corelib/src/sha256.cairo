@@ -203,7 +203,7 @@ fn repeatedly_append_value(ref arr: Array<u32>, count: felt252, value: u32) {
     dec_and_append_or_return!(remaining, arr, value); // returns if `count == 14`.
 }
 
-/// Macro to decrement a counter and append a value to an array, or return if the counter is value.
+/// Macro to decrement a counter and append a value to an array, or return if the counter is zero.
 macro dec_and_append_or_return {
     ($remaining: ident, $arr: ident, $value: ident) => {
         if $remaining == 0 {
