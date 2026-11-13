@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794531105109,
+  "lastUpdate": 1794531253244,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -47591,6 +47591,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/c52c5c07bcd1a79db4e5e9b436c7aeee720e1486"
         },
         "date": 1794444932332,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1910,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "zjuncal",
+            "username": "zjuncal",
+            "email": "naclzju@outlook.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "44eade8a3befe642df23490a0325938129400726",
+          "message": "docs: fix misleading and malformed comments in corelib and Sierra docs (#10483)\n\nSigned-off-by: zjuncal <naclzju@outlook.com>",
+          "timestamp": "2026-11-12T10:08:51Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/44eade8a3befe642df23490a0325938129400726"
+        },
+        "date": 1794531252974,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
