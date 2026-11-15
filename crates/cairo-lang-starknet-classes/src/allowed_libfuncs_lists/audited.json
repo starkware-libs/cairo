@@ -253,7 +253,7 @@
         "u96_guarantee_verify": null,
         "u96_limbs_less_than_guarantee_verify": { "deprecated": { "major": 1, "minor": 10 } },
         "u96_limbs_less_than_guarantee_verify_v2": { "major": 1, "minor": 9, "patch": 5 },
-        "u96_single_limb_less_than_guarantee_verify": null,
+        "u96_single_limb_less_than_guarantee_verify": { "deprecated": { "major": 1, "minor": 10 } },
         "unbox": null,
         "unwrap_non_zero": null,
         "upcast": null,
