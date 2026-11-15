@@ -116,7 +116,7 @@ impl ReferenceExpression {
         Self { cells: vec![] }
     }
 
-    /// If returns the cells as an array of the requested size if the size is correct.
+    /// If the size is correct, returns the cells as an array of the requested size.
     pub fn try_unpack<const SIZE: usize>(
         &self,
     ) -> Result<&[CellExpression; SIZE], InvocationError> {

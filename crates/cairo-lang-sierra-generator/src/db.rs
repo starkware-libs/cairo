@@ -284,7 +284,7 @@ pub trait SierraGenGroup: Database {
         ap_change::get_ap_change(self.as_dyn_database(), function_id)
     }
 
-    /// Private query to returns the type dependencies of a given libfunc.
+    /// Private query to return the type dependencies of a given libfunc.
     fn priv_libfunc_dependencies(
         &self,
         libfunc_id: cairo_lang_sierra::ids::ConcreteLibfuncId,

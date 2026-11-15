@@ -130,7 +130,7 @@ impl DebugInfo {
         }
     }
 
-    /// Replaces the debug names of the generic args if exists in the maps.
+    /// Replaces the debug names of the generic args if they exist in the maps.
     fn try_replace_generic_arg_ids(&self, generic_args: &mut Vec<GenericArg>) {
         for generic_arg in generic_args {
             match generic_arg {
