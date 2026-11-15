@@ -54,6 +54,9 @@ let span = arr_snapshot.span();
 let fixed = [7, 8, 9];
 let span = fixed.span();
 
+// From an existing span (returns it unchanged, useful in generic code over `ToSpanTrait`)
+let same = span.span();
+
 // Using Into trait
 let span: Span<u32> = array![10, 11, 12].into();
 ----
