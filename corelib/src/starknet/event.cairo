@@ -15,10 +15,9 @@
 ///
 /// # Performance
 ///
-/// Serialization and deserialization have O(n) complexity for structs, where n is the number of
-/// fields.
-/// For enums, deserialization has O(m) complexity, where m is the number of variants, as it may
-/// need to check multiple variants before finding a match.
+/// Serialization and deserialization cost depends on the number of fields and the amount of data
+/// in variable-length fields, such as arrays. Enum deserialization may inspect multiple variants
+/// before finding a match.
 ///
 /// # Examples
 ///
@@ -35,11 +34,11 @@
 pub trait Event<T> {
     /// Serializes the keys and data for event emission.
     ///
-    /// The keys array will contain:
-    /// - The event name selector as the first key
-    /// - Any fields marked with #[key] as subsequent keys
+    /// The keys array contains selectors added by non-flat enum variants and fields marked with
+    /// `#[key]`. Struct events do not add a selector themselves, and `#[flat]` enum variants omit
+    /// their selector.
     ///
-    /// The data array will contain all non-key fields.
+    /// The data array contains values serialized by non-key data fields.
     fn append_keys_and_data(self: @T, ref keys: Array<felt252>, ref data: Array<felt252>);
 
     /// Deserializes events keys and data back into the original event structure.
