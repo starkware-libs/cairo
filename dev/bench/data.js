@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795049518001,
+  "lastUpdate": 1795049670182,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -48791,6 +48791,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/98565f78d3bebb0e667607f549cb668edaf7bf9e"
         },
         "date": 1794962218416,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1910,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "98565f78d3bebb0e667607f549cb668edaf7bf9e",
+          "message": "chore(starknet-classes): deprecate u96_single_limb_less_than_guarantee_verify from Sierra 1.10. (#10486)\n\nCo-authored-by: Claude Fable 5.2 <noreply@anthropic.com>",
+          "timestamp": "2026-11-15T08:33:44Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/98565f78d3bebb0e667607f549cb668edaf7bf9e"
+        },
+        "date": 1795049669903,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
