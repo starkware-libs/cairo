@@ -33,7 +33,7 @@ jobs:
           git clone https://github.com/starkware-libs/tree-sitter-cairo --single-branch --depth=1 --filter=blob:none
           mv tree-sitter-cairo/** .
       - name: Parse examples
-        uses: tree-sitter/parse-action@f44ffa94f802024f27e821a72e6f2f3efc5dd521 # v4
+        uses: tree-sitter/parse-action@47beaa8ba0b5c8b44ef0879b2f647ca7f0a1257d # v5
         with:
           files: ./**/*.cairo
           invalid-files: crates/cairo-lang-parser/src/parser_test_data/cairo_test_files/*.cairo
