@@ -208,6 +208,17 @@ use crate::{FormatterConfig, get_formatted_file};
     true,
     false
 )]
+// The merged statements are sorted afterwards, so the leading trivia of the first one must not
+// move down with it.
+#[test_case(
+    "test_data/cairo_files/use_merge_sorted_leading_trivia.cairo",
+    "test_data/expected_results/use_merge_sorted_leading_trivia.cairo",
+    true,
+    false,
+    false,
+    true,
+    false
+)]
 fn format_and_compare_file(
     unformatted_filename: &str,
     expected_filename: &str,
