@@ -180,7 +180,7 @@
     "0x75385f746f5f66656c74323532",
     "0x4e",
     "0x4d",
-    "0x656e756d5f6d61746368",
+    "0x656e756d5f6d617463685f7632",
     "0x4c",
     "0x753132385f746f5f66656c74323532",
     "0x756e626f78",
@@ -2020,7 +2020,7 @@
       ],
       [
         57,
-        "enum_match<core::panics::PanicResult::<(core::integer::u256,)>>"
+        "enum_match_v2<core::panics::PanicResult::<(core::integer::u256,)>>"
       ],
       [
         58,
@@ -2184,7 +2184,7 @@
       ],
       [
         98,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>>"
+        "enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::contracts::storage_accesses::storage_accesses::ContractState, ())>>"
       ],
       [
         99,
@@ -2204,7 +2204,7 @@
       ],
       [
         103,
-        "enum_match<core::option::Option::<cairo_level_tests::contracts::storage_accesses::UserInfo>>"
+        "enum_match_v2<core::option::Option::<cairo_level_tests::contracts::storage_accesses::UserInfo>>"
       ],
       [
         104,
@@ -2220,7 +2220,7 @@
       ],
       [
         107,
-        "enum_match<core::panics::PanicResult::<(core::result::Result::<(), core::array::Array::<core::felt252>>,)>>"
+        "enum_match_v2<core::panics::PanicResult::<(core::result::Result::<(), core::array::Array::<core::felt252>>,)>>"
       ],
       [
         108,
@@ -2228,7 +2228,7 @@
       ],
       [
         109,
-        "enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>>"
+        "enum_match_v2<core::result::Result::<(), core::array::Array::<core::felt252>>>"
       ],
       [
         110,
@@ -2260,7 +2260,7 @@
       ],
       [
         117,
-        "enum_match<core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>,)>>"
+        "enum_match_v2<core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         118,
@@ -2268,7 +2268,7 @@
       ],
       [
         119,
-        "enum_match<core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>>"
+        "enum_match_v2<core::result::Result::<cairo_level_tests::contracts::storage_accesses::UserInfo, core::array::Array::<core::felt252>>>"
       ],
       [
         120,
@@ -2504,7 +2504,7 @@
       ],
       [
         178,
-        "enum_match<core::bool>"
+        "enum_match_v2<core::bool>"
       ],
       [
         179,

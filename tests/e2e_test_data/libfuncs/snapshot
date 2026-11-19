@@ -191,7 +191,7 @@ type Snapshot<test::A> = Snapshot<test::A> [storable: true, drop: true, dup: tru
 libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
 libfunc drop<felt252> = drop<felt252>;
 libfunc dup<Snapshot<test::A>> = dup<Snapshot<test::A>>;
-libfunc enum_snapshot_match<test::A> = enum_snapshot_match<test::A>;
+libfunc enum_match_v2<Snapshot<test::A>> = enum_match_v2<Snapshot<test::A>>;
 libfunc branch_align = branch_align;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
 libfunc function_call<user@test::bar0> = function_call<user@test::bar0>;
@@ -207,7 +207,7 @@ drop<felt252>([0]) -> ();
 return();
 F2:
 dup<Snapshot<test::A>>([0]) -> ([0], [1]);
-enum_snapshot_match<test::A>([1]) { fallthrough([2]) F2_B0([3]) };
+enum_match_v2<Snapshot<test::A>>([1]) { fallthrough([2]) F2_B0([3]) };
 branch_align() -> ();
 store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]);
 function_call<user@test::bar0>([2]) -> ();

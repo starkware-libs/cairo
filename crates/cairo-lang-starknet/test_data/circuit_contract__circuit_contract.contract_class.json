@@ -122,7 +122,7 @@
     "0x42",
     "0x37",
     "0x7374727563745f636f6e737472756374",
-    "0x656e756d5f6d61746368",
+    "0x656e756d5f6d617463685f7632",
     "0x34",
     "0x72656465706f7369745f676173",
     "0x61727261795f6e6577",
@@ -610,7 +610,7 @@
       ],
       [
         18,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>"
+        "enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>"
       ],
       [
         19,

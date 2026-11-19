@@ -5,7 +5,7 @@
 //! type Option = Enum<felt252_ty, unit_ty>;
 //! libfunc init_option_some = enum_init<Option, 0>;
 //! libfunc init_option_none = enum_init<Option, 1>;
-//! libfunc match_option = enum_match<Option>;
+//! libfunc match_option = enum_match_v2<Option>;
 //! ...
 //! felt252_const<0>() -> (felt0);
 //! tuple_const() -> (unit);

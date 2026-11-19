@@ -75,7 +75,7 @@ type test::Option = Enum<ut@test::Option, felt252, Unit> [storable: true, drop: 
 type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc enum_match<test::Option> = enum_match<test::Option>;
+libfunc enum_match_v2<test::Option> = enum_match_v2<test::Option>;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
 libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
@@ -84,7 +84,7 @@ libfunc drop<Unit> = drop<Unit>;
 libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 
 F0:
-enum_match<test::Option>([0]) { fallthrough([1]) F0_B0([2]) };
+enum_match_v2<test::Option>([0]) { fallthrough([1]) F0_B0([2]) };
 branch_align() -> ();
 drop<felt252>([1]) -> ();
 const_as_immediate<Const<felt252, 0>>() -> ([3]);
@@ -122,9 +122,16 @@ fn foo(e: @Color) -> felt252 {
 }
 
 //! > casm
-jmp rel [fp + -4];
-jmp rel 10;
-jmp rel 5;
+%{ memory[ap + 0] = 5 <= memory[fp + -4] %}
+jmp rel 12 if [ap + 0] != 0, ap++;
+%{ memory[ap + 0] = 3 <= memory[fp + -4] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[fp + -4] = 1;
+jmp rel 16;
+[fp + -4] = 3;
+jmp rel 9;
+[fp + -4] = 5;
+ap += 1;
 [ap + 0] = 0, ap++;
 ret;
 [ap + 0] = 1, ap++;
@@ -133,7 +140,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 500})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -142,7 +149,7 @@ type Const<felt252, 2> = Const<felt252, 2> [storable: false, drop: false, dup: f
 type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc enum_match<test::Color> = enum_match<test::Color>;
+libfunc enum_match_v2<test::Color> = enum_match_v2<test::Color>;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
 libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
@@ -151,7 +158,7 @@ libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252
 libfunc const_as_immediate<Const<felt252, 2>> = const_as_immediate<Const<felt252, 2>>;
 
 F0:
-enum_match<test::Color>([0]) { fallthrough([1]) F0_B0([2]) F0_B1([3]) };
+enum_match_v2<test::Color>([0]) { fallthrough([1]) F0_B0([2]) F0_B1([3]) };
 branch_align() -> ();
 drop<felt252>([1]) -> ();
 const_as_immediate<Const<felt252, 0>>() -> ([4]);
@@ -174,7 +181,7 @@ test::foo@F0([0]: test::Color) -> (felt252);
 
 //! > ==========================================================================
 
-//! > match non-duplicatable enum with more than 2 variants
+//! > enum_snapshot_match with more than 2 variants (libfunc only)
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -186,11 +193,20 @@ enum Color {
     Colorful: Array<felt252>,
 }
 
+enum SnapshotColor {
+    White: @(),
+    Black: @(),
+    Colorful: @Array<felt252>,
+}
+
+#[allow(extern_outside_corelib)]
+extern fn enum_snapshot_match<T>(e: @T) -> SnapshotColor nopanic;
+
 fn foo(e: @Color) -> felt252 {
-    match e {
-        Color::White(_) => 0,
-        Color::Black(_) => 1,
-        Color::Colorful(_) => 2,
+    match enum_snapshot_match(e) {
+        SnapshotColor::White(_) => 0,
+        SnapshotColor::Black(_) => 1,
+        SnapshotColor::Colorful(_) => 2,
     }
 }
 
@@ -282,7 +298,7 @@ test::foo@F0([0]: core::never) -> (core::never);
 
 //! > ==========================================================================
 
-//! > enum_match_v2 of a snapshot with 3 variants
+//! > match snapshot of an enum with 3 variants
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -294,20 +310,11 @@ enum Color {
     Blue: u8,
 }
 
-enum SnapshotColor {
-    Red: @Array<felt252>,
-    Green: @felt252,
-    Blue: @u8,
-}
-
-#[allow(extern_outside_corelib)]
-extern fn enum_match_v2<T>(e: T) -> SnapshotColor nopanic;
-
 fn foo(e: @Color) -> felt252 {
-    match enum_match_v2(e) {
-        SnapshotColor::Red(_) => 0,
-        SnapshotColor::Green(x) => *x,
-        SnapshotColor::Blue(x) => (*x).into(),
+    match e {
+        Color::Red(_) => 0,
+        Color::Green(x) => *x,
+        Color::Blue(x) => (*x).into(),
     }
 }
 

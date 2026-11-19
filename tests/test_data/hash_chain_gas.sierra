@@ -33,7 +33,7 @@ libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252
 libfunc felt252_sub = felt252_sub;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@examples::hash_chain_gas::hash_chain> = function_call<user@examples::hash_chain_gas::hash_chain>;
-libfunc enum_match<core::panics::PanicResult::<(core::felt252,)>> = enum_match<core::panics::PanicResult::<(core::felt252,)>>;
+libfunc enum_match_v2<core::panics::PanicResult::<(core::felt252,)>> = enum_match_v2<core::panics::PanicResult::<(core::felt252,)>>;
 libfunc struct_deconstruct<Tuple<felt252>> = struct_deconstruct<Tuple<felt252>>;
 libfunc pedersen = pedersen;
 libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 1> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>;
@@ -75,7 +75,7 @@ store_temp<GasBuiltin>([11]) -> ([11]);
 store_temp<Pedersen>([2]) -> ([2]);
 store_temp<felt252>([16]) -> ([16]);
 function_call<user@examples::hash_chain_gas::hash_chain>([10], [11], [2], [16]) -> ([17], [18], [19], [20]);
-enum_match<core::panics::PanicResult::<(core::felt252,)>>([20]) { fallthrough([21]) F0_B1([22]) };
+enum_match_v2<core::panics::PanicResult::<(core::felt252,)>>([20]) { fallthrough([21]) F0_B1([22]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<felt252>>([21]) -> ([23]);
 pedersen([19], [23], [3]) -> ([24], [25]);

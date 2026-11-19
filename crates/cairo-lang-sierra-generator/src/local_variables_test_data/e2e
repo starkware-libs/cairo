@@ -81,7 +81,7 @@ finalize_locals() -> ()
 disable_ap_tracking() -> ()
 function_call<user@test::revoke_ap>() -> ([3])
 store_local<felt252>([4], [3]) -> ([3])
-enum_match<core::bool>([0]) { fallthrough([5]) label_test::foo::1([6]) }
+enum_match_v2<core::bool>([0]) { fallthrough([5]) label_test::foo::1([6]) }
 branch_align() -> ()
 drop<Unit>([5]) -> ()
 function_call<user@test::revoke_ap>() -> ([7])

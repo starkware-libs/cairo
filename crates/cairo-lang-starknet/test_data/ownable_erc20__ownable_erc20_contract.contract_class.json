@@ -178,7 +178,7 @@
     "0x75385f746f5f66656c74323532",
     "0x1557182e4359a1f0c6301278e8f5b35a776ab58d39892581e357578fb287836",
     "0x4f",
-    "0x656e756d5f6d61746368",
+    "0x656e756d5f6d617463685f7632",
     "0x4e",
     "0x753132385f746f5f66656c74323532",
     "0x756e626f78",
@@ -2431,7 +2431,7 @@
       ],
       [
         52,
-        "enum_match<core::panics::PanicResult::<(core::integer::u256,)>>"
+        "enum_match_v2<core::panics::PanicResult::<(core::integer::u256,)>>"
       ],
       [
         53,
@@ -2595,7 +2595,7 @@
       ],
       [
         93,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>, ())>>"
+        "enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>, ())>>"
       ],
       [
         94,
@@ -2671,7 +2671,7 @@
       ],
       [
         112,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>, ())>>"
+        "enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::ContractState>, ())>>"
       ],
       [
         113,
@@ -2895,7 +2895,7 @@
       ],
       [
         168,
-        "enum_match<core::bool>"
+        "enum_match_v2<core::bool>"
       ],
       [
         169,
@@ -2943,7 +2943,7 @@
       ],
       [
         180,
-        "enum_match<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::Event>"
+        "enum_match_v2<cairo_level_tests::contracts::ownable_erc20::ownable_erc20_contract::Event>"
       ],
       [
         181,
@@ -2951,7 +2951,7 @@
       ],
       [
         182,
-        "enum_match<cairo_level_tests::components::erc20::erc20::Event>"
+        "enum_match_v2<cairo_level_tests::components::erc20::erc20::Event>"
       ],
       [
         183,
@@ -2991,7 +2991,7 @@
       ],
       [
         192,
-        "enum_match<cairo_level_tests::components::ownable::ownable::Event>"
+        "enum_match_v2<cairo_level_tests::components::ownable::ownable::Event>"
       ],
       [
         193,
