@@ -53,6 +53,7 @@
         "coupon_call",
         "coupon_refund",
         "deploy_syscall",
+        "deploy_v2_syscall",
         "disable_ap_tracking",
         "downcast",
         "drop",
