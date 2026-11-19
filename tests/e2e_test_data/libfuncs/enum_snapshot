@@ -279,3 +279,94 @@ F0:
 enum_snapshot_match<core::never>([0]) { };
 
 test::foo@F0([0]: core::never) -> (core::never);
+
+//! > ==========================================================================
+
+//! > enum_match_v2 of a snapshot with 3 variants
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+enum Color {
+    Red: Array<felt252>,
+    Green: felt252,
+    Blue: u8,
+}
+
+enum SnapshotColor {
+    Red: @Array<felt252>,
+    Green: @felt252,
+    Blue: @u8,
+}
+
+#[allow(extern_outside_corelib)]
+extern fn enum_match_v2<T>(e: T) -> SnapshotColor nopanic;
+
+fn foo(e: @Color) -> felt252 {
+    match enum_match_v2(e) {
+        SnapshotColor::Red(_) => 0,
+        SnapshotColor::Green(x) => *x,
+        SnapshotColor::Blue(x) => (*x).into(),
+    }
+}
+
+//! > casm
+%{ memory[ap + 0] = 5 <= memory[fp + -5] %}
+jmp rel 12 if [ap + 0] != 0, ap++;
+%{ memory[ap + 0] = 3 <= memory[fp + -5] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[fp + -5] = 1;
+jmp rel 15;
+[fp + -5] = 3;
+jmp rel 9;
+[fp + -5] = 5;
+ap += 1;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 500})
+
+//! > sierra_code
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::Color = Enum<ut@test::Color, Array<felt252>, felt252, u8> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<test::Color> = Snapshot<test::Color> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc enum_match_v2<Snapshot<test::Color>> = enum_match_v2<Snapshot<test::Color>>;
+libfunc branch_align = branch_align;
+libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc rename<felt252> = rename<felt252>;
+libfunc rename<u8> = rename<u8>;
+libfunc u8_to_felt252 = u8_to_felt252;
+
+F0:
+enum_match_v2<Snapshot<test::Color>>([0]) { fallthrough([1]) F0_B0([2]) F0_B1([3]) };
+branch_align() -> ();
+drop<Snapshot<Array<felt252>>>([1]) -> ();
+const_as_immediate<Const<felt252, 0>>() -> ([4]);
+store_temp<felt252>([4]) -> ([4]);
+return([4]);
+F0_B0:
+branch_align() -> ();
+rename<felt252>([2]) -> ([5]);
+store_temp<felt252>([5]) -> ([5]);
+return([5]);
+F0_B1:
+branch_align() -> ();
+rename<u8>([3]) -> ([6]);
+u8_to_felt252([6]) -> ([7]);
+store_temp<felt252>([7]) -> ([7]);
+return([7]);
+
+test::foo@F0([0]: Snapshot<test::Color>) -> (felt252);
