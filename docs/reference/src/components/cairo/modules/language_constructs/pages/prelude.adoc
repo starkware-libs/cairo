@@ -16,8 +16,17 @@ The edition is set per crate via the `edition` field — typically in `Scarb.tom
 projects, or in `cairo_project.toml` for non-Scarb setups (and via `CrateSettings` when
 driving the compiler programmatically).
 
-- `core::prelude::v2024_07` — the modern prelude, used by editions `v2024_07` and `v2025_12`
-- `core::prelude::v2023_10` — intermediate edition, used by editions `v2023_10` and `v2023_11`
-- `core::prelude::v2023_01` — the legacy prelude
+- `core::prelude::v2024_07` — the modern prelude, used by editions `v2024_07` and `v2025_12`.
+- `core::prelude::v2023_10` — intermediate edition, used by editions `v2023_10` and `v2023_11`.
+- `core::prelude::v2023_01` — the legacy prelude.
 
 Each successive prelude is more conservative, exporting only the most commonly needed items.
+
+== Prelude Source Files
+
+To inspect the exact items exported by each edition, see these source files:
+
+- `corelib/src/prelude.cairo`.
+- `corelib/src/prelude/v2024_07.cairo`.
+- `corelib/src/prelude/v2023_10.cairo`.
+- `corelib/src/prelude/v2023_01.cairo`.
