@@ -3,4 +3,26 @@ version = 1
 
 [[package]]
 name = "core"
-version = "2.20.0"
+version = "2.21.0"
+dependencies = [
+ "snforge_std",
+]
+
+[[package]]
+name = "snforge_scarb_plugin"
+version = "0.64.1"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:811790c3a1b0c4008c3da568ba2bb4204ecedadb15a0b73fed4b81572bb66e88"
+dependencies = [
+ "core",
+]
+
+[[package]]
+name = "snforge_std"
+version = "0.64.1"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:01fe1a1853f8899a455cdc99a408a56f76cc6c069abdf56dcf98709665c272e8"
+dependencies = [
+ "core",
+ "snforge_scarb_plugin",
+]
