@@ -83,7 +83,7 @@ pub trait Intern<'db, Target> {
 macro_rules! define_short_id {
     ($short_id:ident, $long_id:path) => {
         // 1. Modern interned struct.
-        #[cairo_lang_proc_macros::interned(revisions = usize::MAX)]
+        #[cairo_lang_proc_macros::interned]
         pub struct $short_id<'db> {
             #[returns(ref)]
             pub long: $long_id,
