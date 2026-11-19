@@ -26,6 +26,8 @@ pub mod ordered_hash_map;
 pub mod ordered_hash_set;
 #[cfg(feature = "std")]
 pub mod small_ordered_map;
+#[cfg(feature = "std")]
+pub mod stack;
 pub mod unordered_hash_map;
 pub mod unordered_hash_set;
 

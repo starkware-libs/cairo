@@ -11,6 +11,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
+use cairo_lang_utils::stack::with_sufficient_stack;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, require};
 use salsa::Database;
@@ -1600,6 +1601,18 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         lbrace_allowed: LbraceAllowed,
         and_let_behavior: AndLetBehavior,
     ) -> TryParseResult<ExprGreen<'a>> {
+        with_sufficient_stack(|| {
+            self.try_parse_expr_limited_inner(parent_precedence, lbrace_allowed, and_let_behavior)
+        })
+    }
+
+    /// See [Self::try_parse_expr_limited].
+    fn try_parse_expr_limited_inner(
+        &mut self,
+        parent_precedence: usize,
+        lbrace_allowed: LbraceAllowed,
+        and_let_behavior: AndLetBehavior,
+    ) -> TryParseResult<ExprGreen<'a>> {
         let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
         let mut child_op: Option<SyntaxKind> = None;
         loop {
@@ -1755,6 +1768,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Note that unlike in value position, `(<type_expr>)` is not a grouping construct - it is
     /// parsed as a tuple, with a diagnostic.
     fn try_parse_type_expr(&mut self) -> TryParseResult<ExprGreen<'a>> {
+        with_sufficient_stack(|| self.try_parse_type_expr_inner())
+    }
+
+    /// See [Self::try_parse_type_expr].
+    fn try_parse_type_expr_inner(&mut self) -> TryParseResult<ExprGreen<'a>> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             SyntaxKind::TerminalUnderscore => Ok(self.take::<TerminalUnderscore<'_>>().into()),
@@ -2591,6 +2609,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Returns a GreenId of a node with some Pattern kind (see
     /// [syntax::node::ast::Pattern]) or TryParseFailure if a pattern can't be parsed.
     fn try_parse_pattern(&mut self) -> TryParseResult<PatternGreen<'a>> {
+        with_sufficient_stack(|| self.try_parse_pattern_inner())
+    }
+
+    /// See [Self::try_parse_pattern].
+    fn try_parse_pattern_inner(&mut self) -> TryParseResult<PatternGreen<'a>> {
         let modifier_list = self.parse_modifier_list();
         if !modifier_list.is_empty() {
             let modifiers = ModifierList::new_green(self.db, &modifier_list);
