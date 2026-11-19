@@ -6,7 +6,7 @@ use itertools::join;
 use pretty_assertions::assert_eq;
 
 use super::CasmBuilder;
-use crate::builder::CasmBuildResult;
+use crate::builder::{CasmBuildResult, Label};
 use crate::cell_expression::CellExpression;
 use crate::{casm_build_extend, res};
 
@@ -23,7 +23,7 @@ fn test_ap_change_fixes() {
         let fp_at_minus_3_plus_ap_at_5 = fp_at_minus_3 + ap_at_5;
     };
     let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert_eq!(
         state.get_adjusted(ap_at_7_mul_34),
         CellExpression::from_res_operand(res!([ap + 5] * 34))
@@ -54,11 +54,12 @@ fn test_ap_change_fixes() {
 fn test_awaiting_relocations() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
+        label Target;
         ap += 5;
         jump Target;
     };
     let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
-        builder.build(["Target"]);
+        builder.build([Target]);
     assert_eq!(state.ap_change, 5);
     assert_eq!(state.steps, 2);
     assert_eq!(awaiting_relocations, [1]);
@@ -75,12 +76,13 @@ fn test_awaiting_relocations() {
 fn test_noop_branch() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
+        label Target;
         ap += 3;
         jump Target;
         Target:
     };
     let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.ap_change, 3);
     assert_eq!(state.steps, 2);
@@ -105,7 +107,7 @@ fn test_allocations() {
         assert c = a;
     };
     let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.ap_change, 3);
     assert_eq!(state.steps, 3);
@@ -130,7 +132,7 @@ fn should_panic_test_allocations_not_enough_commands() {
         assert a = b;
         assert b = c;
     };
-    builder.build(["Fallthrough"]);
+    builder.build([Label::FALLTHROUGH]);
 }
 
 #[test]
@@ -138,6 +140,7 @@ fn test_aligned_branch_intersect() {
     let mut builder = CasmBuilder::default();
     let var = builder.add_var(CellExpression::from_res_operand(res!([ap + 7])));
     casm_build_extend! {builder,
+        label X, ONE_ALLOC;
         tempvar _unused;
         jump X if var != 0;
         jump ONE_ALLOC;
@@ -145,7 +148,7 @@ fn test_aligned_branch_intersect() {
         ONE_ALLOC:
     };
     let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.ap_change, 1);
     assert_eq!(state.allocated, 1);
@@ -165,6 +168,7 @@ fn should_panic_test_unaligned_branch_intersect() {
     let mut builder = CasmBuilder::default();
     let var = builder.add_var(CellExpression::from_res_operand(res!([ap + 7])));
     casm_build_extend! {builder,
+        label X, ONESIDED_ALLOC;
         jump X if var != 0;
         // A single tempvar in this branch.
         tempvar _unused;
@@ -174,13 +178,25 @@ fn should_panic_test_unaligned_branch_intersect() {
         // When the merge occurs here we will panic on a mismatch.
         ONESIDED_ALLOC:
     };
-    builder.build(["Fallthrough"]);
+    builder.build([Label::FALLTHROUGH]);
+}
+
+#[test]
+#[should_panic(expected = "was placed more than once")]
+fn should_panic_test_label_placed_twice() {
+    let mut builder = CasmBuilder::default();
+    casm_build_extend! {builder,
+        label X;
+        X:
+        X:
+    };
 }
 
 #[test]
 fn test_calculation_loop() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
+        label FIB;
         const one = 1;
         const ten = 10;
         tempvar a = one;
@@ -195,7 +211,7 @@ fn test_calculation_loop() {
         jump FIB if n != 0;
     };
     let CasmBuildResult { instructions, branches: [(state, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.get_adjusted(b), CellExpression::from_res_operand(res!([ap - 1])));
     assert_eq!(
@@ -215,6 +231,7 @@ fn test_calculation_loop() {
 fn test_call_ret() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
+        label FIB, FT, REC_CALL, FIB_END;
         const zero = 0;
         const one = 1;
         const ten = 10;
@@ -243,7 +260,7 @@ fn test_call_ret() {
         FT:
     };
     let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
@@ -271,6 +288,7 @@ fn test_call_ret() {
 fn test_local_fib() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
+        label FIB;
         const one = 1;
         const ten = 10;
         const fib11 = 144;
@@ -288,7 +306,7 @@ fn test_local_fib() {
         assert res = b;
     };
     let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
@@ -319,7 +337,7 @@ fn test_array_access() {
         assert b = ptr[1];
     };
     let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
@@ -337,6 +355,7 @@ fn test_array_access() {
 fn test_fail() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
+        label X;
         const three = 3;
         tempvar var = three;
         jump X if var != 0;
@@ -344,7 +363,7 @@ fn test_fail() {
         X:
     };
     let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
@@ -360,13 +379,14 @@ fn test_fail() {
 fn test_future_label() {
     let mut builder = CasmBuilder::default();
     casm_build_extend! {builder,
+        label FAR_AWAY;
         const value = 1000;
         tempvar var = value;
         jump FAR_AWAY if var != 0;
     };
-    builder.future_label("FAR_AWAY", 100);
+    builder.future_label(FAR_AWAY, 100);
     let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
-        builder.build(["Fallthrough"]);
+        builder.build([Label::FALLTHROUGH]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(
         join(instructions.iter().map(|inst| format!("{inst};\n")), ""),

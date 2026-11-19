@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::range::IntRangeConcreteLibfunc;
@@ -36,6 +36,7 @@ fn build_try_new(
         buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
+        label Valid, Failure;
         let orig_range_check = range_check;
 
         tempvar diff = end - start;
@@ -57,8 +58,8 @@ fn build_try_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[start, end]], None),
-            ("Failure", &[&[range_check], &[end, end]], Some(failure_handle)),
+            (Label::FALLTHROUGH, &[&[range_check], &[start, end]], None),
+            (Failure, &[&[range_check], &[end, end]], Some(failure_handle)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -83,6 +84,7 @@ fn build_pop_front(
         deref end;
     };
     casm_build_extend! {casm_builder,
+        label NonEmpty;
         const one = 1;
         let new_start = start + one;
         tempvar is_non_empty = end - start;
@@ -92,8 +94,8 @@ fn build_pop_front(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[], None),
-            ("NonEmpty", &[&[new_start, end], &[start]], Some(non_empty_handle)),
+            (Label::FALLTHROUGH, &[], None),
+            (NonEmpty, &[&[new_start, end], &[start]], Some(non_empty_handle)),
         ],
         Default::default(),
     ))
