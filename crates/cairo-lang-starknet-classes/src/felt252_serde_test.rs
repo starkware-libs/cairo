@@ -41,7 +41,6 @@ fn test_felt252_serde(name: &str) {
 }
 
 #[test]
-
 fn test_libfunc_serde() {
     let mut output = vec![];
     for libfunc_id in CoreLibfunc::supported_ids() {
