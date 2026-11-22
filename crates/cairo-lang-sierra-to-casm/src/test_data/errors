@@ -1195,3 +1195,130 @@ bar@1([0]: felt252) -> (felt252);
 
 //! > error
 Attempted to merge branches with different bases to align
+
+//! > ==========================================================================
+
+//! > Jump into an ap tracking enabled part from a different base
+
+//! > test_runner_name
+compiler_errors
+
+//! > metadata
+gas
+
+//! > sierra_code
+type felt252 = felt252;
+
+libfunc enable_ap_tracking = enable_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc jump = jump;
+
+enable_ap_tracking() -> ();
+disable_ap_tracking() -> ();
+return();
+store_temp_felt252([0]) -> ([0]);
+jump() { 1() };
+
+F@3([0]: felt252) -> ();
+
+//! > error
+got a statement out of order during ap change calculations
+
+//! > ==========================================================================
+
+//! > Jump into an ap tracking enabled part from a different base, enable after the jump
+
+//! > test_runner_name
+compiler_errors
+
+//! > metadata
+gas
+
+//! > sierra_code
+type felt252 = felt252;
+
+libfunc enable_ap_tracking = enable_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc jump = jump;
+
+store_temp_felt252([0]) -> ([0]);
+jump() { 3() };
+enable_ap_tracking() -> ();
+disable_ap_tracking() -> ();
+return();
+
+F@0([0]: felt252) -> ();
+
+//! > error
+Attempted to merge branches with different bases to align
+
+//! > ==========================================================================
+
+//! > Back edge from one function into a tracked part of another function
+
+//! > test_runner_name
+compiler_errors
+
+//! > metadata
+gas
+
+//! > sierra_code
+type felt252 = felt252;
+type RangeCheck = RangeCheck;
+type GasBuiltin = GasBuiltin;
+
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc withdraw_gas = withdraw_gas;
+libfunc branch_align = branch_align;
+libfunc jump = jump;
+
+store_temp_felt252([2]) -> ([2]);
+disable_ap_tracking() -> ();
+withdraw_gas([0], [1]) { fallthrough([0], [1]) 5([0], [1]) };
+branch_align() -> ();
+jump() { 0() };
+branch_align() -> ();
+return([0], [1], [2]);
+
+F@2([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252) -> (RangeCheck, GasBuiltin, felt252);
+G@1([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252) -> (RangeCheck, GasBuiltin, felt252);
+
+//! > error
+Attempted to merge branches with different bases to align
+
+//! > ==========================================================================
+
+//! > Tracked back edge to before the function entry point
+
+//! > test_runner_name
+compiler_errors
+
+//! > metadata
+gas
+
+//! > sierra_code
+type felt252 = felt252;
+type RangeCheck = RangeCheck;
+type GasBuiltin = GasBuiltin;
+
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc withdraw_gas = withdraw_gas;
+libfunc branch_align = branch_align;
+libfunc jump = jump;
+
+store_temp_felt252([2]) -> ([2]);
+withdraw_gas([0], [1]) { fallthrough([0], [1]) 4([0], [1]) };
+branch_align() -> ();
+jump() { 0() };
+branch_align() -> ();
+disable_ap_tracking() -> ();
+return([0], [1], [2]);
+
+F@1([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252) -> (RangeCheck, GasBuiltin, felt252);
+
+//! > error
+got a statement out of order during ap change calculations

@@ -243,9 +243,12 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     }
 
     /// Calculates the effective ap change for a statement, and the variables for ap alignment.
-    fn calc_effective_ap_change_and_variables_per_statement(&mut self, idx: StatementIdx) {
+    fn calc_effective_ap_change_and_variables_per_statement(
+        &mut self,
+        idx: StatementIdx,
+    ) -> Result<(), ApChangeError> {
         let Some(base_info) = self.infos[idx.0].tracking_info.clone() else {
-            return;
+            return Ok(());
         };
         if matches!(self.program.get_statement(idx), Some(Statement::Return(_))) {
             if let ApTrackingBase::FunctionStart(id) = base_info.base
@@ -253,7 +256,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             {
                 self.infos[idx.0].effective_ap_change_from_base = Some(*func_change);
             }
-            return;
+            return Ok(());
         }
         let mut source_ap_change = None;
         let mut paths_ap_change = vec![];
@@ -267,10 +270,20 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 source_ap_change = Some(base_info.ap_change);
                 continue;
             };
-            let Some(target_ap_change) = self.infos[target.0].effective_ap_change_from_base else {
+            let target_info = &self.infos[target.0];
+            let Some(target_ap_change) = target_info.effective_ap_change_from_base else {
                 continue;
             };
-            let calc_ap_change = target_ap_change - change;
+            let Some(calc_ap_change) = target_ap_change.checked_sub(change) else {
+                return Err(
+                    if target_info.tracking_info.as_ref().is_some_and(|i| i.base != base_info.base)
+                    {
+                        ApChangeError::BadMergeBaseMismatch(*target)
+                    } else {
+                        ApChangeError::StatementOutOfOrder(idx)
+                    },
+                );
+            };
             paths_ap_change.push((target, calc_ap_change));
             if let Some(source_ap_change) = &mut source_ap_change {
                 *source_ap_change = (*source_ap_change).min(calc_ap_change);
@@ -282,10 +295,16 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             self.infos[idx.0].effective_ap_change_from_base = Some(source_ap_change);
             for (target, path_ap_change) in paths_ap_change {
                 if path_ap_change != source_ap_change {
-                    self.variable_values.insert(*target, path_ap_change - source_ap_change);
+                    self.variable_values.insert(
+                        *target,
+                        path_ap_change
+                            .checked_sub(source_ap_change)
+                            .ok_or(ApChangeError::StatementOutOfOrder(idx))?,
+                    );
                 }
             }
         }
+        Ok(())
     }
 
     /// Gets the actual ap-change of a branch.
@@ -356,7 +375,7 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
         helper.calc_tracking_info_for_statement(*idx)?;
     }
     for idx in ap_tracked_reverse_topological_ordering {
-        helper.calc_effective_ap_change_and_variables_per_statement(idx);
+        helper.calc_effective_ap_change_and_variables_per_statement(idx)?;
     }
     Ok(ApChangeInfo {
         variable_values: helper.variable_values,
