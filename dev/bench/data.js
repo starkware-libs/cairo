@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795481546117,
+  "lastUpdate": 1795481703004,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -50291,6 +50291,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/84a5a2a094e8f572af53280ea944ad4c4d52e06b"
         },
         "date": 1795394622461,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1910,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "84a5a2a094e8f572af53280ea944ad4c4d52e06b",
+          "message": "chore: bump nightly toolchain to 2026-11-19 and fix new clippy lint (#10489)",
+          "timestamp": "2026-11-22T10:20:41Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/84a5a2a094e8f572af53280ea944ad4c4d52e06b"
+        },
+        "date": 1795481702733,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
