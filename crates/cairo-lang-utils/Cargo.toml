@@ -33,13 +33,13 @@ tracing.workspace = true
 [features]
 default = ["std", "tracing"]
 parity-scale-codec = ["dep:parity-scale-codec"]
+salsa = ["dep:salsa", "std"]
 schemars = ["dep:schemars", "serde", "std"]
 serde = ["dep:serde", "indexmap/serde", "num-bigint/serde", "smol_str/serde"]
 std = [
   "indexmap/std",
   "num-bigint/std",
   "num-traits/std",
-  "salsa",
   "serde?/std",
   "smol_str/std",
   "vector-map",
