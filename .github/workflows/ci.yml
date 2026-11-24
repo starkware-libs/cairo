@@ -39,6 +39,7 @@ jobs:
         args:
           - cairo-lang-casm --features=serde,parity-scale-codec,schemars
           - cairo-lang-casm --no-default-features --features=serde,parity-scale-codec
+          - cairo-lang-casm-run
           - cairo-lang-compiler
           - cairo-lang-debug
           - cairo-lang-defs

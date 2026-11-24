@@ -16,6 +16,7 @@ CRATES=(
     cairo-lang-eq-solver
     cairo-lang-project
     cairo-lang-sierra
+    cairo-lang-casm-run
     cairo-lang-sierra-type-size
     cairo-lang-sierra-ap-change
     cairo-lang-sierra-gas
