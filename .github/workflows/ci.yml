@@ -160,7 +160,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Machete
-        uses: bnjbvr/cargo-machete@a84eadc0a20e522e37a502609e97a7ce30c998ed # v0.10.0
+        uses: bnjbvr/cargo-machete@431e75731b681a69a4cfdeb1315b505778bb5c70 # v0.10.1
 
   clippy:
     runs-on: ubuntu-latest
