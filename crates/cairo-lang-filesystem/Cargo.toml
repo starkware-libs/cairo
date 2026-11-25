@@ -9,7 +9,10 @@ description = "Virtual filesystem for the compiler."
 [dependencies]
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "=2.21.0" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "=2.21.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.21.0", features = ["salsa", "serde"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.21.0", features = [
+  "salsa",
+  "serde",
+] }
 itertools.workspace = true
 path-clean.workspace = true
 salsa.workspace = true
