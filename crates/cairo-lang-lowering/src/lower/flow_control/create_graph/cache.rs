@@ -25,7 +25,6 @@ impl<Input: std::hash::Hash + Eq + Clone> Cache<Input> {
         }
 
         let node_id = callback(graph, input.clone(), path);
-        assert!(!self.cache.contains_key(&input));
         self.cache.insert(input, node_id);
         node_id
     }
