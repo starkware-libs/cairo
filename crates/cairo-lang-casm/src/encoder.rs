@@ -12,7 +12,7 @@ use crate::operand::Register;
 #[path = "encoder_test.rs"]
 mod test;
 
-const OFFSET_BITS: u32 = 16;
+const OFFSET_BITS: u32 = 18;
 
 const DST_REG_BIT: i32 = 0;
 const OP0_REG_BIT: i32 = 1;
