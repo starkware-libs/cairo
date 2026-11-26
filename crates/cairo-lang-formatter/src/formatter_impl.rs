@@ -20,79 +20,150 @@ use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
 
+/// A `use` path endpoint: a name with an optional alias, or the glob `*`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Leaf {
+    name: String,
+    alias: Option<String>,
+}
+impl Ord for Leaf {
+    fn cmp(&self, other: &Self) -> Ordering {
+        compare_names(&self.name, &other.name).then_with(|| self.alias.cmp(&other.alias))
+    }
+}
+impl PartialOrd for Leaf {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl fmt::Display for Leaf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.alias {
+            Some(alias) => write!(f, "{} as {alias}", self.name),
+            None => write!(f, "{}", self.name),
+        }
+    }
+}
+
+/// An owned `use` path, mirroring the shape of `ast::UsePath`.
+///
+/// Both the paths emitted by the merge tree and the paths of parsed `use` items are ordered
+/// through this type, so merging and sorting agree on a single ordering.
+#[derive(Debug, Clone)]
+enum OwnedUsePath {
+    Leaf(Leaf),
+    Single { segment: String, rest: Box<OwnedUsePath> },
+    Multi(Vec<OwnedUsePath>),
+}
+impl OwnedUsePath {
+    /// Extracts the path from the syntax node, removing any trivia.
+    fn from_ast(db: &dyn Database, use_path: &UsePath<'_>) -> Self {
+        match use_path {
+            UsePath::Leaf(leaf) => Self::Leaf(Leaf {
+                name: leaf.extract_ident(db).to_string(),
+                alias: leaf.extract_alias(db).map(|alias| alias.to_string()),
+            }),
+            UsePath::Single(single) => Self::Single {
+                segment: single.extract_ident(db).to_string(),
+                rest: Box::new(Self::from_ast(db, &single.use_path(db))),
+            },
+            UsePath::Multi(multi) => Self::Multi(
+                multi.use_paths(db).elements(db).map(|path| Self::from_ast(db, &path)).collect(),
+            ),
+            UsePath::Star(_) => Self::Leaf(Leaf { name: "*".to_string(), alias: None }),
+        }
+    }
+}
+impl Ord for OwnedUsePath {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            // Multi vs multi: compare their minimal children.
+            (Self::Multi(a), Self::Multi(b)) => a.iter().min().cmp(&b.iter().min()),
+            // Multi is always after other types of paths.
+            (Self::Multi(_), _) => Ordering::Greater,
+            (_, Self::Multi(_)) => Ordering::Less,
+            (Self::Leaf(a), Self::Leaf(b)) => a.cmp(b),
+            // Leaf is ordered before Single with the same name.
+            (Self::Leaf(a), Self::Single { segment: b, .. }) => {
+                compare_names(&a.name, b).then(Ordering::Less)
+            }
+            (Self::Single { segment: a, .. }, Self::Leaf(b)) => {
+                compare_names(a, &b.name).then(Ordering::Greater)
+            }
+            (
+                Self::Single { segment: a, rest: a_rest },
+                Self::Single { segment: b, rest: b_rest },
+            ) => compare_names(a, b).then_with(|| a_rest.cmp(b_rest)),
+        }
+    }
+}
+impl PartialOrd for OwnedUsePath {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl PartialEq for OwnedUsePath {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+impl Eq for OwnedUsePath {}
+impl fmt::Display for OwnedUsePath {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Leaf(leaf) => write!(f, "{leaf}"),
+            Self::Single { segment, rest } => write!(f, "{segment}::{rest}"),
+            Self::Multi(paths) => write!(f, "{{{}}}", paths.iter().format(", ")),
+        }
+    }
+}
+
 /// Represents a tree structure for organizing and merging `use` statements.
 #[derive(Default, Debug)]
 struct UseTree {
     /// A map of child nodes, where the key is the segment of the `use` path and the value is
     /// another `UseTree` representing the nested structure.
     children: OrderedHashMap<String, UseTree>,
-    /// A list of `Leaf` nodes, representing individual `use` path endpoints
-    /// or aliases. Each leaf contains optional alias information.
+    /// The `use` path endpoints at this level.
     leaves: Vec<Leaf>,
-}
-
-/// Represents a terminal node in a `UseTree`, corresponding to a specific `use` path.
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-struct Leaf {
-    name: String,
-    alias: Option<String>,
-}
-impl std::fmt::Display for Leaf {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(alias) = &self.alias {
-            write!(f, "{} as {alias}", self.name)
-        } else {
-            write!(f, "{}", self.name)
-        }
-    }
 }
 
 impl UseTree {
     /// Inserts a path into the `UseTree`, creating nested entries as needed.
-    fn insert_path(&mut self, db: &dyn Database, use_path: UsePath<'_>) {
+    fn insert_path(&mut self, use_path: OwnedUsePath) {
         match use_path {
-            UsePath::Leaf(leaf) => {
-                let name = leaf.extract_ident(db).to_string();
-                let alias = leaf.extract_alias(db).map(|alias| alias.to_string());
-                self.leaves.push(Leaf { name, alias });
+            OwnedUsePath::Leaf(leaf) => self.leaves.push(leaf),
+            OwnedUsePath::Single { segment, rest } => {
+                self.children.entry(segment).or_default().insert_path(*rest);
             }
-            UsePath::Single(single) => {
-                let segment = single.extract_ident(db).to_string();
-                let subtree = self.children.entry(segment).or_default();
-                subtree.insert_path(db, single.use_path(db));
-            }
-            UsePath::Multi(multi) => {
-                for sub_path in multi.use_paths(db).elements(db) {
-                    self.insert_path(db, sub_path);
+            OwnedUsePath::Multi(paths) => {
+                for path in paths {
+                    self.insert_path(path);
                 }
-            }
-            UsePath::Star(_) => {
-                self.leaves.push(Leaf { name: "*".to_string(), alias: None });
             }
         }
     }
 
     /// Merge and organize the `use` paths in a hierarchical structure.
-    pub fn create_merged_use_items(mut self, allow_duplicate_uses: bool) -> Vec<String> {
+    fn create_merged_use_items(mut self, allow_duplicate_uses: bool) -> Vec<OwnedUsePath> {
         let mut nested_paths = vec![];
         for (segment, subtree) in self.children {
-            let subtree_merged_use_items = subtree.create_merged_use_items(allow_duplicate_uses);
             nested_paths.extend(
-                subtree_merged_use_items.into_iter().map(|child| format!("{segment}::{child}")),
+                subtree.create_merged_use_items(allow_duplicate_uses).into_iter().map(|rest| {
+                    OwnedUsePath::Single { segment: segment.clone(), rest: Box::new(rest) }
+                }),
             );
         }
 
         if !allow_duplicate_uses {
-            self.leaves.sort_by(|a, b| {
-                compare_names(&a.name, &b.name).then_with(|| a.alias.cmp(&b.alias))
-            });
+            self.leaves.sort();
             self.leaves.dedup();
         }
-        match self.leaves.as_slice() {
-            [] => {}
-            [leaf] if nested_paths.is_empty() => return vec![leaf.to_string()],
-            [leaf] => nested_paths.push(leaf.to_string()),
-            leaves => nested_paths.push(format!("{{{}}}", leaves.iter().format(", "))),
+        let mut leaves = self.leaves.into_iter().map(OwnedUsePath::Leaf);
+        if leaves.len() > 1 {
+            nested_paths.push(OwnedUsePath::Multi(leaves.collect()));
+        } else {
+            nested_paths.extend(&mut leaves);
         }
 
         nested_paths
@@ -111,22 +182,6 @@ impl UseTree {
                 }
             }
         }
-    }
-
-    /// Writes the tree's merged `use` statements into `f`, one line per statement, each prefixed
-    /// by `decorations` (the shared attributes and visibility). The caller concatenates the
-    /// output of every decoration group into a single virtual file and reparses it.
-    fn format_merged_uses(
-        mut self,
-        allow_duplicate_uses: bool,
-        decorations: String,
-        f: &mut dyn FnMut(&dyn fmt::Display) -> fmt::Result,
-    ) -> fmt::Result {
-        self.organize_self_imports();
-        f(&self
-            .create_merged_use_items(allow_duplicate_uses)
-            .into_iter()
-            .format_with("", |stmt, f| f(&format_args!("{decorations} use {stmt};\n"))))
     }
 }
 
@@ -1161,18 +1216,30 @@ impl<'a> FormatterImpl<'a> {
                 .join("\n");
 
                 let tree = merge_info.decoration_to_use_tree.entry(decorations).or_default();
-                tree.insert_path(db, use_item.use_path(db));
+                tree.insert_path(OwnedUsePath::from_ast(db, &use_item.use_path(db)));
             }
 
             let Some(merge_info) = merge_info else {
                 continue;
             };
-            let merged_uses = merge_info.decoration_to_use_tree.into_iter().format_with(
-                "",
-                |(decorations, tree), f| {
-                    tree.format_merged_uses(self.config.allow_duplicate_uses, decorations, f)
-                },
-            );
+            let mut merged_uses: Vec<_> = merge_info
+                .decoration_to_use_tree
+                .into_iter()
+                .flat_map(|(decorations, mut tree)| {
+                    tree.organize_self_imports();
+                    tree.create_merged_use_items(self.config.allow_duplicate_uses)
+                        .into_iter()
+                        .map(move |path| (decorations.clone(), path))
+                })
+                .collect();
+            // The merged statements are reordered by the sorting that follows, so emit them in
+            // sorted order here, letting the leading trivia stay with the first statement.
+            if self.config.sort_module_level_items {
+                merged_uses.sort_by(|(_, a), (_, b)| a.cmp(b));
+            }
+            let merged_uses = merged_uses.iter().format_with("", |(decorations, path), f| {
+                f(&format_args!("{decorations} use {path};\n"))
+            });
 
             // Create a virtual file ID for the formatted statements.
             let file_id = FileLongId::Virtual(VirtualFile {
@@ -1228,7 +1295,8 @@ impl<'a> FormatterImpl<'a> {
             let b_use_path = extract_use_path(b_node, self.db);
 
             match (a_use_path, b_use_path) {
-                (Some(a_path), Some(b_path)) => compare_use_paths(&a_path, &b_path, self.db),
+                (Some(a_path), Some(b_path)) => OwnedUsePath::from_ast(self.db, &a_path)
+                    .cmp(&OwnedUsePath::from_ast(self.db, &b_path)),
                 (None, Some(_)) => Ordering::Less,
                 (Some(_), None) => Ordering::Greater,
                 (None, None) => Ordering::Equal,
@@ -1262,13 +1330,7 @@ impl<'a> FormatterImpl<'a> {
                 SortKind::UseItem => {
                     // Sort `UseItem` items based on their use paths.
                     let mut sorted_section = section_nodes.to_vec();
-                    sorted_section.sort_by(|a, b| {
-                        compare_use_paths(
-                            &ast::ItemUse::from_syntax_node(self.db, *a).use_path(self.db),
-                            &ast::ItemUse::from_syntax_node(self.db, *b).use_path(self.db),
-                            self.db,
-                        )
-                    });
+                    sort_use_items(&mut sorted_section, self.db);
                     sorted_children.extend(sorted_section);
                 }
                 SortKind::Immovable => {
@@ -1367,71 +1429,15 @@ impl<'a> FormatterImpl<'a> {
     }
 }
 
-/// Compares two `UsePath` nodes to determine their ordering.
-fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) -> Ordering {
-    match (a, b) {
-        // Case for multi vs multi.
-        (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
-            let get_min_child = |multi: &ast::UsePathMulti<'a>| {
-                multi.use_paths(db).elements(db).min_by(|a, b| compare_use_paths(a, b, db))
-            };
-            match (get_min_child(a_multi), get_min_child(b_multi)) {
-                (Some(a_min), Some(b_min)) => compare_use_paths(&a_min, &b_min, db),
-                (None, Some(_)) => Ordering::Less,
-                (Some(_), None) => Ordering::Greater,
-                (None, None) => Ordering::Equal,
-            }
-        }
-
-        // Case for multi is always after other types of paths.
-        (UsePath::Multi(_), _) => Ordering::Greater,
-        (_, UsePath::Multi(_)) => Ordering::Less,
-
-        // Case for Leaf vs Single and Single vs Leaf.
-        (UsePath::Leaf(a), UsePath::Single(b)) => {
-            match compare_names(a.extract_ident(db), b.extract_ident(db)) {
-                // Leaf is always ordered before Single if equal.
-                Ordering::Equal => Ordering::Less,
-                other => other,
-            }
-        }
-
-        (UsePath::Single(a), UsePath::Leaf(b)) => {
-            // Compare the identifiers.
-            match compare_names(a.extract_ident(db), b.extract_ident(db)) {
-                // Single is ordered after Leaf if equal.
-                Ordering::Equal => Ordering::Greater,
-                other => other,
-            }
-        }
-
-        // Case for Leaf vs Leaf: compare their identifiers, and only if they are equal, compare
-        // their aliases.
-        (UsePath::Leaf(a), UsePath::Leaf(b)) => {
-            match compare_names(a.extract_ident(db), b.extract_ident(db)) {
-                Ordering::Equal => a.extract_alias(db).cmp(&b.extract_alias(db)),
-                other => other,
-            }
-        }
-
-        // Case for Single vs Single: compare their identifiers, then move to the next segment if
-        // equal.
-        (UsePath::Single(a), UsePath::Single(b)) => {
-            match compare_names(a.extract_ident(db), b.extract_ident(db)) {
-                Ordering::Equal => compare_use_paths(&a.use_path(db), &b.use_path(db), db),
-                other => other,
-            }
-        }
-
-        // Star is always considered first.
-        (UsePath::Star(_), UsePath::Star(_)) => Ordering::Equal,
-        (UsePath::Star(_), _) => Ordering::Less,
-        (_, UsePath::Star(_)) => Ordering::Greater,
-    }
+/// Sorts `use` item nodes based on their use paths.
+fn sort_use_items<'a>(nodes: &mut [SyntaxNode<'a>], db: &'a dyn Database) {
+    nodes.sort_by_cached_key(|node| {
+        OwnedUsePath::from_ast(db, &ast::ItemUse::from_syntax_node(db, *node).use_path(db))
+    });
 }
 
 /// Compares two names, with special handling for the glob `*` (first), `self` (first) and
-/// `super`/`crate` (last) — matching the ordering of `compare_use_paths`.
+/// `super`/`crate` (last).
 fn compare_names(a: &str, b: &str) -> Ordering {
     match (a, b) {
         ("*", "*") => Ordering::Equal,
