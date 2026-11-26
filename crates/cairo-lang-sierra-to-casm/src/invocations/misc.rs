@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuilder, Label, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -64,12 +64,13 @@ pub fn build_is_zero(
     let mut casm_builder = CasmBuilder::with_capacity(1, 1);
     add_input_variables!(casm_builder, deref value; );
     casm_build_extend! {casm_builder,
+        label Target;
         jump Target if value != 0;
     };
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[], None), ("Target", &[&[value]], Some(target_statement_id))],
+        [(Label::FALLTHROUGH, &[], None), (Target, &[&[value]], Some(target_statement_id))],
         Default::default(),
     ))
 }
@@ -84,11 +85,12 @@ pub fn build_jump(
     };
     let mut casm_builder = CasmBuilder::with_capacity(1, 1);
     casm_build_extend! {casm_builder,
+        label Target;
         jump Target;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Target", &[], Some(*target_statement_id))],
+        [(Target, &[], Some(*target_statement_id))],
         Default::default(),
     ))
 }
@@ -132,6 +134,7 @@ pub fn build_cell_eq(
     };
 
     casm_build_extend!(casm_builder,
+        label NotEqual, Equal;
         tempvar diff = a - b;
         // diff = a - b => (diff == 0) <==> (a == b)
         jump NotEqual if diff != 0;
@@ -142,15 +145,68 @@ pub fn build_cell_eq(
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
+        [(Label::FALLTHROUGH, &[], None), (Equal, &[], Some(target_statement_id))],
         Default::default(),
     ))
 }
 
-/// Helper to add code that validates that variable `value` is smaller than `limit`, with `K`
-/// constant for checking this bound. `auxiliary_vars` are the variables already allocated used for
-/// execution of the algorithm, requires different sizes for different `K`s, for 1 requires 4, for 2
-/// requires 5.
+/// Adds code that validates that variable `value` is smaller than `limit`, using the algorithm
+/// described in `add_limit_linear_split` with `K == 1`.
+/// `auxiliary_vars` are 4 variables already allocated for the execution of the algorithm.
+pub fn validate_under_limit_k1(
+    casm_builder: &mut CasmBuilder,
+    limit: &BigInt,
+    value: Var,
+    range_check: Var,
+    auxiliary_vars: &[Var],
+) {
+    let (x, y, x_part, y_fixed) =
+        auxiliary_vars.iter().cloned().collect_tuple().expect("Wrong amount of vars.");
+    let b_imm_fix = add_limit_linear_split(casm_builder, limit, u128::MAX, value, x, y, x_part);
+    casm_build_extend! {casm_builder,
+        // x <= max_x = 2**128 - 1
+        assert x = *(range_check++);
+        // y < 2**128
+        assert y = *(range_check++);
+        // y + 2**128 - B < 2**128 ==> y < B
+        assert y_fixed = y + b_imm_fix;
+        assert y_fixed = *(range_check++);
+    };
+}
+
+/// Adds code that validates that variable `value` is smaller than `limit`, using the algorithm
+/// described in `add_limit_linear_split` with `K == 2`, jumping to `done` on success.
+/// `auxiliary_vars` are 5 variables already allocated for the execution of the algorithm.
+pub fn validate_under_limit_k2(
+    casm_builder: &mut CasmBuilder,
+    limit: &BigInt,
+    value: Var,
+    range_check: Var,
+    auxiliary_vars: &[Var],
+    done: Label,
+) {
+    let (x, y, x_part, y_fixed, diff) =
+        auxiliary_vars.iter().cloned().collect_tuple().expect("Wrong amount of vars.");
+    let b_imm_fix = add_limit_linear_split(casm_builder, limit, u128::MAX - 1, value, x, y, x_part);
+    casm_build_extend! {casm_builder,
+        const u128_limit_minus_1 = u128::MAX;
+        // y < 2**128
+        assert y = *(range_check++);
+        // y + 2**128 - B < 2**128 ==> y < B
+        assert y_fixed = y + b_imm_fix;
+        assert y_fixed = *(range_check++);
+        // x < 2**128 && x != 2**128 - 1 ==> x < 2**128 - 1
+        assert x = *(range_check++);
+        assert diff = x - u128_limit_minus_1;
+        jump done if diff != 0;
+        // As x cannot be 2**128 - 1, this is unreachable.
+        fail;
+    };
+}
+
+/// Adds the shared part of `validate_under_limit_k1` and `validate_under_limit_k2` - splitting
+/// `value` into `x` and `y` and asserting that `value = A * x + y`.
+/// Returns the variable holding the `2**128 - B` constant.
 ///
 /// We show that a number is in the range [0, `limit`) by writing it as:
 ///   A * x + y,
@@ -169,65 +225,29 @@ pub fn build_cell_eq(
 ///   max_val = (A * max_x + B) - 1 = `limit` - 1.
 ///
 /// As long as A <= B, every number in the range can be represented.
-/// We assert that the A and B generated by the provided `K` parameter fit the constraint.
-///
-/// If K == 1, the function falls through. If K == 2, the function jumps to a label named `Done`.
-pub fn validate_under_limit<const K: u8>(
+/// We assert that the A and B generated by the provided `K` fit the constraint.
+fn add_limit_linear_split(
     casm_builder: &mut CasmBuilder,
     limit: &BigInt,
+    max_x: u128,
     value: Var,
-    range_check: Var,
-    auxiliary_vars: &[Var],
-) {
-    let a_imm = limit / (u128::MAX - (K - 1) as u128);
-    let b_imm = limit % (u128::MAX - (K - 1) as u128);
+    x: Var,
+    y: Var,
+    x_part: Var,
+) -> Var {
+    let a_imm = limit / max_x;
+    let b_imm = limit % max_x;
     assert!(a_imm <= b_imm, "Must choose `K` such that `{a_imm} (`A`) <= {b_imm} (`B`)");
     casm_build_extend! {casm_builder,
         const a_imm = a_imm;
         // 2**128 - B.
         const b_imm_fix = (BigInt::from(u128::MAX) - b_imm + 1) as BigInt;
-        const u128_limit_minus_1 = u128::MAX;
-    }
-    match K {
-        1 => {
-            let (x, y, x_part, y_fixed) =
-                auxiliary_vars.iter().cloned().collect_tuple().expect("Wrong amount of vars.");
-            casm_build_extend! {casm_builder,
-                hint LinearSplit { value, scalar: a_imm, max_x: u128_limit_minus_1 } into { x, y };
-                assert x_part = x * a_imm;
-                assert value = x_part + y;
-                // x <= max_x = 2**128 - 1
-                assert x = *(range_check++);
-                // y < 2**128
-                assert y = *(range_check++);
-                // y + 2**128 - B < 2**128 ==> y < B
-                assert y_fixed = y + b_imm_fix;
-                assert y_fixed = *(range_check++);
-            };
-        }
-        2 => {
-            let (x, y, x_part, y_fixed, diff) =
-                auxiliary_vars.iter().cloned().collect_tuple().expect("Wrong amount of vars.");
-            casm_build_extend! {casm_builder,
-                const u128_limit_minus_2 = u128::MAX - 1;
-                hint LinearSplit { value, scalar: a_imm, max_x: u128_limit_minus_2 } into { x, y };
-                assert x_part = x * a_imm;
-                assert value = x_part + y;
-                // y < 2**128
-                assert y = *(range_check++);
-                // y + 2**128 - B < 2**128 ==> y < B
-                assert y_fixed = y + b_imm_fix;
-                assert y_fixed = *(range_check++);
-                // x < 2**128 && x != 2**128 - 1 ==> x < 2**128 - 1
-                assert x = *(range_check++);
-                assert diff = x - u128_limit_minus_1;
-                jump Done if diff != 0;
-                // As x cannot be 2**128 - 1, this is unreachable.
-                fail;
-            };
-        }
-        _ => unreachable!("Only K value of 1 or 2 are supported."),
-    }
+        const max_x = max_x;
+        hint LinearSplit { value, scalar: a_imm, max_x } into { x, y };
+        assert x_part = x * a_imm;
+        assert value = x_part + y;
+    };
+    b_imm_fix
 }
 
 /// Helper function to generate code that computes a pointer after the end of the program code,
@@ -276,6 +296,7 @@ pub fn build_unsigned_try_from_felt252(
     };
     let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
+        label IsValidValue;
         const limit = val_bound.clone();
         let orig_range_check = range_check;
         tempvar is_valid_value;
@@ -283,7 +304,7 @@ pub fn build_unsigned_try_from_felt252(
         jump IsValidValue if is_valid_value != 0;
         tempvar shifted_value = value - limit;
     }
-    validate_under_limit::<1>(
+    validate_under_limit_k1(
         &mut casm_builder,
         &(Felt252::prime().to_bigint().unwrap() - val_bound.clone()),
         shifted_value,
@@ -291,17 +312,18 @@ pub fn build_unsigned_try_from_felt252(
         &auxiliary_vars,
     );
     casm_build_extend! {casm_builder,
+        label Failure;
         jump Failure;
         IsValidValue:
     };
-    validate_under_limit::<1>(&mut casm_builder, &val_bound, value, range_check, &auxiliary_vars);
+    validate_under_limit_k1(&mut casm_builder, &val_bound, value, range_check, &auxiliary_vars);
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[value]], None),
-            ("Failure", &[&[range_check]], Some(failure_handle_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[value]], None),
+            (Failure, &[&[range_check]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {

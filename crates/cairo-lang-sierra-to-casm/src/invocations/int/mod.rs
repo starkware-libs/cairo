@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuilder, Label, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -54,7 +54,7 @@ pub fn build_small_wide_mul(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[res]], None)],
+        [(Label::FALLTHROUGH, &[&[res]], None)],
         CostValidationInfo::default(),
     ))
 }
@@ -78,6 +78,8 @@ pub struct SmallDiffHelper<'a> {
     /// Var for the diff result, with a wraparound around `limit` if negative, or larger than
     /// `limit`.
     pub wrapping_a_minus_b: Var,
+    /// The label jumped to on overflow.
+    overflow: Label,
 }
 impl<'a> SmallDiffHelper<'a> {
     /// Constructs the helper.
@@ -97,6 +99,7 @@ impl<'a> SmallDiffHelper<'a> {
         };
         let same_limit = u128_bound() == &limit;
         casm_build_extend! {casm_builder,
+            label NoOverflow, Overflow;
             let orig_range_check = range_check;
             tempvar a_ge_b;
             tempvar a_minus_b = a - b;
@@ -123,6 +126,7 @@ impl<'a> SmallDiffHelper<'a> {
             b,
             a_minus_b,
             wrapping_a_minus_b: if same_limit { fixed_a_minus_b } else { wrapping_a_minus_b },
+            overflow: Overflow,
         })
     }
 
@@ -136,8 +140,8 @@ impl<'a> SmallDiffHelper<'a> {
         Ok(self.builder.build_from_casm_builder(
             self.casm_builder,
             [
-                ("Fallthrough", no_overflow_res, None),
-                ("Overflow", overflow_res, Some(failure_handle_statement_id)),
+                (Label::FALLTHROUGH, no_overflow_res, None),
+                (self.overflow, overflow_res, Some(failure_handle_statement_id)),
             ],
             CostValidationInfo {
                 builtin_infos: vec![BuiltinInfo {

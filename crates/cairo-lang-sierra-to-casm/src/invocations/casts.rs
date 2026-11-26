@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::{CasmBuilder, Label, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::casts::{
     CastConcreteLibfunc, CastType, DowncastConcreteLibfunc,
@@ -50,7 +50,7 @@ pub fn build_downcast(
 
     casm_build_extend!(casm_builder, let orig_range_check = range_check;);
 
-    match libfunc.cast_type() {
+    let failure = match libfunc.cast_type() {
         CastType { overflow_above: false, overflow_below: false } => {
             return handle_downcast_no_overflow(builder);
         }
@@ -73,14 +73,14 @@ pub fn build_downcast(
         CastType { overflow_above: true, overflow_below: true } => {
             add_downcast_overflow_both(&mut casm_builder, value, range_check, &libfunc.to_range)
         }
-    }
+    };
 
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[value]], None),
-            ("Failure", &[&[range_check]], Some(target_statement_id)),
+            (Label::FALLTHROUGH, &[&[range_check], &[value]], None),
+            (failure, &[&[range_check]], Some(target_statement_id)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
@@ -117,13 +117,15 @@ fn handle_downcast_no_overflow(
 /// `false`, `value` may fall below the (inclusive) lower `bound`.
 ///
 /// Assumes `-2**128 <= value - bound < 2**128`.
+/// Returns the label jumped to on failure.
 fn add_directional_downcast<const ABOVE: bool>(
     casm_builder: &mut CasmBuilder,
     value: Var,
     range_check: Var,
     bound: &BigInt,
-) {
+) -> Label {
     casm_build_extend! {casm_builder,
+        label Success, Failure;
         const minus_bound = -bound;
         let diff = value + minus_bound;
         tempvar is_valid;
@@ -155,16 +157,19 @@ fn add_directional_downcast<const ABOVE: bool>(
         Success:
     };
     validate_in_range(casm_builder, range_check, value, bound);
+    Failure
 }
 
 /// Adds instructions for downcasting where the value may both overflow and underflow.
+/// Returns the label jumped to on failure.
 fn add_downcast_overflow_both(
     casm_builder: &mut CasmBuilder,
     value: Var,
     range_check: Var,
     to_range: &Range,
-) {
+) -> Label {
     casm_build_extend! {casm_builder,
+        label Success, OverflowAbove, Failure;
         const minus_to_min_value = -to_range.lower.clone();
         let canonical_value = value + minus_to_min_value;
         // Use a hint to guess whether the result is in range (is_valid=1) or overflows
@@ -202,6 +207,7 @@ fn add_downcast_overflow_both(
     casm_build_extend!(casm_builder, Success:);
     validate_ge(casm_builder, range_check, value, &to_range.lower);
     validate_lt(casm_builder, range_check, value, &to_range.upper);
+    Failure
 }
 
 /// Validates that `value` is smaller than `bound`.

@@ -115,8 +115,8 @@ impl NamedLibfunc for DowncastLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         let is_small_values_downcast = from_range.is_small_range();
-        // Only allow `size < prime % u128::MAX` so that we can safely use `K=2` in
-        // `validate_under_limit`.
+        // Only allow `size < prime % u128::MAX` so that we can safely use
+        // `validate_under_limit_k2`.
         let is_felt252_valid_downcast = from_range.is_full_felt252_range()
             && to_range.size() < (Felt252::prime() % u128::MAX).into();
         if !(is_small_values_downcast || is_felt252_valid_downcast) {

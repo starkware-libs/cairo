@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::builder::{CasmBuilder, Label};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::{casm, casm_build_extend, cell_ref};
 use cairo_lang_sierra::extensions::circuit::{
@@ -85,7 +85,7 @@ fn build_init_circuit_data(
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[rc96], &[input_start, input_end]], None)],
+        [(Label::FALLTHROUGH, &[&[rc96], &[input_start, input_end]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck96,
@@ -115,18 +115,18 @@ fn build_add_input(
     }
 
     casm_build_extend! {casm_builder,
+        label MoreInputs;
         tempvar new_start = start;
         tempvar remaining = end - new_start;
         jump MoreInputs if remaining != 0;
-        Done:
     };
     let more_inputs_handle = get_non_fallthrough_statement_id(&builder);
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[end]], None),
-            ("MoreInputs", &[&[new_start, end]], Some(more_inputs_handle)),
+            (Label::FALLTHROUGH, &[&[end]], None),
+            (MoreInputs, &[&[new_start, end]], Some(more_inputs_handle)),
         ],
         Default::default(),
     ))
@@ -242,6 +242,7 @@ fn build_circuit_eval(
     }
 
     casm_build_extend! {casm_builder,
+        label Failure;
         assert modulus0 = mul_mod[0];
         assert modulus1 = mul_mod[1];
         assert modulus2 = mul_mod[2];
@@ -274,7 +275,7 @@ fn build_circuit_eval(
         [
             // Success.
             (
-                "Fallthrough",
+                Label::FALLTHROUGH,
                 &[
                     &[new_add_mod],
                     &[new_mul_mod],
@@ -283,7 +284,7 @@ fn build_circuit_eval(
                 None,
             ),
             (
-                "Failure",
+                Failure,
                 &[
                     &[new_add_mod],
                     &[new_mul_mod],
@@ -317,6 +318,7 @@ fn build_try_into_circuit_modulus(
     let mut casm_builder = CasmBuilder::with_capacity(8, 7);
     add_input_variables!(casm_builder, deref l0; deref l1; deref l2; deref l3;);
     casm_build_extend! {casm_builder,
+        label Success, CheckNotOne, Failure;
         const one = 1;
         tempvar l0_minus_one;
         jump Success if l3 != 0;
@@ -334,7 +336,10 @@ fn build_try_into_circuit_modulus(
     let failure_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[l0, l1, l2, l3]], None), ("Failure", &[], Some(failure_statement_id))],
+        [
+            (Label::FALLTHROUGH, &[&[l0, l1, l2, l3]], None),
+            (Failure, &[], Some(failure_statement_id)),
+        ],
         Default::default(),
     ))
 }
@@ -375,6 +380,7 @@ fn build_failure_guarantee_verify(
     };
 
     casm_build_extend! {casm_builder,
+        label Done;
         let rc96_start = rc96;
         const offsets_per_gate = OFFSETS_PER_GATE;
         tempvar failing_gate_offset = fail_idx * offsets_per_gate;
@@ -444,7 +450,7 @@ fn build_failure_guarantee_verify(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [(
-            "Fallthrough",
+            Label::FALLTHROUGH,
             &[
                 &[rc96],
                 &[new_mul_mod],
@@ -510,7 +516,7 @@ fn build_get_output(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [(
-            "Fallthrough",
+            Label::FALLTHROUGH,
             &[
                 &[output0, output1, output2, output3],
                 &[output0, output1, output2, output3, modulus0, modulus1, modulus2, modulus3],
@@ -537,7 +543,7 @@ fn build_u96_guarantee_verify(
     }
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[rc96]], None)],
+        [(Label::FALLTHROUGH, &[&[rc96]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck96,
@@ -560,23 +566,27 @@ fn build_u96_limbs_less_than_guarantee_verify_v2(
     assert_eq!(guarantee.len(), limb_count * 2);
     let mut casm_builder = CasmBuilder::with_capacity(limb_count * 4, limb_count * 2 - 1);
     add_input_variables!(casm_builder, buffer(0) rc96;);
-    let diffs = (0..limb_count).map(|_| casm_builder.alloc_var(false)).collect_vec();
-    casm_build_extend!(casm_builder, let rc96_start = rc96;);
-    // Labels for the limbs, extend if deciding to support more than 4.
-    // Note that for larger than 4 value additional ap-balancing work is required.
-    const LIMB_LABELS: [&str; 4] = ["LIMB0", "LIMB1", "LIMB2", "LIMB3"];
-    assert!(limb_count <= LIMB_LABELS.len(), "Unsupported limb count: {limb_count}.");
+    // Note that for more than 4 limbs additional ap-balancing work is required.
+    assert!(limb_count <= 4, "Unsupported limb count: {limb_count}.");
+    // The diff and the label to jump to when it is the first non-zero diff, per limb.
+    let limbs = (0..limb_count)
+        .map(|_| (casm_builder.alloc_var(false), casm_builder.alloc_label()))
+        .collect_vec();
+    casm_build_extend! {casm_builder,
+        label Final;
+        let rc96_start = rc96;
+    };
     // Find the first limb (starting from the most significant) that is different.
-    for (i, &diff) in diffs.iter().enumerate().rev() {
+    for (i, &(diff, limb_label)) in limbs.iter().enumerate().rev() {
         let lhs = casm_builder.add_var(guarantee[i].clone());
         let rhs = casm_builder.add_var(guarantee[limb_count + i].clone());
         casm_build_extend!(casm_builder, assert diff = rhs - lhs;);
-        casm_builder.jump_nz(diff, LIMB_LABELS[i]);
+        casm_builder.jump_nz(diff, limb_label);
     }
     // If none of the jumps were executed, the input values are equal.
     casm_build_extend!(casm_builder, fail;);
-    for (i, diff) in diffs.into_iter().enumerate().rev() {
-        casm_builder.label(LIMB_LABELS[i]);
+    for (i, (diff, limb_label)) in limbs.into_iter().enumerate().rev() {
+        casm_builder.label(limb_label);
         // Range-check the first non-zero `rhs - lhs`, proving `lhs < rhs`.
         casm_build_extend!(casm_builder, assert diff = *(rc96++););
         // For all but the final iteration, jump to `Final`.
@@ -587,7 +597,7 @@ fn build_u96_limbs_less_than_guarantee_verify_v2(
     casm_build_extend!(casm_builder, Final:);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[rc96]], None)],
+        [(Label::FALLTHROUGH, &[&[rc96]], None)],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
                 cost_token_ty: CostTokenType::RangeCheck96,
@@ -617,6 +627,7 @@ fn build_u96_limbs_less_than_guarantee_verify(
             .map(|cell| casm_builder.add_var(cell.clone()))
             .collect();
     casm_build_extend! {casm_builder,
+        label CheckLimb;
         tempvar diff = rhs_high_limb - lhs_high_limb;
         jump CheckLimb if diff != 0;
     };
@@ -624,8 +635,8 @@ fn build_u96_limbs_less_than_guarantee_verify(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&next_guarantee], None),
-            ("CheckLimb", &[&[diff]], Some(check_limb_handle)),
+            (Label::FALLTHROUGH, &[&next_guarantee], None),
+            (CheckLimb, &[&[diff]], Some(check_limb_handle)),
         ],
         Default::default(),
     ))
@@ -645,7 +656,7 @@ fn build_u96_single_limb_less_than_guarantee_verify(
     casm_build_extend!(casm_builder, let diff = rhs - lhs;);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[diff]], None)],
+        [(Label::FALLTHROUGH, &[&[diff]], None)],
         Default::default(),
     ))
 }
