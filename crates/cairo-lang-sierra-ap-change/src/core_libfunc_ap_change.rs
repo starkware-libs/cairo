@@ -15,7 +15,9 @@ use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
-use cairo_lang_sierra::extensions::enm::{EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc};
+use cairo_lang_sierra::extensions::enm::{
+    EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc, enum_match_v2_search_depths,
+};
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
@@ -310,6 +312,19 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 // For other cases, we need 1 AP change for loading the variant selector.
                 let n = signature.branch_signatures.len();
                 if n <= 1 { vec![ApChange::Known(0); n] } else { vec![ApChange::Known(1); n] }
+            }
+            EnumConcreteLibfunc::MatchV2(libfunc) => {
+                let n_variants = libfunc.variants.len();
+                // The cell the indicator is read into out of the box.
+                let base = usize::from(libfunc.boxed && n_variants >= 2);
+                match n_variants {
+                    0..=2 => vec![ApChange::Known(base); n_variants],
+                    // A cell is allocated per level of the indicator search.
+                    _ => enum_match_v2_search_depths(n_variants)
+                        .into_iter()
+                        .map(|depth| ApChange::Known(base + depth))
+                        .collect(),
+                }
             }
         },
         Struct(libfunc) => match libfunc {

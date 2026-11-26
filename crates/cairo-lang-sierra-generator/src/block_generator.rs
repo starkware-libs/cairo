@@ -699,7 +699,7 @@ fn generate_match_value_code<'db>(
         std::slice::from_ref(&enum_var),
     ));
 
-    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type.clone())?;
+    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type.clone());
 
     let args = vec![enum_var];
     generate_match_code(context, block_gen_stack, libfunc_id, args, &match_info.arms)
@@ -716,7 +716,7 @@ fn generate_match_enum_code<'db>(
     let matched_enum = maybe_add_dup_statement(context, statement_location, 0, &match_info.input)?;
     // Get the [ConcreteLibfuncId].
     let concrete_enum_type = context.get_variable_sierra_type(match_info.input)?;
-    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type)?;
+    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type);
 
     let args = vec![matched_enum];
     generate_match_code(context, block_gen_stack, libfunc_id, args, &match_info.arms)

@@ -19,7 +19,7 @@ type core::panics::PanicResult::<(core::felt252, core::integer::u32, ())> = Enum
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc store_temp<u32> = store_temp<u32>;
 libfunc function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}> = function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}>;
-libfunc enum_match<core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>> = enum_match<core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>>;
+libfunc enum_match_v2<core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>> = enum_match_v2<core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>>;
 libfunc branch_align = branch_align;
 libfunc struct_deconstruct<Tuple<felt252, u32, Unit>> = struct_deconstruct<Tuple<felt252, u32, Unit>>;
 libfunc drop<u32> = drop<u32>;
@@ -56,7 +56,7 @@ F0:
 disable_ap_tracking() -> ();
 store_temp<u32>([0]) -> ([0]);
 function_call<user@examples::trim_unused_params::overwritten_in_loop::{loop#0}>([0]) -> ([1]);
-enum_match<core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>>([1]) { fallthrough([2]) F0_B0([3]) };
+enum_match_v2<core::panics::PanicResult::<(core::felt252, core::integer::u32, ())>>([1]) { fallthrough([2]) F0_B0([3]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<felt252, u32, Unit>>([2]) -> ([4], [5], [6]);
 drop<u32>([5]) -> ();

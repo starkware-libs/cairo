@@ -194,6 +194,7 @@ fn priv_free_function_body_data_cycle<'db>(
 fn priv_free_function_body_data_initial<'db>(
     _db: &'db dyn Database,
     _id: salsa::Id,
+    _last_provisional_value: Option<&Maybe<FunctionBodyData<'db>>>,
     _free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionBodyData<'db>> {
     Err(skip_diagnostic())

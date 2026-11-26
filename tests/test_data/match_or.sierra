@@ -19,7 +19,7 @@ libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc struct_construct<Tuple<Unit>> = struct_construct<Tuple<Unit>>;
 libfunc enum_init<core::panics::PanicResult::<((),)>, 0> = enum_init<core::panics::PanicResult::<((),)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics::PanicResult::<((),)>>;
-libfunc enum_match<examples::match_or::MyEnum> = enum_match<examples::match_or::MyEnum>;
+libfunc enum_match_v2<examples::match_or::MyEnum> = enum_match_v2<examples::match_or::MyEnum>;
 libfunc branch_align = branch_align;
 libfunc struct_deconstruct<Tuple<felt252, felt252>> = struct_deconstruct<Tuple<felt252, felt252>>;
 libfunc drop<felt252> = drop<felt252>;
@@ -52,7 +52,7 @@ enum_init<core::panics::PanicResult::<((),)>, 0>([1]) -> ([2]);
 store_temp<core::panics::PanicResult::<((),)>>([2]) -> ([2]);
 return([2]);
 F1:
-enum_match<examples::match_or::MyEnum>([1]) { fallthrough([2]) F1_B0([3]) F1_B1([4]) F1_B2([5]) };
+enum_match_v2<examples::match_or::MyEnum>([1]) { fallthrough([2]) F1_B0([3]) F1_B1([4]) F1_B2([5]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<felt252, felt252>>([2]) -> ([6], [7]);
 drop<felt252>([6]) -> ();

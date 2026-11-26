@@ -248,6 +248,7 @@ fn priv_macro_call_data_cycle<'db>(
 fn priv_macro_call_data_initial<'db>(
     db: &'db dyn Database,
     _id: salsa::Id,
+    _last_provisional_value: Option<&Maybe<MacroCallData<'db>>>,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<MacroCallData<'db>> {
     // If we are in a cycle, we return an empty MacroCallData with no diagnostics.
@@ -321,6 +322,7 @@ fn macro_call_module_id_cycle<'db>(
 fn macro_call_module_id_initial<'db>(
     _db: &'db dyn Database,
     _id: salsa::Id,
+    _last_provisional_value: Option<&Maybe<ModuleId<'db>>>,
     _macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ModuleId<'db>> {
     Err(skip_diagnostic())

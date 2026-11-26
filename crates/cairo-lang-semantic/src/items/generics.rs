@@ -332,6 +332,7 @@ pub fn generic_params_data_cycle<'db, TKey>(
 pub fn generic_params_data_initial<'db, TKey>(
     _db: &'db dyn Database,
     _id: salsa::Id,
+    _last_provisional_value: Option<&Maybe<GenericParamsData<'db>>>,
     _key: TKey,
 ) -> Maybe<GenericParamsData<'db>> {
     Err(skip_diagnostic())

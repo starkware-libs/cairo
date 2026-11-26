@@ -94,7 +94,7 @@ edition = "2024"
 license-file = "LICENSE"
 repository = "https://github.com/starkware-libs/cairo/"
 rust-version = "1.94"
-version = "2.21.0"
+version = "2.22.0"
 
 [workspace.dependencies]
 anyhow = "1.0.98"
@@ -139,7 +139,7 @@ quote = "1.0.40"
 rand = "0.10.0"
 rayon = "1.10.0"
 rstest = "0.26.1"
-salsa = "0.28.2"
+salsa = "=0.28.6"
 schemars = "1.0.4"
 semver = { version = "1.0.26", features = ["serde"] }
 serde = { version = "1.0.219", default-features = false, features = ["derive", "rc"] }

@@ -1,10 +1,10 @@
 {
   "sierra_program": [
     "0x1",
-    "0x9",
-    "0x5",
+    "0xa",
+    "0x0",
     "0x2",
-    "0x15",
+    "0x16",
     "0x0",
     "0x14a",
     "0xb6",
@@ -150,7 +150,7 @@
     "0x6",
     "0x756e626f78",
     "0x8",
-    "0x656e756d5f6d61746368",
+    "0x656e756d5f6d617463685f7632",
     "0x36",
     "0x6a756d70",
     "0xa",
@@ -1132,7 +1132,7 @@
       ],
       [
         49,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>>"
+        "enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>>"
       ],
       [
         50,
@@ -1168,7 +1168,7 @@
       ],
       [
         58,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>>"
+        "enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::components::upgradable::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>>"
       ],
       [
         59,
@@ -1244,7 +1244,7 @@
       ],
       [
         77,
-        "enum_match<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>"
+        "enum_match_v2<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>"
       ],
       [
         78,
@@ -1272,7 +1272,7 @@
       ],
       [
         84,
-        "enum_match<cairo_level_tests::components::upgradable::upgradable::Event>"
+        "enum_match_v2<cairo_level_tests::components::upgradable::upgradable::Event>"
       ],
       [
         85,
@@ -1324,7 +1324,7 @@
       ],
       [
         97,
-        "enum_match<cairo_level_tests::components::ownable::ownable::Event>"
+        "enum_match_v2<cairo_level_tests::components::ownable::ownable::Event>"
       ],
       [
         98,

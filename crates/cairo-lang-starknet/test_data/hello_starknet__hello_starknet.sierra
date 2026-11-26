@@ -48,7 +48,7 @@ libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt25
 libfunc struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState> = struct_construct<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState>;
 libfunc store_temp<u32> = store_temp<u32>;
 libfunc function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::HelloStarknetImpl::increase_balance> = function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::HelloStarknetImpl::increase_balance>;
-libfunc enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>> = enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>>;
+libfunc enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>> = enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>>;
 libfunc drop<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit>> = drop<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit>>;
 libfunc redeposit_gas = redeposit_gas;
 libfunc array_new<felt252> = array_new<felt252>;
@@ -132,7 +132,7 @@ store_temp<GasBuiltin>([5]) -> ([5]);
 store_temp<System>([2]) -> ([2]);
 store_temp<u32>([15]) -> ([15]);
 function_call<user@cairo_level_tests::contracts::hello_starknet::hello_starknet::HelloStarknetImpl::increase_balance>([14], [5], [2], [22], [15]) -> ([23], [24], [25], [26]);
-enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>>([26]) { fallthrough([27]) F0_B1([28]) };
+enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, ())>>([26]) { fallthrough([27]) F0_B1([28]) };
 branch_align() -> ();
 drop<Tuple<cairo_level_tests::contracts::hello_starknet::hello_starknet::ContractState, Unit>>([27]) -> ();
 redeposit_gas([24]) -> ([29]);

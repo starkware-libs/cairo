@@ -475,14 +475,13 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         let db = self.db;
         let concrete_libfunc_id = match match_info {
             MatchInfo::Extern(s) => get_match_libfunc_id(db, s.function),
-            MatchInfo::Enum(s) => {
-                let enum_ty =
-                    db.get_concrete_type_id(self.lowered_function.variables[s.input.var_id].ty)?;
-                match_enum_libfunc_id(db, enum_ty.clone())?
-            }
+            MatchInfo::Enum(s) => match_enum_libfunc_id(
+                db,
+                db.get_concrete_type_id(self.lowered_function.variables[s.input.var_id].ty)?
+                    .clone(),
+            ),
             MatchInfo::Value(s) => {
-                let enum_ty = db.get_index_enum_type_id(s.num_of_arms)?;
-                match_enum_libfunc_id(db, enum_ty.clone())?
+                match_enum_libfunc_id(db, db.get_index_enum_type_id(s.num_of_arms)?.clone())
             }
         };
         Ok(get_libfunc_signature(db, &concrete_libfunc_id))

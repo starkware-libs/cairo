@@ -53,7 +53,7 @@ End:
   Return(v6)
 
 //! > sierra_code
-enum_match<core::option::Option::<core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
+enum_match_v2<core::option::Option::<core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
 branch_align() -> ()
 struct_construct<Tuple<felt252>>([1]) -> ([3])
 enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])

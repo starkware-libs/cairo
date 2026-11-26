@@ -17,7 +17,9 @@ use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
-use cairo_lang_sierra::extensions::enm::{EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc};
+use cairo_lang_sierra::extensions::enm::{
+    EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc, enum_match_v2_search_depths,
+};
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
@@ -412,6 +414,26 @@ pub fn core_libfunc_cost(
                         itertools::repeat_n(ConstCost::steps(3).into(), n - 1)
                     )
                     .collect_vec(),
+                }
+            }
+            EnumConcreteLibfunc::MatchV2(libfunc) => {
+                let n_variants = libfunc.variants.len();
+                // Reading the indicator out of the box.
+                let base = i32::from(libfunc.boxed && n_variants >= 2);
+                match n_variants {
+                    0 | 1 => vec![ConstCost::default().into(); n_variants],
+                    // The conditional jump.
+                    2 => vec![ConstCost::steps(base + 1).into(); 2],
+                    // A conditional jump per search level, the indicator assertion, and a jump to
+                    // the branch for all but the first variant.
+                    _ => enum_match_v2_search_depths(n_variants)
+                        .into_iter()
+                        .enumerate()
+                        .map(|(index, depth)| {
+                            let final_jump = i32::from(index != 0);
+                            ConstCost::steps(base + depth as i32 + 1 + final_jump).into()
+                        })
+                        .collect(),
                 }
             }
         },
