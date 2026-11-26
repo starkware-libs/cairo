@@ -35,7 +35,7 @@ use self::getter::{GetExecutionInfoTrait, GetExecutionInfoV2Trait, GetterLibfunc
 use self::interoperability::{
     ClassHashConstLibfunc, ClassHashToFelt252Libfunc, ClassHashTryFromFelt252Trait, ClassHashType,
     ContractAddressToFelt252Libfunc, ContractAddressTryFromFelt252Libfunc, DeployLibfunc,
-    LibraryCallLibfunc, SendMessageToL1Libfunc,
+    DeployV2Libfunc, LibraryCallLibfunc, SendMessageToL1Libfunc,
 };
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
@@ -90,6 +90,7 @@ define_libfunc_hierarchy! {
          GetExecutionInfoV2(GetterLibfunc<GetExecutionInfoV2Trait>),
          GetExecutionInfoV3(GetterLibfunc<GetExecutionInfoV3Trait>),
          Deploy(DeployLibfunc),
+         DeployV2(DeployV2Libfunc),
          Keccak(KeccakLibfunc),
          Sha256ProcessBlock(Sha256ProcessBlockLibfunc),
          Sha256StateHandleInit(Sha256StateHandleInitLibfunc),
