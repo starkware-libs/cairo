@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795739767200,
+  "lastUpdate": 1795739884257,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -51191,6 +51191,48 @@ window.BENCHMARK_DATA = {
           "url": "https://github.com/starkware-libs/cairo/commit/84a5a2a094e8f572af53280ea944ad4c4d52e06b"
         },
         "date": 1795653767412,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "ls_reexec/structural edit (top)",
+            "value": 2713,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/structural edit (end)",
+            "value": 1910,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/contract trivia edit",
+            "value": 3234,
+            "unit": "queries"
+          },
+          {
+            "name": "ls_reexec/plain trivia edit",
+            "value": 3214,
+            "unit": "queries"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "pqhyl07",
+            "username": "pqhyl07",
+            "email": "pqhyl07@outlook.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "fde134fa66cba974e4c12c8c86348d4e19a938f0",
+          "message": "docs: fix stale initialize_vm doc comment (#10495)\n\nSigned-off-by: pqhyl07 <pqhyl07@outlook.com>",
+          "timestamp": "2026-11-26T15:03:28Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/fde134fa66cba974e4c12c8c86348d4e19a938f0"
+        },
+        "date": 1795739883944,
         "tool": "customSmallerIsBetter",
         "benches": [
           {
