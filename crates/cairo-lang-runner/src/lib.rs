@@ -32,7 +32,7 @@ use crate::profiling::ProfilerConfig;
 pub mod casm_run;
 pub mod clap;
 pub mod profiling;
-pub mod short_string;
+pub use cairo_lang_casm_run::{insert_value_to_cellref, short_string};
 
 const MAX_STACK_TRACE_DEPTH_DEFAULT: usize = 100;
 

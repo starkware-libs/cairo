@@ -385,6 +385,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-casm-run"
+version = "2.22.0"
+dependencies = [
+ "cairo-lang-casm",
+ "cairo-lang-sierra",
+ "cairo-lang-utils",
+ "cairo-vm",
+ "itertools 0.15.0",
+ "lambdaworks-math",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "rand 0.10.2",
+ "starknet-types-core",
+ "test-case",
+]
+
+[[package]]
 name = "cairo-lang-compiler"
 version = "2.22.0"
 dependencies = [
@@ -718,6 +736,7 @@ name = "cairo-lang-runner"
 version = "2.22.0"
 dependencies = [
  "cairo-lang-casm",
+ "cairo-lang-casm-run",
  "cairo-lang-compiler",
  "cairo-lang-defs",
  "cairo-lang-lowering",
@@ -736,9 +755,7 @@ dependencies = [
  "keccak 0.2.1",
  "lambdaworks-math",
  "num-bigint",
- "num-integer",
  "num-traits",
- "rand 0.10.2",
  "salsa",
  "serde",
  "sha2 0.11.0",

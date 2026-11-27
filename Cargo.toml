@@ -53,6 +53,7 @@ members = [
   "crates/bin/starknet-sierra-extract-code",
   "crates/bin/starknet-sierra-upgrade-validate",
   "crates/cairo-lang-casm",
+  "crates/cairo-lang-casm-run",
   "crates/cairo-lang-compiler",
   "crates/cairo-lang-debug",
   "crates/cairo-lang-defs",
