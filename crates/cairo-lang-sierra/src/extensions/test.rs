@@ -332,6 +332,10 @@ Ok(());"enum_init<Option,1>")]
             "enum_snapshot_match<Option>")]
 #[test_case("enum_snapshot_match", vec![type_arg("NonDupEnum")] => Ok(());
             "enum_snapshot_match<NonDupEnum>")]
+#[test_case("enum_match_v2", vec![type_arg("Option")] => Ok(()); "enum_match_v2<Option>")]
+#[test_case("enum_match_v2", vec![type_arg("felt252")] => Err(UnsupportedGenericArg);
+            "enum_match_v2<felt252>")]
+#[test_case("enum_match_v2", vec![] => Err(WrongNumberOfGenericArgs); "enum_match_v2")]
 #[test_case("downcast", vec![type_arg("felt252"), type_arg("bytes31")]
             => Err(UnsupportedGenericArg); "downcast<felt252, bytes31>")]
 #[test_case("downcast", vec![type_arg("bytes31"), type_arg("BoundedInt0_10")]

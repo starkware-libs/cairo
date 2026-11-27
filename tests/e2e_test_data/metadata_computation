@@ -1246,7 +1246,7 @@ type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: f
 type Const<felt252, 2> = Const<felt252, 2> [storable: false, drop: false, dup: false, zero_sized: false];
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc enum_match<core::bool> = enum_match<core::bool>;
+libfunc enum_match_v2<core::bool> = enum_match_v2<core::bool>;
 libfunc branch_align = branch_align;
 libfunc drop<Unit> = drop<Unit>;
 libfunc const_as_immediate<Const<felt252, 2>> = const_as_immediate<Const<felt252, 2>>;
@@ -1262,7 +1262,7 @@ libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_add = felt252_add;
 
 F0:
-enum_match<core::bool>([0]) { fallthrough([1]) F0_B0([2]) };
+enum_match_v2<core::bool>([0]) { fallthrough([1]) F0_B0([2]) };
 branch_align() -> ();
 drop<Unit>([1]) -> ();
 const_as_immediate<Const<felt252, 2>>() -> ([3]);
@@ -1275,7 +1275,7 @@ const_as_immediate<Const<felt252, 1>>() -> ([4]);
 store_temp<felt252>([4]) -> ([4]);
 return([4]);
 F1:
-enum_match<core::bool>([0]) { fallthrough([1]) F1_B0([2]) };
+enum_match_v2<core::bool>([0]) { fallthrough([1]) F1_B0([2]) };
 branch_align() -> ();
 drop<Unit>([1]) -> ();
 struct_construct<Unit>() -> ([3]);
@@ -2290,7 +2290,7 @@ libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc function_call<user@test::rec> = function_call<user@test::rec>;
 libfunc const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>> = const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>>;
 libfunc function_call<user@test::heavy> = function_call<user@test::heavy>;
-libfunc enum_match<core::panics::PanicResult::<(core::integer::u32,)>> = enum_match<core::panics::PanicResult::<(core::integer::u32,)>>;
+libfunc enum_match_v2<core::panics::PanicResult::<(core::integer::u32,)>> = enum_match_v2<core::panics::PanicResult::<(core::integer::u32,)>>;
 libfunc struct_deconstruct<Tuple<u32>> = struct_deconstruct<Tuple<u32>>;
 libfunc const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>> = const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>;
 libfunc const_as_immediate<Const<u32, 3>> = const_as_immediate<Const<u32, 3>>;
@@ -2367,7 +2367,7 @@ branch_align() -> ();
 store_temp<RangeCheck>([4]) -> ([4]);
 store_temp<u32>([2]) -> ([2]);
 function_call<user@test::heavy>([4], [2]) -> ([21], [22]);
-enum_match<core::panics::PanicResult::<(core::integer::u32,)>>([22]) { fallthrough([23]) F1_B2([24]) };
+enum_match_v2<core::panics::PanicResult::<(core::integer::u32,)>>([22]) { fallthrough([23]) F1_B2([24]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<u32>>([23]) -> ([25]);
 store_temp<RangeCheck>([21]) -> ([21]);

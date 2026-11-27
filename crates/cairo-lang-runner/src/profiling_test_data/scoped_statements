@@ -44,6 +44,6 @@ test::pow2_14000;test::pow2_by_add_loop{14000, 1, };test::pow2_by_add_loop;funct
 test::pow2_14000;test::pow2_by_add_loop{14000, 1, };test::pow2_by_add_loop;store_temp<core::panics::PanicResult::<(core::felt252,)>> 3
 test::pow2_14000;test::pow2_by_add_loop{14000, 1, };test::pow2_by_add_loop;return 14000
 test::pow2_14000;test::pow2_by_add_loop{14000, 1, };return 1
-test::pow2_14000;enum_match<core::panics::PanicResult::<(core::felt252,)>> 1
+test::pow2_14000;enum_match_v2<core::panics::PanicResult::<(core::felt252,)>> 1
 test::pow2_14000;store_temp<core::panics::PanicResult::<((),)>> 3
 test::pow2_14000;return 1

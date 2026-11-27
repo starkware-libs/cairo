@@ -436,7 +436,7 @@ type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_size
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc function_call<user@test::recursive_buy::<core::integer::u8>> = function_call<user@test::recursive_buy::<core::integer::u8>>;
-libfunc enum_match<core::panics::PanicResult::<((),)>> = enum_match<core::panics::PanicResult::<((),)>>;
+libfunc enum_match_v2<core::panics::PanicResult::<((),)>> = enum_match_v2<core::panics::PanicResult::<((),)>>;
 libfunc branch_align = branch_align;
 libfunc drop<Tuple<Unit>> = drop<Tuple<Unit>>;
 libfunc redeposit_gas = redeposit_gas;
@@ -465,7 +465,7 @@ F0:
 store_temp<RangeCheck>([0]) -> ([0]);
 store_temp<GasBuiltin>([1]) -> ([1]);
 function_call<user@test::recursive_buy::<core::integer::u8>>([0], [1]) -> ([3], [4], [5]);
-enum_match<core::panics::PanicResult::<((),)>>([5]) { fallthrough([6]) F0_B0([7]) };
+enum_match_v2<core::panics::PanicResult::<((),)>>([5]) { fallthrough([6]) F0_B0([7]) };
 branch_align() -> ();
 drop<Tuple<Unit>>([6]) -> ();
 redeposit_gas([4]) -> ([8]);

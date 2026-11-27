@@ -245,6 +245,7 @@ fn enum_definition_data_cycle<'db>(
 fn enum_definition_data_initial<'db>(
     _db: &'db dyn Database,
     _id: salsa::Id,
+    _last_provisional_value: Option<&Maybe<EnumDefinitionData<'db>>>,
     _enum_id: EnumId<'db>,
 ) -> Maybe<EnumDefinitionData<'db>> {
     Err(skip_diagnostic())

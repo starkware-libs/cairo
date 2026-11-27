@@ -132,7 +132,7 @@ fn foo(opt: Option<@felt252>) -> felt252 {
 //! > lowering_diagnostics
 
 //! > sierra_code
-enum_match<core::option::Option::<@core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
+enum_match_v2<core::option::Option::<@core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
 branch_align() -> ()
 rename<felt252>([1]) -> ([3])
 PushValues([3]: felt252) -> ([3])
@@ -282,7 +282,7 @@ fn foo(x: SingleVariant) -> felt252 {
 //! > lowering_diagnostics
 
 //! > sierra_code
-enum_match<test::SingleVariant>([0]) -> ([1])
+enum_match_v2<test::SingleVariant>([0]) -> ([1])
 const_as_immediate<Const<felt252, 1>>() -> ([2])
 felt252_add([1], [2]) -> ([3])
 PushValues([3]: felt252) -> ([3])

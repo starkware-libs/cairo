@@ -563,7 +563,7 @@ impl Default for ProfilingInfoCollectionConfig {
 }
 
 /// Initializes a VM by adding a new segment with builtins cost and a necessary pointer at the end
-/// of the program, as well as placing the arguments at the initial AP values.
+/// of the program.
 pub fn initialize_vm(vm: &mut VirtualMachine, data_len: usize) -> Result<(), Box<CairoRunError>> {
     // Create the builtin cost segment, with dummy values.
     let builtin_cost_segment = vm.add_memory_segment();

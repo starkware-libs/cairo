@@ -238,7 +238,7 @@ libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<IntRange<u8>> = store_temp<IntRange<u8>>;
 libfunc jump = jump;
 libfunc function_call<user@test::foo::{loop#0}> = function_call<user@test::foo::{loop#0}>;
-libfunc enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>> = enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>;
+libfunc enum_match_v2<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>> = enum_match_v2<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>;
 libfunc struct_deconstruct<Tuple<IntRange<u8>, Unit>> = struct_deconstruct<Tuple<IntRange<u8>, Unit>>;
 libfunc drop<IntRange<u8>> = drop<IntRange<u8>>;
 libfunc struct_construct<Tuple<Unit>> = struct_construct<Tuple<Unit>>;
@@ -285,7 +285,7 @@ store_temp<GasBuiltin>([12]) -> ([10]);
 store_temp<IntRange<u8>>([7]) -> ([11]);
 F0_B1:
 function_call<user@test::foo::{loop#0}>([9], [10], [11]) -> ([13], [14], [15]);
-enum_match<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([15]) { fallthrough([16]) F0_B2([17]) };
+enum_match_v2<core::panics::PanicResult::<(core::ops::range::internal::IntRange::<core::integer::u8>, ())>>([15]) { fallthrough([16]) F0_B2([17]) };
 branch_align() -> ();
 redeposit_gas([14]) -> ([18]);
 struct_deconstruct<Tuple<IntRange<u8>, Unit>>([16]) -> ([19], [20]);

@@ -5,7 +5,7 @@
 //! type Option = Enum<felt252_ty, unit_ty>;
 //! libfunc init_option_some = enum_init<Option, 0>;
 //! libfunc init_option_none = enum_init<Option, 1>;
-//! libfunc match_option = enum_match<Option>;
+//! libfunc match_option = enum_match_v2<Option>;
 //! ...
 //! felt252_const<0>() -> (felt0);
 //! tuple_const() -> (unit);
@@ -23,7 +23,7 @@ use super::structure::StructType;
 use super::utils::{peel_snapshot, reinterpret_cast_signature};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::bounded_int::bounded_int_ty;
-use crate::extensions::boxing::box_ty;
+use crate::extensions::boxing::{BoxType, box_ty};
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
@@ -129,6 +129,7 @@ define_libfunc_hierarchy! {
         Match(EnumMatchLibfunc),
         SnapshotMatch(EnumSnapshotMatchLibfunc),
         BoxedMatch(EnumBoxedMatchLibfunc),
+        MatchV2(EnumMatchV2Libfunc),
     }, EnumConcreteLibfunc
 }
 
@@ -464,4 +465,107 @@ impl NamedLibfunc for EnumBoxedMatchLibfunc {
         )?;
         Ok(EnumBoxedMatchConcreteLibfunc { variants, signature })
     }
+}
+
+/// Concrete implementation of the `enum_match_v2` libfunc.
+pub struct EnumMatchV2ConcreteLibfunc {
+    /// The concrete types of the enum variants (no additional snapshots and boxing).
+    pub variants: Vec<ConcreteTypeId>,
+    /// Whether the matched value is boxed, and the variants are extracted as boxed values.
+    pub boxed: bool,
+    pub signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for EnumMatchV2ConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
+/// Libfunc for matching an enum, a snapshot of an enum, or a box of either.
+#[derive(Default)]
+pub struct EnumMatchV2Libfunc {}
+impl EnumMatchV2Libfunc {
+    fn specialize_concrete_lib_func(
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<EnumMatchV2ConcreteLibfunc, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let type_info = context.get_type_info(ty)?;
+        let (unboxed_ty, boxed) = if type_info.long_id.generic_id == BoxType::id() {
+            (args_as_single_type(&type_info.long_id.generic_args)?, true)
+        } else {
+            (ty, false)
+        };
+        let (enum_ty, is_snapshot) = peel_snapshot(unboxed_ty, context.get_type_info(unboxed_ty)?)?;
+        let variants = EnumConcreteType::try_from_concrete_type(context, enum_ty)?.variants;
+        // Cells are allocated for reading the indicator out of a box, and for the indicator search.
+        let new_vars_only = variants.len() < if boxed { 2 } else { 3 };
+        let branch_signatures = variants
+            .iter()
+            .map(|variant_ty| {
+                let variant_ty =
+                    ty_with_optional_snapshot(context, variant_ty.clone(), is_snapshot)?;
+                let (output_ty, ref_info) = if boxed {
+                    (
+                        box_ty(context, variant_ty)?,
+                        OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
+                    )
+                } else if context.get_type_info(&variant_ty)?.zero_sized {
+                    (variant_ty, OutputVarReferenceInfo::ZeroSized)
+                } else {
+                    (variant_ty, OutputVarReferenceInfo::PartialParam { param_idx: 0 })
+                };
+                Ok(BranchSignature {
+                    vars: vec![OutputVarInfo { ty: output_ty, ref_info }],
+                    ap_change: SierraApChange::Known { new_vars_only },
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let param = ParamSignature::new(ty.clone());
+        let signature = LibfuncSignature {
+            param_signatures: vec![if boxed { param.with_allow_add_const() } else { param }],
+            branch_signatures,
+            fallthrough: (!variants.is_empty()).then_some(0),
+        };
+        Ok(EnumMatchV2ConcreteLibfunc { variants, boxed, signature })
+    }
+}
+impl NamedLibfunc for EnumMatchV2Libfunc {
+    type Concrete = EnumMatchV2ConcreteLibfunc;
+    const STR_ID: &'static str = "enum_match_v2";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(Self::specialize_concrete_lib_func(context, args)?.signature)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Self::specialize_concrete_lib_func(context, args)
+    }
+}
+
+/// Returns per variant the depth of its leaf in the indicator search tree of `enum_match_v2`.
+/// The search is only used for enums with 3 or more variants.
+pub fn enum_match_v2_search_depths(n_variants: usize) -> Vec<usize> {
+    let mut depths = vec![0; n_variants];
+    // The ranges of variants left to set the depth for, with the depth of their subtree.
+    let mut stack = vec![(0..n_variants, 0)];
+    while let Some((variants, depth)) = stack.pop() {
+        if variants.len() <= 1 {
+            depths[variants].fill(depth);
+            continue;
+        }
+        // The lower-indexed variants get the shallower side.
+        let mid = variants.start + variants.len() / 2;
+        stack.push((variants.start..mid, depth + 1));
+        stack.push((mid..variants.end, depth + 1));
+    }
+    depths
 }

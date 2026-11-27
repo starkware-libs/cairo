@@ -9,10 +9,11 @@ use cairo_lang_casm::{casm, casm_build_extend, casm_extend, cell_ref};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::{
     EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc, EnumInitConcreteLibfunc,
+    EnumMatchV2ConcreteLibfunc,
 };
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{require, try_extract_matches};
 use itertools::{Itertools, chain, repeat_n};
 use num_bigint::BigInt;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
@@ -40,6 +41,7 @@ pub fn build(
             build_enum_match(builder)
         }
         EnumConcreteLibfunc::BoxedMatch(libfunc) => build_enum_boxed_match(libfunc, builder),
+        EnumConcreteLibfunc::MatchV2(libfunc) => build_enum_match_v2(libfunc, builder),
     }
 }
 
@@ -499,4 +501,150 @@ fn build_enum_boxed_match(
             instructions,
         )
     }
+}
+
+/// Handles statement for matching an enum, a snapshot of an enum, or a box of either.
+///
+/// The variant is found by a binary search over booleans provided by hints, and the leaf of each
+/// variant asserts the indicator has the value of that variant.
+///
+/// For example, this "Sierra statement" (3-variants-enum, with indicators 5, 3 and 1)
+/// ```ignore
+/// enum_match_v2<Positivity>(enum_var=[ap-10]) {fallthrough(pos), 2000(neg), 3000(zero)};
+/// ```
+/// translates to these CASM instructions:
+/// ```ignore
+/// %{ memory[ap + 0] = 5 <= memory[ap + -10] %}
+/// jmp rel 12 if [ap + 0] != 0, ap++;
+/// %{ memory[ap + 0] = 3 <= memory[ap + -11] %}
+/// jmp rel 6 if [ap + 0] != 0, ap++;
+/// [ap + -12] = 1;
+/// jmp rel <jump_offset_3000>;
+/// [ap + -12] = 3;
+/// jmp rel <jump_offset_2000>;
+/// [ap + -11] = 5;
+/// ```
+/// An enum with 2 variants requires no search:
+/// ```ignore
+/// jmp rel <jump_offset_2000> if [ap + -10] != 0;
+/// ```
+fn build_enum_match_v2(
+    libfunc: &EnumMatchV2ConcreteLibfunc,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let n_variants = libfunc.variants.len();
+    let variant_sizes: Vec<i16> = libfunc
+        .variants
+        .iter()
+        .map(|variant_ty| builder.program_info.type_sizes.get(variant_ty).copied())
+        .collect::<Option<_>>()
+        .ok_or(InvocationError::UnknownTypeData)?;
+    let max_variant_size = variant_sizes.iter().max().copied().unwrap_or_default();
+    // The variants are right-aligned after the indicator.
+    let paddings = variant_sizes.iter().map(|size| max_variant_size - size);
+
+    let mut ctx = casm! {};
+    let (indicator, mut branch_outputs) = if libfunc.boxed {
+        let [enum_ptr] = builder.try_get_single_cells()?;
+        let (mut base_ptr, offset) = enum_ptr
+            .to_deref_with_offset()
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        // The indicator is only read when it is needed for choosing a branch.
+        if n_variants >= 2 {
+            let offset = i16::try_from(offset)
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
+            casm_extend! {ctx, [ap] = [[&base_ptr] + offset], ap++; };
+            require(base_ptr.apply_known_ap_change(1))
+                .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        }
+        let variant_ptrs = paddings.map(|padding| {
+            let variant_offset = i64::from(offset) + 1 + i64::from(padding);
+            vec![CellExpression::add_with_const(base_ptr, variant_offset)]
+        });
+        (cell_ref!([ap - 1]), variant_ptrs.collect_vec())
+    } else {
+        let [expression] = builder.try_get_refs()?;
+        let enum_ty = &builder.libfunc.param_signatures()[0].ty;
+        let EnumView { variant_selector, inner_value } =
+            EnumView::try_get_view(expression, &builder.program_info, enum_ty)
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
+        let indicator = try_extract_matches!(variant_selector, CellExpression::Deref)
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        (indicator, paddings.map(|padding| inner_value[padding as usize..].to_vec()).collect())
+    };
+
+    let branches = &builder.invocation.branches;
+    let mut relocations = vec![];
+    // Adds a relocation of the next added instruction to the statement of the branch of a variant.
+    let mut add_variant_relocation = |instruction_idx, variant: usize| {
+        let BranchTarget::Statement(statement_id) = branches[variant].target else {
+            panic!("malformed invocation");
+        };
+        relocations.push(RelocationEntry {
+            instruction_idx,
+            relocation: Relocation::RelativeStatementId(statement_id),
+        });
+    };
+    match n_variants {
+        // An enum with no variants has no valid value, so the statement must not be passable.
+        0 => {
+            casm_extend! {ctx, [fp - 1] = [fp - 1] + 1; };
+        }
+        1 => {}
+        // A single conditional jump chooses between the two branches.
+        2 => {
+            add_variant_relocation(ctx.instructions.len(), 1);
+            casm_extend! {ctx, jmp rel 0 if indicator != 0; };
+        }
+        // Must split the variants the same way as `enum_match_v2_search_depths`.
+        _ => {
+            let variant_indicator = |variant| get_variant_selector(n_variants, variant);
+            // The ranges of variants left to add the code for, with the indicator at that code,
+            // and the depth of their subtree.
+            let mut stack = vec![(0..n_variants, indicator, 0)];
+            while let Some((variants, mut indicator, depth)) = stack.pop() {
+                if variants.len() == 1 {
+                    let variant = variants.start;
+                    // Adjusting for the cells allocated for the hints on the way to the variant.
+                    for cell in &mut branch_outputs[variant] {
+                        require(cell.apply_known_ap_change(depth))
+                            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+                    }
+                    let expected_indicator = variant_indicator(variant)?;
+                    casm_extend! {ctx, indicator = expected_indicator; };
+                    // The first variant is the last one added, and falls through.
+                    if variant != 0 {
+                        add_variant_relocation(ctx.instructions.len(), variant);
+                        casm_extend! {ctx, jmp rel 0; };
+                    }
+                    continue;
+                }
+                let mid = variants.start + variants.len() / 2;
+                // The indicators decrease with the variant.
+                let min_lower_indicator = variant_indicator(mid - 1)?;
+                // The jump skips over the code of the subtree of the upper variants, which is
+                // added right after it. A subtree of `k` variants has `k` leaves, each an
+                // assertion and a jump (of size 4), and `k - 1` splits, each a conditional jump
+                // (of size 2). As the jump is relative to its own start, its size (2) is added,
+                // for a total of `4k + 2(k - 1) + 2 = 6k`.
+                // The first variant, the only one with no jump, is never an upper variant.
+                let upper_code_size = 6 * (variants.end - mid);
+                casm_extend! {ctx,
+                    %{ memory [ap + 0] = min_lower_indicator <= memory indicator %}
+                    jmp rel upper_code_size if [ap + 0] != 0, ap++;
+                };
+                // Adjusting for the cell allocated for the hint.
+                require(indicator.apply_known_ap_change(1))
+                    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+                // The code of the upper variants is added first, as it is not jumped to.
+                stack.push((variants.start..mid, indicator, depth + 1));
+                stack.push((mid..variants.end, indicator, depth + 1));
+            }
+        }
+    }
+    Ok(builder.build(
+        ctx.instructions,
+        relocations,
+        branch_outputs.into_iter().map(|cells| [ReferenceExpression { cells }].into_iter()),
+    ))
 }

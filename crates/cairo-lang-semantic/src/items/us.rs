@@ -325,6 +325,7 @@ fn priv_global_use_semantic_data_tracked_cycle_fn<'db>(
 fn priv_global_use_semantic_data_tracked_initial<'db>(
     db: &'db dyn Database,
     _id: salsa::Id,
+    _last_provisional_value: Option<&Maybe<UseGlobalData<'db>>>,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
     let mut diagnostics = SemanticDiagnostics::new(global_use_id.parent_module(db));
@@ -462,6 +463,7 @@ fn module_imported_modules_cycle_fn<'db>(
 fn module_imported_modules_initial<'db>(
     _db: &'db dyn Database,
     _id: salsa::Id,
+    _last_provisional_value: Option<&ImportedModules<'db>>,
     _tracked: Tracked,
     _module_id: ModuleId<'db>,
 ) -> ImportedModules<'db> {
