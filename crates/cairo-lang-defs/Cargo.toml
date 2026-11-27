@@ -13,7 +13,10 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "=2.22.0"
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "=2.22.0" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "=2.22.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "=2.22.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.22.0", features = ["tracing"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.22.0", features = [
+  "salsa",
+  "tracing",
+] }
 itertools = { workspace = true, default-features = true }
 postcard.workspace = true
 salsa.workspace = true

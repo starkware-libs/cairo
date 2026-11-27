@@ -10,7 +10,10 @@ description = "Diagnostic utilities."
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "=2.22.0" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "=2.22.0" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "=2.22.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.22.0", features = ["tracing"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.22.0", features = [
+  "salsa",
+  "tracing",
+] }
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
 
