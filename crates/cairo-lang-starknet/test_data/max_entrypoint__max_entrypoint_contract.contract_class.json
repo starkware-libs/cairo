@@ -1,10 +1,10 @@
 {
   "sierra_program": [
     "0x1",
-    "0x9",
-    "0x5",
+    "0xa",
+    "0x0",
     "0x2",
-    "0x15",
+    "0x16",
     "0x0",
     "0x18f",
     "0x71",
@@ -153,7 +153,7 @@
     "0x7374727563745f636f6e737472756374",
     "0x66756e6374696f6e5f63616c6c",
     "0x3",
-    "0x656e756d5f6d61746368",
+    "0x656e756d5f6d617463685f7632",
     "0x5a",
     "0x7533325f7472795f66726f6d5f66656c74323532",
     "0x64726f70",
@@ -1140,7 +1140,7 @@
       ],
       [
         14,
-        "enum_match<core::option::Option::<core::circuit::u384>>"
+        "enum_match_v2<core::option::Option::<core::circuit::u384>>"
       ],
       [
         15,
@@ -1236,7 +1236,7 @@
       ],
       [
         38,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::max_entrypoint::max_entrypoint_contract::ContractState, (core::felt252, (core::felt252, core::felt252, core::felt252), core::integer::u128, core::bool, core::circuit::u384, [core::integer::u32; 8]))>>"
+        "enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::contracts::max_entrypoint::max_entrypoint_contract::ContractState, (core::felt252, (core::felt252, core::felt252, core::felt252), core::integer::u128, core::bool, core::circuit::u384, [core::integer::u32; 8]))>>"
       ],
       [
         39,
@@ -1288,7 +1288,7 @@
       ],
       [
         51,
-        "enum_match<core::bool>"
+        "enum_match_v2<core::bool>"
       ],
       [
         52,

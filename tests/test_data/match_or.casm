@@ -2,10 +2,19 @@
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 ret;
-jmp rel [fp + -6];
+%{ memory[ap + 0] = 5 <= memory[fp + -6] %}
+jmp rel 12 if [ap + 0] != 0, ap++;
+%{ memory[ap + 0] = 3 <= memory[fp + -6] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[fp + -6] = 1;
+jmp rel 36;
+[fp + -6] = 3;
 jmp rel 28;
-jmp rel 22;
-jmp rel 11;
+%{ memory[ap + 0] = 7 <= memory[fp + -6] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[fp + -6] = 5;
+jmp rel 13;
+[fp + -6] = 7;
 ap += 13;
 [ap + 0] = [fp + -7], ap++;
 [ap + 0] = 0, ap++;

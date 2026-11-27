@@ -149,9 +149,9 @@ struct_construct<Unit>() -> ([0])
 enum_init<core::option::Option::<test::Ph>, 1>([0]) -> ([1])
 store_temp<core::option::Option::<test::Ph>>([1]) -> ([1])
 function_call<user@test::identity::<core::option::Option::<test::Ph>>>([1]) -> ([2])
-enum_match<core::option::Option::<test::Ph>>([2]) { fallthrough([3]) label_test::foo::1([4]) }
+enum_match_v2<core::option::Option::<test::Ph>>([2]) { fallthrough([3]) label_test::foo::1([4]) }
 branch_align() -> ()
-enum_match<test::Ph>([3]) { }
+enum_match_v2<test::Ph>([3]) { }
 label_test::foo::3:
 label_test::foo::1:
 branch_align() -> ()

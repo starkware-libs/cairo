@@ -1,10 +1,10 @@
 {
   "sierra_program": [
     "0x1",
-    "0x9",
-    "0x5",
+    "0xa",
+    "0x0",
     "0x2",
-    "0x15",
+    "0x16",
     "0x0",
     "0x25d",
     "0x1a3",
@@ -164,7 +164,7 @@
     "0x75385f746f5f66656c74323532",
     "0x1557182e4359a1f0c6301278e8f5b35a776ab58d39892581e357578fb287836",
     "0x45",
-    "0x656e756d5f6d61746368",
+    "0x656e756d5f6d617463685f7632",
     "0x44",
     "0x753132385f746f5f66656c74323532",
     "0x756e626f78",
@@ -2226,7 +2226,7 @@
       ],
       [
         52,
-        "enum_match<core::panics::PanicResult::<(core::integer::u256,)>>"
+        "enum_match_v2<core::panics::PanicResult::<(core::integer::u256,)>>"
       ],
       [
         53,
@@ -2390,7 +2390,7 @@
       ],
       [
         93,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::ContractState, ())>>"
+        "enum_match_v2<core::panics::PanicResult::<(cairo_level_tests::contracts::erc20::erc_20::ContractState, ())>>"
       ],
       [
         94,
@@ -2642,7 +2642,7 @@
       ],
       [
         156,
-        "enum_match<core::bool>"
+        "enum_match_v2<core::bool>"
       ],
       [
         157,
@@ -2690,7 +2690,7 @@
       ],
       [
         168,
-        "enum_match<cairo_level_tests::contracts::erc20::erc_20::Event>"
+        "enum_match_v2<cairo_level_tests::contracts::erc20::erc_20::Event>"
       ],
       [
         169,

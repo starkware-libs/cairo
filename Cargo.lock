@@ -319,7 +319,7 @@ checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
 
 [[package]]
 name = "cairo-compile"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -334,7 +334,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-execute"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -354,7 +354,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-format"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-utils",
@@ -368,7 +368,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-casm"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -386,7 +386,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-casm-run"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-sierra",
@@ -404,7 +404,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-compiler"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-defs",
@@ -429,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-debug"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-test-utils",
@@ -441,7 +441,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-defs"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-diagnostics",
@@ -465,7 +465,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-diagnostics"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-doc"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-debug",
@@ -503,7 +503,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-eq-solver"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -513,7 +513,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-executable"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -537,7 +537,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-executable-plugin"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-compiler",
  "cairo-lang-defs",
@@ -555,7 +555,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-execute-utils"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -569,7 +569,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-filesystem"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-proc-macros",
@@ -590,7 +590,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-formatter"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-diagnostics",
@@ -610,7 +610,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-lowering"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "assert_matches",
  "cairo-lang-debug",
@@ -642,7 +642,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-parser"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anstream",
  "cairo-lang-diagnostics",
@@ -666,7 +666,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-plugins"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -692,7 +692,7 @@ checksum = "123ac0ecadf31bacae77436d72b88fa9caef2b8e92c89ce63a125ae911a12fae"
 
 [[package]]
 name = "cairo-lang-proc-macros"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
@@ -705,7 +705,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-project"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-utils",
@@ -718,7 +718,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runnable-utils"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-sierra",
@@ -733,7 +733,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runner"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-casm-run",
@@ -767,7 +767,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-semantic"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -797,7 +797,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "bimap",
@@ -827,7 +827,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-ap-change"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -842,7 +842,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-gas"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -861,7 +861,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-generator"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -892,7 +892,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-to-casm"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "assert_matches",
  "cairo-lang-casm",
@@ -915,7 +915,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-type-size"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-utils",
@@ -923,7 +923,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -959,7 +959,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet-classes"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-sierra",
@@ -987,7 +987,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "assert_matches",
  "cairo-lang-debug",
@@ -1008,7 +1008,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax-codegen"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -1019,7 +1019,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-plugin"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1046,7 +1046,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-runner"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1069,7 +1069,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-utils"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-proc-macros",
@@ -1082,7 +1082,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-utils"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-test-utils",
  "hashbrown 0.17.1",
@@ -1105,7 +1105,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-run"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1120,7 +1120,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-size-profiler"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1145,7 +1145,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-test"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1590,7 +1590,7 @@ dependencies = [
  "backtrace",
  "lazy_static",
  "mintex",
- "parking_lot",
+ "parking_lot 0.12.5",
  "rustc-hash 1.1.0",
  "serde",
  "serde_json",
@@ -1920,7 +1920,7 @@ dependencies = [
 
 [[package]]
 name = "generate-syntax"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "cairo-lang-syntax-codegen",
  "cairo-lang-utils",
@@ -1940,7 +1940,7 @@ dependencies = [
 
 [[package]]
 name = "get-lowering"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -2667,9 +2667,9 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
-version = "0.2.189"
+version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
+checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
 
 [[package]]
 name = "libmimalloc-sys"
@@ -2691,6 +2691,15 @@ name = "lock_api"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965"
+dependencies = [
+ "scopeguard",
+]
+
+[[package]]
+name = "lock_api"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65d91b22da179613dcf4d6ec8349563f52a363f6849e03b00dd0a185ec4a59af"
 dependencies = [
  "scopeguard",
 ]
@@ -3042,8 +3051,18 @@ version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93857453250e3077bd71ff98b6a65ea6621a19bb0f559a85248955ac12c45a1a"
 dependencies = [
- "lock_api",
- "parking_lot_core",
+ "lock_api 0.4.14",
+ "parking_lot_core 0.9.12",
+]
+
+[[package]]
+name = "parking_lot"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9cf937ca4e1d0b7578784559063422fc39ae7c5a00f02471f2614d5486fd226"
+dependencies = [
+ "lock_api 0.5.0",
+ "parking_lot_core 0.10.0",
 ]
 
 [[package]]
@@ -3054,7 +3073,19 @@ checksum = "2621685985a2ebf1c516881c026032ac7deafcda1a2c9b7850dc81e3dfcb64c1"
 dependencies = [
  "cfg-if",
  "libc",
- "redox_syscall",
+ "redox_syscall 0.5.18",
+ "smallvec",
+ "windows-link",
+]
+
+[[package]]
+name = "parking_lot_core"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9cfff060068cc18aa7815010fcaf80c68c7fb9e85fc7f5c0f9bf142c21d19826"
+dependencies = [
+ "libc",
+ "redox_syscall 0.9.5",
  "smallvec",
  "windows-link",
 ]
@@ -3447,6 +3478,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "redox_syscall"
+version = "0.9.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "580c875845b41ecb1564ad1ae4703044cef774145e3d7a94dc2b3fa7c97868fd"
+dependencies = [
+ "bitflags",
+]
+
+[[package]]
 name = "ref-cast"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3714,9 +3754,9 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "salsa"
-version = "0.28.2"
+version = "0.28.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf0e374215cd2db2b5c75d7b3a99cb0cc052c0595335dfdefc03d4eb08f4aa81"
+checksum = "71bb6122eeb456512d11ce279cbe1eb5f6e2a23f7082ef5f2fb1ad72e9c85533"
 dependencies = [
  "boxcar",
  "crossbeam-queue",
@@ -3726,7 +3766,7 @@ dependencies = [
  "indexmap",
  "intrusive-collections",
  "inventory",
- "parking_lot",
+ "parking_lot 0.13.0",
  "portable-atomic",
  "rayon",
  "rustc-hash 2.1.3",
@@ -3735,20 +3775,19 @@ dependencies = [
  "smallvec",
  "thin-vec",
  "tracing",
- "typeid",
 ]
 
 [[package]]
 name = "salsa-macro-rules"
-version = "0.28.2"
+version = "0.28.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85f4b7d4405540bbd6d4ffa52d4322d983f3781954d3073067ac1bdb028459b3"
+checksum = "1bc5f7bf0901845dbf61e7f7ce586f74209a7621a7c30c453cecab9b92b15969"
 
 [[package]]
 name = "salsa-macros"
-version = "0.28.2"
+version = "0.28.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "445be2bfbb2f67cb663225ecd7bc5a25370c0250fca30f9d8cbad9a913650370"
+checksum = "6d6dcd603d6a99b0aefabac0961957a9311ae7fb57db233ec631ef47526ada9b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3960,7 +3999,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "sierra-compile"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -4050,7 +4089,7 @@ version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3763264f6b73151db08c50ff20d7d8a0b8796e021cdea7ceedad07b80155fa0e"
 dependencies = [
- "lock_api",
+ "lock_api 0.4.14",
 ]
 
 [[package]]
@@ -4079,7 +4118,7 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starknet-compile"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -4120,7 +4159,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-compile"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -4134,7 +4173,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-extract-code"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "cairo-lang-starknet-classes",
@@ -4145,7 +4184,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-upgrade-validate"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -4187,7 +4226,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a18596f8c785a729f2819c0f6a7eae6ebeebdfffbfe4214ae6b087f690e31901"
 dependencies = [
  "new_debug_unreachable",
- "parking_lot",
+ "parking_lot 0.12.5",
  "phf_shared",
  "precomputed-hash",
 ]
@@ -4328,7 +4367,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "2.21.0"
+version = "2.22.0"
 dependencies = [
  "assert_matches",
  "cairo-lang-casm",
@@ -4481,7 +4520,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
- "parking_lot",
+ "parking_lot 0.12.5",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",

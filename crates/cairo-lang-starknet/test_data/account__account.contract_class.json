@@ -1,10 +1,10 @@
 {
   "sierra_program": [
     "0x1",
-    "0x9",
-    "0x5",
+    "0xa",
+    "0x0",
     "0x2",
-    "0x15",
+    "0x16",
     "0x0",
     "0x197",
     "0x69",
@@ -135,7 +135,7 @@
     "0x7374727563745f636f6e737472756374",
     "0x45",
     "0x736e617073686f745f74616b65",
-    "0x656e756d5f6d61746368",
+    "0x656e756d5f6d617463685f7632",
     "0x44",
     "0x72656465706f7369745f676173",
     "0x61727261795f6e6577",
@@ -1202,7 +1202,7 @@
       ],
       [
         19,
-        "enum_match<core::panics::PanicResult::<(core::felt252,)>>"
+        "enum_match_v2<core::panics::PanicResult::<(core::felt252,)>>"
       ],
       [
         20,
@@ -1290,7 +1290,7 @@
       ],
       [
         41,
-        "enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>"
+        "enum_match_v2<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>"
       ],
       [
         42,
@@ -1298,7 +1298,7 @@
       ],
       [
         43,
-        "enum_match<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>"
+        "enum_match_v2<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>"
       ],
       [
         44,
@@ -1414,7 +1414,7 @@
       ],
       [
         72,
-        "enum_match<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>>"
+        "enum_match_v2<core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>>"
       ],
       [
         73,
@@ -1458,7 +1458,7 @@
       ],
       [
         83,
-        "enum_match<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>"
+        "enum_match_v2<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>"
       ],
       [
         84,
@@ -1590,7 +1590,7 @@
       ],
       [
         116,
-        "enum_match<core::bool>"
+        "enum_match_v2<core::bool>"
       ],
       [
         117,
@@ -1658,7 +1658,7 @@
       ],
       [
         133,
-        "enum_match<core::option::Option::<core::starknet::account::Call>>"
+        "enum_match_v2<core::option::Option::<core::starknet::account::Call>>"
       ],
       [
         134,

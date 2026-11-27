@@ -5,16 +5,16 @@ type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, du
 
 libfunc const_as_immediate<Const<felt252, 300>> = const_as_immediate<Const<felt252, 300>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc enum_match<examples::enum_flow::MyEnumShort> = enum_match<examples::enum_flow::MyEnumShort>;
+libfunc enum_match_v2<examples::enum_flow::MyEnumShort> = enum_match_v2<examples::enum_flow::MyEnumShort>;
 libfunc branch_align = branch_align;
-libfunc enum_match<examples::enum_flow::MyEnumLong> = enum_match<examples::enum_flow::MyEnumLong>;
+libfunc enum_match_v2<examples::enum_flow::MyEnumLong> = enum_match_v2<examples::enum_flow::MyEnumLong>;
 
 F0:
 const_as_immediate<Const<felt252, 300>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 return([0]);
 F1:
-enum_match<examples::enum_flow::MyEnumShort>([0]) { fallthrough([1]) F1_B0([2]) };
+enum_match_v2<examples::enum_flow::MyEnumShort>([0]) { fallthrough([1]) F1_B0([2]) };
 branch_align() -> ();
 store_temp<felt252>([1]) -> ([1]);
 return([1]);
@@ -23,7 +23,7 @@ branch_align() -> ();
 store_temp<felt252>([2]) -> ([2]);
 return([2]);
 F2:
-enum_match<examples::enum_flow::MyEnumLong>([0]) { fallthrough([1]) F2_B0([2]) F2_B1([3]) };
+enum_match_v2<examples::enum_flow::MyEnumLong>([0]) { fallthrough([1]) F2_B0([2]) F2_B1([3]) };
 branch_align() -> ();
 store_temp<felt252>([1]) -> ([1]);
 return([1]);

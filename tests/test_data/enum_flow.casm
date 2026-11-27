@@ -5,9 +5,16 @@ jmp rel 4 if [fp + -4] != 0;
 ret;
 [ap + 0] = [fp + -3], ap++;
 ret;
-jmp rel [fp + -4];
+%{ memory[ap + 0] = 5 <= memory[fp + -4] %}
+jmp rel 12 if [ap + 0] != 0, ap++;
+%{ memory[ap + 0] = 3 <= memory[fp + -4] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[fp + -4] = 1;
+jmp rel 14;
+[fp + -4] = 3;
 jmp rel 8;
-jmp rel 4;
+[fp + -4] = 5;
+ap += 1;
 [ap + 0] = [fp + -3], ap++;
 ret;
 [ap + 0] = [fp + -3], ap++;

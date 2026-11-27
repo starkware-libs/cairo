@@ -7,9 +7,9 @@ license-file.workspace = true
 description = "Execution of CASM hints on the Cairo VM."
 
 [dependencies]
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "=2.21.0" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "=2.21.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.21.0" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "=2.22.0" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "=2.22.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.22.0" }
 cairo-vm.workspace = true
 itertools = { workspace = true, default-features = true }
 lambdaworks-math.workspace = true
