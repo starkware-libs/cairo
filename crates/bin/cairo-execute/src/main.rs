@@ -26,6 +26,7 @@ use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use clap::Parser;
+use clap::builder::ArgPredicate;
 use num_bigint::BigInt;
 use salsa::Database;
 
@@ -121,7 +122,10 @@ struct RunArgs {
         long,
         default_value_t = false,
         conflicts_with_all = ["build_only", "output_path"],
-        requires_ifs = [("standalone", "air_public_input"), ("standalone", "air_private_input")],
+        requires_ifs = [
+            (ArgPredicate::IsPresent, "air_public_input"),
+            (ArgPredicate::IsPresent, "air_private_input"),
+        ],
     )]
     standalone: bool,
     /// If set, the program will be run in secure mode.
@@ -175,7 +179,10 @@ struct ProofOutputArgs {
     #[arg(
         long,
         conflicts_with = "build_only",
-        requires_ifs = [("standalone", "trace_file"), ("standalone", "memory_file")]
+        requires_ifs = [
+            (ArgPredicate::IsPresent, "trace_file"),
+            (ArgPredicate::IsPresent, "memory_file"),
+        ]
     )]
     air_private_input: Option<PathBuf>,
 }
@@ -449,4 +456,58 @@ fn write_usize_as_u64(
     value: usize,
 ) -> Result<(), io::Error> {
     writer.write_all(&(value as u64).to_le_bytes())
+}
+
+#[cfg(test)]
+mod test {
+    use clap::Parser;
+    use clap::error::ErrorKind;
+
+    use super::Args;
+
+    fn parse(extra: &[&str]) -> Result<Args, clap::Error> {
+        Args::try_parse_from(["cairo-execute", "main.cairo", "--single-file"].iter().chain(extra))
+    }
+
+    #[test]
+    fn standalone_requires_air_inputs() {
+        let err = parse(&["--standalone"]).unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::MissingRequiredArgument);
+        let err = parse(&["--standalone", "--air-public-input", "pub.json"]).unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::MissingRequiredArgument);
+    }
+
+    #[test]
+    fn air_private_input_requires_trace_and_memory_files() {
+        let err =
+            parse(&["--output-path", "pie.zip", "--air-private-input", "priv.json"]).unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::MissingRequiredArgument);
+        let err = parse(&[
+            "--output-path",
+            "pie.zip",
+            "--air-private-input",
+            "priv.json",
+            "--trace-file",
+            "trace.bin",
+        ])
+        .unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::MissingRequiredArgument);
+    }
+
+    #[test]
+    fn complete_proof_outputs_are_accepted() {
+        parse(&["--output-path", "pie.zip"]).unwrap();
+        parse(&[
+            "--standalone",
+            "--air-public-input",
+            "pub.json",
+            "--air-private-input",
+            "priv.json",
+            "--trace-file",
+            "trace.bin",
+            "--memory-file",
+            "memory.bin",
+        ])
+        .unwrap();
+    }
 }
